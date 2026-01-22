@@ -569,7 +569,7 @@ export function DomesticBudgetManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="functional">Functional</SelectItem>
-                  <SelectItem value="administrative">Administrative</SelectItem>
+                  <SelectItem value="administrative">Line Ministries</SelectItem>
                   <SelectItem value="economic">Economic</SelectItem>
                   <SelectItem value="programme">Programme</SelectItem>
                 </SelectContent>

@@ -590,7 +590,7 @@ export function BudgetClassificationsManagement() {
                 <SelectContent>
                   <SelectItem value="functional">Functional - National</SelectItem>
                   <SelectItem value="functional_cofog">Functional - COFOG</SelectItem>
-                  <SelectItem value="administrative">Administrative</SelectItem>
+                  <SelectItem value="administrative">Line Ministries</SelectItem>
                   <SelectItem value="economic">Economic</SelectItem>
                   <SelectItem value="programme">Programme</SelectItem>
                   <SelectItem value="revenue">Revenue</SelectItem>

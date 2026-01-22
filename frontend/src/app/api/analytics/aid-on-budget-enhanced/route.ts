@@ -39,11 +39,13 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const fiscalYearParam = searchParams.get("fiscalYear");
-    const fiscalYear = fiscalYearParam ? parseInt(fiscalYearParam) : null; // null means "all years"
+    const startYearParam = searchParams.get("startYear");
+    const endYearParam = searchParams.get("endYear");
+    const startYear = startYearParam ? parseInt(startYearParam) : null;
+    const endYear = endYearParam ? parseInt(endYearParam) : null;
     const classificationType = searchParams.get("classificationType") || "all";
 
-    // 1. Fetch domestic budget data - filter by fiscal year if specified, otherwise get all
+    // 1. Fetch domestic budget data - filter by year range if specified, otherwise get all
     let domesticQuery = supabase
       .from("domestic_budget_data")
       .select(`
@@ -61,8 +63,12 @@ export async function GET(request: NextRequest) {
         )
       `);
 
-    if (fiscalYear) {
-      domesticQuery = domesticQuery.eq("fiscal_year", fiscalYear);
+    if (startYear && endYear) {
+      domesticQuery = domesticQuery.gte("fiscal_year", startYear).lte("fiscal_year", endYear);
+    } else if (startYear) {
+      domesticQuery = domesticQuery.gte("fiscal_year", startYear);
+    } else if (endYear) {
+      domesticQuery = domesticQuery.lte("fiscal_year", endYear);
     }
 
     const { data: domesticData, error: domesticError } = await domesticQuery;
@@ -87,7 +93,7 @@ export async function GET(request: NextRequest) {
 
     // 3. Fetch transactions (disbursements) for calculating aid amounts
     // Group by activity to get total disbursements - use value_usd for converted USD amounts
-    const { data: transactions, error: transactionsError } = await supabase
+    let transactionsQuery = supabase
       .from("transactions")
       .select(`
         activity_id,
@@ -97,6 +103,19 @@ export async function GET(request: NextRequest) {
         transaction_date
       `)
       .in("transaction_type", ["3", "4"]); // Disbursement and Expenditure
+
+    // Filter transactions by year range based on transaction_date
+    if (startYear && endYear) {
+      transactionsQuery = transactionsQuery
+        .gte("transaction_date", `${startYear}-01-01`)
+        .lte("transaction_date", `${endYear}-12-31`);
+    } else if (startYear) {
+      transactionsQuery = transactionsQuery.gte("transaction_date", `${startYear}-01-01`);
+    } else if (endYear) {
+      transactionsQuery = transactionsQuery.lte("transaction_date", `${endYear}-12-31`);
+    }
+
+    const { data: transactions, error: transactionsError } = await transactionsQuery;
 
     if (transactionsError) {
       console.error("[Aid on Budget Enhanced] Error fetching transactions:", transactionsError);
@@ -425,7 +444,8 @@ export async function GET(request: NextRequest) {
         ],
       },
       sectorData: classificationData,
-      fiscalYear,
+      startYear,
+      endYear,
       currency: "USD",
     };
 
@@ -435,7 +455,8 @@ export async function GET(request: NextRequest) {
       summary,
       chartData,
       filters: {
-        fiscalYear,
+        startYear,
+        endYear,
         classificationType,
       },
     });

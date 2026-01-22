@@ -27,6 +27,7 @@ import { CreateActivityModal } from "@/components/modals/CreateActivityModal";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { useUser } from "@/hooks/useUser";
@@ -1230,12 +1231,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             disabled={fieldLockStatus.isLocked}
           />
         </div>
-        {general.created_by_org_name && (
-          <p className="text-xs text-gray-500 mt-1">
-            Current: {general.created_by_org_name}
-            {general.created_by_org_acronym && ` (${general.created_by_org_acronym})`}
-          </p>
-        )}
       </div>
 
       {/* Description with field-level autosave */}
@@ -1266,21 +1261,20 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </div>
         </LabelSaveIndicator>
         <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-          <Textarea
-            value={general.description || ''}
-            onChange={(e) => {
+          <RichTextEditor
+            content={general.description || ''}
+            onChange={(content) => {
               if (!fieldLockStatus.isLocked) {
-                console.log('[GeneralSection] Description onChange triggered with content:', e.target.value);
+                console.log('[GeneralSection] Description onChange triggered with content:', content);
                 // Mark that the user has actually edited the description
                 hasUserEditedDescriptionRef.current = true;
-                setGeneral((g: any) => ({ ...g, description: e.target.value }));
-                descriptionAutosave.triggerFieldSave(e.target.value);
+                setGeneral((g: any) => ({ ...g, description: content }));
+                descriptionAutosave.triggerFieldSave(content);
               }
             }}
             placeholder="Describe your activity's objectives, scope, and expected outcomes..."
             rows={6}
             disabled={fieldLockStatus.isLocked}
-            className="resize-y"
           />
         </div>
         {descriptionAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {descriptionAutosave.state.error.message}</p>}

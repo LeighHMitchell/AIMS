@@ -40,19 +40,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-} from "@/components/ui/command";
 import { toast } from "sonner";
 import {
   Book,
@@ -65,9 +52,7 @@ import {
   Link2,
   X,
   Check,
-  ChevronsUpDown,
   AlertCircle,
-  Layers,
 } from "lucide-react";
 import dacSectorsData from "@/data/dac-sectors.json";
 
@@ -188,9 +173,22 @@ export function CountrySectorVocabularyManagement() {
   const [vocabForm, setVocabForm] = useState({ code: "", name: "", description: "", countryCode: "", version: "", vocabularyType: "sector" as VocabularyType, vocabularyUri: "", isDefault: false });
   const [sectorForm, setSectorForm] = useState({ code: "", name: "", description: "", parentCode: "", level: 1 });
   const [selectedDacSectors, setSelectedDacSectors] = useState<{ code: string; name: string; percentage: number }[]>([]);
+  const [dacSearchQuery, setDacSearchQuery] = useState("");
 
   // DAC sectors data
   const dacSectors = useMemo(() => parseDacSectors(), []);
+
+  // Filtered DAC sectors based on search
+  const filteredDacSectors = useMemo(() => {
+    if (!dacSearchQuery.trim()) return dacSectors;
+    const query = dacSearchQuery.toLowerCase();
+    return dacSectors.filter(
+      (d) =>
+        d.code.toLowerCase().includes(query) ||
+        d.name.toLowerCase().includes(query) ||
+        d.categoryName.toLowerCase().includes(query)
+    );
+  }, [dacSectors, dacSearchQuery]);
 
   // ============================================================================
   // Data Fetching
@@ -400,6 +398,7 @@ export function CountrySectorVocabularyManagement() {
 
   const openMappingDialog = (sector: CountrySector) => {
     setMappingSector(sector);
+    setDacSearchQuery(""); // Reset search when opening
     setSelectedDacSectors(
       (sector.dac_mappings || []).map((m) => ({
         code: m.dac_sector_code,
@@ -664,7 +663,7 @@ export function CountrySectorVocabularyManagement() {
                       <th className="h-10 px-4 text-left font-medium text-muted-foreground">
                         Name
                       </th>
-                      <th className="h-10 px-4 text-left font-medium text-muted-foreground w-[300px]">
+                      <th className="h-10 px-4 text-left font-medium text-muted-foreground w-[350px]">
                         DAC Mappings
                       </th>
                       <th className="h-10 px-4 text-right font-medium text-muted-foreground w-[100px]">
@@ -692,24 +691,25 @@ export function CountrySectorVocabularyManagement() {
                         </td>
                         <td className="p-4">
                           {sector.dac_mappings && sector.dac_mappings.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
+                            <div className="space-y-1">
                               {sector.dac_mappings.map((m) => (
-                                <Badge
-                                  key={m.dac_sector_code}
-                                  variant="outline"
-                                  className="text-xs"
-                                >
-                                  {m.dac_sector_code}
+                                <div key={m.dac_sector_code} className="flex items-center gap-2">
+                                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded shrink-0">
+                                    {m.dac_sector_code}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                                    {m.dac_sector_name || dacSectors.find(d => d.code === m.dac_sector_code)?.name || ""}
+                                  </span>
                                   {sector.dac_mappings!.length > 1 && (
-                                    <span className="ml-1 text-muted-foreground">
+                                    <span className="text-xs text-muted-foreground shrink-0">
                                       ({m.percentage}%)
                                     </span>
                                   )}
-                                </Badge>
+                                </div>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-xs">
+                            <span className="text-muted-foreground text-xs italic">
                               Not mapped
                             </span>
                           )}
@@ -1019,47 +1019,60 @@ export function CountrySectorVocabularyManagement() {
                 </div>
               )}
 
-              {/* DAC sector selector */}
+              {/* DAC sector selector - inline searchable list */}
               <div className="space-y-2">
                 <Label>Add DAC Sector</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Search className="h-4 w-4 mr-2" />
-                      Search DAC sectors...
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[500px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search by code or name..." />
-                      <CommandList className="max-h-[300px]">
-                        <CommandEmpty>No DAC sector found.</CommandEmpty>
-                        <CommandGroup>
-                          {dacSectors.slice(0, 100).map((dac) => (
-                            <CommandItem
-                              key={dac.code}
-                              onSelect={() => addDacMapping(dac)}
-                              className="flex items-start gap-2"
-                            >
-                              <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded shrink-0">
-                                {dac.code}
-                              </span>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm truncate">{dac.name}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {dac.categoryName}
-                                </div>
+                <div className="border rounded-md">
+                  <div className="p-2 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by code or name..."
+                        className="pl-10"
+                        value={dacSearchQuery}
+                        onChange={(e) => setDacSearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-[200px] overflow-auto">
+                    {filteredDacSectors.length === 0 ? (
+                      <div className="p-4 text-center text-muted-foreground text-sm">
+                        No DAC sectors found
+                      </div>
+                    ) : (
+                      filteredDacSectors.slice(0, 50).map((dac) => {
+                        const isSelected = selectedDacSectors.find((s) => s.code === dac.code);
+                        return (
+                          <div
+                            key={dac.code}
+                            className={`flex items-start gap-2 p-2 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 ${
+                              isSelected ? "bg-green-50" : ""
+                            }`}
+                            onClick={() => !isSelected && addDacMapping(dac)}
+                          >
+                            <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded shrink-0">
+                              {dac.code}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm truncate">{dac.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {dac.categoryName}
                               </div>
-                              {selectedDacSectors.find((s) => s.code === dac.code) && (
-                                <Check className="h-4 w-4 text-green-600 shrink-0" />
-                              )}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                            </div>
+                            {isSelected && (
+                              <Check className="h-4 w-4 text-green-600 shrink-0" />
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                    {filteredDacSectors.length > 50 && (
+                      <div className="p-2 text-center text-xs text-muted-foreground bg-muted/30">
+                        Showing 50 of {filteredDacSectors.length} results. Type to filter.
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
             <DialogFooter>

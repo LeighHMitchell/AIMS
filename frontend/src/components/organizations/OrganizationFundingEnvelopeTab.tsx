@@ -329,15 +329,28 @@ export default function OrganizationFundingEnvelopeTab({
     }
   }
 
-  // Toggle funding type flag
+  // Toggle funding type flag with mutual exclusivity for budget status
   const toggleFundingTypeFlag = (flag: FundingTypeFlag) => {
     if (!editingEnvelope) return
 
     const currentFlags = editingEnvelope.funding_type_flags || []
-    const newFlags = currentFlags.includes(flag)
-      ? currentFlags.filter(f => f !== flag)
-      : [...currentFlags, flag]
-
+    
+    // If removing the flag, just remove it
+    if (currentFlags.includes(flag)) {
+      updateField('funding_type_flags', currentFlags.filter(f => f !== flag))
+      return
+    }
+    
+    // Adding a new flag - handle mutual exclusivity for budget status flags
+    const budgetStatusFlags: FundingTypeFlag[] = ['on_budget', 'off_budget', 'unknown']
+    let newFlags = [...currentFlags]
+    
+    // If selecting a budget status flag, remove other budget status flags
+    if (budgetStatusFlags.includes(flag)) {
+      newFlags = newFlags.filter(f => !budgetStatusFlags.includes(f))
+    }
+    
+    newFlags.push(flag)
     updateField('funding_type_flags', newFlags)
   }
 
@@ -1013,12 +1026,27 @@ export default function OrganizationFundingEnvelopeTab({
                         }
                       }}
                     >
-                      <SelectTrigger>
-                        <span className="text-gray-500">
-                          {editingEnvelope.funding_type_flags && editingEnvelope.funding_type_flags.length > 0
-                            ? `${editingEnvelope.funding_type_flags.length} selected`
-                            : 'Select funding types...'}
-                        </span>
+                      <SelectTrigger className="h-auto min-h-[40px] py-2">
+                        <div className="flex flex-wrap gap-1 items-center w-full">
+                          {editingEnvelope.funding_type_flags && editingEnvelope.funding_type_flags.length > 0 ? (
+                            editingEnvelope.funding_type_flags.map(flag => (
+                              <Badge
+                                key={flag}
+                                variant="secondary"
+                                className="flex items-center gap-1 pr-1 text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleFundingTypeFlag(flag)
+                                }}
+                              >
+                                {FUNDING_TYPE_FLAGS.find(f => f.value === flag)?.label || flag}
+                                <X className="h-3 w-3 hover:bg-gray-300 rounded-full cursor-pointer" />
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-gray-500">Select funding types...</span>
+                          )}
+                        </div>
                       </SelectTrigger>
                       <SelectContent>
                         {FUNDING_TYPE_FLAGS.map((flag) => {
@@ -1041,27 +1069,6 @@ export default function OrganizationFundingEnvelopeTab({
                       </SelectContent>
                     </Select>
                   </div>
-                  {/* Selected flags display */}
-                  {editingEnvelope.funding_type_flags && editingEnvelope.funding_type_flags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {editingEnvelope.funding_type_flags.map(flag => (
-                        <Badge
-                          key={flag}
-                          variant="secondary"
-                          className="flex items-center gap-1 pr-1"
-                        >
-                          {FUNDING_TYPE_FLAGS.find(f => f.value === flag)?.label || flag}
-                          <button
-                            type="button"
-                            onClick={() => toggleFundingTypeFlag(flag)}
-                            className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Notes - Full Width */}

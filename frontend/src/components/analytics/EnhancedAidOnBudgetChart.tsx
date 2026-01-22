@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as d3 from "d3";
 import {
   Card,
@@ -20,7 +20,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins, HelpCircle, PieChart, Table2, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { AlertCircle, RefreshCw, TrendingUp, Wallet, PiggyBank, CircleDollarSign, HandCoins, HelpCircle, PieChart, Table2, ChevronDown, ChevronRight, Download, CalendarIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { TableSkeleton } from "@/components/ui/skeleton-loader";
@@ -41,7 +46,6 @@ import {
   ENHANCED_CHART_COLORS,
   ClassificationType,
 } from "@/types/aid-on-budget";
-import { getFiscalYearOptions } from "@/types/domestic-budget";
 
 interface EnhancedAidOnBudgetChartProps {
   refreshKey?: number;
@@ -87,6 +91,7 @@ interface ActivityDetail {
     code: string;
     name: string;
     percentage: number;
+    classificationType: string;
   }>;
 }
 
@@ -121,8 +126,70 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ApiResponse | null>(null);
 
-  // Filters - "all" means all years combined
-  const [selectedYear, setSelectedYear] = useState<number | "all">("all");
+  // Year range selection
+  const currentYear = new Date().getFullYear();
+  const minYear = 2010;
+  const maxYear = currentYear + 5;
+  const [startYear, setStartYear] = useState<number | null>(null);
+  const [endYear, setEndYear] = useState<number | null>(null);
+
+  // Generate year options for the selector grid
+  const yearOptions = useMemo(() => {
+    const years: number[] = [];
+    for (let y = minYear; y <= maxYear; y++) {
+      years.push(y);
+    }
+    return years;
+  }, [minYear, maxYear]);
+
+  // Get formatted year label
+  const getYearDisplayLabel = useCallback((year: number) => {
+    return `CY${year}`;
+  }, []);
+
+  // Check if a year is between start and end (for highlighting)
+  const isYearInRange = useCallback((year: number) => {
+    if (!startYear || !endYear) return false;
+    return year > Math.min(startYear, endYear) && year < Math.max(startYear, endYear);
+  }, [startYear, endYear]);
+
+  // Handle year click for range selection
+  const handleYearClick = useCallback((year: number) => {
+    if (!startYear && !endYear) {
+      // No selection yet - set as start
+      setStartYear(year);
+      setEndYear(year);
+    } else if (startYear && endYear && startYear === endYear) {
+      // Single year selected - extend range
+      if (year < startYear) {
+        setStartYear(year);
+      } else if (year > endYear) {
+        setEndYear(year);
+      } else {
+        // Same year clicked - reset
+        setStartYear(year);
+        setEndYear(year);
+      }
+    } else if (startYear && endYear) {
+      // Range selected - start new selection
+      setStartYear(year);
+      setEndYear(year);
+    }
+  }, [startYear, endYear]);
+
+  // Select all years
+  const selectAllYears = useCallback(() => {
+    setStartYear(null);
+    setEndYear(null);
+  }, []);
+
+  // Select only years with actual data (default to recent 8 years)
+  const selectDataRange = useCallback(() => {
+    setStartYear(currentYear - 7);
+    setEndYear(currentYear);
+  }, [currentYear]);
+
+  // Filters
   const [classificationType, setClassificationType] = useState<ClassificationType>("functional");
 
   // Zoom state - null means no zoom, otherwise contains the target info
@@ -145,8 +212,6 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   const chartWidth = 1200;
   const chartHeight = 700;
 
-  const fiscalYearOptions = getFiscalYearOptions();
-
   // Format number to abbreviated form
   const formatAbbreviated = (value: number): string => {
     if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
@@ -165,6 +230,55 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     }).format(value);
   };
 
+  // Export table data to CSV
+  const exportToCSV = () => {
+    if (!data?.chartData) return;
+
+    const rows: string[][] = [];
+    
+    // Header row
+    rows.push([
+      "Classification Code",
+      "Classification Name", 
+      "Domestic Expenditure (USD)",
+      "On-Budget Aid (USD)",
+      "Off-Budget Aid (USD)",
+      "Total (USD)",
+      "On-Budget %"
+    ]);
+
+    // Data rows
+    data.chartData.forEach((sector) => {
+      const total = sector.domesticExpenditure + sector.onBudgetAid + sector.offBudgetAid;
+      const onBudgetPct = total > 0 ? ((sector.onBudgetAid / total) * 100).toFixed(1) : "0";
+      rows.push([
+        sector.code,
+        sector.name,
+        sector.domesticExpenditure.toString(),
+        sector.onBudgetAid.toString(),
+        sector.offBudgetAid.toString(),
+        total.toString(),
+        onBudgetPct
+      ]);
+    });
+
+    // Convert to CSV string
+    const csvContent = rows
+      .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    // Download file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `aid-on-budget-${classificationType}-${selectedCustomYearId || "all"}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Fetch data from API
   const fetchData = useCallback(async () => {
     try {
@@ -172,10 +286,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       setError(null);
 
       const params = new URLSearchParams();
-      if (selectedYear !== "all") {
-        params.set("fiscalYear", selectedYear.toString());
+      if (startYear) {
+        params.set("startYear", startYear.toString());
       }
-      // If selectedYear is "all", don't send fiscalYear param - API will aggregate all years
+      if (endYear) {
+        params.set("endYear", endYear.toString());
+      }
       params.set("classificationType", classificationType);
 
       const response = await fetch(
@@ -194,7 +310,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     } finally {
       setLoading(false);
     }
-  }, [selectedYear, classificationType]);
+  }, [startYear, endYear, classificationType]);
 
   useEffect(() => {
     fetchData();
@@ -206,8 +322,11 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       setActivitiesLoading(true);
 
       const params = new URLSearchParams();
-      if (selectedYear !== "all") {
-        params.set("fiscalYear", selectedYear.toString());
+      if (startYear) {
+        params.set("startYear", startYear.toString());
+      }
+      if (endYear) {
+        params.set("endYear", endYear.toString());
       }
       if (budgetStatusFilter !== "all") {
         params.set("budgetStatus", budgetStatusFilter);
@@ -228,7 +347,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     } finally {
       setActivitiesLoading(false);
     }
-  }, [selectedYear, budgetStatusFilter]);
+  }, [startYear, endYear, budgetStatusFilter]);
 
   // Fetch activities when switching to table view
   useEffect(() => {
@@ -277,31 +396,35 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   };
 
   // Get activities for a specific classification code
-  // If activities have budget classifications mapped, filter by code
-  // Otherwise, show all activities with matching budget status for that row's aid amounts
+  // Filter by both code AND classification type to ensure correct matching across views
   const getActivitiesForClassification = (classificationCode: string, hasOnBudgetAid: boolean, hasOffBudgetAid: boolean): ActivityDetail[] => {
     if (!activitiesData?.activities) return [];
     
-    // First try to find activities with explicit budget classification mapping
+    // Find activities with budget classification mapping matching both code AND type
     const mappedActivities = activitiesData.activities.filter(activity =>
-      activity.budgetClassifications.some(bc => bc.code === classificationCode)
+      activity.budgetClassifications.some(bc => 
+        bc.code === classificationCode && bc.classificationType === classificationType
+      )
     );
     
-    // If we have mapped activities, return them
+    // If we have mapped activities for this classification type, return them
     if (mappedActivities.length > 0) {
       return mappedActivities;
     }
     
-    // Otherwise, return all activities (they contribute to the aggregate totals)
-    // This allows users to see activities even when budget classification mapping isn't complete
-    return activitiesData.activities;
+    // Fallback: try matching just by code (for backwards compatibility)
+    const codeOnlyMatch = activitiesData.activities.filter(activity =>
+      activity.budgetClassifications.some(bc => bc.code === classificationCode)
+    );
+    
+    if (codeOnlyMatch.length > 0) {
+      return codeOnlyMatch;
+    }
+    
+    // No matches found
+    return [];
   };
   
-  // Check if any activities exist (for showing chevrons)
-  const hasAnyActivities = (): boolean => {
-    return (activitiesData?.activities?.length || 0) > 0;
-  };
-
   // Get status text (plain text instead of badge)
   const getStatusText = (status: BudgetStatusType, isBudgetSupport: boolean): string => {
     if (isBudgetSupport) return "Budget Support";
@@ -513,7 +636,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       s.domesticBudget > 0 || s.domesticExpenditure > 0 || s.onBudgetAid > 0 || s.offBudgetAid > 0
     );
     // Always show orbit if there's at least one sector with data - brought closer to center for better visibility
-    const orbitRadius = sectorData.length >= 1 ? 260 : 0;
+    const orbitRadius = sectorData.length >= 1 ? 400 : 0;
 
     if (sectorData.length >= 1) {
       g.append("circle")
@@ -526,8 +649,8 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     }
 
     // CENTER DONUT - shows the 4 categories
-    const centerRadius = 110;
-    const centerThickness = 22;
+    const centerRadius = 120;
+    const centerThickness = 45;
 
     if (centerData.length > 0) {
       const pieGenerator = d3.pie<{ type: string; value: number; color: string }>()
@@ -557,7 +680,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           showTooltip(event, {
             title: d.data.type,
             values: [
-              { label: "Amount", value: formatAbbreviated(d.data.value), color: d.data.color },
+              { label: "Total", value: formatAbbreviated(totalValue) },
+              ...centerData.map(item => ({
+                label: item.type,
+                value: formatAbbreviated(item.value),
+                color: item.color
+              })),
               { label: "Share", value: `${percentage}%` },
             ],
           });
@@ -567,7 +695,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           showTooltip(event, {
             title: d.data.type,
             values: [
-              { label: "Amount", value: formatAbbreviated(d.data.value), color: d.data.color },
+              { label: "Total", value: formatAbbreviated(totalValue) },
+              ...centerData.map(item => ({
+                label: item.type,
+                value: formatAbbreviated(item.value),
+                color: item.color
+              })),
               { label: "Share", value: `${percentage}%` },
             ],
           });
@@ -636,7 +769,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       // Adjusted satellite sizes for closer orbit - prevents overlapping
       const rScale = d3.scaleSqrt()
         .domain([0, maxValue])
-        .range([30, 55]);
+        .range([55, 95]);
 
       const angleStep = (2 * Math.PI) / sectorData.length;
 
@@ -671,7 +804,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             .sort(null);
 
           const satelliteArc = d3.arc<d3.PieArcDatum<{ type: string; value: number; color: string }>>()
-            .innerRadius(r * 0.55)
+            .innerRadius(r * 0.65)
             .outerRadius(r);
 
           // Add white background circle
@@ -693,7 +826,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
           // Add inner white circle
           planetGroup.append("circle")
-            .attr("r", r * 0.55)
+            .attr("r", r * 0.65)
             .attr("fill", "#ffffff");
         }
 
@@ -769,7 +902,8 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
         // Name text (wrapped if needed) - improved for larger satellites
         const words = sector.name.split(" ");
-        const maxCharsPerLine = Math.floor(r / 4); // More chars allowed in larger circles
+        const nameFontSize = r > 60 ? "12px" : r > 50 ? "11px" : "10px";
+        const maxCharsPerLine = Math.floor(r / 2.5); // More chars allowed in larger circles
 
         if (words.length > 1 && sector.name.length > maxCharsPerLine) {
           // Split into multiple lines for long names
@@ -779,42 +913,27 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
           planetGroup.append("text")
             .attr("text-anchor", "middle")
-            .attr("dy", "1.0em")
-            .attr("font-size", r > 50 ? "12px" : "11px")
+            .attr("dy", "0.9em")
+            .attr("font-size", nameFontSize)
             .attr("fill", palette.blueSlate)
             .text(line1.length > maxCharsPerLine ? line1.slice(0, maxCharsPerLine) + "..." : line1);
 
           planetGroup.append("text")
             .attr("text-anchor", "middle")
-            .attr("dy", "2.2em")
-            .attr("font-size", r > 50 ? "12px" : "11px")
+            .attr("dy", "2.0em")
+            .attr("font-size", nameFontSize)
             .attr("fill", palette.blueSlate)
             .text(line2.length > maxCharsPerLine ? line2.slice(0, maxCharsPerLine) + "..." : line2);
         } else {
           planetGroup.append("text")
             .attr("text-anchor", "middle")
-            .attr("dy", "1.1em")
-            .attr("font-size", r > 50 ? "12px" : "11px")
+            .attr("dy", "1.0em")
+            .attr("font-size", nameFontSize)
             .attr("fill", palette.blueSlate)
             .text(sector.name.length > maxCharsPerLine ? sector.name.slice(0, maxCharsPerLine) + "..." : sector.name);
         }
       });
     }
-
-    // Stats in bottom left
-    const stats = svg.append("g")
-      .attr("transform", `translate(20, ${height - 80})`);
-
-    stats.append("text")
-      .attr("font-size", "12px")
-      .attr("fill", palette.blueSlate)
-      .text(`Activities: ${summary.activityCount} total`);
-
-    stats.append("text")
-      .attr("y", 20)
-      .attr("font-size", "12px")
-      .attr("fill", palette.blueSlate)
-      .text(`On Budget: ${summary.onBudgetActivityCount} | Off Budget: ${summary.offBudgetActivityCount} | Budget Support: ${summary.budgetSupportActivityCount}`);
 
   }, [data]); // Only re-render when data changes, NOT when zoom changes
 
@@ -892,73 +1011,135 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   return (
     <Card className="bg-white border-slate-200">
       <CardHeader>
-        <div className="flex items-center justify-end">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="year-select" className="text-sm">
-                Year:
-              </Label>
-              <Select
-                value={selectedYear.toString()}
-                onValueChange={(v) => setSelectedYear(v === "all" ? "all" : parseInt(v))}
-              >
-                <SelectTrigger id="year-select" className="w-[120px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
-                  {fiscalYearOptions.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="type-select" className="text-sm">
-                Type:
-              </Label>
-              <Select
-                value={classificationType}
-                onValueChange={(v) => setClassificationType(v as ClassificationType)}
-              >
-                <SelectTrigger id="type-select" className="w-[150px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="functional">Functional</SelectItem>
-                  <SelectItem value="administrative">Administrative</SelectItem>
-                  <SelectItem value="economic">Economic</SelectItem>
-                  <SelectItem value="programme">Programme</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={fetchData} variant="outline" size="sm" title="Refresh data">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            {/* View Toggle */}
-            <div className="flex items-center border rounded-md">
-              <Button
-                variant={viewMode === "chart" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("chart")}
-                className="rounded-r-none"
-                title="Chart View"
-              >
-                <PieChart className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "table" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("table")}
-                className="rounded-l-none"
-                title="Table View"
-              >
-                <Table2 className="h-4 w-4" />
-              </Button>
-            </div>
+        <div className="flex items-end justify-end gap-3">
+          {/* Year Range Selector */}
+          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs">
+                  <CalendarIcon className="h-4 w-4" />
+                  {!startYear && !endYear
+                    ? "All Years"
+                    : startYear === endYear
+                      ? getYearDisplayLabel(startYear!)
+                      : `${getYearDisplayLabel(startYear!)} – ${getYearDisplayLabel(endYear!)}`
+                  }
+                  <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="p-3 w-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={selectAllYears}
+                      className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={selectDataRange}
+                      className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                    >
+                      Data
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  {yearOptions.map((year) => {
+                    const isAllSelected = startYear === null && endYear === null;
+                    const hasSelection = startYear !== null || endYear !== null;
+                    const isStartOrEnd = hasSelection && (year === startYear || year === endYear);
+                    const inRange = isYearInRange(year);
+
+                    return (
+                      <button
+                        key={year}
+                        onClick={() => handleYearClick(year)}
+                        className={`
+                          px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
+                          ${isAllSelected
+                            ? "bg-primary/20 text-primary"
+                            : isStartOrEnd
+                              ? "bg-primary text-primary-foreground"
+                              : inRange
+                                ? "bg-primary/20 text-primary"
+                                : "text-slate-600 hover:bg-slate-100"
+                          }
+                        `}
+                        title="Click to select start, then click another to select end"
+                      >
+                        {getYearDisplayLabel(year)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2 text-center">
+                  Click start year, then click end year
+                </p>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="type-select" className="text-xs text-muted-foreground">Type</Label>
+            <Select
+              value={classificationType}
+              onValueChange={(v) => setClassificationType(v as ClassificationType)}
+            >
+              <SelectTrigger id="type-select" className="w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="functional">Functional</SelectItem>
+                <SelectItem value="administrative">Line Ministries</SelectItem>
+                <SelectItem value="economic">Economic</SelectItem>
+                <SelectItem value="programme">Programme</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            onClick={() => {
+              setZoomTarget(null);
+              panOffsetRef.current = { x: 0, y: 0 };
+              if (mainGroupRef.current) {
+                mainGroupRef.current
+                  .transition()
+                  .duration(500)
+                  .attr("transform", `translate(${chartWidth / 2}, ${chartHeight / 2})`);
+              }
+            }}
+            variant="outline"
+            size="sm"
+            title="Reset View"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          {/* View Toggle */}
+          <div className="flex items-center border rounded-md">
+            <Button
+              variant={viewMode === "chart" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("chart")}
+              className="rounded-r-none"
+              title="Chart View"
+            >
+              <PieChart className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "table" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-l-none"
+              title="Table View"
+            >
+              <Table2 className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button onClick={exportToCSV} variant="outline" size="sm" title="Export to CSV">
+            <Download className="h-4 w-4" />
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -976,7 +1157,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
-                {formatCurrency(summary.totalDomesticExpenditure)}
+                {formatAbbreviated(summary.totalDomesticExpenditure)}
               </div>
               <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
                 {summary.domesticExecutionRate.toFixed(1)}% execution rate
@@ -994,7 +1175,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
-                {formatCurrency(summary.totalOnBudgetAid + summary.totalPartialAid)}
+                {formatAbbreviated(summary.totalOnBudgetAid + summary.totalPartialAid)}
               </div>
               <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
                 {summary.onBudgetActivityCount + summary.partialActivityCount} activities
@@ -1012,7 +1193,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
-                {formatCurrency(summary.totalOffBudgetAid + summary.totalUnknownAid)}
+                {formatAbbreviated(summary.totalOffBudgetAid + summary.totalUnknownAid)}
               </div>
               <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
                 {summary.offBudgetActivityCount + summary.unknownActivityCount} activities
@@ -1030,7 +1211,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
-                {formatCurrency(summary.totalBudgetSupport)}
+                {formatAbbreviated(summary.totalBudgetSupport)}
               </div>
               <div className="text-xs mt-1" style={{ color: '#7b95a7' }}>
                 {summary.budgetSupportActivityCount} activities (A01/A02)
@@ -1044,18 +1225,6 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           <>
             {/* Orbital Chart */}
             <div className="relative w-full flex items-center justify-center bg-white" style={{ minHeight: '700px' }}>
-              {/* Reset Zoom Button */}
-              {zoomTarget && (
-                <Button
-                  onClick={() => setZoomTarget(null)}
-                  variant="outline"
-                  size="sm"
-                  className="absolute top-4 left-4 z-10 bg-white"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Reset Zoom
-                </Button>
-              )}
               <svg ref={svgRef} className="w-full h-auto" style={{ maxHeight: '700px' }} />
 
               {/* Tooltip */}
@@ -1079,7 +1248,8 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                   <table className="text-sm">
                     <tbody>
                       {tooltip.content.values.map((item, i) => {
-                        const isIndented = item.label === "Domestic" || item.label === "On-Budget Aid" || item.label === "Off-Budget Aid";
+                        const lowerLabel = item.label.toLowerCase();
+                        const isIndented = lowerLabel.includes("domestic") || lowerLabel.includes("on-budget") || lowerLabel.includes("on budget") || lowerLabel.includes("off-budget") || lowerLabel.includes("off budget") || lowerLabel.includes("budget support");
                         return (
                           <tr key={i} className="border-b last:border-b-0" style={{ borderColor: '#e5e7eb' }}>
                             <td className="px-3 py-1.5 text-left" style={{ color: '#6b7280', paddingLeft: isIndented ? '1.5rem' : '0.75rem' }}>
@@ -1100,36 +1270,6 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               )}
             </div>
 
-            {/* Activity Status Breakdown */}
-            {summary && (
-              <div className="mt-6 pt-4 border-t">
-                <h4 className="text-sm font-semibold mb-3" style={{ color: '#4c5568' }}>
-                  Activity Budget Status Distribution
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
-                    On Budget: {summary.onBudgetActivityCount}
-                  </Badge>
-                  <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
-                    Partial: {summary.partialActivityCount}
-                  </Badge>
-                  <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
-                    Off Budget: {summary.offBudgetActivityCount}
-                  </Badge>
-                  <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
-                    Unknown: {summary.unknownActivityCount}
-                  </Badge>
-                  <Badge variant="outline" className="bg-white border-slate-300" style={{ color: '#4c5568' }}>
-                    Budget Support: {summary.budgetSupportActivityCount}
-                  </Badge>
-                </div>
-                <p className="text-xs mt-2" style={{ color: '#7b95a7' }}>
-                  Total: {summary.activityCount} activities |{" "}
-                  {summary.onBudgetPercentage.toFixed(1)}% of project aid is on budget |{" "}
-                  {summary.aidShareOfBudget.toFixed(1)}% aid share of total spending
-                </p>
-              </div>
-            )}
           </>
         )}
 
@@ -1159,8 +1299,8 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                         const total = sector.domesticExpenditure + sector.onBudgetAid + sector.offBudgetAid;
                         const hasAidData = sector.onBudgetAid > 0 || sector.offBudgetAid > 0;
                         const isExpanded = expandedClassifications.has(sector.code);
-                        // Show chevron if there's any aid data and we have activities loaded
-                        const showChevron = hasAidData && hasAnyActivities();
+                        // Show chevron immediately if there's any aid data (don't wait for activities to load)
+                        const showChevron = hasAidData;
                         const classificationActivities = isExpanded 
                           ? getActivitiesForClassification(sector.code, sector.onBudgetAid > 0, sector.offBudgetAid > 0)
                           : [];
@@ -1169,7 +1309,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                           <React.Fragment key={sector.code}>
                             {/* Classification Header Row */}
                             <TableRow
-                              className={showChevron ? "cursor-pointer hover:bg-slate-50" : ""}
+                              className={`bg-slate-50/70 ${showChevron ? "cursor-pointer hover:bg-slate-100/70" : ""}`}
                               onClick={() => showChevron && toggleClassification(sector.code)}
                             >
                               <TableCell className="w-8">
@@ -1180,7 +1320,11 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                 )}
                               </TableCell>
                               <TableCell className="font-medium">
-                                <span className="text-sm text-gray-500 mr-2">{sector.code}</span>
+                                {sector.code && (
+                                  <code className="mr-2 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-xs">
+                                    {sector.code}
+                                  </code>
+                                )}
                                 {sector.name}
                               </TableCell>
                               <TableCell className="text-right">
@@ -1206,29 +1350,22 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                 key={`${sector.code}-${activity.id}`}
                                 className="bg-slate-50/50 hover:bg-slate-100/50"
                               >
-                                <TableCell className="w-8 pl-6">
-                                  <Link href={`/activities/${activity.id}`}>
-                                    <ExternalLink className="h-3 w-3 text-gray-400 hover:text-blue-500" />
-                                  </Link>
-                                </TableCell>
+                                <TableCell className="w-8 pl-6"></TableCell>
                                 <TableCell className="pl-6">
-                                  <div className="font-medium text-sm" title={activity.title}>
+                                  <Link 
+                                    href={`/activities/${activity.id}`}
+                                    className="font-medium text-sm hover:text-gray-600 cursor-pointer"
+                                    title={activity.title}
+                                  >
                                     {activity.title}
-                                  </div>
-                                  {activity.iatiIdentifier && (
-                                    <div className="mt-1">
-                                      <span className="font-mono text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                  </Link>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                    {activity.iatiIdentifier && (
+                                      <span className="font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
                                         {activity.iatiIdentifier}
                                       </span>
-                                    </div>
-                                  )}
-                                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                                    <span>{formatPartner(activity.partnerName, activity.partnerAcronym)}</span>
-                                    <span>•</span>
-                                    <span>{getStatusText(activity.budgetStatus, activity.isBudgetSupport)}</span>
-                                    {activity.budgetStatus === "partial" && activity.onBudgetPercentage && (
-                                      <span>({activity.onBudgetPercentage}%)</span>
                                     )}
+                                    <span>{formatPartner(activity.partnerName, activity.partnerAcronym)}</span>
                                   </div>
                                 </TableCell>
                                 <TableCell></TableCell>

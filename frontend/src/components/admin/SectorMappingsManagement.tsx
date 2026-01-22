@@ -1119,7 +1119,7 @@ export function SectorMappingsManagement() {
             </TabsTrigger>
             <TabsTrigger value="administrative" className="flex items-center gap-1">
               <Landmark className="h-4 w-4" />
-              Administrative
+              Line Ministries
             </TabsTrigger>
             <TabsTrigger value="funding_sources" className="flex items-center gap-1">
               <Building2 className="h-4 w-4" />
@@ -1198,7 +1198,7 @@ export function SectorMappingsManagement() {
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[280px]">DAC Sector</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Country Sectors</th>
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Administrative</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Line Ministries</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Functional - National</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Functional - COFOG</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground min-w-[200px]">Economic</th>
@@ -1263,7 +1263,7 @@ export function SectorMappingsManagement() {
                     <tr className="border-b-2">
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[350px]">Organization (Receiver)</th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">Organization Type</th>
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">Administrative Classification</th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">Line Ministry</th>
                     </tr>
                   </thead>
                   <tbody>

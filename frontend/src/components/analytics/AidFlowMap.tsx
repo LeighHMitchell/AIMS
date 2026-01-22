@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MultiSelect } from '@/components/ui/multi-select'
-import { RefreshCw, Download, Network, ArrowLeftRight, Activity, Search } from 'lucide-react'
+import { RefreshCw, Download, Network, ArrowLeftRight, Activity, Search, Info } from 'lucide-react'
 import { ChartSkeleton } from '@/components/ui/skeleton-loader'
 import { format, subMonths, startOfYear, endOfYear } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -400,6 +400,22 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
         
         {!loading && !error && graphData && (
           <>
+            {/* Info message when showing activities without relationships */}
+            {viewMode === 'activity' && metadata?.hasRelationships === false && graphData.nodes.length > 0 && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Info className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-amber-800 font-medium">No activity relationships defined</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Showing all published activities. To see connections between activities, 
+                      create relationships in the Activity Profile by linking parent, child, sibling, 
+                      co-funded, or third-party activities.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <EnhancedAidFlowGraph
               graphData={graphData}
               dateRange={dateRange}

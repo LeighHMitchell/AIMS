@@ -1,16 +1,57 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CheckCircle, XCircle, AlertTriangle, MinusCircle, ChevronDown, ChevronRight } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface ImportResultsDisplayProps {
   importSummary: any;
 }
 
 export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProps) {
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [initialized, setInitialized] = useState(false);
+
   if (!importSummary) return null;
+
+  const toggleRow = (rowId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(rowId)) {
+      newExpanded.delete(rowId);
+    } else {
+      newExpanded.add(rowId);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  // Expand all rows by default on first render
+  useEffect(() => {
+    if (!initialized && importSummary) {
+      const allIds = new Set<string>();
+      
+      if (importSummary.basicFields?.length > 0) allIds.add('basic-fields');
+      
+      const standardSections = [
+        'transactions', 'budgets', 'plannedDisbursements', 'sectors', 'locations',
+        'policyMarkers', 'financingTerms', 'tags', 'results', 'documentLinks',
+        'conditions', 'humanitarianScopes', 'contacts', 'participatingOrgs',
+        'otherIdentifiers', 'relatedActivities', 'fss', 'recipientCountries',
+        'recipientRegions', 'customGeographies'
+      ];
+      
+      standardSections.forEach(id => {
+        const section = importSummary[id];
+        if (section && (section.attempted > 0 || section.details?.length > 0 || section.list?.length > 0)) {
+          allIds.add(id);
+        }
+      });
+      
+      if (importSummary.errors?.length > 0) allIds.add('errors');
+      if (importSummary.warnings?.length > 0) allIds.add('warnings');
+      
+      setExpandedRows(allIds);
+      setInitialized(true);
+    }
+  }, [importSummary, initialized]);
 
   const getSectionStatus = (section: any) => {
     if (!section) return 'empty';
@@ -27,11 +68,11 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-gray-700" />;
       case 'partial':
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+        return <AlertTriangle className="h-4 w-4 text-gray-500" />;
       case 'failed':
-        return <XCircle className="h-4 w-4 text-red-600" />;
+        return <XCircle className="h-4 w-4 text-gray-700" />;
       case 'empty':
         return <MinusCircle className="h-4 w-4 text-gray-400" />;
       default:
@@ -39,532 +80,356 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
     }
   };
 
-  const getStatusBadge = (successful: number, attempted: number, failed: number = 0, skipped: number = 0) => {
-    if (attempted === 0) {
-      return <Badge variant="outline" className="bg-gray-100">Not imported</Badge>;
-    }
-    if (failed > 0) {
-      return <Badge variant="destructive"><span className="font-mono bg-gray-100 px-1 rounded">{successful}/{attempted}</span> ({failed} failed)</Badge>;
-    }
-    if (skipped > 0) {
-      return <Badge variant="outline" className="bg-yellow-100"><span className="font-mono bg-gray-100 px-1 rounded">{successful}/{attempted}</span> ({skipped} skipped)</Badge>;
-    }
-    return <Badge variant="outline" className="bg-green-100"><span className="font-mono bg-gray-100 px-1 rounded">{successful}/{attempted}</span></Badge>;
+  const getStatusBadgeClass = (successful: number, attempted: number, failed: number = 0) => {
+    if (attempted === 0) return 'bg-gray-100 text-gray-600';
+    if (failed > 0) return 'bg-gray-200 text-gray-700';
+    return 'bg-gray-100 text-gray-700';
   };
 
-  const renderSection = (title: string, section: any, icon: React.ReactNode) => {
-    const status = getSectionStatus(section);
-    if (status === 'empty' && (!section?.details?.length && !section?.list?.length && !section?.failures?.length)) {
-      return null;
-    }
+  const formatCount = (successful: number, attempted: number, failed: number = 0, skipped: number = 0) => {
+    if (attempted === 0) return '-';
+    let text = `${successful}/${attempted}`;
+    if (failed > 0) text += ` (${failed} failed)`;
+    if (skipped > 0) text += ` (${skipped} skipped)`;
+    return text;
+  };
 
-    return (
-      <AccordionItem value={title} className="border rounded-lg mb-2 px-4">
-        <AccordionTrigger className="hover:no-underline py-4">
-          <div className="flex items-center justify-between w-full pr-4">
-            <div className="flex items-center gap-3">
-              {getStatusIcon(status)}
-              <span className="font-medium">{title}</span>
-            </div>
-            {getStatusBadge(
-              section?.successful || 0, 
-              section?.attempted || 0, 
-              section?.failed || 0,
-              section?.skipped || 0
-            )}
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="pt-2 pb-4">
-          <div className="space-y-4">
-            {/* Summary Stats */}
-            {section?.attempted > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 p-3 rounded-md">
-                <div>
-                  <div className="text-xs text-gray-500">Attempted</div>
-                  <div className="text-lg font-semibold">{section.attempted}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">Successful</div>
-                  <div className="text-lg font-semibold text-green-600">{section.successful}</div>
-                </div>
-                {section.failed > 0 && (
-                  <div>
-                    <div className="text-xs text-gray-500">Failed</div>
-                    <div className="text-lg font-semibold text-red-600">{section.failed}</div>
-                  </div>
-                )}
-                {section.skipped > 0 && (
-                  <div>
-                    <div className="text-xs text-gray-500">Skipped</div>
-                    <div className="text-lg font-semibold text-gray-600">{section.skipped}</div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Additional Stats */}
-            {section?.totalAmount !== undefined && section.totalAmount > 0 && (
-              <div className="bg-blue-50 p-3 rounded-md">
-                <div className="text-xs text-blue-600">Total Amount</div>
-                <div className="text-lg font-semibold text-blue-900">
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(section.totalAmount)}
-                </div>
-              </div>
-            )}
-
-            {section?.totalPercentage !== undefined && section.totalPercentage > 0 && (
-              <div className="bg-blue-50 p-3 rounded-md">
-                <div className="text-xs text-blue-600">Total Percentage</div>
-                <div className="text-lg font-semibold text-blue-900">{section.totalPercentage.toFixed(2)}%</div>
-              </div>
-            )}
-
-            {/* Success Details */}
-            {section?.details && section.details.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-green-700 mb-2">Successfully Imported ({section.details.length})</h4>
-                <div className="bg-green-50 border border-green-200 rounded-md p-3 max-h-60 overflow-y-auto">
-                  <div className="space-y-2 text-xs font-mono">
-                    {section.details.slice(0, 50).map((detail: any, idx: number) => (
-                      <div key={idx} className="border-b border-green-100 pb-1">
-                        {typeof detail === 'string' ? detail : JSON.stringify(detail, null, 2)}
-                      </div>
-                    ))}
-                    {section.details.length > 50 && (
-                      <div className="text-gray-500 italic">... and {section.details.length - 50} more</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* List Items (for sectors, locations, etc.) */}
-            {section?.list && section.list.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-green-700 mb-2">Imported Items ({section.list.length})</h4>
-                <div className="bg-green-50 border border-green-200 rounded-md p-3 max-h-60 overflow-y-auto">
-                  <div className="space-y-2 text-xs">
-                    {section.list.slice(0, 50).map((item: any, idx: number) => (
-                      <div key={idx} className="border-b border-green-100 pb-2">
-                        {item.name && <div className="font-medium">{item.name}</div>}
-                        {item.code && <div className="text-gray-600">Code: {item.code}</div>}
-                        {item.percentage !== undefined && <div className="text-gray-600">Percentage: {item.percentage}%</div>}
-                        {item.significance !== undefined && <div className="text-gray-600">Significance: {item.significance}</div>}
-                        {item.value !== undefined && <div className="text-gray-600">Value: {item.value}</div>}
-                      </div>
-                    ))}
-                    {section.list.length > 50 && (
-                      <div className="text-gray-500 italic">... and {section.list.length - 50} more</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Failures */}
-            {section?.failures && section.failures.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-red-700 mb-2">Failed Items ({section.failures.length})</h4>
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-60 overflow-y-auto">
-                  <div className="space-y-3 text-xs">
-                    {section.failures.map((failure: any, idx: number) => (
-                      <div key={idx} className="border-b border-red-100 pb-2">
-                        {failure.code && <div className="font-medium text-red-900">Code: {failure.code}</div>}
-                        {failure.name && <div className="font-medium text-red-900">Name: {failure.name}</div>}
-                        {failure.vocabulary && <div className="text-gray-700">Vocabulary: {failure.vocabulary}</div>}
-                        {failure.reason && (
-                          <div className="mt-1 text-red-700 bg-red-100 p-2 rounded">
-                            <span className="font-semibold">Reason: </span>{failure.reason}
-                          </div>
-                        )}
-                        {failure.error && (
-                          <div className="mt-1 text-red-700 bg-red-100 p-2 rounded">
-                            <span className="font-semibold">Error: </span>{failure.error}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Warnings */}
-            {section?.warnings && section.warnings.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-yellow-700 mb-2">Warnings ({section.warnings.length})</h4>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 max-h-40 overflow-y-auto">
-                  <ul className="space-y-1 text-xs list-disc list-inside">
-                    {section.warnings.map((warning: string, idx: number) => (
-                      <li key={idx} className="text-yellow-900">{warning}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {/* Matching Details (for policy markers) */}
-            {section?.matchingDetails && section.matchingDetails.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-blue-700 mb-2">Matching Details ({section.matchingDetails.length})</h4>
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 max-h-60 overflow-y-auto">
-                  <div className="space-y-3 text-xs">
-                    {section.matchingDetails.map((detail: any, idx: number) => (
-                      <div key={idx} className="border-b border-blue-100 pb-2">
-                        <div className="font-medium text-blue-900">
-                          Code: {detail.code} {detail.name && `(${detail.name})`}
-                        </div>
-                        {detail.matchedTo && (
-                          <div className="text-gray-700">Matched To: {detail.matchedTo}</div>
-                        )}
-                        {detail.matchingStrategy && (
-                          <div className="text-gray-700">Strategy: {detail.matchingStrategy}</div>
-                        )}
-                        {detail.reason && (
-                          <div className="mt-1 text-blue-700 italic">{detail.reason}</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Validation Issues */}
-            {section?.validationIssues && section.validationIssues.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-orange-700 mb-2">Validation Issues ({section.validationIssues.length})</h4>
-                <div className="bg-orange-50 border border-orange-200 rounded-md p-3 max-h-40 overflow-y-auto">
-                  <ul className="space-y-1 text-xs list-disc list-inside">
-                    {section.validationIssues.map((issue: string, idx: number) => (
-                      <li key={idx} className="text-orange-900">{issue}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
+  const hasDetails = (section: any) => {
+    return section && (
+      section.details?.length > 0 || 
+      section.list?.length > 0 || 
+      section.failures?.length > 0 ||
+      section.warnings?.length > 0 ||
+      section.matchingDetails?.length > 0 ||
+      section.totalAmount > 0 ||
+      section.totalPercentage > 0
     );
   };
 
+  const renderExpandedDetails = (section: any, title: string) => {
+    if (!section) return null;
+
+    return (
+      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 space-y-3">
+        {/* Additional Stats */}
+        {((section?.totalAmount !== undefined && section.totalAmount > 0) || 
+          (section?.totalPercentage !== undefined && section.totalPercentage > 0)) && (
+          <table className="w-full text-sm border border-gray-200 rounded">
+            <tbody>
+              {section?.totalAmount !== undefined && section.totalAmount > 0 && (
+                <tr className="border-b border-gray-200">
+                  <td className="px-3 py-2 font-medium text-gray-600 bg-gray-100 w-40">Total Amount</td>
+                  <td className="px-3 py-2 text-gray-800">
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(section.totalAmount)}
+                  </td>
+                </tr>
+              )}
+              {section?.totalPercentage !== undefined && section.totalPercentage > 0 && (
+                <tr>
+                  <td className="px-3 py-2 font-medium text-gray-600 bg-gray-100 w-40">Total Percentage</td>
+                  <td className="px-3 py-2 text-gray-800">{section.totalPercentage.toFixed(2)}%</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+
+        {/* Success Details - Table Format */}
+        {section?.details && section.details.length > 0 && (
+          <div>
+            <div className="text-sm font-medium text-gray-700 mb-1">Successfully Imported ({section.details.length})</div>
+            <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Details</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white">
+                  {section.details.slice(0, 30).map((detail: any, idx: number) => (
+                    <tr key={idx} className="border-b border-gray-100 last:border-0">
+                      <td className="px-3 py-1.5 text-gray-500 w-12">{idx + 1}</td>
+                      <td className="px-3 py-1.5 font-mono text-gray-800">
+                        {typeof detail === 'string' ? detail : JSON.stringify(detail)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {section.details.length > 30 && (
+                <div className="text-xs text-gray-500 italic px-3 py-2 bg-gray-50 border-t border-gray-200">
+                  ... and {section.details.length - 30} more
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* List Items - Table Format */}
+        {section?.list && section.list.length > 0 && (
+          <div>
+            <div className="text-sm font-medium text-gray-700 mb-1">Imported Items ({section.list.length})</div>
+            <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Name</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Code</th>
+                    <th className="px-3 py-2 text-right font-medium text-gray-700 border-b border-gray-200">Value</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white">
+                  {section.list.slice(0, 30).map((item: any, idx: number) => (
+                    <tr key={idx} className="border-b border-gray-100 last:border-0">
+                      <td className="px-3 py-1.5 text-gray-500 w-12">{idx + 1}</td>
+                      <td className="px-3 py-1.5 font-medium text-gray-800">{item.name || '-'}</td>
+                      <td className="px-3 py-1.5 text-gray-600">{item.code || '-'}</td>
+                      <td className="px-3 py-1.5 text-right text-gray-600">
+                        {item.percentage !== undefined ? `${item.percentage}%` : 
+                         item.significance !== undefined ? `Sig: ${item.significance}` :
+                         item.value !== undefined ? item.value : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {section.list.length > 30 && (
+                <div className="text-xs text-gray-500 italic px-3 py-2 bg-gray-50 border-t border-gray-200">
+                  ... and {section.list.length - 30} more
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Failures - Table Format */}
+        {section?.failures && section.failures.length > 0 && (
+          <div>
+            <div className="text-sm font-medium text-gray-700 mb-1">Failed ({section.failures.length})</div>
+            <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Item</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Reason</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white">
+                  {section.failures.map((failure: any, idx: number) => (
+                    <tr key={idx} className="border-b border-gray-100 last:border-0">
+                      <td className="px-3 py-1.5 text-gray-500 w-12">{idx + 1}</td>
+                      <td className="px-3 py-1.5 font-medium text-gray-800">
+                        {failure.code || failure.name || '-'}
+                      </td>
+                      <td className="px-3 py-1.5 text-gray-600">
+                        {failure.reason || failure.error || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Warnings - Table Format */}
+        {section?.warnings && section.warnings.length > 0 && (
+          <div>
+            <div className="text-sm font-medium text-gray-700 mb-1">Warnings ({section.warnings.length})</div>
+            <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Warning</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white">
+                  {section.warnings.map((warning: string, idx: number) => (
+                    <tr key={idx} className="border-b border-gray-100 last:border-0">
+                      <td className="px-3 py-1.5 text-gray-500 w-12">{idx + 1}</td>
+                      <td className="px-3 py-1.5 text-gray-700">{warning}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Matching Details - Table Format */}
+        {section?.matchingDetails && section.matchingDetails.length > 0 && (
+          <div>
+            <div className="text-sm font-medium text-gray-700 mb-1">Matching Details ({section.matchingDetails.length})</div>
+            <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Code</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Matched To</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Strategy</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white">
+                  {section.matchingDetails.map((detail: any, idx: number) => (
+                    <tr key={idx} className="border-b border-gray-100 last:border-0">
+                      <td className="px-3 py-1.5 text-gray-500 w-12">{idx + 1}</td>
+                      <td className="px-3 py-1.5 font-medium text-gray-800">{detail.code}</td>
+                      <td className="px-3 py-1.5 text-gray-700">{detail.matchedTo || '-'}</td>
+                      <td className="px-3 py-1.5 text-gray-600">{detail.matchingStrategy || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Build sections array for the table
+  type SectionEntry = {
+    id: string;
+    title: string;
+    section: any;
+    isSpecial?: boolean;
+  };
+
+  const sections: SectionEntry[] = [];
+
+  // Basic Fields
+  if (importSummary.basicFields && importSummary.basicFields.length > 0) {
+    sections.push({
+      id: 'basic-fields',
+      title: 'Basic Fields',
+      section: { attempted: importSummary.basicFields.length, successful: importSummary.basicFields.length, failed: 0, list: importSummary.basicFields.map((f: any) => ({ name: f.field, code: String(f.value).substring(0, 50) })) }
+    });
+  }
+
+  // Standard sections
+  const standardSections: [string, string, any][] = [
+    ['transactions', 'Transactions', importSummary.transactions],
+    ['budgets', 'Budgets', importSummary.budgets],
+    ['plannedDisbursements', 'Planned Disbursements', importSummary.plannedDisbursements],
+    ['sectors', 'Sectors', importSummary.sectors],
+    ['locations', 'Locations', importSummary.locations],
+    ['policyMarkers', 'Policy Markers', importSummary.policyMarkers],
+    ['financingTerms', 'Financing Terms (CRS)', importSummary.financingTerms],
+    ['tags', 'Tags', importSummary.tags],
+    ['results', 'Results Framework', importSummary.results],
+    ['documentLinks', 'Document Links', importSummary.documentLinks],
+    ['conditions', 'Conditions', importSummary.conditions],
+    ['humanitarianScopes', 'Humanitarian Scopes', importSummary.humanitarianScopes],
+    ['contacts', 'Contacts', importSummary.contacts],
+    ['participatingOrgs', 'Participating Organizations', importSummary.participatingOrgs],
+    ['otherIdentifiers', 'Other Identifiers', importSummary.otherIdentifiers],
+    ['relatedActivities', 'Related Activities', importSummary.relatedActivities],
+    ['fss', 'Forward Spending Survey (FSS)', importSummary.fss],
+    ['recipientCountries', 'Recipient Countries', importSummary.recipientCountries],
+    ['recipientRegions', 'Recipient Regions', importSummary.recipientRegions],
+    ['customGeographies', 'Custom Geographies', importSummary.customGeographies],
+  ];
+
+  standardSections.forEach(([id, title, section]) => {
+    const status = getSectionStatus(section);
+    if (status !== 'empty' || hasDetails(section)) {
+      sections.push({ id, title, section });
+    }
+  });
+
+  // Error sections
+  if (importSummary.errors && importSummary.errors.length > 0) {
+    sections.push({
+      id: 'errors',
+      title: 'Errors',
+      section: { attempted: importSummary.errors.length, successful: 0, failed: importSummary.errors.length, failures: importSummary.errors.map((e: string) => ({ reason: e })) },
+      isSpecial: true
+    });
+  }
+
+  if (importSummary.warnings && importSummary.warnings.length > 0) {
+    sections.push({
+      id: 'warnings',
+      title: 'Warnings',
+      section: { attempted: importSummary.warnings.length, successful: importSummary.warnings.length, failed: 0, warnings: importSummary.warnings },
+      isSpecial: true
+    });
+  }
+
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span>Detailed Import Results</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="multiple" className="w-full">
-            {/* Basic Fields */}
-            {importSummary.basicFields && importSummary.basicFields.length > 0 && (
-              <AccordionItem value="basic-fields" className="border rounded-lg mb-2 px-4">
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="font-medium">Basic Fields</span>
-                    </div>
-                    <Badge variant="outline" className="bg-green-100">{importSummary.basicFields.length} fields</Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-4">
-                  <div className="bg-green-50 border border-green-200 rounded-md p-3 max-h-60 overflow-y-auto">
-                    <div className="space-y-2 text-xs">
-                      {importSummary.basicFields.map((field: any, idx: number) => (
-                        <div key={idx} className="border-b border-green-100 pb-2">
-                          <div className="font-medium">{field.field}</div>
-                          <div className="text-gray-600 truncate">{String(field.value).substring(0, 100)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
+    <div className="border border-gray-300 rounded-lg overflow-hidden">
+      <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
+        <h3 className="text-lg font-semibold">Detailed Import Results</h3>
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-gray-50 border-b border-gray-300">
+            <TableHead className="w-8 border-r border-gray-200"></TableHead>
+            <TableHead className="w-8 border-r border-gray-200">Status</TableHead>
+            <TableHead className="border-r border-gray-200">Category</TableHead>
+            <TableHead className="text-right w-32">Result</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sections.map((item) => {
+            const status = getSectionStatus(item.section);
+            const isExpanded = expandedRows.has(item.id);
+            const canExpand = hasDetails(item.section);
 
-            {/* Transactions */}
-            {renderSection('Transactions', importSummary.transactions, <CheckCircle />)}
-            
-            {/* Budgets */}
-            {renderSection('Budgets', importSummary.budgets, <CheckCircle />)}
-            
-            {/* Planned Disbursements */}
-            {renderSection('Planned Disbursements', importSummary.plannedDisbursements, <CheckCircle />)}
-            
-            {/* Sectors */}
-            {renderSection('Sectors', importSummary.sectors, <CheckCircle />)}
-            
-            {/* Locations */}
-            {renderSection('Locations', importSummary.locations, <CheckCircle />)}
-            
-            {/* Policy Markers */}
-            {renderSection('Policy Markers', importSummary.policyMarkers, <CheckCircle />)}
-            
-            {/* Financing Terms (CRS) */}
-            {renderSection('Financing Terms (CRS)', importSummary.financingTerms, <CheckCircle />)}
-            
-            {/* Tags */}
-            {renderSection('Tags', importSummary.tags, <CheckCircle />)}
-            
-            {/* Results */}
-            {renderSection('Results Framework', importSummary.results, <CheckCircle />)}
-            
-            {/* Document Links */}
-            {renderSection('Document Links', importSummary.documentLinks, <CheckCircle />)}
-            
-            {/* Conditions */}
-            {renderSection('Conditions', importSummary.conditions, <CheckCircle />)}
-            
-            {/* Humanitarian Scopes */}
-            {renderSection('Humanitarian Scopes', importSummary.humanitarianScopes, <CheckCircle />)}
-            
-            {/* Contacts */}
-            {renderSection('Contacts', importSummary.contacts, <CheckCircle />)}
-            
-            {/* Participating Organizations */}
-            {renderSection('Participating Organizations', importSummary.participatingOrgs, <CheckCircle />)}
-            
-            {/* Other Identifiers */}
-            {renderSection('Other Identifiers', importSummary.otherIdentifiers, <CheckCircle />)}
-            
-            {/* Related Activities */}
-            {importSummary.relatedActivities && (importSummary.relatedActivities.attempted > 0 || importSummary.relatedActivities.missing?.length > 0) && (
-              <AccordionItem value="Related Activities" className="border rounded-lg mb-2 px-4">
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(getSectionStatus(importSummary.relatedActivities))}
-                      <span className="font-medium">Related Activities</span>
-                    </div>
-                    {getStatusBadge(
-                      importSummary.relatedActivities.successful || 0, 
-                      importSummary.relatedActivities.attempted || 0, 
-                      importSummary.relatedActivities.failed || 0,
-                      importSummary.relatedActivities.skipped || 0
+            return (
+              <React.Fragment key={item.id}>
+                <TableRow 
+                  className={`border-b border-gray-200 ${canExpand ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                  onClick={() => canExpand && toggleRow(item.id)}
+                >
+                  <TableCell className="w-8 px-2 border-r border-gray-200">
+                    {canExpand && (
+                      isExpanded 
+                        ? <ChevronDown className="h-4 w-4 text-gray-400" />
+                        : <ChevronRight className="h-4 w-4 text-gray-400" />
                     )}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-4">
-                  <div className="space-y-4">
-                    {/* Summary Stats */}
-                    {importSummary.relatedActivities.attempted > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 p-3 rounded-md">
-                        <div>
-                          <div className="text-xs text-gray-500">Attempted</div>
-                          <div className="text-lg font-semibold">{importSummary.relatedActivities.attempted}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-500">Successful</div>
-                          <div className="text-lg font-semibold text-green-600">{importSummary.relatedActivities.successful}</div>
-                        </div>
-                        {importSummary.relatedActivities.skipped > 0 && (
-                          <div>
-                            <div className="text-xs text-gray-500">Skipped</div>
-                            <div className="text-lg font-semibold text-yellow-600">{importSummary.relatedActivities.skipped}</div>
-                          </div>
-                        )}
-                        {importSummary.relatedActivities.failed > 0 && (
-                          <div>
-                            <div className="text-xs text-gray-500">Failed</div>
-                            <div className="text-lg font-semibold text-red-600">{importSummary.relatedActivities.failed}</div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Successfully Linked Activities */}
-                    {importSummary.relatedActivities.details && importSummary.relatedActivities.details.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-green-700 mb-2">Successfully Linked ({importSummary.relatedActivities.details.length})</h4>
-                        <div className="bg-green-50 border border-green-200 rounded-md p-3 max-h-40 overflow-y-auto">
-                          <div className="space-y-2 text-xs">
-                            {importSummary.relatedActivities.details.map((detail: any, idx: number) => (
-                              <div key={idx} className="border-b border-green-100 pb-2">
-                                <div className="font-medium">{detail.ref}</div>
-                                <div className="text-gray-600">Type: {detail.relationshipTypeLabel || detail.type}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Missing Activities (Not Found in Database) */}
-                    {importSummary.relatedActivities.missing && importSummary.relatedActivities.missing.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-yellow-700 mb-2">Not Found in Database ({importSummary.relatedActivities.missing.length})</h4>
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-                          <p className="text-xs text-yellow-900 mb-3">
-                            These related activities were referenced in the XML but don't exist in your database yet. Import them first to create the relationships.
-                          </p>
-                          <div className="space-y-2">
-                            {importSummary.relatedActivities.missing.map((missing: any, idx: number) => (
-                              <div key={idx} className="bg-white border border-yellow-300 rounded p-2 text-xs">
-                                <div className="font-medium text-gray-900">IATI ID: {missing.ref}</div>
-                                <div className="text-gray-600">Relationship: {missing.relationshipTypeLabel || missing.type}</div>
-                                <div className="mt-2 text-yellow-700 italic">
-                                  💡 Import this activity first, then re-import this activity to create the link
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Failures */}
-                    {importSummary.relatedActivities.failures && importSummary.relatedActivities.failures.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-red-700 mb-2">Failed ({importSummary.relatedActivities.failures.length})</h4>
-                        <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
-                          <div className="space-y-3 text-xs">
-                            {importSummary.relatedActivities.failures.map((failure: any, idx: number) => (
-                              <div key={idx} className="border-b border-red-100 pb-2">
-                                <div className="font-medium text-red-900">Ref: {failure.ref}</div>
-                                {failure.error && (
-                                  <div className="mt-1 text-red-700 bg-red-100 p-2 rounded">
-                                    <span className="font-semibold">Error: </span>{failure.error}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Warnings */}
-                    {importSummary.relatedActivities.warnings && importSummary.relatedActivities.warnings.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-yellow-700 mb-2">Warnings ({importSummary.relatedActivities.warnings.length})</h4>
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 max-h-40 overflow-y-auto">
-                          <ul className="space-y-1 text-xs list-disc list-inside">
-                            {importSummary.relatedActivities.warnings.map((warning: string, idx: number) => (
-                              <li key={idx} className="text-yellow-900">{warning}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-            
-            {/* Forward Spending Survey */}
-            {renderSection('Forward Spending Survey (FSS)', importSummary.fss, <CheckCircle />)}
-
-            {/* Recipient Countries */}
-            {renderSection('Recipient Countries', importSummary.recipientCountries, <CheckCircle />)}
-            
-            {/* Recipient Regions */}
-            {renderSection('Recipient Regions', importSummary.recipientRegions, <CheckCircle />)}
-            
-            {/* Custom Geographies */}
-            {renderSection('Custom Geographies', importSummary.customGeographies, <CheckCircle />)}
-
-            {/* Errors */}
-            {importSummary.errors && importSummary.errors.length > 0 && (
-              <AccordionItem value="errors" className="border rounded-lg mb-2 px-4 border-red-300">
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <div className="flex items-center gap-3">
-                      <XCircle className="h-4 w-4 text-red-600" />
-                      <span className="font-medium text-red-700">Errors</span>
-                    </div>
-                    <Badge variant="destructive">{importSummary.errors.length} errors</Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-4">
-                  <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-60 overflow-y-auto">
-                    <ul className="space-y-2 text-xs list-decimal list-inside">
-                      {importSummary.errors.map((error: string, idx: number) => (
-                        <li key={idx} className="text-red-900">{error}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-
-            {/* Warnings */}
-            {importSummary.warnings && importSummary.warnings.length > 0 && (
-              <AccordionItem value="warnings" className="border rounded-lg mb-2 px-4 border-yellow-300">
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                      <span className="font-medium text-yellow-700">Warnings</span>
-                    </div>
-                    <Badge variant="outline" className="bg-yellow-100">{importSummary.warnings.length} warnings</Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-4">
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 max-h-60 overflow-y-auto">
-                    <ul className="space-y-2 text-xs list-decimal list-inside">
-                      {importSummary.warnings.map((warning: string, idx: number) => (
-                        <li key={idx} className="text-yellow-900">{warning}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-
-            {/* Silent Failures */}
-            {importSummary.silentFailures && importSummary.silentFailures.length > 0 && (
-              <AccordionItem value="silent-failures" className="border rounded-lg mb-2 px-4 border-gray-300">
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <div className="flex items-center gap-3">
-                      <MinusCircle className="h-4 w-4 text-gray-600" />
-                      <span className="font-medium text-gray-700">Silent Failures (Skipped)</span>
-                    </div>
-                    <Badge variant="outline" className="bg-gray-100">{importSummary.silentFailures.length} skipped</Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-4">
-                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3 max-h-60 overflow-y-auto">
-                    <ul className="space-y-2 text-xs list-decimal list-inside">
-                      {importSummary.silentFailures.map((failure: string, idx: number) => (
-                        <li key={idx} className="text-gray-700">{failure}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-
-            {/* Validation Issues */}
-            {importSummary.validationIssues && importSummary.validationIssues.length > 0 && (
-              <AccordionItem value="validation-issues" className="border rounded-lg mb-2 px-4 border-orange-300">
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="h-4 w-4 text-orange-600" />
-                      <span className="font-medium text-orange-700">Validation Issues</span>
-                    </div>
-                    <Badge variant="outline" className="bg-orange-100">{importSummary.validationIssues.length} issues</Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-4">
-                  <div className="bg-orange-50 border border-orange-200 rounded-md p-3 max-h-60 overflow-y-auto">
-                    <ul className="space-y-2 text-xs list-decimal list-inside">
-                      {importSummary.validationIssues.map((issue: string, idx: number) => (
-                        <li key={idx} className="text-orange-900">{issue}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-          </Accordion>
-        </CardContent>
-      </Card>
+                  </TableCell>
+                  <TableCell className="w-8 border-r border-gray-200">
+                    {getStatusIcon(status)}
+                  </TableCell>
+                  <TableCell className="font-medium border-r border-gray-200">
+                    {item.title}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Badge 
+                      variant="outline" 
+                      className={getStatusBadgeClass(
+                        item.section?.successful || 0,
+                        item.section?.attempted || 0,
+                        item.section?.failed || 0
+                      )}
+                    >
+                      {formatCount(
+                        item.section?.successful || 0,
+                        item.section?.attempted || 0,
+                        item.section?.failed || 0,
+                        item.section?.skipped || 0
+                      )}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+                {isExpanded && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="p-0 border-b border-gray-200">
+                      {renderExpandedDetails(item.section, item.title)}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }

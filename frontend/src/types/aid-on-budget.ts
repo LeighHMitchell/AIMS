@@ -414,7 +414,7 @@ export function buildClassificationTree(
  * Classification type display labels
  */
 export const CLASSIFICATION_TYPE_LABELS: Record<ClassificationType, string> = {
-  administrative: 'Administrative',
+  administrative: 'Line Ministries',
   functional: 'Functional - National',
   functional_cofog: 'Functional - COFOG',
   economic: 'Economic',
@@ -429,7 +429,7 @@ export const CLASSIFICATION_TYPE_LABELS: Record<ClassificationType, string> = {
  * Classification type descriptions
  */
 export const CLASSIFICATION_TYPE_DESCRIPTIONS: Record<ClassificationType, string> = {
-  administrative: 'By ministry, department, or agency responsible',
+  administrative: 'Government ministries and agencies that receive and manage aid funds (budget vote holders)',
   functional: 'By purpose or function (national classification)',
   functional_cofog: 'By purpose or function (COFOG international standard)',
   economic: 'By type of expenditure (salaries, goods, grants)',

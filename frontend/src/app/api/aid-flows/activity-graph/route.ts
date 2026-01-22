@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
     console.log('[Activity Graph API] Fetching activity relationships from both tables...');
     
     // Fetch from related_activities table (external/unresolved links)
+    // Note: related_activities uses 'iati_identifier' not 'external_iati_identifier'
     const { data: relatedActivitiesData, error: relError } = await supabase
       .from('related_activities')
       .select(`
@@ -51,8 +52,8 @@ export async function GET(request: NextRequest) {
         source_activity_id,
         linked_activity_id,
         relationship_type,
-        external_iati_identifier,
-        external_activity_title,
+        iati_identifier,
+        is_external,
         created_at
       `);
     
@@ -96,15 +97,16 @@ export async function GET(request: NextRequest) {
     const normalizedRelationships: NormalizedRelationship[] = [];
     
     // Normalize related_activities (uses source_activity_id, linked_activity_id)
+    // Note: related_activities uses 'iati_identifier' for the IATI identifier
     (relatedActivitiesData || []).forEach((rel: any) => {
-      if (rel.linked_activity_id || rel.external_iati_identifier) {
+      if (rel.linked_activity_id || (rel.is_external && rel.iati_identifier)) {
         normalizedRelationships.push({
           id: rel.id,
           sourceActivityId: rel.source_activity_id,
           targetActivityId: rel.linked_activity_id,
           relationshipType: rel.relationship_type,
-          externalIatiIdentifier: rel.external_iati_identifier,
-          externalActivityTitle: rel.external_activity_title
+          externalIatiIdentifier: rel.is_external ? rel.iati_identifier : null,
+          externalActivityTitle: rel.is_external ? rel.iati_identifier : null // Use identifier as title since no title column exists
         });
       }
     });
@@ -294,12 +296,78 @@ export async function GET(request: NextRequest) {
     
     console.log('[Activity Graph API] Built graph:', { nodes: nodes.length, links: links.length });
     
+    // If no valid nodes could be built (either no relationships exist, 
+    // or relationships point to missing/deleted activities), show all activities
+    // This helps users see their activities and understand they need to create relationships
+    const hasValidInternalNodes = nodes.filter(n => n.status !== 'external').length > 0;
+    if (!hasValidInternalNodes) {
+      console.log('[Activity Graph API] No relationships found, fetching all activities...');
+      
+      const { data: allActivities, error: allActError } = await supabase
+        .from('activities')
+        .select(`
+          id,
+          title_narrative,
+          acronym,
+          iati_identifier,
+          activity_status,
+          created_by_org_name,
+          created_by_org_acronym
+        `)
+        .eq('publication_status', 'published')
+        .limit(100); // Limit to prevent overwhelming the graph
+      
+      if (!allActError && allActivities) {
+        console.log('[Activity Graph API] Showing', allActivities.length, 'activities without relationships');
+        
+        // Get all activity IDs for transaction query
+        const allActivityIds = allActivities.map((a: any) => a.id);
+        
+        // Get transaction totals for all activities
+        const { data: allTransactionTotals } = await supabase
+          .from('transactions')
+          .select('activity_id, transaction_type, value')
+          .in('activity_id', allActivityIds)
+          .in('transaction_type', ['2', '3', '4']);
+        
+        const allActivityTotals = new Map<string, { totalIn: number; totalOut: number }>();
+        allTransactionTotals?.forEach((tx: any) => {
+          const current = allActivityTotals.get(tx.activity_id) || { totalIn: 0, totalOut: 0 };
+          const value = parseFloat(tx.value) || 0;
+          if (tx.transaction_type === '1') {
+            current.totalIn += value;
+          } else {
+            current.totalOut += value;
+          }
+          allActivityTotals.set(tx.activity_id, current);
+        });
+        
+        allActivities.forEach((activity: any, index: number) => {
+          const totals = allActivityTotals.get(activity.id) || { totalIn: 0, totalOut: 0 };
+          nodes.push({
+            id: activity.id,
+            name: activity.title_narrative || activity.iati_identifier || 'Untitled Activity',
+            acronym: activity.acronym,
+            iatiIdentifier: activity.iati_identifier,
+            type: 'activity',
+            group: index,
+            status: activity.activity_status,
+            organizationName: activity.created_by_org_acronym || activity.created_by_org_name,
+            totalIn: totals.totalIn,
+            totalOut: totals.totalOut
+          });
+        });
+      }
+    }
+    
     // Calculate metadata
+    // hasRelationships is true only if there are actual links between nodes (not just orphaned relationships)
     const metadata = {
       dateRange: startDate && endDate ? { start: startDate, end: endDate } : null,
       activityCount: nodes.length,
       relationshipCount: links.length,
       totalValue: nodes.reduce((sum, n) => sum + (n.totalIn || 0) + (n.totalOut || 0), 0),
+      hasRelationships: links.length > 0,
       // Debug info
       debug: {
         relatedActivitiesCount: relatedActivitiesData?.length || 0,
@@ -307,7 +375,8 @@ export async function GET(request: NextRequest) {
         normalizedRelationshipsCount: normalizedRelationships.length,
         activityIdsRequested: Array.from(activityIds),
         activitiesFetched: activities.length,
-        externalActivitiesCount: externalActivities.size
+        externalActivitiesCount: externalActivities.size,
+        orphanedRelationships: normalizedRelationships.length > 0 && links.length === 0
       }
     };
     

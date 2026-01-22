@@ -39,10 +39,10 @@ export async function GET(request: NextRequest) {
     // Optional filters
     const markerIds = searchParams.get('markerIds')?.split(',').filter(Boolean) || []
     const significanceLevels = searchParams.get('significanceLevels')?.split(',').map(Number).filter(n => !isNaN(n)) || [0, 1, 2]
-    // Step 1: Get all policy markers (for reference)
+    // Step 1: Get all policy markers (for reference, including visibility settings)
     const { data: allMarkers, error: markersError } = await supabase
       .from('policy_markers')
-      .select('id, code, name')
+      .select('id, code, name, default_visibility, is_iati_standard')
       .eq('is_active', true)
       .order('display_order', { ascending: true })
 
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     const relevantMarkerIds = relevantMarkers.map(m => m.id)
 
     // Step 2: Get activity-policy marker relationships with significance
-    // Join with policy_markers to get default_visibility for filtering
+    // Fetch activity_policy_markers separately from policy_markers to avoid FK hint issues
     const { data: activityMarkers, error: activityMarkersError } = await supabase
       .from('activity_policy_markers')
       .select(`
@@ -78,11 +78,7 @@ export async function GET(request: NextRequest) {
         policy_marker_id, 
         score, 
         significance,
-        visibility,
-        policy_markers!activity_policy_markers_policy_marker_uuid_fkey (
-          default_visibility,
-          is_iati_standard
-        )
+        visibility
       `)
       .in('policy_marker_id', relevantMarkerIds)
 
@@ -93,6 +89,15 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Create a lookup map for policy marker visibility settings
+    const markerVisibilityMap = new Map<string, { default_visibility: string, is_iati_standard: boolean }>()
+    relevantMarkers.forEach(m => {
+      markerVisibilityMap.set(m.id, {
+        default_visibility: (m as any).default_visibility || 'public',
+        is_iati_standard: (m as any).is_iati_standard ?? true
+      })
+    })
 
     if (!activityMarkers || activityMarkers.length === 0) {
       return NextResponse.json({
@@ -141,13 +146,13 @@ export async function GET(request: NextRequest) {
       const marker = relevantMarkers.find(m => m.id === am.policy_marker_id)
       if (!marker) return
 
-      // Determine effective visibility: use override if set, otherwise use default
-      const policyMarker = am.policy_markers
-      const effectiveVisibility = am.visibility || policyMarker?.default_visibility || 'public'
+      // Get visibility settings from our lookup map
+      const markerSettings = markerVisibilityMap.get(am.policy_marker_id)
+      const effectiveVisibility = am.visibility || markerSettings?.default_visibility || 'public'
       
       // Filter: Only include markers with 'public' visibility
       // IATI standard markers are always visible (always public)
-      if (!policyMarker?.is_iati_standard && effectiveVisibility !== 'public') {
+      if (!markerSettings?.is_iati_standard && effectiveVisibility !== 'public') {
         return // Skip non-public custom markers
       }
 

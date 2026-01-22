@@ -955,9 +955,18 @@ export default function AnalyticsDashboardPage() {
                 </TabsContent>
 
                 {/* ==================== PARTNER NETWORK TAB ==================== */}
-                {/* Contains: Participating Orgs, Network */}
+                {/* Contains: Network, Participating Orgs */}
                 <TabsContent value="partner-network">
                   <div className="space-y-8">
+                    {/* Network Section */}
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Aid Flow Network</h2>
+                      <p className="text-gray-600 mb-4">Interactive visualization of aid flows between donors and recipients</p>
+                      <div className="w-full">
+                        <AidFlowMap height={500} />
+                      </div>
+                    </div>
+
                     {/* Participating Organizations Section */}
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">Participating Organizations Flow</h2>
@@ -966,15 +975,6 @@ export default function AnalyticsDashboardPage() {
                         Funding (1) → Extending (3) → Accountable (2) → Implementing (4)
                       </p>
                       <ParticipatingOrgsSankey refreshKey={refreshKey} />
-                    </div>
-
-                    {/* Network Section */}
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Aid Flow Network</h2>
-                      <p className="text-gray-600 mb-4">Interactive visualization of aid flows between donors and recipients</p>
-                      <div className="w-full">
-                        <AidFlowMap height={500} />
-                      </div>
                     </div>
                   </div>
                 </TabsContent>

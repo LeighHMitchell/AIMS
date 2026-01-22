@@ -22,6 +22,7 @@ interface ActivityDetail {
     code: string;
     name: string;
     percentage: number;
+    classificationType: string;
   }>;
 }
 
@@ -43,8 +44,10 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const fiscalYearParam = searchParams.get("fiscalYear");
-    const fiscalYear = fiscalYearParam ? parseInt(fiscalYearParam) : null;
+    const startYearParam = searchParams.get("startYear");
+    const endYearParam = searchParams.get("endYear");
+    const startYear = startYearParam ? parseInt(startYearParam) : null;
+    const endYear = endYearParam ? parseInt(endYearParam) : null;
     const budgetStatusFilter = searchParams.get("budgetStatus"); // on_budget, off_budget, partial, unknown, budget_support, all
 
     // 1. Fetch activities with basic info (using same pattern as enhanced API)
@@ -77,7 +80,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 3. Fetch transactions (disbursements) - filter by fiscal year if specified
+    // 3. Fetch transactions (disbursements) - filter by year range if specified
     let txQuery = supabase
       .from("transactions")
       .select(`
@@ -89,12 +92,15 @@ export async function GET(request: NextRequest) {
       `)
       .in("transaction_type", ["3", "4"]); // Disbursement and Expenditure
 
-    // If fiscal year is specified, filter transactions by date
-    if (fiscalYear) {
-      // Assuming fiscal year is calendar year for simplicity
-      const startDate = `${fiscalYear}-01-01`;
-      const endDate = `${fiscalYear}-12-31`;
-      txQuery = txQuery.gte("transaction_date", startDate).lte("transaction_date", endDate);
+    // Filter transactions by year range based on transaction_date
+    if (startYear && endYear) {
+      txQuery = txQuery
+        .gte("transaction_date", `${startYear}-01-01`)
+        .lte("transaction_date", `${endYear}-12-31`);
+    } else if (startYear) {
+      txQuery = txQuery.gte("transaction_date", `${startYear}-01-01`);
+    } else if (endYear) {
+      txQuery = txQuery.lte("transaction_date", `${endYear}-12-31`);
     }
 
     const { data: transactions, error: transactionsError } = await txQuery;
@@ -135,23 +141,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch budget classifications for names
+    // Fetch budget classifications for names and types
     const classificationIds = Array.from(new Set(budgetItemsRaw.map(bi => bi.budget_classification_id).filter(Boolean)));
-    let classificationsMap = new Map<string, { code: string; name: string }>();
+    let classificationsMap = new Map<string, { code: string; name: string; classificationType: string }>();
 
     if (classificationIds.length > 0) {
       const { data: classifications } = await supabase
         .from("budget_classifications")
-        .select("id, code, name")
+        .select("id, code, name, classification_type")
         .in("id", classificationIds);
 
       (classifications || []).forEach(c => {
-        classificationsMap.set(c.id, { code: c.code, name: c.name });
+        classificationsMap.set(c.id, { code: c.code, name: c.name, classificationType: c.classification_type });
       });
     }
 
     // Build a map of activity_id -> budget items with classification info
-    const activityBudgetItemsMap = new Map<string, Array<{ code: string; name: string; percentage: number }>>();
+    const activityBudgetItemsMap = new Map<string, Array<{ code: string; name: string; percentage: number; classificationType: string }>>();
 
     (countryBudgetItemsRaw || []).forEach(cbi => {
       const items = budgetItemsRaw.filter(bi => bi.country_budget_items_id === cbi.id);
@@ -160,7 +166,8 @@ export async function GET(request: NextRequest) {
         return {
           code: bi.code || classification?.code || '',
           name: classification?.name || bi.code || '',
-          percentage: Number(bi.percentage) || 0
+          percentage: Number(bi.percentage) || 0,
+          classificationType: classification?.classificationType || 'functional'
         };
       }).filter(m => m.code);
 
@@ -276,7 +283,8 @@ export async function GET(request: NextRequest) {
       activities: filteredActivities,
       totals,
       filters: {
-        fiscalYear,
+        startYear,
+        endYear,
         budgetStatus: budgetStatusFilter || "all",
       },
     });

@@ -1,24 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   CheckCircle2, 
   AlertCircle, 
   XCircle, 
-  FileText, 
-  Link2, 
-  MapPin, 
-  Tag,
-  BarChart3,
-  Target,
-  TrendingUp,
-  FileCode
+  FileCode,
+  Check
 } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
 
 interface ImportValidationReportProps {
   summary: {
@@ -63,239 +54,155 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
   const periodCoverage = Math.round((new Set(summary.coverage.period_elements_found).size / periodElementsTotal) * 100);
   const overallCoverage = Math.round((resultCoverage + indicatorCoverage + baselineCoverage + periodCoverage) / 4);
 
-  const totalCreated = summary.results_created + summary.indicators_created + 
-                       summary.baselines_created + summary.periods_created +
-                       summary.result_references_created + summary.result_documents_created +
-                       summary.indicator_references_created + summary.indicator_documents_created +
-                       summary.baseline_locations_created + summary.baseline_dimensions_created +
-                       summary.baseline_documents_created + summary.period_target_locations_created +
-                       summary.period_actual_locations_created + summary.period_target_dimensions_created +
-                       summary.period_actual_dimensions_created + summary.period_target_documents_created +
-                       summary.period_actual_documents_created;
+  // Coverage data for table
+  const coverageData = [
+    { 
+      category: 'Result Elements', 
+      coverage: resultCoverage, 
+      elements: ['title', 'description', 'aggregation-status', 'reference', 'document-link'],
+      found: summary.coverage.result_elements_found
+    },
+    { 
+      category: 'Indicator Elements', 
+      coverage: indicatorCoverage, 
+      elements: ['title', 'description', 'measure', 'ascending', 'aggregation-status', 'reference', 'document-link'],
+      found: summary.coverage.indicator_elements_found
+    },
+    { 
+      category: 'Baseline Elements', 
+      coverage: baselineCoverage, 
+      elements: ['value', 'year', 'iso-date', 'comment', 'location', 'dimension', 'document-link'],
+      found: summary.coverage.baseline_elements_found
+    },
+    { 
+      category: 'Period Elements', 
+      coverage: periodCoverage, 
+      elements: ['period-start', 'period-end', 'target/value', 'target/comment', 'target/location', 'target/dimension', 'target/document-link', 'actual/value', 'actual/comment', 'actual/location', 'actual/dimension', 'actual/document-link'],
+      found: summary.coverage.period_elements_found
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Overall Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Import Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Success/Error Overview */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-gray-600" />
-              <span className="text-lg font-semibold">{totalCreated}</span>
-              <span className="text-sm text-gray-600">elements created</span>
-            </div>
-            
-            {summary.errors.length > 0 && (
-              <div className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-gray-600" />
-                <span className="text-lg font-semibold">{summary.errors.length}</span>
-                <span className="text-sm text-gray-600">errors</span>
-              </div>
-            )}
-            
-            {summary.warnings && summary.warnings.length > 0 && (
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-gray-600" />
-                <span className="text-lg font-semibold">{summary.warnings.length}</span>
-                <span className="text-sm text-gray-600">warnings</span>
-              </div>
-            )}
-          </div>
-
-          {/* Overall Coverage */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Overall IATI Coverage</span>
-              <Badge variant={overallCoverage >= 80 ? 'default' : 'outline'}>
-                {overallCoverage}%
-              </Badge>
-            </div>
-            <Progress value={overallCoverage} className="h-2" />
-          </div>
-        </CardContent>
-      </Card>
-
-
-
-      {/* Element Coverage Report */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
+      {/* IATI Element Coverage Table */}
+      <div className="border border-gray-300 rounded-lg overflow-hidden">
+        <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
             <FileCode className="h-4 w-4" />
             IATI Element Coverage
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Result Level Coverage */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Result Elements</span>
-              <Badge variant={resultCoverage >= 60 ? 'default' : 'outline'}>
-                {resultCoverage}%
-              </Badge>
-            </div>
-            <Progress value={resultCoverage} className="h-2 mb-2" />
-            <div className="flex flex-wrap gap-2">
-              {['title', 'description', 'aggregation-status', 'reference', 'document-link'].map(element => {
-                const found = summary.coverage.result_elements_found.includes(element);
-                return (
-                  <Badge 
-                    key={element} 
-                    variant="outline"
-                    className="text-xs text-gray-500"
-                  >
-                    {found && <FileCode className="h-3 w-3 mr-1" />}
-                    <span className="font-mono bg-gray-100 px-1 rounded">{`<${element}>`}</span>
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Indicator Level Coverage */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Indicator Elements</span>
-              <Badge variant={indicatorCoverage >= 60 ? 'default' : 'outline'}>
-                {indicatorCoverage}%
-              </Badge>
-            </div>
-            <Progress value={indicatorCoverage} className="h-2 mb-2" />
-            <div className="flex flex-wrap gap-2">
-              {['title', 'description', 'measure', 'ascending', 'aggregation-status', 'reference', 'document-link'].map(element => {
-                const found = summary.coverage.indicator_elements_found.includes(element);
-                return (
-                  <Badge 
-                    key={element} 
-                    variant="outline"
-                    className="text-xs text-gray-500"
-                  >
-                    {found && <FileCode className="h-3 w-3 mr-1" />}
-                    <span className="font-mono bg-gray-100 px-1 rounded">{`<${element}>`}</span>
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Baseline Level Coverage */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Baseline Elements</span>
-              <Badge variant={baselineCoverage >= 60 ? 'default' : 'outline'}>
-                {baselineCoverage}%
-              </Badge>
-            </div>
-            <Progress value={baselineCoverage} className="h-2 mb-2" />
-            <div className="flex flex-wrap gap-2">
-              {['value', 'year', 'iso-date', 'comment', 'location', 'dimension', 'document-link'].map(element => {
-                const found = summary.coverage.baseline_elements_found.includes(element);
-                return (
-                  <Badge 
-                    key={element} 
-                    variant="outline"
-                    className="text-xs text-gray-500"
-                  >
-                    {found && <FileCode className="h-3 w-3 mr-1" />}
-                    <span className="font-mono bg-gray-100 px-1 rounded">{`<${element}>`}</span>
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Period Level Coverage */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Period Elements</span>
-              <Badge variant={periodCoverage >= 60 ? 'default' : 'outline'}>
-                {periodCoverage}%
-              </Badge>
-            </div>
-            <Progress value={periodCoverage} className="h-2 mb-2" />
-            <div className="flex flex-wrap gap-2">
-              {['period-start', 'period-end', 'target/value', 'target/comment', 'target/location', 'target/dimension', 'target/document-link',
-                'actual/value', 'actual/comment', 'actual/location', 'actual/dimension', 'actual/document-link'].map(element => {
-                const found = summary.coverage.period_elements_found.includes(element);
-                const displayElement = element.includes('/') ? element.replace('/', '/') : element;
-                return (
-                  <Badge 
-                    key={element} 
-                    variant="outline"
-                    className="text-xs text-gray-500"
-                  >
-                    {found && <FileCode className="h-3 w-3 mr-1" />}
-                    <span className="font-mono bg-gray-100 px-1 rounded">{`<${displayElement}>`}</span>
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </h3>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50 border-b border-gray-300">
+              <TableHead className="border-r border-gray-200">Element Category</TableHead>
+              <TableHead className="text-center w-24 border-r border-gray-200">Coverage</TableHead>
+              <TableHead>Elements Found</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {coverageData.map((row, idx) => (
+              <TableRow key={idx} className="border-b border-gray-200">
+                <TableCell className="font-medium border-r border-gray-200">{row.category}</TableCell>
+                <TableCell className="text-center border-r border-gray-200">
+                  <span className="font-medium text-gray-700">
+                    {row.coverage}%
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {row.elements.map(element => {
+                      const found = row.found.includes(element);
+                      return (
+                        <span 
+                          key={element}
+                          className={`inline-flex items-center text-xs px-2 py-0.5 rounded border ${
+                            found 
+                              ? 'bg-gray-100 border-gray-300 text-gray-700' 
+                              : 'bg-white border-gray-200 text-gray-400'
+                          }`}
+                        >
+                          {found && <Check className="h-3 w-3 mr-1" />}
+                          <code>{`<${element}>`}</code>
+                        </span>
+                      );
+                    })}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Errors Display */}
       {summary.errors.length > 0 && (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>
-            <div className="space-y-2">
-              <p className="font-semibold">Import Errors ({summary.errors.length})</p>
-              <div className="space-y-1 max-h-60 overflow-y-auto">
-                {summary.errors.map((error, index) => (
-                  <div key={index} className="text-sm bg-white bg-opacity-50 p-2 rounded">
-                    <div className="font-medium">{error.message}</div>
-                    {error.context && (
-                      <div className="text-xs text-gray-700">Context: {error.context}</div>
-                    )}
-                    {error.element && (
-                      <div className="text-xs text-gray-700">Element: {error.element}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </AlertDescription>
-        </Alert>
+        <div className="border border-gray-300 rounded-lg overflow-hidden">
+          <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
+            <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+              <XCircle className="h-4 w-4" />
+              Import Errors ({summary.errors.length})
+            </h3>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50 border-b border-gray-200">
+                <TableHead className="w-12 border-r border-gray-200">#</TableHead>
+                <TableHead className="border-r border-gray-200">Error Message</TableHead>
+                <TableHead className="w-48">Context</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {summary.errors.map((error, index) => (
+                <TableRow key={index} className="border-b border-gray-100">
+                  <TableCell className="text-gray-500 border-r border-gray-100">{index + 1}</TableCell>
+                  <TableCell className="font-medium text-gray-800 border-r border-gray-100">{error.message}</TableCell>
+                  <TableCell className="text-sm text-gray-600">
+                    {error.context && <div>Context: {error.context}</div>}
+                    {error.element && <div>Element: {error.element}</div>}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {/* Warnings Display */}
       {summary.warnings && summary.warnings.length > 0 && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <div className="space-y-2">
-              <p className="font-semibold">Warnings ({summary.warnings.length})</p>
-              <div className="space-y-1">
-                {summary.warnings.map((warning, index) => (
-                  <div key={index} className="text-sm">
-                    {warning.message} {warning.element && `(${warning.element})`}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </AlertDescription>
-        </Alert>
+        <div className="border border-gray-300 rounded-lg overflow-hidden">
+          <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
+            <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              Warnings ({summary.warnings.length})
+            </h3>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50 border-b border-gray-200">
+                <TableHead className="w-12 border-r border-gray-200">#</TableHead>
+                <TableHead className="border-r border-gray-200">Warning Message</TableHead>
+                <TableHead className="w-32">Element</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {summary.warnings.map((warning, index) => (
+                <TableRow key={index} className="border-b border-gray-100">
+                  <TableCell className="text-gray-500 border-r border-gray-100">{index + 1}</TableCell>
+                  <TableCell className="text-gray-700 border-r border-gray-100">{warning.message}</TableCell>
+                  <TableCell className="text-sm text-gray-600">{warning.element || '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {/* Success Message */}
       {summary.errors.length === 0 && (
         <Alert className="border-gray-200 bg-gray-50">
           <CheckCircle2 className="h-4 w-4 text-gray-600" />
-          <AlertDescription className="text-gray-800">
+          <AlertDescription className="text-gray-700">
             <p className="font-semibold">Import Completed Successfully!</p>
             <p className="text-sm mt-1">
               All results data has been imported with {overallCoverage}% IATI element coverage. 
