@@ -277,11 +277,29 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   };
 
   // Get activities for a specific classification code
-  const getActivitiesForClassification = (classificationCode: string): ActivityDetail[] => {
+  // If activities have budget classifications mapped, filter by code
+  // Otherwise, show all activities with matching budget status for that row's aid amounts
+  const getActivitiesForClassification = (classificationCode: string, hasOnBudgetAid: boolean, hasOffBudgetAid: boolean): ActivityDetail[] => {
     if (!activitiesData?.activities) return [];
-    return activitiesData.activities.filter(activity =>
+    
+    // First try to find activities with explicit budget classification mapping
+    const mappedActivities = activitiesData.activities.filter(activity =>
       activity.budgetClassifications.some(bc => bc.code === classificationCode)
     );
+    
+    // If we have mapped activities, return them
+    if (mappedActivities.length > 0) {
+      return mappedActivities;
+    }
+    
+    // Otherwise, return all activities (they contribute to the aggregate totals)
+    // This allows users to see activities even when budget classification mapping isn't complete
+    return activitiesData.activities;
+  };
+  
+  // Check if any activities exist (for showing chevrons)
+  const hasAnyActivities = (): boolean => {
+    return (activitiesData?.activities?.length || 0) > 0;
   };
 
   // Get status text (plain text instead of badge)
@@ -1139,19 +1157,23 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                       .filter(s => s.domesticExpenditure > 0 || s.onBudgetAid > 0 || s.offBudgetAid > 0)
                       .map((sector) => {
                         const total = sector.domesticExpenditure + sector.onBudgetAid + sector.offBudgetAid;
-                        const classificationActivities = getActivitiesForClassification(sector.code);
+                        const hasAidData = sector.onBudgetAid > 0 || sector.offBudgetAid > 0;
                         const isExpanded = expandedClassifications.has(sector.code);
-                        const hasActivities = classificationActivities.length > 0;
+                        // Show chevron if there's any aid data and we have activities loaded
+                        const showChevron = hasAidData && hasAnyActivities();
+                        const classificationActivities = isExpanded 
+                          ? getActivitiesForClassification(sector.code, sector.onBudgetAid > 0, sector.offBudgetAid > 0)
+                          : [];
 
                         return (
                           <React.Fragment key={sector.code}>
                             {/* Classification Header Row */}
                             <TableRow
-                              className={hasActivities ? "cursor-pointer hover:bg-slate-50" : ""}
-                              onClick={() => hasActivities && toggleClassification(sector.code)}
+                              className={showChevron ? "cursor-pointer hover:bg-slate-50" : ""}
+                              onClick={() => showChevron && toggleClassification(sector.code)}
                             >
                               <TableCell className="w-8">
-                                {hasActivities && (
+                                {showChevron && (
                                   isExpanded
                                     ? <ChevronDown className="h-4 w-4 text-gray-600" />
                                     : <ChevronRight className="h-4 w-4 text-gray-600" />
@@ -1160,11 +1182,6 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                               <TableCell className="font-medium">
                                 <span className="text-sm text-gray-500 mr-2">{sector.code}</span>
                                 {sector.name}
-                                {hasActivities && (
-                                  <span className="ml-2 text-xs text-gray-400">
-                                    ({classificationActivities.length} {classificationActivities.length === 1 ? 'activity' : 'activities'})
-                                  </span>
-                                )}
                               </TableCell>
                               <TableCell className="text-right">
                                 {formatCurrency(sector.domesticExpenditure)}
