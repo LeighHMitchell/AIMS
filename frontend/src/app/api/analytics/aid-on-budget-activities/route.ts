@@ -10,6 +10,7 @@ interface ActivityDetail {
   title: string;
   iatiIdentifier: string;
   partnerName: string;
+  partnerAcronym: string | null;
   budgetStatus: BudgetStatusType;
   onBudgetPercentage: number | null;
   defaultAidType: string | null;
@@ -61,18 +62,18 @@ export async function GET(request: NextRequest) {
 
     console.log("[Aid on Budget Activities] Fetched activities:", activities?.length);
 
-    // 2. Fetch organizations for partner names
+    // 2. Fetch organizations for partner names and acronyms
     const orgIds = Array.from(new Set((activities || []).map((a: any) => a.reporting_org_id).filter(Boolean)));
-    let organizationsMap = new Map<string, string>();
+    let organizationsMap = new Map<string, { name: string; acronym: string | null }>();
 
     if (orgIds.length > 0) {
       const { data: orgs } = await supabase
         .from("organizations")
-        .select("id, name")
+        .select("id, name, acronym")
         .in("id", orgIds);
 
       (orgs || []).forEach(org => {
-        organizationsMap.set(org.id, org.name);
+        organizationsMap.set(org.id, { name: org.name, acronym: org.acronym || null });
       });
     }
 
@@ -184,7 +185,11 @@ export async function GET(request: NextRequest) {
       const percentage = activity.on_budget_percentage || 0;
       const aidType = activity.default_aid_type || "";
       const isBudgetSupport = BUDGET_SUPPORT_AID_TYPES.includes(aidType);
-      const partnerName = activity.reporting_org_id ? organizationsMap.get(activity.reporting_org_id) || "Unknown Partner" : "Unknown Partner";
+      
+      // Get organization name and acronym
+      const org = activity.reporting_org_id ? organizationsMap.get(activity.reporting_org_id) : null;
+      const partnerName = org?.name || "Unknown Partner";
+      const partnerAcronym = org?.acronym || null;
 
       // Calculate on/off budget amounts
       let onBudgetAmount = 0;
@@ -214,9 +219,10 @@ export async function GET(request: NextRequest) {
 
       return {
         id: activity.id,
-        title: activity.title || "Untitled Activity",
+        title: activity.title_narrative || activity.title || "Untitled Activity",
         iatiIdentifier: activity.iati_identifier || "",
         partnerName,
+        partnerAcronym,
         budgetStatus: status,
         onBudgetPercentage: activity.on_budget_percentage,
         defaultAidType: aidType,

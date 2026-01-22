@@ -75,6 +75,7 @@ interface ActivityDetail {
   title: string;
   iatiIdentifier: string;
   partnerName: string;
+  partnerAcronym: string | null;
   budgetStatus: BudgetStatusType;
   onBudgetPercentage: number | null;
   defaultAidType: string | null;
@@ -106,7 +107,6 @@ interface ActivitiesApiResponse {
 }
 
 type ViewMode = "chart" | "table";
-type TableMode = "aggregate" | "by-status" | "activities";
 
 export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -139,6 +139,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   const [budgetStatusFilter, setBudgetStatusFilter] = useState<string>("all");
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
   const [expandedStatusGroups, setExpandedStatusGroups] = useState<Set<string>>(new Set());
+  const [expandedClassifications, setExpandedClassifications] = useState<Set<string>>(new Set());
 
   // Chart dimensions (constants for zoom calculations)
   const chartWidth = 1200;
@@ -229,12 +230,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
     }
   }, [selectedYear, budgetStatusFilter]);
 
-  // Fetch activities when switching to table view with activities or by-status mode
+  // Fetch activities when switching to table view
   useEffect(() => {
-    if (viewMode === "table" && (tableMode === "activities" || tableMode === "by-status")) {
+    if (viewMode === "table") {
       fetchActivitiesData();
     }
-  }, [viewMode, tableMode, fetchActivitiesData]);
+  }, [viewMode, fetchActivitiesData]);
 
   // Toggle activity expansion
   const toggleActivityExpansion = (activityId: string) => {
@@ -260,6 +261,46 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       }
       return newSet;
     });
+  };
+
+  // Toggle classification expansion
+  const toggleClassification = (code: string) => {
+    setExpandedClassifications(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(code)) {
+        newSet.delete(code);
+      } else {
+        newSet.add(code);
+      }
+      return newSet;
+    });
+  };
+
+  // Get activities for a specific classification code
+  const getActivitiesForClassification = (classificationCode: string): ActivityDetail[] => {
+    if (!activitiesData?.activities) return [];
+    return activitiesData.activities.filter(activity =>
+      activity.budgetClassifications.some(bc => bc.code === classificationCode)
+    );
+  };
+
+  // Get status text (plain text instead of badge)
+  const getStatusText = (status: BudgetStatusType, isBudgetSupport: boolean): string => {
+    if (isBudgetSupport) return "Budget Support";
+    switch (status) {
+      case "on_budget": return "On Budget";
+      case "off_budget": return "Off Budget";
+      case "partial": return "Partial";
+      default: return "Unknown";
+    }
+  };
+
+  // Format partner display with name and acronym
+  const formatPartner = (name: string, acronym: string | null): string => {
+    if (acronym) {
+      return `${name} (${acronym})`;
+    }
+    return name;
   };
 
   // Group activities by budget status
@@ -803,16 +844,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   if (loading) {
     return (
       <Card className="bg-white border-slate-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Aid on Budget Analysis
-          </CardTitle>
-          <CardDescription>
-            Comparing domestic spending with donor aid
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Skeleton className="h-[700px] w-full" />
         </CardContent>
       </Card>
@@ -822,13 +854,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   if (error) {
     return (
       <Card className="bg-white border-slate-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Aid on Budget Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center h-[700px] text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
             <p className="text-lg font-medium text-gray-900 mb-2">Error loading data</p>
@@ -848,16 +874,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   return (
     <Card className="bg-white border-slate-200">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Aid on Budget Analysis
-            </CardTitle>
-            <CardDescription>
-              Comparing domestic spending with donor aid {selectedYear === "all" ? "across all years" : `for fiscal year ${selectedYear}`}
-            </CardDescription>
-          </div>
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Label htmlFor="year-select" className="text-sm">
@@ -1098,69 +1115,17 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           </>
         )}
 
-        {/* Table View */}
+        {/* Table View - Single collapsible table by classification */}
         {viewMode === "table" && (
           <div className="space-y-4">
-            {/* Table Mode Toggle */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Label className="text-sm">Show:</Label>
-                <div className="flex items-center border rounded-md">
-                  <Button
-                    variant={tableMode === "aggregate" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setTableMode("aggregate")}
-                    className="rounded-none rounded-l-md text-xs"
-                  >
-                    By Classification
-                  </Button>
-                  <Button
-                    variant={tableMode === "by-status" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setTableMode("by-status")}
-                    className="rounded-none text-xs border-x"
-                  >
-                    By Status
-                  </Button>
-                  <Button
-                    variant={tableMode === "activities" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setTableMode("activities")}
-                    className="rounded-none rounded-r-md text-xs"
-                  >
-                    All Activities
-                  </Button>
-                </div>
-              </div>
-              {(tableMode === "activities" || tableMode === "by-status") && (
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm">Filter:</Label>
-                  <Select
-                    value={budgetStatusFilter}
-                    onValueChange={setBudgetStatusFilter}
-                  >
-                    <SelectTrigger className="w-[150px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="on_budget">On Budget</SelectItem>
-                      <SelectItem value="off_budget">Off Budget</SelectItem>
-                      <SelectItem value="partial">Partial</SelectItem>
-                      <SelectItem value="unknown">Unknown</SelectItem>
-                      <SelectItem value="budget_support">Budget Support</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-
-            {/* Aggregate Table */}
-            {tableMode === "aggregate" && data?.chartData?.sectorData && (
+            {activitiesLoading && !data?.chartData?.sectorData ? (
+              <TableSkeleton rows={8} columns={7} />
+            ) : data?.chartData?.sectorData ? (
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50">
+                      <TableHead className="w-8"></TableHead>
                       <TableHead className="font-semibold">Classification</TableHead>
                       <TableHead className="font-semibold text-right">Domestic Spending</TableHead>
                       <TableHead className="font-semibold text-right">Aid on Budget</TableHead>
@@ -1174,33 +1139,94 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                       .filter(s => s.domesticExpenditure > 0 || s.onBudgetAid > 0 || s.offBudgetAid > 0)
                       .map((sector) => {
                         const total = sector.domesticExpenditure + sector.onBudgetAid + sector.offBudgetAid;
+                        const classificationActivities = getActivitiesForClassification(sector.code);
+                        const isExpanded = expandedClassifications.has(sector.code);
+                        const hasActivities = classificationActivities.length > 0;
+
                         return (
-                          <TableRow key={sector.code}>
-                            <TableCell className="font-medium">
-                              <span className="text-sm text-gray-500 mr-2">{sector.code}</span>
-                              {sector.name}
-                            </TableCell>
-                            <TableCell className="text-right" style={{ color: '#4c5568' }}>
-                              {formatCurrency(sector.domesticExpenditure)}
-                            </TableCell>
-                            <TableCell className="text-right" style={{ color: '#7b95a7' }}>
-                              {formatCurrency(sector.onBudgetAid)}
-                            </TableCell>
-                            <TableCell className="text-right" style={{ color: '#dc2625' }}>
-                              {formatCurrency(sector.offBudgetAid)}
-                            </TableCell>
-                            <TableCell className="text-right font-semibold">
-                              {formatCurrency(total)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {total > 0 ? ((sector.onBudgetAid / total) * 100).toFixed(1) : 0}%
-                            </TableCell>
-                          </TableRow>
+                          <React.Fragment key={sector.code}>
+                            {/* Classification Header Row */}
+                            <TableRow
+                              className={hasActivities ? "cursor-pointer hover:bg-slate-50" : ""}
+                              onClick={() => hasActivities && toggleClassification(sector.code)}
+                            >
+                              <TableCell className="w-8">
+                                {hasActivities && (
+                                  isExpanded
+                                    ? <ChevronDown className="h-4 w-4 text-gray-600" />
+                                    : <ChevronRight className="h-4 w-4 text-gray-600" />
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                <span className="text-sm text-gray-500 mr-2">{sector.code}</span>
+                                {sector.name}
+                                {hasActivities && (
+                                  <span className="ml-2 text-xs text-gray-400">
+                                    ({classificationActivities.length} {classificationActivities.length === 1 ? 'activity' : 'activities'})
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right" style={{ color: '#4c5568' }}>
+                                {formatCurrency(sector.domesticExpenditure)}
+                              </TableCell>
+                              <TableCell className="text-right" style={{ color: '#7b95a7' }}>
+                                {formatCurrency(sector.onBudgetAid)}
+                              </TableCell>
+                              <TableCell className="text-right" style={{ color: '#dc2625' }}>
+                                {formatCurrency(sector.offBudgetAid)}
+                              </TableCell>
+                              <TableCell className="text-right font-semibold">
+                                {formatCurrency(total)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {total > 0 ? ((sector.onBudgetAid / total) * 100).toFixed(1) : 0}%
+                              </TableCell>
+                            </TableRow>
+
+                            {/* Expanded Activities for this Classification */}
+                            {isExpanded && classificationActivities.map((activity) => (
+                              <TableRow
+                                key={`${sector.code}-${activity.id}`}
+                                className="bg-slate-50/50 hover:bg-slate-100/50"
+                              >
+                                <TableCell className="w-8 pl-6">
+                                  <Link href={`/activities/${activity.id}`}>
+                                    <ExternalLink className="h-3 w-3 text-gray-400 hover:text-blue-500" />
+                                  </Link>
+                                </TableCell>
+                                <TableCell className="pl-6">
+                                  <div className="font-medium text-sm" title={activity.title}>
+                                    {activity.title}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                                    <span>{formatPartner(activity.partnerName, activity.partnerAcronym)}</span>
+                                    <span>•</span>
+                                    <span>{getStatusText(activity.budgetStatus, activity.isBudgetSupport)}</span>
+                                    {activity.budgetStatus === "partial" && activity.onBudgetPercentage && (
+                                      <span>({activity.onBudgetPercentage}%)</span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell></TableCell>
+                                <TableCell className="text-right text-sm" style={{ color: '#7b95a7' }}>
+                                  {formatCurrency(activity.onBudgetAmount)}
+                                </TableCell>
+                                <TableCell className="text-right text-sm" style={{ color: '#dc2625' }}>
+                                  {formatCurrency(activity.offBudgetAmount)}
+                                </TableCell>
+                                <TableCell className="text-right text-sm font-medium">
+                                  {formatCurrency(activity.totalDisbursements)}
+                                </TableCell>
+                                <TableCell></TableCell>
+                              </TableRow>
+                            ))}
+                          </React.Fragment>
                         );
                       })}
                     {/* Totals Row */}
                     {summary && (
-                      <TableRow className="bg-slate-50 font-semibold">
+                      <TableRow className="bg-slate-100 font-semibold">
+                        <TableCell></TableCell>
                         <TableCell>Total</TableCell>
                         <TableCell className="text-right" style={{ color: '#4c5568' }}>
                           {formatCurrency(summary.totalDomesticExpenditure)}
@@ -1221,267 +1247,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                     )}
                   </TableBody>
                 </Table>
+                <div className="p-3 bg-slate-50 border-t text-xs text-gray-600">
+                  <span className="font-medium">Click on any classification row with activities to expand and see individual activities.</span>
+                </div>
               </div>
-            )}
-
-            {/* By Status Table - Collapsible groups */}
-            {tableMode === "by-status" && (
-              <div className="border rounded-lg overflow-hidden">
-                {activitiesLoading ? (
-                  <TableSkeleton rows={5} columns={6} />
-                ) : activitiesData?.activities && activitiesData.activities.length > 0 ? (
-                  <>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-slate-50">
-                          <TableHead className="w-8"></TableHead>
-                          <TableHead className="font-semibold">Budget Status</TableHead>
-                          <TableHead className="font-semibold text-right">Activities</TableHead>
-                          <TableHead className="font-semibold text-right">Total Disbursements</TableHead>
-                          <TableHead className="font-semibold text-right">On Budget Amount</TableHead>
-                          <TableHead className="font-semibold text-right">Off Budget Amount</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {(['on_budget', 'off_budget', 'partial', 'unknown', 'budget_support'] as const).map((status) => {
-                          const statusActivities = getActivitiesByStatus()[status] || [];
-                          if (statusActivities.length === 0) return null;
-                          
-                          const statusDisplay = getStatusDisplay(status);
-                          const isExpanded = expandedStatusGroups.has(status);
-                          const totalDisbursements = statusActivities.reduce((sum, a) => sum + a.totalDisbursements, 0);
-                          const onBudgetTotal = statusActivities.reduce((sum, a) => sum + a.onBudgetAmount, 0);
-                          const offBudgetTotal = statusActivities.reduce((sum, a) => sum + a.offBudgetAmount, 0);
-
-                          return (
-                            <React.Fragment key={status}>
-                              {/* Status Group Header Row */}
-                              <TableRow
-                                className="cursor-pointer hover:bg-slate-50 bg-slate-100/50"
-                                onClick={() => toggleStatusGroup(status)}
-                              >
-                                <TableCell className="w-8">
-                                  {isExpanded
-                                    ? <ChevronDown className="h-4 w-4 text-gray-600" />
-                                    : <ChevronRight className="h-4 w-4 text-gray-600" />
-                                  }
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className="w-3 h-3 rounded-full"
-                                      style={{ backgroundColor: statusDisplay.color }}
-                                    />
-                                    <span className="font-semibold">{statusDisplay.name}</span>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right font-medium">
-                                  {statusActivities.length}
-                                </TableCell>
-                                <TableCell className="text-right font-medium">
-                                  {formatCurrency(totalDisbursements)}
-                                </TableCell>
-                                <TableCell className="text-right font-medium" style={{ color: '#7b95a7' }}>
-                                  {formatCurrency(onBudgetTotal)}
-                                </TableCell>
-                                <TableCell className="text-right font-medium" style={{ color: '#dc2625' }}>
-                                  {formatCurrency(offBudgetTotal)}
-                                </TableCell>
-                              </TableRow>
-
-                              {/* Expanded Activities */}
-                              {isExpanded && statusActivities.map((activity) => (
-                                <TableRow
-                                  key={activity.id}
-                                  className="bg-white hover:bg-slate-50/50"
-                                >
-                                  <TableCell className="w-8 pl-8">
-                                    <Link href={`/activities/${activity.id}`}>
-                                      <ExternalLink className="h-3 w-3 text-gray-400 hover:text-blue-500" />
-                                    </Link>
-                                  </TableCell>
-                                  <TableCell className="pl-8">
-                                    <div className="font-medium text-sm truncate max-w-[350px]" title={activity.title}>
-                                      {activity.title}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                                      {activity.iatiIdentifier && (
-                                        <span className="font-mono">{activity.iatiIdentifier}</span>
-                                      )}
-                                      <span>•</span>
-                                      <span>{activity.partnerName}</span>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell></TableCell>
-                                  <TableCell className="text-right text-sm">
-                                    {formatCurrency(activity.totalDisbursements)}
-                                  </TableCell>
-                                  <TableCell className="text-right text-sm" style={{ color: '#7b95a7' }}>
-                                    {formatCurrency(activity.onBudgetAmount)}
-                                  </TableCell>
-                                  <TableCell className="text-right text-sm" style={{ color: '#dc2625' }}>
-                                    {formatCurrency(activity.offBudgetAmount)}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </React.Fragment>
-                          );
-                        })}
-
-                        {/* Totals Row */}
-                        {activitiesData.totals && (
-                          <TableRow className="bg-slate-100 font-semibold">
-                            <TableCell></TableCell>
-                            <TableCell>Total</TableCell>
-                            <TableCell className="text-right">
-                              {activitiesData.totals.activities}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(activitiesData.totals.totalDisbursements)}
-                            </TableCell>
-                            <TableCell className="text-right" style={{ color: '#7b95a7' }}>
-                              {formatCurrency(activitiesData.totals.onBudgetTotal)}
-                            </TableCell>
-                            <TableCell className="text-right" style={{ color: '#dc2625' }}>
-                              {formatCurrency(activitiesData.totals.offBudgetTotal)}
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                    <div className="p-3 bg-slate-50 border-t text-xs text-gray-600">
-                      <span className="font-medium">Click on any status row to expand/collapse and see individual activities.</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="p-8 text-center text-gray-500">
-                    <p>No activities with disbursements found for the selected filters.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Activities Table */}
-            {tableMode === "activities" && (
-              <div className="border rounded-lg overflow-hidden">
-                {activitiesLoading ? (
-                  <TableSkeleton rows={5} columns={7} />
-                ) : activitiesData?.activities && activitiesData.activities.length > 0 ? (
-                  <>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-slate-50">
-                          <TableHead className="w-8"></TableHead>
-                          <TableHead className="font-semibold">Activity</TableHead>
-                          <TableHead className="font-semibold">Partner</TableHead>
-                          <TableHead className="font-semibold">Status</TableHead>
-                          <TableHead className="font-semibold text-right">Total Disbursements</TableHead>
-                          <TableHead className="font-semibold text-right">On Budget</TableHead>
-                          <TableHead className="font-semibold text-right">Off Budget</TableHead>
-                          <TableHead className="w-10"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {activitiesData.activities.map((activity) => (
-                          <React.Fragment key={activity.id}>
-                            <TableRow
-                              className="cursor-pointer hover:bg-slate-50"
-                              onClick={() => toggleActivityExpansion(activity.id)}
-                            >
-                              <TableCell className="w-8">
-                                {activity.budgetClassifications.length > 0 && (
-                                  expandedActivities.has(activity.id)
-                                    ? <ChevronDown className="h-4 w-4 text-gray-400" />
-                                    : <ChevronRight className="h-4 w-4 text-gray-400" />
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-medium truncate max-w-[300px]" title={activity.title}>
-                                  {activity.title}
-                                </div>
-                                {activity.iatiIdentifier && (
-                                  <div className="text-xs text-gray-500">{activity.iatiIdentifier}</div>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-sm">{activity.partnerName}</TableCell>
-                              <TableCell>
-                                {getBudgetStatusBadge(activity.budgetStatus, activity.isBudgetSupport)}
-                                {activity.budgetStatus === "partial" && activity.onBudgetPercentage && (
-                                  <span className="ml-1 text-xs text-gray-500">
-                                    ({activity.onBudgetPercentage}%)
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right font-medium">
-                                {formatCurrency(activity.totalDisbursements)}
-                              </TableCell>
-                              <TableCell className="text-right" style={{ color: '#7b95a7' }}>
-                                {formatCurrency(activity.onBudgetAmount)}
-                              </TableCell>
-                              <TableCell className="text-right" style={{ color: '#dc2625' }}>
-                                {formatCurrency(activity.offBudgetAmount)}
-                              </TableCell>
-                              <TableCell className="w-10">
-                                <Link href={`/activities/${activity.id}`} onClick={(e) => e.stopPropagation()}>
-                                  <Button variant="ghost" size="sm" title="View Activity">
-                                    <ExternalLink className="h-4 w-4" />
-                                  </Button>
-                                </Link>
-                              </TableCell>
-                            </TableRow>
-                            {/* Expanded Row - Budget Classifications */}
-                            {expandedActivities.has(activity.id) && activity.budgetClassifications.length > 0 && (
-                              <TableRow className="bg-slate-50/50">
-                                <TableCell colSpan={8} className="py-2 px-8">
-                                  <div className="text-xs text-gray-600 mb-1 font-medium">Budget Classifications:</div>
-                                  <div className="flex flex-wrap gap-2">
-                                    {activity.budgetClassifications.map((bc, idx) => (
-                                      <Badge key={idx} variant="outline" className="text-xs">
-                                        {bc.code} - {bc.name} ({bc.percentage}%)
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </React.Fragment>
-                        ))}
-                        {/* Totals Row */}
-                        {activitiesData.totals && (
-                          <TableRow className="bg-slate-100 font-semibold">
-                            <TableCell></TableCell>
-                            <TableCell>Total ({activitiesData.totals.activities} activities)</TableCell>
-                            <TableCell></TableCell>
-                            <TableCell></TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(activitiesData.totals.totalDisbursements)}
-                            </TableCell>
-                            <TableCell className="text-right" style={{ color: '#7b95a7' }}>
-                              {formatCurrency(activitiesData.totals.onBudgetTotal)}
-                            </TableCell>
-                            <TableCell className="text-right" style={{ color: '#dc2625' }}>
-                              {formatCurrency(activitiesData.totals.offBudgetTotal)}
-                            </TableCell>
-                            <TableCell></TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                    {/* Status Summary */}
-                    <div className="p-3 bg-slate-50 border-t text-xs text-gray-600">
-                      <span className="font-medium">Status breakdown: </span>
-                      On Budget: {activitiesData.totals.onBudgetCount} |
-                      Off Budget: {activitiesData.totals.offBudgetCount} |
-                      Partial: {activitiesData.totals.partialCount} |
-                      Unknown: {activitiesData.totals.unknownCount} |
-                      Budget Support: {activitiesData.totals.budgetSupportCount}
-                    </div>
-                  </>
-                ) : (
-                  <div className="p-8 text-center text-gray-500">
-                    <p>No activities with disbursements found for the selected filters.</p>
-                  </div>
-                )}
+            ) : (
+              <div className="p-8 text-center text-gray-500 border rounded-lg">
+                <p>No budget data available for this period.</p>
               </div>
             )}
           </div>
