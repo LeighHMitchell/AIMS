@@ -83,6 +83,7 @@ import { BulkDeleteDialog } from "@/components/dialogs/bulk-delete-dialog";
 import dynamic from 'next/dynamic';
 import { SectorFilterSelection, matchesSectorFilter } from "@/components/maps/SectorHierarchyFilter";
 import { SafeHtml } from '@/components/ui/safe-html';
+import { htmlToPlainText } from '@/lib/sanitize';
 import { OrganizationAvatarGroup } from '@/components/ui/organization-avatar-group';
 import { SDGAvatarGroup } from '@/components/ui/sdg-avatar-group';
 import { PolicyMarkerAvatarGroup } from '@/components/ui/policy-marker-avatar-group';
@@ -429,11 +430,25 @@ const formatOrganisationList = (orgs: string[]): { display: string; full: string
 
 // Helper function to truncate description text for display
 // Shows first 120 characters with ellipsis, full text in tooltip
-const truncateDescription = (text: string | null | undefined, maxLength: number = 120): { display: string; full: string | null } => {
-  if (!text) return { display: '—', full: null };
-  // Always return full text for tooltip, even if not truncated
-  if (text.length <= maxLength) return { display: text, full: text };
-  return { display: text.slice(0, maxLength) + '…', full: text };
+// Handles HTML content by converting to plain text for truncated display
+const truncateDescription = (text: string | null | undefined, maxLength: number = 120): { display: string; full: string | null; isHtml: boolean } => {
+  if (!text) return { display: '—', full: null, isHtml: false };
+  
+  // Check if content contains HTML tags
+  const hasHtml = /<[^>]+>/.test(text);
+  
+  if (hasHtml) {
+    // Convert to plain text for display truncation
+    const plainText = htmlToPlainText(text);
+    if (plainText.length <= maxLength) {
+      return { display: plainText, full: text, isHtml: true };
+    }
+    return { display: plainText.slice(0, maxLength) + '…', full: text, isHtml: true };
+  }
+  
+  // Plain text handling (no HTML)
+  if (text.length <= maxLength) return { display: text, full: text, isHtml: false };
+  return { display: text.slice(0, maxLength) + '…', full: text, isHtml: false };
 };
 
 // Helper function to check if user can edit an activity
@@ -3335,13 +3350,13 @@ const router = useRouter();
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <SafeHtml html={truncated.display} level="iati" as="span" className="cursor-pointer line-clamp-2" />
+                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
                                   </TooltipTrigger>
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
                                         <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – General</p>
-                                        <SafeHtml html={truncated.full} level="iati" className="text-sm" />
+                                        <SafeHtml html={truncated.full} level="rich" className="text-sm" />
                                       </div>
                                     </TooltipContent>
                                   )}
@@ -3359,13 +3374,13 @@ const router = useRouter();
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <SafeHtml html={truncated.display} level="iati" as="span" className="cursor-pointer line-clamp-2" />
+                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
                                   </TooltipTrigger>
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
                                         <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Objectives</p>
-                                        <SafeHtml html={truncated.full} level="iati" className="text-sm" />
+                                        <SafeHtml html={truncated.full} level="rich" className="text-sm" />
                                       </div>
                                     </TooltipContent>
                                   )}
@@ -3383,13 +3398,13 @@ const router = useRouter();
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <SafeHtml html={truncated.display} level="iati" as="span" className="cursor-pointer line-clamp-2" />
+                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
                                   </TooltipTrigger>
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
                                         <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Target Groups</p>
-                                        <SafeHtml html={truncated.full} level="iati" className="text-sm" />
+                                        <SafeHtml html={truncated.full} level="rich" className="text-sm" />
                                       </div>
                                     </TooltipContent>
                                   )}
@@ -3407,13 +3422,13 @@ const router = useRouter();
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <SafeHtml html={truncated.display} level="iati" as="span" className="cursor-pointer line-clamp-2" />
+                                    <span className="cursor-pointer line-clamp-2">{truncated.display}</span>
                                   </TooltipTrigger>
                                   {truncated.full && (
                                     <TooltipContent className="max-w-md bg-white border shadow-lg p-3">
                                       <div className="space-y-1">
                                         <p className="font-medium text-xs text-muted-foreground mb-2">Activity Description – Other</p>
-                                        <SafeHtml html={truncated.full} level="iati" className="text-sm" />
+                                        <SafeHtml html={truncated.full} level="rich" className="text-sm" />
                                       </div>
                                     </TooltipContent>
                                   )}

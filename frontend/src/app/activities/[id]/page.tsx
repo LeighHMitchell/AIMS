@@ -2125,6 +2125,7 @@ export default function ActivityDetailPage() {
                               {isDescriptionExpanded ? (
                                 <SafeHtml 
                                   html={description} 
+                                  level="rich"
                                   className="text-slate-600 leading-relaxed"
                                 />
                               ) : (
@@ -2145,6 +2146,7 @@ export default function ActivityDetailPage() {
                               {isDescriptionExpanded ? (
                                 <SafeHtml 
                                   html={objectives} 
+                                  level="rich"
                                   className="text-slate-600 leading-relaxed"
                                 />
                               ) : (
@@ -2165,6 +2167,7 @@ export default function ActivityDetailPage() {
                               {isDescriptionExpanded ? (
                                 <SafeHtml 
                                   html={targetGroups} 
+                                  level="rich"
                                   className="text-slate-600 leading-relaxed"
                                 />
                               ) : (
@@ -2185,6 +2188,7 @@ export default function ActivityDetailPage() {
                               {isDescriptionExpanded ? (
                                 <SafeHtml 
                                   html={other} 
+                                  level="rich"
                                   className="text-slate-600 leading-relaxed"
                                 />
                               ) : (
