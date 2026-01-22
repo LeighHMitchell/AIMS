@@ -2561,7 +2561,7 @@ const router = useRouter();
                               >
                                 {activity.title}
                                 {activity.acronym && (
-                                  <span className="text-sm text-gray-500 font-normal">
+                                  <span>
                                     {' '}({activity.acronym})
                                   </span>
                                 )}

@@ -19,6 +19,7 @@
     "@fullcalendar/react": "^6.1.18",
     "@fullcalendar/timegrid": "^6.1.18",
     "@radix-ui/react-label": "^2.1.7",
+    "@remotion/cli": "^4.0.407",
     "date-fns": "^4.1.0",
     "leaflet": "^1.9.4",
     "leaflet.heat": "^0.2.0",
@@ -26,7 +27,7 @@
     "react-select": "^5.10.1"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "^1.0.41",
+    "@anthropic-ai/claude-code": "^2.1.15",
     "@playwright/test": "^1.49.0",
     "@supabase/supabase-js": "^2.57.0",
     "@testing-library/jest-dom": "^6.6.3",

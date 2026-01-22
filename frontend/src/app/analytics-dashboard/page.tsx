@@ -102,9 +102,6 @@ import { SectorBarChart } from '@/components/analytics/sectors/SectorBarChart'
 import { SectorTimeSeriesPanel } from '@/components/analytics/sectors/SectorTimeSeriesPanel'
 import { SectorAnalyticsFilters, SectorMetrics, SectorAnalyticsResponse } from '@/types/sector-analytics'
 
-// Funding Over Time Analytics
-import { FundingOverTimeAnalytics } from '@/components/analytics/FundingOverTimeAnalytics'
-
 // National Priorities Dashboard
 import { Dashboard as NationalPrioritiesDashboard } from '@/components/analytics/national-priorities-dashboard'
 
@@ -658,7 +655,8 @@ export default function AnalyticsDashboardPage() {
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                 <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
                   <TabsTrigger value="portfolio-summary" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Portfolio Summary</TabsTrigger>
-                  <TabsTrigger value="financial-analysis" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Financial Analysis</TabsTrigger>
+                  <TabsTrigger value="aid-on-budget" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Aid on Budget</TabsTrigger>
+                  <TabsTrigger value="humanitarian" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Humanitarian</TabsTrigger>
                   <TabsTrigger value="sector-thematic" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Sector & Thematic</TabsTrigger>
                   <TabsTrigger value="partner-network" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Partner Network</TabsTrigger>
                   <TabsTrigger value="aid-ecosystem" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Aid Ecosystem</TabsTrigger>
@@ -829,18 +827,10 @@ export default function AnalyticsDashboardPage() {
                   </div>
                 </TabsContent>
 
-                {/* ==================== FINANCIAL ANALYSIS TAB ==================== */}
-                {/* Contains: Funding Over Time, Aid on Budget, Humanitarian */}
-                <TabsContent value="financial-analysis">
+                {/* ==================== AID ON BUDGET TAB ==================== */}
+                {/* Contains: Aid on Budget analysis and reporting */}
+                <TabsContent value="aid-on-budget">
                   <div className="space-y-8">
-                    {/* Funding Over Time Section */}
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Funding Over Time</h2>
-                      <p className="text-gray-600 mb-4">Track and compare funding trends across multiple donors</p>
-                      <FundingOverTimeAnalytics />
-                    </div>
-
-                    {/* Aid on Budget Section */}
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">Aid on Budget</h2>
                       <p className="text-gray-600 mb-4">Compare domestic government spending with on-budget and off-budget aid by fiscal year</p>
@@ -848,8 +838,13 @@ export default function AnalyticsDashboardPage() {
                         refreshKey={refreshKey}
                       />
                     </div>
+                  </div>
+                </TabsContent>
 
-                    {/* Humanitarian Section */}
+                {/* ==================== HUMANITARIAN TAB ==================== */}
+                {/* Contains: Humanitarian aid analysis */}
+                <TabsContent value="humanitarian">
+                  <div className="space-y-8">
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">Humanitarian Aid</h2>
                       <p className="text-gray-600 mb-4">Analysis of humanitarian aid flows and their share of total assistance</p>
