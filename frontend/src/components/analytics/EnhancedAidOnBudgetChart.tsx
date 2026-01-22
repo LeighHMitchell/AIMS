@@ -1166,13 +1166,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                   </span>
                                 )}
                               </TableCell>
-                              <TableCell className="text-right" style={{ color: '#4c5568' }}>
+                              <TableCell className="text-right">
                                 {formatCurrency(sector.domesticExpenditure)}
                               </TableCell>
-                              <TableCell className="text-right" style={{ color: '#7b95a7' }}>
+                              <TableCell className="text-right">
                                 {formatCurrency(sector.onBudgetAid)}
                               </TableCell>
-                              <TableCell className="text-right" style={{ color: '#dc2625' }}>
+                              <TableCell className="text-right">
                                 {formatCurrency(sector.offBudgetAid)}
                               </TableCell>
                               <TableCell className="text-right font-semibold">
@@ -1198,7 +1198,14 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                   <div className="font-medium text-sm" title={activity.title}>
                                     {activity.title}
                                   </div>
-                                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                                  {activity.iatiIdentifier && (
+                                    <div className="mt-1">
+                                      <span className="font-mono text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                        {activity.iatiIdentifier}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                                     <span>{formatPartner(activity.partnerName, activity.partnerAcronym)}</span>
                                     <span>•</span>
                                     <span>{getStatusText(activity.budgetStatus, activity.isBudgetSupport)}</span>
@@ -1208,10 +1215,10 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                   </div>
                                 </TableCell>
                                 <TableCell></TableCell>
-                                <TableCell className="text-right text-sm" style={{ color: '#7b95a7' }}>
+                                <TableCell className="text-right text-sm">
                                   {formatCurrency(activity.onBudgetAmount)}
                                 </TableCell>
-                                <TableCell className="text-right text-sm" style={{ color: '#dc2625' }}>
+                                <TableCell className="text-right text-sm">
                                   {formatCurrency(activity.offBudgetAmount)}
                                 </TableCell>
                                 <TableCell className="text-right text-sm font-medium">
@@ -1228,13 +1235,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                       <TableRow className="bg-slate-100 font-semibold">
                         <TableCell></TableCell>
                         <TableCell>Total</TableCell>
-                        <TableCell className="text-right" style={{ color: '#4c5568' }}>
+                        <TableCell className="text-right">
                           {formatCurrency(summary.totalDomesticExpenditure)}
                         </TableCell>
-                        <TableCell className="text-right" style={{ color: '#7b95a7' }}>
+                        <TableCell className="text-right">
                           {formatCurrency(summary.totalOnBudgetAid + summary.totalPartialAid)}
                         </TableCell>
-                        <TableCell className="text-right" style={{ color: '#dc2625' }}>
+                        <TableCell className="text-right">
                           {formatCurrency(summary.totalOffBudgetAid + summary.totalUnknownAid)}
                         </TableCell>
                         <TableCell className="text-right">
