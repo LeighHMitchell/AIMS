@@ -594,23 +594,28 @@ export async function PUT(request: NextRequest) {
 }
 
 // DELETE - Delete feedback (for admin users)
+// Supports both single delete (id) and batch delete (ids array)
 export async function DELETE(request: NextRequest) {
   try {
     const { supabase, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
     const body = await request.json();
-    const { userId, id } = body;
+    const { userId, id, ids } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    if (!id) {
-      return NextResponse.json({ error: 'Feedback ID is required' }, { status: 400 });
+    // Validate that either id or ids is provided
+    const isBatchDelete = Array.isArray(ids) && ids.length > 0;
+    if (!id && !isBatchDelete) {
+      return NextResponse.json({ error: 'Feedback ID or IDs array is required' }, { status: 400 });
     }
 
-    console.log('[AIMS Feedback API] DELETE request for user:', userId, 'feedback:', id);
+    const deleteIds = isBatchDelete ? ids : [id];
+    console.log('[AIMS Feedback API] DELETE request for user:', userId, 'feedback count:', deleteIds.length);
+    
     if (!supabase) {
       console.error('[AIMS Feedback API] Supabase admin client is null');
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -638,31 +643,45 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Allow super users and dev partners to delete feedback
-    const allowedRoles = ['super_user', 'dev_partner_tier_1', 'dev_partner_tier_2'];
-    if (!allowedRoles.includes(user.role)) {
-      console.log('[AIMS Feedback API] Delete access denied - user role is:', user.role, 'but requires one of:', allowedRoles);
+    // For batch delete, only allow super_user role
+    if (isBatchDelete && user.role !== 'super_user') {
+      console.log('[AIMS Feedback API] Batch delete access denied - user role is:', user.role, 'but requires super_user');
       return NextResponse.json({ 
         error: 'Insufficient permissions',
-        details: `Your role is '${user.role}' but one of these roles is required: ${allowedRoles.join(', ')}` 
+        details: 'Only super users can batch delete feedback' 
       }, { status: 403 });
     }
 
-    // Delete the feedback
+    // For single delete, allow super users and dev partners
+    if (!isBatchDelete) {
+      const allowedRoles = ['super_user', 'dev_partner_tier_1', 'dev_partner_tier_2'];
+      if (!allowedRoles.includes(user.role)) {
+        console.log('[AIMS Feedback API] Delete access denied - user role is:', user.role, 'but requires one of:', allowedRoles);
+        return NextResponse.json({ 
+          error: 'Insufficient permissions',
+          details: `Your role is '${user.role}' but one of these roles is required: ${allowedRoles.join(', ')}` 
+        }, { status: 403 });
+      }
+    }
+
+    // Delete the feedback (single or batch)
     const { error: deleteError } = await supabase
       .from('feedback')
       .delete()
-      .eq('id', id);
+      .in('id', deleteIds);
 
     if (deleteError) {
       console.error('[AIMS Feedback API] Error deleting feedback:', deleteError);
       return NextResponse.json({ error: 'Failed to delete feedback' }, { status: 500 });
     }
 
-    console.log('[AIMS Feedback API] Feedback deleted successfully');
+    console.log('[AIMS Feedback API] Feedback deleted successfully, count:', deleteIds.length);
     return NextResponse.json({ 
       success: true, 
-      message: 'Feedback deleted successfully' 
+      message: isBatchDelete 
+        ? `Successfully deleted ${deleteIds.length} feedback item(s)` 
+        : 'Feedback deleted successfully',
+      deletedCount: deleteIds.length
     });
   } catch (error) {
     console.error('[AIMS Feedback API] Error in DELETE:', error);

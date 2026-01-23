@@ -18,6 +18,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Collect cookies to set on the response (for clearing session)
+    const cookiesToSet: Array<{ name: string; value: string; options: any }> = [];
+    
     // Create server client with cookie handling to properly sign out
     const cookieStore = await cookies();
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -25,14 +28,11 @@ export async function POST(request: NextRequest) {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          } catch {
-            // Server Component context - ignore
-          }
+        setAll(newCookies) {
+          // Collect cookies to be cleared on the response
+          newCookies.forEach((cookie) => {
+            cookiesToSet.push(cookie);
+          });
         },
       },
     });
@@ -46,7 +46,17 @@ export async function POST(request: NextRequest) {
 
     console.log('[AIMS] User logged out successfully');
 
-    return NextResponse.json({ success: true });
+    // Create response and set/clear cookies on it
+    const response = NextResponse.json({ success: true });
+    
+    // Set all cookies (Supabase sets empty values to clear them)
+    for (const cookie of cookiesToSet) {
+      response.cookies.set(cookie.name, cookie.value, cookie.options);
+    }
+    
+    console.log('[AIMS] Cleared', cookiesToSet.length, 'cookies');
+
+    return response;
 
   } catch (error) {
     console.error('[AIMS] Unexpected error during logout:', error);

@@ -32,7 +32,11 @@ import {
   TrendingDown,
   Timer,
   Percent,
+  CheckSquare,
+  Square,
+  Minus,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
@@ -81,6 +85,10 @@ export function FAQManagement() {
   const [loading, setLoading] = useState(true);
   const [selectedQuestion, setSelectedQuestion] = useState<FAQQuestion | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Batch selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
   // Filters
   const [filterStatus, setFilterStatus] = useState<FAQQuestionStatus | 'all'>('all');
@@ -267,6 +275,75 @@ export function FAQManagement() {
     }
   };
 
+  // Batch delete questions
+  const batchDeleteQuestions = async () => {
+    if (selectedIds.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedIds.size} question(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsBatchDeleting(true);
+    try {
+      const response = await fetch('/api/faq/questions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(data.message || `Successfully deleted ${selectedIds.size} question(s)`);
+        setSelectedIds(new Set());
+        fetchQuestions();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to delete questions');
+      }
+    } catch (error) {
+      console.error('[FAQManagement] Batch delete error:', error);
+      toast.error('Failed to delete questions');
+    } finally {
+      setIsBatchDeleting(false);
+    }
+  };
+
+  // Handle select all for current page
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const newSelected = new Set(selectedIds);
+      sortedQuestions.forEach(q => newSelected.add(q.id));
+      setSelectedIds(newSelected);
+    } else {
+      const newSelected = new Set(selectedIds);
+      sortedQuestions.forEach(q => newSelected.delete(q.id));
+      setSelectedIds(newSelected);
+    }
+  };
+
+  // Handle individual selection
+  const handleSelectOne = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  // Check if all items on current page are selected
+  const allPageItemsSelected = sortedQuestions.length > 0 && 
+    sortedQuestions.every(q => selectedIds.has(q.id));
+  
+  // Check if some items on current page are selected
+  const somePageItemsSelected = sortedQuestions.some(q => selectedIds.has(q.id));
+
+  // Clear selection when changing tabs or filters
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [activeSubTab, filterStatus]);
+
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -382,20 +459,45 @@ export function FAQManagement() {
             {/* Queue filters */}
             <Card>
               <CardContent className="pt-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-48">
-                    <Label className="text-sm mb-1 block">Filter by Status</Label>
-                    <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as FAQQuestionStatus | 'all')}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Pending & In Progress</SelectItem>
-                        <SelectItem value="pending">Pending Only</SelectItem>
-                        <SelectItem value="in_progress">In Progress Only</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-48">
+                      <Label className="text-sm mb-1 block">Filter by Status</Label>
+                      <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as FAQQuestionStatus | 'all')}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Pending & In Progress</SelectItem>
+                          <SelectItem value="pending">Pending Only</SelectItem>
+                          <SelectItem value="in_progress">In Progress Only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
+                  {selectedIds.size > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground">
+                        {selectedIds.size} selected
+                      </span>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={batchDeleteQuestions}
+                        disabled={isBatchDeleting}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {isBatchDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedIds(new Set())}
+                      >
+                        Clear Selection
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -411,6 +513,11 @@ export function FAQManagement() {
                 setIsDetailModalOpen(true);
               }}
               onDelete={deleteQuestion}
+              selectedIds={selectedIds}
+              onSelectOne={handleSelectOne}
+              onSelectAll={handleSelectAll}
+              allPageItemsSelected={allPageItemsSelected}
+              somePageItemsSelected={somePageItemsSelected}
             />
           </TabsContent>
 
@@ -418,23 +525,48 @@ export function FAQManagement() {
             {/* All questions filters */}
             <Card>
               <CardContent className="pt-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-48">
-                    <Label className="text-sm mb-1 block">Filter by Status</Label>
-                    <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as FAQQuestionStatus | 'all')}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="published">Published</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
-                        <SelectItem value="duplicate">Duplicate</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-48">
+                      <Label className="text-sm mb-1 block">Filter by Status</Label>
+                      <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as FAQQuestionStatus | 'all')}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Statuses</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="published">Published</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                          <SelectItem value="duplicate">Duplicate</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
+                  {selectedIds.size > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground">
+                        {selectedIds.size} selected
+                      </span>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={batchDeleteQuestions}
+                        disabled={isBatchDeleting}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {isBatchDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedIds(new Set())}
+                      >
+                        Clear Selection
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -450,6 +582,11 @@ export function FAQManagement() {
                 setIsDetailModalOpen(true);
               }}
               onDelete={deleteQuestion}
+              selectedIds={selectedIds}
+              onSelectOne={handleSelectOne}
+              onSelectAll={handleSelectAll}
+              allPageItemsSelected={allPageItemsSelected}
+              somePageItemsSelected={somePageItemsSelected}
             />
           </TabsContent>
         </Tabs>
@@ -515,6 +652,11 @@ function QuestionTable({
   onSort,
   onView,
   onDelete,
+  selectedIds,
+  onSelectOne,
+  onSelectAll,
+  allPageItemsSelected,
+  somePageItemsSelected,
 }: {
   questions: FAQQuestion[];
   loading: boolean;
@@ -523,6 +665,11 @@ function QuestionTable({
   onSort: (field: string) => void;
   onView: (q: FAQQuestion) => void;
   onDelete: (id: string) => void;
+  selectedIds: Set<string>;
+  onSelectOne: (id: string, checked: boolean) => void;
+  onSelectAll: (checked: boolean) => void;
+  allPageItemsSelected: boolean;
+  somePageItemsSelected: boolean;
 }) {
   return (
     <Card>
@@ -541,6 +688,14 @@ function QuestionTable({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]">
+                  <Checkbox
+                    checked={allPageItemsSelected}
+                    onCheckedChange={(checked) => onSelectAll(!!checked)}
+                    aria-label="Select all questions on this page"
+                    className={somePageItemsSelected && !allPageItemsSelected ? 'data-[state=checked]:bg-primary/50' : ''}
+                  />
+                </TableHead>
                 <TableHead className="w-[50px]">Status</TableHead>
                 <TableHead
                   className="cursor-pointer hover:bg-muted/80 transition-colors"
@@ -568,8 +723,16 @@ function QuestionTable({
             <TableBody>
               {questions.map((question) => {
                 const { icon: StatusIcon, color } = getStatusIcon(question.status);
+                const isSelected = selectedIds.has(question.id);
                 return (
-                  <TableRow key={question.id} className="hover:bg-muted/50">
+                  <TableRow key={question.id} className={`hover:bg-muted/50 ${isSelected ? 'bg-muted/30' : ''}`}>
+                    <TableCell>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => onSelectOne(question.id, !!checked)}
+                        aria-label={`Select question: ${question.question}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Tooltip>
                         <TooltipTrigger>

@@ -241,6 +241,69 @@ export async function GET(request: NextRequest) {
 }
 
 /**
+ * DELETE /api/faq/questions
+ * Batch delete questions (admin only - super_user role required)
+ */
+export async function DELETE(request: NextRequest) {
+  const { supabase, response: authResponse, user } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    }
+
+    const body = await request.json();
+    const { ids } = body;
+
+    // Validate IDs array
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'IDs array is required' }, { status: 400 });
+    }
+
+    // Verify user is a super user
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user?.id)
+      .single();
+
+    if (userError || !userData) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (userData.role !== 'super_user') {
+      return NextResponse.json({ 
+        error: 'Insufficient permissions. Only super users can batch delete FAQ questions.' 
+      }, { status: 403 });
+    }
+
+    // Delete all questions with the given IDs
+    const { error: deleteError, count } = await supabase
+      .from('faq_questions')
+      .delete()
+      .in('id', ids);
+
+    if (deleteError) {
+      console.error('[FAQ Questions] Error batch deleting:', deleteError);
+      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Successfully deleted ${ids.length} question(s)`,
+      deletedCount: ids.length,
+    });
+  } catch (error) {
+    console.error('[FAQ Questions] Unexpected error in batch delete:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * POST /api/faq/questions
  * Submit a new question
  */

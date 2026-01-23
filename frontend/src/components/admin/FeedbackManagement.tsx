@@ -13,7 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortI
 import { LoadingText } from '@/components/ui/loading-text';
 import { FEEDBACK_TYPES, FEEDBACK_STATUS_TYPES, FEEDBACK_PRIORITY_TYPES } from '@/data/feedback-types';
 import { ALL_APP_FEATURES, APP_FEATURES } from '@/data/app-features';
-import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search, Plus } from 'lucide-react';
+import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search, Plus, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
@@ -154,6 +155,10 @@ export function FeedbackManagement() {
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [filterFeature, setFilterFeature] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
+  
+  // Batch selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
   
   // Sorting state
   const [sortField, setSortField] = useState<string>('created_at');
@@ -389,6 +394,65 @@ export function FeedbackManagement() {
     }
   };
 
+  // Batch delete feedback
+  const batchDeleteFeedback = async () => {
+    if (!user?.id || selectedIds.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedIds.size} feedback item(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    // Store items for potential rollback
+    const idsToDelete = Array.from(selectedIds);
+    const itemsToDelete = feedback.filter(item => selectedIds.has(item.id));
+    
+    // Optimistically remove from local state
+    setFeedback(prev => prev.filter(item => !selectedIds.has(item.id)));
+    setTotalCount(prev => prev - selectedIds.size);
+    setSelectedIds(new Set());
+    setIsBatchDeleting(true);
+
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, ids: idsToDelete }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(data.message || `Successfully deleted ${idsToDelete.length} feedback item(s)`);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete feedback');
+      }
+    } catch (error) {
+      // Revert optimistic update on error - add items back
+      setFeedback(prev => [...prev, ...itemsToDelete]);
+      setTotalCount(prev => prev + itemsToDelete.length);
+      console.error('[FeedbackManagement] Batch delete error:', error);
+      toast.error("Failed to delete feedback. Please try again.");
+    } finally {
+      setIsBatchDeleting(false);
+    }
+  };
+
+  // Handle individual selection
+  const handleSelectOne = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  // Clear selection when changing filters
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [filterStatus, filterCategory, filterPriority, filterFeature, showArchived]);
+
   // Sort feedback based on current sort field and direction
   const sortedFeedback = useMemo(() => {
     const sorted = [...feedback].sort((a, b) => {
@@ -424,8 +488,25 @@ export function FeedbackManagement() {
   // Use sorted feedback directly since filtering is now handled server-side
   const filteredFeedback = sortedFeedback;
 
+  // Handle select all for current page (must be after filteredFeedback is defined)
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const newSelected = new Set(selectedIds);
+      filteredFeedback.forEach(item => newSelected.add(item.id));
+      setSelectedIds(newSelected);
+    } else {
+      const newSelected = new Set(selectedIds);
+      filteredFeedback.forEach(item => newSelected.delete(item.id));
+      setSelectedIds(newSelected);
+    }
+  };
 
-
+  // Check if all items on current page are selected
+  const allPageItemsSelected = filteredFeedback.length > 0 && 
+    filteredFeedback.every(item => selectedIds.has(item.id));
+  
+  // Check if some items on current page are selected
+  const somePageItemsSelected = filteredFeedback.some(item => selectedIds.has(item.id));
 
 
   return (
@@ -444,13 +525,38 @@ export function FeedbackManagement() {
                 View and manage user feedback, questions, and feature requests
               </CardDescription>
             </div>
-            <Button 
-              onClick={() => setIsAddFeedbackModalOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Feedback
-            </Button>
+            <div className="flex items-center gap-3">
+              {selectedIds.size > 0 && (
+                <>
+                  <span className="text-sm text-muted-foreground">
+                    {selectedIds.size} selected
+                  </span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={batchDeleteFeedback}
+                    disabled={isBatchDeleting}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {isBatchDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedIds(new Set())}
+                  >
+                    Clear Selection
+                  </Button>
+                </>
+              )}
+              <Button 
+                onClick={() => setIsAddFeedbackModalOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Feedback
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -583,6 +689,14 @@ export function FeedbackManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]">
+                    <Checkbox
+                      checked={allPageItemsSelected}
+                      onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                      aria-label="Select all feedback on this page"
+                      className={somePageItemsSelected && !allPageItemsSelected ? 'data-[state=checked]:bg-primary/50' : ''}
+                    />
+                  </TableHead>
                   <TableHead className="w-[50px]">Type</TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/80 transition-colors"
@@ -657,8 +771,16 @@ export function FeedbackManagement() {
                 {filteredFeedback.map((item) => {
                   const categoryInfo = getCategoryInfo(item.category);
                   const CategoryIcon = getIconComponent(categoryInfo.icon);
+                  const isSelected = selectedIds.has(item.id);
                   return (
-                    <TableRow key={item.id} className="hover:bg-muted/50">
+                    <TableRow key={item.id} className={`hover:bg-muted/50 ${isSelected ? 'bg-muted/30' : ''}`}>
+                      <TableCell>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => handleSelectOne(item.id, !!checked)}
+                          aria-label={`Select feedback: ${item.subject || item.message.substring(0, 50)}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center">
                           <CategoryIcon className="h-4 w-4 text-gray-600" />

@@ -19,6 +19,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // We'll collect cookies to set on the response
+    const cookiesToSet: Array<{ name: string; value: string; options: any }> = [];
+    
     // Create server client with cookie handling for authentication
     const cookieStore = await cookies();
     const authClient = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -26,14 +29,11 @@ export async function POST(request: NextRequest) {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
-          } catch {
-            // Server Component context - ignore
-          }
+        setAll(newCookies) {
+          // Collect cookies to be set on the response
+          newCookies.forEach((cookie) => {
+            cookiesToSet.push(cookie);
+          });
         },
       },
     });
@@ -72,6 +72,9 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
+    
+    console.log('[Auth Login] Supabase auth successful, session established');
+    console.log('[Auth Login] Cookies to set:', cookiesToSet.length);
     
     // Update last_login and get user profile data from our users table
     const now = new Date().toISOString();
@@ -140,11 +143,21 @@ export async function POST(request: NextRequest) {
       console.error('[Auth Login] Failed to log login event:', logError);
     }
     
-    return NextResponse.json({ 
+    // Create response and set cookies on it
+    const response = NextResponse.json({ 
       success: true, 
       user,
       message: 'Login successful' 
     });
+    
+    // Set all Supabase session cookies on the response
+    for (const cookie of cookiesToSet) {
+      response.cookies.set(cookie.name, cookie.value, cookie.options);
+    }
+    
+    console.log('[Auth Login] Set', cookiesToSet.length, 'cookies on response');
+    
+    return response;
     
   } catch (error) {
     console.error('[Auth Login] Error:', error);
