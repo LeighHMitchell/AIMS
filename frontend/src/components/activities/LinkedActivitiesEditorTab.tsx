@@ -85,6 +85,11 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const [showExternalModal, setShowExternalModal] = useState(false);
+  
+  // Graph visualization state
+  const [graphData, setGraphData] = useState<any>(null);
+  const [graphDepth, setGraphDepth] = useState<'1' | '2' | 'all'>('1');
+  const [graphLoading, setGraphLoading] = useState(false);
 
   // Fetch current activity details
   const fetchCurrentActivity = useCallback(async () => {
@@ -103,6 +108,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
         id: data.id,
         title: data.title_narrative || data.title || 'Untitled Activity',
         iatiIdentifier: data.iati_identifier || data.iatiIdentifier || '',
+        otherIdentifier: data.other_identifier || data.otherIdentifier || '',
         status: data.activity_status || data.activityStatus || '',
         organizationName: data.created_by_org_name || data.organizationName || ''
       });
@@ -140,10 +146,43 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     }
   }, [activityId]);
 
+  // Fetch graph data for multi-level visualization
+  const fetchGraphData = useCallback(async (depth: '1' | '2' | 'all') => {
+    if (!activityId) return;
+    
+    setGraphLoading(true);
+    try {
+      const response = await fetch(`/api/activities/${activityId}/linked/graph?depth=${depth}`);
+      if (!response.ok) throw new Error('Failed to fetch graph data');
+      
+      const data = await response.json();
+      setGraphData(data);
+    } catch (error: any) {
+      console.error('Error fetching graph data:', error);
+      // Fall back to null - component will use linkedActivities instead
+      setGraphData(null);
+    } finally {
+      setGraphLoading(false);
+    }
+  }, [activityId]);
+
+  // Handle depth change
+  const handleDepthChange = useCallback((newDepth: '1' | '2' | 'all') => {
+    setGraphDepth(newDepth);
+    fetchGraphData(newDepth);
+  }, [fetchGraphData]);
+
   useEffect(() => {
     fetchCurrentActivity();
     fetchLinkedActivities();
   }, [fetchCurrentActivity, fetchLinkedActivities]);
+
+  // Fetch graph data when linked activities change or on initial load
+  useEffect(() => {
+    if (linkedActivities.length > 0) {
+      fetchGraphData(graphDepth);
+    }
+  }, [linkedActivities, graphDepth, fetchGraphData]);
 
   // Search activities with debounce
   const handleSearch = useCallback((query: string) => {
@@ -327,15 +366,16 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     }
   };
 
-  // Get badge style for relationship type
+  // Get badge style for relationship type - using brand palette
+  // Palette: Primary Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8
   const getRelationshipBadgeStyle = (type: string) => {
     switch (type) {
-      case '1': return "border-purple-300 text-purple-700 bg-purple-50"; // Parent - Purple
-      case '2': return "border-blue-300 text-blue-700 bg-blue-50"; // Child - Blue
-      case '3': return "border-green-300 text-green-700 bg-green-50"; // Sibling - Green
-      case '4': return "border-orange-300 text-orange-700 bg-orange-50"; // Co-funded - Orange
-      case '5': return "border-teal-300 text-teal-700 bg-teal-50"; // Third Party - Teal
-      default: return "border-gray-300 text-gray-700 bg-gray-50"; // Default - Gray
+      case '1': return "border-[#dc2625]/30 text-[#dc2625] bg-[#dc2625]/10"; // Parent - Primary Scarlet
+      case '2': return "border-[#4c5568]/30 text-[#4c5568] bg-[#4c5568]/10"; // Child - Blue Slate
+      case '3': return "border-[#7b95a7]/40 text-[#4c5568] bg-[#7b95a7]/15"; // Sibling - Cool Steel
+      case '4': return "border-[#cfd0d5] text-[#4c5568] bg-[#cfd0d5]/40"; // Co-funded - Pale Slate
+      case '5': return "border-[#7b95a7]/30 text-[#4c5568] bg-[#f1f4f8]"; // Third Party - Platinum
+      default: return "border-[#cfd0d5] text-[#4c5568] bg-[#f1f4f8]"; // Default - Platinum
     }
   };
 
@@ -450,16 +490,22 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                               <span className="font-medium text-gray-900"> ({activity.acronym})</span>
                             )}
                           </h4>
-                          <div className="mt-1">
-                            <p className="text-xs text-gray-500 truncate">
-                              {[
-                                activity.otherIdentifier,
-                                activity.iatiIdentifier,
-                                activity.organizationName && activity.organizationAcronym 
-                                  ? `${activity.organizationName} (${activity.organizationAcronym})`
-                                  : activity.organizationName || (activity.organizationAcronym && `(${activity.organizationAcronym})`)
-                              ].filter(Boolean).join(' • ')}
-                            </p>
+                          <div className="mt-1 flex items-center gap-2 flex-wrap">
+                            {activity.iatiIdentifier && (
+                              <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                                {activity.iatiIdentifier}
+                              </code>
+                            )}
+                            {(activity.otherIdentifier || activity.organizationName || activity.organizationAcronym) && (
+                              <span className="text-xs text-gray-500 truncate">
+                                {[
+                                  activity.otherIdentifier,
+                                  activity.organizationName && activity.organizationAcronym 
+                                    ? `${activity.organizationName} (${activity.organizationAcronym})`
+                                    : activity.organizationName || (activity.organizationAcronym && `(${activity.organizationAcronym})`)
+                                ].filter(Boolean).join(' • ')}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -643,6 +689,10 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
               <LinkedActivitiesGraph
                 currentActivity={currentActivity}
                 linkedActivities={linkedActivities}
+                graphData={graphData}
+                depth={graphDepth}
+                onDepthChange={handleDepthChange}
+                loading={graphLoading}
               />
             </div>
           </div>
