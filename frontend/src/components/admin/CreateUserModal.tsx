@@ -17,7 +17,8 @@ import { AddressSearch, AddressComponents } from "@/components/ui/address-search
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload"
 import { User, UserRole, USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { Organization } from "@/types/user"
-import { Eye, EyeOff, Copy, RefreshCw, UserPlus, Key, AlertCircle, CheckCircle, Loader2, Lock, Unlock } from "lucide-react"
+import { Eye, EyeOff, Copy, RefreshCw, UserPlus, Key, AlertCircle, CheckCircle, Loader2, Lock, Unlock, HelpCircle } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { LockedField } from "@/components/ui/locked-field"
 import { OrganizationDropdownWithLogo, OrganizationWithLogo } from "@/components/ui/organization-dropdown-with-logo"
@@ -552,7 +553,19 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
             </div>
             
             <div>
-              <Label htmlFor="organization">Organization</Label>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Label htmlFor="organization" className="mb-0">Organization</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-[280px]">
+                      <p>The organization this user belongs to or works for. This determines what activities and data the user can access.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <OrganizationCombobox
                 organizations={organizations?.map(org => ({
                   id: org.id,
@@ -580,7 +593,19 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
 
             {/* Reported by Organization Dropdown */}
             <div>
-              <Label htmlFor="reportedByOrg">Reported by Organization</Label>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Label htmlFor="reportedByOrg" className="mb-0">Reported by Organization</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-[280px]">
+                      <p>The organization that registered this user in the system. This may differ from the user's employer if one organization creates accounts on behalf of another.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <OrganizationDropdownWithLogo
                 organizations={organizations?.map(org => ({
                   id: org.id,

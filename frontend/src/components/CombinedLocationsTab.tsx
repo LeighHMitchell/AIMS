@@ -140,6 +140,18 @@ export default function CombinedLocationsTab({
     return countries.length > 0 || regions.length > 0;
   }, [countries, regions]);
 
+  // Derive suggested regions from Activity Sites locations
+  // These will be auto-added to the Subnational Allocation tab with 0%
+  const suggestedRegions = useMemo(() => {
+    const regions = new Set<string>();
+    currentLocations.forEach(loc => {
+      if (loc.state_region_name) {
+        regions.add(loc.state_region_name);
+      }
+    });
+    return Array.from(regions);
+  }, [currentLocations]);
+
   // Update parent when subnational data changes
   const handleSubnationalDataChange = (breakdowns: Record<string, number>) => {
     setSubnationalBreakdowns(breakdowns);
@@ -214,6 +226,7 @@ export default function CombinedLocationsTab({
             activityId={activityId}
             canEdit={canEdit}
             onDataChange={handleSubnationalDataChange}
+            suggestedRegions={suggestedRegions}
           />
         </TabsContent>
 

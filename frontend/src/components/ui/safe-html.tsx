@@ -54,17 +54,20 @@ export const SafeHtml = forwardRef<HTMLElement, SafeHtmlProps>(({
   }
 
   // Base styles for HTML content rendering
+  // Using [&_element] to target nested elements, not just direct children
   const baseStyles = cn(
     // Prose-like styling for rendered HTML
-    '[&>p]:mb-2 [&>p:last-child]:mb-0',
-    '[&>ul]:list-disc [&>ul]:ml-4 [&>ul]:mb-2',
-    '[&>ol]:list-decimal [&>ol]:ml-4 [&>ol]:mb-2',
-    '[&>li]:mb-1',
-    '[&>h1]:text-xl [&>h1]:font-bold [&>h1]:mb-2',
-    '[&>h2]:text-lg [&>h2]:font-bold [&>h2]:mb-2',
-    '[&>h3]:text-base [&>h3]:font-semibold [&>h3]:mb-2',
-    '[&>blockquote]:border-l-4 [&>blockquote]:border-slate-300 [&>blockquote]:pl-4 [&>blockquote]:italic',
-    '[&>a]:text-blue-600 [&>a]:underline [&>a]:hover:text-blue-800',
+    '[&_p]:mb-2 [&_p:last-child]:mb-0',
+    '[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-2 [&_ul]:ml-0',
+    '[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-2 [&_ol]:ml-0',
+    '[&_li]:mb-1 [&_li]:pl-1',
+    '[&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-2',
+    '[&_h2]:text-lg [&_h2]:font-bold [&_h2]:mb-2',
+    '[&_h3]:text-base [&_h3]:font-semibold [&_h3]:mb-2',
+    '[&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_blockquote]:italic',
+    '[&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-800',
+    '[&_strong]:font-semibold [&_b]:font-semibold',
+    '[&_em]:italic [&_i]:italic',
     className
   );
 

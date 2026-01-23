@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -127,10 +128,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get admin client for auth operations (requires service role key)
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'Admin client not configured' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     
-    // Create auth user first
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    console.log('[AIMS] Creating user with email:', body.email);
+    
+    // Check if user with this email already exists in the users table (use admin client to bypass RLS)
+    const { data: existingUsers, error: checkError } = await supabaseAdmin
+      .from('users')
+      .select('id, email')
+      .eq('email', body.email);
+    
+    console.log('[AIMS] Email check result:', { 
+      email: body.email,
+      existingUsers, 
+      checkError,
+      count: existingUsers?.length 
+    });
+    
+    if (existingUsers && existingUsers.length > 0) {
+      console.log('[AIMS] User profile already exists with email:', body.email, 'ID:', existingUsers[0].id);
+      return NextResponse.json(
+        { error: 'A user with this email address already exists' },
+        { status: 409 } // Conflict
+      );
+    }
+    
+    // Create auth user first (using admin client with service role key)
+    // Note: createUser will fail with an error if the email is already registered
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
       password: body.password || `TempPass${Date.now()}!`,
       email_confirm: true,
@@ -138,15 +172,30 @@ export async function POST(request: NextRequest) {
     
     if (authError) {
       console.error('[AIMS] Error creating auth user:', authError);
+      // Check if auth user already exists (email already registered)
+      if (authError.message?.includes('already been registered') || 
+          authError.message?.includes('already exists') ||
+          authError.message?.includes('unique constraint') ||
+          authError.code === 'email_exists') {
+        return NextResponse.json(
+          { error: 'A user with this email address already exists. The previous user may not have been fully deleted - please contact an administrator.' },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { error: authError.message },
         { status: 400 }
       );
     }
     
-    // Create user profile with all available fields
+    console.log('[AIMS] Created auth user with ID:', authData.user.id);
+    
+    // Note: A database trigger (handle_new_auth_user) automatically creates a basic profile
+    // when an auth user is created. We need to UPDATE that profile with the full data,
+    // not INSERT a new one.
+    
+    // Build the profile update data
     const userProfileData: any = {
-      id: authData.user.id,
       email: body.email,
       first_name: body.first_name || '',
       last_name: body.last_name || '',
@@ -154,11 +203,10 @@ export async function POST(request: NextRequest) {
       organization_id: body.organization_id || null,
       organisation: body.organisation || null,
       department: body.department || null,
-      job_title: body.job_title || null, // Position maps to job_title
+      job_title: body.job_title || null,
       telephone: body.telephone || null,
       website: body.website || null,
       mailing_address: body.mailing_address || null,
-      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
 
@@ -180,16 +228,18 @@ export async function POST(request: NextRequest) {
     if (body.country !== undefined) userProfileData.country = body.country
     if (body.postal_code !== undefined) userProfileData.postal_code = body.postal_code
 
-    const { data, error } = await supabase
+    // Update the profile that was auto-created by the database trigger
+    const { data, error } = await supabaseAdmin
       .from('users')
-      .insert(userProfileData)
+      .update(userProfileData)
+      .eq('id', authData.user.id)
       .select()
       .single();
     
     if (error) {
-      console.error('[AIMS] Error creating user profile:', error);
-      // Clean up auth user if profile creation fails
-      await supabase.auth.admin.deleteUser(authData.user.id);
+      console.error('[AIMS] Error updating user profile:', error);
+      // Clean up auth user if profile update fails (using admin client)
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json(
         { error: error.message },
         { status: 400 }
@@ -390,6 +440,15 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Get admin client for auth operations (requires service role key)
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'Admin client not configured' },
+        { status: 500 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
     
@@ -426,15 +485,24 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    // Delete auth user
-    const { error: authError } = await supabase.auth.admin.deleteUser(id);
+    // Delete auth user (using admin client with service role key)
+    console.log('[AIMS] Attempting to delete auth user with ID:', id);
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
     
     if (authError) {
       console.error('[AIMS] Error deleting auth user:', authError);
-      // Profile already deleted, so we continue
+      console.error('[AIMS] Auth deletion failed for user ID:', id, '- Error:', authError.message);
+      // Return error instead of silently continuing
+      return NextResponse.json(
+        { 
+          error: `User profile deleted but failed to delete authentication record: ${authError.message}. Please contact an administrator.`,
+          partialSuccess: true 
+        },
+        { status: 500 }
+      );
     }
     
-    console.log('[AIMS] Deleted user in Supabase');
+    console.log('[AIMS] Successfully deleted user (profile + auth) with ID:', id);
     return NextResponse.json({ success: true });
     
   } catch (error) {

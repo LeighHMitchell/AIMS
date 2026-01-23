@@ -33,12 +33,14 @@ interface EnhancedSubnationalBreakdownProps {
   activityId: string
   canEdit?: boolean
   onDataChange?: (breakdowns: Record<string, number>) => void
+  suggestedRegions?: string[]  // Regions from Activity Sites to auto-add
 }
 
 export function EnhancedSubnationalBreakdown({ 
   activityId, 
   canEdit = true,
-  onDataChange 
+  onDataChange,
+  suggestedRegions = []
 }: EnhancedSubnationalBreakdownProps) {
   const [entries, setEntries] = useState<BreakdownEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,6 +50,9 @@ export function EnhancedSubnationalBreakdown({
   // Track if initial load is complete and if user has made changes
   const isInitialLoadRef = useRef(true)
   const hasUserChangedDataRef = useRef(false)
+  
+  // Track which suggested regions have been processed to avoid re-adding
+  const processedSuggestedRegionsRef = useRef<Set<string>>(new Set())
 
   // Create flattened list of all administrative units (states/regions/union territories only)
   const allAdminUnits = useMemo(() => {
@@ -268,6 +273,48 @@ export function EnhancedSubnationalBreakdown({
     
     return () => clearTimeout(timeout)
   }, [activityId, loadData])
+
+  // Handle suggested regions from Activity Sites
+  // This adds states/regions to the breakdown when locations are added
+  useEffect(() => {
+    if (loading || !suggestedRegions?.length) return
+    
+    // Find regions that need to be added (not already selected and not already processed)
+    const regionsToAdd: string[] = []
+    
+    suggestedRegions.forEach(regionName => {
+      // Skip if we've already processed this region name
+      if (processedSuggestedRegionsRef.current.has(regionName)) return
+      
+      const adminUnit = allAdminUnits.find(u => u.name === regionName)
+      if (adminUnit && !selectedUnits.includes(adminUnit.id)) {
+        regionsToAdd.push(adminUnit.id)
+        // Mark as processed
+        processedSuggestedRegionsRef.current.add(regionName)
+      }
+    })
+    
+    // Add all missing regions at once
+    if (regionsToAdd.length > 0) {
+      console.log('[EnhancedSubnationalBreakdown] Auto-adding regions from Activity Sites:', regionsToAdd)
+      
+      setSelectedUnits(prev => [...prev, ...regionsToAdd])
+      setEntries(prev => {
+        const newEntries = [...prev]
+        regionsToAdd.forEach(unitId => {
+          const adminUnit = allAdminUnits.find(unit => unit.id === unitId)
+          if (adminUnit) {
+            newEntries.push({
+              id: `entry-${Date.now()}-${unitId}`,
+              adminUnit,
+              percentage: 0
+            })
+          }
+        })
+        return newEntries
+      })
+    }
+  }, [suggestedRegions, loading, allAdminUnits, selectedUnits])
 
   // Auto-save function
   const autoSave = useCallback(async () => {

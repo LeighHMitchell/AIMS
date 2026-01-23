@@ -1820,47 +1820,53 @@ export default function ActivityBudgetsTab({
           )}
           {/* Render filters externally if callback provided */}
           {renderFilters && hideSummaryCards && budgets.length > 0 && !loading && renderFilters(
-            <div className="flex items-center gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px] h-9">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="indicative">
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                      <span>Indicative</span>
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="committed">
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                      <span>Committed</span>
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[140px] h-9">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="original">
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                      <span>Original</span>
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="revised">
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
-                      <span>Revised</span>
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-end gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="indicative">
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                        <span>Indicative</span>
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="committed">
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                        <span>Committed</span>
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground">Type</label>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="original">
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                        <span>Original</span>
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="revised">
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                        <span>Revised</span>
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               {expandedRows.size > 0 ? (
                 <Button
                   variant="outline"

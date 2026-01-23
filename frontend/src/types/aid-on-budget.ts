@@ -464,7 +464,8 @@ export interface EnhancedAidOnBudgetSummary {
   domesticExecutionRate: number;
 
   // Combined metrics
-  totalSpending: number; // domestic expenditure + on-budget aid
+  totalSpending: number; // domestic expenditure + on-budget aid + budget support (on-budget total)
+  grandTotal: number; // domestic expenditure + all aid + budget support (sum of all)
   aidShareOfBudget: number; // on-budget aid / (domestic + on-budget aid)
   onBudgetPercentage: number; // on-budget aid / total aid
 

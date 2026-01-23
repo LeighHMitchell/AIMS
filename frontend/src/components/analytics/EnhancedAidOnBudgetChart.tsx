@@ -243,22 +243,25 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       "Domestic Expenditure (USD)",
       "On-Budget Aid (USD)",
       "Off-Budget Aid (USD)",
-      "Total (USD)",
-      "On-Budget %"
+      "On-Budget Total (USD)",
+      "Grand Total (USD)",
+      "Aid Share %"
     ]);
 
     // Data rows
     data.chartData.forEach((sector) => {
-      const total = sector.domesticExpenditure + sector.onBudgetAid + sector.offBudgetAid;
-      const onBudgetPct = total > 0 ? ((sector.onBudgetAid / total) * 100).toFixed(1) : "0";
+      const onBudgetTotal = sector.domesticExpenditure + sector.onBudgetAid;
+      const grandTotal = sector.domesticExpenditure + sector.onBudgetAid + sector.offBudgetAid;
+      const aidSharePct = grandTotal > 0 ? (((sector.onBudgetAid + sector.offBudgetAid) / grandTotal) * 100).toFixed(1) : "0";
       rows.push([
         sector.code,
         sector.name,
         sector.domesticExpenditure.toString(),
         sector.onBudgetAid.toString(),
         sector.offBudgetAid.toString(),
-        total.toString(),
-        onBudgetPct
+        onBudgetTotal.toString(),
+        grandTotal.toString(),
+        aidSharePct
       ]);
     });
 
@@ -1277,7 +1280,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         {viewMode === "table" && (
           <div className="space-y-4">
             {activitiesLoading && !data?.chartData?.sectorData ? (
-              <TableSkeleton rows={8} columns={7} />
+              <TableSkeleton rows={8} columns={8} />
             ) : data?.chartData?.sectorData ? (
               <div className="border rounded-lg overflow-hidden">
                 <Table>
@@ -1288,7 +1291,8 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                       <TableHead className="font-semibold text-right">Domestic Spending</TableHead>
                       <TableHead className="font-semibold text-right">Aid on Budget</TableHead>
                       <TableHead className="font-semibold text-right">Aid off Budget</TableHead>
-                      <TableHead className="font-semibold text-right">Total</TableHead>
+                      <TableHead className="font-semibold text-right">On-Budget Total</TableHead>
+                      <TableHead className="font-semibold text-right">Grand Total</TableHead>
                       <TableHead className="font-semibold text-right">Aid Share</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1296,7 +1300,8 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                     {data.chartData.sectorData
                       .filter(s => s.domesticExpenditure > 0 || s.onBudgetAid > 0 || s.offBudgetAid > 0)
                       .map((sector) => {
-                        const total = sector.domesticExpenditure + sector.onBudgetAid + sector.offBudgetAid;
+                        const onBudgetTotal = sector.domesticExpenditure + sector.onBudgetAid;
+                        const grandTotal = sector.domesticExpenditure + sector.onBudgetAid + sector.offBudgetAid;
                         const hasAidData = sector.onBudgetAid > 0 || sector.offBudgetAid > 0;
                         const isExpanded = expandedClassifications.has(sector.code);
                         // Show chevron immediately if there's any aid data (don't wait for activities to load)
@@ -1337,10 +1342,13 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                 {formatCurrency(sector.offBudgetAid)}
                               </TableCell>
                               <TableCell className="text-right font-semibold">
-                                {formatCurrency(total)}
+                                {formatCurrency(onBudgetTotal)}
+                              </TableCell>
+                              <TableCell className="text-right font-semibold">
+                                {formatCurrency(grandTotal)}
                               </TableCell>
                               <TableCell className="text-right">
-                                {total > 0 ? ((sector.onBudgetAid / total) * 100).toFixed(1) : 0}%
+                                {grandTotal > 0 ? (((sector.onBudgetAid + sector.offBudgetAid) / grandTotal) * 100).toFixed(1) : 0}%
                               </TableCell>
                             </TableRow>
 
@@ -1376,6 +1384,9 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                   {formatCurrency(activity.offBudgetAmount)}
                                 </TableCell>
                                 <TableCell className="text-right text-sm font-medium">
+                                  {formatCurrency(activity.onBudgetAmount)}
+                                </TableCell>
+                                <TableCell className="text-right text-sm font-medium">
                                   {formatCurrency(activity.totalDisbursements)}
                                 </TableCell>
                                 <TableCell></TableCell>
@@ -1384,32 +1395,55 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                           </React.Fragment>
                         );
                       })}
-                    {/* Totals Row */}
-                    {summary && (
-                      <TableRow className="bg-slate-100 font-semibold">
-                        <TableCell></TableCell>
-                        <TableCell>Total</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(summary.totalDomesticExpenditure)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(summary.totalOnBudgetAid + summary.totalPartialAid)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(summary.totalOffBudgetAid + summary.totalUnknownAid)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(summary.totalSpending)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {summary.aidShareOfBudget.toFixed(1)}%
-                        </TableCell>
-                      </TableRow>
-                    )}
+                    {/* Totals Row - COFOG 01-10 only, excludes Unclassified (99) */}
+                    {summary && (() => {
+                      // Calculate COFOG-only totals (exclude code 99)
+                      const cofogData = data.chartData.sectorData.filter(s => 
+                        s.code !== "99" && (s.domesticExpenditure > 0 || s.onBudgetAid > 0 || s.offBudgetAid > 0)
+                      );
+                      const cofogDomestic = cofogData.reduce((sum, s) => sum + s.domesticExpenditure, 0);
+                      const cofogOnBudget = cofogData.reduce((sum, s) => sum + s.onBudgetAid, 0);
+                      const cofogOffBudget = cofogData.reduce((sum, s) => sum + s.offBudgetAid, 0);
+                      const cofogOnBudgetTotal = cofogDomestic + cofogOnBudget;
+                      const cofogGrandTotal = cofogDomestic + cofogOnBudget + cofogOffBudget;
+                      const cofogAidShare = cofogGrandTotal > 0 
+                        ? ((cofogOnBudget + cofogOffBudget) / cofogGrandTotal) * 100 
+                        : 0;
+
+                      return (
+                        <TableRow className="bg-slate-100 font-semibold">
+                          <TableCell></TableCell>
+                          <TableCell>Total (COFOG 01–10 only)</TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(cofogDomestic)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(cofogOnBudget)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(cofogOffBudget)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(cofogOnBudgetTotal)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(cofogGrandTotal)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {cofogAidShare.toFixed(1)}%
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })()}
                   </TableBody>
                 </Table>
-                <div className="p-3 bg-slate-50 border-t text-xs text-gray-600">
-                  <span className="font-medium">Click on any classification row with activities to expand and see individual activities.</span>
+                <div className="p-3 bg-slate-50 border-t text-xs text-gray-600 space-y-2">
+                  <p><span className="font-medium">Click on any classification row with activities to expand and see individual activities.</span></p>
+                  {data.chartData.sectorData.some(s => s.code === "99") && (
+                    <p className="text-gray-500 italic">
+                      Note: Spending classified as &apos;Unclassified / Budget Support&apos; reflects centralised resources and external assistance that cannot be reliably allocated to COFOG functions. These amounts are shown separately to preserve the integrity of functional expenditure analysis.
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (

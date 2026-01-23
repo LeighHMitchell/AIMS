@@ -343,9 +343,15 @@ export async function GET(request: NextRequest) {
 
     // Build classification-level data
     const classificationData: EnhancedChartDataPoint[] = (classifications || []).map((c) => {
-      // Find domestic data for this classification
-      const domestic = (domesticData || []).find(
+      // Aggregate domestic data for this classification across all matching years
+      const domesticForClassification = (domesticData || []).filter(
         (d) => d.budget_classification_id === c.id
+      );
+      const domesticBudget = domesticForClassification.reduce(
+        (sum, d) => sum + (Number(d.budget_amount) || 0), 0
+      );
+      const domesticExp = domesticForClassification.reduce(
+        (sum, d) => sum + (Number(d.expenditure_amount) || 0), 0
       );
 
       // Get the calculated aid totals for this classification
@@ -357,7 +363,6 @@ export async function GET(request: NextRequest) {
       };
 
       const totalClassificationAid = aidTotals.onBudgetAid + aidTotals.offBudgetAid + aidTotals.partialAid + aidTotals.unknownAid;
-      const domesticExp = Number(domestic?.expenditure_amount) || 0;
       const totalSpending = domesticExp + aidTotals.onBudgetAid; // Only on-budget aid contributes to "total spending"
 
       return {
@@ -365,7 +370,7 @@ export async function GET(request: NextRequest) {
         code: c.code,
         classificationType: c.classification_type,
         level: c.level,
-        domesticBudget: Number(domestic?.budget_amount) || 0,
+        domesticBudget: domesticBudget,
         domesticExpenditure: domesticExp,
         onBudgetAid: aidTotals.onBudgetAid,
         offBudgetAid: aidTotals.offBudgetAid,
@@ -380,6 +385,40 @@ export async function GET(request: NextRequest) {
     // Calculate summary
     // Note: Budget Support is counted separately and NOT included in totalAid
     const totalAid = totalOnBudgetAid + totalOffBudgetAid + totalPartialAid + totalUnknownAid;
+
+    // Calculate totals from classification rows to find unclassified amounts
+    const rowTotalDomestic = classificationData.reduce((sum, c) => sum + c.domesticExpenditure, 0);
+    const rowTotalOnBudget = classificationData.reduce((sum, c) => sum + c.onBudgetAid, 0);
+    const rowTotalOffBudget = classificationData.reduce((sum, c) => sum + c.offBudgetAid, 0);
+
+    // Calculate unclassified amounts (difference between summary totals and row totals)
+    // Include Budget Support in on-budget unclassified since it's tracked separately
+    const unclassifiedDomestic = Math.max(0, totalDomesticExpenditure - rowTotalDomestic);
+    const unclassifiedOnBudget = Math.max(0, (totalOnBudgetAid + totalPartialAid) - rowTotalOnBudget + totalBudgetSupport);
+    const unclassifiedOffBudget = Math.max(0, (totalOffBudgetAid + totalUnknownAid) - rowTotalOffBudget);
+
+    // Add unclassified row if there are any unclassified amounts
+    if (unclassifiedDomestic > 0 || unclassifiedOnBudget > 0 || unclassifiedOffBudget > 0) {
+      const unclassifiedGrandTotal = unclassifiedDomestic + unclassifiedOnBudget + unclassifiedOffBudget;
+      const unclassifiedOnBudgetTotal = unclassifiedDomestic + unclassifiedOnBudget;
+      classificationData.push({
+        name: "Unclassified / Budget Support",
+        code: "99",
+        classificationType: classificationType as any,
+        level: 1,
+        domesticBudget: 0,
+        domesticExpenditure: unclassifiedDomestic,
+        onBudgetAid: unclassifiedOnBudget,
+        offBudgetAid: unclassifiedOffBudget,
+        partialAid: 0,
+        unknownAid: 0,
+        totalAid: unclassifiedOnBudget + unclassifiedOffBudget,
+        totalSpending: unclassifiedOnBudgetTotal,
+        aidShare: unclassifiedGrandTotal > 0 
+          ? Math.round(((unclassifiedOnBudget + unclassifiedOffBudget) / unclassifiedGrandTotal) * 10000) / 100 
+          : 0,
+      });
+    }
     const effectiveOnBudget = totalOnBudgetAid + totalPartialAid;
 
     const summary: EnhancedAidOnBudgetSummary = {
@@ -396,10 +435,11 @@ export async function GET(request: NextRequest) {
           ? Math.round((totalDomesticExpenditure / totalDomesticBudget) * 10000) / 100
           : 0,
       totalSpending: totalDomesticExpenditure + effectiveOnBudget + totalBudgetSupport,
+      grandTotal: totalDomesticExpenditure + totalAid + totalBudgetSupport,
       aidShareOfBudget:
-        totalDomesticExpenditure + effectiveOnBudget + totalBudgetSupport > 0
+        (totalDomesticExpenditure + totalAid + totalBudgetSupport) > 0
           ? Math.round(
-              ((effectiveOnBudget + totalBudgetSupport) / (totalDomesticExpenditure + effectiveOnBudget + totalBudgetSupport)) * 10000
+              ((totalAid + totalBudgetSupport) / (totalDomesticExpenditure + totalAid + totalBudgetSupport)) * 10000
             ) / 100
           : 0,
       onBudgetPercentage: totalAid > 0 ? Math.round((effectiveOnBudget / totalAid) * 10000) / 100 : 0,

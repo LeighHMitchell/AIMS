@@ -277,7 +277,7 @@ export function OrganizationCombobox({
         sideOffset={4}
         className="p-0 w-[600px]"
       >
-        <Command shouldFilter={false}>
+        <Command>
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <input

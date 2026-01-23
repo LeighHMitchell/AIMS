@@ -196,6 +196,15 @@ export default function FAQPage() {
   }
 
   const handleDelete = async (id: string) => {
+    // Confirm before deleting
+    if (!window.confirm('Are you sure you want to delete this FAQ? This action cannot be undone.')) {
+      return
+    }
+
+    // Optimistically remove from UI
+    const previousFaqs = [...faqs]
+    setFaqs(faqs.filter(faq => faq.id !== id))
+
     try {
       const response = await fetch(`/api/faq/${id}`, {
         method: 'DELETE'
@@ -207,8 +216,13 @@ export default function FAQPage() {
       }
 
       toast.success('FAQ deleted successfully')
-      fetchFAQs()
+      // Optionally refresh in background to sync any other changes
+      fetchFAQs().catch(() => {
+        // Ignore refresh errors - the delete succeeded
+      })
     } catch (err) {
+      // Restore the FAQ if delete failed
+      setFaqs(previousFaqs)
       toast.error(err instanceof Error ? err.message : 'Failed to delete FAQ')
     }
   }

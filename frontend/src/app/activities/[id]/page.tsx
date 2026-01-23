@@ -808,8 +808,12 @@ export default function ActivityDetailPage() {
     }
   }, [plannedDisbursements])
 
-  // Note: Transaction state is already handled in the activity useEffect above (line 322)
-  // No need for a separate useEffect since transactions come from activity.transactions
+  // Auto-close transactions section if no transactions
+  useEffect(() => {
+    if (activity?.transactions !== undefined) {
+      setIsTransactionsOpen((activity.transactions?.length || 0) > 0)
+    }
+  }, [activity?.transactions])
 
   const fetchActivity = async (showLoading = true) => {
     if (!params?.id) return;
@@ -3089,21 +3093,27 @@ export default function ActivityDetailPage() {
                 {activeTab === "finances" && (
                   <div className="space-y-6">
                   {/* Budgets */}
-                  <div className="border rounded-lg">
+                  <div className={`border rounded-lg ${budgets !== undefined && budgets.length === 0 ? 'opacity-50' : ''}`}>
                     <div className="px-4 py-3 border-b border-slate-200">
                       <div className="flex items-start justify-between gap-4">
                         <button
-                          onClick={() => setIsBudgetsOpen(!isBudgetsOpen)}
-                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
+                          onClick={() => {
+                            const hasBudgets = budgets === undefined || budgets.length > 0;
+                            if (hasBudgets) setIsBudgetsOpen(!isBudgetsOpen);
+                          }}
+                          className={`flex items-center gap-2 text-left transition-colors ${budgets !== undefined && budgets.length === 0 ? 'cursor-not-allowed' : 'hover:text-slate-900'}`}
                           aria-label={isBudgetsOpen ? 'Collapse Budgets' : 'Expand Budgets'}
+                          disabled={budgets !== undefined && budgets.length === 0}
                         >
                           {isBudgetsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
                           <div>
                             <p className="text-lg font-bold text-slate-900">Budgets</p>
-                            <p className="text-xs text-slate-500 mt-1">Activity budget allocations by period</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {budgets !== undefined && budgets.length === 0 ? 'No budgets recorded' : 'Activity budget allocations by period'}
+                            </p>
                           </div>
                         </button>
-                        {isBudgetsOpen && (
+                        {isBudgetsOpen && budgets && budgets.length > 0 && (
                           <div id="budget-filters-container" />
                         )}
                       </div>
@@ -3135,21 +3145,27 @@ export default function ActivityDetailPage() {
                   </div>
 
                   {/* Planned Disbursements */}
-                  <div className="border rounded-lg">
+                  <div className={`border rounded-lg ${plannedDisbursements !== undefined && plannedDisbursements.length === 0 ? 'opacity-50' : ''}`}>
                     <div className="px-4 py-3 border-b border-slate-200">
                       <div className="flex items-start justify-between gap-4">
                         <button
-                          onClick={() => setIsPlannedOpen(!isPlannedOpen)}
-                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
+                          onClick={() => {
+                            const hasPlanned = plannedDisbursements === undefined || plannedDisbursements.length > 0;
+                            if (hasPlanned) setIsPlannedOpen(!isPlannedOpen);
+                          }}
+                          className={`flex items-center gap-2 text-left transition-colors ${plannedDisbursements !== undefined && plannedDisbursements.length === 0 ? 'cursor-not-allowed' : 'hover:text-slate-900'}`}
                           aria-label={isPlannedOpen ? 'Collapse Planned Disbursements' : 'Expand Planned Disbursements'}
+                          disabled={plannedDisbursements !== undefined && plannedDisbursements.length === 0}
                         >
                           {isPlannedOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
                           <div>
                             <p className="text-lg font-bold text-slate-900">Planned Disbursements</p>
-                            <p className="text-xs text-slate-500 mt-1">Scheduled future disbursements</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {plannedDisbursements !== undefined && plannedDisbursements.length === 0 ? 'No planned disbursements recorded' : 'Scheduled future disbursements'}
+                            </p>
                           </div>
                         </button>
-                        {isPlannedOpen && (
+                        {isPlannedOpen && plannedDisbursements && plannedDisbursements.length > 0 && (
                           <div id="planned-filters-container" />
                         )}
                       </div>
@@ -3181,21 +3197,27 @@ export default function ActivityDetailPage() {
                   </div>
 
                   {/* Transactions */}
-                  <div className="border rounded-lg">
+                  <div className={`border rounded-lg ${activity.transactions !== undefined && activity.transactions.length === 0 ? 'opacity-50' : ''}`}>
                     <div className="px-4 py-3 border-b border-slate-200">
                       <div className="flex items-start justify-between gap-4">
                         <button
-                          onClick={() => setIsTransactionsOpen(!isTransactionsOpen)}
-                          className="flex items-center gap-2 text-left hover:text-slate-900 transition-colors"
+                          onClick={() => {
+                            const hasTransactions = activity.transactions === undefined || activity.transactions.length > 0;
+                            if (hasTransactions) setIsTransactionsOpen(!isTransactionsOpen);
+                          }}
+                          className={`flex items-center gap-2 text-left transition-colors ${activity.transactions !== undefined && activity.transactions.length === 0 ? 'cursor-not-allowed' : 'hover:text-slate-900'}`}
                           aria-label={isTransactionsOpen ? 'Collapse Transactions' : 'Expand Transactions'}
+                          disabled={activity.transactions !== undefined && activity.transactions.length === 0}
                         >
                           {isTransactionsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
                           <div>
                             <p className="text-lg font-bold text-slate-900">Transactions</p>
-                            <p className="text-xs text-slate-500 mt-1">Commitments, disbursements, and expenditures</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {activity.transactions !== undefined && activity.transactions.length === 0 ? 'No transactions recorded' : 'Commitments, disbursements, and expenditures'}
+                            </p>
                           </div>
                         </button>
-                        {isTransactionsOpen && (
+                        {isTransactionsOpen && activity.transactions && activity.transactions.length > 0 && (
                           <div id="transaction-filters-container" className="flex items-center gap-2 flex-wrap" />
                         )}
                       </div>
