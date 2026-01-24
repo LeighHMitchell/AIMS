@@ -125,6 +125,7 @@ export default function PartnersPage() {
   const [loadingOrgs, setLoadingOrgs] = useState<Set<string>>(new Set());
   const [loadingCountries, setLoadingCountries] = useState<Set<string>>(new Set());
   const [expandLevel, setExpandLevel] = useState<0 | 1 | 2>(0); // 0 = collapsed, 1 = orgs expanded, 2 = activities expanded
+  const [hideInactiveOrgs, setHideInactiveOrgs] = useState(false); // Hide orgs with no financial activity
 
   // Helper to fetch data for a specific transaction type
   const fetchDataForType = async (type: 'C' | 'D'): Promise<SummaryData> => {
@@ -390,17 +391,43 @@ export default function PartnersPage() {
     });
   };
 
-  // Filter organizations by search term
-  const filterOrganizations = (organizations: OrganizationMetrics[]) => {
-    if (!searchTerm) return organizations;
+  // Check if an organization has any financial activity
+  const hasFinancialActivity = (org: OrganizationMetrics): boolean => {
+    // Check if org has any reported activities or provider/receiver transactions
+    if ((org.reportedActivities || 0) > 0) return true;
+    if ((org.providerTransactionCount || 0) > 0) return true;
+    if ((org.receiverTransactionCount || 0) > 0) return true;
     
-    const term = searchTerm.toLowerCase();
-    return organizations.filter(org => 
-      org.name.toLowerCase().includes(term) ||
-      org.fullName.toLowerCase().includes(term) ||
-      org.acronym.toLowerCase().includes(term) ||
-      org.countryRepresented.toLowerCase().includes(term)
-    );
+    // Check if org has any financial values across years
+    const years = ['2022', '2023', '2024', '2025', '2026', '2027'];
+    for (const year of years) {
+      if ((org.financialData?.[year] || 0) > 0) return true;
+    }
+    
+    return false;
+  };
+
+  // Filter organizations by search term and activity status
+  const filterOrganizations = (organizations: OrganizationMetrics[]) => {
+    let filtered = organizations;
+    
+    // Filter by activity status if hideInactiveOrgs is enabled
+    if (hideInactiveOrgs) {
+      filtered = filtered.filter(org => hasFinancialActivity(org));
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(org => 
+        org.name.toLowerCase().includes(term) ||
+        org.fullName.toLowerCase().includes(term) ||
+        org.acronym.toLowerCase().includes(term) ||
+        org.countryRepresented.toLowerCase().includes(term)
+      );
+    }
+    
+    return filtered;
   };
 
   // Calculate metrics - now based on countries instead of organization types
@@ -1061,6 +1088,15 @@ export default function PartnersPage() {
                 >
                   {expandLevel === 2 ? 'Collapse Activities' : 'Collapse All'}
                 </Button>
+                <Button 
+                  variant={hideInactiveOrgs ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setHideInactiveOrgs(!hideInactiveOrgs)}
+                  title={hideInactiveOrgs ? "Show all organizations" : "Hide organizations with no financial activity"}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  {hideInactiveOrgs ? 'Show All' : 'Hide Inactive'}
+                </Button>
               </div>
             </div>
 
@@ -1173,7 +1209,9 @@ export default function PartnersPage() {
                 </Card>
 
                 {/* Institutional Group Cards - One for each group */}
-                {getOrganizationsByInstitutionalGroup().map((institutionalGroup) => (
+                {getOrganizationsByInstitutionalGroup()
+                  .filter(institutionalGroup => filterOrganizations(institutionalGroup.organizations).length > 0)
+                  .map((institutionalGroup) => (
                   <Card key={institutionalGroup.name} className="bg-white border border-gray-200">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg font-semibold text-gray-900">
@@ -1272,7 +1310,7 @@ export default function PartnersPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {sortOrganizations(institutionalGroup.organizations).map((org) => renderOrganizationRow(org))}
+                            {sortOrganizations(filterOrganizations(institutionalGroup.organizations)).map((org) => renderOrganizationRow(org))}
                           </tbody>
                         </table>
                       </div>
@@ -1281,7 +1319,7 @@ export default function PartnersPage() {
                 ))}
 
                 {/* Unassigned Organizations Card */}
-                {getUnassignedOrganizations().length > 0 && (
+                {filterOrganizations(getUnassignedOrganizations()).length > 0 && (
                   <Card className="bg-white border border-orange-200">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg font-semibold text-gray-900">
@@ -1380,7 +1418,7 @@ export default function PartnersPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {sortOrganizations(getUnassignedOrganizations()).map((org) => renderOrganizationRow(org))}
+                            {sortOrganizations(filterOrganizations(getUnassignedOrganizations())).map((org) => renderOrganizationRow(org))}
                           </tbody>
                         </table>
                       </div>
