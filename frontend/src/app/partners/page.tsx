@@ -733,9 +733,8 @@ export default function PartnersPage() {
     return rows;
   };
 
-  // Get Global/Regional organizations for separate display
-  // This includes all organizations mapped to institutional groups
-  const getGlobalOrganizations = () => {
+  // Get organizations grouped by institutional group for separate display
+  const getOrganizationsByInstitutionalGroup = (): { name: string; description: string; organizations: OrganizationMetrics[] }[] => {
     if (!summaryData || !summaryData.predefinedGroups) return [];
     
     // Get all groups that are institutional groups
@@ -743,12 +742,29 @@ export default function PartnersPage() {
       (country: GroupData) => isInstitutionalGroupCountry(country.name)
     );
     
-    // Flatten all organizations from institutional groups
+    // Map to display format with descriptions from INSTITUTIONAL_GROUPS
+    return institutionalGroups.map((group: GroupData) => {
+      // Find the matching institutional group definition for description
+      const institutionalGroupDef = INSTITUTIONAL_GROUPS.find(
+        ig => ig.name.toLowerCase() === group.name.toLowerCase()
+      );
+      
+      return {
+        name: group.name,
+        description: institutionalGroupDef?.description || `${group.name} organizations`,
+        organizations: group.organizations
+      };
+    }).filter(group => group.organizations.length > 0); // Only show groups with organizations
+  };
+
+  // Get Global/Regional organizations for separate display (flattened)
+  // This includes all organizations mapped to institutional groups
+  const getGlobalOrganizations = () => {
+    const groupedOrgs = getOrganizationsByInstitutionalGroup();
     const allGlobalOrgs: OrganizationMetrics[] = [];
-    institutionalGroups.forEach((group: GroupData) => {
+    groupedOrgs.forEach(group => {
       allGlobalOrgs.push(...group.organizations);
     });
-    
     return allGlobalOrgs;
   };
 
@@ -1156,15 +1172,15 @@ export default function PartnersPage() {
                   </CardContent>
                 </Card>
 
-                {/* Global/Regional Organizations Card */}
-                {getGlobalOrganizations().length > 0 && (
-                  <Card className="bg-white border border-gray-200">
+                {/* Institutional Group Cards - One for each group */}
+                {getOrganizationsByInstitutionalGroup().map((institutionalGroup) => (
+                  <Card key={institutionalGroup.name} className="bg-white border border-gray-200">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg font-semibold text-gray-900">
-                        Global & Regional Organizations
+                        {institutionalGroup.name}
                       </CardTitle>
                       <CardDescription className="text-gray-600">
-                        Multilateral organizations and global institutions
+                        {institutionalGroup.description}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -1256,13 +1272,13 @@ export default function PartnersPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {sortOrganizations(getGlobalOrganizations()).map((org) => renderOrganizationRow(org))}
+                            {sortOrganizations(institutionalGroup.organizations).map((org) => renderOrganizationRow(org))}
                           </tbody>
                         </table>
                       </div>
                     </CardContent>
                   </Card>
-                )}
+                ))}
 
                 {/* Unassigned Organizations Card */}
                 {getUnassignedOrganizations().length > 0 && (
