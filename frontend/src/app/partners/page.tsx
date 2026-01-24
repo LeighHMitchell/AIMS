@@ -574,6 +574,11 @@ export default function PartnersPage() {
       const filteredOrgs = filterOrganizations(country.organizations);
       const sortedOrgs = sortOrganizations(filteredOrgs);
 
+      // Skip country if all organizations are filtered out
+      if (hideInactiveOrgs && filteredOrgs.length === 0) {
+        return;
+      }
+
       // Country row
       rows.push(
         <tr key={country.id} className="border-b border-gray-200 hover:bg-gray-50 bg-gray-100">
@@ -693,7 +698,15 @@ export default function PartnersPage() {
 
           // Activity rows (if organization is expanded)
           if (isOrgExpanded) {
-            orgActivitiesList.forEach((activity: any) => {
+            // Filter activities if hideInactiveOrgs is enabled
+            const filteredActivities = hideInactiveOrgs 
+              ? orgActivitiesList.filter((activity: any) => {
+                  const years = ['2022', '2023', '2024', '2025', '2026', '2027'];
+                  return years.some(year => (activity.financialData?.[year] || 0) > 0);
+                })
+              : orgActivitiesList;
+
+            filteredActivities.forEach((activity: any) => {
               rows.push(
                 <tr key={`activity-${activity.id}`} className="hover:bg-gray-50">
                   <td className="py-2 px-2 pl-16">
@@ -874,7 +887,13 @@ export default function PartnersPage() {
             {formatCurrency(org.financialData['2027'])}
           </td>
         </tr>
-        {isOrgExpanded && orgActivitiesList.map((activity: any) => (
+        {isOrgExpanded && (hideInactiveOrgs 
+          ? orgActivitiesList.filter((activity: any) => {
+              const years = ['2022', '2023', '2024', '2025', '2026', '2027'];
+              return years.some(year => (activity.financialData?.[year] || 0) > 0);
+            })
+          : orgActivitiesList
+        ).map((activity: any) => (
           <tr key={`activity-${activity.id}`} className="hover:bg-gray-50">
             <td className="py-2 px-2 pl-16">
               <div className="flex items-center gap-2">
