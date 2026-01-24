@@ -149,7 +149,10 @@ export function DocumentThumbnail({
     renderAttemptedRef.current = true
 
     const renderPDF = async () => {
-      if (!canvasRef.current) return
+      if (!canvasRef.current) {
+        console.log('[PDF Preview] No canvas ref, skipping')
+        return
+      }
 
       try {
         setLoading(true)
@@ -158,13 +161,21 @@ export function DocumentThumbnail({
         // Get container dimensions or use defaults
         const containerWidth = containerRef.current?.clientWidth || width || 280
         const containerHeight = containerRef.current?.clientHeight || height || 180
+        console.log('[PDF Preview] Container dimensions:', containerWidth, 'x', containerHeight)
 
         // Dynamically import pdf.js
         console.log('[PDF Preview] Starting to load PDF:', url)
         
-        // Use dynamic import with the legacy build for better compatibility
-        const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
-        console.log('[PDF Preview] pdf.js loaded')
+        let pdfjs: any
+        try {
+          // Try the standard build first
+          pdfjs = await import('pdfjs-dist')
+          console.log('[PDF Preview] pdf.js standard build loaded')
+        } catch (importErr) {
+          console.log('[PDF Preview] Standard build failed, trying legacy:', importErr)
+          pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+          console.log('[PDF Preview] pdf.js legacy build loaded')
+        }
         
         // Disable worker - runs in main thread but more compatible
         pdfjs.GlobalWorkerOptions.workerSrc = ''
@@ -177,6 +188,7 @@ export function DocumentThumbnail({
           url: pdfUrl,
           disableWorker: true,
           isEvalSupported: false,
+          useSystemFonts: true,
         })
 
         const pdf = await loadingTask.promise
