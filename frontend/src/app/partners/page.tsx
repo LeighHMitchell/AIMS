@@ -98,6 +98,17 @@ export default function PartnersPage() {
   const router = useRouter();
   const { user } = useUser();
   
+  // Current year for determining actual vs planned disbursements
+  const currentYear = new Date().getFullYear();
+  
+  // Helper to get column label with actual/planned indicator
+  const getYearLabel = (year: number) => {
+    if (year <= currentYear) {
+      return `${year} (Actual)`;
+    }
+    return `${year} (Planned)`;
+  };
+  
   // UI state
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -1119,7 +1130,7 @@ export default function PartnersPage() {
                                 onClick={() => handleSort('2022')}
                                 className="flex items-center hover:text-gray-900"
                               >
-                                2022 (USD)
+                                {getYearLabel(2022)}
                                 {getSortIcon('2022')}
                               </button>
                             </th>
@@ -1128,7 +1139,7 @@ export default function PartnersPage() {
                                 onClick={() => handleSort('2023')}
                                 className="flex items-center hover:text-gray-900"
                               >
-                                2023 (USD)
+                                {getYearLabel(2023)}
                                 {getSortIcon('2023')}
                               </button>
                             </th>
@@ -1137,7 +1148,7 @@ export default function PartnersPage() {
                                 onClick={() => handleSort('2024')}
                                 className="flex items-center hover:text-gray-900"
                               >
-                                2024 (USD)
+                                {getYearLabel(2024)}
                                 {getSortIcon('2024')}
                               </button>
                             </th>
@@ -1146,7 +1157,7 @@ export default function PartnersPage() {
                                 onClick={() => handleSort('2025')}
                                 className="flex items-center hover:text-gray-900"
                               >
-                                2025 (USD)
+                                {getYearLabel(2025)}
                                 {getSortIcon('2025')}
                               </button>
                             </th>
@@ -1155,7 +1166,7 @@ export default function PartnersPage() {
                                 onClick={() => handleSort('2026')}
                                 className="flex items-center hover:text-gray-900"
                               >
-                                2026 (USD)
+                                {getYearLabel(2026)}
                                 {getSortIcon('2026')}
                               </button>
                             </th>
@@ -1164,7 +1175,7 @@ export default function PartnersPage() {
                                 onClick={() => handleSort('2027')}
                                 className="flex items-center hover:text-gray-900"
                               >
-                                2027 (USD)
+                                {getYearLabel(2027)}
                                 {getSortIcon('2027')}
                               </button>
                             </th>
@@ -1228,7 +1239,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2022')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2022 (USD)
+                                  {getYearLabel(2022)}
                                   {getSortIcon('2022')}
                                 </button>
                               </th>
@@ -1237,7 +1248,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2023')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2023 (USD)
+                                  {getYearLabel(2023)}
                                   {getSortIcon('2023')}
                                 </button>
                               </th>
@@ -1246,7 +1257,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2024')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2024 (USD)
+                                  {getYearLabel(2024)}
                                   {getSortIcon('2024')}
                                 </button>
                               </th>
@@ -1255,7 +1266,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2025')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2025 (USD)
+                                  {getYearLabel(2025)}
                                   {getSortIcon('2025')}
                                 </button>
                               </th>
@@ -1264,7 +1275,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2026')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2026 (USD)
+                                  {getYearLabel(2026)}
                                   {getSortIcon('2026')}
                                 </button>
                               </th>
@@ -1273,7 +1284,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2027')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2027 (USD)
+                                  {getYearLabel(2027)}
                                   {getSortIcon('2027')}
                                 </button>
                               </th>
@@ -1336,7 +1347,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2022')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2022 (USD)
+                                  {getYearLabel(2022)}
                                   {getSortIcon('2022')}
                                 </button>
                               </th>
@@ -1345,7 +1356,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2023')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2023 (USD)
+                                  {getYearLabel(2023)}
                                   {getSortIcon('2023')}
                                 </button>
                               </th>
@@ -1354,7 +1365,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2024')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2024 (USD)
+                                  {getYearLabel(2024)}
                                   {getSortIcon('2024')}
                                 </button>
                               </th>
@@ -1363,7 +1374,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2025')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2025 (USD)
+                                  {getYearLabel(2025)}
                                   {getSortIcon('2025')}
                                 </button>
                               </th>
@@ -1372,7 +1383,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2026')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2026 (USD)
+                                  {getYearLabel(2026)}
                                   {getSortIcon('2026')}
                                 </button>
                               </th>
@@ -1381,7 +1392,7 @@ export default function PartnersPage() {
                                   onClick={() => handleSort('2027')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  2027 (USD)
+                                  {getYearLabel(2027)}
                                   {getSortIcon('2027')}
                                 </button>
                               </th>
@@ -1499,7 +1510,7 @@ export default function PartnersPage() {
                                           onClick={() => handleSort('2022')}
                                           className="flex items-center hover:text-gray-900"
                                         >
-                                          2022 (USD)
+                                          {getYearLabel(2022)}
                                           {getSortIcon('2022')}
                                         </button>
                                       </th>
@@ -1508,7 +1519,7 @@ export default function PartnersPage() {
                                           onClick={() => handleSort('2023')}
                                           className="flex items-center hover:text-gray-900"
                                         >
-                                          2023 (USD)
+                                          {getYearLabel(2023)}
                                           {getSortIcon('2023')}
                                         </button>
                                       </th>
@@ -1517,7 +1528,7 @@ export default function PartnersPage() {
                                           onClick={() => handleSort('2024')}
                                           className="flex items-center hover:text-gray-900"
                                         >
-                                          2024 (USD)
+                                          {getYearLabel(2024)}
                                           {getSortIcon('2024')}
                                         </button>
                                       </th>
@@ -1526,7 +1537,7 @@ export default function PartnersPage() {
                                           onClick={() => handleSort('2025')}
                                           className="flex items-center hover:text-gray-900"
                                         >
-                                          2025 (USD)
+                                          {getYearLabel(2025)}
                                           {getSortIcon('2025')}
                                         </button>
                                       </th>
@@ -1535,7 +1546,7 @@ export default function PartnersPage() {
                                           onClick={() => handleSort('2026')}
                                           className="flex items-center hover:text-gray-900"
                                         >
-                                          2026 (USD)
+                                          {getYearLabel(2026)}
                                           {getSortIcon('2026')}
                                         </button>
                                       </th>
@@ -1544,7 +1555,7 @@ export default function PartnersPage() {
                                           onClick={() => handleSort('2027')}
                                           className="flex items-center hover:text-gray-900"
                                         >
-                                          2027 (USD)
+                                          {getYearLabel(2027)}
                                           {getSortIcon('2027')}
                                         </button>
                                       </th>
