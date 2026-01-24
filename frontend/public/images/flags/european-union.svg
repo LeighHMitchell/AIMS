@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 540">
+  <rect fill="#003399" width="810" height="540"/>
+  <g fill="#FFCC00" transform="translate(405,270)">
+    <!-- 12 stars in a circle -->
+    <g id="star">
+      <polygon points="0,-108 11.2,-33.4 81.2,-66.5 38.4,-9.4 97.1,40.4 23.3,33.4 0,108 -23.3,33.4 -97.1,40.4 -38.4,-9.4 -81.2,-66.5 -11.2,-33.4" transform="scale(0.3)"/>
+    </g>
+    <!-- Star positions at 30 degree intervals, radius 150 -->
+    <use href="#star" transform="translate(0,-150)"/>
+    <use href="#star" transform="translate(75,-129.9)"/>
+    <use href="#star" transform="translate(129.9,-75)"/>
+    <use href="#star" transform="translate(150,0)"/>
+    <use href="#star" transform="translate(129.9,75)"/>
+    <use href="#star" transform="translate(75,129.9)"/>
+    <use href="#star" transform="translate(0,150)"/>
+    <use href="#star" transform="translate(-75,129.9)"/>
+    <use href="#star" transform="translate(-129.9,75)"/>
+    <use href="#star" transform="translate(-150,0)"/>
+    <use href="#star" transform="translate(-129.9,-75)"/>
+    <use href="#star" transform="translate(-75,-129.9)"/>
+  </g>
+</svg>

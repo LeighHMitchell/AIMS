@@ -42,6 +42,7 @@ import { FieldHelp, RequiredFieldIndicator } from "@/components/ActivityFieldHel
 import { CommentsDrawer } from "@/components/CommentsDrawer";
 import ActivityLocationEditorWrapper from "@/components/ActivityLocationEditorWrapper";
 import CombinedLocationsTab from "@/components/CombinedLocationsTab";
+import CountriesRegionsTab from "@/components/activities/CountriesRegionsTab";
 import ActivityEditorNavigation from "@/components/ActivityEditorNavigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -2549,6 +2550,19 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           }}
         />
       );
+    case "country-region":
+      return (
+        <CountriesRegionsTab
+          activityId={general.id || ''}
+          countries={countries}
+          regions={regions}
+          onCountriesChange={setCountries}
+          onRegionsChange={setRegions}
+          canEdit={permissions?.canEditActivity ?? true}
+          geographyLevel={general.geographyLevel || 'activity'}
+          onGeographyLevelChange={onGeographyLevelChange}
+        />
+      );
     case "organisations":
       return <OrganisationsSection
         activityId={general.id}
@@ -2582,18 +2596,12 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         onCoverageAreasChange={setCoverageAreas}
         advancedLocations={advancedLocations}
         onAdvancedLocationsChange={setAdvancedLocations}
-        countries={countries}
-        regions={regions}
-        onCountriesChange={setCountries}
-        onRegionsChange={setRegions}
         activityId={general.id}
         canEdit={permissions?.canEditActivity ?? true}
         onSubnationalDataChange={setSubnationalBreakdowns}
         subnationalBreakdowns={subnationalBreakdowns}
         activityTitle={general.title}
         activitySector={general.primarySector}
-        geographyLevel={general.geographyLevel || 'activity'}
-        onGeographyLevelChange={onGeographyLevelChange}
       />;
     case "finances":
       return <EnhancedFinancesSection 

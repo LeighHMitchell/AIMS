@@ -110,6 +110,8 @@ export async function GET(request: NextRequest) {
         humanitarian,
         banner,
         icon,
+        recipient_countries,
+        recipient_regions,
         activity_sdg_mappings (
           id,
           sdg_goal,
@@ -682,7 +684,10 @@ export async function GET(request: NextRequest) {
         // Include policy markers for Policy Markers column
         policyMarkers: policyMarkersMap.get(activity.id) || [],
         // Include creator profile for Metadata columns
-        creatorProfile: creatorProfilesMap.get(activity.created_by) || null
+        creatorProfile: creatorProfilesMap.get(activity.created_by) || null,
+        // Include recipient countries and regions for Country/Region column
+        recipient_countries: activity.recipient_countries || [],
+        recipient_regions: activity.recipient_regions || []
       };
     });
 

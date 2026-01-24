@@ -77,6 +77,8 @@ export async function GET(request: NextRequest) {
         capital_spend_percentage,
         likes_count,
         humanitarian,
+        recipient_countries,
+        recipient_regions,
         ${includeImages ? 'banner, icon,' : ''}
         activity_sdg_mappings (
           id,
@@ -346,6 +348,9 @@ export async function GET(request: NextRequest) {
       totalDisbursed: summary.totalDisbursed,
       capitalSpendPercentage: activity.capital_spend_percentage,
       humanitarian: activity.humanitarian,
+      // Include recipient countries and regions for Country/Region column
+      recipient_countries: activity.recipient_countries || [],
+      recipient_regions: activity.recipient_regions || [],
       // Add empty arrays for organizations
       funders: [],
       implementers: [],

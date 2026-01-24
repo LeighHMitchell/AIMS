@@ -89,7 +89,11 @@ export default function LocationsTab({
         const data = await response.json();
 
       if (data.success) {
-        setLocations(data.locations || []);
+        // Filter out coverage-type locations - they belong to Subnational Allocation, not Activity Sites
+        const siteLocations = (data.locations || []).filter(
+          (loc: any) => loc.location_type !== 'coverage'
+        );
+        setLocations(siteLocations);
       } else {
         throw new Error(data.error || 'Failed to load locations');
       }

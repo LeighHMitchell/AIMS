@@ -11,15 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Users, Edit2, Trash2, MoreVertical, Globe, Lock, Eye, Building2 } from 'lucide-react'
 import { motion, useReducedMotion, type Transition } from "framer-motion"
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 
 // Color palette - matching OrganizationCardModern
 const colors = {
@@ -67,21 +61,10 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
   const router = useRouter()
   const memberCount = group.members?.length || 0
   const shouldReduceMotion = useReducedMotion()
-  const [membersPopoverOpen, setMembersPopoverOpen] = useState(false)
 
   const handleView = () => {
     router.push(`/partners/groups/${group.id}`)
   }
-
-  // Sort members alphabetically by name
-  const sortedMembers = useMemo(() => {
-    if (!group.members) return []
-    return [...group.members].sort((a, b) => {
-      const nameA = (a.organizations?.name || a.name || '').toLowerCase()
-      const nameB = (b.organizations?.name || b.name || '').toLowerCase()
-      return nameA.localeCompare(nameB)
-    })
-  }, [group.members])
 
   const animationConfig = useMemo(
     () =>
@@ -243,111 +226,70 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 Members
               </p>
-              <Popover open={membersPopoverOpen} onOpenChange={setMembersPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <div
-                    className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setMembersPopoverOpen(true)
-                    }}
-                  >
-                    <motion.ul className="flex -space-x-2" role="list">
-                      {displayedMembers.map((member: any, index: number) => {
-                        const org = member.organizations || member
-                        const orgName = org?.name || org?.acronym || 'Unknown'
-                        const orgLogo = org?.logo
-                        const orgAcronym = org?.acronym || orgName.slice(0, 2).toUpperCase()
+              <div className="flex items-center">
+                <motion.ul className="flex -space-x-2" role="list">
+                  {displayedMembers.map((member: any, index: number) => {
+                    const org = member.organizations || member
+                    const orgName = org?.name || org?.acronym || 'Unknown'
+                    const orgLogo = org?.logo
+                    const orgAcronym = org?.acronym || orgName.slice(0, 2).toUpperCase()
 
-                        return (
-                          <motion.li
-                            key={member.id || member.organization_id || index}
-                            role="listitem"
-                            initial={
-                              typeof animationConfig.initial === "function"
-                                ? animationConfig.initial(index)
-                                : animationConfig.initial
-                            }
-                            animate={animationConfig.animate}
-                            transition={
-                              (typeof animationConfig.transition === "function"
-                                ? animationConfig.transition(index)
-                                : animationConfig.transition) as Transition
-                            }
-                            className="relative"
-                            style={{ zIndex: displayedMembers.length - index }}
-                          >
-                            <div
-                              className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-white shadow-sm overflow-hidden ${!orgLogo ? getOrgColor(orgName) : 'bg-white'}`}
-                            >
-                              {orgLogo ? (
-                                <img
-                                  src={orgLogo}
-                                  alt={orgName}
-                                  className="h-full w-full object-contain p-0.5"
-                                />
-                              ) : (
-                                <span className="text-[10px] font-semibold text-white">
-                                  {orgAcronym}
-                                </span>
-                              )}
-                            </div>
-                          </motion.li>
-                        )
-                      })}
-                    </motion.ul>
-                    {remainingCount > 0 && (
-                      <motion.span
-                        initial={{
-                          opacity: shouldReduceMotion ? 1 : 0,
-                          x: shouldReduceMotion ? 0 : -8,
-                        }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={
-                          shouldReduceMotion
-                            ? { duration: 0 }
-                            : { delay: 0.05 * displayedMembers.length, duration: 0.25, ease: "easeOut" }
+                    return (
+                      <motion.li
+                        key={member.id || member.organization_id || index}
+                        role="listitem"
+                        initial={
+                          typeof animationConfig.initial === "function"
+                            ? animationConfig.initial(index)
+                            : animationConfig.initial
                         }
-                        className="ml-2 text-xs font-medium"
-                        style={{ color: colors.coolSteel }}
+                        animate={animationConfig.animate}
+                        transition={
+                          (typeof animationConfig.transition === "function"
+                            ? animationConfig.transition(index)
+                            : animationConfig.transition) as Transition
+                        }
+                        className="relative"
+                        style={{ zIndex: displayedMembers.length - index }}
                       >
-                        +{remainingCount}
-                      </motion.span>
-                    )}
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-72 p-0"
-                  align="start"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="p-3 border-b">
-                    <h4 className="font-semibold text-sm">Group Members</h4>
-                    <p className="text-xs text-muted-foreground">{memberCount} organizations</p>
-                  </div>
-                  <ScrollArea className="h-48">
-                    <div className="p-2 space-y-1">
-                      {sortedMembers.map((member: any, index: number) => {
-                        const org = member.organizations || member
-                        const orgName = org?.name || 'Unknown'
-                        const orgAcronym = org?.acronym
-
-                        return (
-                          <div
-                            key={member.id || member.organization_id || index}
-                            className="py-1.5 px-2 rounded hover:bg-muted/50 text-xs"
-                          >
-                            <span>{orgName}</span>
-                            {orgAcronym && (
-                              <span className="ml-1">({orgAcronym})</span>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </ScrollArea>
-                </PopoverContent>
-              </Popover>
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-white shadow-sm overflow-hidden ${!orgLogo ? getOrgColor(orgName) : 'bg-white'}`}
+                        >
+                          {orgLogo ? (
+                            <img
+                              src={orgLogo}
+                              alt={orgName}
+                              className="h-full w-full object-contain p-0.5"
+                            />
+                          ) : (
+                            <span className="text-[10px] font-semibold text-white">
+                              {orgAcronym}
+                            </span>
+                          )}
+                        </div>
+                      </motion.li>
+                    )
+                  })}
+                </motion.ul>
+                {remainingCount > 0 && (
+                  <motion.span
+                    initial={{
+                      opacity: shouldReduceMotion ? 1 : 0,
+                      x: shouldReduceMotion ? 0 : -8,
+                    }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={
+                      shouldReduceMotion
+                        ? { duration: 0 }
+                        : { delay: 0.05 * displayedMembers.length, duration: 0.25, ease: "easeOut" }
+                    }
+                    className="ml-2 text-xs font-medium"
+                    style={{ color: colors.coolSteel }}
+                  >
+                    +{remainingCount}
+                  </motion.span>
+                )}
+              </div>
             </div>
           )}
 

@@ -121,6 +121,9 @@ import { PortfolioSpendTrajectoryChart } from '@/components/charts/PortfolioSpen
 import { OrganizationalPositioningMap } from '@/components/analytics/OrganizationalPositioningMap'
 import { AidEcosystemSolarSystem } from '@/components/analytics/AidEcosystemSolarSystem'
 
+// Financial Totals Bar Chart
+import { FinancialTotalsBarChart } from '@/components/analytics/FinancialTotalsBarChart'
+
 interface KPIData {
   totalDisbursed: number
   commitmentsDisbursedPercent: number
@@ -671,6 +674,23 @@ export default function AnalyticsDashboardPage() {
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">Overview</h2>
                       <p className="text-gray-600 mb-4">Key financial metrics and portfolio performance at a glance</p>
+                      
+                      {/* Full-width Financial Totals Chart */}
+                      <div className="mb-6">
+                        <CompactChartCard
+                          title="Financial Totals"
+                          shortDescription="Total budgets, planned disbursements, and transaction types"
+                          fullDescription="Compare total budgets and planned disbursements with actual transaction totals by type"
+                          className="w-full"
+                          compactHeight={300}
+                        >
+                          <FinancialTotalsBarChart
+                            dateRange={fiveYearRange}
+                            refreshKey={refreshKey}
+                          />
+                        </CompactChartCard>
+                      </div>
+
                       <ChartGrid>
                         <CompactChartCard
                           title="Financial Summary by Sector"

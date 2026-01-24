@@ -28,7 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_activity_relationships_external_iati
 CREATE INDEX IF NOT EXISTS idx_activity_relationships_unresolved
   ON activity_relationships(is_resolved)
   WHERE is_resolved = FALSE AND external_iati_identifier IS NOT NULL;
-bud
+
 COMMENT ON COLUMN activity_relationships.external_iati_identifier IS
   'IATI identifier of a related activity that does not exist in the database yet';
 

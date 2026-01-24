@@ -1,12 +1,22 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, X, CheckCircle, UserX } from "lucide-react";
+import { Trash2, X, CheckCircle, UserX, Download } from "lucide-react";
+
+// Action interface for custom actions
+interface BulkAction {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  disabled?: boolean;
+}
 
 interface BulkActionToolbarProps {
   selectedCount: number;
-  itemType: "activities" | "transactions";
+  itemType?: "activities" | "transactions" | "documents";
   onDelete?: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
+  onClearSelection?: () => void;
   isDeleting?: boolean;
   // Linked transaction actions
   linkedTransactionCount?: number;
@@ -14,24 +24,46 @@ interface BulkActionToolbarProps {
   onRejectLinked?: () => void;
   isAccepting?: boolean;
   isRejecting?: boolean;
+  // Custom actions (alternative to built-in actions)
+  actions?: BulkAction[];
+  // For documents - count of deletable items
+  deletableCount?: number;
+}
+
+function getItemLabel(itemType: string, count: number): string {
+  switch (itemType) {
+    case 'activities':
+      return count === 1 ? 'activity' : 'activities';
+    case 'transactions':
+      return count === 1 ? 'transaction' : 'transactions';
+    case 'documents':
+      return count === 1 ? 'document' : 'documents';
+    default:
+      return count === 1 ? 'item' : 'items';
+  }
 }
 
 export function BulkActionToolbar({
   selectedCount,
-  itemType,
+  itemType = "activities",
   onDelete,
   onCancel,
+  onClearSelection,
   isDeleting = false,
   linkedTransactionCount = 0,
   onAcceptLinked,
   onRejectLinked,
   isAccepting = false,
   isRejecting = false,
+  actions,
+  deletableCount,
 }: BulkActionToolbarProps) {
   if (selectedCount === 0) return null;
 
   const hasLinkedTransactions = linkedTransactionCount > 0;
   const isProcessing = isDeleting || isAccepting || isRejecting;
+  const handleCancel = onClearSelection || onCancel;
+  const actualDeletableCount = deletableCount ?? (selectedCount - linkedTransactionCount);
 
   return (
     <div
@@ -55,27 +87,49 @@ export function BulkActionToolbar({
       <div className="bg-white shadow-lg rounded-lg border border-gray-200 px-6 py-3 flex items-center gap-4">
         <div className="text-sm font-medium text-gray-700">
           <div>
-            {selectedCount} {itemType === "activities" ? (selectedCount === 1 ? "activity" : "activities") : (selectedCount === 1 ? "transaction" : "transactions")} selected
+            {selectedCount} {getItemLabel(itemType, selectedCount)} selected
           </div>
           {hasLinkedTransactions && (
             <div className="text-xs text-gray-500 mt-1">
               {linkedTransactionCount} linked transaction{linkedTransactionCount === 1 ? '' : 's'}
             </div>
           )}
+          {itemType === 'documents' && deletableCount !== undefined && deletableCount < selectedCount && (
+            <div className="text-xs text-gray-500 mt-1">
+              {deletableCount} can be deleted (standalone only)
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onCancel}
-            disabled={isProcessing}
-          >
-            <X className="h-4 w-4 mr-1" />
-            Cancel
-          </Button>
+          {handleCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCancel}
+              disabled={isProcessing}
+            >
+              <X className="h-4 w-4 mr-1" />
+              Cancel
+            </Button>
+          )}
           
-          {/* Accept/Reject actions for linked transactions */}
-          {hasLinkedTransactions && onAcceptLinked && (
+          {/* Custom actions (e.g., Download) */}
+          {actions && actions.map((action, index) => (
+            <Button
+              key={index}
+              variant={action.variant || 'default'}
+              size="sm"
+              onClick={action.onClick}
+              disabled={action.disabled || isProcessing}
+              className="flex items-center gap-2"
+            >
+              {action.icon}
+              {action.label}
+            </Button>
+          ))}
+          
+          {/* Accept/Reject actions for linked transactions (only when no custom actions) */}
+          {!actions && hasLinkedTransactions && onAcceptLinked && (
             <Button
               variant="default"
               size="sm"
@@ -88,7 +142,7 @@ export function BulkActionToolbar({
             </Button>
           )}
           
-          {hasLinkedTransactions && onRejectLinked && (
+          {!actions && hasLinkedTransactions && onRejectLinked && (
             <Button
               variant="outline"
               size="sm"
@@ -101,8 +155,8 @@ export function BulkActionToolbar({
             </Button>
           )}
           
-          {/* Delete action for own transactions */}
-          {onDelete && (selectedCount > linkedTransactionCount) && (
+          {/* Delete action - always show when onDelete is provided and there are deletable items */}
+          {onDelete && actualDeletableCount > 0 && (
             <Button
               variant="destructive"
               size="sm"
@@ -111,7 +165,7 @@ export function BulkActionToolbar({
               className="flex items-center gap-2"
             >
               <Trash2 className="h-4 w-4" />
-              {isDeleting ? "Deleting..." : `Delete ${selectedCount - linkedTransactionCount}`}
+              {isDeleting ? "Deleting..." : `Delete ${actualDeletableCount}`}
             </Button>
           )}
         </div>

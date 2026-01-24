@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+  <rect fill="#009EDB" width="900" height="600"/>
+  <g fill="#FFF" transform="translate(450,300)">
+    <!-- Globe with latitude/longitude lines -->
+    <circle r="160" fill="none" stroke="#FFF" stroke-width="8"/>
+    <!-- Horizontal lines (latitudes) -->
+    <ellipse rx="160" ry="40" fill="none" stroke="#FFF" stroke-width="4"/>
+    <ellipse rx="160" ry="80" fill="none" stroke="#FFF" stroke-width="4"/>
+    <ellipse rx="160" ry="120" fill="none" stroke="#FFF" stroke-width="4"/>
+    <!-- Vertical lines (longitudes) -->
+    <ellipse rx="40" ry="160" fill="none" stroke="#FFF" stroke-width="4"/>
+    <ellipse rx="80" ry="160" fill="none" stroke="#FFF" stroke-width="4"/>
+    <ellipse rx="120" ry="160" fill="none" stroke="#FFF" stroke-width="4"/>
+    <line x1="0" y1="-160" x2="0" y2="160" stroke="#FFF" stroke-width="4"/>
+    <line x1="-160" y1="0" x2="160" y2="0" stroke="#FFF" stroke-width="4"/>
+    <!-- North Pole dot -->
+    <circle r="12" cy="-160" fill="#FFF"/>
+    <!-- Olive branches (simplified) -->
+    <g transform="translate(-200,0)">
+      <!-- Left branch -->
+      <path d="M0,150 Q-20,100 0,50 Q-15,75 -30,50 Q-10,60 0,50 Q-25,25 0,0 Q-15,15 -25,0 Q-5,10 0,0 Q-20,-25 0,-50 Q-15,-35 -25,-50 Q-5,-40 0,-50 Q-15,-75 0,-100 Q-10,-85 -20,-100 Q0,-90 0,-100 Q-10,-125 0,-150" 
+            fill="none" stroke="#FFF" stroke-width="6" stroke-linecap="round"/>
+      <!-- Leaves left -->
+      <ellipse cx="-25" cy="100" rx="20" ry="8" transform="rotate(-30,-25,100)"/>
+      <ellipse cx="-30" cy="50" rx="20" ry="8" transform="rotate(-40,-30,50)"/>
+      <ellipse cx="-25" cy="0" rx="20" ry="8" transform="rotate(-30,-25,0)"/>
+      <ellipse cx="-30" cy="-50" rx="20" ry="8" transform="rotate(-40,-30,-50)"/>
+      <ellipse cx="-25" cy="-100" rx="20" ry="8" transform="rotate(-30,-25,-100)"/>
+    </g>
+    <g transform="translate(200,0) scale(-1,1)">
+      <!-- Right branch (mirrored) -->
+      <path d="M0,150 Q-20,100 0,50 Q-15,75 -30,50 Q-10,60 0,50 Q-25,25 0,0 Q-15,15 -25,0 Q-5,10 0,0 Q-20,-25 0,-50 Q-15,-35 -25,-50 Q-5,-40 0,-50 Q-15,-75 0,-100 Q-10,-85 -20,-100 Q0,-90 0,-100 Q-10,-125 0,-150" 
+            fill="none" stroke="#FFF" stroke-width="6" stroke-linecap="round"/>
+      <!-- Leaves right -->
+      <ellipse cx="-25" cy="100" rx="20" ry="8" transform="rotate(-30,-25,100)"/>
+      <ellipse cx="-30" cy="50" rx="20" ry="8" transform="rotate(-40,-30,50)"/>
+      <ellipse cx="-25" cy="0" rx="20" ry="8" transform="rotate(-30,-25,0)"/>
+      <ellipse cx="-30" cy="-50" rx="20" ry="8" transform="rotate(-40,-30,-50)"/>
+      <ellipse cx="-25" cy="-100" rx="20" ry="8" transform="rotate(-30,-25,-100)"/>
+    </g>
+  </g>
+</svg>

@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { FileText, Loader2, FileSpreadsheet, FileImage, File, FileCode, FileArchive, Presentation } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { FileText, FileSpreadsheet, FileImage, File, FileCode, FileArchive, Presentation, Loader2 } from 'lucide-react'
 
 interface DocumentThumbnailProps {
   url: string
@@ -129,77 +129,108 @@ export function DocumentThumbnail({
   url,
   format,
   title,
-  width = 200,
-  height = 140,
+  width,
+  height,
   className = '',
 }: DocumentThumbnailProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [loading, setLoading] = useState(false)
   const [pdfRendered, setPdfRendered] = useState(false)
   const [error, setError] = useState(false)
+  const renderAttemptedRef = useRef(false)
 
   const isPDF = url.toLowerCase().endsWith('.pdf') || (format || '').toLowerCase().includes('pdf')
   const isImage = url.toLowerCase().match(/\.(jpe?g|png|gif|webp|svg|bmp)$/i) || (format || '').toLowerCase().includes('image')
 
   // Render PDF thumbnail
-  const renderPDF = useCallback(async () => {
-    if (!isPDF || !canvasRef.current || pdfRendered) return
-
-    try {
-      setLoading(true)
-      setError(false)
-
-      // Dynamically import pdf.js
-      const pdfjsLib = await import('pdfjs-dist')
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
-
-      // Use proxied URL for external PDFs to avoid CORS issues
-      const pdfUrl = getProxiedUrl(url)
-
-      const loadingTask = pdfjsLib.getDocument({
-        url: pdfUrl,
-        withCredentials: false,
-      })
-
-      const pdf = await loadingTask.promise
-      const page = await pdf.getPage(1)
-
-      const canvas = canvasRef.current
-      if (!canvas) return
-
-      const context = canvas.getContext('2d')
-      if (!context) return
-
-      // Calculate scale to fit
-      const viewport = page.getViewport({ scale: 1 })
-      const scaleX = width / viewport.width
-      const scaleY = height / viewport.height
-      const scale = Math.min(scaleX, scaleY) * 0.95 // Slightly smaller for padding
-
-      const scaledViewport = page.getViewport({ scale })
-
-      canvas.width = scaledViewport.width
-      canvas.height = scaledViewport.height
-
-      await page.render({
-        canvasContext: context,
-        viewport: scaledViewport,
-      }).promise
-
-      setPdfRendered(true)
-      setLoading(false)
-    } catch (err) {
-      console.warn('Failed to render PDF thumbnail:', err)
-      setError(true)
-      setLoading(false)
-    }
-  }, [url, width, height, isPDF, pdfRendered])
-
   useEffect(() => {
-    if (isPDF && !pdfRendered && !error) {
-      renderPDF()
+    if (!isPDF || pdfRendered || error || renderAttemptedRef.current) return
+    renderAttemptedRef.current = true
+
+    const renderPDF = async () => {
+      if (!canvasRef.current) return
+
+      try {
+        setLoading(true)
+        setError(false)
+
+        // Get container dimensions or use defaults
+        const containerWidth = containerRef.current?.clientWidth || width || 280
+        const containerHeight = containerRef.current?.clientHeight || height || 180
+
+        // Dynamically import pdf.js
+        console.log('[PDF Preview] Starting to load PDF:', url)
+        
+        // Use dynamic import with the legacy build for better compatibility
+        const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+        console.log('[PDF Preview] pdf.js loaded')
+        
+        // Disable worker - runs in main thread but more compatible
+        pdfjs.GlobalWorkerOptions.workerSrc = ''
+
+        // Use proxied URL for external PDFs to avoid CORS issues
+        const pdfUrl = getProxiedUrl(url)
+        console.log('[PDF Preview] Loading document from:', pdfUrl)
+
+        const loadingTask = pdfjs.getDocument({
+          url: pdfUrl,
+          disableWorker: true,
+          isEvalSupported: false,
+        })
+
+        const pdf = await loadingTask.promise
+        const page = await pdf.getPage(1)
+
+        const canvas = canvasRef.current
+        if (!canvas) {
+          setError(true)
+          setLoading(false)
+          return
+        }
+
+        const context = canvas.getContext('2d')
+        if (!context) {
+          setError(true)
+          setLoading(false)
+          return
+        }
+
+        // Calculate scale to fit container
+        const viewport = page.getViewport({ scale: 1 })
+        const scaleX = containerWidth / viewport.width
+        const scaleY = containerHeight / viewport.height
+        const scale = Math.min(scaleX, scaleY) * 0.95
+
+        const scaledViewport = page.getViewport({ scale })
+
+        canvas.width = scaledViewport.width
+        canvas.height = scaledViewport.height
+
+        await page.render({
+          canvasContext: context,
+          viewport: scaledViewport,
+        }).promise
+
+        setPdfRendered(true)
+        setLoading(false)
+      } catch (err: any) {
+        console.error('[PDF Preview] Failed to render PDF thumbnail:', {
+          error: err,
+          message: err?.message,
+          name: err?.name,
+          url: url
+        })
+        setError(true)
+        setLoading(false)
+      }
     }
-  }, [isPDF, pdfRendered, error, renderPDF])
+
+    renderPDF()
+  }, [url, width, height, isPDF, pdfRendered, error])
+
+  // Build style object only if dimensions are explicitly provided
+  const styleObj = (width || height) ? { width, height } : undefined
 
   // For images, show the actual image (proxy external images to avoid CORS)
   if (isImage) {
@@ -207,8 +238,9 @@ export function DocumentThumbnail({
 
     return (
       <div
-        className={`relative overflow-hidden rounded-lg bg-slate-100 ${className}`}
-        style={{ width, height }}
+        ref={containerRef}
+        className={`relative overflow-hidden bg-slate-100 ${className}`}
+        style={styleObj}
       >
         <img
           src={imageUrl}
@@ -227,18 +259,20 @@ export function DocumentThumbnail({
     )
   }
 
-  // For PDFs, show the rendered canvas or loading state
+  // For PDFs, show the rendered canvas or loading/fallback state
   if (isPDF) {
     if (loading) {
       return (
         <div
-          className={`flex items-center justify-center bg-slate-100 rounded-lg ${className}`}
-          style={{ width, height }}
+          ref={containerRef}
+          className={`flex items-center justify-center bg-slate-100 ${className}`}
+          style={styleObj}
         >
           <div className="text-center">
             <Loader2 className="h-6 w-6 text-slate-400 animate-spin mx-auto mb-2" />
-            <span className="text-xs text-slate-400">Loading preview...</span>
+            <span className="text-xs text-slate-400">Loading...</span>
           </div>
+          <canvas ref={canvasRef} className="hidden" />
         </div>
       )
     }
@@ -246,22 +280,24 @@ export function DocumentThumbnail({
     if (pdfRendered) {
       return (
         <div
-          className={`relative overflow-hidden rounded-lg bg-white border border-slate-200 flex items-center justify-center ${className}`}
-          style={{ width, height }}
+          ref={containerRef}
+          className={`relative overflow-hidden bg-white flex items-center justify-center ${className}`}
+          style={styleObj}
         >
           <canvas
             ref={canvasRef}
-            className="max-w-full max-h-full"
+            className="max-w-full max-h-full object-contain"
           />
         </div>
       )
     }
 
-    // PDF failed to render, show fallback
+    // PDF failed to render or hasn't started, show fallback
     return (
       <div
-        className={`flex flex-col items-center justify-center rounded-lg ${getBackgroundColor(url, format)} ${className}`}
-        style={{ width, height }}
+        ref={containerRef}
+        className={`flex flex-col items-center justify-center ${getBackgroundColor(url, format)} ${className}`}
+        style={styleObj}
       >
         <canvas ref={canvasRef} className="hidden" />
         {getDocumentIcon(url, format)}
@@ -273,8 +309,9 @@ export function DocumentThumbnail({
   // For other file types, show icon with background
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-lg ${getBackgroundColor(url, format)} ${className}`}
-      style={{ width, height }}
+      ref={containerRef}
+      className={`flex flex-col items-center justify-center ${getBackgroundColor(url, format)} ${className}`}
+      style={styleObj}
     >
       {getDocumentIcon(url, format)}
       {format && (

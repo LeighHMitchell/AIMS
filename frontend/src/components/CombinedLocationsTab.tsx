@@ -6,8 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // Using the new LocationsTab component instead of LocationEditor
 // import LocationEditor, { IATILocation } from './LocationEditor';
 import { EnhancedSubnationalBreakdown } from './activities/EnhancedSubnationalBreakdown';
-import CountriesRegionsTab, { CountryAllocation, RegionAllocation } from './activities/CountriesRegionsTab';
 import { AdvancedLocationData } from '@/data/iati-location-types';
+
+// Re-export CountryAllocation and RegionAllocation types for compatibility
+export type { CountryAllocation, RegionAllocation } from './activities/CountriesRegionsTab';
 
 // Re-export types for compatibility with existing interfaces
 export interface SpecificLocation {
@@ -53,16 +55,6 @@ interface CombinedLocationsTabProps {
   onSubnationalDataChange?: (breakdowns: Record<string, number>) => void;
   subnationalBreakdowns?: Record<string, number>;
 
-  // Countries & Regions props
-  countries?: CountryAllocation[];
-  regions?: RegionAllocation[];
-  onCountriesChange?: (countries: CountryAllocation[]) => void;
-  onRegionsChange?: (regions: RegionAllocation[]) => void;
-
-  // Geography level props (activity vs transaction level)
-  geographyLevel?: 'activity' | 'transaction';
-  onGeographyLevelChange?: (level: 'activity' | 'transaction') => void;
-
   // Common props
   activityTitle?: string;
   activitySector?: string;
@@ -82,20 +74,12 @@ export default function CombinedLocationsTab({
   canEdit = true,
   onSubnationalDataChange,
   subnationalBreakdowns: initialSubnationalBreakdowns = {},
-  countries: initialCountries = [],
-  regions: initialRegions = [],
-  onCountriesChange,
-  onRegionsChange,
-  geographyLevel = 'activity',
-  onGeographyLevelChange,
   activityTitle,
   activitySector
 }: CombinedLocationsTabProps) {
   // State to track active sub-tab
   const [activeSubTab, setActiveSubTab] = useState('activity-locations');
   const [subnationalBreakdowns, setSubnationalBreakdowns] = useState<Record<string, number>>(initialSubnationalBreakdowns);
-  const [countries, setCountries] = useState<CountryAllocation[]>(initialCountries);
-  const [regions, setRegions] = useState<RegionAllocation[]>(initialRegions);
   const [advancedLocationsState, setAdvancedLocationsState] = useState<AdvancedLocationData[]>(advancedLocations);
   
   // Track locations from the LocationsTab component
@@ -126,20 +110,6 @@ export default function CombinedLocationsTab({
     return Object.values(subnationalBreakdowns).some(value => value > 0);
   }, [subnationalBreakdowns]);
 
-  const hasValidCountriesRegions = useMemo(() => {
-    const countryTotal = countries.reduce((sum, c) => sum + (c.percentage || 0), 0);
-    const regionTotal = regions.reduce((sum, r) => sum + (r.percentage || 0), 0);
-    const totalPercentage = countryTotal + regionTotal;
-    const isValidTotal = Math.abs(totalPercentage - 100) < 0.01;
-    const hasAnyValues = countries.length > 0 || regions.length > 0;
-    return isValidTotal && hasAnyValues;
-  }, [countries, regions]);
-
-  // Check if countries/regions has any data (for green tick)
-  const hasCountriesRegionsData = useMemo(() => {
-    return countries.length > 0 || regions.length > 0;
-  }, [countries, regions]);
-
   // Derive suggested regions from Activity Sites locations
   // These will be auto-added to the Subnational Allocation tab with 0%
   const suggestedRegions = useMemo(() => {
@@ -157,22 +127,6 @@ export default function CombinedLocationsTab({
     setSubnationalBreakdowns(breakdowns);
     if (onSubnationalDataChange) {
       onSubnationalDataChange(breakdowns);
-    }
-  };
-
-  // Update parent when countries data changes
-  const handleCountriesChange = (newCountries: CountryAllocation[]) => {
-    setCountries(newCountries);
-    if (onCountriesChange) {
-      onCountriesChange(newCountries);
-    }
-  };
-
-  // Update parent when regions data changes
-  const handleRegionsChange = (newRegions: RegionAllocation[]) => {
-    setRegions(newRegions);
-    if (onRegionsChange) {
-      onRegionsChange(newRegions);
     }
   };
 
@@ -196,7 +150,7 @@ export default function CombinedLocationsTab({
   return (
     <div className="space-y-6">
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="activity-locations" className="flex items-center gap-2">
             Activity Sites
             {hasValidLocations && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
@@ -204,10 +158,6 @@ export default function CombinedLocationsTab({
           <TabsTrigger value="subnational-breakdown" className="flex items-center gap-2">
             Subnational Allocation
             {hasSubnationalData && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
-          </TabsTrigger>
-          <TabsTrigger value="countries-regions" className="flex items-center gap-2">
-            Country and Region Allocation
-            {hasCountriesRegionsData && <CheckCircle className="h-4 w-4 text-green-500 ml-1" />}
           </TabsTrigger>
         </TabsList>
         
@@ -227,19 +177,6 @@ export default function CombinedLocationsTab({
             canEdit={canEdit}
             onDataChange={handleSubnationalDataChange}
             suggestedRegions={suggestedRegions}
-          />
-        </TabsContent>
-
-        <TabsContent value="countries-regions" className="mt-6">
-          <CountriesRegionsTab
-            activityId={activityId}
-            countries={countries}
-            regions={regions}
-            onCountriesChange={handleCountriesChange}
-            onRegionsChange={handleRegionsChange}
-            canEdit={canEdit}
-            geographyLevel={geographyLevel}
-            onGeographyLevelChange={onGeographyLevelChange}
           />
         </TabsContent>
       </Tabs>

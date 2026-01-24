@@ -17,6 +17,8 @@ export interface ColumnConfig<T extends string> {
   group: string;
   alwaysVisible?: boolean;
   defaultVisible?: boolean;
+  /** Help text description shown in column header tooltip */
+  description?: string;
 }
 
 /**

@@ -110,6 +110,7 @@ import {
   activityColumns,
   activityColumnGroups,
   defaultVisibleActivityColumns,
+  columnDescriptions,
   ACTIVITY_COLUMNS_LOCALSTORAGE_KEY,
 } from "./columns";
 
@@ -333,6 +334,16 @@ type Activity = {
       state_region_code?: string;
     }>;
   };
+
+  // Recipient country/region data
+  recipient_countries?: Array<{
+    country: { code: string; name: string };
+    percentage: number;
+  }>;
+  recipient_regions?: Array<{
+    region: { code: string; name: string };
+    percentage: number;
+  }>;
 
   // Policy markers
   policyMarkers?: Array<{
@@ -1246,6 +1257,24 @@ const router = useRouter();
       : <ArrowDown className="h-4 w-4 text-gray-400" />;
   };
 
+  // Helper to render column header text with tooltip
+  const ColumnHeaderText = ({ columnId, children }: { columnId: ActivityColumnId; children: React.ReactNode }) => {
+    const description = columnDescriptions[columnId];
+    if (!description) return <>{children}</>;
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-help border-b border-dotted border-muted-foreground/50">{children}</span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-xs">
+            <p className="text-sm">{description}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
   const exportActivities = () => {
     const dataToExport = activities.map(activity => {
       const sectors = activity.sectors?.map((s: any) => `${s.name} (${s.percentage}%)`).join("; ") || "";
@@ -1844,7 +1873,7 @@ const router = useRouter();
                       onClick={() => handleSort('title')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Activity Title</span>
+                        <ColumnHeaderText columnId="title">Activity Title</ColumnHeaderText>
                         {getSortIcon('title')}
                       </div>
                     </th>
@@ -1857,7 +1886,7 @@ const router = useRouter();
                       onClick={() => handleSort('activityStatus')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Activity Status</span>
+                        <ColumnHeaderText columnId="activityStatus">Activity Status</ColumnHeaderText>
                         {getSortIcon('activityStatus')}
                       </div>
                     </th>
@@ -1866,7 +1895,7 @@ const router = useRouter();
                   {/* Publication Status */}
                   {visibleColumns.includes('publicationStatus') && (
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
-                      Publication Status
+                      <ColumnHeaderText columnId="publicationStatus">Publication Status</ColumnHeaderText>
                     </th>
                   )}
                   
@@ -1877,7 +1906,7 @@ const router = useRouter();
                       onClick={() => handleSort('createdBy')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Reported by</span>
+                        <ColumnHeaderText columnId="reportedBy">Reported by</ColumnHeaderText>
                         {getSortIcon('createdBy')}
                       </div>
                     </th>
@@ -1890,19 +1919,7 @@ const router = useRouter();
                       onClick={() => handleSort('commitments')}
                     >
                       <div className="flex items-center justify-end gap-1">
-                        <span>Total Budgeted</span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="inline h-4 w-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                              <p className="text-sm text-gray-600 font-normal">
-                                Total budget amount across all budget entries for this activity. All values are displayed in USD.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <ColumnHeaderText columnId="totalBudgeted">Total Budgeted</ColumnHeaderText>
                         {getSortIcon('commitments')}
                       </div>
                     </th>
@@ -1915,19 +1932,7 @@ const router = useRouter();
                       onClick={() => handleSort('plannedDisbursements')}
                     >
                       <div className="flex items-center justify-end gap-1">
-                        <span>Total Planned Disbursements</span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="inline h-4 w-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left whitespace-normal">
-                              <p className="text-sm text-gray-600 font-normal">
-                                Total value of all planned disbursements for this activity. All values are displayed in USD.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <ColumnHeaderText columnId="totalPlannedDisbursement">Total Planned Disbursements</ColumnHeaderText>
                         {getSortIcon('plannedDisbursements')}
                       </div>
                     </th>
@@ -1940,7 +1945,7 @@ const router = useRouter();
                       onClick={() => handleSort('updatedAt')}
                     >
                       <div className="flex items-center justify-end gap-1">
-                        <span>Last Edited</span>
+                        <ColumnHeaderText columnId="lastEdited">Last Edited</ColumnHeaderText>
                         {getSortIcon('updatedAt')}
                       </div>
                     </th>
@@ -1949,28 +1954,28 @@ const router = useRouter();
                   {/* Modality & Classification */}
                   {visibleColumns.includes('modalityClassification') && (
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
-                      Modality & Classification
+                      <ColumnHeaderText columnId="modalityClassification">Modality & Classification</ColumnHeaderText>
                     </th>
                   )}
 
                   {/* Sector Categories */}
                   {visibleColumns.includes('sectorCategories') && (
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
-                      Sector Categories
+                      <ColumnHeaderText columnId="sectorCategories">Sector Categories</ColumnHeaderText>
                     </th>
                   )}
 
                   {/* Sectors */}
                   {visibleColumns.includes('sectors') && (
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
-                      Sectors
+                      <ColumnHeaderText columnId="sectors">Sectors</ColumnHeaderText>
                     </th>
                   )}
 
                   {/* Sub-sectors */}
                   {visibleColumns.includes('subSectors') && (
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      Sub-sectors
+                      <ColumnHeaderText columnId="subSectors">Sub-sectors</ColumnHeaderText>
                     </th>
                   )}
 
@@ -1978,7 +1983,7 @@ const router = useRouter();
                   {visibleColumns.includes('locations') && (
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
                       <div className="flex items-center justify-center gap-2">
-                        <span>Locations</span>
+                        <ColumnHeaderText columnId="locations">Locations</ColumnHeaderText>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1993,97 +1998,114 @@ const router = useRouter();
                     </th>
                   )}
 
+                  {/* Country/Region Column */}
+                  {visibleColumns.includes('recipientCountries') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
+                      <ColumnHeaderText columnId="recipientCountries">Country/Region</ColumnHeaderText>
+                    </th>
+                  )}
+
                   {/* Optional Activity Defaults Columns */}
                   {visibleColumns.includes('aidType') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
-                      Default Aid Type
+                      <ColumnHeaderText columnId="aidType">Default Aid Type</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('defaultFinanceType') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
-                      Default Finance Type
+                      <ColumnHeaderText columnId="defaultFinanceType">Default Finance Type</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('defaultFlowType') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
-                      Default Flow Type
+                      <ColumnHeaderText columnId="defaultFlowType">Default Flow Type</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('defaultTiedStatus') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[130px]">
-                      Default Tied Status
+                      <ColumnHeaderText columnId="defaultTiedStatus">Default Tied Status</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('defaultModality') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[130px]">
-                      Default Modality
+                      <ColumnHeaderText columnId="defaultModality">Default Modality</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('humanitarian') && (
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[100px]">
-                      Humanitarian
+                      <ColumnHeaderText columnId="humanitarian">Humanitarian</ColumnHeaderText>
                     </th>
                   )}
                   
                   {/* Transaction Type Total Columns */}
                   {visibleColumns.includes('totalIncomingCommitments') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Incoming Commitments
+                      <ColumnHeaderText columnId="totalIncomingCommitments">Incoming Commitments</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalCommitments') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Outgoing Commitments
+                      <ColumnHeaderText columnId="totalCommitments">Outgoing Commitments</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalDisbursements') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Disbursements
+                      <ColumnHeaderText columnId="totalDisbursements">Disbursements</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalExpenditures') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Expenditures
+                      <ColumnHeaderText columnId="totalExpenditures">Expenditures</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalInterestRepayment') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Interest Payment
+                      <ColumnHeaderText columnId="totalInterestRepayment">Interest Payment</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalLoanRepayment') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Loan Repayment
+                      <ColumnHeaderText columnId="totalLoanRepayment">Loan Repayment</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalReimbursement') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Reimbursement
+                      <ColumnHeaderText columnId="totalReimbursement">Reimbursement</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalPurchaseOfEquity') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Purchase of Equity
+                      <ColumnHeaderText columnId="totalPurchaseOfEquity">Purchase of Equity</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalSaleOfEquity') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Sale of Equity
+                      <ColumnHeaderText columnId="totalSaleOfEquity">Sale of Equity</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalCreditGuarantee') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Credit Guarantee
+                      <ColumnHeaderText columnId="totalCreditGuarantee">Credit Guarantee</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalIncomingFunds') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Incoming Funds
+                      <ColumnHeaderText columnId="totalIncomingFunds">Incoming Funds</ColumnHeaderText>
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalCommitmentCancellation') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      <ColumnHeaderText columnId="totalCommitmentCancellation">Commitment Cancellation</ColumnHeaderText>
+                    </th>
+                  )}
+                  {visibleColumns.includes('totalOutgoingPledge') && (
+                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
+                      <ColumnHeaderText columnId="totalOutgoingPledge">Outgoing Pledge</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('totalIncomingPledge') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Incoming Pledge
+                      <ColumnHeaderText columnId="totalIncomingPledge">Incoming Pledge</ColumnHeaderText>
                     </th>
                   )}
                   
@@ -2142,104 +2164,104 @@ const router = useRouter();
                   {/* Publication Status Columns */}
                   {visibleColumns.includes('isPublished') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px]">
-                      Published
+                      <ColumnHeaderText columnId="isPublished">Published</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('isValidated') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px]">
-                      Validated
+                      <ColumnHeaderText columnId="isValidated">Validated</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('iatiSyncStatus') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      IATI Synced
+                      <ColumnHeaderText columnId="iatiSyncStatus">IATI Synced</ColumnHeaderText>
                     </th>
                   )}
                   
                   {/* Participating Organisation Columns */}
                   {visibleColumns.includes('fundingOrganisations') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      Funding Organisations
+                      <ColumnHeaderText columnId="fundingOrganisations">Funding Organisations</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('extendingOrganisations') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      Extending Organisations
+                      <ColumnHeaderText columnId="extendingOrganisations">Extending Organisations</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('implementingOrganisations') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      Implementing Organisations
+                      <ColumnHeaderText columnId="implementingOrganisations">Implementing Organisations</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('accountableOrganisations') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      Accountable Organisations
+                      <ColumnHeaderText columnId="accountableOrganisations">Accountable Organisations</ColumnHeaderText>
                     </th>
                   )}
                   
                   {/* SDG Column */}
                   {visibleColumns.includes('sdgs') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      SDGs
+                      <ColumnHeaderText columnId="sdgs">SDGs</ColumnHeaderText>
                     </th>
                   )}
 
                   {/* Policy Markers Column */}
                   {visibleColumns.includes('policyMarkers') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
-                      Policy Markers
+                      <ColumnHeaderText columnId="policyMarkers">Policy Markers</ColumnHeaderText>
                     </th>
                   )}
 
                   {/* Metadata Columns */}
                   {visibleColumns.includes('createdByName') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
-                      Created By
+                      <ColumnHeaderText columnId="createdByName">Created By</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('createdAt') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
-                      Created Date & Time
+                      <ColumnHeaderText columnId="createdAt">Created Date & Time</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('createdByDepartment') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
-                      Creator's Department
+                      <ColumnHeaderText columnId="createdByDepartment">Creator's Department</ColumnHeaderText>
                     </th>
                   )}
 
                   {/* Budget Status Column */}
                   {visibleColumns.includes('budgetStatus') && (
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[130px]">
-                      Budget Status
+                      <ColumnHeaderText columnId="budgetStatus">Budget Status</ColumnHeaderText>
                     </th>
                   )}
 
                   {/* Capital Spend Header Cells */}
                   {visibleColumns.includes('capitalSpendPercent') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[100px]">
-                      Capital Spend %
+                      <ColumnHeaderText columnId="capitalSpendPercent">Capital Spend %</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('capitalSpendTotalBudget') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      Capital Spend - Total Budget
+                      <ColumnHeaderText columnId="capitalSpendTotalBudget">Capital Spend - Total Budget</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('capitalSpendPlannedDisbursements') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
-                      Capital Spend - Planned Disb.
+                      <ColumnHeaderText columnId="capitalSpendPlannedDisbursements">Capital Spend - Planned Disb.</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('capitalSpendCommitments') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      Capital Spend - Commitments
+                      <ColumnHeaderText columnId="capitalSpendCommitments">Capital Spend - Commitments</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('capitalSpendDisbursements') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      Capital Spend - Disbursements
+                      <ColumnHeaderText columnId="capitalSpendDisbursements">Capital Spend - Disbursements</ColumnHeaderText>
                     </th>
                   )}
 
@@ -2248,7 +2270,7 @@ const router = useRouter();
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[80px]">
                       <div className="flex items-center justify-center gap-1">
                         <ArrowUpDown className="h-4 w-4" />
-                        Score
+                        <ColumnHeaderText columnId="voteScore">Score</ColumnHeaderText>
                       </div>
                     </th>
                   )}
@@ -2256,7 +2278,7 @@ const router = useRouter();
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[80px]">
                       <div className="flex items-center justify-center gap-1">
                         <ChevronUp className="h-4 w-4 text-primary" />
-                        Upvotes
+                        <ColumnHeaderText columnId="upvotes">Upvotes</ColumnHeaderText>
                       </div>
                     </th>
                   )}
@@ -2264,7 +2286,7 @@ const router = useRouter();
                     <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[80px]">
                       <div className="flex items-center justify-center gap-1">
                         <ChevronDown className="h-4 w-4 text-red-500" />
-                        Downvotes
+                        <ColumnHeaderText columnId="downvotes">Downvotes</ColumnHeaderText>
                       </div>
                     </th>
                   )}
@@ -2272,105 +2294,61 @@ const router = useRouter();
                   {/* Description Columns */}
                   {visibleColumns.includes('descriptionGeneral') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
-                      Activity Description – General
+                      <ColumnHeaderText columnId="descriptionGeneral">Activity Description – General</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('descriptionObjectives') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
-                      Activity Description – Objectives
+                      <ColumnHeaderText columnId="descriptionObjectives">Activity Description – Objectives</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('descriptionTargetGroups') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
-                      Activity Description – Target Groups
+                      <ColumnHeaderText columnId="descriptionTargetGroups">Activity Description – Target Groups</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('descriptionOther') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
-                      Activity Description – Other
+                      <ColumnHeaderText columnId="descriptionOther">Activity Description – Other</ColumnHeaderText>
                     </th>
                   )}
                   
                   {/* Progress & Metrics columns */}
                   {visibleColumns.includes('timeElapsed') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
-                      Time Elapsed
+                      <ColumnHeaderText columnId="timeElapsed">Time Elapsed</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('committedSpentPercent') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
-                      % Committed Spent
+                      <ColumnHeaderText columnId="committedSpentPercent">% Committed Spent</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('budgetSpentPercent') && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
-                      % Budget Spent
+                      <ColumnHeaderText columnId="budgetSpentPercent">% Budget Spent</ColumnHeaderText>
                     </th>
                   )}
                   
                   {/* Portfolio Share columns */}
                   {visibleColumns.includes('budgetShare') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[100px]">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="cursor-help">Budget Share</span>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                            <p className="text-sm text-gray-600 font-normal">
-                              This activity's budget as a percentage of total budget across all activities in the system.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <ColumnHeaderText columnId="budgetShare">Budget Share</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('plannedDisbursementShare') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="cursor-help">Planned Disb. Share</span>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                            <p className="text-sm text-gray-600 font-normal">
-                              This activity's planned disbursements as a percentage of total planned disbursements across all activities in the system.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <ColumnHeaderText columnId="plannedDisbursementShare">Planned Disb. Share</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('commitmentShare') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="cursor-help">Commitment Share</span>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                            <p className="text-sm text-gray-600 font-normal">
-                              This activity's commitments as a percentage of total commitments across all activities in the system.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <ColumnHeaderText columnId="commitmentShare">Commitment Share</ColumnHeaderText>
                     </th>
                   )}
                   {visibleColumns.includes('disbursementShare') && (
                     <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="cursor-help">Disbursement Share</span>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg text-left">
-                            <p className="text-sm text-gray-600 font-normal">
-                              This activity's disbursements as a percentage of total disbursements across all activities in the system.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <ColumnHeaderText columnId="disbursementShare">Disbursement Share</ColumnHeaderText>
                     </th>
                   )}
                   
@@ -2381,7 +2359,7 @@ const router = useRouter();
                       onClick={() => handleSort('totalExpectedLength')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Total Expected Length</span>
+                        <ColumnHeaderText columnId="totalExpectedLength">Total Expected Length</ColumnHeaderText>
                         {getSortIcon('totalExpectedLength')}
                       </div>
                     </th>
@@ -2392,7 +2370,7 @@ const router = useRouter();
                       onClick={() => handleSort('implementationToDate')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Implementation to Date</span>
+                        <ColumnHeaderText columnId="implementationToDate">Implementation to Date</ColumnHeaderText>
                         {getSortIcon('implementationToDate')}
                       </div>
                     </th>
@@ -2403,7 +2381,7 @@ const router = useRouter();
                       onClick={() => handleSort('remainingDuration')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Remaining Duration</span>
+                        <ColumnHeaderText columnId="remainingDuration">Remaining Duration</ColumnHeaderText>
                         {getSortIcon('remainingDuration')}
                       </div>
                     </th>
@@ -2414,7 +2392,7 @@ const router = useRouter();
                       onClick={() => handleSort('actualLength')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Actual Length</span>
+                        <ColumnHeaderText columnId="actualLength">Actual Length</ColumnHeaderText>
                         {getSortIcon('actualLength')}
                       </div>
                     </th>
@@ -2425,7 +2403,7 @@ const router = useRouter();
                       onClick={() => handleSort('durationBand')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Duration Band</span>
+                        <ColumnHeaderText columnId="durationBand">Duration Band</ColumnHeaderText>
                         {getSortIcon('durationBand')}
                       </div>
                     </th>
@@ -2438,7 +2416,7 @@ const router = useRouter();
                       onClick={() => handleSort('plannedStartDate')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Planned Start</span>
+                        <ColumnHeaderText columnId="plannedStartDate">Planned Start</ColumnHeaderText>
                         {getSortIcon('plannedStartDate')}
                       </div>
                     </th>
@@ -2449,7 +2427,7 @@ const router = useRouter();
                       onClick={() => handleSort('plannedEndDate')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Planned End</span>
+                        <ColumnHeaderText columnId="plannedEndDate">Planned End</ColumnHeaderText>
                         {getSortIcon('plannedEndDate')}
                       </div>
                     </th>
@@ -2460,7 +2438,7 @@ const router = useRouter();
                       onClick={() => handleSort('actualStartDate')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Actual Start</span>
+                        <ColumnHeaderText columnId="actualStartDate">Actual Start</ColumnHeaderText>
                         {getSortIcon('actualStartDate')}
                       </div>
                     </th>
@@ -2471,7 +2449,7 @@ const router = useRouter();
                       onClick={() => handleSort('actualEndDate')}
                     >
                       <div className="flex items-center gap-1">
-                        <span>Actual End</span>
+                        <ColumnHeaderText columnId="actualEndDate">Actual End</ColumnHeaderText>
                         {getSortIcon('actualEndDate')}
                       </div>
                     </th>
@@ -2479,7 +2457,7 @@ const router = useRouter();
                   
                   {/* Actions column - always visible */}
                   <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[80px]">
-                    Actions
+                    <ColumnHeaderText columnId="actions">Actions</ColumnHeaderText>
                   </th>
                 </tr>
               </thead>
@@ -2872,6 +2850,36 @@ const router = useRouter();
                         </td>
                       )}
 
+                      {/* Country/Region cell */}
+                      {visibleColumns.includes('recipientCountries') && (
+                        <td className="px-4 py-2 text-sm text-foreground">
+                          <div className="flex flex-col gap-0.5">
+                            {activity.recipient_countries && activity.recipient_countries.length > 0 ? (
+                              activity.recipient_countries.slice(0, 3).map((rc, idx) => (
+                                <span key={`country-${idx}`}>
+                                  {rc.country?.name || rc.country?.code || 'Unknown'}
+                                  {rc.percentage > 0 && <span className="text-muted-foreground ml-1">{rc.percentage}%</span>}
+                                </span>
+                              ))
+                            ) : activity.recipient_regions && activity.recipient_regions.length > 0 ? (
+                              activity.recipient_regions.slice(0, 3).map((rr, idx) => (
+                                <span key={`region-${idx}`}>
+                                  {rr.region?.name || rr.region?.code || 'Unknown'}
+                                  {rr.percentage > 0 && <span className="text-muted-foreground ml-1">{rr.percentage}%</span>}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                            {((activity.recipient_countries?.length || 0) > 3 || (activity.recipient_regions?.length || 0) > 3) && (
+                              <span className="text-muted-foreground text-xs">
+                                +{Math.max((activity.recipient_countries?.length || 0) - 3, (activity.recipient_regions?.length || 0) - 3)} more
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      )}
+
                       {/* Optional Activity Default Columns */}
                       {visibleColumns.includes('aidType') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
@@ -2999,6 +3007,16 @@ const router = useRouter();
                       {visibleColumns.includes('totalCommitmentCancellation') && (
                         <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.commitmentCancellation || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalOutgoingPledge') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.outgoingPledge || 0)}
+                        </td>
+                      )}
+                      {visibleColumns.includes('totalIncomingPledge') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          <span className="text-muted-foreground">USD</span> {formatCurrency(activity.incomingPledge || 0)}
                         </td>
                       )}
                       

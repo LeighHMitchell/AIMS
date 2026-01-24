@@ -540,9 +540,9 @@ export default function ActivityDetailPage() {
   const [sectorFlowView, setSectorFlowView] = useState<'flow' | 'distribution'>('flow')
   const [locationsView, setLocationsView] = useState<'cards' | 'table'>('cards')
   const [mapLayer, setMapLayer] = useState<MapLayerType>('cartodb_voyager')
-  const [sectorViewMode, setSectorViewMode] = useState<'sankey' | 'pie' | 'bar' | 'table'>('sankey')
+  const [sectorViewMode, setSectorViewMode] = useState<'sankey' | 'pie' | 'bar' | 'table'>('bar')
   const [sectorMetricMode, setSectorMetricMode] = useState<'percentage' | 'budget' | 'planned' | 'actual'>('percentage')
-  const [sectorBarGroupingMode, setSectorBarGroupingMode] = useState<'sector' | 'category' | 'group'>('group')
+  const [sectorBarGroupingMode, setSectorBarGroupingMode] = useState<'sector' | 'category' | 'group'>('category')
 
   const [partners, setPartners] = useState<Partner[]>([])
   const [allPartners, setAllPartners] = useState<Partner[]>([])
@@ -1709,13 +1709,20 @@ export default function ActivityDetailPage() {
                             <div className="text-slate-500 mb-2 text-xs font-medium">Locations</div>
                             <div className="flex flex-wrap gap-1.5">
                               {countryAllocations.map((countryAlloc: any) => (
-                                <Badge 
+                                <div 
                                   key={countryAlloc.id || countryAlloc.country?.code} 
-                                  variant="secondary" 
-                                  className="text-[10px] px-2 py-0.5"
+                                  className="flex items-center gap-1.5 text-xs"
                                 >
-                                  {countryAlloc.country?.name || countryAlloc.country?.code || 'Unknown Country'}
-                                </Badge>
+                                  <img
+                                    src={`https://flagcdn.com/w20/${(countryAlloc.country?.code || '').toLowerCase()}.png`}
+                                    alt={`${countryAlloc.country?.name || 'Country'} flag`}
+                                    className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                  <span className="text-slate-900">
+                                    {countryAlloc.country?.name || countryAlloc.country?.code || 'Unknown Country'}
+                                  </span>
+                                </div>
                               ))}
                               {regionAllocations.map((regionAlloc: any) => (
                                 <Badge 
@@ -4394,128 +4401,6 @@ export default function ActivityDetailPage() {
                     <span className="ml-2 text-muted-foreground">Loading location data...</span>
                   </div>
                 )}
-                {/* Country/Region Allocation Chart - Hero Card */}
-                {(countryAllocations.length > 0 || regionAllocations.length > 0) && (() => {
-                  // New color palette
-                  const colorPalette = [
-                    { bg: 'bg-[#dc2625]', hex: '#dc2625' },
-                    { bg: 'bg-[#cfd0d5]', hex: '#cfd0d5' },
-                    { bg: 'bg-[#4c5568]', hex: '#4c5568' },
-                    { bg: 'bg-[#7b95a7]', hex: '#7b95a7' },
-                    { bg: 'bg-[#f1f4f8]', hex: '#f1f4f8' },
-                  ];
-
-                  // Combine countries and regions into a single list with colors
-                  const allAllocations = [
-                    ...countryAllocations.map((alloc: any, index: number) => ({
-                      type: 'country' as const,
-                      name: alloc.country?.name || alloc.country?.code || 'Unknown Country',
-                      code: alloc.country?.code || '',
-                      percentage: alloc.percentage || 0,
-                      color: colorPalette[index % colorPalette.length],
-                    })),
-                    ...regionAllocations.map((alloc: any, index: number) => ({
-                      type: 'region' as const,
-                      name: alloc.region?.name || alloc.region?.code || 'Unknown Region',
-                      code: alloc.region?.code || '',
-                      percentage: alloc.percentage || 0,
-                      color: colorPalette[(countryAllocations.length + index) % colorPalette.length],
-                    })),
-                  ];
-
-                  const totalPercentage = allAllocations.reduce((sum, a) => sum + a.percentage, 0);
-                  const unallocatedPercentage = Math.max(0, 100 - totalPercentage);
-
-                  return (
-                    <Card className="border-slate-200">
-                      <CardHeader>
-                        <CardTitle className="text-slate-900 flex items-center gap-2">
-                          <Globe className="h-5 w-5" />
-                          Country & Region Allocation
-                        </CardTitle>
-                        <CardDescription>
-                          Percentage breakdown of activity allocation by country and region
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        {/* Stacked Bar with labels */}
-                        <TooltipProvider delayDuration={0}>
-                          <div className="w-full bg-slate-100 rounded-lg h-12 overflow-hidden flex">
-                            {allAllocations.map((alloc, index) => (
-                              <Tooltip key={`${alloc.type}-${index}`}>
-                                <TooltipTrigger asChild>
-                                  <div
-                                    className="h-full transition-all duration-500 flex items-center justify-center relative cursor-pointer hover:brightness-110"
-                                    style={{ 
-                                      width: `${alloc.percentage}%`,
-                                      minWidth: alloc.percentage > 0 ? '2px' : '0',
-                                      backgroundColor: alloc.color.hex,
-                                    }}
-                                  >
-                                    {alloc.percentage >= 12 && (
-                                      <span className="text-xs font-medium text-white drop-shadow-sm truncate px-2">
-                                        {alloc.name}
-                                      </span>
-                                    )}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent 
-                                  side="top" 
-                                  className="bg-slate-900 text-white border-slate-700 px-3 py-2 shadow-xl"
-                                >
-                                  <div className="space-y-1.5">
-                                    <div className="font-semibold text-sm">{alloc.name}</div>
-                                    <div className="flex items-center gap-2 text-xs text-slate-300">
-                                      {alloc.code && (
-                                        <span className="font-mono bg-slate-700 px-1.5 py-0.5 rounded">
-                                          {alloc.code}
-                                        </span>
-                                      )}
-                                      <span className={`px-1.5 py-0.5 rounded ${alloc.type === 'country' ? 'bg-slate-600' : 'bg-slate-500'}`}>
-                                        {alloc.type === 'country' ? 'Country' : 'Region'}
-                                      </span>
-                                    </div>
-                                    <div className="text-lg font-bold text-white pt-1 border-t border-slate-700">
-                                      {alloc.percentage.toFixed(1)}%
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            ))}
-                            {/* Unallocated section */}
-                            {unallocatedPercentage > 0 && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div
-                                    className="h-full bg-slate-200 transition-all duration-500 flex items-center justify-center cursor-pointer hover:bg-slate-300"
-                                    style={{ width: `${unallocatedPercentage}%` }}
-                                  >
-                                    {unallocatedPercentage >= 12 && (
-                                      <span className="text-xs font-medium text-slate-500 truncate px-2">
-                                        Unallocated
-                                      </span>
-                                    )}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent 
-                                  side="top" 
-                                  className="bg-slate-900 text-white border-slate-700 px-3 py-2 shadow-xl"
-                                >
-                                  <div className="space-y-1">
-                                    <div className="font-semibold text-sm">Unallocated</div>
-                                    <div className="text-lg font-bold text-white">
-                                      {unallocatedPercentage.toFixed(1)}%
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                          </div>
-                        </TooltipProvider>
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
                 {/* Top Section: 4-column layout - Map (2 cols) + Location Cards (2 cols) */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {/* Map Section - Takes first 2 columns */}

@@ -110,7 +110,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
               onOpenChange={setIsMenuOpen}
             >
               <Menu.Container
-                buttonSize={{ width: 160, height: 40 }}
+                buttonSize={{ width: 190, height: 40 }}
                 menuWidth={280}
                 menuRadius={20}
                 buttonRadius={9999}

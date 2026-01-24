@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     console.log('[Activity Graph API] Fetching activity relationships from both tables...');
     
     // Fetch from related_activities table (external/unresolved links)
-    // Note: related_activities uses 'iati_identifier' not 'external_iati_identifier'
+    // Note: related_activities uses 'external_iati_identifier' for external links
     const { data: relatedActivitiesData, error: relError } = await supabase
       .from('related_activities')
       .select(`
@@ -52,8 +52,8 @@ export async function GET(request: NextRequest) {
         source_activity_id,
         linked_activity_id,
         relationship_type,
-        iati_identifier,
-        is_external,
+        external_iati_identifier,
+        external_activity_title,
         created_at
       `);
     
@@ -97,16 +97,16 @@ export async function GET(request: NextRequest) {
     const normalizedRelationships: NormalizedRelationship[] = [];
     
     // Normalize related_activities (uses source_activity_id, linked_activity_id)
-    // Note: related_activities uses 'iati_identifier' for the IATI identifier
+    // Note: related_activities uses 'external_iati_identifier' for external links
     (relatedActivitiesData || []).forEach((rel: any) => {
-      if (rel.linked_activity_id || (rel.is_external && rel.iati_identifier)) {
+      if (rel.linked_activity_id || rel.external_iati_identifier) {
         normalizedRelationships.push({
           id: rel.id,
           sourceActivityId: rel.source_activity_id,
           targetActivityId: rel.linked_activity_id,
           relationshipType: rel.relationship_type,
-          externalIatiIdentifier: rel.is_external ? rel.iati_identifier : null,
-          externalActivityTitle: rel.is_external ? rel.iati_identifier : null // Use identifier as title since no title column exists
+          externalIatiIdentifier: rel.external_iati_identifier || null,
+          externalActivityTitle: rel.external_activity_title || rel.external_iati_identifier || null
         });
       }
     });

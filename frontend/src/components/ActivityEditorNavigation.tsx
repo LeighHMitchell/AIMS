@@ -74,6 +74,7 @@ export default function ActivityEditorNavigation({
         { id: "general", label: "General" },
         { id: "sectors", label: "Sectors" },
         { id: "humanitarian", label: "Humanitarian" },
+        { id: "country-region", label: "Country/Region" },
         { id: "locations", label: "Locations" },
       ]
     },

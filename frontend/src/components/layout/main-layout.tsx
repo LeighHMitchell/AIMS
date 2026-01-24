@@ -53,6 +53,9 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
             <span className="text-xl font-bold whitespace-nowrap">
               æther
             </span>
+            <span className="text-sm font-medium text-muted-foreground ml-2">
+              MYANMAR
+            </span>
           </Link>
         </div>
 
