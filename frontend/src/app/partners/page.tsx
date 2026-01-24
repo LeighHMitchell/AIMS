@@ -45,6 +45,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { PartnerFundingSummarySkeleton } from "@/components/skeletons";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
+import { INSTITUTIONAL_GROUPS, getAllInstitutionalGroupNames } from "@/data/location-groups";
 
 type SortField = 'name' | 'reportedActivities' | 'providerReceiver' | 'totalAmount' | '2022' | '2023' | '2024' | '2025' | '2026' | '2027';
 type SortOrder = 'asc' | 'desc';
@@ -505,15 +506,33 @@ export default function PartnersPage() {
     }
   };
 
+  // Get all institutional group names for filtering
+  const institutionalGroupNames = useMemo(() => getAllInstitutionalGroupNames(), []);
+
+  // Check if a country name is an institutional group
+  const isInstitutionalGroupCountry = (countryName: string): boolean => {
+    if (!countryName) return false;
+    const normalizedName = countryName.toLowerCase().trim();
+    // Check if it matches any institutional group name
+    if (institutionalGroupNames.some(name => name.toLowerCase() === normalizedName)) {
+      return true;
+    }
+    // Also check for common variations
+    if (normalizedName.includes('global') || normalizedName === 'unknown') {
+      return true;
+    }
+    return false;
+  };
+
   // Render unified table with countries, organizations, and activities (excluding Global/Regional)
   const renderUnifiedTable = () => {
     if (!summaryData || !summaryData.predefinedGroups) return null;
 
     const rows: JSX.Element[] = [];
 
-    // Filter out Global or Regional organizations for separate display
+    // Filter out institutional groups (Global/Regional organizations) for separate display
     const bilateralCountries = summaryData.predefinedGroups.filter(
-      (country: GroupData) => !country.name.includes('Global') && country.name !== 'Unknown'
+      (country: GroupData) => !isInstitutionalGroupCountry(country.name)
     );
 
     bilateralCountries.forEach((country: GroupData) => {
@@ -708,14 +727,22 @@ export default function PartnersPage() {
   };
 
   // Get Global/Regional organizations for separate display
+  // This includes all organizations mapped to institutional groups
   const getGlobalOrganizations = () => {
     if (!summaryData || !summaryData.predefinedGroups) return [];
     
-    const globalGroup = summaryData.predefinedGroups.find(
-      (country: GroupData) => country.name.includes('Global') || country.name === 'Unknown'
+    // Get all groups that are institutional groups
+    const institutionalGroups = summaryData.predefinedGroups.filter(
+      (country: GroupData) => isInstitutionalGroupCountry(country.name)
     );
     
-    return globalGroup ? globalGroup.organizations : [];
+    // Flatten all organizations from institutional groups
+    const allGlobalOrgs: OrganizationMetrics[] = [];
+    institutionalGroups.forEach((group: GroupData) => {
+      allGlobalOrgs.push(...group.organizations);
+    });
+    
+    return allGlobalOrgs;
   };
 
   // Render organization row with expandable activities
