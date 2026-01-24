@@ -92,7 +92,6 @@ interface SummaryData {
   totalAmount: number;
   customGroupsCount: number;
   lastUpdated: string;
-  transactionType: string;
 }
 
 export default function PartnersPage() {
@@ -101,18 +100,12 @@ export default function PartnersPage() {
   
   // UI state
   const [searchTerm, setSearchTerm] = useState("");
-  const [transactionType, setTransactionType] = useState<'C' | 'D'>('D'); // C = Commitments, D = Disbursements
 
-  // Main state - cache both transaction types for instant toggling
-  const [summaryDataByType, setSummaryDataByType] = useState<{
-    C: SummaryData | null;
-    D: SummaryData | null;
-  }>({ C: null, D: null });
+  // Main state - unified view showing actual disbursements + planned disbursements
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Derived summary data based on current transaction type selection
-  const summaryData = summaryDataByType[transactionType];
   const [groupBy, setGroupBy] = useState<'type' | 'custom'>('type');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedCountries, setExpandedCountries] = useState<Set<string>>(new Set());
@@ -127,59 +120,43 @@ export default function PartnersPage() {
   const [expandLevel, setExpandLevel] = useState<0 | 1 | 2>(0); // 0 = collapsed, 1 = orgs expanded, 2 = activities expanded
   const [hideInactiveOrgs, setHideInactiveOrgs] = useState(false); // Hide orgs with no financial activity
 
-  // Helper to fetch data for a specific transaction type
-  const fetchDataForType = async (type: 'C' | 'D'): Promise<SummaryData> => {
-    const timestamp = Date.now();
-    const [predefinedResponse, customResponse, countryResponse] = await Promise.all([
-      fetch(`/api/partners/summary?groupBy=country&transactionType=${type}&_t=${timestamp}`, { cache: 'no-store' }),
-      fetch(`/api/partners/summary?groupBy=custom&transactionType=${type}&_t=${timestamp}`, { cache: 'no-store' }),
-      fetch(`/api/partners/summary?groupBy=type&transactionType=${type}&_t=${timestamp}`, { cache: 'no-store' })
-    ]);
-
-    if (!predefinedResponse.ok || !customResponse.ok || !countryResponse.ok) {
-      throw new Error(`API Error: ${predefinedResponse.status} or ${customResponse.status} or ${countryResponse.status}`);
-    }
-
-    const [predefinedData, customData] = await Promise.all([
-      predefinedResponse.json(),
-      customResponse.json(),
-      countryResponse.json()
-    ]);
-
-    return {
-      predefinedGroups: predefinedData.groups || [],
-      customGroups: customData.groups || [],
-      countryGroups: predefinedData.groups || [],
-      totalOrganizations: predefinedData.totalOrganizations || 0,
-      totalActiveProjects: predefinedData.totalActiveProjects || 0,
-      totalAmount: predefinedData.totalAmount || 0,
-      customGroupsCount: customData.customGroupsCount || customData.groups?.length || 0,
-      lastUpdated: predefinedData.lastUpdated || new Date().toISOString(),
-      transactionType: type
-    };
-  };
-
-  // Fetch both transaction types on initial load for instant toggling
+  // Fetch summary data - unified view with actual disbursements + planned disbursements
   const fetchSummaryData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch both Commitments and Disbursements in parallel
-      const [disbursementsData, commitmentsData] = await Promise.all([
-        fetchDataForType('D'),
-        fetchDataForType('C')
+      const timestamp = Date.now();
+      const [predefinedResponse, customResponse] = await Promise.all([
+        fetch(`/api/partners/summary?groupBy=country&_t=${timestamp}`, { cache: 'no-store' }),
+        fetch(`/api/partners/summary?groupBy=custom&_t=${timestamp}`, { cache: 'no-store' })
       ]);
 
-      setSummaryDataByType({
-        D: disbursementsData,
-        C: commitmentsData
-      });
+      if (!predefinedResponse.ok || !customResponse.ok) {
+        throw new Error(`API Error: ${predefinedResponse.status} or ${customResponse.status}`);
+      }
 
-      // Auto-expand countries based on current transaction type
-      const currentData = transactionType === 'D' ? disbursementsData : commitmentsData;
-      if (currentData.predefinedGroups) {
-        const countryIds = currentData.predefinedGroups.map((g: GroupData) => g.id);
+      const [predefinedData, customData] = await Promise.all([
+        predefinedResponse.json(),
+        customResponse.json()
+      ]);
+
+      const data: SummaryData = {
+        predefinedGroups: predefinedData.groups || [],
+        customGroups: customData.groups || [],
+        countryGroups: predefinedData.groups || [],
+        totalOrganizations: predefinedData.totalOrganizations || 0,
+        totalActiveProjects: predefinedData.totalActiveProjects || 0,
+        totalAmount: predefinedData.totalAmount || 0,
+        customGroupsCount: customData.customGroupsCount || customData.groups?.length || 0,
+        lastUpdated: predefinedData.lastUpdated || new Date().toISOString()
+      };
+
+      setSummaryData(data);
+
+      // Auto-expand countries
+      if (data.predefinedGroups) {
+        const countryIds = data.predefinedGroups.map((g: GroupData) => g.id);
         setExpandedCountries(new Set(countryIds));
       }
     } catch (err) {
@@ -194,12 +171,6 @@ export default function PartnersPage() {
   useEffect(() => {
     fetchSummaryData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Clear activity cache and reset expanded state when switching transaction types
-  useEffect(() => {
-    setOrgActivities({});
-    setExpandedOrgs(new Set());
-  }, [transactionType]);
 
   // Toggle group expansion
   const toggleGroup = (groupId: string) => {
@@ -1068,26 +1039,6 @@ export default function PartnersPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-64"
                   />
-                </div>
-
-                {/* Transaction Type Toggle */}
-                <div className="flex items-center bg-white border border-gray-200 rounded-md">
-                  <Button
-                    variant={transactionType === 'D' ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setTransactionType('D')}
-                    className="rounded-r-none"
-                  >
-                    Disbursements
-                  </Button>
-                  <Button
-                    variant={transactionType === 'C' ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setTransactionType('C')}
-                    className="rounded-l-none"
-                  >
-                    Commitments
-                  </Button>
                 </div>
 
                 {/* Actions */}

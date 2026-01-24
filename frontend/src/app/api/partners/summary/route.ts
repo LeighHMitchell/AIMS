@@ -166,9 +166,11 @@ export async function GET(request: NextRequest) {
     // Get search parameters
     const { searchParams } = new URL(request.url);
     const groupBy = searchParams.get('groupBy') || 'type'; // 'type', 'custom', or 'country'
-    const transactionType = searchParams.get('transactionType') || 'C'; // 'C' for commitments, 'D' for disbursements
     
-    console.log('[AIMS] Request parameters:', { groupBy, transactionType });
+    // Determine current year for blending actual vs planned disbursements
+    const currentYear = new Date().getFullYear();
+    
+    console.log('[AIMS] Request parameters:', { groupBy, currentYear });
 
     // Fetch all organizations from Supabase Organizations table
     console.log('[AIMS] Fetching organizations from Supabase...');
@@ -195,7 +197,6 @@ export async function GET(request: NextRequest) {
         totalActiveProjects: 0,
         totalAmount: 0,
         lastUpdated: new Date().toISOString(),
-        transactionType,
         groupBy
       });
     }
@@ -253,47 +254,34 @@ export async function GET(request: NextRequest) {
     
     console.log('[AIMS] Organizations with activities:', orgActivityMap.size);
 
-    // Map frontend transaction type to IATI codes
-    const transactionTypeCodes = transactionType === 'C' ? ['1', '2', '11'] : ['3', '4']; // C = Commitments (1=Incoming, 2=Outgoing, 11=Incoming Commitment), D = Disbursements (3=Disbursement, 4=Expenditure)
-    
-    // Fetch all transactions for financial calculations
-    console.log('[AIMS] Fetching transactions with type codes:', transactionTypeCodes);
-    const { data: transactions, error: transactionsError } = await supabase
+    // Fetch actual disbursement transactions (types 3=Disbursement, 4=Expenditure)
+    // These are used for current year and earlier
+    const disbursementTypeCodes = ['3', '4'];
+    console.log('[AIMS] Fetching actual disbursement transactions...');
+    const { data: disbursementTransactions, error: disbursementError } = await supabase
       .from('transactions')
       .select('activity_id, provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, value, transaction_date, value_usd, transaction_type')
-      .in('transaction_type', transactionTypeCodes);
+      .in('transaction_type', disbursementTypeCodes);
 
-    if (transactionsError) {
-      console.error('[AIMS] Error fetching transactions:', transactionsError);
+    if (disbursementError) {
+      console.error('[AIMS] Error fetching disbursement transactions:', disbursementError);
     }
+    console.log('[AIMS] Found disbursement transactions:', disbursementTransactions?.length || 0);
 
-    console.log('[AIMS] Found transactions:', transactions?.length || 0);
-    
-    // Fetch ALL transactions (regardless of type) for provider/receiver counts
-    // Include name fields to match by name as well as ID (consistent with financial calculations)
-    console.log('[AIMS] Fetching all transactions for provider/receiver counts...');
-    const { data: allTransactions, error: allTransactionsError } = await supabase
-      .from('transactions')
-      .select('provider_org_id, receiver_org_id, provider_org_name, receiver_org_name');
-
-    if (allTransactionsError) {
-      console.error('[AIMS] Error fetching all transactions:', allTransactionsError);
-    }
-    console.log('[AIMS] Found all transactions:', allTransactions?.length || 0);
-
-    // Fetch planned disbursements for provider/receiver counts
-    console.log('[AIMS] Fetching planned disbursements for provider/receiver counts...');
+    // Fetch planned disbursements with full financial data
+    // These are used for future years (year > currentYear)
+    console.log('[AIMS] Fetching planned disbursements with financial data...');
     const { data: plannedDisbursements, error: plannedError } = await supabase
       .from('planned_disbursements')
-      .select('provider_org_id, receiver_org_id, provider_org_name, receiver_org_name');
+      .select('provider_org_id, receiver_org_id, provider_org_name, receiver_org_name, amount, usd_amount, period_start');
 
     if (plannedError) {
       console.error('[AIMS] Error fetching planned disbursements:', plannedError);
     }
     console.log('[AIMS] Found planned disbursements:', plannedDisbursements?.length || 0);
 
-    // Provider/receiver counts are now calculated per-organization during metrics calculation
-    // to ensure consistent matching with financial calculations (by ID OR name)
+    // Provider/receiver counts now only count actual disbursement transactions
+    // (not commitments, not planned disbursements)
 
     // Build reported activities map (activities where org is reporting_org_id)
     const reportedActivitiesMap = new Map<string, number>();
@@ -320,6 +308,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Calculate financial data by year (2022-2027)
+      // Blended view: actual disbursements for current year and earlier, planned disbursements for future years
       const financialData: Record<string, number> = {};
       const years = [2022, 2023, 2024, 2025, 2026, 2027];
       
@@ -328,41 +317,63 @@ export async function GET(request: NextRequest) {
         financialData[year.toString()] = 0;
       });
       
-      // Calculate yearly totals by aggregating transactions where this organization is involved
+      // Calculate yearly totals using blended logic
       years.forEach(year => {
-        const yearTotal = (transactions || []).reduce((sum: number, trans: any) => {
-          if (!trans.transaction_date) return sum;
+        if (year <= currentYear) {
+          // For current year and earlier: use actual disbursement transactions
+          const yearTotal = (disbursementTransactions || []).reduce((sum: number, trans: any) => {
+            if (!trans.transaction_date) return sum;
+            
+            try {
+              const transYear = new Date(trans.transaction_date).getFullYear();
+              if (transYear !== year) return sum;
+              
+              // Check if this organization is the provider (the one making the disbursement)
+              const isProvider = trans.provider_org_id === org.id || trans.provider_org_name === org.name;
+              
+              if (isProvider) {
+                // Use USD value if available, otherwise use original value
+                const transValue = trans.value_usd || trans.value;
+                const amount = (typeof transValue === 'number' && !isNaN(transValue)) ? transValue : 0;
+                return sum + amount;
+              }
+              
+              return sum;
+            } catch (dateError) {
+              console.warn('[AIMS] Invalid transaction date:', trans.transaction_date);
+              return sum;
+            }
+          }, 0);
           
-          try {
-            const transYear = new Date(trans.transaction_date).getFullYear();
-            if (transYear !== year) return sum;
+          financialData[year.toString()] = yearTotal;
+        } else {
+          // For future years: use planned disbursements
+          const yearTotal = (plannedDisbursements || []).reduce((sum: number, pd: any) => {
+            if (!pd.period_start) return sum;
             
-            // Check if this organization is involved in the transaction
-            // For both commitments and disbursements: organization must be the provider (the one making the payment)
-            let isInvolved = false;
-            if (transactionType === 'C') {
-              // For commitments, only count if organization is the provider
-              isInvolved = trans.provider_org_id === org.id || trans.provider_org_name === org.name;
-            } else {
-              // For disbursements, only count if organization is the provider (not the receiver)
-              isInvolved = trans.provider_org_id === org.id || trans.provider_org_name === org.name;
+            try {
+              const pdYear = new Date(pd.period_start).getFullYear();
+              if (pdYear !== year) return sum;
+              
+              // Check if this organization is the provider
+              const isProvider = pd.provider_org_id === org.id || pd.provider_org_name === org.name;
+              
+              if (isProvider) {
+                // Use USD amount if available, otherwise use original amount
+                const pdValue = pd.usd_amount || pd.amount;
+                const amount = (typeof pdValue === 'number' && !isNaN(pdValue)) ? pdValue : 0;
+                return sum + amount;
+              }
+              
+              return sum;
+            } catch (dateError) {
+              console.warn('[AIMS] Invalid planned disbursement period_start:', pd.period_start);
+              return sum;
             }
-            
-            if (isInvolved) {
-              // Use USD value if available, otherwise use original value
-              const transValue = trans.value_usd || trans.value;
-              const amount = (typeof transValue === 'number' && !isNaN(transValue)) ? transValue : 0;
-              return sum + amount;
-            }
-            
-            return sum;
-          } catch (dateError) {
-            console.warn('[AIMS] Invalid transaction date:', trans.transaction_date);
-            return sum;
-          }
-        }, 0);
-        
-        financialData[year.toString()] = yearTotal;
+          }, 0);
+          
+          financialData[year.toString()] = yearTotal;
+        }
       });
 
       // Calculate total financial amount
@@ -378,27 +389,19 @@ export async function GET(request: NextRequest) {
       // Get activity breakdown counts
       const reportedActivities = reportedActivitiesMap.get(org.id) || 0;
       
-      // Count transactions where org is provider (by ID OR name, consistent with financial calculations)
+      // Count only actual disbursement transactions where org is provider/receiver
+      // (by ID OR name, consistent with financial calculations)
+      // Does NOT include planned disbursements or commitments
       let providerTransactionCount = 0;
       let receiverTransactionCount = 0;
       
-      allTransactions?.forEach((t: any) => {
+      disbursementTransactions?.forEach((t: any) => {
         // Check if this org is the provider
         if (t.provider_org_id === org.id || t.provider_org_name === org.name) {
           providerTransactionCount++;
         }
         // Check if this org is the receiver
         if (t.receiver_org_id === org.id || t.receiver_org_name === org.name) {
-          receiverTransactionCount++;
-        }
-      });
-      
-      // Also count planned disbursements
-      plannedDisbursements?.forEach((pd: any) => {
-        if (pd.provider_org_id === org.id || pd.provider_org_name === org.name) {
-          providerTransactionCount++;
-        }
-        if (pd.receiver_org_id === org.id || pd.receiver_org_name === org.name) {
           receiverTransactionCount++;
         }
       });
@@ -662,7 +665,6 @@ export async function GET(request: NextRequest) {
       totalAmount,
       customGroupsCount,
       lastUpdated: new Date().toISOString(),
-      transactionType,
       groupBy
     });
 
