@@ -517,11 +517,18 @@ export default function PartnersPage() {
     if (institutionalGroupNames.some(name => name.toLowerCase() === normalizedName)) {
       return true;
     }
-    // Also check for common variations
-    if (normalizedName.includes('global') || normalizedName === 'unknown') {
+    // Also check for "Global" variations (but not "Unknown" - those go to unassigned)
+    if (normalizedName.includes('global')) {
       return true;
     }
     return false;
+  };
+
+  // Check if a country name represents unassigned organizations
+  const isUnassignedCountry = (countryName: string): boolean => {
+    if (!countryName) return true;
+    const normalizedName = countryName.toLowerCase().trim();
+    return normalizedName === '' || normalizedName === 'unknown' || normalizedName === 'unassigned';
   };
 
   // Render unified table with countries, organizations, and activities (excluding Global/Regional)
@@ -530,9 +537,9 @@ export default function PartnersPage() {
 
     const rows: JSX.Element[] = [];
 
-    // Filter out institutional groups (Global/Regional organizations) for separate display
+    // Filter out institutional groups and unassigned organizations for separate display
     const bilateralCountries = summaryData.predefinedGroups.filter(
-      (country: GroupData) => !isInstitutionalGroupCountry(country.name)
+      (country: GroupData) => !isInstitutionalGroupCountry(country.name) && !isUnassignedCountry(country.name)
     );
 
     bilateralCountries.forEach((country: GroupData) => {
@@ -743,6 +750,24 @@ export default function PartnersPage() {
     });
     
     return allGlobalOrgs;
+  };
+
+  // Get organizations that haven't been assigned to a country or institutional group
+  const getUnassignedOrganizations = () => {
+    if (!summaryData || !summaryData.predefinedGroups) return [];
+    
+    // Find groups with empty, null, or "Unknown" country names
+    const unassignedGroups = summaryData.predefinedGroups.filter(
+      (country: GroupData) => isUnassignedCountry(country.name)
+    );
+    
+    // Flatten all organizations from unassigned groups
+    const unassignedOrgs: OrganizationMetrics[] = [];
+    unassignedGroups.forEach((group: GroupData) => {
+      unassignedOrgs.push(...group.organizations);
+    });
+    
+    return unassignedOrgs;
   };
 
   // Render organization row with expandable activities
@@ -1232,6 +1257,114 @@ export default function PartnersPage() {
                           </thead>
                           <tbody>
                             {sortOrganizations(getGlobalOrganizations()).map((org) => renderOrganizationRow(org))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Unassigned Organizations Card */}
+                {getUnassignedOrganizations().length > 0 && (
+                  <Card className="bg-white border border-orange-200">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg font-semibold text-gray-900">
+                        Unassigned Organizations
+                      </CardTitle>
+                      <CardDescription className="text-gray-600">
+                        Organizations that need to be assigned a country or institutional group
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200">
+                              <th className="text-left py-3 px-2 font-medium text-gray-700">
+                                <button
+                                  onClick={() => handleSort('name')}
+                                  className="flex items-center hover:text-gray-900"
+                                >
+                                  Organisation Name
+                                  {getSortIcon('name')}
+                                </button>
+                              </th>
+                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                <button
+                                  onClick={() => handleSort('reportedActivities')}
+                                  className="flex items-center hover:text-gray-900"
+                                >
+                                  Reported
+                                  {getSortIcon('reportedActivities')}
+                                </button>
+                              </th>
+                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                <button
+                                  onClick={() => handleSort('providerReceiver')}
+                                  className="flex items-center hover:text-gray-900"
+                                >
+                                  Provider/Receiver
+                                  {getSortIcon('providerReceiver')}
+                                </button>
+                              </th>
+                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                <button
+                                  onClick={() => handleSort('2022')}
+                                  className="flex items-center hover:text-gray-900"
+                                >
+                                  2022 (USD)
+                                  {getSortIcon('2022')}
+                                </button>
+                              </th>
+                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                <button
+                                  onClick={() => handleSort('2023')}
+                                  className="flex items-center hover:text-gray-900"
+                                >
+                                  2023 (USD)
+                                  {getSortIcon('2023')}
+                                </button>
+                              </th>
+                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                <button
+                                  onClick={() => handleSort('2024')}
+                                  className="flex items-center hover:text-gray-900"
+                                >
+                                  2024 (USD)
+                                  {getSortIcon('2024')}
+                                </button>
+                              </th>
+                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                <button
+                                  onClick={() => handleSort('2025')}
+                                  className="flex items-center hover:text-gray-900"
+                                >
+                                  2025 (USD)
+                                  {getSortIcon('2025')}
+                                </button>
+                              </th>
+                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                <button
+                                  onClick={() => handleSort('2026')}
+                                  className="flex items-center hover:text-gray-900"
+                                >
+                                  2026 (USD)
+                                  {getSortIcon('2026')}
+                                </button>
+                              </th>
+                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                <button
+                                  onClick={() => handleSort('2027')}
+                                  className="flex items-center hover:text-gray-900"
+                                >
+                                  2027 (USD)
+                                  {getSortIcon('2027')}
+                                </button>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sortOrganizations(getUnassignedOrganizations()).map((org) => renderOrganizationRow(org))}
                           </tbody>
                         </table>
                       </div>
