@@ -231,11 +231,12 @@ export async function PUT(
     }
     
     // Map frontend field names to database column names
+    // Save to BOTH country and country_represented columns for compatibility
     if ('country_represented' in updates) {
       console.log('[AIMS] Received country_represented:', updates.country_represented);
       updates.country = updates.country_represented;
-      console.log('[AIMS] Saving to country column:', updates.country);
-      delete updates.country_represented;
+      // Keep country_represented so it also gets saved to the database
+      console.log('[AIMS] Saving to both country and country_represented columns:', updates.country);
     }
     
     if ('organisation_type' in updates) {

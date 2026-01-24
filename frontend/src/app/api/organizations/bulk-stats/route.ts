@@ -231,6 +231,8 @@ export async function GET(request: NextRequest) {
     const reportingOrgActivityCount = new Map<string, number>();
     const contributingOrgActivityCount = new Map<string, number>();
     const associatedOrgActivities = new Map<string, Set<string>>(); // org_id -> Set of activity_ids
+    const providerTransactionCount = new Map<string, number>(); // org_id -> count of transactions as provider
+    const receiverTransactionCount = new Map<string, number>(); // org_id -> count of transactions as receiver
     const orgTotalBudgeted = new Map<string, number>();
     const orgTotalDisbursed = new Map<string, number>();
 
@@ -286,46 +288,68 @@ export async function GET(request: NextRequest) {
     }
 
     // Count activities associated via transactions (provider or receiver org)
+    // Also count individual transactions as provider or receiver for each org
     if (transactions && !transactionsError) {
       transactions.forEach((transaction: any) => {
         const activityId = transaction.activity_id;
         if (activityId) {
-          // Add activity for provider org
+          // Add activity for provider org and count transaction
           if (transaction.provider_org_id) {
             if (!associatedOrgActivities.has(transaction.provider_org_id)) {
               associatedOrgActivities.set(transaction.provider_org_id, new Set());
             }
             associatedOrgActivities.get(transaction.provider_org_id)!.add(activityId);
+            // Count this transaction as provider
+            providerTransactionCount.set(
+              transaction.provider_org_id,
+              (providerTransactionCount.get(transaction.provider_org_id) || 0) + 1
+            );
           }
-          // Add activity for receiver org
+          // Add activity for receiver org and count transaction
           if (transaction.receiver_org_id) {
             if (!associatedOrgActivities.has(transaction.receiver_org_id)) {
               associatedOrgActivities.set(transaction.receiver_org_id, new Set());
             }
             associatedOrgActivities.get(transaction.receiver_org_id)!.add(activityId);
+            // Count this transaction as receiver
+            receiverTransactionCount.set(
+              transaction.receiver_org_id,
+              (receiverTransactionCount.get(transaction.receiver_org_id) || 0) + 1
+            );
           }
         }
       });
     }
 
     // Count activities associated via planned disbursements (provider or receiver org)
+    // Also count planned disbursements as provider or receiver for each org
     if (plannedDisbursements && !plannedDisbursementsError) {
       plannedDisbursements.forEach((pd: any) => {
         const activityId = pd.activity_id;
         if (activityId) {
-          // Add activity for provider org
+          // Add activity for provider org and count planned disbursement
           if (pd.provider_org_id) {
             if (!associatedOrgActivities.has(pd.provider_org_id)) {
               associatedOrgActivities.set(pd.provider_org_id, new Set());
             }
             associatedOrgActivities.get(pd.provider_org_id)!.add(activityId);
+            // Count this planned disbursement as provider
+            providerTransactionCount.set(
+              pd.provider_org_id,
+              (providerTransactionCount.get(pd.provider_org_id) || 0) + 1
+            );
           }
-          // Add activity for receiver org
+          // Add activity for receiver org and count planned disbursement
           if (pd.receiver_org_id) {
             if (!associatedOrgActivities.has(pd.receiver_org_id)) {
               associatedOrgActivities.set(pd.receiver_org_id, new Set());
             }
             associatedOrgActivities.get(pd.receiver_org_id)!.add(activityId);
+            // Count this planned disbursement as receiver
+            receiverTransactionCount.set(
+              pd.receiver_org_id,
+              (receiverTransactionCount.get(pd.receiver_org_id) || 0) + 1
+            );
           }
         }
       });
@@ -350,6 +374,11 @@ export async function GET(request: NextRequest) {
       const contributingCount = contributingOrgActivityCount.get(org.id) || 0;
       const associatedActivitiesSet = associatedOrgActivities.get(org.id);
       const associatedCount = associatedActivitiesSet ? associatedActivitiesSet.size : 0;
+      
+      // Get provider and receiver transaction counts
+      const providerCount = providerTransactionCount.get(org.id) || 0;
+      const receiverCount = receiverTransactionCount.get(org.id) || 0;
+      const totalTransactionCount = providerCount + receiverCount;
 
       // Total active projects (avoid double counting if org is both reporting and contributing to same activity)
       const totalActiveProjects = Math.max(reportingCount, contributingCount);
@@ -365,6 +394,9 @@ export async function GET(request: NextRequest) {
         activeProjects: totalActiveProjects,
         reportedActivities: reportingCount, // Activities where org is the reporting org
         associatedActivities: associatedCount, // Activities associated via transactions/planned disbursements
+        providerTransactionCount: providerCount, // Number of transactions/planned disbursements as provider
+        receiverTransactionCount: receiverCount, // Number of transactions/planned disbursements as receiver
+        totalTransactionCount: totalTransactionCount, // Total transactions (provider + receiver)
         totalBudgeted: totalBudgeted, // Total budgeted from activity_budgets (sum of usd_value for org's reported activities)
         totalDisbursed: totalDisbursed, // Total disbursed funds
         displayName: org.name && org.acronym ? `${org.name} (${org.acronym})` : org.name,

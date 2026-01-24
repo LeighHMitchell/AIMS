@@ -355,6 +355,9 @@ interface Organization {
   activeProjects: number
   reportedActivities?: number
   associatedActivities?: number
+  providerTransactionCount?: number
+  receiverTransactionCount?: number
+  totalTransactionCount?: number
   totalBudgeted?: number
   totalDisbursed?: number
   displayName: string
@@ -1007,7 +1010,14 @@ const OrganizationCard: React.FC<{
               {/* Location and Classification Pills */}
               <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                 {(organization.country_represented || organization.country) && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {(organization.country_represented || organization.country) === 'United Nations' ? (
+                      <img src="/images/flags/united-nations.svg" alt="UN Flag" className="h-3 w-4 object-cover rounded-sm" />
+                    ) : (organization.country_represented || organization.country) === 'European Union Institutions' ? (
+                      <img src="/images/flags/european-union.svg" alt="EU Flag" className="h-3 w-4 object-cover rounded-sm" />
+                    ) : getCountryCode(organization.country_represented || organization.country || '') ? (
+                      <Flag code={getCountryCode(organization.country_represented || organization.country || '')!} className="h-3 w-4 object-cover rounded-sm" />
+                    ) : null}
                     {organization.country_represented || organization.country}
                   </span>
                 )}
@@ -1108,9 +1118,16 @@ const OrganizationListView: React.FC<{
 
               {/* Location */}
               <div className="flex-shrink-0 min-w-[120px]">
-                <p className="text-sm text-gray-600">
-                  {org.country_represented || org.country || 'No location'}
-                </p>
+                <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                  {(org.country_represented || org.country) === 'United Nations' ? (
+                    <img src="/images/flags/united-nations.svg" alt="UN Flag" className="h-3.5 w-5 object-cover rounded-sm" />
+                  ) : (org.country_represented || org.country) === 'European Union Institutions' ? (
+                    <img src="/images/flags/european-union.svg" alt="EU Flag" className="h-3.5 w-5 object-cover rounded-sm" />
+                  ) : getCountryCode(org.country_represented || org.country || '') ? (
+                    <Flag code={getCountryCode(org.country_represented || org.country || '')!} className="h-3.5 w-5 object-cover rounded-sm" />
+                  ) : null}
+                  <span>{org.country_represented || org.country || 'No location'}</span>
+                </div>
               </div>
             </div>
 
@@ -1262,6 +1279,10 @@ function OrganizationsPageContent() {
         case 'associated':
           aValue = a.associatedActivities ?? 0
           bValue = b.associatedActivities ?? 0
+          break
+        case 'providerReceiver':
+          aValue = a.totalTransactionCount ?? 0
+          bValue = b.totalTransactionCount ?? 0
           break
         case 'funding':
           aValue = a.totalBudgeted || 0

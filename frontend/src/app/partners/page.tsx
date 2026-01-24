@@ -46,7 +46,7 @@ import { toast } from "sonner";
 import { PartnerFundingSummarySkeleton } from "@/components/skeletons";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
 
-type SortField = 'name' | 'activeProjects' | 'totalAmount' | '2022' | '2023' | '2024' | '2025' | '2026' | '2027';
+type SortField = 'name' | 'reportedActivities' | 'providerReceiver' | 'totalAmount' | '2022' | '2023' | '2024' | '2025' | '2026' | '2027';
 type SortOrder = 'asc' | 'desc';
 
 interface OrganizationMetrics {
@@ -64,6 +64,10 @@ interface OrganizationMetrics {
   logo?: string;
   cooperationModality?: string;  // Partner Origin
   derivedCategory?: string;       // Partner Classification
+  // Activity breakdown
+  reportedActivities?: number;      // Activities where org is reporting_org_id
+  providerTransactionCount?: number; // Transactions where org is provider
+  receiverTransactionCount?: number; // Transactions where org is receiver
 }
 
 interface GroupData {
@@ -354,9 +358,13 @@ export default function PartnersPage() {
           aVal = a.name.toLowerCase();
           bVal = b.name.toLowerCase();
           break;
-        case 'activeProjects':
-          aVal = a.activeProjects || 0;
-          bVal = b.activeProjects || 0;
+        case 'reportedActivities':
+          aVal = a.reportedActivities || 0;
+          bVal = b.reportedActivities || 0;
+          break;
+        case 'providerReceiver':
+          aVal = (a.providerTransactionCount || 0) + (a.receiverTransactionCount || 0);
+          bVal = (b.providerTransactionCount || 0) + (b.receiverTransactionCount || 0);
           break;
         case 'totalAmount':
           aVal = a.totalAmount;
@@ -538,7 +546,12 @@ export default function PartnersPage() {
             </div>
           </td>
           <td className="py-3 px-2 text-center font-semibold">
-            {country.totalActiveProjects || 0}
+            {country.organizations.reduce((sum, org) => sum + (org.reportedActivities || 0), 0)}
+          </td>
+          <td className="py-3 px-2 text-center font-semibold text-xs text-gray-700">
+            {country.organizations.reduce((sum, org) => sum + (org.providerTransactionCount || 0), 0)}
+            {' / '}
+            {country.organizations.reduce((sum, org) => sum + (org.receiverTransactionCount || 0), 0)}
           </td>
           <td className="py-3 px-2 text-center font-semibold">
             {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2022'] || 0), 0))}
@@ -599,7 +612,10 @@ export default function PartnersPage() {
                 </div>
               </td>
               <td className="py-3 px-2 text-center font-semibold">
-                {org.activeProjects || 0}
+                {org.reportedActivities || 0}
+              </td>
+              <td className="py-3 px-2 text-center font-semibold text-xs text-gray-700">
+                {org.providerTransactionCount || 0} / {org.receiverTransactionCount || 0}
               </td>
               <td className="py-3 px-2 text-center font-semibold">
                 {formatCurrency(org.financialData['2022'])}
@@ -655,6 +671,9 @@ export default function PartnersPage() {
                         {activity.acronym && ` (${activity.acronym})`}
                       </a>
                     </div>
+                  </td>
+                  <td className="py-2 px-2 text-center text-sm">
+                    -
                   </td>
                   <td className="py-2 px-2 text-center text-sm">
                     -
@@ -736,7 +755,10 @@ export default function PartnersPage() {
             </div>
           </td>
           <td className="py-3 px-2 text-center font-semibold">
-            {org.activeProjects || 0}
+            {org.reportedActivities || 0}
+          </td>
+          <td className="py-3 px-2 text-center font-semibold text-xs text-gray-700">
+            {org.providerTransactionCount || 0} / {org.receiverTransactionCount || 0}
           </td>
           <td className="py-3 px-2 text-center font-semibold">
             {formatCurrency(org.financialData['2022'])}
@@ -789,7 +811,10 @@ export default function PartnersPage() {
               </div>
             </td>
             <td className="py-2 px-2 text-center text-sm">
-              {/* Individual activity doesn't show project count */}
+              {/* Individual activity doesn't show these org-level counts */}
+              -
+            </td>
+            <td className="py-2 px-2 text-center text-sm">
               -
             </td>
             <td className="py-2 px-2 text-center text-sm">
@@ -999,11 +1024,20 @@ export default function PartnersPage() {
                             </th>
                             <th className="text-center py-3 px-2 font-medium text-gray-700">
                               <button
-                                onClick={() => handleSort('activeProjects')}
+                                onClick={() => handleSort('reportedActivities')}
                                 className="flex items-center hover:text-gray-900"
                               >
-                                Activities
-                                {getSortIcon('activeProjects')}
+                                Reported
+                                {getSortIcon('reportedActivities')}
+                              </button>
+                            </th>
+                            <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <button
+                                onClick={() => handleSort('providerReceiver')}
+                                className="flex items-center hover:text-gray-900"
+                              >
+                                Provider/Receiver
+                                {getSortIcon('providerReceiver')}
                               </button>
                             </th>
                             <th className="text-center py-3 px-2 font-medium text-gray-700">
@@ -1097,11 +1131,20 @@ export default function PartnersPage() {
                               </th>
                               <th className="text-center py-3 px-2 font-medium text-gray-700">
                                 <button
-                                  onClick={() => handleSort('activeProjects')}
+                                  onClick={() => handleSort('reportedActivities')}
                                   className="flex items-center hover:text-gray-900"
                                 >
-                                  Activities
-                                  {getSortIcon('activeProjects')}
+                                  Reported
+                                  {getSortIcon('reportedActivities')}
+                                </button>
+                              </th>
+                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                <button
+                                  onClick={() => handleSort('providerReceiver')}
+                                  className="flex items-center hover:text-gray-900"
+                                >
+                                  Provider/Receiver
+                                  {getSortIcon('providerReceiver')}
                                 </button>
                               </th>
                               <th className="text-center py-3 px-2 font-medium text-gray-700">
@@ -1251,11 +1294,20 @@ export default function PartnersPage() {
                                       </th>
                                       <th className="text-center py-3 px-2 font-medium text-gray-700">
                                         <button
-                                          onClick={() => handleSort('activeProjects')}
+                                          onClick={() => handleSort('reportedActivities')}
                                           className="flex items-center hover:text-gray-900"
                                         >
-                                          Activities
-                                          {getSortIcon('activeProjects')}
+                                          Reported
+                                          {getSortIcon('reportedActivities')}
+                                        </button>
+                                      </th>
+                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                        <button
+                                          onClick={() => handleSort('providerReceiver')}
+                                          className="flex items-center hover:text-gray-900"
+                                        >
+                                          Provider/Receiver
+                                          {getSortIcon('providerReceiver')}
                                         </button>
                                       </th>
                                       <th className="text-center py-3 px-2 font-medium text-gray-700">

@@ -352,7 +352,7 @@ export function PlannedDisbursementsTable({
               )}
               {isColumnVisible('providerReceiver') && (
                 <TableHead>
-                  Provider / Receiver
+                  Provider → Receiver
                 </TableHead>
               )}
               {isColumnVisible('amount') && (
@@ -498,19 +498,18 @@ export function PlannedDisbursementsTable({
                             <div className="text-sm font-medium text-foreground">
                               <div className="flex items-start gap-2">
                                 {/* Provider */}
-                                <div className="flex items-start gap-1 flex-1 min-w-0">
-                                  <OrganizationLogo
-                                    logo={disbursement.provider_org_logo}
-                                    name={providerDisplay}
-                                    size="sm"
-                                    className="flex-shrink-0 mt-0.5"
-                                  />
-                                  <div className="flex-1 min-w-0">
+                                <div className="flex flex-col gap-0.5">
+                                  <div className="flex items-center gap-1">
+                                    <OrganizationLogo
+                                      logo={disbursement.provider_org_logo}
+                                      name={providerDisplay}
+                                      size="sm"
+                                    />
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <div className="text-sm truncate">
+                                        <span className="text-sm">
                                           {providerDisplay}
-                                        </div>
+                                        </span>
                                       </TooltipTrigger>
                                       {disbursement.provider_org_ref && (
                                         <TooltipContent side="top">
@@ -518,30 +517,29 @@ export function PlannedDisbursementsTable({
                                         </TooltipContent>
                                       )}
                                     </Tooltip>
-                                    {disbursement.provider_activity && (
-                                      <div className="text-xs text-muted-foreground">
-                                        {disbursement.provider_activity.title_narrative || disbursement.provider_activity.title}
-                                      </div>
-                                    )}
                                   </div>
+                                  {disbursement.provider_activity && (
+                                    <div className="text-xs text-muted-foreground ml-5">
+                                      {disbursement.provider_activity.title_narrative || disbursement.provider_activity.title}
+                                    </div>
+                                  )}
                                 </div>
 
-                                <span className="text-muted-foreground flex-shrink-0 mt-1">→</span>
+                                <span className="text-muted-foreground mt-1">→</span>
 
                                 {/* Receiver */}
-                                <div className="flex items-start gap-1 flex-1 min-w-0">
-                                  <OrganizationLogo
-                                    logo={disbursement.receiver_org_logo}
-                                    name={receiverDisplay}
-                                    size="sm"
-                                    className="flex-shrink-0 mt-0.5"
-                                  />
-                                  <div className="flex-1 min-w-0">
+                                <div className="flex flex-col gap-0.5">
+                                  <div className="flex items-center gap-1">
+                                    <OrganizationLogo
+                                      logo={disbursement.receiver_org_logo}
+                                      name={receiverDisplay}
+                                      size="sm"
+                                    />
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <div className="text-sm truncate">
+                                        <span className="text-sm">
                                           {receiverDisplay}
-                                        </div>
+                                        </span>
                                       </TooltipTrigger>
                                       {disbursement.receiver_org_ref && (
                                         <TooltipContent side="top">
@@ -549,12 +547,12 @@ export function PlannedDisbursementsTable({
                                         </TooltipContent>
                                       )}
                                     </Tooltip>
-                                    {disbursement.receiver_activity && (
-                                      <div className="text-xs text-muted-foreground">
-                                        {disbursement.receiver_activity.title_narrative || disbursement.receiver_activity.title}
-                                      </div>
-                                    )}
                                   </div>
+                                  {disbursement.receiver_activity && (
+                                    <div className="text-xs text-muted-foreground ml-5">
+                                      {disbursement.receiver_activity.title_narrative || disbursement.receiver_activity.title}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>

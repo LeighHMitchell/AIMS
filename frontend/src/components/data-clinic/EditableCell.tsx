@@ -107,7 +107,7 @@ const FIELD_LABELS: Record<string, string> = {
   acronym: 'Acronym',
   iati_org_id: 'IATI Identifier',
   type: 'Organization Type',
-  country: 'Location Represented',
+  country_represented: 'Location Represented',
   default_currency: 'Default Currency',
 };
 
@@ -248,6 +248,24 @@ export function EditableCell({
         }
         // Check if it's an institutional group
         if (isInstitutionalGroup(value)) {
+          // Special case for United Nations - show UN flag
+          if (value === 'United Nations') {
+            return (
+              <div className="flex items-center gap-2">
+                <img src="/images/flags/united-nations.svg" alt="UN Flag" className="h-4 w-6 object-cover rounded" />
+                <span className="text-sm">{value}</span>
+              </div>
+            );
+          }
+          // Special case for European Union Institutions - show EU flag
+          if (value === 'European Union Institutions') {
+            return (
+              <div className="flex items-center gap-2">
+                <img src="/images/flags/european-union.svg" alt="EU Flag" className="h-4 w-6 object-cover rounded" />
+                <span className="text-sm">{value}</span>
+              </div>
+            );
+          }
           return (
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -365,6 +383,24 @@ export function EditableCell({
                           );
                         }
                         if (isInstitutionalGroup(localValue)) {
+                          // Special case for United Nations - show UN flag
+                          if (localValue === 'United Nations') {
+                            return (
+                              <>
+                                <img src="/images/flags/united-nations.svg" alt="UN Flag" className="h-4 w-6 object-cover rounded" />
+                                <span>{localValue}</span>
+                              </>
+                            );
+                          }
+                          // Special case for European Union Institutions - show EU flag
+                          if (localValue === 'European Union Institutions') {
+                            return (
+                              <>
+                                <img src="/images/flags/european-union.svg" alt="EU Flag" className="h-4 w-6 object-cover rounded" />
+                                <span>{localValue}</span>
+                              </>
+                            );
+                          }
                           return (
                             <>
                               <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -403,7 +439,13 @@ export function EditableCell({
                     {filteredInstitutionalGroups.map((group) => (
                       <SelectItem key={group.code} value={group.name} className="font-medium">
                         <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          {group.name === 'United Nations' ? (
+                            <img src="/images/flags/united-nations.svg" alt="UN Flag" className="h-4 w-6 object-cover rounded flex-shrink-0" />
+                          ) : group.name === 'European Union Institutions' ? (
+                            <img src="/images/flags/european-union.svg" alt="EU Flag" className="h-4 w-6 object-cover rounded flex-shrink-0" />
+                          ) : (
+                            <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          )}
                           <span>{group.name}</span>
                         </div>
                       </SelectItem>

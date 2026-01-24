@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         acronym,
         iati_org_id,
         type,
-        country,
+        country_represented,
         default_currency,
         website,
         total_budget,
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
         missingBudget++;
         hasGap = true;
       }
-      if (!org.country) {
+      if (!org.country_represented) {
         missingCountry++;
         hasGap = true;
       }
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
           acronym: org.acronym,
           iati_org_id: org.iati_org_id,
           type: org.type,
-          country: org.country,
+          country_represented: org.country_represented,
           default_currency: org.default_currency,
           totalBudget: org.total_budget,
           recipientOrgBudget: org.recipient_org_budget,

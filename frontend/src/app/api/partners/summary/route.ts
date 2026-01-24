@@ -23,6 +23,10 @@ interface OrganizationMetrics extends Organization {
   activeProjects: number;
   totalAmount: number;
   financialData: Record<string, number>;
+  // Activity breakdown
+  reportedActivities: number;      // Activities where org is reporting_org_id
+  providerTransactionCount: number; // Transactions/planned disbursements where org is provider
+  receiverTransactionCount: number; // Transactions/planned disbursements where org is receiver
   // Computed/display fields
   fullName: string;
   acronym: string;
@@ -209,41 +213,45 @@ export async function GET(request: NextRequest) {
 
     console.log('[AIMS] Found active activities:', activities?.length || 0);
     
-    // Debug: Log all activity org names to see what we're working with
-    const activityOrgNames = new Set();
+    // Fetch participating organizations to count activities where org is a funder/implementer/etc
+    console.log('[AIMS] Fetching participating organizations...');
+    const { data: participatingOrgs, error: participatingOrgsError } = await supabase
+      .from('activity_participating_organizations')
+      .select('activity_id, organization_id, role_type');
+    
+    if (participatingOrgsError) {
+      console.error('[AIMS] Error fetching participating organizations:', participatingOrgsError);
+    }
+    
+    console.log('[AIMS] Found participating org relationships:', participatingOrgs?.length || 0);
+    
+    // Create a map of organization_id -> Set of activity_ids where they participate
+    const orgActivityMap = new Map<string, Set<string>>();
+    
+    // Add activities from reporting_org_id
     activities?.forEach((activity: any) => {
-      if (activity.created_by_org_name) activityOrgNames.add(activity.created_by_org_name);
-      if (activity.created_by_org_acronym) activityOrgNames.add(activity.created_by_org_acronym);
+      if (activity.reporting_org_id) {
+        if (!orgActivityMap.has(activity.reporting_org_id)) {
+          orgActivityMap.set(activity.reporting_org_id, new Set());
+        }
+        orgActivityMap.get(activity.reporting_org_id)!.add(activity.id);
+      }
     });
-    console.log('[AIMS] Activity org names found:', Array.from(activityOrgNames));
     
-    // Debug: Log organization names to see what we're matching against
-    const orgNames = organizations?.map((org: any) => `${org.name} (${org.acronym || 'no acronym'})`);
-    console.log('[AIMS] Organization names in database:', orgNames);
+    // Add activities from participating organizations
+    // Only include activities that are active (in our activities list)
+    const activeActivityIds = new Set(activities?.map((a: any) => a.id) || []);
+    participatingOrgs?.forEach((po: any) => {
+      // Only count if the activity is active
+      if (activeActivityIds.has(po.activity_id)) {
+        if (!orgActivityMap.has(po.organization_id)) {
+          orgActivityMap.set(po.organization_id, new Set());
+        }
+        orgActivityMap.get(po.organization_id)!.add(po.activity_id);
+      }
+    });
     
-          // Debug: Show UNDP-related organizations specifically
-      const undpOrgs = organizations?.filter((org: any) => 
-        org.name?.toLowerCase().includes('undp') || 
-        org.acronym?.toLowerCase().includes('undp') ||
-        org.name?.toLowerCase().includes('united nations development')
-      );
-      console.log('[AIMS] UNDP-related organizations:', undpOrgs?.map((org: any) => ({
-        id: org.id,
-        name: org.name,
-        acronym: org.acronym
-      })));
-      
-      // Debug: Show activities with UNDP-related org names
-      const undpActivities = activities?.filter((activity: any) => 
-        activity.created_by_org_name?.toLowerCase().includes('undp') ||
-        activity.created_by_org_acronym?.toLowerCase().includes('undp')
-      );
-      console.log('[AIMS] UNDP-related activities:', undpActivities?.map((activity: any) => ({
-        id: activity.id,
-        created_by_org_name: activity.created_by_org_name,
-        created_by_org_acronym: activity.created_by_org_acronym,
-        reporting_org_id: activity.reporting_org_id
-      })));
+    console.log('[AIMS] Organizations with activities:', orgActivityMap.size);
 
     // Map frontend transaction type to IATI codes
     const transactionTypeCodes = transactionType === 'C' ? ['1', '2', '11'] : ['3', '4']; // C = Commitments (1=Incoming, 2=Outgoing, 11=Incoming Commitment), D = Disbursements (3=Disbursement, 4=Expenditure)
@@ -261,40 +269,54 @@ export async function GET(request: NextRequest) {
 
     console.log('[AIMS] Found transactions:', transactions?.length || 0);
     
+    // Fetch ALL transactions (regardless of type) for provider/receiver counts
+    // Include name fields to match by name as well as ID (consistent with financial calculations)
+    console.log('[AIMS] Fetching all transactions for provider/receiver counts...');
+    const { data: allTransactions, error: allTransactionsError } = await supabase
+      .from('transactions')
+      .select('provider_org_id, receiver_org_id, provider_org_name, receiver_org_name');
 
-    
+    if (allTransactionsError) {
+      console.error('[AIMS] Error fetching all transactions:', allTransactionsError);
+    }
+    console.log('[AIMS] Found all transactions:', allTransactions?.length || 0);
 
+    // Fetch planned disbursements for provider/receiver counts
+    console.log('[AIMS] Fetching planned disbursements for provider/receiver counts...');
+    const { data: plannedDisbursements, error: plannedError } = await supabase
+      .from('planned_disbursements')
+      .select('provider_org_id, receiver_org_id, provider_org_name, receiver_org_name');
 
-    // Note: Only counting activities where organization is the reporting organization
-    // No need to fetch contributors or participating organizations for this count
+    if (plannedError) {
+      console.error('[AIMS] Error fetching planned disbursements:', plannedError);
+    }
+    console.log('[AIMS] Found planned disbursements:', plannedDisbursements?.length || 0);
 
-    // Calculate metrics for each organization using ONLY Organizations table data
+    // Provider/receiver counts are now calculated per-organization during metrics calculation
+    // to ensure consistent matching with financial calculations (by ID OR name)
+
+    // Build reported activities map (activities where org is reporting_org_id)
+    const reportedActivitiesMap = new Map<string, number>();
+    activities?.forEach((activity: any) => {
+      if (activity.reporting_org_id) {
+        reportedActivitiesMap.set(
+          activity.reporting_org_id, 
+          (reportedActivitiesMap.get(activity.reporting_org_id) || 0) + 1
+        );
+      }
+    });
+
+    // Calculate metrics for each organization using Organizations table data
+    // and participating organizations relationships
     const organizationMetrics: OrganizationMetrics[] = organizations.map((org: Organization) => {
-      console.log(`[AIMS] Processing org: ${org.name} (ID: ${org.id})`);
-      
-
-      
-      // Count active projects where this organization is the reporting organization
-      // STRICT: Only count activities directly reported by this organization
-      const matchedActivities = activities?.filter((activity: any) => {
-        // ONLY Method 1: Check if organization matches by UUID (reporting_org_id)
-        // This is the most reliable method as it uses database relationships
-        if (activity.reporting_org_id === org.id) {
-          return true;
-        }
-        
-        // No fallback methods - only count if there's a proper UUID link
-        return false;
-      }) || [];
-      
-      const activeProjects = matchedActivities.length;
+      // Count active projects where this organization is involved
+      // This includes: reporting organization OR participating organization (funder, implementer, etc.)
+      const orgActivities = orgActivityMap.get(org.id);
+      const activeProjects = orgActivities ? orgActivities.size : 0;
       
       // Debug logging for organizations with matched activities
       if (activeProjects > 0) {
-        console.log(`[AIMS] ${org.name} (${org.acronym || 'no acronym'}) matched ${activeProjects} activities:`);
-        matchedActivities.forEach((activity: any) => {
-          console.log(`  - Activity: ${activity.id}, created_by_org_name: "${activity.created_by_org_name}", created_by_org_acronym: "${activity.created_by_org_acronym}", reporting_org_id: "${activity.reporting_org_id}"`);
-        });
+        console.log(`[AIMS] ${org.name} (${org.acronym || 'no acronym'}) has ${activeProjects} activities`);
       }
 
       // Calculate financial data by year (2022-2027)
@@ -353,12 +375,44 @@ export async function GET(request: NextRequest) {
       const orgType = org.organisation_type || org.type || '';
       const country = org.country_represented || org.country || '';
 
+      // Get activity breakdown counts
+      const reportedActivities = reportedActivitiesMap.get(org.id) || 0;
+      
+      // Count transactions where org is provider (by ID OR name, consistent with financial calculations)
+      let providerTransactionCount = 0;
+      let receiverTransactionCount = 0;
+      
+      allTransactions?.forEach((t: any) => {
+        // Check if this org is the provider
+        if (t.provider_org_id === org.id || t.provider_org_name === org.name) {
+          providerTransactionCount++;
+        }
+        // Check if this org is the receiver
+        if (t.receiver_org_id === org.id || t.receiver_org_name === org.name) {
+          receiverTransactionCount++;
+        }
+      });
+      
+      // Also count planned disbursements
+      plannedDisbursements?.forEach((pd: any) => {
+        if (pd.provider_org_id === org.id || pd.provider_org_name === org.name) {
+          providerTransactionCount++;
+        }
+        if (pd.receiver_org_id === org.id || pd.receiver_org_name === org.name) {
+          receiverTransactionCount++;
+        }
+      });
+
       // Map to expected output format using actual Supabase fields
       return {
         ...org,                                                    // Include all original Supabase fields
         activeProjects,
         totalAmount,
         financialData,
+        // Activity breakdown
+        reportedActivities,
+        providerTransactionCount,
+        receiverTransactionCount,
         // Computed display fields
         fullName: org.name,                                          // Use name
         acronym: org.acronym,                                        // Use acronym

@@ -22,7 +22,7 @@ export const plannedDisbursementColumns: ColumnConfig<PlannedDisbursementColumnI
   { id: "periodStart", label: "Start Date", group: "default", defaultVisible: true },
   { id: "periodEnd", label: "End Date", group: "default", defaultVisible: true },
   { id: "type", label: "Type", group: "default", defaultVisible: true },
-  { id: "providerReceiver", label: "Provider / Receiver", group: "default", defaultVisible: true },
+  { id: "providerReceiver", label: "Provider → Receiver", group: "default", defaultVisible: true },
   { id: "amount", label: "Amount", group: "default", defaultVisible: true },
   { id: "valueDate", label: "Value Date", group: "details", defaultVisible: false },
   { id: "valueUsd", label: "USD Value", group: "default", defaultVisible: true },

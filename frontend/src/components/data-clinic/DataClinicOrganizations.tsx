@@ -24,7 +24,7 @@ type Organization = {
   acronym?: string;
   iati_org_id?: string;
   type?: string;
-  country?: string;
+  country_represented?: string;
   default_currency?: string;
   totalBudget?: number;
   recipientOrgBudget?: number;
@@ -92,7 +92,7 @@ export function DataClinicOrganizations() {
           case 'missing_budget':
             return !organization.totalBudget && !organization.recipientOrgBudget;
           case 'missing_country':
-            return !organization.country;
+            return !organization.country_represented;
           case 'missing_acronym':
             return !organization.acronym;
           default:
@@ -403,8 +403,8 @@ export function DataClinicOrganizations() {
                       <td className="p-4">
                         <EditableCell
                           organizationId={organization.id}
-                          field="country"
-                          value={organization.country}
+                          field="country_represented"
+                          value={organization.country_represented}
                           onSave={saveFieldValue}
                           isEditable={isSuperUser}
                         />

@@ -155,21 +155,21 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Batch query for financial totals - disbursements (type 3)
-    // Only for organizations in the current page
-    // Note: UUIDs in the .or() filter need proper quoting for PostgREST
+    // Batch query for all transactions where org is provider or receiver
+    // Used for both financial totals and provider/receiver counts
     const quotedOrgIds = orgIds.map((id: string) => `"${id}"`).join(',');
-    const { data: transactionStats } = await supabase
+    const { data: allTransactions } = await supabase
       .from('transactions')
       .select('provider_org_id, receiver_org_id, transaction_type, value_usd')
-      .or(`provider_org_id.in.(${quotedOrgIds}),receiver_org_id.in.(${quotedOrgIds})`)
-      .eq('transaction_type', '3');
+      .or(`provider_org_id.in.(${quotedOrgIds}),receiver_org_id.in.(${quotedOrgIds})`);
 
-    // Calculate disbursement totals per org
+    // Calculate disbursement totals and provider/receiver counts per org
     const orgDisbursed = new Map<string, number>();
+    const providerTransactionCount = new Map<string, number>();
+    const receiverTransactionCount = new Map<string, number>();
 
-    if (transactionStats) {
-      transactionStats.forEach((t: {
+    if (allTransactions) {
+      allTransactions.forEach((t: {
         provider_org_id: string | null;
         receiver_org_id: string | null;
         transaction_type: string;
@@ -177,12 +177,57 @@ export async function GET(request: NextRequest) {
       }) => {
         const value = t.value_usd || 0;
 
-        // Disbursements (type 3) - where org is provider or receiver
+        // Count transactions as provider
         if (t.provider_org_id && orgIds.includes(t.provider_org_id)) {
-          orgDisbursed.set(t.provider_org_id, (orgDisbursed.get(t.provider_org_id) || 0) + value);
+          providerTransactionCount.set(
+            t.provider_org_id,
+            (providerTransactionCount.get(t.provider_org_id) || 0) + 1
+          );
+          // Disbursements (type 3) - add to disbursed total
+          if (t.transaction_type === '3') {
+            orgDisbursed.set(t.provider_org_id, (orgDisbursed.get(t.provider_org_id) || 0) + value);
+          }
         }
+        
+        // Count transactions as receiver
         if (t.receiver_org_id && orgIds.includes(t.receiver_org_id)) {
-          orgDisbursed.set(t.receiver_org_id, (orgDisbursed.get(t.receiver_org_id) || 0) + value);
+          receiverTransactionCount.set(
+            t.receiver_org_id,
+            (receiverTransactionCount.get(t.receiver_org_id) || 0) + 1
+          );
+          // Disbursements (type 3) - add to disbursed total
+          if (t.transaction_type === '3') {
+            orgDisbursed.set(t.receiver_org_id, (orgDisbursed.get(t.receiver_org_id) || 0) + value);
+          }
+        }
+      });
+    }
+    
+    // Also fetch planned disbursements for provider/receiver counts
+    const { data: plannedDisbursements } = await supabase
+      .from('planned_disbursements')
+      .select('provider_org_id, receiver_org_id')
+      .or(`provider_org_id.in.(${quotedOrgIds}),receiver_org_id.in.(${quotedOrgIds})`);
+    
+    if (plannedDisbursements) {
+      plannedDisbursements.forEach((pd: {
+        provider_org_id: string | null;
+        receiver_org_id: string | null;
+      }) => {
+        // Count planned disbursements as provider
+        if (pd.provider_org_id && orgIds.includes(pd.provider_org_id)) {
+          providerTransactionCount.set(
+            pd.provider_org_id,
+            (providerTransactionCount.get(pd.provider_org_id) || 0) + 1
+          );
+        }
+        
+        // Count planned disbursements as receiver
+        if (pd.receiver_org_id && orgIds.includes(pd.receiver_org_id)) {
+          receiverTransactionCount.set(
+            pd.receiver_org_id,
+            (receiverTransactionCount.get(pd.receiver_org_id) || 0) + 1
+          );
         }
       });
     }
@@ -204,28 +249,37 @@ export async function GET(request: NextRequest) {
       banner: string | null;
       created_at: string;
       updated_at: string;
-    }) => ({
-      id: org.id,
-      name: org.name,
-      acronym: org.acronym,
-      type: org.type,
-      Organisation_Type_Code: org.Organisation_Type_Code || org.type,
-      Organisation_Type_Name: org.Organisation_Type_Name,
-      country: org.country,
-      country_represented: org.country_represented,
-      iati_org_id: org.iati_org_id,
-      website: org.website,
-      name_aliases: org.name_aliases,
-      logo: org.logo,
-      banner: org.banner,
-      created_at: org.created_at,
-      updated_at: org.updated_at,
-      // Computed stats
-      activeProjects: activityCounts.get(org.id) || 0,
-      reportedActivities: activityCounts.get(org.id) || 0,
-      totalBudgeted: orgBudgeted.get(org.id) || 0,
-      totalDisbursed: orgDisbursed.get(org.id) || 0
-    }));
+    }) => {
+      const providerCount = providerTransactionCount.get(org.id) || 0;
+      const receiverCount = receiverTransactionCount.get(org.id) || 0;
+      
+      return {
+        id: org.id,
+        name: org.name,
+        acronym: org.acronym,
+        type: org.type,
+        Organisation_Type_Code: org.Organisation_Type_Code || org.type,
+        Organisation_Type_Name: org.Organisation_Type_Name,
+        country: org.country,
+        country_represented: org.country_represented,
+        iati_org_id: org.iati_org_id,
+        website: org.website,
+        name_aliases: org.name_aliases,
+        logo: org.logo,
+        banner: org.banner,
+        created_at: org.created_at,
+        updated_at: org.updated_at,
+        // Computed stats
+        activeProjects: activityCounts.get(org.id) || 0,
+        reportedActivities: activityCounts.get(org.id) || 0,
+        totalBudgeted: orgBudgeted.get(org.id) || 0,
+        totalDisbursed: orgDisbursed.get(org.id) || 0,
+        // Provider/Receiver transaction counts
+        providerTransactionCount: providerCount,
+        receiverTransactionCount: receiverCount,
+        totalTransactionCount: providerCount + receiverCount
+      };
+    });
 
     const executionTime = Date.now() - startTime;
     const totalCount = count || 0;

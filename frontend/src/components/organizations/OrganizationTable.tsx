@@ -36,6 +36,9 @@ type Organization = {
   activeProjects: number;
   reportedActivities?: number;
   associatedActivities?: number;
+  providerTransactionCount?: number;
+  receiverTransactionCount?: number;
+  totalTransactionCount?: number;
   totalBudgeted?: number;
   totalDisbursed?: number;
   logo?: string;
@@ -51,7 +54,7 @@ type OrganizationType = {
   sort_order: number;
 };
 
-type SortField = 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'funding' | 'created_at';
+type SortField = 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'providerReceiver' | 'funding' | 'created_at';
 type SortOrder = 'asc' | 'desc';
 
 interface OrganizationTableProps {
@@ -216,12 +219,12 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 </div>
               </TableHead>
               <TableHead
-                className="text-center cursor-pointer hover:bg-muted/80 transition-colors w-[7%]"
-                onClick={() => onSort('associated')}
+                className="text-center cursor-pointer hover:bg-muted/80 transition-colors w-[9%]"
+                onClick={() => onSort('providerReceiver')}
               >
                 <div className="flex items-center justify-center gap-1">
-                  <span>Associated</span>
-                  {getSortIcon('associated', sortField, sortOrder)}
+                  <span>Provider/Receiver</span>
+                  {getSortIcon('providerReceiver', sortField, sortOrder)}
                 </div>
               </TableHead>
               <TableHead
@@ -337,11 +340,25 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                   <TableCell className="px-4 py-3 text-sm text-foreground">
                     {org.country_represented ? (
                       <div className="flex items-start gap-2">
-                        {getCountryCode(org.country_represented) && (
+                        {org.country_represented === 'United Nations' ? (
+                          <img
+                            src="/images/flags/united-nations.svg"
+                            alt="UN Flag"
+                            className="h-4 w-5 flex-shrink-0 rounded-sm object-cover mt-0.5"
+                          />
+                        ) : org.country_represented === 'European Union Institutions' ? (
+                          <img
+                            src="/images/flags/european-union.svg"
+                            alt="EU Flag"
+                            className="h-4 w-5 flex-shrink-0 rounded-sm object-cover mt-0.5"
+                          />
+                        ) : getCountryCode(org.country_represented) ? (
                           <Flag
                             code={getCountryCode(org.country_represented)!}
                             className="h-4 w-5 flex-shrink-0 rounded-sm object-cover mt-0.5"
                           />
+                        ) : (
+                          <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-0.5" />
                         )}
                         <span>{org.country_represented}</span>
                       </div>
@@ -355,9 +372,27 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                     </span>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground text-center">
-                    <span className="font-medium">
-                      {org.associatedActivities ?? 0}
-                    </span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="font-medium cursor-help">
+                            {org.totalTransactionCount ?? 0}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="text-sm">
+                            <div className="flex justify-between gap-4">
+                              <span>Provider:</span>
+                              <span className="font-medium">{org.providerTransactionCount ?? 0}</span>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                              <span>Receiver:</span>
+                              <span className="font-medium">{org.receiverTransactionCount ?? 0}</span>
+                            </div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground text-right font-medium">
                     <TooltipProvider>

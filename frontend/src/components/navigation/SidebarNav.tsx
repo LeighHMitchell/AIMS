@@ -26,7 +26,8 @@ import {
   FolderPlus,
   Zap,
   Upload,
-  ChevronDown
+  ChevronDown,
+  Construction
 } from "lucide-react"
 import {
   HomeIcon,
@@ -103,12 +104,12 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Analytics", href: "/analytics-dashboard", show: true },
-        { name: "Transparency Index", href: "/transparency-index", show: true },
+        { name: "Transparency Index", href: "/transparency-index", show: true, underDevelopment: true },
         { name: "Atlas", href: "/aid-map", show: true },
         { name: "Search", href: "/search", show: true },
-        { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true },
-        { name: "Portfolios", href: "/partners", show: true },
-        { name: "Reports", href: "/reports", show: true },
+        { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true, underDevelopment: true },
+        { name: "Portfolios", href: "/partners", show: true, underDevelopment: true },
+        { name: "Reports", href: "/reports", show: true, underDevelopment: true },
       ]
     },
     {
@@ -147,8 +148,9 @@ export function SidebarNav({
       isAnimated: true,
       defaultOpen: true,
       items: [
-        { name: "Calendar", href: "/calendar", show: true },
-        { name: "Data Clinic", href: "/data-clinic", show: true },
+        { name: "Calendar", href: "/calendar", show: true, underDevelopment: true },
+        { name: "Data Clinic", href: "/data-clinic", show: true, underDevelopment: true },
+        { name: "Library", href: "/library", show: true, isNew: true },
       ]
     },
     {
@@ -409,7 +411,7 @@ export function SidebarNav({
                             >
                               <span
                                 className={cn(
-                                  "whitespace-nowrap",
+                                  "whitespace-nowrap flex items-center gap-2",
                                   isCollapsed
                                     ? "opacity-0 w-0 overflow-hidden"
                                     : "opacity-100 w-auto"
@@ -421,6 +423,21 @@ export function SidebarNav({
                                 }}
                               >
                                 {item.name}
+                                {'isNew' in item && item.isNew && (
+                                  <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 rounded-full">
+                                    New
+                                  </span>
+                                )}
+                                {'underDevelopment' in item && item.underDevelopment && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Construction className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-[200px] text-center whitespace-normal">
+                                      <span className="text-xs">Under Development — This feature is usable but not in its final form</span>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
                               </span>
                             </Link>
                           )
@@ -433,7 +450,22 @@ export function SidebarNav({
                                     {linkContent}
                                   </TooltipTrigger>
                                   <TooltipContent side="right" className="font-medium">
-                                    {item.name}
+                                    <div className="flex flex-col gap-1">
+                                      <span className="flex items-center gap-2">
+                                        {item.name}
+                                        {'isNew' in item && item.isNew && (
+                                          <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 rounded-full">
+                                            New
+                                          </span>
+                                        )}
+                                        {'underDevelopment' in item && item.underDevelopment && (
+                                          <Construction className="h-3.5 w-3.5 text-gray-400" />
+                                        )}
+                                      </span>
+                                      {'underDevelopment' in item && item.underDevelopment && (
+                                        <span className="text-[10px] text-gray-400 font-normal">Under Development — Usable but not final</span>
+                                      )}
+                                    </div>
                                   </TooltipContent>
                                 </Tooltip>
                               ) : (

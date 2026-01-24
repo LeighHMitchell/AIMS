@@ -26,7 +26,7 @@ export const organizationColumns: ColumnConfig<OrganizationColumnId>[] = [
   { id: "location", label: "Location", group: "default", defaultVisible: true },
   { id: "activities", label: "Active Projects", group: "default", defaultVisible: true },
   { id: "reported", label: "Reported", group: "details", defaultVisible: false },
-  { id: "associated", label: "Associated", group: "details", defaultVisible: false },
+  { id: "associated", label: "Provider/Receiver", group: "details", defaultVisible: false },
   { id: "funding", label: "Total Funding", group: "default", defaultVisible: true },
   { id: "created_at", label: "Created", group: "details", defaultVisible: false },
 ];

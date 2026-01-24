@@ -17,7 +17,7 @@ export async function GET(
   if (authResponse) return authResponse;
 
   try {
-    const { id: orgId } = params;
+    const { id: orgId } = await params;
     
     if (!orgId) {
       return NextResponse.json(
@@ -90,10 +90,23 @@ export async function GET(
       .eq('reporting_org_id', orgId)
       .in('activity_status', ['2', '3']);
 
-    // Combine both sets of activity IDs
+    // Also get activities where this organization is a participating org (funder, implementer, etc.)
+    const { data: participatingOrgActivities, error: participatingError } = await supabase
+      .from('activity_participating_organizations')
+      .select('activity_id')
+      .eq('organization_id', orgId);
+    
+    if (participatingError) {
+      console.error('[AIMS] Error fetching participating org activities:', participatingError);
+    }
+    
+    console.log('[AIMS] Found', participatingOrgActivities?.length || 0, 'activities as participating org');
+
+    // Combine all sets of activity IDs
     const allActivityIds = new Set([
       ...Array.from(activityIdsFromTransactions),
-      ...(reportingActivities || []).map((a: any) => a.id)
+      ...(reportingActivities || []).map((a: any) => a.id),
+      ...(participatingOrgActivities || []).map((po: any) => po.activity_id)
     ]);
 
     console.log('[AIMS] Total unique activities for', organization.name, ':', allActivityIds.size);
