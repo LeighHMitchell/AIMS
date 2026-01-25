@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Download, RotateCcw, CircleDot, Flame } from 'lucide-react'
+import { MapPin, Download, RotateCcw, CircleDot, Flame, Map as MapIcon, Mountain } from 'lucide-react'
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import html2canvas from 'html2canvas'
@@ -12,91 +12,182 @@ import { toast } from "sonner"
 import type { LocationSchema } from '@/lib/schemas/location'
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates'
 
-// Dynamically import the Leaflet map component (client-side only)
-const ActivityLocationsMapView = dynamic(() => import('./ActivityLocationsMapView'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-96 items-center justify-center bg-muted text-sm text-muted-foreground">
-      Loading map...
-    </div>
-  ),
-})
+// mapcn map components
+import { Map, MapControls, useMap } from '@/components/ui/map'
 
-interface Location {
-  id?: string
-  location_name?: string
-  latitude?: number
-  longitude?: number
-  site_type?: string
-  [key: string]: any
+// Dynamic import for MapLibre-based layers
+const ActivityMarkersLayer = dynamic(() => import('../maps-v2/ActivityMarkersLayer'), { ssr: false })
+const HeatmapLayer = dynamic(() => import('../maps-v2/HeatmapLayer'), { ssr: false })
+
+interface SectorData {
+  code: string
+  name: string
+  categoryCode?: string
+  categoryName?: string
+  level?: string
+  percentage: number
+}
+
+interface ActivityData {
+  id: string
+  title: string
+  status?: string
+  organization_name?: string
+  sectors?: SectorData[]
+  totalBudget?: number
+  totalPlannedDisbursement?: number
+  totalCommitments?: number
+  totalDisbursed?: number
+  plannedStartDate?: string
+  plannedEndDate?: string
+  actualStartDate?: string
+  actualEndDate?: string
+  banner?: string
+  icon?: string
 }
 
 interface ActivityLocationsHeatmapProps {
-  locations: Location[]
+  locations: LocationSchema[]
   title?: string
   activityTitle?: string
+  activity?: ActivityData
 }
 
 type ViewMode = 'markers' | 'heatmap'
 
-type MapLayerKey = 'cartodb_voyager' | 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri'
+type MapStyleKey = 'carto_light' | 'carto_voyager' | 'osm_liberty'
 
-interface MapLayerConfig {
-  name: string
-  url: string
-  attribution: string
-  category: string
+// Map style configurations for MapLibre GL
+const MAP_STYLES: Record<MapStyleKey, { name: string; light: string; dark: string }> = {
+  carto_light: {
+    name: 'Streets (Light)',
+    light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  },
+  carto_voyager: {
+    name: 'Voyager',
+    light: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+    dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  },
+  osm_liberty: {
+    name: 'OpenStreetMap Liberty',
+    light: 'https://tiles.openfreemap.org/styles/liberty',
+    dark: 'https://tiles.openfreemap.org/styles/liberty',
+  },
 }
 
-const MAP_LAYERS: Record<MapLayerKey, MapLayerConfig> = {
-  cartodb_voyager: {
-    name: 'Streets (CartoDB Voyager)',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '© OpenStreetMap contributors, © CARTO',
-    category: 'Streets'
-  },
-  osm_standard: {
-    name: 'OpenStreetMap Standard',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors',
-    category: 'Streets'
-  },
-  osm_humanitarian: {
-    name: 'Humanitarian (HOT)',
-    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © HOT',
-    category: 'Humanitarian'
-  },
-  cyclosm: {
-    name: 'CyclOSM Transport',
-    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © CyclOSM',
-    category: 'Transport'
-  },
-  opentopo: {
-    name: 'OpenTopo Terrain',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © OpenTopoMap',
-    category: 'Terrain'
-  },
-  satellite_esri: {
-    name: 'ESRI Satellite',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '© Esri',
-    category: 'Satellite'
-  }
-}
+const STYLE_PREFERENCE_KEY = 'aims-activity-map-style-preference'
 
-const LAYER_PREFERENCE_KEY = 'aims-activity-map-layer-preference'
+// Map 3D Controller Component (uses useMap inside Map context)
+function Map3DController({ 
+  homeCountryCenter, 
+  homeCountryZoom 
+}: { 
+  homeCountryCenter: [number, number]
+  homeCountryZoom: number
+}) {
+  const { map, isLoaded } = useMap()
+  const [pitch, setPitch] = useState(0)
+  const [bearing, setBearing] = useState(0)
+
+  useEffect(() => {
+    if (!map || !isLoaded) return
+
+    const handleMove = () => {
+      setPitch(Math.round(map.getPitch()))
+      setBearing(Math.round(map.getBearing()))
+    }
+
+    map.on('move', handleMove)
+    return () => {
+      map.off('move', handleMove)
+    }
+  }, [map, isLoaded])
+
+  const handle3DView = useCallback(() => {
+    map?.easeTo({
+      pitch: 60,
+      bearing: -20,
+      duration: 1000,
+    })
+  }, [map])
+
+  const handle2DView = useCallback(() => {
+    map?.easeTo({
+      pitch: 0,
+      bearing: 0,
+      duration: 1000,
+    })
+  }, [map])
+
+  const handleReset = useCallback(() => {
+    if (map) {
+      map.flyTo({
+        center: [homeCountryCenter[1], homeCountryCenter[0]], // MapLibre uses [lng, lat]
+        zoom: homeCountryZoom,
+        pitch: 0,
+        bearing: 0,
+        duration: 1500,
+      })
+    }
+  }, [map, homeCountryCenter, homeCountryZoom])
+
+  const is3DMode = pitch !== 0 || bearing !== 0
+
+  if (!isLoaded) return null
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {is3DMode ? (
+        <Button
+          onClick={handle2DView}
+          variant="outline"
+          size="sm"
+          title="2D View"
+          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+        >
+          <MapIcon className="h-4 w-4 mr-1.5" />
+          <span className="text-xs">2D</span>
+        </Button>
+      ) : (
+        <Button
+          onClick={handle3DView}
+          variant="outline"
+          size="sm"
+          title="3D View"
+          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+        >
+          <Mountain className="h-4 w-4 mr-1.5" />
+          <span className="text-xs">3D</span>
+        </Button>
+      )}
+      <Button
+        onClick={handleReset}
+        variant="outline"
+        size="sm"
+        title="Reset view"
+        className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
+      >
+        <RotateCcw className="h-4 w-4" />
+      </Button>
+      {is3DMode && (
+        <div className="rounded-md bg-white/90 backdrop-blur px-2 py-1 text-[10px] font-mono border border-gray-300 shadow-md flex gap-2">
+          <span className="text-gray-600">Pitch: {pitch}°</span>
+          <span className="text-gray-600">Bearing: {bearing}°</span>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ActivityLocationsHeatmap({
   locations = [],
   title = "Activity Locations Map",
-  activityTitle
+  activityTitle,
+  activity
 }: ActivityLocationsHeatmapProps) {
-  const [currentLayer, setCurrentLayer] = useState<MapLayerKey>('cartodb_voyager')
+  const [mapStyle, setMapStyle] = useState<MapStyleKey>('carto_light')
   const [isExporting, setIsExporting] = useState(false)
-  const [mapKey, setMapKey] = useState(0)
   const [viewMode, setViewMode] = useState<ViewMode>('markers')
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
@@ -119,51 +210,54 @@ export default function ActivityLocationsHeatmap({
         }
       } catch (error) {
         console.error('Failed to fetch home country setting:', error)
-        // Keep defaults on error
       }
     }
     fetchHomeCountry()
   }, [])
 
-  // Reset map to home country view
-  const handleResetView = () => {
-    setMapKey(prev => prev + 1)
-  }
-
-  // Load saved layer preference
+  // Load saved style preference
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedLayer = localStorage.getItem(LAYER_PREFERENCE_KEY) as MapLayerKey
-      if (savedLayer && Object.keys(MAP_LAYERS).includes(savedLayer)) {
-        setCurrentLayer(savedLayer)
-      } else {
-        // Default to CartoDB Voyager if no saved preference
-        setCurrentLayer('cartodb_voyager')
+      const savedStyle = localStorage.getItem(STYLE_PREFERENCE_KEY) as MapStyleKey
+      if (savedStyle && Object.keys(MAP_STYLES).includes(savedStyle)) {
+        setMapStyle(savedStyle)
       }
     }
   }, [])
 
-  // Save layer preference
-  const handleLayerChange = (layer: MapLayerKey) => {
+  // Save style preference
+  const handleStyleChange = (style: MapStyleKey) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(LAYER_PREFERENCE_KEY, layer)
-      setCurrentLayer(layer)
+      localStorage.setItem(STYLE_PREFERENCE_KEY, style)
+      setMapStyle(style)
     }
   }
 
-  // Filter locations with valid coordinates
+  // Filter locations with valid coordinates (site locations only)
   const validLocations = useMemo(() => {
-    return locations.filter(loc => 
-      loc.latitude != null && 
-      loc.longitude != null &&
-      !isNaN(Number(loc.latitude)) &&
-      !isNaN(Number(loc.longitude))
-    )
+    return locations.filter(loc => {
+      if (loc.location_type !== 'site') return false
+      const lat = Number(loc.latitude)
+      const lng = Number(loc.longitude)
+      return !isNaN(lat) && !isNaN(lng)
+    })
   }, [locations])
 
-  // Always use home country as default view
-  const mapCenter = homeCountryCenter
-  const mapZoom = homeCountryZoom
+  // Prepare heatmap points
+  const heatmapPoints = useMemo(() => {
+    return validLocations
+      .filter(loc => {
+        if (loc.location_type !== 'site') return false
+        const lat = Number(loc.latitude)
+        const lng = Number(loc.longitude)
+        return !isNaN(lat) && !isNaN(lng)
+      })
+      .map(loc => ({
+        lat: Number(loc.latitude),
+        lng: Number(loc.longitude),
+        intensity: 0.8
+      }))
+  }, [validLocations])
 
   // Export map to JPEG
   const exportToJPEG = async () => {
@@ -213,84 +307,104 @@ export default function ActivityLocationsHeatmap({
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
           {title}
-          <HelpTextTooltip content="Interactive map showing activity locations. Click markers for details. Use the layer selector to switch between different map styles." />
+          <HelpTextTooltip content="Interactive map showing activity locations. Click markers for details. Double-click to zoom. Use the style selector to switch between different map styles. Toggle 3D mode for a tilted perspective." />
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4">
         <div ref={mapContainerRef} className="relative w-full h-[500px] rounded-lg overflow-hidden border border-gray-200">
-          {/* Map Controls Overlay */}
-          <div className="absolute top-3 left-3 z-[1000] flex items-center gap-2">
-            <Select value={currentLayer} onValueChange={(value) => handleLayerChange(value as MapLayerKey)}>
-              <SelectTrigger className="w-48 bg-white shadow-md border-gray-300">
-                <SelectValue placeholder="Select map type" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(MAP_LAYERS).map(([key, layer]) => (
-                  <SelectItem key={key} value={key}>
-                    {layer.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* MapLibre Map */}
+          <Map
+            styles={{
+              light: MAP_STYLES[mapStyle].light,
+              dark: MAP_STYLES[mapStyle].dark,
+            }}
+            center={[homeCountryCenter[1], homeCountryCenter[0]]} // MapLibre uses [lng, lat]
+            zoom={homeCountryZoom}
+            minZoom={2}
+            maxZoom={18}
+          >
+            {/* Controls Bar - positioned above map */}
+            <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-2">
+              <Select value={mapStyle} onValueChange={(value) => handleStyleChange(value as MapStyleKey)}>
+                <SelectTrigger className="w-48 bg-white shadow-md border-gray-300 text-xs h-9">
+                  <SelectValue placeholder="Select map style" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(MAP_STYLES).map(([key, style]) => (
+                    <SelectItem key={key} value={key}>
+                      {style.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Button
-              onClick={handleResetView}
-              variant="outline"
-              size="sm"
-              title="Reset to home country view"
-              className="bg-white shadow-md border-gray-300"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-
-            <Button
-              onClick={exportToJPEG}
-              disabled={isExporting}
-              variant="outline"
-              size="sm"
-              title={isExporting ? 'Exporting...' : 'Export JPEG'}
-              className="bg-white shadow-md border-gray-300"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-
-            {/* View Mode Toggle */}
-            <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
               <Button
-                onClick={() => setViewMode('markers')}
-                variant="ghost"
+                onClick={exportToJPEG}
+                disabled={isExporting}
+                variant="outline"
                 size="sm"
-                title="Show markers"
-                className={`rounded-none border-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                title={isExporting ? 'Exporting...' : 'Export JPEG'}
+                className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
               >
-                <CircleDot className="h-4 w-4" />
+                <Download className="h-4 w-4" />
               </Button>
-              <Button
-                onClick={() => setViewMode('heatmap')}
-                variant="ghost"
-                size="sm"
-                title="Show heatmap"
-                className={`rounded-none border-0 border-l border-gray-300 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
-              >
-                <Flame className="h-4 w-4" />
-              </Button>
+
+              {/* View Mode Toggle */}
+              <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
+                <Button
+                  onClick={() => setViewMode('markers')}
+                  variant="ghost"
+                  size="sm"
+                  title="Show markers"
+                  className={`rounded-none border-0 h-9 w-9 p-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                >
+                  <CircleDot className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => setViewMode('heatmap')}
+                  variant="ghost"
+                  size="sm"
+                  title="Show heatmap"
+                  className={`rounded-none border-0 border-l border-gray-300 h-9 w-9 p-0 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
+                >
+                  <Flame className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* 3D Controls */}
+              <Map3DController 
+                homeCountryCenter={homeCountryCenter} 
+                homeCountryZoom={homeCountryZoom} 
+              />
             </div>
-          </div>
 
-          <ActivityLocationsMapView
-            key={`${mapKey}-${viewMode}`}
-            locations={validLocations}
-            mapCenter={mapCenter}
-            mapZoom={mapZoom}
-            currentLayer={currentLayer}
-            layerUrl={MAP_LAYERS[currentLayer].url}
-            layerAttribution={MAP_LAYERS[currentLayer].attribution}
-            viewMode={viewMode}
-            activityTitle={activityTitle}
-          />
+            {/* Map Controls (zoom, compass, etc.) */}
+            <MapControls 
+              position="bottom-right" 
+              showZoom={true} 
+              showCompass={true}
+              showLocate={true}
+              showFullscreen={true}
+            />
+
+            {/* Markers Mode */}
+            {viewMode === 'markers' && validLocations.length > 0 && (
+              <ActivityMarkersLayer 
+                locations={validLocations} 
+                activity={activity}
+              />
+            )}
+
+            {/* Heatmap Mode */}
+            {viewMode === 'heatmap' && heatmapPoints.length > 0 && (
+              <HeatmapLayer points={heatmapPoints} />
+            )}
+          </Map>
         </div>
       </CardContent>
     </Card>
   )
 }
-

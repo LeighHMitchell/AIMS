@@ -42,6 +42,33 @@ import {
 import { countries } from '@/data/countries';
 import { Menu } from 'bloom-menu';
 
+interface SectorData {
+  code: string;
+  name: string;
+  categoryCode?: string;
+  categoryName?: string;
+  level?: string;
+  percentage: number;
+}
+
+interface ActivityData {
+  id: string;
+  title: string;
+  status?: string;
+  organization_name?: string;
+  sectors?: SectorData[];
+  totalBudget?: number;
+  totalPlannedDisbursement?: number;
+  totalCommitments?: number;
+  totalDisbursed?: number;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
+  actualStartDate?: string;
+  actualEndDate?: string;
+  banner?: string;
+  icon?: string;
+}
+
 interface LocationsTabProps {
   activityId?: string;
   activityTitle?: string;
@@ -64,6 +91,7 @@ export default function LocationsTab({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<LocationSchema | undefined>();
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
+  const [activityData, setActivityData] = useState<ActivityData | undefined>();
 
   // Get user for autosave
   const { user } = useUser();
@@ -109,6 +137,59 @@ export default function LocationsTab({
   useEffect(() => {
     loadLocations();
   }, [loadLocations]);
+
+  // Load activity data for the map popup display
+  const loadActivityData = useCallback(async () => {
+    if (!activityId || activityId === 'new') {
+      setActivityData(undefined);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/activities/${activityId}`);
+      if (!response.ok) {
+        console.error('Failed to load activity data for map');
+        return;
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.activity) {
+        const activity = data.activity;
+        setActivityData({
+          id: activity.id,
+          title: activity.title || activityTitle || 'Untitled Activity',
+          status: activity.activity_status,
+          organization_name: activity.reporting_org_name || activity.organization_name,
+          sectors: activity.sectors?.map((s: any) => ({
+            code: s.code,
+            name: s.name,
+            categoryCode: s.category_code,
+            categoryName: s.category_name,
+            level: s.level,
+            percentage: s.percentage || 100,
+          })),
+          totalBudget: activity.total_budget_usd || activity.total_budget,
+          totalPlannedDisbursement: activity.total_planned_disbursement_usd || activity.total_planned_disbursement,
+          totalCommitments: activity.total_commitments_usd || activity.total_commitments,
+          totalDisbursed: activity.total_disbursed_usd || activity.total_disbursed,
+          plannedStartDate: activity.planned_start_date,
+          plannedEndDate: activity.planned_end_date,
+          actualStartDate: activity.actual_start_date,
+          actualEndDate: activity.actual_end_date,
+          banner: activity.banner,
+          icon: activity.icon,
+        });
+      }
+    } catch (err) {
+      console.error('Error loading activity data:', err);
+    }
+  }, [activityId, activityTitle]);
+
+  // Load activity data on mount and when activityId changes
+  useEffect(() => {
+    loadActivityData();
+  }, [loadActivityData]);
 
   // Notify parent when locations change
   useEffect(() => {
@@ -258,11 +339,12 @@ export default function LocationsTab({
 
   return (
     <div className="space-y-6">
-      {/* Activity Locations Heatmap */}
+      {/* Activity Locations Map */}
       <ActivityLocationsHeatmap 
         locations={locations}
         title="Activity Locations Map"
         activityTitle={activityTitle}
+        activity={activityData}
       />
 
       {/* Header */}

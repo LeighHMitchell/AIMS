@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { MapMarker, MarkerContent, MarkerPopup, MarkerTooltip, useMap } from '@/components/ui/map';
 import { Badge } from '@/components/ui/badge';
+import type { LocationSchema } from '@/lib/schemas/location';
 
 interface SectorData {
   code: string;
@@ -13,47 +14,27 @@ interface SectorData {
   percentage: number;
 }
 
-interface LocationData {
+interface ActivityData {
   id: string;
-  activity_id: string;
-  location_type: string;
-  location_name: string;
-  description?: string;
-  latitude: number;
-  longitude: number;
-  address?: string;
-  site_type?: string;
-  admin_unit?: string;
-  coverage_scope?: string;
-  state_region_code?: string;
-  state_region_name?: string;
-  township_code?: string;
-  township_name?: string;
-  district_name?: string;
-  village_name?: string;
-  city?: string;
-  activity?: {
-    id: string;
-    title: string;
-    status: string;
-    organization_id: string;
-    organization_name?: string;
-    sectors?: SectorData[];
-    totalBudget?: number;
-    totalPlannedDisbursement?: number;
-    totalCommitments?: number;
-    totalDisbursed?: number;
-    plannedStartDate?: string;
-    plannedEndDate?: string;
-    actualStartDate?: string;
-    actualEndDate?: string;
-    banner?: string;
-    icon?: string;
-  } | null;
+  title: string;
+  status?: string;
+  organization_name?: string;
+  sectors?: SectorData[];
+  totalBudget?: number;
+  totalPlannedDisbursement?: number;
+  totalCommitments?: number;
+  totalDisbursed?: number;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
+  actualStartDate?: string;
+  actualEndDate?: string;
+  banner?: string;
+  icon?: string;
 }
 
-interface MarkersLayerProps {
-  locations: LocationData[];
+interface ActivityMarkersLayerProps {
+  locations: LocationSchema[];
+  activity?: ActivityData;
 }
 
 // Sector color palette
@@ -122,14 +103,20 @@ const formatDate = (dateStr?: string): string => {
   }
 };
 
-const getFullAddress = (location: LocationData): string => {
+// Format site type for display
+const formatSiteType = (siteType?: string): string => {
+  if (!siteType) return '-';
+  return siteType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+const getFullAddress = (location: LocationSchema): string => {
   const parts = [];
-  if (location.address) parts.push(location.address);
-  if (location.village_name) parts.push(location.village_name);
-  if (location.township_name) parts.push(location.township_name);
-  if (location.district_name) parts.push(location.district_name);
-  if (location.state_region_name) parts.push(location.state_region_name);
-  if (location.city) parts.push(location.city);
+  if ('address' in location && location.address) parts.push(location.address);
+  if ('village_name' in location && location.village_name) parts.push(location.village_name);
+  if ('township_name' in location && location.township_name) parts.push(location.township_name);
+  if ('district_name' in location && location.district_name) parts.push(location.district_name);
+  if ('state_region_name' in location && location.state_region_name) parts.push(location.state_region_name);
+  if ('city' in location && location.city) parts.push(location.city);
   return parts.join(', ') || '-';
 };
 
@@ -164,12 +151,22 @@ function SectorBar({ sectors }: { sectors?: SectorData[] }) {
   );
 }
 
-// Individual marker component
-function LocationMarker({ location }: { location: LocationData }) {
+// Individual marker component for activity locations
+function ActivityLocationMarker({ 
+  location, 
+  activity 
+}: { 
+  location: LocationSchema; 
+  activity?: ActivityData;
+}) {
   const { map } = useMap();
+  
+  // Only site locations have coordinates
+  if (location.location_type !== 'site') return null;
+  
   const lat = Number(location.latitude);
   const lng = Number(location.longitude);
-  const statusInfo = getStatusInfo(location.activity?.status);
+  const statusInfo = getStatusInfo(activity?.status);
   
   if (isNaN(lat) || isNaN(lng)) return null;
 
@@ -178,7 +175,7 @@ function LocationMarker({ location }: { location: LocationData }) {
     if (map) {
       map.flyTo({
         center: [lng, lat],
-        zoom: 18, // Maximum useful zoom level for most map tiles
+        zoom: 18,
         duration: 1500,
       });
     }
@@ -198,9 +195,9 @@ function LocationMarker({ location }: { location: LocationData }) {
       {/* Tooltip on hover */}
       <MarkerTooltip className="!p-0 !bg-white !text-foreground max-w-[300px] overflow-hidden">
         {/* Banner */}
-        {location.activity?.banner ? (
+        {activity?.banner ? (
           <div className="w-full h-16 overflow-hidden">
-            <img src={location.activity.banner} alt="" className="w-full h-full object-cover" />
+            <img src={activity.banner} alt="" className="w-full h-full object-cover" />
           </div>
         ) : (
           <div className="w-full h-12 bg-gradient-to-r from-slate-600 to-slate-400" />
@@ -209,7 +206,7 @@ function LocationMarker({ location }: { location: LocationData }) {
         <div className="p-2.5">
           {/* Title */}
           <div className="font-semibold text-xs text-slate-700 mb-2 line-clamp-2">
-            {location.activity?.title || 'Untitled Activity'}
+            {activity?.title || 'Untitled Activity'}
           </div>
           
           {/* Quick info */}
@@ -217,15 +214,22 @@ function LocationMarker({ location }: { location: LocationData }) {
             <div className="text-slate-500">Location</div>
             <div className="text-slate-700 truncate">{location.location_name || 'Unnamed'}</div>
             
-            {location.activity?.organization_name && (
+            {activity?.organization_name && (
               <>
                 <div className="text-slate-500">Organisation</div>
-                <div className="text-slate-700 truncate">{location.activity.organization_name}</div>
+                <div className="text-slate-700 truncate">{activity.organization_name}</div>
               </>
             )}
             
             <div className="text-slate-500">Status</div>
             <div className="text-slate-700">{statusInfo.label}</div>
+            
+            {'site_type' in location && location.site_type && (
+              <>
+                <div className="text-slate-500">Site Type</div>
+                <div className="text-slate-700">{formatSiteType(location.site_type)}</div>
+              </>
+            )}
           </div>
         </div>
       </MarkerTooltip>
@@ -233,18 +237,23 @@ function LocationMarker({ location }: { location: LocationData }) {
       {/* Popup on click */}
       <MarkerPopup className="!p-0 !bg-white !text-foreground min-w-[350px] max-w-[420px] overflow-hidden" closeButton>
         {/* Banner */}
-        {location.activity?.banner ? (
+        {activity?.banner ? (
           <div className="w-full h-24 overflow-hidden -m-3 mb-3" style={{ width: 'calc(100% + 24px)' }}>
-            <img src={location.activity.banner} alt="" className="w-full h-full object-cover" />
+            <img src={activity.banner} alt="" className="w-full h-full object-cover" />
           </div>
         ) : (
           <div className="w-full h-16 bg-gradient-to-r from-slate-600 to-slate-400 -m-3 mb-3" style={{ width: 'calc(100% + 24px)' }} />
         )}
         
-        {/* Title */}
-        <h3 className="font-bold text-base text-slate-700 mb-3 leading-tight">
-          {location.activity?.title || 'Untitled Activity'}
+        {/* Location Name */}
+        <h3 className="font-bold text-base text-slate-700 mb-1 leading-tight">
+          {location.location_name || 'Unnamed Location'}
         </h3>
+        
+        {/* Activity Title */}
+        <div className="text-xs text-slate-500 mb-3">
+          {activity?.title || 'Untitled Activity'}
+        </div>
         
         <hr className="border-slate-200 mb-3" />
         
@@ -252,7 +261,7 @@ function LocationMarker({ location }: { location: LocationData }) {
         <div className="grid grid-cols-2 gap-2 text-xs mb-3">
           <div>
             <div className="text-slate-500 text-[10px] font-medium mb-0.5">Organisation</div>
-            <div className="text-slate-700">{location.activity?.organization_name || '-'}</div>
+            <div className="text-slate-700">{activity?.organization_name || '-'}</div>
           </div>
           <div>
             <div className="text-slate-500 text-[10px] font-medium mb-0.5">Status</div>
@@ -266,71 +275,112 @@ function LocationMarker({ location }: { location: LocationData }) {
           </div>
         </div>
         
+        {/* Site Type */}
+        {'site_type' in location && location.site_type && (
+          <div className="text-xs mb-3">
+            <div className="text-slate-500 text-[10px] font-medium mb-0.5">Site Type</div>
+            <div className="text-slate-700">{formatSiteType(location.site_type)}</div>
+          </div>
+        )}
+        
         {/* Address */}
         <div className="text-xs mb-3">
           <div className="text-slate-500 text-[10px] font-medium mb-0.5">Address</div>
           <div className="text-slate-700 leading-snug">{getFullAddress(location)}</div>
         </div>
         
+        {/* Coordinates */}
+        <div className="text-xs mb-3">
+          <div className="text-slate-500 text-[10px] font-medium mb-0.5">Coordinates</div>
+          <div className="font-mono text-[10px] text-slate-700 bg-slate-50 px-2 py-1 rounded inline-block">
+            {lat.toFixed(6)}, {lng.toFixed(6)}
+          </div>
+        </div>
+        
+        {/* Description */}
+        {(location.description || location.location_description || ('activity_location_description' in location && location.activity_location_description)) && (
+          <div className="text-xs mb-3">
+            <div className="text-slate-500 text-[10px] font-medium mb-0.5">Description</div>
+            <div className="text-slate-700 leading-snug italic">
+              {location.description || location.location_description || ('activity_location_description' in location && location.activity_location_description)}
+            </div>
+          </div>
+        )}
+        
         {/* Sector Breakdown */}
-        <SectorBar sectors={location.activity?.sectors} />
+        <SectorBar sectors={activity?.sectors} />
         
         {/* Financial Summary */}
-        <div className="mb-3">
-          <div className="text-[10px] font-semibold text-slate-500 mb-1.5">Financial Summary</div>
-          <div className="rounded border border-slate-200 overflow-hidden text-xs">
-            <div className="flex justify-between px-2.5 py-1.5 bg-white">
-              <span className="text-slate-500">Total Budgeted</span>
-              <span className="font-semibold text-slate-700">{formatCompactCurrency(location.activity?.totalBudget)}</span>
-            </div>
-            <div className="flex justify-between px-2.5 py-1.5 bg-slate-50">
-              <span className="text-slate-500">Total Planned Disbursement</span>
-              <span className="font-semibold text-slate-700">{formatCompactCurrency(location.activity?.totalPlannedDisbursement)}</span>
-            </div>
-            <div className="flex justify-between px-2.5 py-1.5 bg-white">
-              <span className="text-slate-500">Total Committed</span>
-              <span className="font-semibold text-slate-700">{formatCompactCurrency(location.activity?.totalCommitments)}</span>
-            </div>
-            <div className="flex justify-between px-2.5 py-1.5 bg-slate-50">
-              <span className="text-slate-500">Total Disbursed</span>
-              <span className="font-semibold text-slate-700">{formatCompactCurrency(location.activity?.totalDisbursed)}</span>
+        {activity && (activity.totalBudget || activity.totalPlannedDisbursement || activity.totalCommitments || activity.totalDisbursed) && (
+          <div className="mb-3">
+            <div className="text-[10px] font-semibold text-slate-500 mb-1.5">Financial Summary</div>
+            <div className="rounded border border-slate-200 overflow-hidden text-xs">
+              <div className="flex justify-between px-2.5 py-1.5 bg-white">
+                <span className="text-slate-500">Total Budgeted</span>
+                <span className="font-semibold text-slate-700">{formatCompactCurrency(activity.totalBudget)}</span>
+              </div>
+              <div className="flex justify-between px-2.5 py-1.5 bg-slate-50">
+                <span className="text-slate-500">Total Planned Disbursement</span>
+                <span className="font-semibold text-slate-700">{formatCompactCurrency(activity.totalPlannedDisbursement)}</span>
+              </div>
+              <div className="flex justify-between px-2.5 py-1.5 bg-white">
+                <span className="text-slate-500">Total Committed</span>
+                <span className="font-semibold text-slate-700">{formatCompactCurrency(activity.totalCommitments)}</span>
+              </div>
+              <div className="flex justify-between px-2.5 py-1.5 bg-slate-50">
+                <span className="text-slate-500">Total Disbursed</span>
+                <span className="font-semibold text-slate-700">{formatCompactCurrency(activity.totalDisbursed)}</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
         
         {/* Timeline */}
-        <div>
-          <div className="text-[10px] font-semibold text-slate-500 mb-1.5">Project Timeline</div>
-          <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-            <div className="text-slate-500">Planned Start: <span className="font-medium text-slate-700">{formatDate(location.activity?.plannedStartDate)}</span></div>
-            <div className="text-slate-500">Planned End: <span className="font-medium text-slate-700">{formatDate(location.activity?.plannedEndDate)}</span></div>
-            <div className="text-slate-500">Actual Start: <span className="font-medium text-slate-700">{formatDate(location.activity?.actualStartDate)}</span></div>
-            <div className="text-slate-500">Actual End: <span className="font-medium text-slate-700">{location.activity?.actualEndDate ? formatDate(location.activity.actualEndDate) : 'N/A'}</span></div>
+        {activity && (activity.plannedStartDate || activity.plannedEndDate || activity.actualStartDate || activity.actualEndDate) && (
+          <div>
+            <div className="text-[10px] font-semibold text-slate-500 mb-1.5">Project Timeline</div>
+            <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+              <div className="text-slate-500">Planned Start: <span className="font-medium text-slate-700">{formatDate(activity.plannedStartDate)}</span></div>
+              <div className="text-slate-500">Planned End: <span className="font-medium text-slate-700">{formatDate(activity.plannedEndDate)}</span></div>
+              <div className="text-slate-500">Actual Start: <span className="font-medium text-slate-700">{formatDate(activity.actualStartDate)}</span></div>
+              <div className="text-slate-500">Actual End: <span className="font-medium text-slate-700">{activity.actualEndDate ? formatDate(activity.actualEndDate) : 'N/A'}</span></div>
+            </div>
           </div>
-        </div>
+        )}
         
         {/* View Activity Link */}
-        <div className="mt-3 pt-3 border-t border-slate-200">
-          <a 
-            href={`/activities/${location.activity_id}`}
-            className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium"
-          >
-            View Full Activity Details →
-          </a>
-        </div>
+        {activity?.id && (
+          <div className="mt-3 pt-3 border-t border-slate-200">
+            <a 
+              href={`/activities/${activity.id}`}
+              className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium"
+            >
+              View Full Activity Details →
+            </a>
+          </div>
+        )}
       </MarkerPopup>
     </MapMarker>
   );
 }
 
-export default function MarkersLayer({ locations }: MarkersLayerProps) {
-  // For performance with many markers, we could use MapClusterLayer instead
-  // For now, render individual markers (good for up to ~500 points)
+export default function ActivityMarkersLayer({ locations, activity }: ActivityMarkersLayerProps) {
+  // Filter to only site locations with valid coordinates
+  const validLocations = locations.filter(loc => {
+    if (loc.location_type !== 'site') return false;
+    const lat = Number(loc.latitude);
+    const lng = Number(loc.longitude);
+    return !isNaN(lat) && !isNaN(lng);
+  });
   
   return (
     <>
-      {locations.map(location => (
-        <LocationMarker key={location.id} location={location} />
+      {validLocations.map(location => (
+        <ActivityLocationMarker 
+          key={location.id || `${location.latitude}-${location.longitude}`} 
+          location={location} 
+          activity={activity}
+        />
       ))}
     </>
   );

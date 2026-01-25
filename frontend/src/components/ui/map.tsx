@@ -261,6 +261,8 @@ type MapMarkerProps = {
   children: ReactNode;
   /** Callback when marker is clicked */
   onClick?: (e: MouseEvent) => void;
+  /** Callback when marker is double-clicked */
+  onDoubleClick?: (e: MouseEvent) => void;
   /** Callback when mouse enters marker */
   onMouseEnter?: (e: MouseEvent) => void;
   /** Callback when mouse leaves marker */
@@ -278,6 +280,7 @@ function MapMarker({
   latitude,
   children,
   onClick,
+  onDoubleClick,
   onMouseEnter,
   onMouseLeave,
   onDragStart,
@@ -296,10 +299,12 @@ function MapMarker({
     }).setLngLat([longitude, latitude]);
 
     const handleClick = (e: MouseEvent) => onClick?.(e);
+    const handleDoubleClick = (e: MouseEvent) => onDoubleClick?.(e);
     const handleMouseEnter = (e: MouseEvent) => onMouseEnter?.(e);
     const handleMouseLeave = (e: MouseEvent) => onMouseLeave?.(e);
 
     markerInstance.getElement()?.addEventListener("click", handleClick);
+    markerInstance.getElement()?.addEventListener("dblclick", handleDoubleClick);
     markerInstance
       .getElement()
       ?.addEventListener("mouseenter", handleMouseEnter);

@@ -20,7 +20,8 @@ import {
   ArrowDown,
   ChevronRight,
   ChevronDown,
-  Mountain
+  Mountain,
+  X
 } from 'lucide-react';
 import {
   Table,
@@ -160,6 +161,14 @@ function Map3DController({
     });
   }, [map]);
 
+  const handle2DView = useCallback(() => {
+    map?.easeTo({
+      pitch: 0,
+      bearing: 0,
+      duration: 1000,
+    });
+  }, [map]);
+
   const handleReset = useCallback(() => {
     if (map) {
       map.flyTo({
@@ -172,21 +181,36 @@ function Map3DController({
     }
   }, [map, homeCountryCenter, homeCountryZoom]);
 
+  const is3DMode = pitch !== 0 || bearing !== 0;
+
   if (!isLoaded) return null;
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex gap-1.5">
-        <Button
-          onClick={handle3DView}
-          variant="outline"
-          size="sm"
-          title="3D View"
-          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
-        >
-          <Mountain className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">3D</span>
-        </Button>
+    <div className="relative">
+      <div className="flex items-center gap-1.5">
+        {is3DMode ? (
+          <Button
+            onClick={handle2DView}
+            variant="outline"
+            size="sm"
+            title="2D View"
+            className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+          >
+            <MapIcon className="h-4 w-4 mr-1.5" />
+            <span className="text-xs">2D</span>
+          </Button>
+        ) : (
+          <Button
+            onClick={handle3DView}
+            variant="outline"
+            size="sm"
+            title="3D View"
+            className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+          >
+            <Mountain className="h-4 w-4 mr-1.5" />
+            <span className="text-xs">3D</span>
+          </Button>
+        )}
         <Button
           onClick={handleReset}
           variant="outline"
@@ -197,10 +221,10 @@ function Map3DController({
           <RotateCcw className="h-4 w-4" />
         </Button>
       </div>
-      {(pitch !== 0 || bearing !== 0) && (
-        <div className="rounded-md bg-white/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-gray-300 shadow-md">
-          <div className="text-gray-600">Pitch: {pitch}°</div>
-          <div className="text-gray-600">Bearing: {bearing}°</div>
+      {is3DMode && (
+        <div className="absolute top-full left-0 mt-1.5 rounded-md bg-white/90 backdrop-blur px-2 py-1 text-[10px] font-mono border border-gray-300 shadow-md flex gap-2 whitespace-nowrap z-[1]">
+          <span className="text-gray-600">Pitch: {pitch}°</span>
+          <span className="text-gray-600">Bearing: {bearing}°</span>
         </div>
       )}
     </div>
@@ -211,10 +235,55 @@ export default function Atlas() {
   const [mapStyle, setMapStyle] = useState<MapStyleKey>('carto_light');
   const [viewMode, setViewMode] = useState<ViewMode>('markers');
   const [tabMode, setTabMode] = useState<TabMode>('map');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [orgFilter, setOrgFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [statusFilterOpen, setStatusFilterOpen] = useState(false);
+  const [orgFilter, setOrgFilter] = useState<string[]>([]);
   const [orgFilterOpen, setOrgFilterOpen] = useState(false);
   const [orgFilterSearch, setOrgFilterSearch] = useState('');
+  const [sectorFilterOpen, setSectorFilterOpen] = useState(false);
+  
+  // Toggle status selection
+  const toggleStatusFilter = (code: string) => {
+    setStatusFilter(prev => 
+      prev.includes(code) 
+        ? prev.filter(c => c !== code)
+        : [...prev, code]
+    );
+  };
+  
+  // Toggle org selection
+  const toggleOrgFilter = (name: string) => {
+    setOrgFilter(prev => 
+      prev.includes(name) 
+        ? prev.filter(n => n !== name)
+        : [...prev, name]
+    );
+  };
+  
+  // Close other filters when one opens
+  const handleStatusFilterOpen = (open: boolean) => {
+    setStatusFilterOpen(open);
+    if (open) {
+      setOrgFilterOpen(false);
+      setSectorFilterOpen(false);
+    }
+  };
+  
+  const handleOrgFilterOpen = (open: boolean) => {
+    setOrgFilterOpen(open);
+    if (open) {
+      setStatusFilterOpen(false);
+      setSectorFilterOpen(false);
+    }
+  };
+  
+  const handleSectorFilterOpen = (open: boolean) => {
+    setSectorFilterOpen(open);
+    if (open) {
+      setStatusFilterOpen(false);
+      setOrgFilterOpen(false);
+    }
+  };
   // Sorting state for subnational breakdown table
   const [sortColumn, setSortColumn] = useState<'region' | 'activities' | 'allocation' | 'coverage'>('allocation');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -323,8 +392,8 @@ export default function Atlas() {
         setSubnationalLoading(true);
         
         const params = new URLSearchParams();
-        if (statusFilter !== 'all') params.append('status', statusFilter);
-        if (orgFilter !== 'all') params.append('organization', orgFilter);
+        if (statusFilter.length > 0) statusFilter.forEach(s => params.append('status', s));
+        if (orgFilter.length > 0) orgFilter.forEach(o => params.append('organization', o));
         
         const response = await fetch(`/api/subnational-breakdowns?${params}`);
         const data = await response.json();
@@ -358,12 +427,12 @@ export default function Atlas() {
   const filteredLocations = useMemo(() => {
     let filtered = validLocations;
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(loc => loc.activity?.status === statusFilter);
+    if (statusFilter.length > 0) {
+      filtered = filtered.filter(loc => loc.activity?.status && statusFilter.includes(loc.activity.status));
     }
 
-    if (orgFilter !== 'all') {
-      filtered = filtered.filter(loc => loc.activity?.organization_name === orgFilter);
+    if (orgFilter.length > 0) {
+      filtered = filtered.filter(loc => loc.activity?.organization_name && orgFilter.includes(loc.activity.organization_name));
     }
 
     // Apply sector hierarchy filter
@@ -512,28 +581,62 @@ export default function Atlas() {
                 {/* Controls Bar - positioned above map */}
                 <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-2">
                   {/* Filters */}
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="!w-[130px] min-w-[130px] bg-white shadow-md border-gray-300 text-xs h-9">
-                      <SelectValue placeholder="All Statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      {ACTIVITY_STATUS_GROUPS.map((group) => (
-                        <React.Fragment key={group.label}>
-                          {group.options.map((status) => (
-                            <SelectItem key={status.code} value={status.code}>
-                              <span className="inline-flex items-center gap-2">
-                                <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono">{status.code}</code>
-                                <span>{status.name}</span>
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </React.Fragment>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={statusFilterOpen} onOpenChange={handleStatusFilterOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={statusFilterOpen}
+                        className="!w-[150px] min-w-[150px] justify-between bg-white shadow-md border-gray-300 text-xs h-9 font-normal"
+                      >
+                        <span className="truncate">
+                          {statusFilter.length === 0 
+                            ? 'All Statuses' 
+                            : statusFilter.length === 1 
+                              ? ACTIVITY_STATUS_GROUPS.flatMap(g => g.options).find(s => s.code === statusFilter[0])?.name || statusFilter[0]
+                              : `${statusFilter.length} statuses`}
+                        </span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {statusFilter.length > 0 && (
+                            <X
+                              className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setStatusFilter([]);
+                              }}
+                            />
+                          )}
+                          <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                        </div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[250px] p-0" align="start">
+                      <Command>
+                        <CommandList>
+                          <CommandGroup>
+                            {ACTIVITY_STATUS_GROUPS.map((group) => (
+                              <React.Fragment key={group.label}>
+                                {group.options.map((status) => (
+                                  <CommandItem
+                                    key={status.code}
+                                    value={status.code}
+                                    onSelect={() => toggleStatusFilter(status.code)}
+                                    className="flex items-center text-xs"
+                                  >
+                                    <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0", statusFilter.includes(status.code) ? "opacity-100" : "opacity-0")} />
+                                    <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2">{status.code}</code>
+                                    <span>{status.name}</span>
+                                  </CommandItem>
+                                ))}
+                              </React.Fragment>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   
-                  <Popover open={orgFilterOpen} onOpenChange={setOrgFilterOpen}>
+                  <Popover open={orgFilterOpen} onOpenChange={handleOrgFilterOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -542,23 +645,27 @@ export default function Atlas() {
                         className="!w-[200px] min-w-[200px] justify-between bg-white shadow-md border-gray-300 text-xs h-9 font-normal"
                       >
                         <div className="flex items-center gap-2 truncate">
-                          {orgFilter === 'all' ? (
-                            <Building2 className="h-4 w-4 text-gray-500 shrink-0" />
-                          ) : (
-                            (() => {
-                              const selectedOrg = organizations.find(o => o.name === orgFilter);
-                              return selectedOrg?.logo ? (
-                                <img src={selectedOrg.logo} alt="" className="h-4 w-4 rounded-sm object-contain shrink-0" />
-                              ) : (
-                                <Building2 className="h-4 w-4 text-gray-500 shrink-0" />
-                              );
-                            })()
-                          )}
+                          <Building2 className="h-4 w-4 text-gray-500 shrink-0" />
                           <span className="truncate">
-                            {orgFilter === 'all' ? 'All Organizations' : orgFilter}
+                            {orgFilter.length === 0 
+                              ? 'All Organizations' 
+                              : orgFilter.length === 1 
+                                ? orgFilter[0]
+                                : `${orgFilter.length} organizations`}
                           </span>
                         </div>
-                        <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                        <div className="flex items-center gap-1 shrink-0">
+                          {orgFilter.length > 0 && (
+                            <X
+                              className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOrgFilter([]);
+                              }}
+                            />
+                          )}
+                          <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                        </div>
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[350px] p-0" align="start">
@@ -572,19 +679,6 @@ export default function Atlas() {
                         <CommandList>
                           <CommandEmpty>No organization found.</CommandEmpty>
                           <CommandGroup>
-                            <CommandItem
-                              value="all"
-                              onSelect={() => {
-                                setOrgFilter('all');
-                                setOrgFilterOpen(false);
-                                setOrgFilterSearch('');
-                              }}
-                              className="flex items-center text-xs"
-                            >
-                              <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0", orgFilter === 'all' ? "opacity-100" : "opacity-0")} />
-                              <Building2 className="h-5 w-5 mr-2 text-gray-400 shrink-0" />
-                              <span>All Organizations</span>
-                            </CommandItem>
                             {organizations
                               .filter(org => 
                                 org.name.toLowerCase().includes(orgFilterSearch.toLowerCase()) ||
@@ -594,15 +688,11 @@ export default function Atlas() {
                                 <CommandItem
                                   key={org.name}
                                   value={org.name}
-                                  onSelect={() => {
-                                    setOrgFilter(org.name);
-                                    setOrgFilterOpen(false);
-                                    setOrgFilterSearch('');
-                                  }}
-                                  className="flex items-center text-xs"
+                                  onSelect={() => toggleOrgFilter(org.name)}
+                                  className="flex items-start text-xs py-2"
                                 >
-                                  <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0", orgFilter === org.name ? "opacity-100" : "opacity-0")} />
-                                  <div className="h-5 w-5 mr-2 shrink-0 flex items-center justify-center">
+                                  <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0 mt-0.5", orgFilter.includes(org.name) ? "opacity-100" : "opacity-0")} />
+                                  <div className="h-5 w-5 mr-2 shrink-0 flex items-center justify-center mt-0.5">
                                     {org.logo ? (
                                       <img 
                                         src={org.logo} 
@@ -616,7 +706,7 @@ export default function Atlas() {
                                     ) : null}
                                     <Building2 className={cn("h-4 w-4 text-gray-400", org.logo ? "hidden" : "")} />
                                   </div>
-                                  <span className="truncate">
+                                  <span className="break-words">
                                     {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
                                   </span>
                                 </CommandItem>
@@ -624,12 +714,14 @@ export default function Atlas() {
                           </CommandGroup>
                         </CommandList>
                       </Command>
-                    </PopoverContent>
+                      </PopoverContent>
                   </Popover>
                   
                   <SectorHierarchyFilter
                     selected={sectorFilter}
                     onChange={setSectorFilter}
+                    open={sectorFilterOpen}
+                    onOpenChange={handleSectorFilterOpen}
                     className="!w-[280px] min-w-[280px] bg-white shadow-md border-gray-300 h-9 text-xs"
                   />
                   
@@ -649,7 +741,7 @@ export default function Atlas() {
                       <SelectTrigger className="!w-[180px] min-w-[180px] bg-white shadow-md border-gray-300 text-xs h-9">
                         <SelectValue placeholder="Map style" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[1001]">
                         {Object.entries(MAP_STYLES).map(([key, style]) => (
                           <SelectItem key={key} value={key}>
                             {style.name}
@@ -693,8 +785,8 @@ export default function Atlas() {
                   minZoom={2}
                   maxZoom={18}
                 >
-                  {/* Map Controls - positioned inside Map context */}
-                  <div className="absolute top-16 right-3 z-[1000]">
+                  {/* 3D/Reset Controls - positioned inside Map context on same line as filters */}
+                  <div className="absolute top-3 right-[290px] z-[1001]">
                     <Map3DController 
                       homeCountryCenter={homeCountryCenter} 
                       homeCountryZoom={homeCountryZoom} 
