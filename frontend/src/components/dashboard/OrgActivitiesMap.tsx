@@ -23,8 +23,8 @@ const ZoomControl = dynamic(
   () => import('react-leaflet').then((mod) => mod.ZoomControl),
   { ssr: false }
 );
-const AidMapMarkersLayer = dynamic(
-  () => import('@/components/maps/AidMapMarkersLayer'),
+const MarkersLayer = dynamic(
+  () => import('@/components/maps/MarkersLayer'),
   { ssr: false }
 );
 const HeatmapLayer = dynamic(
@@ -497,7 +497,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                 
                 {/* Markers mode */}
                 {viewMode === 'markers' && filteredLocations.length > 0 && (
-                  <AidMapMarkersLayer locations={filteredLocations} />
+                  <MarkersLayer locations={filteredLocations} />
                 )}
 
                 {/* Heatmap mode */}
