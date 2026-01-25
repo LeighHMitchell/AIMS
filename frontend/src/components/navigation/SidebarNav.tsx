@@ -151,7 +151,7 @@ export function SidebarNav({
         { name: "Calendar", href: "/calendar", show: true, underDevelopment: true },
         { name: "Data Clinic", href: "/data-clinic", show: true, underDevelopment: true },
         { name: "Library", href: "/library", show: true, isNew: true },
-        { name: "Build History", href: "/build-history", show: true },
+        { name: "Build History", href: "/build-history", show: true, isNew: true },
       ]
     },
     {
@@ -425,7 +425,7 @@ export function SidebarNav({
                               >
                                 {item.name}
                                 {'isNew' in item && item.isNew && (
-                                  <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 rounded-full">
+                                  <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full" style={{ backgroundColor: '#3C6255', color: 'white' }}>
                                     New
                                   </span>
                                 )}
@@ -455,7 +455,7 @@ export function SidebarNav({
                                       <span className="flex items-center gap-2">
                                         {item.name}
                                         {'isNew' in item && item.isNew && (
-                                          <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 rounded-full">
+                                          <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full" style={{ backgroundColor: '#3C6255', color: 'white' }}>
                                             New
                                           </span>
                                         )}
