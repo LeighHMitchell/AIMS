@@ -37,7 +37,7 @@ export function VersionBadge() {
         side="right" 
         align="start" 
         sideOffset={8}
-        className="w-80"
+        className="w-80 bg-white shadow-lg"
       >
         <div className="space-y-3">
           {/* Header */}
