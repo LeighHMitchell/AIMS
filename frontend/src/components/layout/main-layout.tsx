@@ -8,6 +8,7 @@ import { useUser } from "@/hooks/useUser"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { SidebarNav } from "@/components/navigation/SidebarNav"
 import { TopNav } from "@/components/navigation/TopNav"
+import { VersionBadge } from "@/components/ui/version-badge"
 import { useSmartPreCache } from "@/hooks/use-pre-cached-data"
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch"
 import { getHomeRoute } from "@/lib/navigation-utils"
@@ -47,19 +48,24 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         }}
       >
         {/* Logo Section */}
-        <div className="h-16 flex items-center px-4 flex-shrink-0" style={{ backgroundColor: '#f6f5f3' }}>
+        <div className="py-3 px-4 flex-shrink-0" style={{ backgroundColor: '#f6f5f3' }}>
           <Link href={homeRoute} className="flex items-center hover:opacity-80 transition-opacity duration-200">
             <img
               src="/images/Logo - No Text 2.jpeg"
               alt="æther logo"
               className="h-12 w-12 object-contain flex-shrink-0 mr-4"
             />
-            <span className="text-xl font-bold whitespace-nowrap">
-              æther
-            </span>
-            <span className="text-sm font-medium text-muted-foreground ml-2">
-              MYANMAR
-            </span>
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <span className="text-xl font-bold whitespace-nowrap">
+                  æther
+                </span>
+                <span className="text-sm font-medium text-muted-foreground ml-2">
+                  MYANMAR
+                </span>
+              </div>
+              <VersionBadge />
+            </div>
           </Link>
         </div>
 

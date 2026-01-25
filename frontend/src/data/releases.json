@@ -1,0 +1,37 @@
+{
+  "currentVersion": "1.1.0",
+  "releases": [
+    {
+      "version": "1.1.0",
+      "date": "2026-01-25",
+      "changes": [
+        "Added version badge in sidebar header with hover popup showing recent changes",
+        "New Build History page under Operations section showing all releases",
+        "Version number now displays below the app title for better visibility",
+        "Hover over version badge to see latest release notes at a glance",
+        "Build History shows timeline of all production releases with change logs",
+        "Click 'View full build history' in hover popup to see complete release history",
+        "Releases data stored in centralized JSON file for easy updates",
+        "Each release displays version number, date, and bullet list of changes"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-01-24",
+      "changes": [
+        "Initial production release of æther Myanmar AIMS",
+        "Activity management with full IATI compliance and XML import/export",
+        "Transaction tracking with automatic USD conversion",
+        "Planned disbursements management with period allocation",
+        "Organization directory with contact management",
+        "Interactive aid map (Atlas) with geographic visualization",
+        "Analytics dashboard with financial summaries",
+        "Document library for centralized file management",
+        "Role-based access control with organization permissions",
+        "IATI Registry search and activity import",
+        "Comprehensive results framework tracking",
+        "Multi-currency support with real-time exchange rates"
+      ]
+    }
+  ]
+}
