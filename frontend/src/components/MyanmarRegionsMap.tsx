@@ -383,7 +383,7 @@ export default function MyanmarRegionsMap({
                           </td>
                         </tr>
                       )}
-                      <tr className="border-b border-slate-100">
+                      <tr>
                         <td className="py-1 text-slate-500">Activities</td>
                         <td className="py-1 text-right font-medium text-slate-900">
                           {regionData?.activityCount ?? 0}
@@ -391,23 +391,6 @@ export default function MyanmarRegionsMap({
                       </tr>
                     </tbody>
                   </table>
-                  {regionData?.activities && regionData.activities.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-slate-200">
-                      <p className="text-xs font-medium text-slate-700 mb-1">Activities in this region:</p>
-                      <ul className="text-xs text-slate-600 space-y-1 max-h-32 overflow-y-auto">
-                        {regionData.activities.slice(0, 5).map((activity) => (
-                          <li key={activity.id} className="truncate" title={activity.title}>
-                            • {activity.title}
-                          </li>
-                        ))}
-                        {regionData.activities.length > 5 && (
-                          <li className="text-slate-400 italic">
-                            +{regionData.activities.length - 5} more...
-                          </li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               )
             })()}

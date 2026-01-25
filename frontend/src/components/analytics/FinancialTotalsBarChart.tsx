@@ -16,7 +16,7 @@ import {
   Legend,
 } from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp } from 'lucide-react'
+import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp, Table2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
   DropdownMenu,
@@ -43,12 +43,15 @@ const PALETTE_ARRAY = [
   BRAND_PALETTE.paleSlate,
   BRAND_PALETTE.platinum,
 ]
-import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
-import { format } from 'date-fns'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear } from '@/types/custom-years'
+import { format, parseISO } from 'date-fns'
 import {
   splitBudgetAcrossYears,
   splitPlannedDisbursementAcrossYears,
-  splitTransactionAcrossYears
+  splitTransactionAcrossYears,
+  allocateAcrossFiscalYears,
+  getFiscalYearForDate,
+  type FiscalYearAllocation
 } from '@/utils/year-allocation'
 
 // Transaction type mapping (IATI Standard v2.03)
@@ -104,7 +107,7 @@ const AVAILABLE_YEARS = Array.from(
   (_, i) => 2010 + i
 )
 
-type ChartType = 'bar' | 'line' | 'area'
+type ChartType = 'bar' | 'line' | 'area' | 'table'
 
 interface FinancialTotalsBarChartProps {
   dateRange?: {
@@ -123,16 +126,16 @@ interface YearlyData {
   [key: string]: number | string
 }
 
-// Currency formatter
+// Currency formatter for axis labels (no decimals)
 const formatCurrency = (value: number): string => {
   if (value >= 1000000000) {
-    return `$${(value / 1000000000).toFixed(1)}b`
+    return `$${Math.round(value / 1000000000)}b`
   } else if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}m`
+    return `$${Math.round(value / 1000000)}m`
   } else if (value >= 1000) {
-    return `$${(value / 1000).toFixed(1)}k`
+    return `$${Math.round(value / 1000)}k`
   }
-  return `$${value.toFixed(0)}`
+  return `$${Math.round(value)}`
 }
 
 const formatCurrencyFull = (value: number): string => {
@@ -380,6 +383,9 @@ export function FinancialTotalsBarChart({
 
     const customYear = customYears.find(cy => cy.id === calendarType)
     const yearlyDataMap = new Map<number, YearlyData>()
+    
+    // Check if we're using a fiscal year that crosses calendar boundaries
+    const useFiscalYear = customYear && crossesCalendarYear(customYear)
 
     const ensureYearEntry = (year: number) => {
       if (!yearlyDataMap.has(year)) {
@@ -394,51 +400,130 @@ export function FinancialTotalsBarChart({
 
     // Process budgets
     rawData.budgets.forEach(budget => {
-      const yearAllocations = splitBudgetAcrossYears(budget)
-      yearAllocations.forEach(({ year, amount }) => {
-        ensureYearEntry(year)
-        yearlyDataMap.get(year)!.Budgets += amount
-      })
+      if (useFiscalYear && customYear && budget.period_start && budget.period_end) {
+        // Use fiscal year allocation
+        const value = parseFloat(String(budget.usd_value)) || 
+                     (budget.currency === 'USD' ? parseFloat(String(budget.value)) || 0 : 0)
+        if (value > 0) {
+          const fiscalAllocations = allocateAcrossFiscalYears(
+            budget.period_start,
+            budget.period_end,
+            value,
+            customYear
+          )
+          fiscalAllocations.forEach(({ fiscalYear, amount }) => {
+            ensureYearEntry(fiscalYear)
+            yearlyDataMap.get(fiscalYear)!.Budgets += amount
+          })
+        }
+      } else {
+        // Use calendar year allocation
+        const yearAllocations = splitBudgetAcrossYears(budget)
+        yearAllocations.forEach(({ year, amount }) => {
+          ensureYearEntry(year)
+          yearlyDataMap.get(year)!.Budgets += amount
+        })
+      }
     })
 
     // Process planned disbursements
     rawData.plannedDisbursements.forEach(pd => {
-      const yearAllocations = splitPlannedDisbursementAcrossYears(pd)
-      yearAllocations.forEach(({ year, amount }) => {
-        ensureYearEntry(year)
-        yearlyDataMap.get(year)!['Planned Disbursements'] += amount
-      })
+      if (useFiscalYear && customYear && pd.period_start) {
+        // Use fiscal year allocation
+        const value = parseFloat(String(pd.usd_amount)) || 
+                     (pd.currency === 'USD' ? parseFloat(String(pd.amount)) || 0 : 0)
+        if (value > 0) {
+          if (pd.period_end) {
+            const fiscalAllocations = allocateAcrossFiscalYears(
+              pd.period_start,
+              pd.period_end,
+              value,
+              customYear
+            )
+            fiscalAllocations.forEach(({ fiscalYear, amount }) => {
+              ensureYearEntry(fiscalYear)
+              yearlyDataMap.get(fiscalYear)!['Planned Disbursements'] += amount
+            })
+          } else {
+            // Single date - assign to fiscal year
+            const date = parseISO(pd.period_start)
+            if (!isNaN(date.getTime())) {
+              const fiscalYear = getFiscalYearForDate(date, customYear)
+              ensureYearEntry(fiscalYear)
+              yearlyDataMap.get(fiscalYear)!['Planned Disbursements'] += value
+            }
+          }
+        }
+      } else {
+        // Use calendar year allocation
+        const yearAllocations = splitPlannedDisbursementAcrossYears(pd)
+        yearAllocations.forEach(({ year, amount }) => {
+          ensureYearEntry(year)
+          yearlyDataMap.get(year)!['Planned Disbursements'] += amount
+        })
+      }
     })
 
     // Process transactions
     rawData.transactions.forEach(tx => {
-      const yearAllocations = splitTransactionAcrossYears(tx)
-      yearAllocations.forEach(({ year, amount }) => {
-        const type = tx.transaction_type
-        if (!type) return
+      const type = tx.transaction_type
+      if (!type) return
 
-        const typeName = TRANSACTION_TYPES[type]
-        if (!typeName) return
+      const typeName = TRANSACTION_TYPES[type]
+      if (!typeName) return
 
-        ensureYearEntry(year)
-        const yearData = yearlyDataMap.get(year)!
-        if (!yearData[typeName]) {
-          yearData[typeName] = 0
+      if (useFiscalYear && customYear && tx.transaction_date) {
+        // Use fiscal year for transaction
+        const value = parseFloat(String(tx.value_usd)) || 
+                     (tx.currency === 'USD' ? parseFloat(String(tx.value)) || 0 : 0)
+        if (value > 0) {
+          const date = parseISO(tx.transaction_date)
+          if (!isNaN(date.getTime())) {
+            const fiscalYear = getFiscalYearForDate(date, customYear)
+            ensureYearEntry(fiscalYear)
+            const yearData = yearlyDataMap.get(fiscalYear)!
+            if (!yearData[typeName]) {
+              yearData[typeName] = 0
+            }
+            (yearData[typeName] as number) += value
+          }
         }
-        (yearData[typeName] as number) += amount
-      })
+      } else {
+        // Use calendar year allocation
+        const yearAllocations = splitTransactionAcrossYears(tx)
+        yearAllocations.forEach(({ year, amount }) => {
+          ensureYearEntry(year)
+          const yearData = yearlyDataMap.get(year)!
+          if (!yearData[typeName]) {
+            yearData[typeName] = 0
+          }
+          (yearData[typeName] as number) += amount
+        })
+      }
     })
 
     // Filter to selected year range and sort
-    const startYear = effectiveDateRange.from.getFullYear()
-    const endYear = effectiveDateRange.to.getFullYear()
-
-    const filteredData = Array.from(yearlyDataMap.values())
-      .filter(d => d.year >= startYear && d.year <= endYear)
-      .sort((a, b) => a.year - b.year)
+    // For fiscal years, we filter by fiscal year number, not calendar date
+    let filteredData: YearlyData[]
+    
+    if (useFiscalYear && customYear && selectedYears.length > 0) {
+      // Filter by selected fiscal years
+      const minYear = Math.min(...selectedYears)
+      const maxYear = Math.max(...selectedYears)
+      filteredData = Array.from(yearlyDataMap.values())
+        .filter(d => d.year >= minYear && d.year <= maxYear)
+        .sort((a, b) => a.year - b.year)
+    } else {
+      // Filter by calendar date range
+      const startYear = effectiveDateRange.from.getFullYear()
+      const endYear = effectiveDateRange.to.getFullYear()
+      filteredData = Array.from(yearlyDataMap.values())
+        .filter(d => d.year >= startYear && d.year <= endYear)
+        .sort((a, b) => a.year - b.year)
+    }
 
     return filteredData
-  }, [rawData, customYears, calendarType, effectiveDateRange])
+  }, [rawData, customYears, calendarType, effectiveDateRange, selectedYears])
 
   // Get available transaction types (those with data)
   const availableTransactionTypes = useMemo(() => {
@@ -580,6 +665,72 @@ export function FinancialTotalsBarChart({
       fontSize: isCompact ? 10 : 12,
     }
 
+    if (chartType === 'table') {
+      return (
+        <div className="overflow-auto" style={{ maxHeight: height }}>
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 sticky top-0">
+              <tr>
+                <th className="text-left px-4 py-3 font-semibold text-slate-700 border-b">Year</th>
+                {activeDataKeys.map(key => (
+                  <th key={key} className="text-right px-4 py-3 font-semibold text-slate-700 border-b">
+                    <div className="flex items-center justify-end gap-2">
+                      <div
+                        className="w-3 h-3 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: colorMap[key] }}
+                      />
+                      {key}
+                    </div>
+                  </th>
+                ))}
+                <th className="text-right px-4 py-3 font-semibold text-slate-700 border-b">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartData.map((row, idx) => {
+                const rowTotal = activeDataKeys.reduce((sum, key) => sum + (Number(row[key]) || 0), 0)
+                return (
+                  <tr key={row.displayYear} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                    <td className="px-4 py-2.5 font-medium text-slate-900 border-b border-slate-100">
+                      {row.displayYear}
+                    </td>
+                    {activeDataKeys.map(key => (
+                      <td key={key} className="text-right px-4 py-2.5 text-slate-600 border-b border-slate-100 font-mono">
+                        {formatCurrencyFull(Number(row[key]) || 0)}
+                      </td>
+                    ))}
+                    <td className="text-right px-4 py-2.5 text-slate-900 font-semibold border-b border-slate-100 font-mono">
+                      {formatCurrencyFull(rowTotal)}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+            <tfoot className="bg-slate-100">
+              <tr>
+                <td className="px-4 py-3 font-semibold text-slate-900 border-t-2 border-slate-300">Total</td>
+                {activeDataKeys.map(key => {
+                  const columnTotal = chartData.reduce((sum, row) => sum + (Number(row[key]) || 0), 0)
+                  return (
+                    <td key={key} className="text-right px-4 py-3 font-semibold text-slate-900 border-t-2 border-slate-300 font-mono">
+                      {formatCurrencyFull(columnTotal)}
+                    </td>
+                  )
+                })}
+                <td className="text-right px-4 py-3 font-bold text-slate-900 border-t-2 border-slate-300 font-mono">
+                  {formatCurrencyFull(
+                    chartData.reduce((grandTotal, row) => 
+                      grandTotal + activeDataKeys.reduce((sum, key) => sum + (Number(row[key]) || 0), 0), 0
+                    )
+                  )}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )
+    }
+
     if (chartType === 'line') {
       return (
         <ResponsiveContainer width="100%" height={height}>
@@ -677,9 +828,26 @@ export function FinancialTotalsBarChart({
       )
     }
 
+    // Use 100% height to fill the container
     return (
       <div className="h-full w-full">
-        {renderChart(250, true)}
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 10, right: 20, left: 20, bottom: 30 }} barGap={0} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <XAxis dataKey="displayYear" stroke="#64748B" fontSize={11} tickLine={false} />
+            <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={10} />
+            <Tooltip content={<CustomTooltip />} />
+            {activeDataKeys.map(key => (
+              <Bar
+                key={key}
+                dataKey={key}
+                name={key}
+                fill={colorMap[key]}
+                radius={[4, 4, 0, 0]}
+              />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     )
   }
@@ -801,51 +969,50 @@ export function FinancialTotalsBarChart({
           </>
         )}
 
-        {/* Transaction Types Dropdown - stays open for multi-select */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8">
-              Transaction Types ({selectedTransactionTypes.length})
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
-            <div className="space-y-1">
-              {availableTransactionTypes.map(({ code, name }) => {
-                const isSelected = selectedTransactionTypes.includes(code)
-                const typeName = TRANSACTION_TYPES[code]
-                const displayColor = isSelected && typeName ? colorMap[typeName] : BRAND_PALETTE.paleSlate
-                return (
-                  <div
-                    key={code}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-100 cursor-pointer"
-                    onClick={() => toggleTransactionType(code)}
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => toggleTransactionType(code)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <div
-                      className="w-3 h-3 rounded-sm flex-shrink-0"
-                      style={{ backgroundColor: displayColor }}
-                    />
-                    <span className="flex-1 text-sm">{name}</span>
-                    <code className="text-xs text-slate-500">{code}</code>
-                  </div>
-                )
-              })}
-              {availableTransactionTypes.length === 0 && (
-                <div className="px-2 py-3 text-sm text-slate-500 text-center">
-                  No transaction data available
-                </div>
-              )}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         {/* Right side controls */}
         <div className="flex items-center gap-2 ml-auto">
+          {/* Transaction Types Dropdown - stays open for multi-select */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                Transaction Types ({selectedTransactionTypes.length})
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72 p-2" onCloseAutoFocus={(e) => e.preventDefault()}>
+              <div className="space-y-1">
+                {availableTransactionTypes.map(({ code, name }) => {
+                  const isSelected = selectedTransactionTypes.includes(code)
+                  const typeName = TRANSACTION_TYPES[code]
+                  const displayColor = isSelected && typeName ? colorMap[typeName] : BRAND_PALETTE.paleSlate
+                  return (
+                    <div
+                      key={code}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-100 cursor-pointer"
+                      onClick={() => toggleTransactionType(code)}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleTransactionType(code)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <code className="text-xs text-slate-600 bg-slate-200 px-1.5 py-0.5 rounded font-mono min-w-[24px] text-center">{code}</code>
+                      <div
+                        className="w-3 h-3 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: displayColor }}
+                      />
+                      <span className="text-sm">{name}</span>
+                    </div>
+                  )
+                })}
+                {availableTransactionTypes.length === 0 && (
+                  <div className="px-2 py-3 text-sm text-slate-500 text-center">
+                    No transaction data available
+                  </div>
+                )}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {/* Chart Type Toggle */}
           <div className="flex gap-1 border rounded-lg p-1 bg-white">
             <Button
@@ -874,6 +1041,15 @@ export function FinancialTotalsBarChart({
               title="Area Chart"
             >
               <TrendingUp className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={chartType === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setChartType('table')}
+              className="h-8"
+              title="Table View"
+            >
+              <Table2 className="h-4 w-4" />
             </Button>
           </div>
 

@@ -3,6 +3,16 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
+import { AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import OrganizationEditorNavigation from './OrganizationEditorNavigation'
 import { OrganizationFormContent, Organization } from './OrganizationFormContent'
 import { IATIBudgetManager } from './IATIBudgetManager'
@@ -39,6 +49,8 @@ export function OrganizationEditor({
   const [organizationCreated, setOrganizationCreated] = useState(!isCreating)
   const [saving, setSaving] = useState(false)
   const [tabCompletionStatus, setTabCompletionStatus] = useState<Record<string, { isComplete: boolean; isInProgress: boolean }>>({})
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Update active section when URL changes
   useEffect(() => {
@@ -138,6 +150,33 @@ export function OrganizationEditor({
       setSaving(false)
     }
   }, [organizationId, organization, handleCreate, onSuccess])
+
+  // Handle organization deletion
+  const handleDeleteOrganization = useCallback(async () => {
+    const currentOrgId = organizationId || organization?.id
+    if (!currentOrgId) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/organizations/${currentOrgId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        toast.success(`"${organization?.name || 'Organization'}" was deleted successfully`)
+        setShowDeleteDialog(false)
+        router.push('/')
+      } else {
+        const data = await response.json()
+        toast.error(data.error || 'Failed to delete organization')
+      }
+    } catch (error) {
+      console.error('Error deleting organization:', error)
+      toast.error('Failed to delete organization')
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [organizationId, organization, router])
 
   // Map section IDs to form tab names
   const getFormTab = (section: string) => {
@@ -282,12 +321,37 @@ export function OrganizationEditor({
         tabCompletionStatus={tabCompletionStatus}
         disabled={saving}
         organization={organization}
+        onDelete={() => setShowDeleteDialog(true)}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {renderSectionContent()}
       </div>
+
+      {/* Delete Organization Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Organization
+            </DialogTitle>
+            <DialogDescription className="pt-3">
+              Are you sure you want to delete "{organization?.name || 'this organization'}"? 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-4">
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteOrganization} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete Organization'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -45,7 +45,8 @@ const FORMAT_OPTIONS = [
 // Category options for multi-select
 const CATEGORY_OPTIONS = DOCUMENT_CATEGORIES.map(cat => ({
   value: cat.code,
-  label: `${cat.code} - ${cat.name}`,
+  label: cat.name,
+  code: cat.code,
 }));
 
 export function LibraryFiltersPanel({
@@ -188,7 +189,7 @@ export function LibraryFiltersPanel({
           </div>
 
           {/* Category and Organization Filters - stacked in wider column */}
-          <div className="space-y-4 lg:col-span-2">
+          <div className="space-y-4 lg:col-span-2 max-w-[90%]">
             {/* Category Filter */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Document Category</Label>
@@ -232,9 +233,9 @@ export function LibraryFiltersPanel({
           </div>
 
           {/* Date Range Filter */}
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0 -ml-4">
             <Label className="text-sm font-medium">Document Date</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Input
                 type="date"
                 value={filters.documentDateFrom || ''}
@@ -244,9 +245,9 @@ export function LibraryFiltersPanel({
                     documentDateFrom: e.target.value || undefined,
                   })
                 }
-                className="text-sm"
+                className="text-sm min-w-0 flex-1"
               />
-              <span className="text-muted-foreground">to</span>
+              <span className="text-muted-foreground text-sm shrink-0">to</span>
               <Input
                 type="date"
                 value={filters.documentDateTo || ''}
@@ -256,7 +257,7 @@ export function LibraryFiltersPanel({
                     documentDateTo: e.target.value || undefined,
                   })
                 }
-                className="text-sm"
+                className="text-sm min-w-0 flex-1"
               />
             </div>
           </div>

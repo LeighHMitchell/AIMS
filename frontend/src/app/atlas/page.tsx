@@ -6,24 +6,24 @@ import { MapSkeleton } from '@/components/ui/skeleton-loader';
 // Force dynamic rendering - skip static prerendering for this map page
 export const dynamic = 'force-dynamic';
 
-// Dynamic import AidMap to avoid SSR issues with Leaflet
-const AidMap = dynamicImport(() => import('@/components/AidMap'), { 
+// Dynamic import Atlas to avoid SSR issues with MapLibre
+const Atlas = dynamicImport(() => import('@/components/Atlas'), { 
   ssr: false,
   loading: () => <MapSkeleton height="600px" />
 });
 
-export default function AidMapPage() {
+export default function AtlasPage() {
   return (
     <MainLayout>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Atlas</h1>
-        <p className="text-gray-600">
-          Interactive map showing the locations of all activities across Myanmar
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Atlas</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Interactive map powered by MapLibre GL for improved performance and WebGL rendering
         </p>
       </div>
       
       <Suspense fallback={<MapSkeleton height="600px" />}>
-        <AidMap />
+        <Atlas />
       </Suspense>
     </MainLayout>
   );

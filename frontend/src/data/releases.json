@@ -1,6 +1,24 @@
 {
-  "currentVersion": "1.1.0",
+  "currentVersion": "1.2.0",
   "releases": [
+    {
+      "version": "1.2.0",
+      "date": "2026-01-25",
+      "changes": [
+        "New Atlas map system with improved performance and visualization",
+        "Added heatmap layer support for geographic data density visualization",
+        "New embedded map component for organization analytics pages",
+        "Redesigned global search bar with enhanced UX and better result handling",
+        "Improved search result row display with cleaner layout",
+        "Enhanced analytics charts with improved cumulative financial overview",
+        "Updated finance type flow chart with better data visualization",
+        "Financial totals bar chart improvements with expanded features",
+        "Organization editor enhancements for better data management",
+        "Myanmar regions map performance improvements",
+        "Streamlined sidebar navigation by removing deprecated pages",
+        "Various UI component refinements and hover card improvements"
+      ]
+    },
     {
       "version": "1.1.0",
       "date": "2026-01-25",

@@ -85,6 +85,7 @@ function normalizeActivity(result: LegacySearchResult): ActivitySearchResult {
     type: 'activity',
     id: result.id,
     title: stripHtml(result.title),
+    subtitle: result.subtitle,
     metadata: {
       acronym: result.metadata?.acronym,
       status: result.metadata?.status,
@@ -110,6 +111,7 @@ function normalizeOrganisation(result: LegacySearchResult): OrganisationSearchRe
     type: 'organisation',
     id: result.id,
     title: stripHtml(result.title),
+    subtitle: result.subtitle,
     metadata: {
       acronym: result.metadata?.acronym,
       code: result.metadata?.code,
@@ -138,6 +140,7 @@ function normalizeSector(result: LegacySearchResult): SectorSearchResult {
     type: 'sector',
     id: result.id,
     title,
+    subtitle: result.subtitle,
     metadata: {
       code,
       hierarchy_level: hierarchyLevel,
@@ -156,6 +159,7 @@ function normalizeTag(result: LegacySearchResult): TagSearchResult {
     type: 'tag',
     id: result.id,
     title: stripHtml(result.title),
+    subtitle: result.subtitle,
     metadata: {
       activity_count: result.metadata?.activity_count ?? 0,
       updated_at: result.metadata?.updated_at
@@ -171,6 +175,7 @@ function normalizeUser(result: LegacySearchResult): UserSearchResult {
     type: 'user',
     id: result.id,
     title: stripHtml(result.title),
+    subtitle: result.subtitle,
     metadata: {
       position: result.metadata?.position,
       organisation: result.metadata?.organisation,
@@ -189,6 +194,7 @@ function normalizeContact(result: LegacySearchResult): ContactSearchResult {
     type: 'contact',
     id: result.id,
     title: stripHtml(result.title),
+    subtitle: result.subtitle,
     metadata: {
       activity_id: result.metadata?.activity_id,
       activity_title: result.metadata?.activity_title,

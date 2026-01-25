@@ -119,7 +119,7 @@ export function MultiSelectFilter({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("p-0 w-[350px]", dropdownClassName)} align="start">
+      <PopoverContent className={cn("p-0 w-[315px]", dropdownClassName)} align="start">
         {/* Search */}
         <div className="flex items-center border-b px-3 py-2">
           <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />

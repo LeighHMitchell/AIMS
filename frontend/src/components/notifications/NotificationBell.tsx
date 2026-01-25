@@ -305,7 +305,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
         <DropdownMenuItem
           className="text-center text-sm text-blue-600 cursor-pointer justify-center"
           onClick={() => {
-            router.push('/notifications');
+            router.push('/dashboard?tab=notifications');
             setOpen(false);
           }}
         >

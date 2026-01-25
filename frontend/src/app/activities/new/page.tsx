@@ -111,6 +111,7 @@ import { IatiDocumentLink } from "@/lib/iatiDocumentLink";
 import { HumanitarianTab } from "@/components/activities/HumanitarianTab";
 
 import GovernmentEndorsementTab from "@/components/activities/GovernmentEndorsementTab";
+import { DeleteActivityDialog } from "@/components/DeleteActivityDialog";
 
 // Utility function to format date without timezone conversion
 const formatDateToString = (date: Date | null): string => {
@@ -2832,6 +2833,8 @@ function NewActivityPageContent() {
   // All state declarations first
   const [activeSection, setActiveSection] = useState("general");
   const [showActivityMetadata, setShowActivityMetadata] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // OPTIMIZATION: Track which tabs have been loaded for lazy loading
   const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set(['general'])); // General is always loaded
@@ -3183,6 +3186,32 @@ function NewActivityPageContent() {
       setSubmitting(false);
     }
   }, [general.id, user, router]);
+
+  // Handle activity deletion
+  const handleDeleteActivity = useCallback(async () => {
+    if (!general.id) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/activities/${general.id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        toast.success(`"${general.title || 'Activity'}" was deleted successfully`);
+        setShowDeleteDialog(false);
+        router.push('/');
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete activity');
+      }
+    } catch (error) {
+      console.error('[ActivityEditor] Error deleting activity:', error);
+      toast.error('Failed to delete activity');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [general.id, general.title, router]);
 
   // Handle submit for validation (Tier 2 users)
   const handleSubmitForValidation = useCallback(async () => {
@@ -5086,6 +5115,8 @@ function NewActivityPageContent() {
               activityCreated={!!general.id}
               tabCompletionStatus={tabCompletionStatus}
               disabled={isAnyAutosaveInProgress}
+              activityId={general.id}
+              onDelete={() => setShowDeleteDialog(true)}
             />
           </div>
         </aside>
@@ -5555,6 +5586,14 @@ function NewActivityPageContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Activity Confirmation Dialog */}
+      <DeleteActivityDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteActivity}
+        activityTitle={general.title || 'Untitled Activity'}
+      />
       
       {/* Debug Panel - Disabled for field-level autosave */}
       

@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,7 @@ import {
   ClipboardCheck,
   Briefcase,
   ClipboardList,
+  Bell,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DashboardStatsSkeleton } from "@/components/ui/skeleton-loader"
@@ -49,13 +50,25 @@ import { DataClinicHeader } from "@/components/dashboard/DataClinicHeader"
 import { MyPortfolioTab } from "@/components/dashboard/MyPortfolioTab"
 import { ValidationRulesCard } from "@/components/data-clinic/ValidationRulesCard"
 import { TaskingTab } from "@/components/tasks/TaskingTab"
+import { NotificationTabs } from "@/components/NotificationTabs"
 
 export default function Dashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, permissions, isLoading } = useUser();
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   const defaultTab = searchParams.get('tab') || 'overview';
+
+  // Fetch unread notification count for the tab badge
+  useEffect(() => {
+    if (user?.id) {
+      fetch(`/api/notifications/user?userId=${user.id}&limit=1`)
+        .then(res => res.json())
+        .then(data => setUnreadNotificationCount(data.unreadCount || 0))
+        .catch(err => console.error('Failed to fetch notification count:', err));
+    }
+  }, [user?.id]);
 
   // Loading state
   if (isLoading) {
@@ -292,6 +305,18 @@ export default function Dashboard() {
                   Overview
                 </TabsTrigger>
                 <TabsTrigger 
+                  value="notifications" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <Bell className="h-4 w-4" />
+                  Notifications
+                  {unreadNotificationCount > 0 && (
+                    <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1 text-xs">
+                      {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger 
                   value="activities" 
                   className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
@@ -416,6 +441,11 @@ export default function Dashboard() {
                   canCreateTasks={user.role === USER_ROLES.SUPER_USER || permissions?.canManageOrganizations}
                   canViewAnalytics={user.role === USER_ROLES.SUPER_USER || permissions?.canManageOrganizations}
                 />
+              </TabsContent>
+
+              {/* Notifications Tab Content */}
+              <TabsContent value="notifications" className="space-y-6">
+                <NotificationTabs userId={user.id} />
               </TabsContent>
             </Tabs>
           </div>

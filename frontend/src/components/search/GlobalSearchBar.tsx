@@ -47,19 +47,34 @@ interface GlobalSearchBarProps {
   placeholder?: string
   isExpanded?: boolean
   onExpandedChange?: (expanded: boolean) => void
+  /** "nav" = collapsible search in top nav (default), "page" = always expanded for search page */
+  variant?: "nav" | "page"
+  /** Size of the search bar - "default" for nav, "large" for page */
+  size?: "default" | "large"
+  /** Callback when search is submitted (Enter pressed). If provided in page mode, prevents navigation. */
+  onSearch?: (query: string) => void
+  /** Auto focus the input on mount (useful for page mode) */
+  autoFocus?: boolean
 }
 
 export function GlobalSearchBar({
   className,
   placeholder = "Search projects, donors, tags...",
   isExpanded: controlledExpanded,
-  onExpandedChange
+  onExpandedChange,
+  variant = "nav",
+  size = "default",
+  onSearch,
+  autoFocus = false
 }: GlobalSearchBarProps) {
-  const [internalExpanded, setInternalExpanded] = useState(false)
+  // In page mode, always expanded
+  const isPageMode = variant === "page"
+  const [internalExpanded, setInternalExpanded] = useState(isPageMode)
 
-  // Use controlled or uncontrolled mode
-  const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded
+  // Use controlled or uncontrolled mode (page mode is always expanded)
+  const isExpanded = isPageMode ? true : (controlledExpanded !== undefined ? controlledExpanded : internalExpanded)
   const setIsExpanded = (expanded: boolean) => {
+    if (isPageMode) return // Cannot collapse in page mode
     if (onExpandedChange) {
       onExpandedChange(expanded)
     } else {
@@ -112,8 +127,10 @@ export function GlobalSearchBar({
     }
   }, [])
 
-  // Click outside handler
+  // Click outside handler (only for nav mode)
   useEffect(() => {
+    if (isPageMode) return // Don't collapse in page mode
+    
     const handleClickOutside = (event: MouseEvent) => {
       if (
         containerRef.current &&
@@ -127,7 +144,17 @@ export function GlobalSearchBar({
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isExpanded, query, handleCollapse])
+  }, [isExpanded, query, handleCollapse, isPageMode])
+  
+  // Auto-focus input in page mode
+  useEffect(() => {
+    if (isPageMode && autoFocus) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
+    }
+  }, [isPageMode, autoFocus])
 
   // Fetch search suggestions
   const fetchSuggestions = useCallback(async (searchQuery: string) => {
@@ -348,25 +375,20 @@ export function GlobalSearchBar({
     performSearch(searchTerm)
   }, [performSearch])
 
-  // Navigate to full search results page
+  // Navigate to full search results page or call onSearch callback
   const handleSearchSubmit = useCallback(() => {
     if (query.trim()) {
       setOpen(false)
-      setIsExpanded(false)
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+      if (onSearch) {
+        // Use callback (for page mode)
+        onSearch(query.trim())
+      } else {
+        // Navigate to search page (for nav mode)
+        setIsExpanded(false)
+        router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+      }
     }
-  }, [query, router])
-
-  // Handle Enter key press
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleSearchSubmit()
-    }
-    if (e.key === 'Escape') {
-      handleCollapse()
-    }
-  }, [handleSearchSubmit, handleCollapse])
+  }, [query, router, onSearch])
 
   // Clear search
   const handleClear = useCallback(() => {
@@ -382,7 +404,28 @@ export function GlobalSearchBar({
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
     }
-  }, [])
+    // Notify parent to clear results (for page mode)
+    if (onSearch) {
+      onSearch('')
+    }
+  }, [onSearch])
+
+  // Handle Enter key press
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSearchSubmit()
+    }
+    if (e.key === 'Escape') {
+      if (isPageMode) {
+        // In page mode, just clear the input and close dropdown
+        handleClear()
+        setOpen(false)
+      } else {
+        handleCollapse()
+      }
+    }
+  }, [handleSearchSubmit, handleCollapse, isPageMode, handleClear])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -396,86 +439,76 @@ export function GlobalSearchBar({
     }
   }, [])
 
-  return (
-    <div className={cn("relative", className)} ref={containerRef}>
-      <AnimatePresence mode="wait">
-        {!isExpanded ? (
-          <motion.button
-            key="search-icon"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            onClick={handleExpand}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            aria-label="Open search"
-          >
-            <Search className="h-4 w-4 text-muted-foreground" />
-          </motion.button>
-        ) : (
-          <motion.div
-            key="search-input"
-            initial={{ width: 40, opacity: 0 }}
-            animate={{ width: 500, opacity: 1 }}
-            exit={{ width: 40, opacity: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-            }}
-            className="relative flex items-center h-10 rounded-full border border-border bg-card"
-          >
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <div className="relative flex items-center w-full h-full rounded-full">
-                    <div className="ml-4">
-                      <Search className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={query}
-                      onChange={(e) => handleInputChange(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      onFocus={() => setOpen(true)}
-                      placeholder={placeholder}
-                      className="h-10 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-0 focus:outline-none border-none"
-                    />
-                    {(loading || isSearching) && (
-                      <Loader2 className="mr-2 h-4 w-4 text-muted-foreground animate-spin" />
-                    )}
-                    {!loading && !isSearching && query && (
-                      <motion.button
-                        type="button"
-                        onClick={handleClear}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="mr-1 flex h-6 w-6 items-center justify-center rounded-full hover:bg-muted"
-                      >
-                        <X className="h-3 w-3" />
-                      </motion.button>
-                    )}
-                    <motion.button
-                      type="button"
-                      onClick={handleCollapse}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="mr-2 flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
-                      aria-label="Close search"
-                    >
-                      <X className="h-4 w-4" />
-                    </motion.button>
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-[500px] p-0 max-h-96 shadow-none"
-                  align="start"
-                >
-                  <Command>
+  // Size-based styles
+  const inputHeight = size === "large" ? "h-14" : "h-10"
+  const iconSize = size === "large" ? "h-5 w-5" : "h-4 w-4"
+  const inputTextSize = size === "large" ? "text-base" : "text-sm"
+  const popoverWidth = size === "large" ? "w-full max-w-2xl" : "w-[500px]"
+  
+  // Render the search input (used in both modes)
+  const renderSearchInput = () => (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div className={cn("relative flex items-center w-full h-full rounded-full", isPageMode && "cursor-text")}>
+          <div className={cn("ml-4", size === "large" && "ml-5")}>
+            <Search className={cn(iconSize, "text-muted-foreground")} />
+          </div>
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setOpen(true)}
+            placeholder={placeholder}
+            className={cn(
+              inputHeight,
+              inputTextSize,
+              "flex-1 bg-transparent px-3 outline-none placeholder:text-muted-foreground focus:ring-0 focus:outline-none border-none"
+            )}
+          />
+          {(loading || isSearching) && (
+            <Loader2 className={cn("mr-3", iconSize, "text-muted-foreground animate-spin")} />
+          )}
+          {!loading && !isSearching && query && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className={cn(
+                "flex items-center justify-center rounded-full hover:bg-muted transition-colors",
+                size === "large" ? "mr-2 h-8 w-8" : "mr-1 h-6 w-6"
+              )}
+            >
+              <X className={size === "large" ? "h-4 w-4" : "h-3 w-3"} />
+            </button>
+          )}
+          {/* Only show close button in nav mode */}
+          {!isPageMode && (
+            <motion.button
+              type="button"
+              onClick={handleCollapse}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="mr-2 flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
+              aria-label="Close search"
+            >
+              <X className="h-4 w-4" />
+            </motion.button>
+          )}
+          {/* Add padding on right when in page mode with no query */}
+          {isPageMode && !query && !loading && !isSearching && (
+            <div className={size === "large" ? "w-5" : "w-3"} />
+          )}
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        className={cn(popoverWidth, "p-0 max-h-96 shadow-none border-none bg-transparent")}
+        align={isPageMode ? "center" : "start"}
+        hidden={!query.trim()}
+      >
+                  <Command className="border border-border rounded-lg bg-popover shadow-lg">
                     <CommandList className="max-h-80 overflow-y-auto">
                       {(loading || isSearching) && (
                         <div className="p-4 text-center text-sm text-muted-foreground">
@@ -601,6 +634,53 @@ export function GlobalSearchBar({
                   </Command>
                 </PopoverContent>
               </Popover>
+  )
+  
+  // Page mode: always show expanded input without animation
+  if (isPageMode) {
+    return (
+      <div className={cn("relative w-full", className)} ref={containerRef}>
+        <div className={cn(
+          "relative flex items-center rounded-full border border-border bg-card w-full",
+          inputHeight
+        )}>
+          {renderSearchInput()}
+        </div>
+      </div>
+    )
+  }
+  
+  // Nav mode: collapsible with animation
+  return (
+    <div className={cn("relative", className)} ref={containerRef}>
+      <AnimatePresence mode="wait">
+        {!isExpanded ? (
+          <motion.button
+            key="search-icon"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={handleExpand}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            aria-label="Open search"
+          >
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </motion.button>
+        ) : (
+          <motion.div
+            key="search-input"
+            initial={{ width: 40, opacity: 0 }}
+            animate={{ width: 500, opacity: 1 }}
+            exit={{ width: 40, opacity: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+            }}
+            className="relative flex items-center h-10 rounded-full border border-border bg-card"
+          >
+            {renderSearchInput()}
           </motion.div>
         )}
       </AnimatePresence>

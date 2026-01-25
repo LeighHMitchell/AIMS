@@ -1671,6 +1671,7 @@ export function OrganizationFormContent({
         onClick={handleSave}
         disabled={isSaving}
         variant="outline"
+        className="px-6 py-3 text-base font-semibold"
       >
         {isSaving ? (
           <>
@@ -1683,9 +1684,10 @@ export function OrganizationFormContent({
       </Button>
       {onNextSection && (
         <Button
+          variant="default"
           onClick={handleSaveAndNext}
           disabled={isSaving}
-          className="bg-slate-600 hover:bg-slate-700"
+          className="px-6 py-3 text-base font-semibold min-w-[160px]"
         >
           {isSaving ? (
             <>

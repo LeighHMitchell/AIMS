@@ -105,7 +105,7 @@ export function SidebarNav({
       items: [
         { name: "Analytics", href: "/analytics-dashboard", show: true },
         { name: "Transparency Index", href: "/transparency-index", show: true, underDevelopment: true },
-        { name: "Atlas", href: "/aid-map", show: true },
+        { name: "Atlas", href: "/atlas", show: true, isNew: true },
         { name: "Search", href: "/search", show: true },
         { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true, underDevelopment: true },
         { name: "Portfolios", href: "/partners", show: true, underDevelopment: true },

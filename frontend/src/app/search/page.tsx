@@ -2,16 +2,14 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MainLayout } from '@/components/layout/main-layout'
 import { SearchResultsSkeleton } from '@/components/ui/skeleton-loader'
-import { SearchResultRow, CodePill } from '@/components/search'
+import { SearchResultRow } from '@/components/search'
+import { GlobalSearchBar } from '@/components/search/GlobalSearchBar'
 import { cn } from '@/lib/utils'
-import { format } from 'date-fns'
 import type { SearchResult, SearchResultType } from '@/types/search'
 import { normalizeSearchResults } from '@/lib/search-normalizer'
 import { LoadingText } from '@/components/ui/loading-text'
@@ -35,15 +33,6 @@ const resultTypeLabels: Record<SearchResultType, string> = {
   contact: 'Contacts'
 }
 
-// Badge colors for result types
-const resultTypeBadgeColors: Record<SearchResultType, string> = {
-  activity: 'border-blue-200 text-blue-700',
-  organisation: 'border-green-200 text-green-700',
-  sector: 'border-teal-200 text-teal-700',
-  tag: 'border-purple-200 text-purple-700',
-  user: 'border-orange-200 text-orange-700',
-  contact: 'border-indigo-200 text-indigo-700'
-}
 
 function SearchPageContent() {
   const searchParams = useSearchParams()
@@ -132,6 +121,14 @@ function SearchPageContent() {
     if (newQuery) params.set('q', newQuery)
     router.push(`/search?${params.toString()}`)
 
+    // Clear results immediately if query is empty
+    if (!newQuery) {
+      setResults([])
+      setTotalResults(0)
+      setHasMore(false)
+      return
+    }
+
     // Perform search
     performSearch(newQuery, 1, true)
   }, [router, performSearch])
@@ -183,22 +180,43 @@ function SearchPageContent() {
     }
   }, [router])
 
-  // Get updated_at from result metadata
-  const getUpdatedAt = (result: SearchResult): string | undefined => {
-    return result.metadata?.updated_at
-  }
-
   const filteredResults = getFilteredResults(activeTab)
   const resultCounts = getResultCounts()
 
   return (
     <MainLayout>
       <div>
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Search Results</h1>
-
-          {/* Results Summary */}
+        {/* Search Bar - Always visible at top, centered */}
+        <div className={cn(
+          "flex flex-col items-center mb-8",
+          !query && "pt-12 pb-8" // Extra padding when no results to center visually
+        )}>
+          <div className="w-full max-w-2xl">
+            <GlobalSearchBar
+              variant="page"
+              size="large"
+              placeholder="Search activities, organisations, sectors, tags..."
+              onSearch={handleSearchSubmit}
+              autoFocus={!initialQuery}
+            />
+          </div>
+          
+          {/* Searchable content badges - shown when no query */}
+          {!query && (
+            <div className="mt-6 text-center">
+              <p className="text-gray-500 text-sm mb-3">Search across</p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Badge variant="outline">Activities</Badge>
+                <Badge variant="outline">Organisations</Badge>
+                <Badge variant="outline">Users</Badge>
+                <Badge variant="outline">Sectors</Badge>
+                <Badge variant="outline">Tags</Badge>
+                <Badge variant="outline">Contacts</Badge>
+              </div>
+            </div>
+          )}
+          
+          {/* Results Summary - shown when there's a query */}
           {query && (
             <div className="mt-4 text-sm text-gray-600">
               {loading ? (
@@ -217,26 +235,33 @@ function SearchPageContent() {
 
         {/* Error State */}
         {error && (
-          <Card className="mb-6">
-            <CardContent className="p-6 text-center">
-              <div className="text-red-600 mb-2">Search Error</div>
-              <div className="text-gray-600">{error}</div>
-            </CardContent>
-          </Card>
+          <div className="mb-6 p-6 text-center border border-red-200 rounded-lg bg-red-50">
+            <div className="text-red-600 mb-2">Search Error</div>
+            <div className="text-gray-600">{error}</div>
+          </div>
         )}
 
         {/* Results */}
         {query && !error && (
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'all' | SearchResultType)} className="w-full">
-            <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-              <TabsTrigger value="all" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsList className="h-auto bg-transparent p-0 gap-4 sm:gap-6 border-b border-gray-200 w-full justify-start rounded-none mb-6 flex flex-wrap">
+              <TabsTrigger 
+                value="all" 
+                className="text-sm text-gray-600 bg-transparent rounded-none border-b-2 border-transparent pb-3 px-1 
+                           data-[state=active]:text-blue-600 data-[state=active]:border-blue-600 
+                           data-[state=active]:bg-transparent data-[state=active]:shadow-none
+                           hover:text-gray-900 transition-colors"
+              >
                 All ({resultCounts.all})
               </TabsTrigger>
               {searchResultOrder.map((type) => (
                 <TabsTrigger
                   key={type}
                   value={type}
-                  className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="text-sm text-gray-600 bg-transparent rounded-none border-b-2 border-transparent pb-3 px-1 
+                             data-[state=active]:text-blue-600 data-[state=active]:border-blue-600 
+                             data-[state=active]:bg-transparent data-[state=active]:shadow-none
+                             hover:text-gray-900 transition-colors"
                 >
                   {resultTypeLabels[type]} ({resultCounts[type]})
                 </TabsTrigger>
@@ -257,46 +282,21 @@ function SearchPageContent() {
                 </div>
               ) : (
                 <>
-                  {/* Results List */}
-                  <div className="space-y-4">
+                  {/* Results List - Google-style divider-separated */}
+                  <div className="divide-y divide-gray-100">
                     {filteredResults.map((result) => (
-                      <Card
+                      <div
                         key={`${result.type}-${result.id}`}
-                        className="hover:shadow-md transition-shadow cursor-pointer"
+                        className="py-5 cursor-pointer hover:bg-gray-50/50 -mx-2 px-2 rounded transition-colors"
                         onClick={() => handleResultClick(result)}
                       >
-                        <CardContent className="p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <SearchResultRow
-                                    result={result}
-                                    searchQuery={query}
-                                    variant="full"
-                                  />
-                                </div>
-                                <div className="flex-shrink-0 ml-4 text-right">
-                                  <Badge
-                                    variant="outline"
-                                    className={cn(
-                                      "text-xs mb-2",
-                                      resultTypeBadgeColors[result.type]
-                                    )}
-                                  >
-                                    {result.type.charAt(0).toUpperCase() + result.type.slice(1)}
-                                  </Badge>
-                                  {getUpdatedAt(result) && (
-                                    <div className="text-xs text-gray-400">
-                                      Updated {format(new Date(getUpdatedAt(result)!), 'MMM d, yyyy')}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                        <SearchResultRow
+                          result={result}
+                          searchQuery={query}
+                          variant="full"
+                          showTypeIndicator={true}
+                        />
+                      </div>
                     ))}
                   </div>
 
@@ -318,25 +318,6 @@ function SearchPageContent() {
           </Tabs>
         )}
 
-        {/* No Query State */}
-        {!query && (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Search the AIMS Database</h2>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Search for activities, organisations, users, sectors, and tags using the search bar above.
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <Badge variant="outline">Activities</Badge>
-                <Badge variant="outline">Organisations</Badge>
-                <Badge variant="outline">Users</Badge>
-                <Badge variant="outline">Sectors</Badge>
-                <Badge variant="outline">Tags</Badge>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </MainLayout>
   )

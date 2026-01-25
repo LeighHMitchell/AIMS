@@ -33,14 +33,17 @@ export function VersionBadge() {
           v{currentVersion}
         </button>
       </HoverCardTrigger>
-      <HoverCardContent 
-        side="right" 
-        align="start" 
+      <HoverCardContent
+        side="right"
+        align="start"
         sideOffset={8}
         className="w-80 shadow-xl border border-gray-200 z-[100] p-0"
-        style={{ backgroundColor: '#ffffff' }}
+        style={{ backgroundColor: '#f6f5f3', opacity: 1 }}
       >
-        <div className="space-y-3 bg-white p-4 rounded-md">
+        <div
+          className="space-y-3 p-4 rounded-md"
+          style={{ backgroundColor: '#f6f5f3', opacity: 1 }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

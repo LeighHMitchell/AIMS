@@ -55,13 +55,13 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://lhiayyjwkjkjkxvhcenw.supabase.co https://*.supabase.co https://api.fxratesapi.com https://api.exchangerate-api.com https://api.exchangerate.host https://api.iatistandard.org https://nominatim.openstreetmap.org https://unpkg.com",
+              "connect-src 'self' https://lhiayyjwkjkjkxvhcenw.supabase.co https://*.supabase.co https://api.fxratesapi.com https://api.exchangerate-api.com https://api.exchangerate.host https://api.iatistandard.org https://nominatim.openstreetmap.org https://unpkg.com https://basemaps.cartocdn.com https://*.cartocdn.com https://tiles.openfreemap.org https://*.openstreetmap.org https://*.openstreetmap.fr",
               "frame-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'none'",
-              "worker-src 'self' blob: https://unpkg.com https://cdnjs.cloudflare.com",
+              "worker-src 'self' blob: https://unpkg.com https://cdnjs.cloudflare.com https://basemaps.cartocdn.com https://*.cartocdn.com",
             ].join('; ')
           },
         ],
@@ -80,6 +80,22 @@ const nextConfig = {
         },
       ],
     }
+  },
+
+  // Redirects for legacy routes
+  async redirects() {
+    return [
+      {
+        source: '/aid-map',
+        destination: '/atlas',
+        permanent: true,
+      },
+      {
+        source: '/atlas-beta',
+        destination: '/atlas',
+        permanent: true,
+      },
+    ]
   },
 
   typescript: {

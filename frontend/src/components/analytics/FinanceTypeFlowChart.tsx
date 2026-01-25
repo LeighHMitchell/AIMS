@@ -22,16 +22,20 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AlertCircle, Download, BarChart3, LineChart as LineChartIcon, TrendingUp as TrendingUpIcon, Table as TableIcon, X, Image, CalendarIcon, RotateCcw } from 'lucide-react'
 import { MultiSelect } from '@/components/ui/multi-select'
-import { splitTransactionAcrossYears } from '@/utils/year-allocation'
+import { 
+  splitTransactionAcrossYears,
+  allocateAcrossFiscalYears,
+  getFiscalYearForDate
+} from '@/utils/year-allocation'
 import { TRANSACTION_TYPE_CHART_COLORS } from '@/components/analytics/sectors/sectorColorMap'
-import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear } from '@/types/custom-years'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 
 // Generate list of available years (from 2010 to current year + 10)
 const currentYear = new Date().getFullYear()
@@ -370,23 +374,47 @@ export function FinanceTypeFlowChart({
 
         // Process data for year allocation
         const processedData: any[] = []
+        
+        // Get the custom year for fiscal year allocation
+        const customYear = customYears.find(cy => cy.id === calendarType)
+        const useFiscalYear = customYear && crossesCalendarYear(customYear)
 
         data.transactions.forEach((t: any) => {
           // Pass value_usd (set from the value field) since the API already converts values to USD
           const txToProcess = { ...t, transaction_date: t.date, value_usd: t.value }
+          const value = parseFloat(String(t.value)) || 0
+          
+          if (value <= 0) return
 
-          const yearAllocations = splitTransactionAcrossYears(txToProcess)
+          if (useFiscalYear && customYear && t.date) {
+            // Use fiscal year allocation
+            const date = parseISO(t.date)
+            if (!isNaN(date.getTime())) {
+              const fiscalYear = getFiscalYearForDate(date, customYear)
+              processedData.push({
+                year: fiscalYear,
+                flowType: t.flowType,
+                financeType: t.financeType,
+                transactionType: t.transactionType,
+                value: value,
+                date: t.date
+              })
+            }
+          } else {
+            // Use calendar year allocation
+            const yearAllocations = splitTransactionAcrossYears(txToProcess)
 
-          yearAllocations.forEach(({ year, amount }) => {
-            processedData.push({
-              year,
-              flowType: t.flowType,
-              financeType: t.financeType,
-              transactionType: t.transactionType,
-              value: amount,
-              date: t.date
+            yearAllocations.forEach(({ year, amount }) => {
+              processedData.push({
+                year,
+                flowType: t.flowType,
+                financeType: t.financeType,
+                transactionType: t.transactionType,
+                value: amount,
+                date: t.date
+              })
             })
-          })
+          }
         })
 
         // Get unique transaction types from the data
@@ -428,7 +456,7 @@ export function FinanceTypeFlowChart({
     }
 
     fetchData()
-  }, [effectiveDateRange, refreshKey, organizationId]) // Removed selectedTransactionTypes - filter client-side instead
+  }, [effectiveDateRange, refreshKey, organizationId, customYears, calendarType]) // Removed selectedTransactionTypes - filter client-side instead
 
   // Aggregate data - restructured to show flow types on X-axis
   const chartData = useMemo(() => {

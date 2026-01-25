@@ -34,11 +34,13 @@ import html2canvas from 'html2canvas'
 import {
   splitBudgetAcrossYears,
   splitPlannedDisbursementAcrossYears,
-  splitTransactionAcrossYears
+  splitTransactionAcrossYears,
+  allocateAcrossFiscalYears,
+  getFiscalYearForDate
 } from '@/utils/year-allocation'
 import { FINANCIAL_OVERVIEW_COLORS, BRAND_COLORS } from '@/components/analytics/sectors/sectorColorMap'
-import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
-import { format } from 'date-fns'
+import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear } from '@/types/custom-years'
+import { format, parseISO } from 'date-fns'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -420,8 +422,9 @@ export function CumulativeFinancialOverview({
 
     const { transactions, plannedDisbursements, budgets } = rawData
 
-    // Get the custom year for label formatting
+    // Get the custom year for label formatting and fiscal year allocation
     const customYear = customYears.find(cy => cy.id === calendarType)
+    const useFiscalYear = customYear && crossesCalendarYear(customYear)
 
     // Process data using year-based allocation
     const yearlyDataMap = new Map<number, {
@@ -450,39 +453,86 @@ export function CumulativeFinancialOverview({
       }
     }
 
+    // Helper to add transaction amount to the correct year data field
+    const addTransactionToYear = (year: number, amount: number, type: string) => {
+      ensureYearEntry(year)
+      const yearData = yearlyDataMap.get(year)!
+      
+      // IATI Standard v2.03 transaction type codes
+      if (type === '1') {
+        yearData.incomingFunds += amount        // Code 1 = Incoming Funds
+      } else if (type === '2') {
+        yearData.outgoingCommitment += amount   // Code 2 = Outgoing Commitment
+      } else if (type === '3') {
+        yearData.disbursements += amount        // Code 3 = Disbursement
+      } else if (type === '4') {
+        yearData.expenditures += amount         // Code 4 = Expenditure
+      } else if (type === '10') {
+        yearData.creditGuarantee += amount      // Code 10 = Credit Guarantee
+      } else if (type === '11') {
+        yearData.incomingCommitment += amount   // Code 11 = Incoming Commitment
+      }
+    }
+
     // Process transactions
     transactions?.forEach((transaction: any) => {
-      const txToProcess = allocationMethod === 'proportional'
-        ? transaction
-        : { ...transaction, period_start: null, period_end: null }
-
-      const yearAllocations = splitTransactionAcrossYears(txToProcess)
-
-      yearAllocations.forEach(({ year, amount }) => {
-        ensureYearEntry(year)
-        const yearData = yearlyDataMap.get(year)!
-        const type = transaction.transaction_type
-
-        // IATI Standard v2.03 transaction type codes
-        if (type === '1') {
-          yearData.incomingFunds += amount        // Code 1 = Incoming Funds
-        } else if (type === '2') {
-          yearData.outgoingCommitment += amount   // Code 2 = Outgoing Commitment
-        } else if (type === '3') {
-          yearData.disbursements += amount        // Code 3 = Disbursement
-        } else if (type === '4') {
-          yearData.expenditures += amount         // Code 4 = Expenditure
-        } else if (type === '10') {
-          yearData.creditGuarantee += amount      // Code 10 = Credit Guarantee
-        } else if (type === '11') {
-          yearData.incomingCommitment += amount   // Code 11 = Incoming Commitment
+      const type = transaction.transaction_type
+      
+      if (useFiscalYear && customYear && transaction.transaction_date) {
+        // Use fiscal year allocation
+        const value = parseFloat(String(transaction.value_usd)) || 
+                     (transaction.currency === 'USD' ? parseFloat(String(transaction.value)) || 0 : 0)
+        if (value > 0) {
+          const date = parseISO(transaction.transaction_date)
+          if (!isNaN(date.getTime())) {
+            const fiscalYear = getFiscalYearForDate(date, customYear)
+            addTransactionToYear(fiscalYear, value, type)
+          }
         }
-      })
+      } else {
+        // Use calendar year allocation
+        const txToProcess = allocationMethod === 'proportional'
+          ? transaction
+          : { ...transaction, period_start: null, period_end: null }
+
+        const yearAllocations = splitTransactionAcrossYears(txToProcess)
+
+        yearAllocations.forEach(({ year, amount }) => {
+          addTransactionToYear(year, amount, type)
+        })
+      }
     })
 
     // Process planned disbursements
     plannedDisbursements?.forEach((pd: any) => {
-      if (allocationMethod === 'proportional') {
+      const value = parseFloat(String(pd.usd_amount)) || 
+                   (pd.currency === 'USD' ? parseFloat(String(pd.amount)) || 0 : 0)
+      if (value <= 0) return
+
+      if (useFiscalYear && customYear && pd.period_start) {
+        // Use fiscal year allocation
+        if (pd.period_end) {
+          const fiscalAllocations = allocateAcrossFiscalYears(
+            pd.period_start,
+            pd.period_end,
+            value,
+            customYear
+          )
+          fiscalAllocations.forEach(({ fiscalYear, amount }) => {
+            ensureYearEntry(fiscalYear)
+            yearlyDataMap.get(fiscalYear)!.plannedDisbursements += amount
+          })
+        } else {
+          // Single date - assign to fiscal year
+          const date = parseISO(pd.period_start)
+          if (!isNaN(date.getTime())) {
+            const fiscalYear = getFiscalYearForDate(date, customYear)
+            ensureYearEntry(fiscalYear)
+            yearlyDataMap.get(fiscalYear)!.plannedDisbursements += value
+          }
+        }
+      } else if (allocationMethod === 'proportional') {
+        // Use calendar year allocation
         const yearAllocations = splitPlannedDisbursementAcrossYears(pd)
         yearAllocations.forEach(({ year, amount }) => {
           ensureYearEntry(year)
@@ -494,13 +544,7 @@ export function CumulativeFinancialOverview({
           if (!isNaN(startDate.getTime())) {
             const year = startDate.getFullYear()
             ensureYearEntry(year)
-            let value = parseFloat(String(pd.usd_amount)) || 0
-            if (!value && pd.currency === 'USD' && pd.amount) {
-              value = parseFloat(String(pd.amount)) || 0
-            }
-            if (value) {
-              yearlyDataMap.get(year)!.plannedDisbursements += value
-            }
+            yearlyDataMap.get(year)!.plannedDisbursements += value
           }
         }
       }
@@ -508,7 +552,24 @@ export function CumulativeFinancialOverview({
 
     // Process budgets
     budgets?.forEach((budget: any) => {
-      if (allocationMethod === 'proportional') {
+      const value = parseFloat(String(budget.usd_value)) || 
+                   (budget.currency === 'USD' ? parseFloat(String(budget.value)) || 0 : 0)
+      if (value <= 0) return
+
+      if (useFiscalYear && customYear && budget.period_start && budget.period_end) {
+        // Use fiscal year allocation
+        const fiscalAllocations = allocateAcrossFiscalYears(
+          budget.period_start,
+          budget.period_end,
+          value,
+          customYear
+        )
+        fiscalAllocations.forEach(({ fiscalYear, amount }) => {
+          ensureYearEntry(fiscalYear)
+          yearlyDataMap.get(fiscalYear)!.plannedBudgets += amount
+        })
+      } else if (allocationMethod === 'proportional') {
+        // Use calendar year allocation
         const yearAllocations = splitBudgetAcrossYears(budget)
         yearAllocations.forEach(({ year, amount }) => {
           ensureYearEntry(year)
@@ -520,13 +581,7 @@ export function CumulativeFinancialOverview({
           if (!isNaN(startDate.getTime())) {
             const year = startDate.getFullYear()
             ensureYearEntry(year)
-            let value = parseFloat(String(budget.usd_value)) || 0
-            if (!value && budget.currency === 'USD' && budget.value) {
-              value = parseFloat(String(budget.value)) || 0
-            }
-            if (value) {
-              yearlyDataMap.get(year)!.plannedBudgets += value
-            }
+            yearlyDataMap.get(year)!.plannedBudgets += value
           }
         }
       }

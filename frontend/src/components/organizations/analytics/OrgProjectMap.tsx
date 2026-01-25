@@ -6,9 +6,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, MapPin } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import type { EmbeddedLocation } from '@/components/maps-v2/EmbeddedAtlasMap';
 
-// Dynamically import AidMap to avoid SSR issues
-const AidMap = dynamic(() => import('@/components/AidMap'), {
+// Dynamically import EmbeddedAtlasMap to avoid SSR issues
+const EmbeddedAtlasMap = dynamic(() => import('@/components/maps-v2/EmbeddedAtlasMap'), {
   ssr: false,
   loading: () => (
     <div className="h-[500px] flex items-center justify-center bg-slate-50 rounded-lg">
@@ -73,26 +74,19 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
     }
   }, [organizationId]);
 
-  // Transform locations to AidMap format
-  const mapActivities = locations.map(loc => ({
-    id: loc.activityId,
-    title: loc.activityTitle,
-    iati_identifier: loc.activityIdentifier,
-    activity_status: loc.activityStatus,
-    total_budget: loc.totalBudget,
-    default_currency: loc.currency,
-    locations: [
-      {
-        id: loc.id,
-        name: loc.locationName,
-        description: loc.locationDescription,
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-        location_reach_code: loc.locationReach,
-        location_class_code: loc.locationClass,
-        exactness_code: loc.exactness,
-      },
-    ],
+  // Transform locations to EmbeddedAtlasMap format
+  const mapLocations: EmbeddedLocation[] = locations.map(loc => ({
+    id: loc.id,
+    latitude: loc.latitude,
+    longitude: loc.longitude,
+    name: loc.locationName,
+    description: loc.locationDescription,
+    activity: {
+      id: loc.activityId,
+      title: loc.activityTitle,
+      status: loc.activityStatus,
+      total_budget: loc.totalBudget,
+    },
   }));
 
   if (loading) {
@@ -162,11 +156,10 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[500px] rounded-lg overflow-hidden border border-slate-200">
-          <AidMap activities={mapActivities} />
+        <div className="rounded-lg overflow-hidden border border-slate-200">
+          <EmbeddedAtlasMap locations={mapLocations} height="500px" />
         </div>
       </CardContent>
     </Card>
   );
 }
-

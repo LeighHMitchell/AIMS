@@ -77,6 +77,7 @@ export interface ActivitySearchResult {
   type: 'activity'
   id: string
   title: string
+  subtitle?: string
   metadata: ActivitySearchMetadata
 }
 
@@ -85,6 +86,7 @@ export interface OrganisationSearchResult {
   type: 'organisation'
   id: string
   title: string
+  subtitle?: string
   metadata: OrganisationSearchMetadata
 }
 
@@ -93,6 +95,7 @@ export interface SectorSearchResult {
   type: 'sector'
   id: string
   title: string
+  subtitle?: string
   metadata: SectorSearchMetadata
 }
 
@@ -101,6 +104,7 @@ export interface TagSearchResult {
   type: 'tag'
   id: string
   title: string
+  subtitle?: string
   metadata: TagSearchMetadata
 }
 
@@ -109,6 +113,7 @@ export interface UserSearchResult {
   type: 'user'
   id: string
   title: string
+  subtitle?: string
   metadata: UserSearchMetadata
 }
 
@@ -117,6 +122,7 @@ export interface ContactSearchResult {
   type: 'contact'
   id: string
   title: string
+  subtitle?: string
   metadata: ContactSearchMetadata
 }
 

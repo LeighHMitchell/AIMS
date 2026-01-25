@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Lock, Copy, Check } from "lucide-react"
+import { Lock, Copy, Check, Trash2 } from "lucide-react"
 import { StableTabCompletionIndicator } from "@/utils/stable-tab-completion"
 import { toast } from "sonner"
 import {
@@ -38,6 +38,7 @@ interface OrganizationEditorNavigationProps {
   tabCompletionStatus?: Record<string, { isComplete: boolean; isInProgress: boolean }>
   disabled?: boolean
   organization?: OrganizationData | null
+  onDelete?: () => void
 }
 
 export default function OrganizationEditorNavigation({
@@ -46,7 +47,8 @@ export default function OrganizationEditorNavigation({
   organizationCreated = false,
   tabCompletionStatus = {},
   disabled = false,
-  organization = null
+  organization = null,
+  onDelete
 }: OrganizationEditorNavigationProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -257,6 +259,23 @@ export default function OrganizationEditorNavigation({
             )}
           </div>
         ))}
+
+        {/* Delete Organization Button */}
+        {organizationCreated && organization?.id && onDelete && (
+          <div className="mt-auto pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={disabled}
+              className={cn(
+                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2",
+                disabled && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              Delete Organization
+            </button>
+          </div>
+        )}
 
       </nav>
     </TooltipProvider>

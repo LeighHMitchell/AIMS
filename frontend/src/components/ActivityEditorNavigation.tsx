@@ -3,7 +3,7 @@
 import React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Lock } from "lucide-react"
+import { Lock, Trash2 } from "lucide-react"
 import { StableTabCompletionIndicator } from "@/utils/stable-tab-completion"
 import {
   Tooltip,
@@ -30,6 +30,8 @@ interface ActivityEditorNavigationProps {
   activityCreated?: boolean
   tabCompletionStatus?: Record<string, { isComplete: boolean; isInProgress: boolean }>
   disabled?: boolean
+  activityId?: string
+  onDelete?: () => void
 }
 
 export default function ActivityEditorNavigation({
@@ -38,7 +40,9 @@ export default function ActivityEditorNavigation({
   showGovernmentInputs = false,
   activityCreated = false,
   tabCompletionStatus = {},
-  disabled = false
+  disabled = false,
+  activityId,
+  onDelete
 }: ActivityEditorNavigationProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -225,6 +229,23 @@ export default function ActivityEditorNavigation({
             </div>
           </div>
         ))}
+
+        {/* Delete Activity Button */}
+        {activityCreated && activityId && onDelete && (
+          <div className="mt-auto pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={disabled}
+              className={cn(
+                "w-full py-2.5 px-4 rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2",
+                disabled && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              Delete Activity
+            </button>
+          </div>
+        )}
 
       </nav>
     </TooltipProvider>
