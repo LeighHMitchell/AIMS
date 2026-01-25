@@ -37,10 +37,10 @@ export function VersionBadge() {
         side="right" 
         align="start" 
         sideOffset={8}
-        className="w-80 !bg-white shadow-lg border border-gray-200 backdrop-blur-none"
-        style={{ backgroundColor: '#ffffff', opacity: 1, backdropFilter: 'none' }}
+        className="w-80 shadow-xl border border-gray-200 z-[100] p-0"
+        style={{ backgroundColor: '#ffffff' }}
       >
-        <div className="space-y-3">
+        <div className="space-y-3 bg-white p-4 rounded-md">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
