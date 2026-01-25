@@ -37,8 +37,8 @@ export function VersionBadge() {
         side="right" 
         align="start" 
         sideOffset={8}
-        className="w-80 bg-white shadow-lg border border-gray-200"
-        style={{ backgroundColor: 'white', opacity: 1 }}
+        className="w-80 !bg-white shadow-lg border border-gray-200 backdrop-blur-none"
+        style={{ backgroundColor: '#ffffff', opacity: 1, backdropFilter: 'none' }}
       >
         <div className="space-y-3">
           {/* Header */}
