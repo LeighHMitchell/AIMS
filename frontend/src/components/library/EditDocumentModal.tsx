@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,18 +13,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentCategorySelect } from '@/components/forms/DocumentCategorySelect';
 import { SearchableSelect, SearchableSelectOption } from '@/components/ui/searchable-select';
-import { Upload, Link2, X, Plus, Loader2, FileText } from 'lucide-react';
+import { X, Loader2, Save, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { COMMON_LANGUAGES, inferMimeFromUrl, FILE_FORMATS } from '@/lib/iatiDocumentLink';
+import { COMMON_LANGUAGES } from '@/lib/iatiDocumentLink';
+import { UnifiedDocument } from '@/types/library-document';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+interface EditDocumentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  document: UnifiedDocument | null;
+}
 
 /**
  * Convert a filename like "dfat-design-monitoring-evaluation-learning-standards"
@@ -38,7 +45,8 @@ function formatTitleFromFilename(filename: string): string {
   const words = nameWithoutExt.split(/[-_\s]+/);
 
   // Capitalize each word, with special handling for acronyms
-  return words.map((word) => {
+  return words.map((word, index) => {
+    // Check if it looks like an acronym (all caps or common acronyms)
     const upperWord = word.toUpperCase();
     const commonAcronyms = ['DFAT', 'PDF', 'UN', 'EU', 'UK', 'US', 'USA', 'NGO', 'IATI', 'M&E', 'MEL', 'USAID', 'UNDP', 'WHO', 'FAO', 'WFP'];
 
@@ -46,38 +54,25 @@ function formatTitleFromFilename(filename: string): string {
       return upperWord;
     }
 
+    // Capitalize first letter
     return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
   }).join(' ');
 }
 
-interface AddDocumentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModalProps) {
-  const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('upload');
+export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: EditDocumentModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Form state
-  const [file, setFile] = useState<File | null>(null);
-  const [url, setUrl] = useState('');
-  const [format, setFormat] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [categoryCode, setCategoryCode] = useState('');
   const [documentDate, setDocumentDate] = useState('');
   const [organizationId, setOrganizationId] = useState('');
   const [languageCodes, setLanguageCodes] = useState<string[]>(['en']);
-  const [recipientCountries, setRecipientCountries] = useState<string[]>([]);
-  
+
   // Organizations for select
   const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym?: string; logo?: string }>>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
-
-  // Drag and drop state
-  const [isDragging, setIsDragging] = useState(false);
 
   // Fetch organizations
   useEffect(() => {
@@ -97,72 +92,43 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
     fetchOrganizations();
   }, []);
 
+  // Populate form when document changes
+  useEffect(() => {
+    if (document && isOpen) {
+      // Extract title - if empty, format from filename
+      const titleNarrative = document.titleNarratives?.[0];
+      let docTitle = titleNarrative?.text || document.title || '';
+
+      // If title matches filename pattern, format it nicely
+      if (!docTitle && document.fileName) {
+        docTitle = formatTitleFromFilename(document.fileName);
+      }
+
+      setTitle(docTitle);
+
+      // Extract description
+      const descNarrative = document.descriptionNarratives?.[0];
+      setDescription(descNarrative?.text || document.description || '');
+
+      // Other fields
+      setCategoryCode(document.categoryCode || '');
+      setDocumentDate(document.documentDate?.split('T')[0] || '');
+      setOrganizationId(document.reportingOrgId || '');
+      setLanguageCodes(document.languageCodes || ['en']);
+    }
+  }, [document, isOpen]);
+
   // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setFile(null);
-      setUrl('');
-      setFormat('');
       setTitle('');
       setDescription('');
       setCategoryCode('');
       setDocumentDate('');
       setOrganizationId('');
       setLanguageCodes(['en']);
-      setRecipientCountries([]);
-      setUploadMode('upload');
     }
   }, [isOpen]);
-
-  // Auto-detect format from URL
-  useEffect(() => {
-    if (uploadMode === 'url' && url) {
-      const detectedMime = inferMimeFromUrl(url);
-      if (detectedMime) {
-        setFormat(detectedMime);
-      }
-    }
-  }, [url, uploadMode]);
-
-  // Auto-detect format from file and set formatted title
-  useEffect(() => {
-    if (file) {
-      setFormat(file.type);
-      if (!title) {
-        setTitle(formatTitleFromFilename(file.name));
-      }
-    }
-  }, [file]);
-
-  // Handle file drop
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      setFile(droppedFile);
-      setUploadMode('upload');
-    }
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  // Handle file input change
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-    }
-  };
 
   // Add language
   const handleAddLanguage = (code: string) => {
@@ -171,7 +137,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
     }
   };
 
-  // Remove language (keep at least one)
+  // Remove language
   const handleRemoveLanguage = (code: string) => {
     if (languageCodes.length > 1) {
       setLanguageCodes(languageCodes.filter(c => c !== code));
@@ -180,17 +146,8 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
 
   // Submit form
   const handleSubmit = async () => {
-    // Validation
-    if (uploadMode === 'upload' && !file) {
-      toast.error('Please select a file to upload');
-      return;
-    }
-    
-    if (uploadMode === 'url' && !url) {
-      toast.error('Please enter a URL');
-      return;
-    }
-    
+    if (!document) return;
+
     if (!title.trim()) {
       toast.error('Please enter a title');
       return;
@@ -199,63 +156,37 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      
-      if (uploadMode === 'upload' && file) {
-        formData.append('file', file);
-        formData.append('isExternal', 'false');
-      } else {
-        formData.append('url', url);
-        formData.append('isExternal', 'true');
-      }
+      // Extract the actual document ID (remove 'standalone-' prefix if present)
+      const docId = document.id.replace('standalone-', '');
 
-      // Add metadata - use first document language for title/description
       const primaryLang = languageCodes[0] || 'en';
-      formData.append('title', JSON.stringify([{ text: title.trim(), lang: primaryLang }]));
+      const updateData = {
+        title: [{ text: title.trim(), lang: primaryLang }],
+        description: description.trim() ? [{ text: description.trim(), lang: primaryLang }] : null,
+        categoryCode: categoryCode || null,
+        documentDate: documentDate || null,
+        organizationId: organizationId || null,
+        languageCodes: languageCodes,
+      };
 
-      if (description.trim()) {
-        formData.append('description', JSON.stringify([{ text: description.trim(), lang: primaryLang }]));
-      }
-      
-      if (format) {
-        formData.append('format', format);
-      }
-      
-      if (categoryCode) {
-        formData.append('categoryCode', categoryCode);
-      }
-      
-      if (documentDate) {
-        formData.append('documentDate', documentDate);
-      }
-      
-      if (organizationId) {
-        formData.append('organizationId', organizationId);
-      }
-      
-      if (languageCodes.length > 0) {
-        formData.append('languageCodes', JSON.stringify(languageCodes));
-      }
-      
-      if (recipientCountries.length > 0) {
-        formData.append('recipientCountries', JSON.stringify(recipientCountries));
-      }
-
-      const response = await fetch('/api/library/upload', {
-        method: 'POST',
-        body: formData,
+      const response = await fetch(`/api/library/${docId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to upload document');
+        throw new Error(data.error || 'Failed to update document');
       }
 
-      toast.success('Document added successfully');
+      toast.success('Document updated successfully');
       onSuccess();
     } catch (error: any) {
-      console.error('Error uploading document:', error);
-      toast.error(error.message || 'Failed to upload document');
+      console.error('Error updating document:', error);
+      toast.error(error.message || 'Failed to update document');
     } finally {
       setIsSubmitting(false);
     }
@@ -276,130 +207,29 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
     ),
   }));
 
-  // Language options
-  const languageOptions: SearchableSelectOption[] = COMMON_LANGUAGES.map(lang => ({
-    value: lang.code,
-    label: `${lang.name} (${lang.code})`,
-  }));
-
-  // Format options
-  const formatOptions: SearchableSelectOption[] = Object.entries(FILE_FORMATS).map(([mime, label]) => ({
-    value: mime,
-    label: `${label} (${mime})`,
-  }));
+  if (!document) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Document to Library</DialogTitle>
+          <DialogTitle>Edit Document</DialogTitle>
           <DialogDescription>
-            Upload a file or add an external URL to the document library.
+            Update the metadata for this document.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as 'upload' | 'url')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upload">
-              <Upload className="h-4 w-4 mr-2" />
-              Upload File
-            </TabsTrigger>
-            <TabsTrigger value="url">
-              <Link2 className="h-4 w-4 mr-2" />
-              External URL
-            </TabsTrigger>
-          </TabsList>
+        {/* Document Info (read-only) */}
+        <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+          <FileText className="h-8 w-8 text-muted-foreground flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-medium truncate">{document.fileName || 'External Document'}</p>
+            <p className="text-sm text-muted-foreground truncate">{document.url}</p>
+          </div>
+        </div>
 
-          <TabsContent value="upload" className="mt-4">
-            {/* File Drop Zone */}
-            <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                isDragging 
-                  ? 'border-primary bg-primary/5' 
-                  : file 
-                    ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
-                    : 'border-muted-foreground/25 hover:border-muted-foreground/50'
-              }`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              {file ? (
-                <div className="flex items-center justify-center gap-3">
-                  <FileText className="h-8 w-8 text-green-600" />
-                  <div className="text-left">
-                    <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setFile(null)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div>
-                  <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground mb-2">
-                    Drag and drop a file here, or click to select
-                  </p>
-                  <input
-                    type="file"
-                    id="file-upload"
-                    className="hidden"
-                    onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.json,.xml,.jpg,.jpeg,.png,.gif,.webp,.svg,.mp4,.webm,.mp3,.wav,.zip"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => document.getElementById('file-upload')?.click()}
-                  >
-                    Select File
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Max file size: 50MB
-                  </p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="url" className="mt-4 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="url">Document URL *</Label>
-              <Input
-                id="url"
-                type="url"
-                placeholder="https://example.com/document.pdf"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="format">File Format</Label>
-              <SearchableSelect
-                options={formatOptions}
-                value={format}
-                onValueChange={setFormat}
-                placeholder="Auto-detected or select..."
-                searchPlaceholder="Search formats..."
-              />
-              {format && (
-                <p className="text-xs text-muted-foreground">
-                  Detected: {FILE_FORMATS[format] || format}
-                </p>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Common Fields */}
-        <div className="space-y-4 mt-6 pt-6 border-t">
+        {/* Editable Fields */}
+        <div className="space-y-4 mt-4">
           {/* Title - full width */}
           <div className="space-y-2">
             <Label htmlFor="title">Title *</Label>
@@ -516,12 +346,12 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {uploadMode === 'upload' ? 'Uploading...' : 'Adding...'}
+                Saving...
               </>
             ) : (
               <>
-                <Plus className="h-4 w-4 mr-2" />
-                Add to Library
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
               </>
             )}
           </Button>

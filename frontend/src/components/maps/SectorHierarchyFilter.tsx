@@ -33,6 +33,8 @@ interface SectorHierarchyFilterProps {
   className?: string;
   disabled?: boolean;
   availableSectorCodes?: string[]; // Optional: only show sectors that exist in data
+  open?: boolean; // Controlled open state
+  onOpenChange?: (open: boolean) => void; // Callback when open state changes
 }
 
 interface HierarchicalSector {
@@ -55,9 +57,34 @@ export function SectorHierarchyFilter({
   className,
   disabled = false,
   availableSectorCodes,
+  open: controlledOpen,
+  onOpenChange,
 }: SectorHierarchyFilterProps) {
-  const [open, setOpen] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Use controlled state if provided, otherwise use internal state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(value);
+    }
+    if (controlledOpen === undefined) {
+      setInternalOpen(value);
+    }
+  };
+  
+  // Auto-focus search input when popover opens
+  React.useEffect(() => {
+    if (open) {
+      // Small delay to ensure popover content is rendered
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   // Get hierarchical sector data
   const hierarchicalSectors = React.useMemo(() => {
@@ -259,6 +286,7 @@ export function SectorHierarchyFilter({
           <div className="flex items-center border-b px-3 py-2">
             <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
             <Input
+              ref={searchInputRef}
               placeholder="Search sectors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

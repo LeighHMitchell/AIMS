@@ -51,6 +51,7 @@ import { LibraryFiltersPanel } from "@/components/library/LibraryFilters";
 import { DocumentCard } from "@/components/library/DocumentCard";
 import { DocumentTable } from "@/components/library/DocumentTable";
 import { AddDocumentModal } from "@/components/library/AddDocumentModal";
+import { EditDocumentModal } from "@/components/library/EditDocumentModal";
 import { DocumentPreviewModal } from "@/components/library/DocumentPreviewModal";
 
 type ViewMode = 'card' | 'table';
@@ -100,6 +101,7 @@ export default function LibraryPage() {
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
   const [previewDocument, setPreviewDocument] = useState<UnifiedDocument | null>(null);
+  const [editingDocument, setEditingDocument] = useState<UnifiedDocument | null>(null);
 
   // User permissions
   const { user } = useUser();
@@ -304,6 +306,17 @@ export default function LibraryPage() {
     setShowAddModal(false);
     fetchDocuments();
     toast.success('Document added to library');
+  }, [fetchDocuments]);
+
+  // Handle edit
+  const handleEdit = useCallback((doc: UnifiedDocument) => {
+    setEditingDocument(doc);
+  }, []);
+
+  // Handle edit success
+  const handleEditSuccess = useCallback(() => {
+    setEditingDocument(null);
+    fetchDocuments();
   }, [fetchDocuments]);
 
   // Clear filters
@@ -535,6 +548,7 @@ export default function LibraryPage() {
                 onSelect={(checked) => handleSelectOne(doc.id, checked)}
                 onPreview={() => handlePreview(doc)}
                 onDownload={() => handleDownload(doc)}
+                onEdit={isSuperUser && doc.sourceType === 'standalone' ? () => handleEdit(doc) : undefined}
                 onDelete={isSuperUser && doc.sourceType === 'standalone' ? () => handleDelete(doc) : undefined}
                 onNavigate={() => handleNavigateToSource(doc)}
               />
@@ -548,6 +562,7 @@ export default function LibraryPage() {
             onSelectOne={handleSelectOne}
             onPreview={handlePreview}
             onDownload={handleDownload}
+            onEdit={isSuperUser ? handleEdit : undefined}
             onDelete={isSuperUser ? handleDelete : undefined}
             onNavigate={handleNavigateToSource}
             sortBy={sortBy}
@@ -596,6 +611,13 @@ export default function LibraryPage() {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={handleDocumentAdded}
+      />
+
+      <EditDocumentModal
+        isOpen={!!editingDocument}
+        onClose={() => setEditingDocument(null)}
+        onSuccess={handleEditSuccess}
+        document={editingDocument}
       />
 
       <DocumentPreviewModal

@@ -10,6 +10,7 @@ import { SidebarNav } from "@/components/navigation/SidebarNav"
 import { TopNav } from "@/components/navigation/TopNav"
 import { useSmartPreCache } from "@/hooks/use-pre-cached-data"
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch"
+import { getHomeRoute } from "@/lib/navigation-utils"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -32,19 +33,22 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
 
   const sidebarWidth = 'w-72';
   const mainMargin = 'ml-72';
+  
+  // Get the home route based on whether user has an organization
+  const homeRoute = getHomeRoute(user);
 
   const content = (
     <div className="flex h-screen overflow-hidden bg-background border-0">
       {/* Fixed Sidebar */}
       <aside
-        className={`${sidebarWidth} flex-shrink-0 border-r h-full fixed z-40 flex flex-col`}
+        className={`${sidebarWidth} flex-shrink-0 border-r h-full fixed top-0 left-0 z-40 flex flex-col`}
         style={{
           backgroundColor: '#f6f5f3'
         }}
       >
         {/* Logo Section */}
         <div className="h-16 flex items-center px-4 flex-shrink-0" style={{ backgroundColor: '#f6f5f3' }}>
-          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity duration-200">
+          <Link href={homeRoute} className="flex items-center hover:opacity-80 transition-opacity duration-200">
             <img
               src="/images/Logo - No Text 2.jpeg"
               alt="æther logo"

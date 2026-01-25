@@ -558,6 +558,14 @@ function ActivitiesPageContent() {
     subSectors: [],
   });
   
+  // Track which filter dropdown is currently open (only one at a time)
+  const [openFilterId, setOpenFilterId] = useState<string | null>(null);
+  
+  // Helper to handle filter open/close - ensures only one filter is open at a time
+  const handleFilterOpenChange = (filterId: string) => (isOpen: boolean) => {
+    setOpenFilterId(isOpen ? filterId : null);
+  };
+  
   // Column visibility state with localStorage persistence
   const [visibleColumns, setVisibleColumns] = useState<ActivityColumnId[]>(defaultVisibleActivityColumns);
   
@@ -1685,6 +1693,8 @@ const router = useRouter();
             icon={<Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
             className="w-[180px] h-9"
             dropdownClassName="w-[280px]"
+            open={openFilterId === 'status'}
+            onOpenChange={handleFilterOpenChange('status')}
           />
         </div>
 
@@ -1705,6 +1715,8 @@ const router = useRouter();
             icon={<ShieldCheck className="h-4 w-4 text-muted-foreground shrink-0" />}
             className="w-[160px] h-9"
             dropdownClassName="w-[240px]"
+            open={openFilterId === 'validation'}
+            onOpenChange={handleFilterOpenChange('validation')}
           />
         </div>
 
@@ -1725,6 +1737,8 @@ const router = useRouter();
             icon={<Building2 className="h-4 w-4 text-muted-foreground shrink-0" />}
             className="w-[200px] h-9"
             dropdownClassName="w-[400px]"
+            open={openFilterId === 'reportedBy'}
+            onOpenChange={handleFilterOpenChange('reportedBy')}
           />
         </div>
 
@@ -1735,6 +1749,8 @@ const router = useRouter();
             selected={sectorFilter}
             onChange={setSectorFilter}
             className="w-[180px]"
+            open={openFilterId === 'sector'}
+            onOpenChange={handleFilterOpenChange('sector')}
           />
         </div>
 
@@ -1755,6 +1771,8 @@ const router = useRouter();
             icon={<Handshake className="h-4 w-4 text-muted-foreground shrink-0" />}
             className="w-[180px] h-9"
             dropdownClassName="w-[360px]"
+            open={openFilterId === 'aidType'}
+            onOpenChange={handleFilterOpenChange('aidType')}
           />
         </div>
 
@@ -1775,6 +1793,8 @@ const router = useRouter();
             icon={<ArrowRightLeft className="h-4 w-4 text-muted-foreground shrink-0" />}
             className="w-[180px] h-9"
             dropdownClassName="w-[340px]"
+            open={openFilterId === 'flowType'}
+            onOpenChange={handleFilterOpenChange('flowType')}
           />
         </div>
 
@@ -1788,6 +1808,8 @@ const router = useRouter();
               defaultVisibleColumns={defaultVisibleActivityColumns}
               onChange={handleColumnsChange}
               groupLabels={activityColumnGroups}
+              open={openFilterId === 'columns'}
+              onOpenChange={handleFilterOpenChange('columns')}
             />
           </div>
         )}

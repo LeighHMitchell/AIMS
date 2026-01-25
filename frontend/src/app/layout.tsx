@@ -1,5 +1,5 @@
 import React, { Suspense } from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { UserProvider } from "@/hooks/useUser"
@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   icons: {
     icon: '/images/Aether Logo.001.jpeg',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({

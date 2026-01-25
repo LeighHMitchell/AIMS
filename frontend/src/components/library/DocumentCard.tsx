@@ -20,6 +20,7 @@ import {
   Trash2,
   ExternalLink,
   Link2,
+  Pencil,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { UnifiedDocument, DocumentSourceType } from '@/types/library-document';
@@ -31,6 +32,7 @@ interface DocumentCardProps {
   onSelect: (checked: boolean) => void;
   onPreview: () => void;
   onDownload: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
   onNavigate?: () => void;
 }
@@ -53,6 +55,7 @@ export function DocumentCard({
   onSelect,
   onPreview,
   onDownload,
+  onEdit,
   onDelete,
   onNavigate,
 }: DocumentCardProps) {
@@ -84,6 +87,12 @@ export function DocumentCard({
               <Download className="h-4 w-4 mr-2" />
               Download
             </DropdownMenuItem>
+            {onEdit && document.sourceType === 'standalone' && (
+              <DropdownMenuItem onClick={onEdit}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+            )}
             {document.sourceUrl && onNavigate && (
               <DropdownMenuItem onClick={onNavigate}>
                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -107,8 +116,8 @@ export function DocumentCard({
       </div>
 
       <CardContent className="p-0">
-        {/* Thumbnail */}
-        <div 
+        {/* Thumbnail - cropped preview showing top of document */}
+        <div
           className="relative w-full aspect-[4/3] bg-muted rounded-t-lg overflow-hidden cursor-pointer"
           onClick={onPreview}
         >
@@ -116,6 +125,7 @@ export function DocumentCard({
             url={document.url}
             format={document.format}
             title={document.title}
+            thumbnailUrl={document.thumbnailUrl}
             className="w-full h-full"
           />
         </div>
@@ -190,9 +200,9 @@ export function DocumentCard({
             {/* Date */}
             <span>
               {document.createdAt
-                ? `Uploaded on ${format(new Date(document.createdAt), 'MMM d, yyyy')}`
+                ? `Uploaded on ${format(new Date(document.createdAt), 'MMMM do yyyy')}`
                 : document.documentDate
-                  ? `Uploaded on ${format(new Date(document.documentDate), 'MMM d, yyyy')}`
+                  ? `Uploaded on ${format(new Date(document.documentDate), 'MMMM do yyyy')}`
                   : '-'
               }
             </span>
@@ -230,19 +240,6 @@ export function DocumentCard({
           </div>
         </div>
 
-        {/* Quick Actions (visible on hover) */}
-        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-background to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="flex justify-center gap-2">
-            <Button variant="secondary" size="sm" onClick={onPreview}>
-              <Eye className="h-4 w-4 mr-1" />
-              Preview
-            </Button>
-            <Button variant="secondary" size="sm" onClick={onDownload}>
-              <Download className="h-4 w-4 mr-1" />
-              Download
-            </Button>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

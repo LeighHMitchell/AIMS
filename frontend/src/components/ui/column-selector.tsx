@@ -31,6 +31,10 @@ export interface ColumnSelectorProps<T extends string> {
   onChange: (columns: T[]) => void;
   /** Optional mapping of group keys to display labels */
   groupLabels?: Record<string, string>;
+  /** Controlled open state */
+  open?: boolean;
+  /** Callback when open state changes */
+  onOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -43,9 +47,22 @@ export function ColumnSelector<T extends string>({
   defaultVisibleColumns,
   onChange,
   groupLabels,
+  open: controlledOpen,
+  onOpenChange,
 }: ColumnSelectorProps<T>) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Use controlled state if provided, otherwise use internal state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(value);
+    }
+    if (controlledOpen === undefined) {
+      setInternalOpen(value);
+    }
+  };
 
   // Get unique groups in stable order (based on first appearance)
   const orderedGroups = useMemo(() => {

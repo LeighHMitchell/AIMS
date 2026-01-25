@@ -25,6 +25,8 @@ interface MultiSelectFilterProps {
   icon?: React.ReactNode
   className?: string
   dropdownClassName?: string
+  open?: boolean // Controlled open state
+  onOpenChange?: (open: boolean) => void // Callback when open state changes
 }
 
 export function MultiSelectFilter({
@@ -37,9 +39,22 @@ export function MultiSelectFilter({
   icon,
   className,
   dropdownClassName,
+  open: controlledOpen,
+  onOpenChange,
 }: MultiSelectFilterProps) {
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
   const [search, setSearch] = useState("")
+  
+  // Use controlled state if provided, otherwise use internal state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen
+  const setOpen = (value: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(value)
+    }
+    if (controlledOpen === undefined) {
+      setInternalOpen(value)
+    }
+  }
   
   // Ensure value is always an array
   const safeValue = value || []
@@ -104,7 +119,7 @@ export function MultiSelectFilter({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("p-0", dropdownClassName)} align="start">
+      <PopoverContent className={cn("p-0 w-[350px]", dropdownClassName)} align="start">
         {/* Search */}
         <div className="flex items-center border-b px-3 py-2">
           <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />

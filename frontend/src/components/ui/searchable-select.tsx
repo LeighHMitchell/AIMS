@@ -40,6 +40,8 @@ interface SearchableSelectProps {
   showValueCode?: boolean
   dropdownClassName?: string
   triggerIcon?: React.ReactNode
+  open?: boolean // Controlled open state
+  onOpenChange?: (open: boolean) => void // Callback when open state changes
 }
 
 export function SearchableSelect({
@@ -54,11 +56,24 @@ export function SearchableSelect({
   showValueCode = true,
   dropdownClassName,
   triggerIcon,
+  open: controlledOpen,
+  onOpenChange,
 }: SearchableSelectProps) {
-  const [open, setOpen] = React.useState(false)
+  const [internalOpen, setInternalOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const triggerRef = React.useRef<HTMLButtonElement>(null)
   const contentRef = React.useRef<HTMLDivElement>(null)
+
+  // Use controlled state if provided, otherwise use internal state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen
+  const setOpen = (value: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(value)
+    }
+    if (controlledOpen === undefined) {
+      setInternalOpen(value)
+    }
+  }
 
   // Group options by category
   const groupedOptions = React.useMemo(() => {
@@ -159,7 +174,7 @@ export function SearchableSelect({
         </PopoverTrigger>
         <PopoverContent
           ref={contentRef}
-          className={cn("w-[var(--radix-popover-trigger-width)] p-0 z-[9999]", dropdownClassName)}
+          className={cn("min-w-[250px] p-0 z-[9999]", dropdownClassName)}
           align="start"
         >
           <Command>

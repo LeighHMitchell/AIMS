@@ -582,9 +582,9 @@ export default function PartnerSummaryPage() {
             </TabsList>
           </Tabs>
 
-          <div className="flex-1 flex gap-2">
+          <div className="flex-1 flex flex-wrap gap-2 min-w-0">
             {/* Search */}
-            <div className="relative flex-1 max-w-sm">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search organizations..."
@@ -595,12 +595,12 @@ export default function PartnerSummaryPage() {
             </div>
 
             {/* Financial Mode Toggle */}
-            <div className="flex items-center space-x-2 bg-muted rounded-lg p-1">
+            <div className="flex items-center space-x-2 bg-muted rounded-lg p-1 flex-shrink-0">
               <Button
                 variant={financialMode === 'disbursements' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setFinancialMode('disbursements')}
-                className="text-xs"
+                className="text-xs whitespace-nowrap"
               >
                 Disbursements
               </Button>
@@ -608,20 +608,20 @@ export default function PartnerSummaryPage() {
                 variant={financialMode === 'commitments' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setFinancialMode('commitments')}
-                className="text-xs"
+                className="text-xs whitespace-nowrap"
               >
                 Commitments
               </Button>
             </div>
 
             {/* Global expand/collapse controls */}
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={toggleAllGroups}>
-                {allCollapsed ? <Maximize2 className="h-4 w-4 mr-2" /> : <Minimize2 className="h-4 w-4 mr-2" />}
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              <Button variant="outline" size="sm" onClick={toggleAllGroups} className="whitespace-nowrap">
+                {allCollapsed ? <Maximize2 className="h-4 w-4 mr-2 flex-shrink-0" /> : <Minimize2 className="h-4 w-4 mr-2 flex-shrink-0" />}
                 {allCollapsed ? 'Expand All' : 'Collapse All'}
               </Button>
-              <Button size="sm" onClick={() => setShowCreateGroupModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button size="sm" onClick={() => setShowCreateGroupModal(true)} className="whitespace-nowrap">
+                <Plus className="h-4 w-4 mr-2 flex-shrink-0" />
                 Create Group
               </Button>
             </div>
@@ -642,24 +642,24 @@ export default function PartnerSummaryPage() {
                 >
                   <CollapsibleTrigger asChild>
                     <CardHeader className="hover:bg-muted/50 cursor-pointer transition-colors py-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
+                      <div className="flex items-center justify-between gap-4 min-w-0">
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
                           {isExpanded ? 
-                            <ChevronDown className="h-5 w-5" /> : 
-                            <ChevronRight className="h-5 w-5" />
+                            <ChevronDown className="h-5 w-5 flex-shrink-0" /> : 
+                            <ChevronRight className="h-5 w-5 flex-shrink-0" />
                           }
-                          <div>
-                            <CardTitle className="text-lg">
+                          <div className="min-w-0">
+                            <CardTitle className="text-lg truncate">
                               {'label' in info ? info.label : info.name}
                             </CardTitle>
-                            <CardDescription>
+                            <CardDescription className="truncate">
                               {partners.length === 0 ? 'No organisations assigned to this group yet' : `${partners.length} organizations`}
                             </CardDescription>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <div className="flex items-center">
-                            <Building2 className="h-4 w-4 mr-1" />
+                        <div className="flex items-center space-x-4 text-sm text-muted-foreground flex-shrink-0">
+                          <div className="flex items-center whitespace-nowrap">
+                            <Building2 className="h-4 w-4 mr-1 flex-shrink-0" />
                             {partners.length} organizations
                           </div>
                           {groupingMode === 'userDefined' && (

@@ -1,11 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 
 interface PopoverContextValue {
   open: boolean
   onOpenChange: (open: boolean) => void
+  triggerRef: React.RefObject<HTMLElement | null>
 }
 
 const PopoverContext = React.createContext<PopoverContextValue | undefined>(undefined)
@@ -17,8 +19,10 @@ interface PopoverProps {
 }
 
 const Popover = ({ open = false, onOpenChange = () => {}, children }: PopoverProps) => {
+  const triggerRef = React.useRef<HTMLElement | null>(null)
+  
   return (
-    <PopoverContext.Provider value={{ open, onOpenChange }}>
+    <PopoverContext.Provider value={{ open, onOpenChange, triggerRef }}>
       <div className="relative w-full">
         {children}
       </div>
@@ -35,17 +39,39 @@ const PopoverTrigger = React.forwardRef<
   PopoverTriggerProps
 >(({ children, onClick, className, asChild, ...props }, ref) => {
   const context = React.useContext(PopoverContext)
+  const internalRef = React.useRef<HTMLButtonElement>(null)
+  
   if (!context) throw new Error("PopoverTrigger must be used within Popover")
+
+  // Store the trigger element reference
+  React.useEffect(() => {
+    if (internalRef.current) {
+      context.triggerRef.current = internalRef.current
+    }
+  }, [context.triggerRef])
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     onClick?.(e)
     context.onOpenChange(!context.open)
   }
 
+  // Combine refs
+  const combinedRef = React.useCallback((node: HTMLButtonElement | null) => {
+    internalRef.current = node
+    if (typeof ref === "function") {
+      ref(node)
+    } else if (ref) {
+      (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
+    }
+    if (node) {
+      context.triggerRef.current = node
+    }
+  }, [ref, context.triggerRef])
+
   // If asChild is true, clone the child element and pass props to it
   if (asChild && React.isValidElement(children)) {
     return React.cloneElement(children as React.ReactElement<any>, {
-      ref,
+      ref: combinedRef,
       onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
         // Call the child's onClick if it exists
         const childOnClick = (children as React.ReactElement<any>).props?.onClick
@@ -59,7 +85,7 @@ const PopoverTrigger = React.forwardRef<
 
   return (
     <button
-      ref={ref}
+      ref={combinedRef}
       onClick={handleClick}
       className={cn("w-full", className)}
       type="button"
@@ -77,15 +103,23 @@ interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement> {
   sideOffset?: number
   collisionPadding?: number
   forcePosition?: 'top' | 'bottom'
+  usePortal?: boolean
 }
 
 const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
-  ({ className, align = "center", sideOffset = 4, collisionPadding = 8, forcePosition, ...props }, ref) => {
+  ({ className, align = "center", sideOffset = 4, collisionPadding = 8, forcePosition, usePortal = true, ...props }, ref) => {
     const context = React.useContext(PopoverContext)
     const contentRef = React.useRef<HTMLDivElement | null>(null)
     const [position, setPosition] = React.useState<'bottom' | 'top'>(forcePosition || 'bottom')
+    const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0 })
+    const [mounted, setMounted] = React.useState(false)
     
     if (!context) throw new Error("PopoverContent must be used within Popover")
+
+    // Handle SSR
+    React.useEffect(() => {
+      setMounted(true)
+    }, [])
 
     // Combine refs
     const combinedRef = React.useCallback((node: HTMLDivElement | null) => {
@@ -97,21 +131,73 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
       }
     }, [ref])
 
+    // Calculate position based on trigger
+    React.useEffect(() => {
+      if (!context.open || !context.triggerRef.current || !usePortal) return
+
+      const updatePosition = () => {
+        const trigger = context.triggerRef.current
+        if (!trigger) return
+
+        const rect = trigger.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const scrollY = window.scrollY
+
+        // Calculate if content would overflow at bottom
+        const contentHeight = contentRef.current?.offsetHeight || 350 // estimate
+        const spaceBelow = viewportHeight - rect.bottom
+        const shouldFlip = spaceBelow < contentHeight + collisionPadding && rect.top > spaceBelow
+
+        let top: number
+        if (shouldFlip && !forcePosition) {
+          // Position above
+          top = rect.top + scrollY - contentHeight - sideOffset
+          setPosition('top')
+        } else {
+          // Position below
+          top = rect.bottom + scrollY + sideOffset
+          setPosition('bottom')
+        }
+
+        let left: number
+        if (align === "start") {
+          left = rect.left
+        } else if (align === "end") {
+          left = rect.right
+        } else {
+          left = rect.left + rect.width / 2
+        }
+
+        setCoords({ top, left, width: rect.width })
+      }
+
+      updatePosition()
+
+      // Update on resize and scroll
+      window.addEventListener('resize', updatePosition)
+      window.addEventListener('scroll', updatePosition, true)
+
+      return () => {
+        window.removeEventListener('resize', updatePosition)
+        window.removeEventListener('scroll', updatePosition, true)
+      }
+    }, [context.open, context.triggerRef, align, sideOffset, collisionPadding, forcePosition, usePortal])
+
     // Handle outside clicks
     React.useEffect(() => {
       if (!context.open) return
 
-             function handleClickOutside(event: MouseEvent) {
-         const target = event.target as Element
-         if (
-           contentRef.current &&
-           !contentRef.current.contains(target) &&
-           // Also check if click is not on the trigger (to avoid conflicts)
-           !target.closest('[data-popover-trigger]')
-         ) {
-           context?.onOpenChange(false)
-         }
-       }
+      function handleClickOutside(event: MouseEvent) {
+        const target = event.target as Element
+        if (
+          contentRef.current &&
+          !contentRef.current.contains(target) &&
+          // Also check if click is not on the trigger (to avoid conflicts)
+          !target.closest('[data-popover-trigger]')
+        ) {
+          context?.onOpenChange(false)
+        }
+      }
 
       // Use a small delay to avoid immediate closure when opening
       const timeoutId = setTimeout(() => {
@@ -128,59 +214,48 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
     React.useEffect(() => {
       if (!context.open) return
 
-             function handleEscape(event: KeyboardEvent) {
-         if (event.key === "Escape") {
-           context?.onOpenChange(false)
-         }
-       }
-
-       document.addEventListener("keydown", handleEscape)
-       return () => document.removeEventListener("keydown", handleEscape)
-     }, [context?.open, context])
-
-    // Collision detection (simplified to reduce flickering)
-    React.useEffect(() => {
-      if (!context.open || !contentRef.current || forcePosition) return
-
-      const checkCollision = () => {
-        const content = contentRef.current
-        if (!content) return
-
-        const rect = content.getBoundingClientRect()
-        const viewportHeight = window.innerHeight
-        const spaceBelow = viewportHeight - rect.bottom
-        const spaceAbove = rect.top
-
-        // If there's not enough space below and more space above, flip to top
-        if (spaceBelow < collisionPadding && spaceAbove > spaceBelow) {
-          setPosition('top')
-        } else {
-          setPosition('bottom')
+      function handleEscape(event: KeyboardEvent) {
+        if (event.key === "Escape") {
+          context?.onOpenChange(false)
         }
       }
 
-      // Check collision after initial render only
-      const timeoutId = setTimeout(checkCollision, 0)
-      
-      // Only check on resize, not on scroll to prevent flickering
-      window.addEventListener('resize', checkCollision)
-
-      return () => {
-        clearTimeout(timeoutId)
-        window.removeEventListener('resize', checkCollision)
-      }
-    }, [context.open, collisionPadding, forcePosition])
+      document.addEventListener("keydown", handleEscape)
+      return () => document.removeEventListener("keydown", handleEscape)
+    }, [context?.open, context])
 
     if (!context.open) return null
 
-    // Check if className contains positioning classes
+    // For portal rendering
+    if (usePortal && mounted) {
+      const content = (
+        <div
+          ref={combinedRef}
+          className={cn(
+            "fixed z-[9999] min-w-[200px] rounded-md border bg-white p-4 text-gray-900 shadow-lg outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
+            className
+          )}
+          style={{
+            top: coords.top,
+            left: align === "center" ? coords.left : align === "end" ? coords.left - (contentRef.current?.offsetWidth || 0) + coords.width : coords.left,
+            transform: align === "center" ? 'translateX(-50%)' : undefined,
+            minWidth: coords.width,
+          }}
+          {...props}
+        />
+      )
+
+      return createPortal(content, document.body)
+    }
+
+    // Fallback to non-portal rendering (for SSR or when usePortal is false)
     const hasCustomPosition = className?.includes('bottom-full') || className?.includes('top-full')
 
     return (
       <div
         ref={combinedRef}
         className={cn(
-          "absolute z-50 w-72 rounded-md border bg-white p-4 text-gray-900 shadow-md outline-none",
+          "absolute z-50 w-72 rounded-md border bg-white p-4 text-gray-900 shadow-md outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
           align === "start" && "left-0",
           align === "center" && "left-1/2 -translate-x-1/2",
           align === "end" && "right-0",

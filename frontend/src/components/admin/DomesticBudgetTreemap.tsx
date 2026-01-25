@@ -26,7 +26,7 @@ interface TreemapDataItem {
 
 // Custom content renderer for treemap rectangles
 const CustomizedContent = (props: any) => {
-  const { x, y, width, height, name, value, currency } = props;
+  const { x, y, width, height, name, value, currency, index } = props;
 
   // Guard against undefined values
   if (typeof x === 'undefined' || typeof y === 'undefined' || 
@@ -37,6 +37,9 @@ const CustomizedContent = (props: any) => {
   const displayValue = typeof value === 'number' ? value : 0;
   const displayCurrency = currency || 'USD';
   const displayName = name || 'Unknown';
+  
+  // Generate unique clipPath ID for this rectangle
+  const clipId = `treemap-clip-${index || Math.random().toString(36).substr(2, 9)}`;
 
   // Don't render text if rectangle is too small
   if (width < 60 || height < 40) {
@@ -72,12 +75,23 @@ const CustomizedContent = (props: any) => {
     return val.toFixed(0);
   };
 
-  // Truncate name if too long for the rectangle
-  const maxChars = Math.floor(width / 8);
-  const truncatedName = displayName.length > maxChars ? displayName.substring(0, maxChars - 2) + "..." : displayName;
+  // Use more conservative character estimate for cross-browser compatibility
+  // Firefox and high-DPI displays render text wider than Chrome
+  const avgCharWidth = 7; // More conservative estimate (was 8)
+  const maxChars = Math.max(3, Math.floor((width - 16) / avgCharWidth)); // Account for padding
+  const truncatedName = displayName.length > maxChars ? displayName.substring(0, maxChars - 1) + "…" : displayName;
+
+  // Calculate available text width (with padding)
+  const textWidth = Math.max(0, width - 16);
 
   return (
     <g>
+      {/* Define clipPath to constrain text within rectangle bounds */}
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={x + 4} y={y + 4} width={Math.max(0, width - 8)} height={Math.max(0, height - 8)} rx={2} ry={2} />
+        </clipPath>
+      </defs>
       <rect
         x={x}
         y={y}
@@ -93,14 +107,19 @@ const CustomizedContent = (props: any) => {
         ry={4}
       />
       {height > 50 && (
-        <>
+        <g clipPath={`url(#${clipId})`}>
           <text
             x={x + 8}
             y={y + 20}
             fill="#fff"
             fontSize={12}
             fontWeight={600}
-            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}
+            style={{ 
+              textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+              fontFamily: "system-ui, -apple-system, sans-serif"
+            }}
+            textLength={textWidth > 0 ? undefined : undefined}
+            lengthAdjust="spacingAndGlyphs"
           >
             {truncatedName}
           </text>
@@ -110,11 +129,14 @@ const CustomizedContent = (props: any) => {
             fill="#fff"
             fontSize={11}
             opacity={0.9}
-            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}
+            style={{ 
+              textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+              fontFamily: "system-ui, -apple-system, sans-serif"
+            }}
           >
             {displayCurrency} {formatValue(displayValue)}
           </text>
-        </>
+        </g>
       )}
     </g>
   );

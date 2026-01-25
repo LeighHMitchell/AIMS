@@ -292,16 +292,30 @@ export default function SectorAllocationPieChart({
             .on('end', () => tooltip.classed('invisible', true));
         });
 
-      // Add text labels for larger rectangles with full sector names
+      // Add clipPath for each leaf to prevent text overflow
+      leaf.append('clipPath')
+        .attr('id', (d: any, i: number) => `leaf-clip-${i}`)
+        .append('rect')
+        .attr('x', 4)
+        .attr('y', 4)
+        .attr('width', (d: any) => Math.max(0, d.x1 - d.x0 - 8))
+        .attr('height', (d: any) => Math.max(0, d.y1 - d.y0 - 8))
+        .attr('rx', 2);
+
+      // Add text labels for larger rectangles with full sector names (clipped)
       leaf.append('text')
+        .attr('clip-path', (d: any, i: number) => `url(#leaf-clip-${i})`)
         .attr('x', 6)
         .attr('y', 18)
         .text((d: any) => {
           const width = d.x1 - d.x0;
           const height = d.y1 - d.y0;
-          if (width > 100 && height > 30) {
-            // Show full sector name instead of just code
-            return d.data.name;
+          // More conservative size check for cross-browser compatibility
+          if (width > 120 && height > 35) {
+            // Truncate name if it's too long for the available width
+            const maxChars = Math.floor((width - 12) / 7); // ~7px per char average
+            const name = d.data.name;
+            return name.length > maxChars ? name.substring(0, maxChars - 1) + '…' : name;
           }
           return '';
         })
@@ -309,16 +323,19 @@ export default function SectorAllocationPieChart({
         .attr('font-weight', '600')
         .attr('fill', 'white')
         .attr('text-anchor', 'start')
-        .style('text-shadow', '0 1px 2px rgba(0,0,0,0.3)');
+        .style('text-shadow', '0 1px 2px rgba(0,0,0,0.3)')
+        .style('font-family', 'system-ui, -apple-system, sans-serif');
 
-      // Add percentage labels for larger rectangles
+      // Add percentage labels for larger rectangles (clipped)
       leaf.append('text')
+        .attr('clip-path', (d: any, i: number) => `url(#leaf-clip-${i})`)
         .attr('x', 6)
         .attr('y', 32)
         .text((d: any) => {
           const width = d.x1 - d.x0;
           const height = d.y1 - d.y0;
-          if (width > 80 && height > 40) {
+          // More conservative size check
+          if (width > 100 && height > 45) {
             return `${d.data.value.toFixed(1)}%`;
           }
           return '';
@@ -327,7 +344,8 @@ export default function SectorAllocationPieChart({
         .attr('fill', 'white')
         .attr('opacity', 0.9)
         .attr('text-anchor', 'start')
-        .style('text-shadow', '0 1px 2px rgba(0,0,0,0.3)');
+        .style('text-shadow', '0 1px 2px rgba(0,0,0,0.3)')
+        .style('font-family', 'system-ui, -apple-system, sans-serif');
 
       // Draw category boundaries with reduced opacity
       const categoryGroups = g.selectAll('.category')
@@ -347,23 +365,37 @@ export default function SectorAllocationPieChart({
         .attr('stroke-width', 2)  // Reduced from 3
         .attr('opacity', 0.4);    // Reduced from 0.6
 
-      // Category labels with full names
+      // Add clipPath for each category to prevent text overflow
+      categoryGroups.append('clipPath')
+        .attr('id', (d: any, i: number) => `category-clip-${i}`)
+        .append('rect')
+        .attr('x', (d: any) => d.x0 + 2)
+        .attr('y', (d: any) => d.y0 + 2)
+        .attr('width', (d: any) => Math.max(0, d.x1 - d.x0 - 4))
+        .attr('height', (d: any) => Math.max(0, d.y1 - d.y0 - 4));
+
+      // Category labels with full names (clipped)
       categoryGroups.append('text')
+        .attr('clip-path', (d: any, i: number) => `url(#category-clip-${i})`)
         .attr('x', (d: any) => d.x0 + 4)
         .attr('y', (d: any) => d.y0 + 14)
         .text((d: any) => {
           const width = d.x1 - d.x0;
           const height = d.y1 - d.y0;
-          if (width > 120 && height > 50) {
-            // Show full category name instead of truncating
-            return d.data.name;
+          // More conservative size check for cross-browser compatibility
+          if (width > 140 && height > 55) {
+            // Truncate name if needed
+            const maxChars = Math.floor((width - 8) / 7);
+            const name = d.data.name;
+            return name.length > maxChars ? name.substring(0, maxChars - 1) + '…' : name;
           }
           return '';
         })
         .attr('font-size', '11px')
         .attr('font-weight', 'bold')
         .attr('fill', '#333')
-        .attr('text-anchor', 'start');
+        .attr('text-anchor', 'start')
+        .style('font-family', 'system-ui, -apple-system, sans-serif');
 
       console.log('Treemap rendering completed successfully');
       // Set loading to false after rendering

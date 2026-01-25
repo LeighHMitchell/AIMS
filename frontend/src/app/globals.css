@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== CSS Reset/Normalize for Cross-Browser Consistency ===== */
+
+/* Universal box-sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Prevent font scaling in landscape on iOS */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Ensure images/media are responsive */
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Form elements inherit font */
+button, input, select, textarea {
+  font: inherit;
+}
+
 /* React DatePicker CSS - imported in components as needed */
 
 /* Hide number input stepper controls */
@@ -823,4 +847,137 @@ table td:has(div:contains("AA-AAA")) {
 
 #nprogress .spinner-icon {
   display: none;
+}
+
+/* ===== Cross-Browser & High-DPI Display Fixes ===== */
+
+/* Firefox-specific fixes for high-DPI displays */
+@supports (-moz-appearance: none) {
+  /* Prevent flex items from overflowing their containers */
+  .flex > * {
+    min-width: 0;
+  }
+  
+  /* Fix grid gap calculations in Firefox */
+  .grid {
+    grid-gap: inherit;
+  }
+  
+  /* Ensure text truncation works consistently */
+  .whitespace-nowrap {
+    max-width: 100%;
+  }
+}
+
+/* Universal high-DPI fixes */
+@media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 144dpi) {
+  /* Improve text rendering on high-DPI displays */
+  body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Prevent subpixel rendering issues */
+  .text-xs, .text-sm {
+    text-rendering: geometricPrecision;
+  }
+}
+
+/* Prevent flex children from overflowing (cross-browser) */
+.flex-item-min-w-0 > * {
+  min-width: 0;
+}
+
+/* Ensure truncate class works consistently across browsers */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Fix for grid items that might overflow */
+.grid > * {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Responsive text that won't overflow containers */
+.text-responsive {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Firefox line-clamp compatibility */
+.line-clamp-1,
+.line-clamp-2,
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.line-clamp-1 {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.line-clamp-2 {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.line-clamp-3 {
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+/* ===== Accessibility & Device-Specific Fixes ===== */
+
+/* Reduced Motion - Respect user preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Safe Area Insets for Notched Devices (iPhone X+, etc.) */
+.safe-area-inset {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Main layout wrapper with safe areas */
+.main-layout {
+  min-height: 100dvh; /* Dynamic viewport height */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Mobile Viewport Height Fix - 100vh includes address bar on mobile */
+.min-h-screen-safe {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.h-screen-safe {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Gap Fallback for Older Safari (< 14.1) */
+@supports not (gap: 1rem) {
+  .flex-gap-fallback > * + * {
+    margin-left: 0.5rem;
+  }
+  .flex-gap-fallback-y > * + * {
+    margin-top: 0.5rem;
+  }
 } 

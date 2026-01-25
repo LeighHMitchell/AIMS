@@ -1991,53 +1991,53 @@ export default function ActivityDetailPage() {
                           )}
                         </div>
 
-                        {/* Third Row: Timeline Dates - 3 Column Grid */}
-                        <div className="grid grid-cols-3 gap-4 pb-3 border-b border-slate-200">
+                        {/* Third Row: Timeline Dates - Responsive Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 pb-3 border-b border-slate-200">
                           {/* Column 1: Start Dates */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                          <div className="space-y-1.5 min-w-0">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
                               <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                              <span className="text-slate-500">Planned Start:</span>
-                              <span className="font-medium text-slate-900">
+                              <span className="text-slate-500 flex-shrink-0">Planned Start:</span>
+                              <span className="font-medium text-slate-900 truncate">
                                 {activity.plannedStartDate ? formatDate(activity.plannedStartDate) : '—'}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
                               <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                              <span className="text-slate-500">Actual Start:</span>
-                              <span className="font-medium text-slate-900">
+                              <span className="text-slate-500 flex-shrink-0">Actual Start:</span>
+                              <span className="font-medium text-slate-900 truncate">
                                 {activity.actualStartDate ? formatDate(activity.actualStartDate) : '—'}
                               </span>
                             </div>
                           </div>
 
                           {/* Column 2: End Dates */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                          <div className="space-y-1.5 min-w-0">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
                               <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                              <span className="text-slate-500">Planned End:</span>
-                              <span className="font-medium text-slate-900">
+                              <span className="text-slate-500 flex-shrink-0">Planned End:</span>
+                              <span className="font-medium text-slate-900 truncate">
                                 {activity.plannedEndDate ? formatDate(activity.plannedEndDate) : '—'}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
                               <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                              <span className="text-slate-500">Actual End:</span>
-                              <span className="font-medium text-slate-900">
+                              <span className="text-slate-500 flex-shrink-0">Actual End:</span>
+                              <span className="font-medium text-slate-900 truncate">
                                 {activity.actualEndDate ? formatDate(activity.actualEndDate) : '—'}
                               </span>
                             </div>
                           </div>
 
                           {/* Column 3: Created/Updated + History Button */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
-                              <span className="text-slate-500">Created:</span>
-                              <span className="font-medium text-slate-900">{formatDate(activity.createdAt)}</span>
+                          <div className="space-y-1.5 min-w-0">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
+                              <span className="text-slate-500 flex-shrink-0">Created:</span>
+                              <span className="font-medium text-slate-900 truncate">{formatDate(activity.createdAt)}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
-                              <span className="text-slate-500">Updated:</span>
-                              <span className="font-medium text-slate-900">{formatDate(activity.updatedAt)}</span>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
+                              <span className="text-slate-500 flex-shrink-0">Updated:</span>
+                              <span className="font-medium text-slate-900 truncate">{formatDate(activity.updatedAt)}</span>
                               <AllDatesHistory
                                 activityId={activity.id}
                                 dates={{

@@ -13,6 +13,7 @@ import { useUser } from "@/hooks/useUser";
 import { GmailLogin } from "@/components/auth/GmailLogin";
 import { supabase } from "@/lib/supabase";
 import { WavesBackground } from "@/components/landing/WavesBackground";
+import { getHomeRouteFromApiData } from "@/lib/navigation-utils";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,7 +63,11 @@ export default function LoginPage() {
       setUser(data.user);
       
       toast.success("Login successful!");
-      router.push("/activities");
+      
+      // Redirect to dashboard if user has an organization, otherwise to activities
+      const homeRoute = getHomeRouteFromApiData(data.user);
+      console.log("[Login] Redirecting to:", homeRoute, "organizationId:", data.user?.organizationId);
+      router.push(homeRoute);
     } catch (err) {
       console.error("[Login] Login error:", err);
       const errorMessage = err instanceof Error ? err.message : "An error occurred during login";
@@ -166,7 +171,7 @@ export default function LoginPage() {
           </div>
 
           {/* Google Sign-In */}
-          <GmailLogin redirectTo="/auth/callback?next=/activities" />
+          <GmailLogin redirectTo="/auth/callback" />
 
           {/* Create Account Link */}
           <div className="mt-6 text-center text-sm text-gray-600">

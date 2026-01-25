@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { generatePdfThumbnailBuffer } from '@/lib/pdf-thumbnail-generator';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,6 +87,8 @@ export async function POST(request: NextRequest) {
     let fileName: string | null = null;
     let filePath: string | null = null;
     let fileFormat: string;
+    let thumbnailUrl: string | null = null;
+    let thumbnailPath: string | null = null;
 
     if (isExternal && externalUrl) {
       // External URL document
@@ -162,13 +165,14 @@ export async function POST(request: NextRequest) {
         bucket: 'library-documents'
       });
 
-      // Convert file to ArrayBuffer for upload
-      const fileBuffer = await file.arrayBuffer();
+      // Convert file to ArrayBuffer and Buffer for upload and thumbnail generation
+      const fileArrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(fileArrayBuffer);
 
       // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('library-documents')
-        .upload(storagePath, fileBuffer, {
+        .upload(storagePath, buffer, {
           contentType: file.type,
           cacheControl: '3600',
           upsert: false,
@@ -198,6 +202,87 @@ export async function POST(request: NextRequest) {
       fileName = file.name;
       filePath = storagePath;
       fileFormat = file.type;
+
+      // Generate thumbnail for PDFs
+      if (file.type === 'application/pdf') {
+        try {
+          console.log('[Library Upload] Generating PDF thumbnail...');
+          const thumbnailBuffer = await generatePdfThumbnailBuffer(buffer, {
+            width: 300,
+            height: 400,
+            quality: 85,
+          });
+
+          if (thumbnailBuffer) {
+            // Upload thumbnail to storage
+            const thumbnailStoragePath = `library/thumbnails/${uniqueId}_thumb.jpg`;
+
+            const { error: thumbUploadError } = await supabase.storage
+              .from('library-documents')
+              .upload(thumbnailStoragePath, thumbnailBuffer, {
+                contentType: 'image/jpeg',
+                cacheControl: '3600',
+                upsert: false,
+              });
+
+            if (!thumbUploadError) {
+              const { data: thumbUrlData } = supabase.storage
+                .from('library-documents')
+                .getPublicUrl(thumbnailStoragePath);
+
+              thumbnailUrl = thumbUrlData.publicUrl;
+              thumbnailPath = thumbnailStoragePath;
+              console.log('[Library Upload] Thumbnail generated:', thumbnailUrl);
+            } else {
+              console.error('[Library Upload] Thumbnail upload error:', thumbUploadError);
+            }
+          }
+        } catch (thumbError) {
+          console.error('[Library Upload] Thumbnail generation failed:', thumbError);
+          // Continue without thumbnail - not a critical error
+        }
+      }
+
+      // Generate thumbnail for images (just resize the original)
+      if (file.type.startsWith('image/') && !file.type.includes('svg')) {
+        try {
+          console.log('[Library Upload] Generating image thumbnail...');
+          const sharp = (await import('sharp')).default;
+          const thumbnailBuffer = await sharp(buffer)
+            .resize(300, 400, {
+              fit: 'inside',
+              withoutEnlargement: false,
+            })
+            .jpeg({ quality: 85 })
+            .toBuffer();
+
+          // Upload thumbnail to storage
+          const thumbnailStoragePath = `library/thumbnails/${uniqueId}_thumb.jpg`;
+
+          const { error: thumbUploadError } = await supabase.storage
+            .from('library-documents')
+            .upload(thumbnailStoragePath, thumbnailBuffer, {
+              contentType: 'image/jpeg',
+              cacheControl: '3600',
+              upsert: false,
+            });
+
+          if (!thumbUploadError) {
+            const { data: thumbUrlData } = supabase.storage
+              .from('library-documents')
+              .getPublicUrl(thumbnailStoragePath);
+
+            thumbnailUrl = thumbUrlData.publicUrl;
+            thumbnailPath = thumbnailStoragePath;
+            console.log('[Library Upload] Thumbnail generated:', thumbnailUrl);
+          } else {
+            console.error('[Library Upload] Thumbnail upload error:', thumbUploadError);
+          }
+        } catch (thumbError) {
+          console.error('[Library Upload] Image thumbnail generation failed:', thumbError);
+          // Continue without thumbnail - not a critical error
+        }
+      }
     } else {
       return NextResponse.json(
         { error: 'Invalid upload configuration' },
@@ -206,7 +291,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create document record in database
-    const documentData = {
+    const documentData: Record<string, any> = {
       url,
       format: fileFormat,
       title,
@@ -223,6 +308,14 @@ export async function POST(request: NextRequest) {
       uploaded_by: user.id,
     };
 
+    // Add thumbnail fields if generated
+    if (thumbnailUrl) {
+      documentData.thumbnail_url = thumbnailUrl;
+    }
+    if (thumbnailPath) {
+      documentData.thumbnail_path = thumbnailPath;
+    }
+
     const { data: document, error: dbError } = await supabase
       .from('library_documents')
       .insert(documentData)
@@ -235,11 +328,18 @@ export async function POST(request: NextRequest) {
     if (dbError) {
       console.error('[Library Upload] Database insert error:', dbError);
 
-      // Clean up uploaded file if database insert fails
+      // Clean up uploaded files if database insert fails
+      const filesToRemove: string[] = [];
       if (filePath) {
+        filesToRemove.push(filePath);
+      }
+      if (thumbnailPath) {
+        filesToRemove.push(thumbnailPath);
+      }
+      if (filesToRemove.length > 0) {
         await supabase.storage
           .from('library-documents')
-          .remove([filePath]);
+          .remove(filesToRemove);
       }
 
       return NextResponse.json(
@@ -268,6 +368,7 @@ export async function POST(request: NextRequest) {
         fileName: document.file_name,
         fileSize: document.file_size,
         isExternal: document.is_external,
+        thumbnailUrl: document.thumbnail_url || null,
         sourceType: 'standalone',
         sourceId: document.id,
         sourceName: 'Library',

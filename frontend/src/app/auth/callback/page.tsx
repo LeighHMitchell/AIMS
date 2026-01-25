@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 import { Loader2 } from 'lucide-react';
+import { getHomeRouteFromApiData } from '@/lib/navigation-utils';
 
 // Determine the auth type from URL parameters
 type AuthType = 'oauth' | 'signup' | 'recovery' | 'magiclink' | 'unknown';
@@ -188,12 +189,15 @@ export default function AuthCallbackPage() {
       setStatus('success');
       
       // Redirect to the intended destination
-      const next = searchParams.get('next') || '/activities';
-      console.log('[Auth Callback] Redirecting to:', next);
+      // If no specific destination, route based on organization assignment
+      const next = searchParams.get('next');
+      const defaultRoute = getHomeRouteFromApiData(userProfile);
+      const redirectTo = next || defaultRoute;
+      console.log('[Auth Callback] Redirecting to:', redirectTo, 'organizationId:', userProfile?.organizationId);
       
       // Small delay before redirect to ensure state is saved
       await new Promise(resolve => setTimeout(resolve, 100));
-      router.push(next);
+      router.push(redirectTo);
     };
 
     handleAuthCallback();

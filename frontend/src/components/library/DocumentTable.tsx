@@ -28,6 +28,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Pencil,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { UnifiedDocument, DocumentSourceType, LibrarySortField } from '@/types/library-document';
@@ -40,6 +41,7 @@ interface DocumentTableProps {
   onSelectOne: (id: string, checked: boolean) => void;
   onPreview: (doc: UnifiedDocument) => void;
   onDownload: (doc: UnifiedDocument) => void;
+  onEdit?: (doc: UnifiedDocument) => void;
   onDelete?: (doc: UnifiedDocument) => void;
   onNavigate: (doc: UnifiedDocument) => void;
   sortBy: string;
@@ -103,6 +105,7 @@ export function DocumentTable({
   onSelectOne,
   onPreview,
   onDownload,
+  onEdit,
   onDelete,
   onNavigate,
   sortBy,
@@ -315,6 +318,12 @@ export function DocumentTable({
                         <Download className="h-4 w-4 mr-2" />
                         Download
                       </DropdownMenuItem>
+                      {onEdit && doc.sourceType === 'standalone' && (
+                        <DropdownMenuItem onClick={() => onEdit(doc)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                      )}
                       {doc.sourceUrl && (
                         <DropdownMenuItem onClick={() => onNavigate(doc)}>
                           <ExternalLink className="h-4 w-4 mr-2" />

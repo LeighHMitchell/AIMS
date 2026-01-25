@@ -48,13 +48,16 @@ const CATEGORY_OPTIONS = DOCUMENT_CATEGORIES.map(cat => ({
   label: `${cat.code} - ${cat.name}`,
 }));
 
-export function LibraryFiltersPanel({ 
-  filters, 
-  onFiltersChange, 
-  onClear 
+export function LibraryFiltersPanel({
+  filters,
+  onFiltersChange,
+  onClear
 }: LibraryFiltersPanelProps) {
-  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym?: string }>>([]);
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym?: string; logo?: string }>>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
+
+  // Track which dropdown is open - only one can be open at a time
+  const [openDropdown, setOpenDropdown] = useState<'category' | 'org' | null>(null);
 
   // Fetch organizations for filter
   useEffect(() => {
@@ -120,12 +123,21 @@ export function LibraryFiltersPanel({
   const orgOptions: SearchableSelectOption[] = organizations.map(org => ({
     value: org.id,
     label: org.acronym ? `${org.name} (${org.acronym})` : org.name,
+    icon: org.logo ? (
+      <img src={org.logo} alt="" className="h-5 w-5 rounded-sm object-contain flex-shrink-0" />
+    ) : (
+      <div className="h-5 w-5 rounded-sm bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+          {(org.acronym || org.name || '?')[0].toUpperCase()}
+        </span>
+      </div>
+    ),
   }));
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <Card className="overflow-visible">
+      <CardContent className="p-4 overflow-visible">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {/* Source Type Filter */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">Source Type</Label>
@@ -135,7 +147,7 @@ export function LibraryFiltersPanel({
                   <Checkbox
                     id={`source-${option.value}`}
                     checked={filters.sourceTypes?.includes(option.value) || false}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       handleSourceTypeToggle(option.value, checked as boolean)
                     }
                   />
@@ -160,7 +172,7 @@ export function LibraryFiltersPanel({
                   <Checkbox
                     id={`format-${option.label}`}
                     checked={isFormatGroupSelected(option.value)}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       handleFormatToggle(option.value, checked as boolean)
                     }
                   />
@@ -175,32 +187,36 @@ export function LibraryFiltersPanel({
             </div>
           </div>
 
-          {/* Category Filter */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Document Category</Label>
-            <MultiSelectFilter
-              options={CATEGORY_OPTIONS}
-              selected={filters.categoryCodes || []}
-              onChange={(selected) => 
-                onFiltersChange({
-                  ...filters,
-                  categoryCodes: selected.length > 0 ? selected : undefined,
-                })
-              }
-              placeholder="Select categories..."
-              searchPlaceholder="Search categories..."
-            />
-          </div>
+          {/* Category and Organization Filters - stacked in wider column */}
+          <div className="space-y-4 lg:col-span-2">
+            {/* Category Filter */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Document Category</Label>
+              <MultiSelectFilter
+                options={CATEGORY_OPTIONS}
+                value={filters.categoryCodes || []}
+                onChange={(values) =>
+                  onFiltersChange({
+                    ...filters,
+                    categoryCodes: values.length > 0 ? values : undefined,
+                  })
+                }
+                placeholder="Select categories..."
+                searchPlaceholder="Search categories..."
+                className="w-full"
+                dropdownClassName="z-[9999]"
+                open={openDropdown === 'category'}
+                onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'category' : null)}
+              />
+            </div>
 
-          {/* Organization and Date Filters */}
-          <div className="space-y-4">
             {/* Organization Filter */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Reporting Organization</Label>
               <SearchableSelect
                 options={orgOptions}
                 value={filters.reportingOrgIds?.[0] || ''}
-                onValueChange={(value) => 
+                onValueChange={(value) =>
                   onFiltersChange({
                     ...filters,
                     reportingOrgIds: value ? [value] : undefined,
@@ -208,38 +224,40 @@ export function LibraryFiltersPanel({
                 }
                 placeholder="Select organization..."
                 searchPlaceholder="Search organizations..."
-                loading={loadingOrgs}
+                showValueCode={false}
+                open={openDropdown === 'org'}
+                onOpenChange={(isOpen) => setOpenDropdown(isOpen ? 'org' : null)}
               />
             </div>
+          </div>
 
-            {/* Date Range Filter */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Document Date</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="date"
-                  value={filters.documentDateFrom || ''}
-                  onChange={(e) => 
-                    onFiltersChange({
-                      ...filters,
-                      documentDateFrom: e.target.value || undefined,
-                    })
-                  }
-                  className="text-sm"
-                />
-                <span className="text-muted-foreground">to</span>
-                <Input
-                  type="date"
-                  value={filters.documentDateTo || ''}
-                  onChange={(e) => 
-                    onFiltersChange({
-                      ...filters,
-                      documentDateTo: e.target.value || undefined,
-                    })
-                  }
-                  className="text-sm"
-                />
-              </div>
+          {/* Date Range Filter */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Document Date</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={filters.documentDateFrom || ''}
+                onChange={(e) =>
+                  onFiltersChange({
+                    ...filters,
+                    documentDateFrom: e.target.value || undefined,
+                  })
+                }
+                className="text-sm"
+              />
+              <span className="text-muted-foreground">to</span>
+              <Input
+                type="date"
+                value={filters.documentDateTo || ''}
+                onChange={(e) =>
+                  onFiltersChange({
+                    ...filters,
+                    documentDateTo: e.target.value || undefined,
+                  })
+                }
+                className="text-sm"
+              />
             </div>
           </div>
         </div>
