@@ -41,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Contact {
   id?: string;
@@ -123,7 +124,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
 
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/organizations/${organizationId}/contacts`, {
+      const response = await apiFetch(`/api/organizations/${organizationId}/contacts`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -149,7 +150,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
     if (!organizationId) return;
 
     try {
-      const response = await fetch(`/api/organizations/${organizationId}/users`);
+      const response = await apiFetch(`/api/organizations/${organizationId}/users`);
       if (response.ok) {
         const data = await response.json();
         setOrgUsers(data || []);
@@ -213,7 +214,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
 
       if (editingContact?.id) {
         // Update existing contact
-        const response = await fetch(`/api/organizations/${organizationId}/contacts`, {
+        const response = await apiFetch(`/api/organizations/${organizationId}/contacts`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...contact, id: editingContact.id }),
@@ -226,7 +227,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
         toast.success('Contact updated successfully');
       } else {
         // Create new contact
-        const response = await fetch(`/api/organizations/${organizationId}/contacts`, {
+        const response = await apiFetch(`/api/organizations/${organizationId}/contacts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(contact),
@@ -263,7 +264,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
     }
 
     try {
-      const response = await fetch(`/api/organizations/${organizationId}/contacts?contactId=${contactId}`, {
+      const response = await apiFetch(`/api/organizations/${organizationId}/contacts?contactId=${contactId}`, {
         method: 'DELETE',
       });
 

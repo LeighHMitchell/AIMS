@@ -33,6 +33,7 @@ import {
 import { getSectorLabel, getSectorDescription } from '@/components/forms/SectorSelect'
 import dacSectorsData from '@/data/dac-sectors.json'
 import sectorGroupData from '@/data/SectorGroup.json'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface SectorInfo {
   code: string
@@ -129,7 +130,7 @@ export default function SectorDetailPage() {
       let totalBudget = 0
       
       try {
-        const activitiesResponse = await fetch(`/api/sectors/${code}/activities`)
+        const activitiesResponse = await apiFetch(`/api/sectors/${code}/activities`)
         if (activitiesResponse.ok) {
           const data = await activitiesResponse.json()
           activities = data.activities || []

@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, Calendar as CalendarIcon } from 'lucide-react'
 import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
 import { format } from 'date-fns'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Generate list of available years
 const AVAILABLE_YEARS = Array.from(
@@ -71,7 +72,7 @@ export function SDGConcentrationChart({
   useEffect(() => {
     const fetchCustomYears = async () => {
       try {
-        const response = await fetch('/api/custom-years')
+        const response = await apiFetch('/api/custom-years')
         if (response.ok) {
           const result = await response.json()
           const years = result.data || []
@@ -178,7 +179,7 @@ export function SDGConcentrationChart({
         dataType: 'concentration'
       })
 
-      const response = await fetch(`/api/analytics/sdgs?${params}`)
+      const response = await apiFetch(`/api/analytics/sdgs?${params}`)
       const result = await response.json()
 
       if (result.success && result.concentration) {

@@ -2,6 +2,7 @@ import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { setFieldSaved, isFieldSaved, clearFieldSaved } from '@/utils/persistentSave';
 import { toast } from 'sonner';
 import { invalidateActivityCache } from '@/lib/activity-cache';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Utility function to check if HTML content is effectively empty
 function isEmptyHtmlContent(content: any): boolean {
@@ -379,7 +380,7 @@ export function useFieldAutosave(
           setTimeout(async () => {
             try {
               // Try to fetch activities to see if one was created with our title
-              const response = await fetch('/api/activities-simple?limit=5');
+              const response = await apiFetch('/api/activities-simple?limit=5');
               if (response.ok) {
                 const data = await response.json();
                 console.log(`[FieldAutosave] Polling response data:`, data);

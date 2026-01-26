@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { apiFetch } from '@/lib/api-fetch';
 
 export interface Notification {
   id: string
@@ -59,7 +60,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/notifications/user?userId=${userId}&limit=100`)
+      const response = await apiFetch(`/api/notifications/user?userId=${userId}&limit=100`)
 
       if (!response.ok) {
         throw new Error('Failed to fetch notifications')
@@ -91,7 +92,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
     )
 
     try {
-      const response = await fetch('/api/notifications/user', {
+      const response = await apiFetch('/api/notifications/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, notificationIds: [notificationId] }),
@@ -127,7 +128,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
     )
 
     try {
-      const response = await fetch('/api/notifications/user', {
+      const response = await apiFetch('/api/notifications/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, notificationIds: notificationsToUpdate }),

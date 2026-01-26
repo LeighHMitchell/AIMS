@@ -33,6 +33,7 @@ import {
 import { toast } from 'sonner'
 import { useUser } from '@/hooks/useUser'
 import { format } from 'date-fns'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface EventCreateModalProps {
   isOpen: boolean
@@ -148,7 +149,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
   useEffect(() => {
     if (isOpen && !contactsLoaded) {
       setSearchingPeople(true)
-      fetch('/api/rolodex?limit=50')
+      apiFetch('/api/rolodex?limit=50')
         .then(res => res.ok ? res.json() : { people: [] })
         .then(data => {
           const people = data.people || []
@@ -303,7 +304,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
     console.log('[EventCreateModal] Creating event...')
 
     try {
-      const response = await fetch('/api/calendar-events', {
+      const response = await apiFetch('/api/calendar-events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

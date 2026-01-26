@@ -47,6 +47,7 @@ import { ResetPasswordModal } from "@/components/ResetPasswordModal";
 import { EmailChangeConfirmDialog } from "@/components/EmailChangeConfirmDialog";
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Helper function to split telephone into country code and phone number
 const splitTelephone = (telephone: string) => {
@@ -206,7 +207,7 @@ export default function UserManagement() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch('/api/users');
+        const response = await apiFetch('/api/users');
         if (response.ok) {
           const data = await response.json();
           // Transform API users to match User type
@@ -376,7 +377,7 @@ export default function UserManagement() {
       console.log('[AIMS Frontend] Request body organization_id:', requestBody.organization_id);
       console.log('[AIMS Frontend] Full request body:', requestBody);
 
-      const response = await fetch('/api/users', {
+      const response = await apiFetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -447,7 +448,7 @@ export default function UserManagement() {
     }
 
     try {
-      const response = await fetch(`/api/users?id=${userId}`, {
+      const response = await apiFetch(`/api/users?id=${userId}`, {
         method: 'DELETE',
       });
 
@@ -472,7 +473,7 @@ export default function UserManagement() {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
-      const response = await fetch('/api/users', {
+      const response = await apiFetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -557,7 +558,7 @@ export default function UserManagement() {
     }
 
     try {
-      const response = await fetch('/api/users/change-email', {
+      const response = await apiFetch('/api/users/change-email', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -988,7 +989,7 @@ function UserEditor({
     
     // Auto-save the profile photo immediately
     try {
-      const response = await fetch('/api/users', {
+      const response = await apiFetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

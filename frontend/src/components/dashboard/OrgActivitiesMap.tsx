@@ -9,6 +9,7 @@ import { MapPin, RotateCcw, Flame, CircleDot, Layers, Mountain, Satellite } from
 import dynamic from 'next/dynamic';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
 import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Dynamic imports for map components
 const MapContainer = dynamic(
@@ -242,7 +243,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
         setError(null);
 
         const params = new URLSearchParams({ organizationId });
-        const response = await fetch(`/api/dashboard/org-locations?${params.toString()}`);
+        const response = await apiFetch(`/api/dashboard/org-locations?${params.toString()}`);
 
         if (!response.ok) {
           const errorData = await response.json();

@@ -29,6 +29,7 @@ import { AidTypeSelect } from "@/components/forms/AidTypeSelect";
 import { DefaultFinanceTypeSelect } from "@/components/forms/DefaultFinanceTypeSelect";
 import { ActivityStatusSelect } from "@/components/forms/ActivityStatusSelect";
 import { useUser } from "@/hooks/useUser";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Aid Type mappings
 const AID_TYPE_LABELS: Record<string, string> = {
@@ -196,7 +197,7 @@ export function DataClinicActivities() {
 
   const handleInlineEdit = async (activityId: string, field: string, value: string) => {
     try {
-      const res = await fetch(`/api/data-clinic/activities/${activityId}`, {
+      const res = await apiFetch(`/api/data-clinic/activities/${activityId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ field, value, userId: user?.id })
@@ -224,7 +225,7 @@ export function DataClinicActivities() {
     }
 
     try {
-      const res = await fetch('/api/data-clinic/bulk-update', {
+      const res = await apiFetch('/api/data-clinic/bulk-update', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

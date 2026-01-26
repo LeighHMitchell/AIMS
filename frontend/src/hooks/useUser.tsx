@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { User, UserRole, UserPermissions, getUserPermissions, USER_ROLES, Organization } from '@/types/user';
 import { useRouter } from "next/navigation";
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UserContextType {
   user: User | null;
@@ -83,7 +84,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             // Fetch user profile from our users table (needed for OAuth logins)
             console.log('[useUser] Fetching user profile for OAuth login:', session.user.email);
             try {
-              const response = await fetch(`/api/users?email=${encodeURIComponent(session.user.email)}`);
+              const response = await apiFetch(`/api/users?email=${encodeURIComponent(session.user.email)}`);
               if (response.ok) {
                 const userData = await response.json();
                 // Handle both array and single object responses
@@ -156,7 +157,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     
     try {
       console.log('[useUser] Refreshing user data from API');
-      const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`);
+      const response = await apiFetch(`/api/users?email=${encodeURIComponent(user.email)}`);
       if (response.ok) {
         const data = await response.json();
         // Handle both array and single object responses
@@ -175,7 +176,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       // Call Supabase logout endpoint
-      await fetch('/api/auth/logout', {
+      await apiFetch('/api/auth/logout', {
         method: 'POST',
       });
     } catch (error) {

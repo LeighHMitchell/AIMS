@@ -50,8 +50,14 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true });
     
     // Set all cookies (Supabase sets empty values to clear them)
+    // Use explicit options for better cross-browser compatibility
     for (const cookie of cookiesToSet) {
-      response.cookies.set(cookie.name, cookie.value, cookie.options);
+      response.cookies.set(cookie.name, cookie.value, {
+        ...cookie.options,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+      });
     }
     
     console.log('[AIMS] Cleared', cookiesToSet.length, 'cookies');

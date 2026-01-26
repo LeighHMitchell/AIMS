@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { format } from 'date-fns'
 import { IATI_ORGANIZATION_TYPES, getOrganizationTypeName } from '@/data/iati-organization-types'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
@@ -147,7 +148,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   useEffect(() => {
     const fetchCustomYears = async () => {
       try {
-        const response = await fetch('/api/custom-years')
+        const response = await apiFetch('/api/custom-years')
         if (response.ok) {
           const result = await response.json()
           const years = result.data || []
@@ -184,7 +185,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
           dateFrom: '2000-01-01',
           dateTo: '2050-12-31'
         })
-        const response = await fetch(`/api/analytics/all-donors?${params}`)
+        const response = await apiFetch(`/api/analytics/all-donors?${params}`)
         if (response.ok) {
           const result = await response.json()
           // For now, use a reasonable default range
@@ -224,7 +225,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   useEffect(() => {
     const fetchSectorData = async () => {
       try {
-        const response = await fetch('/api/analytics/disbursements-by-sector?dateFrom=2000-01-01T00:00:00.000Z&dateTo=2050-12-31T23:59:59.999Z')
+        const response = await apiFetch('/api/analytics/disbursements-by-sector?dateFrom=2000-01-01T00:00:00.000Z&dateTo=2050-12-31T23:59:59.999Z')
         if (response.ok) {
           const result = await response.json()
           const sectors = result.sectors || []
@@ -427,7 +428,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
         queryParams.set('sectorLevel', sectorAggregationLevel)
       }
 
-      const response = await fetch(`/api/analytics/all-donors?${queryParams}`)
+      const response = await apiFetch(`/api/analytics/all-donors?${queryParams}`)
       const result = await response.json()
 
       if (!response.ok || !result.success) {

@@ -58,6 +58,7 @@ import {
   NationalPriorityFormData,
   buildPriorityTree,
 } from "@/types/national-priorities";
+import { apiFetch } from '@/lib/api-fetch';
 
 // ============================================
 // TREE NODE COMPONENT
@@ -241,7 +242,7 @@ export function NationalPrioritiesManagement() {
         asTree: "false", // Get flat list first
       });
 
-      const response = await fetch(`/api/national-priorities?${params}`);
+      const response = await apiFetch(`/api/national-priorities?${params}`);
       const result = await response.json();
 
       if (!result.success) {

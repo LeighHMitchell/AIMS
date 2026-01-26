@@ -13,6 +13,7 @@ import { SectorTimeSeriesPanel } from '@/components/analytics/sectors/SectorTime
 import { SectorMetrics, SectorAnalyticsFilters, SectorAnalyticsResponse } from '@/types/sector-analytics'
 import { toast } from 'sonner'
 import { AlertCircle, RefreshCw, Download, PieChart } from 'lucide-react'
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function SectorAnalyticsPage() {
   const [data, setData] = useState<SectorMetrics[]>([])
@@ -55,7 +56,7 @@ export default function SectorAnalyticsPage() {
       }
       params.append('groupByLevel', filters.groupByLevel)
 
-      const response = await fetch(`/api/analytics/sectors-analytics?${params}`)
+      const response = await apiFetch(`/api/analytics/sectors-analytics?${params}`)
       const result: SectorAnalyticsResponse = await response.json()
 
       if (!result.success) {

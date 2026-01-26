@@ -48,6 +48,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
+import { apiFetch } from '@/lib/api-fetch';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ViewMode = "bar" | "pie" | "table";
@@ -169,7 +170,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
         params.set("dateTo", to.toISOString());
       }
 
-      const response = await fetch(`/api/analytics/top-donor-groups?${params}`);
+      const response = await apiFetch(`/api/analytics/top-donor-groups?${params}`);
       const result = await response.json();
 
       if (!result.success) {

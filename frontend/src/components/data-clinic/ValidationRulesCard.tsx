@@ -40,6 +40,7 @@ import type {
   ZeroPercentSectorActivity,
 } from '@/types/validation-rules';
 import { ACTIVITY_STATUS_LABELS } from '@/types/validation-rules';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ValidationRulesCardProps {
   organizationId: string;
@@ -147,7 +148,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/data-clinic/validation-rules?organization_id=${organizationId}`);
+      const response = await apiFetch(`/api/data-clinic/validation-rules?organization_id=${organizationId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch validation rules data');
       }

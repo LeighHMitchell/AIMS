@@ -1,3 +1,4 @@
+import { apiFetch } from '@/lib/api-fetch';
 /**
  * Analytics tracking utility for IATI import events
  * This is a simple implementation that can be extended with actual analytics providers
@@ -85,7 +86,7 @@ async function sendToAuditLog(event: AnalyticsEvent): Promise<void> {
       return;
     }
 
-    await fetch('/api/audit/log', {
+    await apiFetch('/api/audit/log', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

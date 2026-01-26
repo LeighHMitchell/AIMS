@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Link2, Plus, X, ExternalLink } from 'lucide-react';
 import ActivityCard from './ActivityCard';
 import LinkedActivityModal from './LinkedActivityModal';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface LinkedActivity {
   id: string;
@@ -42,7 +43,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
   const fetchLinkedActivities = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/linked`);
+      const response = await apiFetch(`/api/activities/${activityId}/linked`);
       if (!response.ok) throw new Error('Failed to fetch linked activities');
       
       const data = await response.json();
@@ -60,7 +61,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
     if (!confirm('Are you sure you want to remove this link?')) return;
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/linked/${linkId}`, {
+      const response = await apiFetch(`/api/activities/${activityId}/linked/${linkId}`, {
         method: 'DELETE'
       });
       
@@ -89,7 +90,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
       setSearching(true);
       try {
         // Use the search-activities API which returns both UUID and IATI ID
-        const response = await fetch(`/api/search-activities?q=${encodeURIComponent(query)}&exclude=${activityId}`);
+        const response = await apiFetch(`/api/search-activities?q=${encodeURIComponent(query)}&exclude=${activityId}`);
         if (!response.ok) throw new Error('Search failed');
         
         const data = await response.json();
@@ -131,7 +132,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
     
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/linked`, {
+      const response = await apiFetch(`/api/activities/${activityId}/linked`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

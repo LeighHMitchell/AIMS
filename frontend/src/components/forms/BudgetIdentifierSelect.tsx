@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import budgetIdentifiersData from "@/data/budget-identifiers.json";
 import { useDropdownState } from "@/contexts/DropdownContext";
 import { BudgetClassification, CLASSIFICATION_TYPE_LABELS } from "@/types/aid-on-budget";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface BudgetIdentifier {
   code: string;
@@ -59,7 +60,7 @@ export function BudgetIdentifierSelect({
   useEffect(() => {
     if (useCountryChartOfAccounts) {
       setLoadingClassifications(true);
-      fetch('/api/admin/budget-classifications?flat=true')
+      apiFetch('/api/admin/budget-classifications?flat=true')
         .then(res => res.json())
         .then(data => {
           if (data.success && data.data) {

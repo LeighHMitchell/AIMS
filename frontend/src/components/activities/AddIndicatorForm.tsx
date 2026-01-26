@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { MEASURE_TYPE_LABELS, MeasureType, REFERENCE_VOCABULARIES } from '@/types/results';
 import { MeasureTypeSearchableSelect } from '@/components/forms/MeasureTypeSearchableSelect';
 import { ResultVocabularySearchableSelect } from '@/components/forms/ResultVocabularySearchableSelect';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface AddIndicatorFormProps {
   resultId: string;
@@ -55,7 +56,7 @@ export function AddIndicatorForm({
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/results/${resultId}/indicators`, {
+      const response = await apiFetch(`/api/activities/${activityId}/results/${resultId}/indicators`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +105,7 @@ export function AddIndicatorForm({
         }
 
         try {
-          const baselineResponse = await fetch(`/api/activities/${activityId}/results/${resultId}/indicators/${responseData.id}/baseline`, {
+          const baselineResponse = await apiFetch(`/api/activities/${activityId}/results/${resultId}/indicators/${responseData.id}/baseline`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

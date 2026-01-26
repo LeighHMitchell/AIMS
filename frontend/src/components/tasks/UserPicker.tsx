@@ -18,6 +18,7 @@ import {
 import type { TaskUser, TaskOrganization, TaskAssignees } from '@/types/task';
 import { getTaskUserDisplayName } from '@/types/task';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UserPickerProps {
   userId: string;
@@ -214,7 +215,7 @@ function UserPickerInner({
     async function loadData() {
       try {
         setLoading(true);
-        const response = await fetch(`/api/users/taskable?userId=${userId}`);
+        const response = await apiFetch(`/api/users/taskable?userId=${userId}`);
 
         if (!mountedRef.current) return;
 

@@ -16,6 +16,7 @@ import {
 import { formatDistanceToNow, format, subDays } from "date-fns"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
 import { UserActivityPanel } from "./UserActivityPanel"
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UserActivityStats {
   userId: string
@@ -55,8 +56,8 @@ export function UserActivityDashboard() {
     setLoading(true)
     try {
       const [summaryRes, loginsRes] = await Promise.all([
-        fetch('/api/admin/user-activity?type=summary'),
-        fetch('/api/admin/user-activity?type=logins&limit=100')
+        apiFetch('/api/admin/user-activity?type=summary'),
+        apiFetch('/api/admin/user-activity?type=logins&limit=100')
       ])
       
       if (summaryRes.ok) {

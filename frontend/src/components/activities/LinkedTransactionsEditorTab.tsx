@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface LinkedTransaction {
   id: string;
@@ -59,7 +60,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
   const fetchLinkedTransactions = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/linked-transactions`);
+      const response = await apiFetch(`/api/activities/${activityId}/linked-transactions`);
       if (!response.ok) throw new Error('Failed to fetch linked transactions');
       
       const data = await response.json();

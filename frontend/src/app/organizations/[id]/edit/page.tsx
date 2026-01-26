@@ -7,6 +7,7 @@ import { OrganizationEditor } from '@/components/organizations/OrganizationEdito
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Organization {
   id?: string
@@ -62,7 +63,7 @@ export default function EditOrganizationPage() {
 
     const fetchOrganization = async () => {
       try {
-        const response = await fetch(`/api/organizations/${organizationId}`)
+        const response = await apiFetch(`/api/organizations/${organizationId}`)
         
         if (!response.ok) {
           if (response.status === 404) {

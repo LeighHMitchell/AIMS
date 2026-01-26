@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { apiFetch } from '@/lib/api-fetch';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     // Make internal API call to test the email change
     const baseUrl = request.nextUrl.origin;
-    const response = await fetch(`${baseUrl}/api/users/change-email-simple`, {
+    const response = await apiFetch(`${baseUrl}/api/users/change-email-simple`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

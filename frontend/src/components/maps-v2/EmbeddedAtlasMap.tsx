@@ -6,6 +6,7 @@ import { Map, MapControls, useMap } from '@/components/ui/map';
 import { MapMarker, MarkerContent, MarkerPopup, MarkerTooltip } from '@/components/ui/map';
 import { Badge } from '@/components/ui/badge';
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Simplified location interface for embedded map
 export interface EmbeddedLocation {
@@ -235,7 +236,7 @@ export default function EmbeddedAtlasMap({
   useEffect(() => {
     const fetchHomeCountry = async () => {
       try {
-        const response = await fetch('/api/admin/system-settings');
+        const response = await apiFetch('/api/admin/system-settings');
         if (response.ok) {
           const data = await response.json();
           if (data.homeCountry) {

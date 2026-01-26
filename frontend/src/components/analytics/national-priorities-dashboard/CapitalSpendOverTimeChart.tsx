@@ -56,6 +56,7 @@ import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
+import { apiFetch } from '@/lib/api-fetch';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ChartType = "bar" | "line" | "area" | "table";
@@ -188,7 +189,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
         params.set("dateTo", to.toISOString());
       }
 
-      const response = await fetch(`/api/analytics/capital-spend-over-time?${params}`);
+      const response = await apiFetch(`/api/analytics/capital-spend-over-time?${params}`);
       const result = await response.json();
 
       if (!result.success) {

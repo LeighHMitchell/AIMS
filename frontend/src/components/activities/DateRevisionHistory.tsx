@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { History, X, ArrowRight, Clock, User } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { format } from 'date-fns'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface DateChange {
   id: string
@@ -57,7 +58,7 @@ export function DateRevisionHistory({
     setError(null)
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/date-history`)
+      const response = await apiFetch(`/api/activities/${activityId}/date-history`)
       
       if (!response.ok) {
         throw new Error('Failed to fetch date history')

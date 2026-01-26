@@ -17,6 +17,7 @@ import {
   StatusIndicator,
   STATUS_THRESHOLDS
 } from '@/types/results';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Hook for managing activity results
 export function useResults(activityId: string) {
@@ -33,7 +34,7 @@ export function useResults(activityId: string) {
 
     try {
       // Use the API endpoint instead of direct Supabase calls
-      const response = await fetch(`/api/activities/${activityId}/results`);
+      const response = await apiFetch(`/api/activities/${activityId}/results`);
       const responseData = await response.json();
 
       if (!response.ok) {
@@ -77,7 +78,7 @@ export function useResults(activityId: string) {
   // Create a new result
   const createResult = useCallback(async (data: CreateResultData): Promise<ActivityResult | null> => {
     try {
-      const response = await fetch(`/api/activities/${data.activity_id}/results`, {
+      const response = await apiFetch(`/api/activities/${data.activity_id}/results`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ export function useResults(activityId: string) {
   // Update a result
   const updateResult = useCallback(async (resultId: string, data: UpdateResultData): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/activities/${activityId}/results/${resultId}`, {
+      const response = await apiFetch(`/api/activities/${activityId}/results/${resultId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +134,7 @@ export function useResults(activityId: string) {
   // Delete a result
   const deleteResult = useCallback(async (resultId: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/activities/${activityId}/results/${resultId}`, {
+      const response = await apiFetch(`/api/activities/${activityId}/results/${resultId}`, {
         method: 'DELETE',
       });
 

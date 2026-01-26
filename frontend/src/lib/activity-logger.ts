@@ -1,4 +1,5 @@
 import { ActivityLog } from '@/app/api/activity-logs/route';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface LogActivityParams {
   actionType: ActivityLog['actionType'];
@@ -77,7 +78,7 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
       }
     } else {
       // Client-side: use API endpoint
-      const response = await fetch('/api/activity-logs', {
+      const response = await apiFetch('/api/activity-logs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

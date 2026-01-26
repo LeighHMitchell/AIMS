@@ -12,6 +12,7 @@ import { useUser } from '@/hooks/useUser';
 import { MessageSquareIcon, SendIcon, Loader2Icon, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Upload, X, Image, FileText, Minus, CircleDot, AlertTriangle, Flame } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AppFeatureSearchableSelect } from '@/components/forms/AppFeatureSearchableSelect';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -161,7 +162,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         uploadFormData.append('file', selectedFile);
         uploadFormData.append('userId', user.id);
 
-        const uploadResponse = await fetch('/api/feedback/upload', {
+        const uploadResponse = await apiFetch('/api/feedback/upload', {
           method: 'POST',
           body: uploadFormData,
         });
@@ -179,7 +180,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       }
 
       // Submit feedback with attachment data
-      const response = await fetch('/api/feedback', {
+      const response = await apiFetch('/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

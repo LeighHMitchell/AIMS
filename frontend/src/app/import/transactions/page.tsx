@@ -7,10 +7,11 @@ import { FieldMapping, ImportResults } from '@/types/import';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function ImportTransactionsPage() {
   const handleImport = async (data: any[], mappings: FieldMapping[], fileName?: string): Promise<ImportResults> => {
-    const response = await fetch('/api/import/transactions/', {
+    const response = await apiFetch('/api/import/transactions/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

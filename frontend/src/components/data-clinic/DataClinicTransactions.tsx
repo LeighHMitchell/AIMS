@@ -32,6 +32,7 @@ import { format } from "date-fns";
 import { useUser } from "@/hooks/useUser";
 import { AidTypeSelect } from "@/components/forms/AidTypeSelect";
 import { DefaultFinanceTypeSelect } from "@/components/forms/DefaultFinanceTypeSelect";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Transaction Type mappings
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
@@ -135,7 +136,7 @@ export function DataClinicTransactions() {
 
   const fetchTransactionsWithGaps = async () => {
     try {
-      const res = await fetch('/api/data-clinic/transactions?missing_fields=true');
+      const res = await apiFetch('/api/data-clinic/transactions?missing_fields=true');
       if (!res.ok) throw new Error('Failed to fetch transactions');
       
       const data = await res.json();
@@ -194,7 +195,7 @@ export function DataClinicTransactions() {
 
   const handleInlineEdit = async (transactionId: string, field: string, value: string) => {
     try {
-      const res = await fetch(`/api/data-clinic/transactions/${transactionId}`, {
+      const res = await apiFetch(`/api/data-clinic/transactions/${transactionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ field, value, userId: user?.id })
@@ -222,7 +223,7 @@ export function DataClinicTransactions() {
     }
 
     try {
-      const res = await fetch('/api/data-clinic/bulk-update', {
+      const res = await apiFetch('/api/data-clinic/bulk-update', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

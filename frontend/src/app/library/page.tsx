@@ -53,6 +53,7 @@ import { DocumentTable } from "@/components/library/DocumentTable";
 import { AddDocumentModal } from "@/components/library/AddDocumentModal";
 import { EditDocumentModal } from "@/components/library/EditDocumentModal";
 import { DocumentPreviewModal } from "@/components/library/DocumentPreviewModal";
+import { apiFetch } from '@/lib/api-fetch';
 
 type ViewMode = 'card' | 'table';
 
@@ -160,7 +161,7 @@ export default function LibraryPage() {
         params.append('documentDateTo', filters.documentDateTo);
       }
 
-      const response = await fetch(`/api/library?${params.toString()}`);
+      const response = await apiFetch(`/api/library?${params.toString()}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch documents');
@@ -234,7 +235,7 @@ export default function LibraryPage() {
     }
 
     try {
-      const response = await fetch(`/api/library/${doc.id}`, {
+      const response = await apiFetch(`/api/library/${doc.id}`, {
         method: 'DELETE',
       });
 
@@ -265,7 +266,7 @@ export default function LibraryPage() {
     try {
       const results = await Promise.allSettled(
         standaloneIds.map(id =>
-          fetch(`/api/library/${id}`, { method: 'DELETE' })
+          apiFetch(`/api/library/${id}`, { method: 'DELETE' })
         )
       );
 

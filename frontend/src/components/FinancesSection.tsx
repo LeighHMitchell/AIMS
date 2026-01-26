@@ -6,6 +6,7 @@ import TransactionsManager from "@/components/TransactionsManager";
 import { Transaction } from "@/types/transaction";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useActivityDefaults } from "@/hooks/use-activity-defaults";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface FinancesSectionProps {
   activityId: string;
@@ -32,7 +33,7 @@ export default function FinancesSection({
       if (!activityId) return;
 
       try {
-        const response = await fetch(`/api/activities/${activityId}/budgets`);
+        const response = await apiFetch(`/api/activities/${activityId}/budgets`);
         if (response.ok) {
           const data = await response.json();
           setBudgets(data);
@@ -51,7 +52,7 @@ export default function FinancesSection({
       if (!activityId) return;
 
       try {
-        const response = await fetch(`/api/activities/${activityId}/planned-disbursements`);
+        const response = await apiFetch(`/api/activities/${activityId}/planned-disbursements`);
         if (response.ok) {
           const data = await response.json();
           setPlannedDisbursements(data);

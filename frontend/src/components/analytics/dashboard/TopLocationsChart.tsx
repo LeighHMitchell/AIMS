@@ -43,6 +43,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface LocationItem {
   id: string;
@@ -109,7 +110,7 @@ export function TopLocationsChart() {
       setError(null);
       
       const params = new URLSearchParams({ metric, topN: '10' });
-      const response = await fetch(`/api/analytics/top-locations?${params}`);
+      const response = await apiFetch(`/api/analytics/top-locations?${params}`);
       const result = await response.json();
 
       if (!result.success) {

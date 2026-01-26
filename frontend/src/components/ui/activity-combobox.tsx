@@ -16,6 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Activity {
   id: string;
@@ -93,7 +94,7 @@ export function ActivityCombobox({
       // Fetch the specific activity
       console.log('[ActivityCombobox] Fetching activity:', value);
       try {
-        const response = await fetch(`/api/activities/${value}`);
+        const response = await apiFetch(`/api/activities/${value}`);
         if (response.ok) {
           const activity = await response.json();
           console.log('[ActivityCombobox] Fetched activity:', activity.title_narrative || activity.title);

@@ -69,6 +69,7 @@ import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { IATI_LOCATION_TYPE_GROUPS } from '@/data/iati-location-types';
 import { countries } from '@/data/countries';
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates';
+import { apiFetch } from '@/lib/api-fetch';
 
 const LocationMap = dynamic(() => import('./LocationMap'), {
   ssr: false,
@@ -627,7 +628,7 @@ export default function LocationModal({
   useEffect(() => {
     const fetchHomeCountry = async () => {
       try {
-        const response = await fetch('/api/admin/system-settings')
+        const response = await apiFetch('/api/admin/system-settings')
         if (response.ok) {
           const data = await response.json()
           if (data.homeCountry) {

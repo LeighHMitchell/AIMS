@@ -32,6 +32,7 @@ import {
   Download
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ParseResult {
   activities: any[];
@@ -121,7 +122,7 @@ export default function IATIImportEnhancedPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/iati/parse', {
+      const response = await apiFetch('/api/iati/parse', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -370,7 +371,7 @@ export default function IATIImportEnhancedPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/iati/import-enhanced', {
+      const response = await apiFetch('/api/iati/import-enhanced', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -453,7 +454,7 @@ export default function IATIImportEnhancedPage() {
   // Fetch organizations for assignment
   const fetchOrganizations = async () => {
     try {
-      const response = await fetch('/api/organizations');
+      const response = await apiFetch('/api/organizations');
       if (response.ok) {
         const orgs = await response.json();
         setExistingOrganizations(orgs);

@@ -80,6 +80,7 @@ import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { DISBURSEMENT_CHANNEL_TYPES } from '@/data/disbursement-channel-types';
 import { IATI_ORGANIZATION_TYPES } from '@/data/iati-organization-types';
 import { exportToCSV } from '@/lib/csv-export';
+import { apiFetch } from '@/lib/api-fetch';
 
 // IATI Transaction Type Definitions
 const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
@@ -738,7 +739,7 @@ export default function TransactionList({
     }
 
     try {
-      const response = await fetch(`/api/transactions/documents?transactionId=${encodeURIComponent(transactionIdOrUuid)}`);
+      const response = await apiFetch(`/api/transactions/documents?transactionId=${encodeURIComponent(transactionIdOrUuid)}`);
       if (response.ok) {
         const data = await response.json();
         setTransactionDocuments(prev => ({
@@ -764,7 +765,7 @@ export default function TransactionList({
   React.useEffect(() => {
     async function fetchActivityIdentifiers() {
       try {
-        const response = await fetch(`/api/activities/${activityId}/basic`);
+        const response = await apiFetch(`/api/activities/${activityId}/basic`);
         if (response.ok) {
           const data = await response.json();
           setActivityIdentifiers({

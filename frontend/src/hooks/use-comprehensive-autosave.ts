@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { autosaveDebugger } from '@/utils/autosave-debugger';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface AutosaveState {
   isAutoSaving: boolean;
@@ -305,9 +306,8 @@ export function useComprehensiveAutosave(
           return false;
         }
         
-        const response = await fetch('/api/activities', {
+        const response = await apiFetch('/api/activities', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: minimalPayloadString
         });
         
@@ -336,9 +336,8 @@ export function useComprehensiveAutosave(
       // 🔧 DEBUG: Log network request
       autosaveDebugger.logNetworkRequest('/api/activities', 'POST', payload);
       
-      const response = await fetch('/api/activities', {
+      const response = await apiFetch('/api/activities', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: payloadString
       });
 

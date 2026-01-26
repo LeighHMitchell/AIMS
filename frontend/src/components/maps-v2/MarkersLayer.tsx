@@ -178,7 +178,7 @@ function LocationMarker({ location }: { location: LocationData }) {
     if (map) {
       map.flyTo({
         center: [lng, lat],
-        zoom: 18, // Maximum useful zoom level for most map tiles
+        zoom: 14, // Safe zoom level that works with satellite imagery
         duration: 1500,
       });
     }

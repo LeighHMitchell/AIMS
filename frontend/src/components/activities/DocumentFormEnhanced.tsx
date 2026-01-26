@@ -38,6 +38,7 @@ import {
   isImageMime,
   validateIatiDocument,
 } from '@/lib/iatiDocumentLink';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface DocumentFormEnhancedProps {
   isOpen: boolean;
@@ -227,7 +228,7 @@ export function DocumentFormEnhanced({
       setThumbnailError(null);
       
       try {
-        const response = await fetch('/api/documents/generate-thumbnail', {
+        const response = await apiFetch('/api/documents/generate-thumbnail', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

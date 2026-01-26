@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 import { Loader2 } from 'lucide-react';
 import { getHomeRouteFromApiData } from '@/lib/navigation-utils';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Determine the auth type from URL parameters
 type AuthType = 'oauth' | 'signup' | 'recovery' | 'magiclink' | 'unknown';
@@ -140,7 +141,7 @@ export default function AuthCallbackPage() {
       console.log('[Auth Callback] Payload:', JSON.stringify(payload, null, 2));
       
       try {
-        const response = await fetch('/api/auth/create-oauth-user', {
+        const response = await apiFetch('/api/auth/create-oauth-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),

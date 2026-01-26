@@ -73,6 +73,7 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingText } from "@/components/ui/loading-text";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Transaction type to icon mapping (IATI Standard v2.03)
 const TRANSACTION_TYPE_ICONS: Record<string, React.FC<any>> = {
@@ -381,7 +382,7 @@ export function TransactionTable({
     setLoadingActivities(prev => new Set(prev).add(activityId));
     
     try {
-      const response = await fetch(`/api/activities/${activityId}`);
+      const response = await apiFetch(`/api/activities/${activityId}`);
       if (response.ok) {
         const activity = await response.json();
         setActivityDetails(prev => ({

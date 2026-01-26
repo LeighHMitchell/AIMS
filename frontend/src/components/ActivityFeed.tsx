@@ -26,6 +26,7 @@ import {
   AlertCircle,
   Clock,
 } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Icon mapping for different action types
 const getActionIcon = (actionType: string, entityType?: string) => {
@@ -160,7 +161,7 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
         limit: limit.toString(),
       });
 
-      const response = await fetch(`/api/activity-logs?${params}`);
+      const response = await apiFetch(`/api/activity-logs?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch activity logs');
       }

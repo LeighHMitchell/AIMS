@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Key, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ResetPasswordModalProps {
   isOpen: boolean;
@@ -85,7 +86,7 @@ export function ResetPasswordModal({
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/users/reset-password', {
+      const response = await apiFetch('/api/users/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

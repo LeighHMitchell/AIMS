@@ -51,6 +51,7 @@ import { useRolodexData } from '@/components/rolodex/useRolodexData';
 import { LoadingText } from '@/components/ui/loading-text';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api-fetch';
 
 type ViewMode = 'grid' | 'table';
 
@@ -165,8 +166,7 @@ export default function RolodexPage() {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(
-        `/api/rolodex?id=${deleteContact.id}&source=${deleteContact.source}`,
+      const response = await apiFetch(`/api/rolodex?id=${deleteContact.id}&source=${deleteContact.source}`,
         { method: 'DELETE' }
       );
 

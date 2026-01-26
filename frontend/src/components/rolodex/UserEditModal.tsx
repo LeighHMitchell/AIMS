@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProfilePhotoUpload } from '@/components/ProfilePhotoUpload';
 import { toast } from 'sonner';
 import { Loader2, Camera, Building2, User, Mail, Phone, Briefcase } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UserEditModalProps {
   person: RolodexPerson;
@@ -74,7 +75,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        const response = await fetch('/api/organizations');
+        const response = await apiFetch('/api/organizations');
         if (response.ok) {
           const orgs = await response.json();
           setOrganizations(orgs);
@@ -128,7 +129,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
 
       console.log('Updating user with data:', updateData);
 
-      const response = await fetch('/api/users/update', {
+      const response = await apiFetch('/api/users/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

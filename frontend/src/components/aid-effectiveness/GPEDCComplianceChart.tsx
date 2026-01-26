@@ -21,6 +21,7 @@ import {
   Radar,
   Cell
 } from 'recharts'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface GPEDCIndicator {
   indicator: string
@@ -85,7 +86,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
         detailed: detailed.toString()
       })
 
-      const response = await fetch(`/api/aid-effectiveness/gpedc-compliance?${params}`)
+      const response = await apiFetch(`/api/aid-effectiveness/gpedc-compliance?${params}`)
       
       if (response.ok) {
         const result = await response.json()

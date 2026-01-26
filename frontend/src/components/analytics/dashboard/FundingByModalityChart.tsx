@@ -47,6 +47,7 @@ import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Color palette for modalities (matching project palette)
 const MODALITY_COLORS: Record<string, string> = {
@@ -130,7 +131,7 @@ export function FundingByModalityChart() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/analytics/funding-by-modality?type=${transactionType}`);
+      const response = await apiFetch(`/api/analytics/funding-by-modality?type=${transactionType}`);
       const result = await response.json();
 
       if (!result.success) {

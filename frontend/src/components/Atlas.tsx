@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { apiFetch } from '@/lib/api-fetch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -70,6 +71,51 @@ const MAP_STYLES = {
     light: 'https://tiles.openfreemap.org/styles/liberty',
     dark: 'https://tiles.openfreemap.org/styles/liberty',
   },
+  satellite_imagery: {
+    name: 'Satellite Imagery',
+    light: {
+      version: 8 as const,
+      sources: {
+        'esri-satellite': {
+          type: 'raster' as const,
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+          ],
+          tileSize: 256,
+          attribution: '© Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+          maxzoom: 19
+        }
+      },
+      layers: [{
+        id: 'esri-satellite-layer',
+        type: 'raster' as const,
+        source: 'esri-satellite',
+        minzoom: 0,
+        maxzoom: 22
+      }]
+    },
+    dark: {
+      version: 8 as const,
+      sources: {
+        'esri-satellite': {
+          type: 'raster' as const,
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+          ],
+          tileSize: 256,
+          attribution: '© Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+          maxzoom: 19
+        }
+      },
+      layers: [{
+        id: 'esri-satellite-layer',
+        type: 'raster' as const,
+        source: 'esri-satellite',
+        minzoom: 0,
+        maxzoom: 22
+      }]
+    }
+  },
 };
 
 type MapStyleKey = keyof typeof MAP_STYLES;
@@ -138,6 +184,7 @@ function Map3DController({
   const { map, isLoaded } = useMap();
   const [pitch, setPitch] = useState(0);
   const [bearing, setBearing] = useState(0);
+  const [zoom, setZoom] = useState(homeCountryZoom);
 
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -145,9 +192,12 @@ function Map3DController({
     const handleMove = () => {
       setPitch(Math.round(map.getPitch()));
       setBearing(Math.round(map.getBearing()));
+      setZoom(Math.round(map.getZoom() * 10) / 10); // Round to 1 decimal place
     };
 
     map.on('move', handleMove);
+    // Set initial zoom
+    setZoom(Math.round(map.getZoom() * 10) / 10);
     return () => {
       map.off('move', handleMove);
     };
@@ -221,12 +271,15 @@ function Map3DController({
           <RotateCcw className="h-4 w-4" />
         </Button>
       </div>
-      {is3DMode && (
-        <div className="absolute top-full left-0 mt-1.5 rounded-md bg-white/90 backdrop-blur px-2 py-1 text-[10px] font-mono border border-gray-300 shadow-md flex gap-2 whitespace-nowrap z-[1]">
-          <span className="text-gray-600">Pitch: {pitch}°</span>
-          <span className="text-gray-600">Bearing: {bearing}°</span>
-        </div>
-      )}
+      <div className="absolute top-full left-0 mt-1.5 rounded-md bg-white/90 backdrop-blur px-2 py-1 text-[10px] font-mono border border-gray-300 shadow-md flex gap-2 whitespace-nowrap z-[1]">
+        <span className="text-gray-600">Zoom: {zoom}</span>
+        {is3DMode && (
+          <>
+            <span className="text-gray-600">Pitch: {pitch}°</span>
+            <span className="text-gray-600">Bearing: {bearing}°</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -309,7 +362,7 @@ export default function Atlas() {
   useEffect(() => {
     const fetchHomeCountry = async () => {
       try {
-        const response = await fetch('/api/admin/system-settings')
+        const response = await apiFetch('/api/admin/system-settings')
         if (response.ok) {
           const data = await response.json()
           if (data.homeCountry) {
@@ -361,7 +414,7 @@ export default function Atlas() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch('/api/locations');
+        const response = await apiFetch('/api/locations');
         const data = await response.json();
         
         if (!response.ok) {
@@ -395,7 +448,7 @@ export default function Atlas() {
         if (statusFilter.length > 0) statusFilter.forEach(s => params.append('status', s));
         if (orgFilter.length > 0) orgFilter.forEach(o => params.append('organization', o));
         
-        const response = await fetch(`/api/subnational-breakdowns?${params}`);
+        const response = await apiFetch(`/api/subnational-breakdowns?${params}`);
         const data = await response.json();
         
         if (!response.ok) {
@@ -776,6 +829,7 @@ export default function Atlas() {
                 
                 {/* MapLibre Map */}
                 <Map
+                  key={mapStyle === 'satellite_imagery' ? 'satellite' : 'standard'}
                   styles={{
                     light: MAP_STYLES[mapStyle].light,
                     dark: MAP_STYLES[mapStyle].dark,
@@ -783,8 +837,9 @@ export default function Atlas() {
                   center={[homeCountryCenter[1], homeCountryCenter[0]]} // MapLibre uses [lng, lat]
                   zoom={homeCountryZoom}
                   minZoom={2}
-                  maxZoom={18}
+                  maxZoom={mapStyle === 'satellite_imagery' ? 14.9 : 18}
                 >
+                  
                   {/* 3D/Reset Controls - positioned inside Map context on same line as filters */}
                   <div className="absolute top-3 right-[290px] z-[1001]">
                     <Map3DController 

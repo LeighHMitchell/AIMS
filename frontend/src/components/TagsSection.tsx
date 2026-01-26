@@ -13,6 +13,7 @@ import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
 import { LoadingText } from '@/components/ui/loading-text';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Enhanced Tag interface with metadata
 interface Tag {
@@ -84,7 +85,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
   const fetchTags = useCallback(async (query: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/tags?q=${encodeURIComponent(query)}`);
+      const response = await apiFetch(`/api/tags?q=${encodeURIComponent(query)}`);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(errorData.error || `HTTP ${response.status}`);
@@ -141,7 +142,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
     if (apiAvailable && activityId) {
       try {
         // Step 1: Create or get the tag
-        const response = await fetch('/api/tags', {
+        const response = await apiFetch('/api/tags', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -165,7 +166,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
         }
         
         // Step 2: Link the tag to the activity
-        const linkResponse = await fetch(`/api/activities/${activityId}/tags`, {
+        const linkResponse = await apiFetch(`/api/activities/${activityId}/tags`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -219,7 +220,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
     if (apiAvailable && activityId && !tagId.startsWith('local-')) {
       try {
         // Remove the tag-activity relationship
-        const response = await fetch(`/api/activities/${activityId}/tags/${tagId}`, {
+        const response = await apiFetch(`/api/activities/${activityId}/tags/${tagId}`, {
           method: 'DELETE'
         });
 

@@ -48,6 +48,7 @@ import {
   FAQ_QUESTION_STATUS_LABELS,
   FAQ_QUESTION_STATUS_COLORS,
 } from '@/types/faq-enhanced';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Helper function to get user display name
 const getUserDisplayName = (user?: { first_name?: string; last_name?: string; email?: string }) => {
@@ -136,7 +137,7 @@ export function FAQManagement() {
       params.append('page', currentPage.toString());
       params.append('pageSize', pageSize.toString());
 
-      const response = await fetch(`/api/faq/questions?${params}`);
+      const response = await apiFetch(`/api/faq/questions?${params}`);
       if (response.ok) {
         const data = await response.json();
         setQuestions(data.data || []);
@@ -211,7 +212,7 @@ export function FAQManagement() {
   // Update question
   const updateQuestion = async (id: string, updates: Partial<FAQQuestion>) => {
     try {
-      const response = await fetch(`/api/faq/questions/${id}`, {
+      const response = await apiFetch(`/api/faq/questions/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -234,7 +235,7 @@ export function FAQManagement() {
   // Publish question as FAQ
   const publishQuestion = async (questionId: string, answer: string, category: string) => {
     try {
-      const response = await fetch(`/api/faq/questions/${questionId}/publish`, {
+      const response = await apiFetch(`/api/faq/questions/${questionId}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ answer, category }),
@@ -259,7 +260,7 @@ export function FAQManagement() {
     if (!confirm('Are you sure you want to delete this question?')) return;
 
     try {
-      const response = await fetch(`/api/faq/questions/${id}`, {
+      const response = await apiFetch(`/api/faq/questions/${id}`, {
         method: 'DELETE',
       });
 
@@ -285,7 +286,7 @@ export function FAQManagement() {
 
     setIsBatchDeleting(true);
     try {
-      const response = await fetch('/api/faq/questions', {
+      const response = await apiFetch('/api/faq/questions', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: Array.from(selectedIds) }),

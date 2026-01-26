@@ -77,6 +77,7 @@ import {
   Search,
   DownloadCloud,
 } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface IatiImportTabProps {
   activityId: string;
@@ -1054,7 +1055,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       }
       
       try {
-        const response = await fetch(`/api/organizations/${user.organizationId}/iati-import-preferences`);
+        const response = await apiFetch(`/api/organizations/${user.organizationId}/iati-import-preferences`);
         if (response.ok) {
           const prefs = await response.json();
           setOrgPreferences(prefs);
@@ -1490,7 +1491,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         try {
           // Query organizations table to get IATI org ID
           const orgName = user?.organisation || user?.organization?.name || '';
-          const response = await fetch(`/api/organizations?search=${encodeURIComponent(orgName || '')}`);
+          const response = await apiFetch(`/api/organizations?search=${encodeURIComponent(orgName || '')}`);
           
           if (response.ok) {
             const data = await response.json();
@@ -1583,7 +1584,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         
         console.log('[XmlImportTab] Fetching current activity locations...');
         
-        const locationsResponse = await fetch(`/api/activities/${activityId}/locations`);
+        const locationsResponse = await apiFetch(`/api/activities/${activityId}/locations`);
         
         const locationsData = locationsResponse.ok ? await locationsResponse.json() : { locations: [] };
         currentLocations = locationsData.locations || [];
@@ -1593,7 +1594,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         // Fetch current participating organizations
         console.log('[XmlImportTab] Fetching current participating organizations...');
         
-        const participatingOrgsResponse = await fetch(`/api/activities/${activityId}/participating-organizations`);
+        const participatingOrgsResponse = await apiFetch(`/api/activities/${activityId}/participating-organizations`);
         
         currentParticipatingOrgs = participatingOrgsResponse.ok ? await participatingOrgsResponse.json() : [];
         
@@ -1635,12 +1636,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         // If basic endpoint fails, try the full endpoint as fallback
         try {
           console.log('[XmlImportTab] Trying full endpoint as fallback');
-          const response = await fetch(`/api/activities/${activityId}`);
+          const response = await apiFetch(`/api/activities/${activityId}`);
           if (response.ok) {
             const data = await response.json();
             
             // Also try to fetch participating orgs in fallback
-            const participatingOrgsResponse = await fetch(`/api/activities/${activityId}/participating-organizations`);
+            const participatingOrgsResponse = await apiFetch(`/api/activities/${activityId}/participating-organizations`);
             const currentParticipatingOrgs = participatingOrgsResponse.ok ? await participatingOrgsResponse.json() : [];
             
             setCurrentActivityData({
@@ -1784,7 +1785,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       console.log('[XML Import Debug] Fetch API endpoint:', '/api/xml/fetch');
       
       // Use our server-side API to fetch the XML
-      const response = await fetch('/api/xml/fetch', {
+      const response = await apiFetch('/api/xml/fetch', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3373,7 +3374,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         // Fetch existing policy markers to populate current values
         let existingPolicyMarkers = [];
         try {
-          const policyMarkersResponse = await fetch(`/api/activities/${activityId}/policy-markers`);
+          const policyMarkersResponse = await apiFetch(`/api/activities/${activityId}/policy-markers`);
           if (policyMarkersResponse.ok) {
             existingPolicyMarkers = await policyMarkersResponse.json();
             console.log('[XML Import] Fetched existing policy markers:', existingPolicyMarkers);
@@ -3459,7 +3460,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         // Fetch existing tags on this activity
         let existingTags: any[] = [];
         try {
-          const tagsResponse = await fetch(`/api/activities/${activityId}/tags`);
+          const tagsResponse = await apiFetch(`/api/activities/${activityId}/tags`);
           if (tagsResponse.ok) {
             existingTags = await tagsResponse.json();
             console.log('[XML Import] Fetched existing tags:', existingTags);
@@ -3714,7 +3715,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         let existingLinkedActivities: any[] = [];
         if (activityId) {
           try {
-            const linkedResponse = await fetch(`/api/activities/${activityId}/linked`);
+            const linkedResponse = await apiFetch(`/api/activities/${activityId}/linked`);
             if (linkedResponse.ok) {
               existingLinkedActivities = await linkedResponse.json();
               console.log(`[XML Import] Found ${existingLinkedActivities.length} existing linked activities`);
@@ -3900,7 +3901,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             let existingAct = null;
             if (meta.iatiId) {
               try {
-                const searchResponse = await fetch(`/api/activities/search?iatiId=${encodeURIComponent(meta.iatiId)}`);
+                const searchResponse = await apiFetch(`/api/activities/search?iatiId=${encodeURIComponent(meta.iatiId)}`);
                 if (searchResponse.ok) {
                   const searchData = await searchResponse.json();
                   if (searchData.activities && searchData.activities.length > 0) {
@@ -4183,7 +4184,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         // Create a single new activity
         console.log('[Multi-Activity Import] Create new mode - single activity');
         
-        const response = await fetch('/api/activities/bulk-import-iati', {
+        const response = await apiFetch('/api/activities/bulk-import-iati', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -4215,7 +4216,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         // Bulk create multiple activities
         console.log('[Multi-Activity Import] Bulk create mode - creating', selectedActivityIndices.length, 'activities');
         
-        const response = await fetch('/api/activities/bulk-import-iati', {
+        const response = await apiFetch('/api/activities/bulk-import-iati', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -4294,7 +4295,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     setIatiSearchResults([]);
     
     try {
-      const response = await fetch('/api/iati/search', {
+      const response = await apiFetch('/api/iati/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -4355,7 +4356,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
     setIsFetchingXmlFromDatastore(true);
     
     try {
-      const response = await fetch(`/api/iati/activity/${encodeURIComponent(activity.iatiIdentifier)}`);
+      const response = await apiFetch(`/api/iati/activity/${encodeURIComponent(activity.iatiIdentifier)}`);
       
       if (!response.ok) {
         let errorMessage = 'Failed to fetch activity XML';
@@ -4502,7 +4503,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       const userPublisherRefs: string[] = [];
       if (user?.organizationId) {
         try {
-          const orgResponse = await fetch(`/api/organizations/${user.organizationId}`);
+          const orgResponse = await apiFetch(`/api/organizations/${user.organizationId}`);
           if (orgResponse.ok) {
             const org = await orgResponse.json();
             if (org.iati_identifier) userPublisherRefs.push(org.iati_identifier);
@@ -5436,7 +5437,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
       }
       
-      const response = await fetch(`/api/activities/${activityId}`, {
+      const response = await apiFetch(`/api/activities/${activityId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -5496,7 +5497,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           console.log('[XML Import] Saving other identifiers:', otherIdentifiersData);
 
           // Save using the field API
-          const otherIdentifiersResponse = await fetch(`/api/activities/field`, {
+          const otherIdentifiersResponse = await apiFetch(`/api/activities/field`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -5674,7 +5675,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 // Sectors are valid, proceed with import
             
             try {
-              const sectorResponse = await fetch(`/api/activities/${activityId}/sectors`, {
+              const sectorResponse = await apiFetch(`/api/activities/${activityId}/sectors`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -5781,7 +5782,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 // Perform reverse geocoding to populate address fields
                 try {
                   console.log(`[XML Import] Reverse geocoding coordinates: ${latitude}, ${longitude}`);
-                  const geocodeResponse = await fetch(`/api/geocoding/reverse?lat=${latitude}&lon=${longitude}`);
+                  const geocodeResponse = await apiFetch(`/api/geocoding/reverse?lat=${latitude}&lon=${longitude}`);
                   
                   if (geocodeResponse.ok) {
                     const geocodeData = await geocodeResponse.json();
@@ -5834,7 +5835,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             coordinates: loc.latitude && loc.longitude ? `${loc.latitude}, ${loc.longitude}` : null
           }));
           
-          const locationsResponse = await fetch(`/api/activities/${activityId}/locations`, {
+          const locationsResponse = await apiFetch(`/api/activities/${activityId}/locations`, {
             method: 'PUT',  // Changed from POST to PUT for batch import
             headers: {
               'Content-Type': 'application/json',
@@ -5878,7 +5879,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
 
         try {
-          const fssResponse = await fetch(`/api/activities/${activityId}/import-fss`, {
+          const fssResponse = await apiFetch(`/api/activities/${activityId}/import-fss`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -5917,7 +5918,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         });
 
         try {
-          const docResponse = await fetch(`/api/activities/${activityId}/documents/import`, {
+          const docResponse = await apiFetch(`/api/activities/${activityId}/documents/import`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -5969,7 +5970,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           // Fetch existing contacts for deduplication
           let existingContacts: any[] = [];
           try {
-            const existingResponse = await fetch(`/api/activities/${activityId}/contacts`);
+            const existingResponse = await apiFetch(`/api/activities/${activityId}/contacts`);
             if (existingResponse.ok) {
               existingContacts = await existingResponse.json();
             }
@@ -5988,7 +5989,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           });
 
           // Save using field API
-          const contactsResponse = await fetch(`/api/activities/field`, {
+          const contactsResponse = await apiFetch(`/api/activities/field`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -6033,7 +6034,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         try {
           console.log('[XML Import] Saving humanitarian data:', updateData.importedHumanitarian);
 
-          const humanitarianResponse = await fetch(`/api/activities/${activityId}/humanitarian`, {
+          const humanitarianResponse = await apiFetch(`/api/activities/${activityId}/humanitarian`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -6078,7 +6079,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
         try {
           // Clear existing budgets to avoid duplicates
-          const clearResponse = await fetch(`/api/activities/${activityId}/budgets`, {
+          const clearResponse = await apiFetch(`/api/activities/${activityId}/budgets`, {
             method: 'DELETE'
           });
           
@@ -6101,7 +6102,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 value_date: budget.valueDate || budget.period?.start
               };
 
-              const response = await fetch(`/api/activities/${activityId}/budgets`, {
+              const response = await apiFetch(`/api/activities/${activityId}/budgets`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(budgetData)
@@ -6236,7 +6237,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           // Fetch and create organizations if needed
           if (pdUniqueOrgRefs.size > 0 || pdUniqueOrgNames.size > 0) {
             try {
-              const orgsResponse = await fetch('/api/organizations');
+              const orgsResponse = await apiFetch('/api/organizations');
               if (orgsResponse.ok) {
                 const allOrgs = await orgsResponse.json();
                 console.log(`[IATI Import] Fetched ${allOrgs.length} organizations for planned disbursements`);
@@ -6271,7 +6272,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   for (const ref of missingOrgRefs) {
                     const orgName = pdOrgRefToNameMap.get(ref) || ref;
                     try {
-                      const createResponse = await fetch('/api/organizations', {
+                      const createResponse = await apiFetch('/api/organizations', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -6300,7 +6301,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
                   for (const name of missingOrgNames) {
                     try {
-                      const createResponse = await fetch('/api/organizations', {
+                      const createResponse = await apiFetch('/api/organizations', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -6328,7 +6329,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           }
           
           // Clear existing planned disbursements to avoid duplicates
-          const clearResponse = await fetch(`/api/activities/${activityId}/planned-disbursements`, {
+          const clearResponse = await apiFetch(`/api/activities/${activityId}/planned-disbursements`, {
             method: 'DELETE'
           });
           
@@ -6368,7 +6369,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 value_date: disbursement.valueDate || disbursement.period?.start
               };
 
-              const response = await fetch(`/api/activities/${activityId}/planned-disbursements`, {
+              const response = await apiFetch(`/api/activities/${activityId}/planned-disbursements`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(disbursementData)
@@ -6433,7 +6434,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           
           // First, fetch available policy markers from database to match IATI codes
           captureConsoleLog(`[XML Import] Fetching policy markers for activity: ${activityId}`);
-          const policyMarkersResponse = await fetch(`/api/policy-markers?activity_id=${activityId}`);
+          const policyMarkersResponse = await apiFetch(`/api/policy-markers?activity_id=${activityId}`);
           
           if (!policyMarkersResponse.ok) {
             const errorText = await policyMarkersResponse.text();
@@ -6568,7 +6569,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
                 try {
                   // Create custom policy marker
-                  const createResponse = await fetch('/api/policy-markers', {
+                  const createResponse = await apiFetch('/api/policy-markers', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
@@ -6632,7 +6633,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             });
             
             captureConsoleLog(`[XML Import] Sending policy markers to API:`, importedPolicyMarkers);
-              const importResponse = await fetch(`/api/activities/${activityId}/policy-markers`, {
+              const importResponse = await apiFetch(`/api/activities/${activityId}/policy-markers`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -6725,7 +6726,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               
               try {
                 // Create tag with IATI vocabulary info
-                const tagResponse = await fetch('/api/tags', {
+                const tagResponse = await apiFetch('/api/tags', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
@@ -6751,7 +6752,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 console.log('[XML Import] Tag created/found:', tag);
                 
                 // Link tag to activity
-                const linkResponse = await fetch(`/api/activities/${activityId}/tags`, {
+                const linkResponse = await apiFetch(`/api/activities/${activityId}/tags`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ tag_id: tag.id })
@@ -6833,7 +6834,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           if (parsedActivity.results && parsedActivity.results.length > 0) {
             console.log(`[XML Import] Importing ${parsedActivity.results.length} result(s)...`);
             
-            const importResponse = await fetch(`/api/activities/${activityId}/results/import`, {
+            const importResponse = await apiFetch(`/api/activities/${activityId}/results/import`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -7059,7 +7060,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           // Fetch all organizations and filter for matching IATI IDs
           if (uniqueOrgRefs.size > 0) {
             try {
-              const orgsResponse = await fetch('/api/organizations');
+              const orgsResponse = await apiFetch('/api/organizations');
               if (orgsResponse.ok) {
                 const allOrgs = await orgsResponse.json();
                 console.log(`[XML Import] Fetched ${allOrgs.length} organizations for lookup`);
@@ -7083,7 +7084,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   for (const ref of missingOrgRefs) {
                     const orgName = orgRefToNameMap.get(ref) || ref;
                     try {
-                      const createResponse = await fetch('/api/organizations', {
+                      const createResponse = await apiFetch('/api/organizations', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -7167,7 +7168,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               console.log('[XML Import] Prepared transaction data:', transactionData);
               console.log('[XML Import] Calling API to create transaction...');
 
-              const apiRes = await fetch(`/api/activities/${activityId}/transactions`, {
+              const apiRes = await apiFetch(`/api/activities/${activityId}/transactions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(transactionData)
@@ -7475,7 +7476,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
           // Clear existing participating organizations to avoid duplicates
           console.log('[XML Import] Clearing existing participating organizations...');
-          const clearResponse = await fetch(`/api/activities/${activityId}/participating-organizations`, {
+          const clearResponse = await apiFetch(`/api/activities/${activityId}/participating-organizations`, {
             method: 'DELETE'
           });
           
@@ -7535,8 +7536,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               
               console.log('[XML Import] Creating participating org with data:', requestBody);
               
-              const participatingOrgResponse = await fetch(
-                `/api/activities/${activityId}/participating-organizations`,
+              const participatingOrgResponse = await apiFetch(`/api/activities/${activityId}/participating-organizations`,
                 {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -7700,7 +7700,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 narrative: `Imported from XML - ${relatedActivityData.relationshipTypeLabel}`
               };
 
-              const createResponse = await fetch(`/api/activities/${activityId}/linked`, {
+              const createResponse = await apiFetch(`/api/activities/${activityId}/linked`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(relationshipData)
@@ -9778,7 +9778,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 case 'reference':
                   // Create read-only reference
                   toast.info('Creating read-only reference...');
-                  response = await fetch('/api/iati/reference', {
+                  response = await apiFetch('/api/iati/reference', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -9801,7 +9801,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 case 'fork':
                   // Create editable copy
                   toast.info('Creating local draft copy...');
-                  response = await fetch('/api/iati/fork', {
+                  response = await apiFetch('/api/iati/fork', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -9826,7 +9826,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                   // Link to existing activity
                   if (targetActivityId) {
                     toast.info('Linking to existing activity...');
-                    response = await fetch('/api/iati/merge', {
+                    response = await apiFetch('/api/iati/merge', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({

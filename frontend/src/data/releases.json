@@ -1,6 +1,24 @@
 {
-  "currentVersion": "1.3.0",
+  "currentVersion": "1.4.0",
   "releases": [
+    {
+      "version": "1.4.0",
+      "date": "2026-01-26",
+      "changes": [
+        "New Government Readiness Checklist feature for tracking preparatory milestones before project validation",
+        "Dynamic checklist items based on financing type (Loan/Grant/TA/Mixed) and financing modality",
+        "Six-stage readiness workflow: Project Identification, Appraisal, Negotiation, Approval, Effectiveness, Implementation",
+        "Document upload support for checklist evidence with automatic status completion",
+        "Stage sign-off functionality with signature tracking for formal approval workflow",
+        "Integrated Endorsement Details section with validation status, validating authority, and date tracking",
+        "Validating Authority dropdown now pulls actual government organizations from database with logos and acronyms",
+        "Admin panel for managing readiness templates and checklist items",
+        "Enhanced date picker component with portal rendering for reliable popup display",
+        "Auto-save functionality for all readiness checklist fields",
+        "Lucide icons added to validation status and financing type/modality dropdowns",
+        "Government Endorsement tab merged into Readiness Checklist for streamlined workflow"
+      ]
+    },
     {
       "version": "1.3.0",
       "date": "2026-01-26",

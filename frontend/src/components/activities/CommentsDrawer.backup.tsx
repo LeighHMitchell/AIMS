@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EnhancedActivityComments } from './EnhancedActivityComments';
 import { MessageSquare, X } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface CommentsDrawerProps {
   activityId: string;
@@ -32,7 +33,7 @@ export function CommentsDrawer({
 
   const fetchUnreadCount = async () => {
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments/unread-count`);
+      const response = await apiFetch(`/api/activities/${activityId}/comments/unread-count`);
       if (response.ok) {
         const data = await response.json();
         setUnreadCount(data.count || 0);

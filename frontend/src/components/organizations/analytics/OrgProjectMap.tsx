@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, MapPin } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import type { EmbeddedLocation } from '@/components/maps-v2/EmbeddedAtlasMap';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Dynamically import EmbeddedAtlasMap to avoid SSR issues
 const EmbeddedAtlasMap = dynamic(() => import('@/components/maps-v2/EmbeddedAtlasMap'), {
@@ -53,7 +54,7 @@ export function OrgProjectMap({ organizationId }: OrgProjectMapProps) {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/organizations/${organizationId}/project-locations`);
+        const response = await apiFetch(`/api/organizations/${organizationId}/project-locations`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch project locations');

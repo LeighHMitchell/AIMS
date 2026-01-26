@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle } from 'lucide-react'
 import { getOrgTypeLabel } from '@/lib/org-type-mappings'
+import { apiFetch } from '@/lib/api-fetch';
 
 /**
  * Organizational Positioning Map
@@ -156,7 +157,7 @@ export function OrganizationalPositioningMap({
         params.set('dateTo', dateRange.to.toISOString())
       }
 
-      const response = await fetch(`/api/analytics/ecosystem?${params}`)
+      const response = await apiFetch(`/api/analytics/ecosystem?${params}`)
       const result = await response.json()
 
       if (!result.success) {

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useUser } from '@/hooks/useUser';
 import { HelpCircle, SendIcon, Loader2Icon, Lightbulb } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface AskQuestionModalProps {
   isOpen: boolean;
@@ -38,7 +39,7 @@ export function AskQuestionModal({ isOpen, onClose }: AskQuestionModalProps) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/faq/questions', {
+      const response = await apiFetch('/api/faq/questions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

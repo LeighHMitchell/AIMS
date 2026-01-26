@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { format } from "date-fns"
+import { apiFetch } from '@/lib/api-fetch';
 import {
   ArrowLeft,
   Edit,
@@ -234,7 +235,7 @@ const MAP_LAYERS: Record<MapLayerType, { name: string; url: string; attribution:
     attribution: '© OpenStreetMap contributors, © OpenTopoMap'
   },
   satellite_esri: {
-    name: 'ESRI Satellite',
+    name: 'Satellite Imagery',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: '© Esri'
   }
@@ -630,7 +631,7 @@ export default function ActivityDetailPage() {
   const fetchParticipatingOrgs = async () => {
     if (!params?.id) return;
     try {
-      const response = await fetch(`/api/activities/${params.id}/participating-organizations`);
+      const response = await apiFetch(`/api/activities/${params.id}/participating-organizations`);
       if (response.ok) {
         const data = await response.json();
         setParticipatingOrgs(data);
@@ -643,7 +644,7 @@ export default function ActivityDetailPage() {
   const fetchPlannedDisbursements = async () => {
     if (!params?.id) return;
     try {
-      const response = await fetch(`/api/activities/${params.id}/planned-disbursements`);
+      const response = await apiFetch(`/api/activities/${params.id}/planned-disbursements`);
       if (response.ok) {
         const data = await response.json();
         setPlannedDisbursements(data || []);
@@ -657,7 +658,7 @@ export default function ActivityDetailPage() {
   const fetchDocuments = async () => {
     if (!params?.id) return;
     try {
-      const response = await fetch(`/api/activities/${params.id}/documents`);
+      const response = await apiFetch(`/api/activities/${params.id}/documents`);
       if (response.ok) {
         const data = await response.json();
         setDocuments(data.documents || []);
@@ -672,7 +673,7 @@ export default function ActivityDetailPage() {
     if (!params?.id) return;
     try {
       setLoadingEndorsement(true);
-      const response = await fetch(`/api/activities/${params.id}/government-endorsement`);
+      const response = await apiFetch(`/api/activities/${params.id}/government-endorsement`);
       if (response.ok) {
         const data = await response.json();
         setGovernmentEndorsement(data.endorsement || null);
@@ -688,7 +689,7 @@ export default function ActivityDetailPage() {
   const fetchActivityLocations = async () => {
     if (!params?.id) return;
     try {
-      const response = await fetch(`/api/activities/${params.id}/locations`);
+      const response = await apiFetch(`/api/activities/${params.id}/locations`);
       if (response.ok) {
         const data = await response.json();
         // API returns { success: true, locations: [...] }
@@ -718,7 +719,7 @@ export default function ActivityDetailPage() {
   const fetchSubnationalBreakdowns = async () => {
     if (!params?.id) return;
     try {
-      const response = await fetch(`/api/activities/${params.id}/subnational-breakdown`);
+      const response = await apiFetch(`/api/activities/${params.id}/subnational-breakdown`);
       if (response.ok) {
         const data = await response.json();
         // Convert array to object with region_name as key and percentage as value
@@ -737,7 +738,7 @@ export default function ActivityDetailPage() {
   const fetchCountriesRegions = async () => {
     if (!params?.id) return;
     try {
-      const response = await fetch(`/api/activities/${params.id}/countries-regions`);
+      const response = await apiFetch(`/api/activities/${params.id}/countries-regions`);
       if (response.ok) {
         const data = await response.json();
         setCountryAllocations(data.countries || []);
@@ -756,7 +757,7 @@ export default function ActivityDetailPage() {
       return;
     }
     try {
-      const response = await fetch(`/api/organizations/${activity.reporting_org_id}`);
+      const response = await apiFetch(`/api/organizations/${activity.reporting_org_id}`);
       if (response.ok) {
         const data = await response.json();
         setReportingOrg(data);
@@ -886,7 +887,7 @@ export default function ActivityDetailPage() {
 
   const loadAllPartners = async () => {
     try {
-      const res = await fetch("/api/partners");
+      const res = await apiFetch("/api/partners");
       if (res.ok) {
         const data = await res.json();
         setAllPartners(data);
@@ -900,7 +901,7 @@ export default function ActivityDetailPage() {
     if (!params?.id) return;
     
     try {
-      const res = await fetch(`/api/activities/${params.id}/budgets`);
+      const res = await apiFetch(`/api/activities/${params.id}/budgets`);
       if (res.ok) {
         const budgetData = await res.json();
         setBudgets(budgetData || []);
@@ -920,7 +921,7 @@ export default function ActivityDetailPage() {
     // Save banner to backend
     if (!activity?.id) return
     try {
-      const res = await fetch(`/api/activities/${activity.id}`, {
+      const res = await apiFetch(`/api/activities/${activity.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1174,7 +1175,7 @@ export default function ActivityDetailPage() {
     if (!currentActivity?.id) return
     // Save icon to backend
     try {
-      const res = await fetch(`/api/activities/${currentActivity.id}`, {
+      const res = await apiFetch(`/api/activities/${currentActivity.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ icon: newIcon }),
@@ -1572,7 +1573,7 @@ export default function ActivityDetailPage() {
                   <DropdownMenuItem onClick={async () => {
                     try {
                       toast.info("Generating IATI XML...");
-                      const response = await fetch(`/api/activities/${activity?.id}/export-iati`);
+                      const response = await apiFetch(`/api/activities/${activity?.id}/export-iati`);
                       if (!response.ok) throw new Error('Export failed');
                       const blob = await response.blob();
                       const url = window.URL.createObjectURL(blob);

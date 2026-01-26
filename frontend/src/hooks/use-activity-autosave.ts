@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { autosaveDebugger } from '@/utils/autosave-debugger';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ActivityAutosaveState {
   isSaving: boolean;
@@ -86,7 +87,7 @@ export function useActivityAutosave(
         timestamp: new Date().toISOString()
       });
 
-      const response = await fetch('/api/activities', {
+      const response = await apiFetch('/api/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

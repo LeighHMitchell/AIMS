@@ -51,6 +51,7 @@ import { MyPortfolioTab } from "@/components/dashboard/MyPortfolioTab"
 import { ValidationRulesCard } from "@/components/data-clinic/ValidationRulesCard"
 import { TaskingTab } from "@/components/tasks/TaskingTab"
 import { NotificationTabs } from "@/components/NotificationTabs"
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function Dashboard() {
   // Fetch unread notification count for the tab badge
   useEffect(() => {
     if (user?.id) {
-      fetch(`/api/notifications/user?userId=${user.id}&limit=1`)
+      apiFetch(`/api/notifications/user?userId=${user.id}&limit=1`)
         .then(res => res.json())
         .then(data => setUnreadNotificationCount(data.unreadCount || 0))
         .catch(err => console.error('Failed to fetch notification count:', err));

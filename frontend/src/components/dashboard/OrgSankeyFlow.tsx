@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, GitBranch } from 'lucide-react';
 import type { OrgSankeyData, SankeyTransactionFilter } from '@/types/dashboard';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface OrgSankeyFlowProps {
   organizationId: string;
@@ -92,7 +93,7 @@ export function OrgSankeyFlow({
           transactionTypes: transactionFilter,
         });
 
-        const response = await fetch(`/api/dashboard/org-sankey?${params.toString()}`);
+        const response = await apiFetch(`/api/dashboard/org-sankey?${params.toString()}`);
 
         if (!response.ok) {
           const errorData = await response.json();

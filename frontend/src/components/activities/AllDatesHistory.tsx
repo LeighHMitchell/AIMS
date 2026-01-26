@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Skeleton } from '@/components/ui/skeleton'
 import { format } from 'date-fns'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface DateChange {
   id: string
@@ -149,7 +150,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
     setError(null)
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/date-history`)
+      const response = await apiFetch(`/api/activities/${activityId}/date-history`)
       
       if (!response.ok) {
         throw new Error('Failed to fetch date history')

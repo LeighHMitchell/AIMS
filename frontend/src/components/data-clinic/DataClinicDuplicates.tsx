@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/useUser";
 import Link from "next/link";
 import { DuplicatePairCard } from "./DuplicatePairCard";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Types
 interface DuplicateStats {
@@ -137,7 +138,7 @@ export function DataClinicDuplicates() {
   // Fetch stats
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch('/api/data-clinic/duplicates/stats');
+      const res = await apiFetch('/api/data-clinic/duplicates/stats');
       if (!res.ok) throw new Error('Failed to fetch stats');
       const data = await res.json();
       setStats(data);
@@ -156,7 +157,7 @@ export function DataClinicDuplicates() {
       if (detectionTypeFilter !== 'all') params.set('detection_type', detectionTypeFilter);
       params.set('limit', '100');
 
-      const res = await fetch(`/api/data-clinic/duplicates?${params}`);
+      const res = await apiFetch(`/api/data-clinic/duplicates?${params}`);
       if (!res.ok) throw new Error('Failed to fetch duplicates');
       const data = await res.json();
       setDuplicates(data.duplicates || []);
@@ -185,7 +186,7 @@ export function DataClinicDuplicates() {
 
     setRefreshing(true);
     try {
-      const res = await fetch('/api/data-clinic/duplicates/refresh', {
+      const res = await apiFetch('/api/data-clinic/duplicates/refresh', {
         method: 'POST',
       });
       
@@ -207,7 +208,7 @@ export function DataClinicDuplicates() {
   // Dismiss duplicate
   const handleDismiss = async (pair: DuplicatePair, action: 'not_duplicate' | 'linked' | 'merged') => {
     try {
-      const res = await fetch('/api/data-clinic/duplicates/dismiss', {
+      const res = await apiFetch('/api/data-clinic/duplicates/dismiss', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

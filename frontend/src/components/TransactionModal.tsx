@@ -79,6 +79,7 @@ import { IATI_FIELD_HELP } from '@/components/ActivityFieldHelpers';
 import { IATI_COUNTRIES } from '@/data/iati-countries';
 import { IATI_REGIONS } from '@/data/iati-regions';
 import dacSectorsData from '@/data/dac-sectors.json';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Helper to get full sector info from DAC sectors data
 interface DacSectorInfo {
@@ -464,7 +465,7 @@ export default function TransactionModal({
     if (transactionId && open) {
       const fetchDocuments = async () => {
         try {
-          const response = await fetch(`/api/transactions/documents?transactionId=${transactionId}`);
+          const response = await apiFetch(`/api/transactions/documents?transactionId=${transactionId}`);
           if (response.ok) {
             const data = await response.json();
             setDocuments(data.documents || []);
@@ -503,7 +504,7 @@ export default function TransactionModal({
 
   // Handler to update organization type via API
   const handleOrgTypeUpdate = async (orgId: string, newTypeCode: string) => {
-    const response = await fetch(`/api/organizations/${orgId}`, {
+    const response = await apiFetch(`/api/organizations/${orgId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ Organisation_Type_Code: newTypeCode })
@@ -1001,7 +1002,7 @@ export default function TransactionModal({
       // If we have an autosaved transaction, update it instead of creating a new one
       if (createdTransactionId) {
         console.log('[TransactionModal] Updating autosaved transaction:', createdTransactionId);
-        response = await fetch('/api/transactions', {
+        response = await apiFetch('/api/transactions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...submissionData, id: createdTransactionId })
@@ -1009,7 +1010,7 @@ export default function TransactionModal({
       } else if (isEditing && (transaction?.uuid || transaction?.id)) {
         console.log('[TransactionModal] Updating existing transaction:', transaction.uuid || transaction.id);
         // Update existing transaction (edit mode)
-        response = await fetch('/api/transactions', {
+        response = await apiFetch('/api/transactions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...submissionData, id: transaction.uuid || transaction.id })
@@ -1017,7 +1018,7 @@ export default function TransactionModal({
       } else {
         console.log('[TransactionModal] Creating new transaction');
         // Create new transaction
-        response = await fetch('/api/transactions', {
+        response = await apiFetch('/api/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(submissionData)
@@ -1330,7 +1331,7 @@ export default function TransactionModal({
       
       try {
         const payload = getTransactionPayload({ ...data, activity_id: activityId });
-        const response = await fetch('/api/transactions', {
+        const response = await apiFetch('/api/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -1359,7 +1360,7 @@ export default function TransactionModal({
         
         // Save any pending fields (with same abort controller)
         if (Object.keys(pendingFields).length > 0) {
-          await fetch('/api/transactions', {
+          await apiFetch('/api/transactions', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...pendingFields, id: saved.id || saved.uuid }),
@@ -1848,8 +1849,7 @@ export default function TransactionModal({
                         onClick={async () => {
                           setIsCheckingProviderActivity(true);
                           try {
-                            const response = await fetch(
-                              `/api/activities?iati_identifier=${encodeURIComponent(formData.provider_org_activity_id || '')}`
+                            const response = await apiFetch(`/api/activities?iati_identifier=${encodeURIComponent(formData.provider_org_activity_id || '')}`
                             );
                             if (response.ok) {
                               const activities = await response.json();
@@ -1864,7 +1864,7 @@ export default function TransactionModal({
                                   ...formData,
                                   provider_activity_uuid: matchedActivity.id
                                 };
-                                const updateResponse = await fetch(`/api/activities/${activityId}/transactions/${transactionId}`, {
+                                const updateResponse = await apiFetch(`/api/activities/${activityId}/transactions/${transactionId}`, {
                                   method: 'PUT',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify(updatePayload)
@@ -1939,7 +1939,7 @@ export default function TransactionModal({
                       } else {
                         // Fetch the activity to get its IATI identifier
                         try {
-                          const response = await fetch(`/api/activities/${activityUuid}`);
+                          const response = await apiFetch(`/api/activities/${activityUuid}`);
                           if (response.ok) {
                             const activity = await response.json();
                             setFormData({
@@ -2053,8 +2053,7 @@ export default function TransactionModal({
                         onClick={async () => {
                           setIsCheckingReceiverActivity(true);
                           try {
-                            const response = await fetch(
-                              `/api/activities?iati_identifier=${encodeURIComponent(formData.receiver_org_activity_id || '')}`
+                            const response = await apiFetch(`/api/activities?iati_identifier=${encodeURIComponent(formData.receiver_org_activity_id || '')}`
                             );
                             if (response.ok) {
                               const activities = await response.json();
@@ -2069,7 +2068,7 @@ export default function TransactionModal({
                                   ...formData,
                                   receiver_activity_uuid: matchedActivity.id
                                 };
-                                const updateResponse = await fetch(`/api/activities/${activityId}/transactions/${transactionId}`, {
+                                const updateResponse = await apiFetch(`/api/activities/${activityId}/transactions/${transactionId}`, {
                                   method: 'PUT',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify(updatePayload)
@@ -2144,7 +2143,7 @@ export default function TransactionModal({
                       } else {
                         // Fetch the activity to get its IATI identifier
                         try {
-                          const response = await fetch(`/api/activities/${activityUuid}`);
+                          const response = await apiFetch(`/api/activities/${activityUuid}`);
                           if (response.ok) {
                             const activity = await response.json();
                             setFormData({

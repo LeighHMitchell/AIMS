@@ -22,6 +22,7 @@ import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { LoadingText } from "@/components/ui/loading-text";
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function BudgetsPage() {
   const router = useRouter();
@@ -138,7 +139,7 @@ export default function BudgetsPage() {
 
   const fetchOrganizations = async () => {
     try {
-      const response = await fetch('/api/organizations');
+      const response = await apiFetch('/api/organizations');
       if (response.ok) {
         const data = await response.json();
         setOrganizations(data.organizations || data);
@@ -167,7 +168,7 @@ export default function BudgetsPage() {
           params.append('endDay', selectedYear.endDay.toString());
         }
 
-        const response = await fetch(`/api/budgets/yearly-summary?${params.toString()}`);
+        const response = await apiFetch(`/api/budgets/yearly-summary?${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
           setYearlySummary(data.years || []);
@@ -319,7 +320,7 @@ export default function BudgetsPage() {
 
     try {
       // Use bulk delete endpoint with single ID
-      const response = await fetch('/api/budgets/bulk-delete', {
+      const response = await apiFetch('/api/budgets/bulk-delete', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -376,7 +377,7 @@ export default function BudgetsPage() {
     setIsBulkDeleting(true);
 
     try {
-      const response = await fetch('/api/budgets/bulk-delete', {
+      const response = await apiFetch('/api/budgets/bulk-delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

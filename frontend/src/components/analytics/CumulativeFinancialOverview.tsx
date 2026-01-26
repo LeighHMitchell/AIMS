@@ -41,6 +41,7 @@ import {
 import { FINANCIAL_OVERVIEW_COLORS, BRAND_COLORS } from '@/components/analytics/sectors/sectorColorMap'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear } from '@/types/custom-years'
 import { format, parseISO } from 'date-fns'
+import { apiFetch } from '@/lib/api-fetch';
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -138,7 +139,7 @@ export function CumulativeFinancialOverview({
   useEffect(() => {
     const fetchCustomYears = async () => {
       try {
-        const response = await fetch('/api/custom-years')
+        const response = await apiFetch('/api/custom-years')
         if (response.ok) {
           const result = await response.json()
           const years = result.data || []

@@ -26,6 +26,7 @@ import {
 import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/csv-utils';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface MissingImagesCardProps {
   organizationId: string;
@@ -66,7 +67,7 @@ export function MissingImagesCard({
         organization_id: organizationId,
       });
 
-      const response = await fetch(`/api/activities?${params.toString()}`);
+      const response = await apiFetch(`/api/activities?${params.toString()}`);
       if (!response.ok) {
         throw new Error('Failed to fetch activities');
       }
@@ -114,7 +115,7 @@ export function MissingImagesCard({
         organization_id: organizationId,
       });
 
-      const response = await fetch(`/api/activities?${params.toString()}`);
+      const response = await apiFetch(`/api/activities?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch data');
 
       const data = await response.json();
@@ -230,7 +231,7 @@ export function MissingImagesCard({
       const base64 = await base64Promise;
 
       // Update the activity
-      const response = await fetch('/api/activities/field', {
+      const response = await apiFetch('/api/activities/field', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

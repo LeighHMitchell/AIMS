@@ -33,6 +33,7 @@ import { YearlyTotalsBarChart, MultiSeriesDataPoint } from "@/components/charts/
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";
+import { apiFetch } from '@/lib/api-fetch';
 
 type FilterState = {
   transactionTypes: string[];
@@ -189,7 +190,7 @@ export default function TransactionsPage() {
 
   const fetchOrganizations = async () => {
     try {
-      const response = await fetch('/api/organizations');
+      const response = await apiFetch('/api/organizations');
       if (response.ok) {
         const data = await response.json();
         setOrganizations(data.organizations || data);
@@ -201,7 +202,7 @@ export default function TransactionsPage() {
 
   const fetchFinanceTypes = async () => {
     try {
-      const response = await fetch('/api/analytics/finance-types');
+      const response = await apiFetch('/api/analytics/finance-types');
       if (response.ok) {
         const data = await response.json();
         setFinanceTypes(data);
@@ -234,7 +235,7 @@ export default function TransactionsPage() {
           params.append('endDay', selectedYear.endDay.toString());
         }
 
-        const response = await fetch(`/api/transactions/yearly-summary?${params.toString()}`);
+        const response = await apiFetch(`/api/transactions/yearly-summary?${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
           setYearlySummary(data.years || []);
@@ -259,7 +260,7 @@ export default function TransactionsPage() {
     if (editingTransaction?.activity_id) {
       const fetchActivityData = async () => {
         try {
-          const response = await fetch(`/api/activities/${editingTransaction.activity_id}`);
+          const response = await apiFetch(`/api/activities/${editingTransaction.activity_id}`);
           if (response.ok) {
             const activityData = await response.json();
             setActivityPartnerId(activityData.partner_id || null);
@@ -432,7 +433,7 @@ export default function TransactionsPage() {
     deleteTransaction(transactionId);
 
     try {
-      const response = await fetch(`/api/transactions?uuid=${transactionId}`, {
+      const response = await apiFetch(`/api/transactions?uuid=${transactionId}`, {
         method: 'DELETE'
       });
 
@@ -536,7 +537,7 @@ export default function TransactionsPage() {
       // Optimistic update - remove from UI immediately
       selectedArray.forEach(id => deleteTransaction(id));
       
-      const response = await fetch('/api/transactions', {
+      const response = await apiFetch('/api/transactions', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -580,7 +581,7 @@ export default function TransactionsPage() {
     setIsBulkAccepting(true);
     
     try {
-      const response = await fetch('/api/transactions/bulk-accept', {
+      const response = await apiFetch('/api/transactions/bulk-accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -627,7 +628,7 @@ export default function TransactionsPage() {
     setIsBulkRejecting(true);
     
     try {
-      const response = await fetch('/api/transactions/bulk-reject', {
+      const response = await apiFetch('/api/transactions/bulk-reject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -660,7 +661,7 @@ export default function TransactionsPage() {
 
   const handleTransactionSubmit = async (formData: any) => {
     try {
-      const response = await fetch('/api/transactions', {
+      const response = await apiFetch('/api/transactions', {
         method: editingTransaction ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -31,6 +31,7 @@ import {
   YAxis,
 } from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Types
 interface SectorTimeSeriesData {
@@ -267,9 +268,9 @@ export default function SectorsDashboard() {
     try {
       // Fetch filter options from various endpoints
       const [donorsRes, orgsRes, typesRes] = await Promise.all([
-        fetch('/api/organizations'),
-        fetch('/api/organization-groups'),
-        fetch('/api/organization-types')
+        apiFetch('/api/organizations'),
+        apiFetch('/api/organization-groups'),
+        apiFetch('/api/organization-types')
       ])
 
       if (donorsRes.ok && orgsRes.ok && typesRes.ok) {
@@ -310,8 +311,8 @@ export default function SectorsDashboard() {
 
       // Fetch time series and summary data
       const [timeSeriesRes, summaryRes] = await Promise.all([
-        fetch(`/api/sectors/by-year?${params}`),
-        fetch(`/api/sectors/summary?${params}`)
+        apiFetch(`/api/sectors/by-year?${params}`),
+        apiFetch(`/api/sectors/summary?${params}`)
       ])
 
       if (timeSeriesRes.ok && summaryRes.ok) {

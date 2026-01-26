@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Loader2, Mail, Send, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { apiFetch } from '@/lib/api-fetch';
 
 export function WaitlistSignupBlock() {
   const [email, setEmail] = useState("");
@@ -23,7 +24,7 @@ export function WaitlistSignupBlock() {
     setError(null);
 
     try {
-      const response = await fetch('/api/waitlist', {
+      const response = await apiFetch('/api/waitlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

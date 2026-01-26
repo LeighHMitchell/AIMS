@@ -18,6 +18,7 @@ import {
 import RelatedActivitiesNetworkGraph from './RelatedActivitiesNetworkGraph';
 import { AddLinkedActivityModal } from '@/components/modals/AddLinkedActivityModal';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface RelatedActivity {
   id: string;
@@ -81,7 +82,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
       setError(null);
 
       try {
-        const response = await fetch(`/api/activities/${activityId}/related-activities`);
+        const response = await apiFetch(`/api/activities/${activityId}/related-activities`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch related activities');
@@ -106,7 +107,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
     // TODO: Implement sync functionality to check if external IATI IDs now exist in database
     setSyncing(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/sync-external-links`, {
+      const response = await apiFetch(`/api/activities/${activityId}/sync-external-links`, {
         method: 'POST',
       });
 
@@ -114,7 +115,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
         const data = await response.json();
         toast.success(`Synced ${data.resolvedCount || 0} external link(s)`);
         // Refresh the list
-        const refreshResponse = await fetch(`/api/activities/${activityId}/related-activities`);
+        const refreshResponse = await apiFetch(`/api/activities/${activityId}/related-activities`);
         if (refreshResponse.ok) {
           const refreshedData = await refreshResponse.json();
           setRelatedActivities(refreshedData || []);
@@ -136,8 +137,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
     }
 
     try {
-      const response = await fetch(
-        `/api/activities/${activityId}/related-activities?relationship_id=${relationshipId}`,
+      const response = await apiFetch(`/api/activities/${activityId}/related-activities?relationship_id=${relationshipId}`,
         { method: 'DELETE' }
       );
 
@@ -232,7 +232,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
           activityId={activityId}
           onSuccess={() => {
             const refresh = async () => {
-              const response = await fetch(`/api/activities/${activityId}/related-activities`);
+              const response = await apiFetch(`/api/activities/${activityId}/related-activities`);
               if (response.ok) {
                 const data = await response.json();
                 setRelatedActivities(data || []);
@@ -433,7 +433,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
         activityId={activityId}
         onSuccess={() => {
           const refresh = async () => {
-            const response = await fetch(`/api/activities/${activityId}/related-activities`);
+            const response = await apiFetch(`/api/activities/${activityId}/related-activities`);
             if (response.ok) {
               const data = await response.json();
               setRelatedActivities(data || []);

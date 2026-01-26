@@ -21,6 +21,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { exportToCSV } from '@/lib/csv-export';
 import { TRANSACTION_TYPE_LABELS } from '@/types/transaction';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Format currency with abbreviations (K, M, B)
 const formatCurrencyAbbreviated = (value: number) => {
@@ -156,7 +157,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`/api/organizations/${organizationId}/transactions`);
+        const response = await apiFetch(`/api/organizations/${organizationId}/transactions`);
         const data = await response.json();
         if (!response.ok) {
           console.error('API error:', data);

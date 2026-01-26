@@ -17,6 +17,7 @@ import {
 import { format } from 'date-fns';
 import { ArrowRight, ArrowUpRight, ArrowDownLeft, DollarSign } from 'lucide-react';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface OrgTransactionsTableProps {
   organizationId: string;
@@ -90,7 +91,7 @@ export function OrgTransactionsTable({
           sortOrder: 'desc',
         });
 
-        const response = await fetch(`/api/transactions?${params.toString()}`);
+        const response = await apiFetch(`/api/transactions?${params.toString()}`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch transactions');

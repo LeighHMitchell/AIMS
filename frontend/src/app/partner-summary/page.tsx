@@ -69,6 +69,7 @@ import {
 import { toast } from "sonner"
 import { format } from "date-fns"
 import Link from "next/link"
+import { apiFetch } from '@/lib/api-fetch';
 
 // Enhanced interfaces matching the API
 interface PartnerSummaryData {
@@ -186,7 +187,7 @@ export default function PartnerSummaryPage() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/partner-summary?groupBy=${groupingMode}&financialMode=${financialMode}`);
+      const response = await apiFetch(`/api/partner-summary?groupBy=${groupingMode}&financialMode=${financialMode}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch partner summary: ${response.status}`);
@@ -376,7 +377,7 @@ export default function PartnerSummaryPage() {
     try {
       setCreatingGroup(true);
 
-      const response = await fetch('/api/organization-groups', {
+      const response = await apiFetch('/api/organization-groups', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

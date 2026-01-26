@@ -33,6 +33,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
 import { validateIatiContactType } from '@/lib/contact-utils';
+import { apiFetch } from '@/lib/api-fetch';
 
 type ViewMode = 'grid' | 'table';
 
@@ -98,7 +99,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`/api/activities/${activityId}/contacts`);
+        const response = await apiFetch(`/api/activities/${activityId}/contacts`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch contacts');
@@ -124,7 +125,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
       
       try {
         setFocalPointsLoading(true);
-        const response = await fetch(`/api/activities/${activityId}/focal-points`);
+        const response = await apiFetch(`/api/activities/${activityId}/focal-points`);
         
         if (!response.ok) {
           console.error('Failed to fetch focal points');

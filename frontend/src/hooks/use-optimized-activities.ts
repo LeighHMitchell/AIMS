@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { SystemTotals } from '@/lib/system-totals';
+import { apiFetch } from '@/lib/api-fetch';
 
 /**
  * Optimized Activities Hook
@@ -257,23 +258,17 @@ export function useOptimizedActivities(
       // Try optimized endpoint first, fallback to lightweight simple endpoint
       let endpoint = `/api/activities-optimized?${params}`;
       
-      let response = await fetch(endpoint, {
+      let response = await apiFetch(endpoint, {
         signal: abortControllerRef.current.signal,
         cache: 'no-store',
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
 
       // If optimized endpoint fails, try lightweight endpoint with server-side pagination
       if (!response.ok) {
         endpoint = `/api/activities-simple?${params}`;
-        response = await fetch(endpoint, {
+        response = await apiFetch(endpoint, {
           signal: abortControllerRef.current.signal,
           cache: 'no-store',
-          headers: {
-            'Content-Type': 'application/json'
-          }
         });
       }
 

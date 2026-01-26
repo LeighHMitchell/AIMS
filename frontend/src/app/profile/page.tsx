@@ -56,6 +56,7 @@ import {
   Trash2,
   Loader2
 } from "lucide-react";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Helper function to split telephone into country code and phone number
 const splitTelephone = (telephone: string) => {
@@ -236,7 +237,7 @@ export default function ProfilePage() {
     // Refresh form data when entering edit mode
     if (user?.email) {
       try {
-        const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`);
+        const response = await apiFetch(`/api/users?email=${encodeURIComponent(user.email)}`);
         if (response.ok) {
           const freshData = await response.json();
           console.log('[Profile] Fresh data for edit mode:', freshData);
@@ -348,7 +349,7 @@ export default function ProfilePage() {
       if (!user?.email) return
 
       try {
-        const response = await fetch(`/api/users?email=${encodeURIComponent(user.email)}`)
+        const response = await apiFetch(`/api/users?email=${encodeURIComponent(user.email)}`)
         
         if (response.ok) {
           const userData = await response.json()
@@ -415,7 +416,7 @@ export default function ProfilePage() {
     }
 
     try {
-      const response = await fetch('/api/users/change-email-simple', {
+      const response = await apiFetch('/api/users/change-email-simple', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -456,7 +457,7 @@ export default function ProfilePage() {
     
     setIsExportingData(true);
     try {
-      const response = await fetch(`/api/users/export-data?userId=${user.id}`);
+      const response = await apiFetch(`/api/users/export-data?userId=${user.id}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -536,7 +537,7 @@ export default function ProfilePage() {
 
       console.log('[Profile] Sending API data:', apiData);
 
-      const response = await fetch('/api/users', {
+      const response = await apiFetch('/api/users', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

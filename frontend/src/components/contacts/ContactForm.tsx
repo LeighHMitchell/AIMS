@@ -38,6 +38,7 @@ import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { countries } from '@/data/countries';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Contact {
   id?: string;
@@ -88,7 +89,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        const response = await fetch('/api/organizations');
+        const response = await apiFetch('/api/organizations');
         if (response.ok) {
           const data = await response.json();
           setOrganizations(data);

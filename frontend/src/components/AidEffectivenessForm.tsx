@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
 import * as XLSX from 'xlsx';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Types for form data
 export interface AidEffectivenessFormData {
@@ -288,7 +289,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        const response = await fetch('/api/organizations');
+        const response = await apiFetch('/api/organizations');
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data)) {
@@ -343,7 +344,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
       };
       onUpdate(updatedGeneral);
 
-      const response = await fetch(`/api/activities/${general.id}/general-info`, {
+      const response = await apiFetch(`/api/activities/${general.id}/general-info`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

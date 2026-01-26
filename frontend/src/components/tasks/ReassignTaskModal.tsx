@@ -20,6 +20,7 @@ import { Search, Check, ArrowRightLeft } from 'lucide-react';
 import type { TaskAssignment, TaskUser } from '@/types/task';
 import { getTaskUserDisplayName } from '@/types/task';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ReassignTaskModalProps {
   open: boolean;
@@ -65,7 +66,7 @@ export function ReassignTaskModal({
     async function loadUsers() {
       try {
         setLoading(true);
-        const response = await fetch(`/api/users/taskable?userId=${userId}`);
+        const response = await apiFetch(`/api/users/taskable?userId=${userId}`);
         const data = await response.json();
 
         if (response.ok) {

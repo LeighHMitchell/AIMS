@@ -32,6 +32,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownProvider } from '@/contexts/DropdownContext';
 import { motion, type Variants } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api-fetch';
 
 // ============================================================================
 // ANIMATION VARIANTS
@@ -373,7 +374,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
       };
 
       // Create the activity
-      const response = await fetch('/api/activities', {
+      const response = await apiFetch('/api/activities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -400,7 +401,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
             coverage_scope: 'national',
           };
 
-          await fetch('/api/locations', {
+          await apiFetch('/api/locations', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

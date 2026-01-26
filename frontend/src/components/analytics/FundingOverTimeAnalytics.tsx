@@ -42,6 +42,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { apiFetch } from '@/lib/api-fetch';
 
 // Color scheme
 const COLORS = {
@@ -134,7 +135,7 @@ export function FundingOverTimeAnalytics() {
     const fetchOrganizations = async () => {
       try {
         setLoadingOrgs(true)
-        const response = await fetch('/api/organizations/funding-envelopes-summary')
+        const response = await apiFetch('/api/organizations/funding-envelopes-summary')
         if (!response.ok) throw new Error('Failed to fetch organizations')
         const data = await response.json()
         setOrganizations(
@@ -166,8 +167,7 @@ export function FundingOverTimeAnalytics() {
 
       try {
         setLoading(true)
-        const response = await fetch(
-          `/api/analytics/funding-over-time?organizationIds=${selectedDonors.join(',')}`
+        const response = await apiFetch(`/api/analytics/funding-over-time?organizationIds=${selectedDonors.join(',')}`
         )
         if (!response.ok) throw new Error('Failed to fetch funding time series data')
         const result: ApiResponse = await response.json()

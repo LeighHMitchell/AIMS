@@ -33,6 +33,7 @@ import {
 import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon, CalendarIcon, Filter, Check, Search } from 'lucide-react'
 import { LoadingText } from '@/components/ui/loading-text'
 import html2canvas from 'html2canvas'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Color palette based on brand colors - distinct colors for data visualization
 // Brand colors: Primary Scarlet, Blue Slate, Cool Steel, Deep Teal, Soft Ochre, Pale Slate
@@ -141,7 +142,7 @@ export function SectorDisbursementOverTime({
   useEffect(() => {
     const fetchCustomYears = async () => {
       try {
-        const response = await fetch('/api/custom-years')
+        const response = await apiFetch('/api/custom-years')
         if (response.ok) {
           const result = await response.json()
           const years = result.data || []
@@ -338,7 +339,7 @@ export function SectorDisbursementOverTime({
           params.append('organizationId', organizationId)
         }
 
-        const response = await fetch(`/api/analytics/disbursements-by-sector?${params.toString()}`)
+        const response = await apiFetch(`/api/analytics/disbursements-by-sector?${params.toString()}`)
 
         if (!response.ok) {
           throw new Error('Failed to fetch data')

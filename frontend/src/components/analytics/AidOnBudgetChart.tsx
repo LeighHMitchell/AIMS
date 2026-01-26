@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/format';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface AidOnBudgetChartProps {
   dateRange?: {
@@ -86,7 +87,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
         params.set('dateTo', dateRange.to.toISOString().split('T')[0]);
       }
 
-      const response = await fetch(`/api/analytics/aid-on-budget?${params.toString()}`);
+      const response = await apiFetch(`/api/analytics/aid-on-budget?${params.toString()}`);
       const result = await response.json();
 
       if (!response.ok) {

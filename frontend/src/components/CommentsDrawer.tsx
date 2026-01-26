@@ -14,6 +14,7 @@ import { useUser } from '@/hooks/useUser';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Comment type options
 const COMMENT_TYPE_OPTIONS = [
@@ -167,7 +168,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
     try {
       const params = new URLSearchParams();
       params.append('includeArchived', showArchived ? 'true' : 'false');
-      const res = await fetch(`/api/activities/${activityId}/comments?${params}`);
+      const res = await apiFetch(`/api/activities/${activityId}/comments?${params}`);
       
       if (!res.ok) {
         if (res.status === 404) {
@@ -195,7 +196,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -230,7 +231,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -262,7 +263,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
     if (!user) return;
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -306,7 +307,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
     if (!user) return;
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -352,7 +353,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
     }
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

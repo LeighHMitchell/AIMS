@@ -24,6 +24,7 @@ import {
 import { FocalPointAvatarGroup, FocalPointInfo } from '@/components/ui/focal-point-avatar-group';
 import { toast } from 'sonner';
 import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/csv-utils';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface FocalPointCheckCardProps {
   organizationId: string;
@@ -65,7 +66,7 @@ export function FocalPointCheckCard({
         organization_id: organizationId,
       });
 
-      const response = await fetch(`/api/data-clinic/focal-points?${params.toString()}`);
+      const response = await apiFetch(`/api/data-clinic/focal-points?${params.toString()}`);
       if (!response.ok) {
         throw new Error('Failed to fetch focal points data');
       }
@@ -102,7 +103,7 @@ export function FocalPointCheckCard({
         organization_id: organizationId,
       });
 
-      const response = await fetch(`/api/data-clinic/focal-points?${params.toString()}`);
+      const response = await apiFetch(`/api/data-clinic/focal-points?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch data');
 
       const data = await response.json();

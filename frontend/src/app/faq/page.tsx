@@ -30,6 +30,7 @@ import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { USER_ROLES } from '@/types/user'
 import { LoadingText } from '@/components/ui/loading-text'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface FAQItem {
   id: string
@@ -92,7 +93,7 @@ export default function FAQPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('/api/faq?includeFollowUps=true')
+      const response = await apiFetch('/api/faq?includeFollowUps=true')
       if (!response.ok) {
         throw new Error('Failed to fetch FAQs')
       }
@@ -152,13 +153,13 @@ export default function FAQPage() {
 
       let response
       if (editingFAQ) {
-        response = await fetch(`/api/faq/${editingFAQ.id}`, {
+        response = await apiFetch(`/api/faq/${editingFAQ.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         })
       } else {
-        response = await fetch('/api/faq', {
+        response = await apiFetch('/api/faq', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -206,7 +207,7 @@ export default function FAQPage() {
     setFaqs(faqs.filter(faq => faq.id !== id))
 
     try {
-      const response = await fetch(`/api/faq/${id}`, {
+      const response = await apiFetch(`/api/faq/${id}`, {
         method: 'DELETE'
       })
 
@@ -236,7 +237,7 @@ export default function FAQPage() {
 
     setSubmittingFollowUp(true)
     try {
-      const response = await fetch('/api/faq/questions', {
+      const response = await apiFetch('/api/faq/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

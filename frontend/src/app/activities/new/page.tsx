@@ -86,7 +86,6 @@ import { saveGeneralTab } from '@/lib/general-tab-service';
 import { LabelSaveIndicator, SaveIndicator } from '@/components/ui/save-indicator';
 import { getTabCompletionStatus } from "@/utils/tab-completion";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
-import { useGovernmentEndorsement } from "@/hooks/use-government-endorsement";
 
 // Remove test utilities import that's causing module not found error
 // if (process.env.NODE_ENV === 'development') {
@@ -110,8 +109,9 @@ import { DocumentsAndImagesTabInline } from "@/components/activities/DocumentsAn
 import { IatiDocumentLink } from "@/lib/iatiDocumentLink";
 import { HumanitarianTab } from "@/components/activities/HumanitarianTab";
 
-import GovernmentEndorsementTab from "@/components/activities/GovernmentEndorsementTab";
 import { DeleteActivityDialog } from "@/components/DeleteActivityDialog";
+import { ReadinessChecklistTab } from "@/components/activities/readiness";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Utility function to format date without timezone conversion
 const formatDateToString = (date: Date | null): string => {
@@ -199,7 +199,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   useEffect(() => {
     const fetchOrgs = async () => {
       try {
-        const res = await fetch('/api/organizations');
+        const res = await apiFetch('/api/organizations');
         const data = await res.json();
         setOrganizations(data || []);
       } catch (error) {
@@ -348,7 +348,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     }
 
     try {
-      const response = await fetch(`/api/activities/${effectiveActivityId}/reporting-org`, {
+      const response = await apiFetch(`/api/activities/${effectiveActivityId}/reporting-org`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reporting_org_id: orgId || null })
@@ -643,7 +643,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       console.log('[Manual Create] Payload:', payload);
       console.log('[Manual Create] Acronym value:', payload.acronym);
       
-      const res = await fetch('/api/activities', {
+      const res = await apiFetch('/api/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -700,7 +700,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       
       console.log('[DEBUG] Creating activity with payload:', payload);
       
-      const res = await fetch('/api/activities', {
+      const res = await apiFetch('/api/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -819,7 +819,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               if (position !== undefined && general.id) {
                 console.log('[BANNER SAVE] Saving position:', position, 'activityId:', general.id);
                 try {
-                  const response = await fetch('/api/activities/field', {
+                  const response = await apiFetch('/api/activities/field', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -896,7 +896,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 if (scale !== undefined && general.id) {
                   console.log('[ICON SAVE] Saving scale:', scale, 'activityId:', general.id);
                   try {
-                    const response = await fetch('/api/activities/field', {
+                    const response = await apiFetch('/api/activities/field', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -2705,11 +2705,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         governmentInputs={governmentInputs} 
         onChange={setGovernmentInputs} 
       />;
-    case "government_endorsement":
-      return <GovernmentEndorsementTab 
-        activityId={general.id}
-        readOnly={!permissions?.canEditActivity}
-      />;
     case "documents":
       return <DocumentsAndImagesTabInline
         documents={documents}
@@ -2753,7 +2748,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           setLinkedActivitiesCount(count);
         }}
       />;
-
     default:
       return null;
   }
@@ -3073,7 +3067,7 @@ function NewActivityPageContent() {
 
     try {
       console.log('[ActivityEditor] Saving geography level:', level, 'for activity:', currentActivityId);
-      const response = await fetch(`/api/activities/${currentActivityId}`, {
+      const response = await apiFetch(`/api/activities/${currentActivityId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ geography_level: level })
@@ -3112,7 +3106,7 @@ function NewActivityPageContent() {
 
     try {
       console.log('[ActivityEditor] Saving sector export level:', level, 'for activity:', currentActivityId);
-      const response = await fetch(`/api/activities/${currentActivityId}`, {
+      const response = await apiFetch(`/api/activities/${currentActivityId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sectorExportLevel: level })
@@ -3139,7 +3133,7 @@ function NewActivityPageContent() {
     if (!general.id || !user) return;
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/activities/${general.id}/validate`, {
+      const response = await apiFetch(`/api/activities/${general.id}/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user, action: 'approve' }),
@@ -3167,7 +3161,7 @@ function NewActivityPageContent() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/activities/${general.id}/validate`, {
+      const response = await apiFetch(`/api/activities/${general.id}/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user, action: 'reject', reason }),
@@ -3193,7 +3187,7 @@ function NewActivityPageContent() {
     
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/activities/${general.id}`, {
+      const response = await apiFetch(`/api/activities/${general.id}`, {
         method: 'DELETE',
       });
       
@@ -3218,7 +3212,7 @@ function NewActivityPageContent() {
     if (!general.id || !user) return;
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/activities/${general.id}/submit`, {
+      const response = await apiFetch(`/api/activities/${general.id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user }),
@@ -3240,9 +3234,6 @@ function NewActivityPageContent() {
 
   // NOTE: Participating orgs, linked activities, results, country budget items, and metadata
   // are now loaded in the batch fetch in loadActivity() to prevent gradual green tick appearance
-
-  // Use government endorsement hook for tab completion
-  const { endorsement: governmentEndorsementData } = useGovernmentEndorsement(general.id || 'new');
 
   // Track XML import status from localStorage (IatiImportTab stores it there)
   React.useEffect(() => {
@@ -3345,7 +3336,7 @@ function NewActivityPageContent() {
     
     try {
       console.log('[AIMS] Refreshing transactions for activity:', activityId);
-      const response = await fetch(`/api/activities/${activityId}`, {
+      const response = await apiFetch(`/api/activities/${activityId}`, {
         cache: 'no-store'
       });
       if (response.ok) {
@@ -3663,7 +3654,7 @@ function NewActivityPageContent() {
     const loadDocuments = async () => {
       if (!general.id) return;
       try {
-        const response = await fetch(`/api/activities/${general.id}/documents`);
+        const response = await apiFetch(`/api/activities/${general.id}/documents`);
         if (response.ok) {
           const data = await response.json();
           if (data.documents && data.documents.length > 0) {
@@ -3682,7 +3673,7 @@ function NewActivityPageContent() {
     const loadGovernmentInputs = async () => {
       if (!general.id) return;
       try {
-        const response = await fetch(`/api/activities/${general.id}/government-inputs`);
+        const response = await apiFetch(`/api/activities/${general.id}/government-inputs`);
         if (response.ok) {
           const data = await response.json();
           if (data.governmentInputs) {
@@ -3717,7 +3708,7 @@ function NewActivityPageContent() {
       
       try {
         console.log('[GovernmentInputsAutosave] Saving government inputs...');
-        const response = await fetch(`/api/activities/${general.id}/government-inputs`, {
+        const response = await apiFetch(`/api/activities/${general.id}/government-inputs`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3991,21 +3982,21 @@ function NewActivityPageContent() {
             focalPointsResult
           ] = await Promise.allSettled([
             // 1. Budgets API
-            fetch(`/api/activities/${activityId}/budgets`).then(r => r.ok ? r.json() : null),
+            apiFetch(`/api/activities/${activityId}/budgets`).then(r => r.ok ? r.json() : null),
             // 2. Budget exceptions (Supabase)
             supabase.from('activity_budget_exceptions').select('*').eq('activity_id', activityId).single(),
             // 3. Planned disbursements (Supabase) - using direct query due to API bug
             supabase.from('planned_disbursements').select('*').eq('activity_id', activityId).order('period_start', { ascending: true }),
             // 4. Forward Spend FSS API
-            fetch(`/api/activities/${activityId}/fss`).then(r => r.ok ? r.json() : null),
+            apiFetch(`/api/activities/${activityId}/fss`).then(r => r.ok ? r.json() : null),
             // 5. Humanitarian API
-            fetch(`/api/activities/${activityId}/humanitarian`).then(r => r.ok ? r.json() : null),
+            apiFetch(`/api/activities/${activityId}/humanitarian`).then(r => r.ok ? r.json() : null),
             // 6. Transactions API
-            fetch(`/api/activities/${activityId}/transactions`).then(r => r.ok ? r.json() : null),
+            apiFetch(`/api/activities/${activityId}/transactions`).then(r => r.ok ? r.json() : null),
             // 7. Subnational breakdown API
-            fetch(`/api/activities/${activityId}/subnational-breakdown`).then(r => r.ok ? r.json() : null),
+            apiFetch(`/api/activities/${activityId}/subnational-breakdown`).then(r => r.ok ? r.json() : null),
             // 8. Contacts API
-            fetch(`/api/activities/${activityId}/contacts`).then(r => r.ok ? r.json() : null),
+            apiFetch(`/api/activities/${activityId}/contacts`).then(r => r.ok ? r.json() : null),
             // 9. Conditions (Supabase)
             supabase.from('activity_conditions').select('id').eq('activity_id', activityId),
             // 10. Financing terms (Supabase) - both tables
@@ -4014,17 +4005,17 @@ function NewActivityPageContent() {
               supabase.from('activity_loan_status').select('id').eq('activity_id', activityId)
             ]),
             // 11. Participating organizations API (for tab completion)
-            fetch(`/api/activities/${activityId}/participating-organizations`).then(r => r.ok ? r.json() : []),
+            apiFetch(`/api/activities/${activityId}/participating-organizations`).then(r => r.ok ? r.json() : []),
             // 12. Linked activities API (for tab completion)
-            fetch(`/api/activities/${activityId}/linked`).then(r => r.ok ? r.json() : []),
+            apiFetch(`/api/activities/${activityId}/linked`).then(r => r.ok ? r.json() : []),
             // 13. Results API (for tab completion)
-            fetch(`/api/activities/${activityId}/results`).then(r => r.ok ? r.json() : { results: [] }),
+            apiFetch(`/api/activities/${activityId}/results`).then(r => r.ok ? r.json() : { results: [] }),
             // 14. Country budget items API (for tab completion)
-            fetch(`/api/activities/${activityId}/country-budget-items`).then(r => r.ok ? r.json() : { country_budget_items: [] }),
+            apiFetch(`/api/activities/${activityId}/country-budget-items`).then(r => r.ok ? r.json() : { country_budget_items: [] }),
             // 15. Metadata API (for tab completion)
-            fetch(`/api/activities/${activityId}/metadata`).then(r => r.ok ? r.json() : { metadata: null }),
+            apiFetch(`/api/activities/${activityId}/metadata`).then(r => r.ok ? r.json() : { metadata: null }),
             // 16. Focal Points API (for tab completion)
-            fetch(`/api/activities/${activityId}/focal-points`).then(r => r.ok ? r.json() : { government_focal_points: [], development_partner_focal_points: [] })
+            apiFetch(`/api/activities/${activityId}/focal-points`).then(r => r.ok ? r.json() : { government_focal_points: [], development_partner_focal_points: [] })
           ]);
 
           // Process all results and prepare values
@@ -4294,7 +4285,6 @@ function NewActivityPageContent() {
       working_groups: "Working Groups",
       policy_markers: "Policy Markers",
       government: "Government Inputs",
-      government_endorsement: "Government Endorsement",
       documents: "Documents & Images",
       aid_effectiveness: "Aid Effectiveness",
       budgets: "Budgets",
@@ -4302,7 +4292,8 @@ function NewActivityPageContent() {
       "forward-spending-survey": "Forward Spending Survey",
       "financing-terms": "Financing Terms",
       "conditions": "Conditions",
-      "xml-import": "IATI Import"
+      "xml-import": "IATI Import",
+      readiness_checklist: "Government Readiness Checklist"
     };
     return sectionLabels[sectionId] || sectionId;
   };
@@ -4326,7 +4317,8 @@ function NewActivityPageContent() {
       "conditions": "Conditions are requirements that must be met for the activity to proceed. They can be policy-related (requiring implementation of particular policies), performance-based (requiring achievement of specific outputs or outcomes), or fiduciary (requiring use of specific financial management measures).",
       "country-budget": "Map activity budget to recipient country budget classifications.",
       "forward-spending-survey": "Complete this section to provide additional details about your activity.",
-      "financing-terms": "Complete this section to provide additional details about your activity."
+      "financing-terms": "Complete this section to provide additional details about your activity.",
+      "readiness_checklist": "Track preparatory milestones and ensure project readiness before validation. Complete each checklist item by uploading supporting documents and marking the status. All required items must be completed before signing off each stage."
     };
     return sectionHelpTexts[sectionId] || "Complete this section to provide additional details about your activity.";
   };
@@ -4519,9 +4511,6 @@ function NewActivityPageContent() {
     // XML Import tab: check if import was completed
     const xmlImportCompletion = getTabCompletionStatus('xml-import', xmlImportStatus);
 
-    // Government Endorsement tab: check if endorsement exists
-    const governmentEndorsementCompletion = getTabCompletionStatus('government_endorsement', governmentEndorsementData);
-
     return {
       general: generalCompletion ? { 
         isComplete: generalCompletion.isComplete,
@@ -4619,13 +4608,9 @@ function NewActivityPageContent() {
       "xml-import": xmlImportCompletion ? {
         isComplete: xmlImportCompletion.isComplete,
         isInProgress: xmlImportCompletion.isInProgress
-      } : { isComplete: false, isInProgress: false },
-      government_endorsement: governmentEndorsementCompletion ? {
-        isComplete: governmentEndorsementCompletion.isComplete,
-        isInProgress: governmentEndorsementCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, countryBudgetItemsCount, focalPointsCount, metadataData, xmlImportStatus, governmentEndorsementData]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, countryBudgetItemsCount, focalPointsCount, metadataData, xmlImportStatus]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -4636,8 +4621,8 @@ function NewActivityPageContent() {
       "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
       "sdg", "country-budget", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
-      "metadata", "government", "government_endorsement"
-    ].filter(id => (id !== "government" && id !== "government_endorsement") || showGovernmentInputs);
+      "metadata", "government", "readiness_checklist"
+    ].filter(id => id !== "government" || showGovernmentInputs);
     
     const idx = sections.findIndex(s => s === currentId);
     return idx < sections.length - 1 ? sections[idx + 1] : null;
@@ -4652,8 +4637,8 @@ function NewActivityPageContent() {
       "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
       "sdg", "country-budget", "tags", "working_groups", "policy_markers",
       "documents", "aid_effectiveness",
-      "metadata", "government", "government_endorsement"
-    ].filter(id => (id !== "government" && id !== "government_endorsement") || showGovernmentInputs);
+      "metadata", "government", "readiness_checklist"
+    ].filter(id => id !== "government" || showGovernmentInputs);
     
     const idx = sections.findIndex(s => s === currentId);
     return idx > 0 ? sections[idx - 1] : null;
@@ -4691,7 +4676,7 @@ function NewActivityPageContent() {
     // No default values - all data will come from the IATI import
     if (value === 'xml-import' && !general.id) {
       try {
-        const response = await fetch('/api/activities', {
+        const response = await apiFetch('/api/activities', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -4795,7 +4780,7 @@ function NewActivityPageContent() {
       // If no ID, create first via POST with essential fields
       if (!activityId) {
         console.log('[DEBUG] Creating new activity via POST');
-        const createRes = await fetch('/api/activities', {
+        const createRes = await apiFetch('/api/activities', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -4813,7 +4798,7 @@ function NewActivityPageContent() {
       } else {
         console.log('[DEBUG] Updating existing activity via PATCH');
         // Now persist the full General tab via PATCH
-        const patchRes = await fetch(`/api/activities/${activityId}`, {
+        const patchRes = await apiFetch(`/api/activities/${activityId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -4955,8 +4940,8 @@ function NewActivityPageContent() {
       title: "Administration",
       sections: [
         { id: "metadata", label: "Metadata" },
-        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : []),
-        ...(showGovernmentInputs ? [{ id: "government_endorsement", label: "Government Endorsement" }] : [])
+        { id: "readiness_checklist", label: "Readiness Checklist" },
+        ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : [])
       ]
     }
   ];

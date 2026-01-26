@@ -46,6 +46,7 @@ import { toast } from "sonner";
 import { PartnerFundingSummarySkeleton } from "@/components/skeletons";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { INSTITUTIONAL_GROUPS, getAllInstitutionalGroupNames } from "@/data/location-groups";
+import { apiFetch } from '@/lib/api-fetch';
 
 type SortField = 'name' | 'reportedActivities' | 'providerReceiver' | 'totalAmount' | '2022' | '2023' | '2024' | '2025' | '2026' | '2027';
 type SortOrder = 'asc' | 'desc';
@@ -139,8 +140,8 @@ export default function PartnersPage() {
 
       const timestamp = Date.now();
       const [predefinedResponse, customResponse] = await Promise.all([
-        fetch(`/api/partners/summary?groupBy=country&_t=${timestamp}`, { cache: 'no-store' }),
-        fetch(`/api/partners/summary?groupBy=custom&_t=${timestamp}`, { cache: 'no-store' })
+        apiFetch(`/api/partners/summary?groupBy=country&_t=${timestamp}`, { cache: 'no-store' }),
+        apiFetch(`/api/partners/summary?groupBy=custom&_t=${timestamp}`, { cache: 'no-store' })
       ]);
 
       if (!predefinedResponse.ok || !customResponse.ok) {
@@ -237,7 +238,7 @@ export default function PartnersPage() {
   // Fetch activities for a specific organization
   const fetchOrgActivities = async (orgId: string) => {
     try {
-      const response = await fetch(`/api/organizations/${orgId}/activities?transactionType=${transactionType}`);
+      const response = await apiFetch(`/api/organizations/${orgId}/activities?transactionType=${transactionType}`);
       if (response.ok) {
         const activities = await response.json();
         setOrgActivities(prev => ({

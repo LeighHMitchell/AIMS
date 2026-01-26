@@ -39,6 +39,7 @@ import {
   FIELD_MAPPINGS
 } from '@/lib/iati-field-mapper';
 import { CompareDataModal } from './CompareDataModal';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface IATISyncPanelProps {
   activityId: string;
@@ -138,7 +139,7 @@ export function IATISyncPanel({
 
     setIsComparing(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/compare-iati-simple`, {
+      const response = await apiFetch(`/api/activities/${activityId}/compare-iati-simple`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -180,7 +181,7 @@ export function IATISyncPanel({
     
     // TODO: Update auto-sync setting in backend
     try {
-      const response = await fetch(`/api/activities/${activityId}`, {
+      const response = await apiFetch(`/api/activities/${activityId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -418,7 +419,7 @@ export function IATISyncPanel({
 
           setIsImporting(true);
           try {
-            const response = await fetch(`/api/activities/${activityId}/import-iati`, {
+            const response = await apiFetch(`/api/activities/${activityId}/import-iati`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

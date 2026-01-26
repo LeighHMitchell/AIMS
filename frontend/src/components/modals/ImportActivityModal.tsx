@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Loader2, Upload, Search, FileCode, Globe, ClipboardPaste } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ImportActivityModalProps {
   isOpen: boolean;
@@ -39,7 +40,7 @@ export function ImportActivityModal({ isOpen, onClose, user }: ImportActivityMod
 
     try {
       // Create a draft activity for import
-      const response = await fetch('/api/activities', {
+      const response = await apiFetch('/api/activities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

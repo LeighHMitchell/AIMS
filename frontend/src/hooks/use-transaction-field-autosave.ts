@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { showFieldSaveSuccess } from '@/lib/toast-manager';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface TransactionFieldAutosaveOptions {
   transactionId: string;
@@ -31,7 +32,7 @@ export function useTransactionFieldAutosave({
     setError(null);
     setIsSaved(false);
     try {
-      const res = await fetch(`/api/data-clinic/transactions/${transactionId}`, {
+      const res = await apiFetch(`/api/data-clinic/transactions/${transactionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ field: fieldName, value, userId })

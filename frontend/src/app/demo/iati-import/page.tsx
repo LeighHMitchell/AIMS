@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ExternalPublisherModal } from '@/components/import/ExternalPublisherModal';
 import { toast } from 'sonner';
 import { Upload, FileText, CheckCircle } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 // Mock strings for demo - in production these would come from i18n system
 const iatiImportStrings = {
   'toast.reference': 'Linked as reference. Read-only and excluded from totals.',
@@ -54,7 +55,7 @@ export default function IatiImportDemoPage() {
       formData.append('file', selectedFile);
       formData.append('userId', MOCK_USER.id);
 
-      const response = await fetch('/api/iati/import', {
+      const response = await apiFetch('/api/iati/import', {
         method: 'POST',
         body: formData
       });

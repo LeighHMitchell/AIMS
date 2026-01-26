@@ -5,6 +5,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ActivityExportData {
   basic: any;
@@ -34,14 +35,14 @@ async function fetchActivityExportData(activityId: string): Promise<ActivityExpo
       orgsRes,
       docsRes
     ] = await Promise.all([
-      fetch(`${baseUrl}/api/activities/${activityId}/basic`),
-      fetch(`${baseUrl}/api/activities/${activityId}/transactions`),
-      fetch(`${baseUrl}/api/activities/${activityId}/budgets`),
-      fetch(`${baseUrl}/api/activities/${activityId}/locations`),
-      fetch(`${baseUrl}/api/activities/${activityId}/sectors`),
-      fetch(`${baseUrl}/api/activities/${activityId}/results`),
-      fetch(`${baseUrl}/api/activities/${activityId}/participating-organizations`),
-      fetch(`${baseUrl}/api/activities/${activityId}/documents`)
+      apiFetch(`${baseUrl}/api/activities/${activityId}/basic`),
+      apiFetch(`${baseUrl}/api/activities/${activityId}/transactions`),
+      apiFetch(`${baseUrl}/api/activities/${activityId}/budgets`),
+      apiFetch(`${baseUrl}/api/activities/${activityId}/locations`),
+      apiFetch(`${baseUrl}/api/activities/${activityId}/sectors`),
+      apiFetch(`${baseUrl}/api/activities/${activityId}/results`),
+      apiFetch(`${baseUrl}/api/activities/${activityId}/participating-organizations`),
+      apiFetch(`${baseUrl}/api/activities/${activityId}/documents`)
     ]);
 
     const [basic, transactions, budgets, locations, sectors, results, orgs, docs] = await Promise.all([

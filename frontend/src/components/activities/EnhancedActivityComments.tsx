@@ -54,6 +54,7 @@ import {
   FileText,
   Trash,
 } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Helper function to get user initials
 const getUserInitials = (name: string): string => {
@@ -182,7 +183,7 @@ export function EnhancedActivityComments({
         params.append('includeArchived', 'false');
       }
 
-      const res = await fetch(`/api/activities/${activityId}/comments?${params}`);
+      const res = await apiFetch(`/api/activities/${activityId}/comments?${params}`);
       
       if (!res.ok) {
         if (res.status === 404) {
@@ -211,7 +212,7 @@ export function EnhancedActivityComments({
     
     for (const comment of commentsList) {
       try {
-        const res = await fetch(`/api/activities/${activityId}/comments/reactions?commentId=${comment.id}`);
+        const res = await apiFetch(`/api/activities/${activityId}/comments/reactions?commentId=${comment.id}`);
         if (res.ok) {
           const data = await res.json();
           newReactionCounts[comment.id] = data.reactionCounts || [];
@@ -220,7 +221,7 @@ export function EnhancedActivityComments({
         // Load reactions for replies
         if (comment.replies) {
           for (const reply of comment.replies) {
-            const replyRes = await fetch(`/api/activities/${activityId}/comments/reactions?replyId=${reply.id}`);
+            const replyRes = await apiFetch(`/api/activities/${activityId}/comments/reactions?replyId=${reply.id}`);
             if (replyRes.ok) {
               const replyData = await replyRes.json();
               newReactionCounts[reply.id] = replyData.reactionCounts || [];
@@ -239,7 +240,7 @@ export function EnhancedActivityComments({
     if (!user) return;
     
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments/notifications?userId=${user.id}`);
+      const res = await apiFetch(`/api/activities/${activityId}/comments/notifications?userId=${user.id}`);
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.notifications || []);
@@ -252,7 +253,7 @@ export function EnhancedActivityComments({
 
   const fetchAvailableUsers = async () => {
     try {
-      const res = await fetch(`/api/activities/${activityId}/users`);
+      const res = await apiFetch(`/api/activities/${activityId}/users`);
       if (res.ok) {
         const data = await res.json();
         setAvailableUsers(data.users || []);
@@ -264,7 +265,7 @@ export function EnhancedActivityComments({
 
   const fetchAvailableOrgs = async () => {
     try {
-      const res = await fetch(`/api/activities/${activityId}/organizations`);
+      const res = await apiFetch(`/api/activities/${activityId}/organizations`);
       if (res.ok) {
         const data = await res.json();
         setAvailableOrgs(data.organizations || []);
@@ -342,7 +343,7 @@ export function EnhancedActivityComments({
     }
 
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments/reactions`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments/reactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -426,7 +427,7 @@ export function EnhancedActivityComments({
     }
 
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -462,7 +463,7 @@ export function EnhancedActivityComments({
     const inheritedType = parentComment?.type || 'Feedback';
 
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -488,7 +489,7 @@ export function EnhancedActivityComments({
     if (!user) return;
 
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -513,7 +514,7 @@ export function EnhancedActivityComments({
     if (!user) return;
 
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -543,7 +544,7 @@ export function EnhancedActivityComments({
     }
     
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Organization } from '@/components/ui/organization-searchable-select';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UseOrganizationsProps {
   onError?: (error: string) => void;
@@ -16,7 +17,7 @@ export function useOrganizations({ onError }: UseOrganizationsProps = {}) {
     setError(null);
 
     try {
-      const response = await fetch('/api/organizations');
+      const response = await apiFetch('/api/organizations');
       
       if (!response.ok) {
         const errorData = await response.json();

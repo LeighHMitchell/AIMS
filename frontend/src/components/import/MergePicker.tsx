@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Check
 } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 // Native debounce implementation
 const debounce = <T extends (...args: any[]) => any>(func: T, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -69,8 +70,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
       setError(null);
 
       try {
-        const response = await fetch(
-          `/api/activities/search?query=${encodeURIComponent(query)}&limit=20`
+        const response = await apiFetch(`/api/activities/search?query=${encodeURIComponent(query)}&limit=20`
         );
 
         if (!response.ok) {
@@ -103,7 +103,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
     const loadInitialActivities = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/activities/search?limit=10&recent=true');
+        const response = await apiFetch('/api/activities/search?limit=10&recent=true');
         if (response.ok) {
           const data = await response.json();
           setActivities(data.activities || []);

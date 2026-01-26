@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { formatDistanceToNow, format } from "date-fns"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ActivityLog {
   id: string
@@ -148,7 +149,7 @@ export function UserActivityPanel({ userId, userName, isOpen, onClose }: UserAct
     
     setLoading(true)
     try {
-      const response = await fetch(`/api/admin/user-activity?type=logs&userId=${userId}&limit=100`)
+      const response = await apiFetch(`/api/admin/user-activity?type=logs&userId=${userId}&limit=100`)
       if (response.ok) {
         const data = await response.json()
         setLogs(data)

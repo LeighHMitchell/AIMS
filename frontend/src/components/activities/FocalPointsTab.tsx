@@ -35,6 +35,7 @@ import {
   getFocalPointPermissions,
   hasPendingHandoff as checkPendingHandoff
 } from '@/lib/activity-permissions';
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function FocalPointsTab({ 
   activityId, 
@@ -82,7 +83,7 @@ export default function FocalPointsTab({
     
     try {
       setLoading(true);
-      const response = await fetch(`/api/activities/${activityId}/focal-points`);
+      const response = await apiFetch(`/api/activities/${activityId}/focal-points`);
       if (!response.ok) throw new Error('Failed to fetch focal points');
       
       const data = await response.json();
@@ -115,7 +116,7 @@ export default function FocalPointsTab({
 
     setActionLoading(`assign-${type}`);
     try {
-      const response = await fetch(`/api/activities/${activityId}/focal-points`, {
+      const response = await apiFetch(`/api/activities/${activityId}/focal-points`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -153,7 +154,7 @@ export default function FocalPointsTab({
 
     setActionLoading(`remove-${focalPoint.id}`);
     try {
-      const response = await fetch(`/api/activities/${activityId}/focal-points`, {
+      const response = await apiFetch(`/api/activities/${activityId}/focal-points`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -190,7 +191,7 @@ export default function FocalPointsTab({
 
     setActionLoading(`handoff-${currentFocalPointForHandoff.id}`);
     try {
-      const response = await fetch(`/api/activities/${activityId}/focal-points`, {
+      const response = await apiFetch(`/api/activities/${activityId}/focal-points`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -223,7 +224,7 @@ export default function FocalPointsTab({
 
     setActionLoading(`accept-${type}`);
     try {
-      const response = await fetch(`/api/activities/${activityId}/focal-points`, {
+      const response = await apiFetch(`/api/activities/${activityId}/focal-points`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -254,7 +255,7 @@ export default function FocalPointsTab({
 
     setActionLoading(`decline-${type}`);
     try {
-      const response = await fetch(`/api/activities/${activityId}/focal-points`, {
+      const response = await apiFetch(`/api/activities/${activityId}/focal-points`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -15,6 +15,7 @@ import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { BarChartSkeleton } from "@/components/ui/skeleton-loader";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface AnalyticsFilters {
   donor: string;
@@ -64,7 +65,7 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
         timePeriod: filters.timePeriod,
       });
 
-      const response = await fetch(`/api/analytics/budget-vs-spending?${queryParams}`);
+      const response = await apiFetch(`/api/analytics/budget-vs-spending?${queryParams}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

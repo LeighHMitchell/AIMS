@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 import { AidPredictabilityPoint } from "@/types/national-priorities";
 import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { toast } from "sonner";
+import { apiFetch } from '@/lib/api-fetch';
 
 type ChartType = "bar" | "line" | "area";
 type ViewMode = "chart" | "table";
@@ -81,7 +82,7 @@ export function AidPredictabilityChart() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/analytics/aid-predictability");
+      const response = await apiFetch("/api/analytics/aid-predictability");
       const result = await response.json();
 
       if (!result.success) {

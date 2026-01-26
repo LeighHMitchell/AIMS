@@ -49,6 +49,7 @@ import {
   flattenPriorityTree,
   buildPriorityTree,
 } from "@/types/national-priorities";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface NationalPrioritiesSectionProps {
   activityId: string;
@@ -81,7 +82,7 @@ export function NationalPrioritiesSection({
 
   const fetchAllocations = useCallback(async () => {
     try {
-      const response = await fetch(`/api/activities/${activityId}/national-priorities`);
+      const response = await apiFetch(`/api/activities/${activityId}/national-priorities`);
       const result = await response.json();
       
       if (result.success) {
@@ -94,7 +95,7 @@ export function NationalPrioritiesSection({
 
   const fetchPriorities = useCallback(async () => {
     try {
-      const response = await fetch("/api/national-priorities?asTree=false");
+      const response = await apiFetch("/api/national-priorities?asTree=false");
       const result = await response.json();
       
       if (result.success) {
@@ -159,7 +160,7 @@ export function NationalPrioritiesSection({
     try {
       setSaving(true);
 
-      const response = await fetch(`/api/activities/${activityId}/national-priorities`, {
+      const response = await apiFetch(`/api/activities/${activityId}/national-priorities`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -190,7 +191,7 @@ export function NationalPrioritiesSection({
 
   const handleUpdatePercentage = async (allocation: ActivityNationalPriority, newPercentage: number) => {
     try {
-      const response = await fetch(`/api/activities/${activityId}/national-priorities`, {
+      const response = await apiFetch(`/api/activities/${activityId}/national-priorities`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -219,8 +220,7 @@ export function NationalPrioritiesSection({
     try {
       setSaving(true);
 
-      const response = await fetch(
-        `/api/activities/${activityId}/national-priorities?allocationId=${selectedAllocation.id}`,
+      const response = await apiFetch(`/api/activities/${activityId}/national-priorities?allocationId=${selectedAllocation.id}`,
         { method: "DELETE" }
       );
 

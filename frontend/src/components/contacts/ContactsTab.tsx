@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { normalizeContact, deduplicateContacts, areContactsDuplicate } from '@/lib/contact-utils';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Contact {
   id?: string;
@@ -82,7 +83,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       }
       // Add cache-busting timestamp to prevent stale responses
       const timestamp = Date.now();
-      const response = await fetch(`/api/activities/${activityId}/contacts?_t=${timestamp}&_force=${force}`, {
+      const response = await apiFetch(`/api/activities/${activityId}/contacts?_t=${timestamp}&_force=${force}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
@@ -159,7 +160,7 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       saveInProgressRef.current = true;
       setIsSaving(true);
       
-      const response = await fetch('/api/activities/field', {
+      const response = await apiFetch('/api/activities/field', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

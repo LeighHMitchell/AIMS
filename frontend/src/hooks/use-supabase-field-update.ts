@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface FieldUpdateState {
   isUpdating: boolean;
@@ -61,7 +62,7 @@ export function useSupabaseFieldUpdate(
       if (tableName === 'activities') {
         console.log(`[SupabaseFieldUpdate] Using API route for activities table field update`);
         
-        const response = await fetch('/api/activities/field', {
+        const response = await apiFetch('/api/activities/field', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

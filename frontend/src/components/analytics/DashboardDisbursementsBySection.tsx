@@ -5,6 +5,7 @@ import { DisbursementsBySectorChart } from '@/components/activities/Disbursement
 import { DisbursementsOverTimeChart } from '@/components/activities/DisbursementsOverTimeChart'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface DateRange {
   from: Date;
@@ -35,7 +36,7 @@ export function DashboardDisbursementsBySection({
         params.append('dateFrom', dateRange.from.toISOString());
         params.append('dateTo', dateRange.to.toISOString());
 
-        const response = await fetch(`/api/analytics/disbursements-by-sector?${params.toString()}`);
+        const response = await apiFetch(`/api/analytics/disbursements-by-sector?${params.toString()}`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch disbursements data');

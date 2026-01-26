@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { format, parseISO } from 'date-fns'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Generate list of available years (from 2010 to current year + 10)
 const currentYear = new Date().getFullYear()
@@ -169,7 +170,7 @@ export function FinanceTypeFlowChart({
   useEffect(() => {
     const fetchCustomYears = async () => {
       try {
-        const response = await fetch('/api/custom-years')
+        const response = await apiFetch('/api/custom-years')
         if (response.ok) {
           const result = await response.json()
           const years = result.data || []
@@ -210,7 +211,7 @@ export function FinanceTypeFlowChart({
         if (organizationId) {
           params.set('organizationId', organizationId)
         }
-        const response = await fetch(`/api/analytics/finance-type-flow-data?${params}`)
+        const response = await apiFetch(`/api/analytics/finance-type-flow-data?${params}`)
         if (response.ok) {
           const result = await response.json()
           const transactions = result.transactions || []
@@ -356,7 +357,7 @@ export function FinanceTypeFlowChart({
         }
 
         // Fetch all data from consolidated API (flow types, finance types, and transactions)
-        const response = await fetch(`/api/analytics/finance-type-flow-data?${params}`)
+        const response = await apiFetch(`/api/analytics/finance-type-flow-data?${params}`)
         
         if (!response.ok) {
           throw new Error('Failed to fetch data')

@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { CreateCustomGroupModal } from '@/components/organizations/CreateCustomGroupModal'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface CustomGroup {
   id: string
@@ -59,7 +60,7 @@ export default function ManageGroupsPage() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch('/api/custom-groups?includeMembers=true')
+      const response = await apiFetch('/api/custom-groups?includeMembers=true')
       if (response.ok) {
         const data = await response.json()
         setGroups(data)
@@ -79,7 +80,7 @@ export default function ManageGroupsPage() {
     if (!confirm('Are you sure you want to delete this group?')) return
 
     try {
-      const response = await fetch(`/api/custom-groups/${groupId}`, {
+      const response = await apiFetch(`/api/custom-groups/${groupId}`, {
         method: 'DELETE'
       })
 

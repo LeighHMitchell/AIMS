@@ -20,6 +20,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { exportToCSV } from '@/lib/csv-export';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Format currency with abbreviations (K, M, B)
 const formatCurrencyAbbreviated = (value: number) => {
@@ -127,7 +128,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`/api/organizations/${organizationId}/planned-disbursements`);
+        const response = await apiFetch(`/api/organizations/${organizationId}/planned-disbursements`);
         if (!response.ok) throw new Error('Failed to fetch planned disbursements');
         const data = await response.json();
         setDisbursements(data || []);

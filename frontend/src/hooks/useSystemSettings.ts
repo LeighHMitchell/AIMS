@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface SystemSettings {
   homeCountry: string
@@ -24,7 +25,7 @@ export function useSystemSettings(): UseSystemSettingsReturn {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/admin/system-settings')
+      const response = await apiFetch('/api/admin/system-settings')
       if (!response.ok) {
         throw new Error('Failed to fetch system settings')
       }
@@ -44,7 +45,7 @@ export function useSystemSettings(): UseSystemSettingsReturn {
     try {
       setError(null)
 
-      const response = await fetch('/api/admin/system-settings', {
+      const response = await apiFetch('/api/admin/system-settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -8,6 +8,7 @@ import { AlertCircle, Download, Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { FundingSourceSankey } from '@/components/activities/FinancialAnalyticsTab'
 import { MultiSelect } from '@/components/ui/multi-select'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Transaction type options for multi-select (IATI Standard v2.03)
 const TRANSACTION_TYPE_OPTIONS = [
@@ -80,7 +81,7 @@ export function AllActivitiesFundingSourceBreakdown({
           params.set('dateTo', dateToStr)
         }
 
-        const response = await fetch(`/api/analytics/funding-source-breakdown?${params.toString()}`)
+        const response = await apiFetch(`/api/analytics/funding-source-breakdown?${params.toString()}`)
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))

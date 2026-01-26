@@ -6,6 +6,7 @@ import type {
   TaskAttachmentType,
   TaskAttachmentsResponse,
 } from '@/types/task';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UseTaskAttachmentsOptions {
   userId?: string;
@@ -52,8 +53,7 @@ export function useTaskAttachments({
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/tasks/${taskId}/attachments?userId=${userId}`
+      const response = await apiFetch(`/api/tasks/${taskId}/attachments?userId=${userId}`
       );
       const data: TaskAttachmentsResponse = await response.json();
 
@@ -162,8 +162,7 @@ export function useTaskAttachments({
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/tasks/${taskId}/attachments?userId=${userId}&attachmentId=${attachmentId}`,
+      const response = await apiFetch(`/api/tasks/${taskId}/attachments?userId=${userId}&attachmentId=${attachmentId}`,
         { method: 'DELETE' }
       );
 
@@ -197,8 +196,7 @@ export function useTaskAttachments({
     }
 
     try {
-      const response = await fetch(
-        `/api/tasks/${taskId}/attachments/${attachmentId}?userId=${userId}`
+      const response = await apiFetch(`/api/tasks/${taskId}/attachments/${attachmentId}?userId=${userId}`
       );
 
       const result = await response.json();

@@ -10,6 +10,7 @@ import type {
   TaskDetailResponse,
   AssignedTasksResponse,
 } from '@/types/task';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Type for reassigned task data
 interface ReassignedTask {
@@ -90,7 +91,7 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
       if (filters?.status) params.set('status', filters.status);
       if (filters?.priority) params.set('priority', filters.priority);
 
-      const response = await fetch(`/api/tasks?${params}`);
+      const response = await apiFetch(`/api/tasks?${params}`);
       const data: TaskListResponse = await response.json();
 
       if (!response.ok) {
@@ -125,7 +126,7 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
       if (filters?.includeArchived) params.set('includeArchived', 'true');
 
       console.log('[useTasks] fetchAssignedTasks: Fetching for userId:', userId, 'includeArchived:', filters?.includeArchived);
-      const response = await fetch(`/api/tasks/assigned?${params}`);
+      const response = await apiFetch(`/api/tasks/assigned?${params}`);
       const data: AssignedTasksResponse = await response.json();
       console.log('[useTasks] fetchAssignedTasks response:', data);
 
@@ -163,7 +164,7 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
       const params = new URLSearchParams({ userId });
 
       console.log('[useTasks] fetchReassignedTasks: Fetching for userId:', userId);
-      const response = await fetch(`/api/tasks/reassigned?${params}`);
+      const response = await apiFetch(`/api/tasks/reassigned?${params}`);
       const data = await response.json();
       console.log('[useTasks] fetchReassignedTasks response:', data);
 
@@ -191,7 +192,7 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/${taskId}?userId=${userId}`);
+      const response = await apiFetch(`/api/tasks/${taskId}?userId=${userId}`);
       const data: TaskDetailResponse = await response.json();
 
       if (!response.ok) {
@@ -218,7 +219,7 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
     setError(null);
 
     try {
-      const response = await fetch('/api/tasks', {
+      const response = await apiFetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, ...data }),
@@ -261,7 +262,7 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      const response = await apiFetch(`/api/tasks/${taskId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, ...data }),
@@ -298,7 +299,7 @@ export function useTasks({ userId }: UseTasksOptions): UseTasksReturn {
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      const response = await apiFetch(`/api/tasks/${taskId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),

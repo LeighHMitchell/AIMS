@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useBookmarks } from '@/hooks/use-bookmarks';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface BookmarkedActivity {
   id: string;
@@ -85,7 +86,7 @@ export function BookmarkedActivitiesTable() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/bookmarks/activities?userId=${user.id}`);
+      const response = await apiFetch(`/api/bookmarks/activities?userId=${user.id}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch bookmarked activities');

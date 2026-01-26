@@ -55,6 +55,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import dacSectorsData from "@/data/dac-sectors.json";
+import { apiFetch } from '@/lib/api-fetch';
 
 // ============================================================================
 // Types
@@ -197,7 +198,7 @@ export function CountrySectorVocabularyManagement() {
   const fetchVocabularies = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/admin/country-sector-vocabularies?includeStats=true");
+      const response = await apiFetch("/api/admin/country-sector-vocabularies?includeStats=true");
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setVocabularies(data.data || []);
@@ -212,7 +213,7 @@ export function CountrySectorVocabularyManagement() {
   const fetchSectors = useCallback(async (vocabularyId: string) => {
     try {
       setSectorsLoading(true);
-      const response = await fetch(`/api/admin/country-sectors?vocabularyId=${vocabularyId}&includeMappings=true`);
+      const response = await apiFetch(`/api/admin/country-sectors?vocabularyId=${vocabularyId}&includeMappings=true`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setSectors(data.data || []);
@@ -296,8 +297,7 @@ export function CountrySectorVocabularyManagement() {
     if (!deletingItem || deletingItem.type !== "vocabulary") return;
 
     try {
-      const response = await fetch(
-        `/api/admin/country-sector-vocabularies/${deletingItem.item.id}?force=true`,
+      const response = await apiFetch(`/api/admin/country-sector-vocabularies/${deletingItem.item.id}?force=true`,
         { method: "DELETE" }
       );
       const data = await response.json();
@@ -375,8 +375,7 @@ export function CountrySectorVocabularyManagement() {
     if (!deletingItem || deletingItem.type !== "sector" || !selectedVocabulary) return;
 
     try {
-      const response = await fetch(
-        `/api/admin/country-sectors/${deletingItem.item.id}`,
+      const response = await apiFetch(`/api/admin/country-sectors/${deletingItem.item.id}`,
         { method: "DELETE" }
       );
       const data = await response.json();
@@ -463,7 +462,7 @@ export function CountrySectorVocabularyManagement() {
     }
 
     try {
-      const response = await fetch("/api/admin/country-sector-dac-mappings", {
+      const response = await apiFetch("/api/admin/country-sector-dac-mappings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

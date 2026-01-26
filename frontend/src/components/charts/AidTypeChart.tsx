@@ -13,6 +13,7 @@ import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { BarChartSkeleton } from "@/components/ui/skeleton-loader";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface AnalyticsFilters {
   donor: string;
@@ -63,7 +64,7 @@ export const AidTypeChart: React.FC<AidTypeChartProps> = ({
         topN: filters.topN,
       });
 
-      const response = await fetch(`/api/analytics/aid-type?${queryParams}`);
+      const response = await apiFetch(`/api/analytics/aid-type?${queryParams}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

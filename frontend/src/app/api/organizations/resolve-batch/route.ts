@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { apiFetch } from '@/lib/api-fetch';
 
 export const dynamic = 'force-dynamic'
 
@@ -54,8 +55,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<BatchReso
     // Resolve each organization sequentially
     // We could optimize this with parallel processing, but sequential is simpler and avoids overwhelming the DB
     for (const org of organizations) {
-      const resolveResponse = await fetch(
-        `${request.nextUrl.origin}/api/organizations/resolve`,
+      const resolveResponse = await apiFetch(`${request.nextUrl.origin}/api/organizations/resolve`,
         {
           method: 'POST',
           headers: {

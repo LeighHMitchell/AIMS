@@ -13,6 +13,7 @@ import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
 import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
 import { HierarchicalAdminSelect } from "@/components/ui/hierarchical-admin-select"
+import { apiFetch } from '@/lib/api-fetch';
 
 interface AdminUnit {
   id: string
@@ -203,7 +204,7 @@ export function EnhancedSubnationalBreakdown({
     
     try {
       console.log('[EnhancedSubnationalBreakdown] Fetching data from API...')
-      const response = await fetch(`/api/activities/${activityId}/subnational-breakdown`)
+      const response = await apiFetch(`/api/activities/${activityId}/subnational-breakdown`)
       
       if (response.ok) {
         const data = await response.json()
@@ -339,7 +340,7 @@ export function EnhancedSubnationalBreakdown({
         hasNonZeroPercentages: payload.some(p => p.percentage > 0)
       });
 
-      const response = await fetch(`/api/activities/${activityId}/subnational-breakdown`, {
+      const response = await apiFetch(`/api/activities/${activityId}/subnational-breakdown`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Colour palette as specified
 const COLOURS = {
@@ -94,7 +95,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
         setNoBudget(false)
         setNoDisbursements(false)
 
-        const response = await fetch(`/api/activities/${activityId}/spend-trajectory`)
+        const response = await apiFetch(`/api/activities/${activityId}/spend-trajectory`)
         
         if (!response.ok) {
           const errorData = await response.json()

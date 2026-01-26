@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Download, AlertCircle } from 'lucide-react'
 import { SDG_GOALS } from '@/data/sdg-targets'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface SDGTableProps {
   organizationId: string
@@ -56,7 +57,7 @@ export function SDGTable({
         dataType: 'coverage'
       })
 
-      const response = await fetch(`/api/analytics/sdgs?${params}`)
+      const response = await apiFetch(`/api/analytics/sdgs?${params}`)
       const result = await response.json()
 
       if (result.success && result.coverage) {

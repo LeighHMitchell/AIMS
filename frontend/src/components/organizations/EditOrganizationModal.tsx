@@ -74,6 +74,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { apiFetch } from '@/lib/api-fetch';
 
 // Combine all options for validation (countries + institutional groups)
 const ALL_COUNTRY_AND_REGION_CODES = [
@@ -293,7 +294,7 @@ export function EditOrganizationModal({
   const fetchOrganizationTypes = async () => {
     setLoadingTypes(true)
     try {
-      const response = await fetch('/api/organization-types')
+      const response = await apiFetch('/api/organization-types')
       if (response.ok) {
         const types = await response.json()
         setOrganizationTypes(types)
@@ -453,7 +454,7 @@ export function EditOrganizationModal({
       if (onSave) {
         await onSave(dataToSave)
       } else if (organization?.id) {
-        const response = await fetch(`/api/organizations/${organization.id}`, {
+        const response = await apiFetch(`/api/organizations/${organization.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -510,7 +511,7 @@ export function EditOrganizationModal({
     if (activeTab === 'aliases' && modalOpen && organization?.id) {
       const fetchOrganizations = async () => {
         try {
-          const response = await fetch('/api/organizations')
+          const response = await apiFetch('/api/organizations')
           if (response.ok) {
             const data = await response.json()
             // Filter out the current organization and map to ComboboxOrganization format
@@ -553,8 +554,7 @@ export function EditOrganizationModal({
       const fetchMergePreview = async () => {
         setLoadingMergePreview(true)
         try {
-          const response = await fetch(
-            `/api/organizations/merge/preview?sourceOrgId=${mergeSourceOrgId}&targetOrgId=${organization.id}`
+          const response = await apiFetch(`/api/organizations/merge/preview?sourceOrgId=${mergeSourceOrgId}&targetOrgId=${organization.id}`
           )
           if (response.ok) {
             const preview = await response.json()
@@ -583,7 +583,7 @@ export function EditOrganizationModal({
     
     setIsMerging(true)
     try {
-      const response = await fetch('/api/organizations/merge', {
+      const response = await apiFetch('/api/organizations/merge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

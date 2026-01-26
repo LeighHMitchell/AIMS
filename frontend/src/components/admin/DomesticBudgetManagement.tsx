@@ -76,6 +76,7 @@ import {
   ClassificationType,
   CLASSIFICATION_TYPE_LABELS,
 } from "@/types/aid-on-budget";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface BudgetSummary {
   totalBudget: number;
@@ -132,7 +133,7 @@ export function DomesticBudgetManagement() {
   // Fetch budget classifications
   const fetchClassifications = useCallback(async () => {
     try {
-      const response = await fetch("/api/admin/budget-classifications?flat=true");
+      const response = await apiFetch("/api/admin/budget-classifications?flat=true");
       const data = await response.json();
 
       if (!response.ok) {
@@ -153,7 +154,7 @@ export function DomesticBudgetManagement() {
       params.set("fiscalYear", selectedYear.toString());
       params.set("classificationType", filterType);
 
-      const response = await fetch(`/api/admin/domestic-budget?${params.toString()}`);
+      const response = await apiFetch(`/api/admin/domestic-budget?${params.toString()}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -330,7 +331,7 @@ export function DomesticBudgetManagement() {
     }
 
     try {
-      const response = await fetch(`/api/admin/domestic-budget/${item.id}`, {
+      const response = await apiFetch(`/api/admin/domestic-budget/${item.id}`, {
         method: "DELETE",
       });
       const data = await response.json();
@@ -356,7 +357,7 @@ export function DomesticBudgetManagement() {
 
     setSaving(true);
     try {
-      const response = await fetch("/api/admin/domestic-budget", {
+      const response = await apiFetch("/api/admin/domestic-budget", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -392,7 +393,7 @@ export function DomesticBudgetManagement() {
     if (numValue < 0) return;
 
     try {
-      const response = await fetch("/api/admin/domestic-budget", {
+      const response = await apiFetch("/api/admin/domestic-budget", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

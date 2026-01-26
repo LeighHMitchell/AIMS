@@ -43,6 +43,7 @@ import { useTaskAssignments } from '@/hooks/useTaskAssignments';
 import type { Task, TaskStatus, TaskAssignment, CreateTaskRequest } from '@/types/task';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface TaskingTabProps {
   userId: string;
@@ -144,7 +145,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
         formData.append('userId', userId);
 
         try {
-          const response = await fetch(`/api/tasks/${result.id}/attachments`, {
+          const response = await apiFetch(`/api/tasks/${result.id}/attachments`, {
             method: 'POST',
             body: formData,
           });

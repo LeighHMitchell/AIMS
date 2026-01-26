@@ -12,6 +12,7 @@ import { HelpText } from '@/components/ui/help-text';
 import { toast } from 'sonner';
 import { usePolicyMarkersAutosave } from '@/hooks/use-policy-markers-autosave';
 import { useUser } from '@/hooks/useUser';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface PolicyMarker {
   id: string;
@@ -101,7 +102,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
   useEffect(() => {
     const fetchMarkers = async () => {
       try {
-        const response = await fetch('/api/policy-markers');
+        const response = await apiFetch('/api/policy-markers');
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
           throw new Error(errorData.error || `HTTP ${response.status}`);

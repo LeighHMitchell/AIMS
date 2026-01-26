@@ -29,6 +29,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface DocumentTitle {
   narrative: string;
@@ -312,7 +313,7 @@ export function IATIDocumentManager({
     setError(null);
 
     try {
-      const response = await fetch(`/api/organizations/${organizationId}/documents`);
+      const response = await apiFetch(`/api/organizations/${organizationId}/documents`);
       if (!response.ok) {
         throw new Error('Failed to fetch documents');
       }
@@ -370,7 +371,7 @@ export function IATIDocumentManager({
       // Save new order to API if in self-contained mode
       if (!isControlled && organizationId) {
         try {
-          await fetch(`/api/organizations/${organizationId}/documents`, {
+          await apiFetch(`/api/organizations/${organizationId}/documents`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -425,8 +426,7 @@ export function IATIDocumentManager({
     }
 
     try {
-      const response = await fetch(
-        `/api/organizations/${organizationId}/documents?documentId=${docToDelete.id}`,
+      const response = await apiFetch(`/api/organizations/${organizationId}/documents?documentId=${docToDelete.id}`,
         { method: 'DELETE' }
       );
 
@@ -499,7 +499,7 @@ export function IATIDocumentManager({
         recipientCountries: editingDocument.recipientCountries,
       };
 
-      const response = await fetch(`/api/organizations/${organizationId}/documents`, {
+      const response = await apiFetch(`/api/organizations/${organizationId}/documents`, {
         method: isEditing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

@@ -18,6 +18,7 @@ import {
   Scatter,
   Cell
 } from 'recharts'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ImplementingPartnerData {
   partner_name: string
@@ -74,7 +75,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
         topN
       })
 
-      const response = await fetch(`/api/aid-effectiveness/implementing-partners?${params}`)
+      const response = await apiFetch(`/api/aid-effectiveness/implementing-partners?${params}`)
       
       if (response.ok) {
         const result = await response.json()

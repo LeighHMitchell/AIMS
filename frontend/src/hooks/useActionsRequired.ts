@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { ActionItem } from '@/types/dashboard';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ActionsRequiredResponse {
   actions: ActionItem[];
@@ -48,7 +49,7 @@ export function useActionsRequired(
         params.append('userId', userId);
       }
 
-      const response = await fetch(`/api/dashboard/actions-required?${params.toString()}`);
+      const response = await apiFetch(`/api/dashboard/actions-required?${params.toString()}`);
 
       if (!response.ok) {
         const errorData = await response.json();

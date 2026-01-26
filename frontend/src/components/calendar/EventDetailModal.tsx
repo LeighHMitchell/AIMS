@@ -35,6 +35,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUser } from '@/hooks/useUser'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface CalendarEvent {
   id: string
@@ -213,7 +214,7 @@ export function EventDetailModal({
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/calendar-events/${event.id}`, {
+      const response = await apiFetch(`/api/calendar-events/${event.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -257,7 +258,7 @@ export function EventDetailModal({
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/calendar-events/${event.id}`, {
+      const response = await apiFetch(`/api/calendar-events/${event.id}`, {
         method: 'DELETE',
       })
 

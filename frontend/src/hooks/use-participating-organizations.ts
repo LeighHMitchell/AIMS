@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Organization } from '@/components/ui/organization-searchable-select';
+import { apiFetch } from '@/lib/api-fetch';
 
 export interface ParticipatingOrganization {
   id: string;
@@ -61,7 +62,7 @@ export function useParticipatingOrganizations({
     setError(null);
 
     try {
-      const response = await fetch(`/api/activities/${activityId}/participating-organizations`);
+      const response = await apiFetch(`/api/activities/${activityId}/participating-organizations`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -97,7 +98,7 @@ export function useParticipatingOrganizations({
     setError(null);
 
     try {
-      const response = await fetch(`/api/activities/${activityId}/participating-organizations`, {
+      const response = await apiFetch(`/api/activities/${activityId}/participating-organizations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,8 +149,7 @@ export function useParticipatingOrganizations({
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/activities/${activityId}/participating-organizations?organization_id=${organizationId}&role_type=${roleType}`,
+      const response = await apiFetch(`/api/activities/${activityId}/participating-organizations?organization_id=${organizationId}&role_type=${roleType}`,
         {
           method: 'DELETE',
         }

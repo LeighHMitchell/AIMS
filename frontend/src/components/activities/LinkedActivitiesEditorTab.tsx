@@ -22,6 +22,7 @@ import LinkedActivitiesGraph from './LinkedActivitiesGraph';
 import { cn } from '@/lib/utils';
 import { CreateRelationshipsTableGuide } from './CreateRelationshipsTableGuide';
 import { LinkExternalActivityModal } from '@/components/modals/LinkExternalActivityModal';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface LinkedActivity {
   id: string;
@@ -126,7 +127,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     
     setLoading(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/linked`);
+      const response = await apiFetch(`/api/activities/${activityId}/linked`);
       if (!response.ok) throw new Error('Failed to fetch linked activities');
       
       const data = await response.json();
@@ -152,7 +153,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     
     setGraphLoading(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/linked/graph?depth=${depth}`);
+      const response = await apiFetch(`/api/activities/${activityId}/linked/graph?depth=${depth}`);
       if (!response.ok) throw new Error('Failed to fetch graph data');
       
       const data = await response.json();
@@ -200,7 +201,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     debounceRef.current = setTimeout(async () => {
     setSearching(true);
     try {
-        const response = await fetch(`/api/activities/search?q=${encodeURIComponent(query)}&limit=20`);
+        const response = await apiFetch(`/api/activities/search?q=${encodeURIComponent(query)}&limit=20`);
         if (!response.ok) throw new Error('Search failed');
         
         const data = await response.json();
@@ -272,7 +273,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
       
       if (editingActivity) {
         // Update existing link
-        const response = await fetch(`/api/activities/${activityId}/linked/${editingActivity.id}`, {
+        const response = await apiFetch(`/api/activities/${activityId}/linked/${editingActivity.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -288,7 +289,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
         toast.success('Link updated successfully');
       } else if (selectedActivity) {
         // Create new link
-      const response = await fetch(`/api/activities/${activityId}/linked`, {
+      const response = await apiFetch(`/api/activities/${activityId}/linked`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -337,7 +338,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     try {
       setSaving(true);
       
-      const response = await fetch(`/api/activities/${activityId}/linked/${linkedActivityId}`, {
+      const response = await apiFetch(`/api/activities/${activityId}/linked/${linkedActivityId}`, {
         method: 'DELETE'
       });
       

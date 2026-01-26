@@ -26,6 +26,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCont
 import Image from 'next/image'
 import { format } from 'date-fns'
 import { Skeleton } from '@/components/ui/skeleton'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface SDGData {
   sdg: {
@@ -106,7 +107,7 @@ export default function SDGProfilePage() {
           throw new Error('Invalid SDG ID')
         }
 
-        const response = await fetch(`/api/sdgs/${sdgId}`, {
+        const response = await apiFetch(`/api/sdgs/${sdgId}`, {
           signal: abortControllerRef.current.signal
         })
         

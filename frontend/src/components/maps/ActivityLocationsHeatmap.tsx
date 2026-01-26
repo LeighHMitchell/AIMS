@@ -11,6 +11,7 @@ import html2canvas from 'html2canvas'
 import { toast } from "sonner"
 import type { LocationSchema } from '@/lib/schemas/location'
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates'
+import { apiFetch } from '@/lib/api-fetch';
 
 // mapcn map components
 import { Map, MapControls, useMap } from '@/components/ui/map'
@@ -199,7 +200,7 @@ export default function ActivityLocationsHeatmap({
   useEffect(() => {
     const fetchHomeCountry = async () => {
       try {
-        const response = await fetch('/api/admin/system-settings')
+        const response = await apiFetch('/api/admin/system-settings')
         if (response.ok) {
           const data = await response.json()
           if (data.homeCountry) {

@@ -31,6 +31,7 @@ import {
   PieChart as PieChartIcon,
   Maximize2,
 } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface BudgetTrendPoint {
   year: number;
@@ -176,7 +177,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/dashboard/org-hero-stats?organizationId=${organizationId}`);
+        const response = await apiFetch(`/api/dashboard/org-hero-stats?organizationId=${organizationId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch hero stats');
         }

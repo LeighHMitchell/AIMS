@@ -49,6 +49,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
+import { apiFetch } from '@/lib/api-fetch';
 
 type MetricType = "commitments" | "disbursements";
 type ViewMode = "bar" | "pie" | "table";
@@ -119,7 +120,7 @@ export function ExecutingAgenciesChart({ refreshKey = 0 }: ExecutingAgenciesChar
       setLoading(true);
 
       const params = new URLSearchParams({ measure: metric });
-      const response = await fetch(`/api/analytics/dashboard?${params}`);
+      const response = await apiFetch(`/api/analytics/dashboard?${params}`);
       const result = await response.json();
 
       if (!result.success) {

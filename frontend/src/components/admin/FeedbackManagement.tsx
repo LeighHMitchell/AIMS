@@ -20,6 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FeedbackModal } from '@/components/ui/feedback-modal';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Feedback {
   id: string;
@@ -197,7 +198,7 @@ export function FeedbackManagement() {
       params.append('page', currentPage.toString());
       params.append('limit', pageSize.toString());
       
-      const response = await fetch(`/api/feedback?${params}`);
+      const response = await apiFetch(`/api/feedback?${params}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -267,7 +268,7 @@ export function FeedbackManagement() {
     try {
       const requestBody = { userId: user.id, id, ...updates };
       
-      const response = await fetch('/api/feedback', {
+      const response = await apiFetch('/api/feedback', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -316,7 +317,7 @@ export function FeedbackManagement() {
     try {
       const requestBody = { userId: user?.id, id, status: newStatus };
       
-      const response = await fetch('/api/feedback', {
+      const response = await apiFetch('/api/feedback', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -373,7 +374,7 @@ export function FeedbackManagement() {
     setTotalCount(prev => prev - 1);
     
     try {
-      const response = await fetch('/api/feedback', {
+      const response = await apiFetch('/api/feedback', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, id }),
@@ -413,7 +414,7 @@ export function FeedbackManagement() {
     setIsBatchDeleting(true);
 
     try {
-      const response = await fetch('/api/feedback', {
+      const response = await apiFetch('/api/feedback', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, ids: idsToDelete }),

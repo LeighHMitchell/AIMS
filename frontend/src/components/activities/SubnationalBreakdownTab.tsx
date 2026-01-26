@@ -11,6 +11,7 @@ import { MYANMAR_REGIONS, type MyanmarRegion } from "@/data/myanmar-regions"
 import { toast } from "sonner"
 import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
 import { RegionSearchableSelect } from "@/components/ui/region-searchable-select"
+import { apiFetch } from '@/lib/api-fetch';
 
 interface SubnationalBreakdown {
   id?: string
@@ -180,7 +181,7 @@ export function SubnationalBreakdownTab({
     if (!activityId) return
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/subnational-breakdown`)
+      const response = await apiFetch(`/api/activities/${activityId}/subnational-breakdown`)
       if (response.ok) {
         const data = await response.json()
         
@@ -327,7 +328,7 @@ export function SubnationalBreakdownTab({
         totalPercentage: Object.values(currentBreakdowns).reduce((sum, val) => sum + val, 0)
       })
 
-      const response = await fetch(`/api/activities/${activityId}/subnational-breakdown`, {
+      const response = await apiFetch(`/api/activities/${activityId}/subnational-breakdown`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -7,6 +7,7 @@ import type {
   ShareTaskRequest,
   TaskShare,
 } from '@/types/task';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UseTaskAssignmentsOptions {
   userId: string;
@@ -64,7 +65,7 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
       }
 
       console.log('[useTaskAssignments] Making PUT request to:', `/api/tasks/assignments/${assignmentId}`, body);
-      const response = await fetch(`/api/tasks/assignments/${assignmentId}`, {
+      const response = await apiFetch(`/api/tasks/assignments/${assignmentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -107,7 +108,7 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/assignments/${assignmentId}`, {
+      const response = await apiFetch(`/api/tasks/assignments/${assignmentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -144,7 +145,7 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/assignments/${assignmentId}`, {
+      const response = await apiFetch(`/api/tasks/assignments/${assignmentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,7 +184,7 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/assignments/${assignmentId}`, {
+      const response = await apiFetch(`/api/tasks/assignments/${assignmentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -221,7 +222,7 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/assignments/${assignmentId}/share`, {
+      const response = await apiFetch(`/api/tasks/assignments/${assignmentId}/share`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -258,7 +259,7 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/assignments/${assignmentId}/share`, {
+      const response = await apiFetch(`/api/tasks/assignments/${assignmentId}/share`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -294,7 +295,7 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/assignments/${assignmentId}?userId=${userId}`);
+      const response = await apiFetch(`/api/tasks/assignments/${assignmentId}?userId=${userId}`);
       const result = await response.json();
 
       if (!response.ok) {
@@ -322,7 +323,7 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/assignments/${assignmentId}`, {
+      const response = await apiFetch(`/api/tasks/assignments/${assignmentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -358,7 +359,7 @@ export function useTaskAssignments({ userId }: UseTaskAssignmentsOptions): UseTa
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/assignments/${assignmentId}`, {
+      const response = await apiFetch(`/api/tasks/assignments/${assignmentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

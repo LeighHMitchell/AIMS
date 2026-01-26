@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
+import { apiFetch } from '@/lib/api-fetch';
 
 export type VoteValue = -1 | 0 | 1
 
@@ -127,7 +128,7 @@ export function useActivityVote({
     setError(null)
 
     try {
-      const response = await fetch(`/api/activities/${activityId}/vote`, {
+      const response = await apiFetch(`/api/activities/${activityId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, vote: newVote })

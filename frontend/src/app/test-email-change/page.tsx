@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function TestEmailChangePage() {
   const [newEmail, setNewEmail] = useState("");
@@ -18,7 +19,7 @@ export default function TestEmailChangePage() {
     try {
       console.log('Testing email change with:', newEmail);
 
-      const response = await fetch('/api/users/change-email-simple', {
+      const response = await apiFetch('/api/users/change-email-simple', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +58,7 @@ export default function TestEmailChangePage() {
 
   const resetTestData = async () => {
     try {
-      const response = await fetch('/api/test-email-change', {
+      const response = await apiFetch('/api/test-email-change', {
         method: 'POST',
       });
       

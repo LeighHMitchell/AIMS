@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { apiFetch } from '@/lib/api-fetch';
 // Remove supabase import - we'll use API routes instead
 import { useUser } from '@/hooks/useUser'
 
@@ -87,7 +88,7 @@ export function useMyPortfolioData() {
       try {
         console.log('[MyPortfolio] Fetching data for user ID:', user.id)
         
-        const response = await fetch('/api/my-portfolio')
+        const response = await apiFetch('/api/my-portfolio')
         if (!response.ok) {
           const errorData = await response.json()
           throw new Error(errorData.error || 'Failed to fetch portfolio data')

@@ -27,6 +27,7 @@ import aidTypesData from "@/data/aid-types.json"
 import flowTypesData from "@/data/flow-types.json"
 import financeTypesData from "@/data/finance-types.json"
 import { devLog, devError, prodError } from "@/lib/debug"
+import { apiFetch } from '@/lib/api-fetch';
 
 interface IatiSearchTabProps {
   activityId: string
@@ -129,7 +130,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
       if (!user?.organizationId) return
       
       try {
-        const response = await fetch(`/api/organizations/${user.organizationId}`)
+        const response = await apiFetch(`/api/organizations/${user.organizationId}`)
         if (response.ok) {
           const org = await response.json()
           if (org.iati_identifier) {
@@ -207,7 +208,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
     
     try {
       devLog("[IATI Search Frontend] Making API call to /api/iati/search")
-      const response = await fetch("/api/iati/search", {
+      const response = await apiFetch("/api/iati/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -257,7 +258,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
     setIsFetchingXml(true)
     
     try {
-      const response = await fetch(`/api/iati/activity/${encodeURIComponent(activity.iatiIdentifier)}`)
+      const response = await apiFetch(`/api/iati/activity/${encodeURIComponent(activity.iatiIdentifier)}`)
       
       if (!response.ok) {
         let errorMessage = 'Failed to fetch activity XML';
@@ -315,7 +316,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
       const userPublisherRefs: string[] = []
       if (user?.organizationId) {
         try {
-          const orgResponse = await fetch(`/api/organizations/${user.organizationId}`)
+          const orgResponse = await apiFetch(`/api/organizations/${user.organizationId}`)
           if (orgResponse.ok) {
             const org = await orgResponse.json()
             if (org.iati_identifier) {
@@ -342,7 +343,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
         let existingAct = null
         if (meta.iatiId) {
           try {
-            const searchResponse = await fetch(`/api/activities/search?iatiId=${encodeURIComponent(meta.iatiId)}`)
+            const searchResponse = await apiFetch(`/api/activities/search?iatiId=${encodeURIComponent(meta.iatiId)}`)
             if (searchResponse.ok) {
               const searchData = await searchResponse.json()
               if (searchData.activities && searchData.activities.length > 0) {

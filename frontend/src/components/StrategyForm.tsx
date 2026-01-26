@@ -31,6 +31,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Document types for strategies
 const DOCUMENT_TYPES = [
@@ -207,7 +208,7 @@ export function StrategyForm({
         ...(isEditing && { id: strategy?.id }),
       };
 
-      const response = await fetch('/api/strategies', {
+      const response = await apiFetch('/api/strategies', {
         method: isEditing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

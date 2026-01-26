@@ -18,6 +18,7 @@ import {
   Cell,
   Legend
 } from 'recharts'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface DevelopmentIndicatorData {
   indicator: string
@@ -71,7 +72,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
         implementingPartner: filters.implementingPartner
       })
 
-      const response = await fetch(`/api/aid-effectiveness/development-indicators?${params}`)
+      const response = await apiFetch(`/api/aid-effectiveness/development-indicators?${params}`)
       
       if (response.ok) {
         const result = await response.json()

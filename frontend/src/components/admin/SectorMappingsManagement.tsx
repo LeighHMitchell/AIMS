@@ -58,6 +58,7 @@ import {
 } from "@/types/aid-on-budget";
 import dacSectorsData from "@/data/dac-sectors.json";
 import financeTypesData from "@/data/finance-types.json";
+import { apiFetch } from '@/lib/api-fetch';
 
 // ============================================================================
 // Types
@@ -235,7 +236,7 @@ export function SectorMappingsManagement() {
 
   const fetchClassifications = useCallback(async () => {
     try {
-      const response = await fetch("/api/admin/budget-classifications?flat=true&activeOnly=true");
+      const response = await apiFetch("/api/admin/budget-classifications?flat=true&activeOnly=true");
       const data = await response.json();
       if (response.ok) {
         setClassifications(data.data || []);
@@ -248,7 +249,7 @@ export function SectorMappingsManagement() {
   const fetchSectorMappings = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/admin/sector-mappings?grouped=true");
+      const response = await apiFetch("/api/admin/sector-mappings?grouped=true");
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setSectorMappings(data.data || {});
@@ -263,7 +264,7 @@ export function SectorMappingsManagement() {
   const fetchOrgMappings = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/admin/organization-mappings");
+      const response = await apiFetch("/api/admin/organization-mappings");
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setOrgMappings(data.data || []);
@@ -278,7 +279,7 @@ export function SectorMappingsManagement() {
   const fetchAdminMappings = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/admin/organization-administrative-mappings");
+      const response = await apiFetch("/api/admin/organization-administrative-mappings");
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setAdminMappings(data.data || []);
@@ -293,7 +294,7 @@ export function SectorMappingsManagement() {
   const fetchFinanceTypeMappings = useCallback(async (type: "revenue" | "liabilities") => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/finance-type-mappings?classificationType=${type}`);
+      const response = await apiFetch(`/api/admin/finance-type-mappings?classificationType=${type}`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setFinanceTypeMappings(data.data || []);
@@ -310,7 +311,7 @@ export function SectorMappingsManagement() {
     try {
       setCountrySectorsLoading(true);
       // First get all active vocabularies
-      const vocabResponse = await fetch("/api/admin/country-sector-vocabularies?activeOnly=true");
+      const vocabResponse = await apiFetch("/api/admin/country-sector-vocabularies?activeOnly=true");
       const vocabData = await vocabResponse.json();
 
       if (!vocabResponse.ok) {
@@ -331,7 +332,7 @@ export function SectorMappingsManagement() {
       }
 
       // Fetch sectors from the default vocabulary
-      const sectorsResponse = await fetch(`/api/admin/country-sector-vocabularies/${defaultVocab.id}`);
+      const sectorsResponse = await apiFetch(`/api/admin/country-sector-vocabularies/${defaultVocab.id}`);
       const sectorsData = await sectorsResponse.json();
 
       if (!sectorsResponse.ok) {
@@ -472,7 +473,7 @@ export function SectorMappingsManagement() {
       let newMappingId: string | undefined = mappingId;
 
       if (newValue && !mappingId) {
-        const response = await fetch("/api/admin/sector-mappings", {
+        const response = await apiFetch("/api/admin/sector-mappings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -490,7 +491,7 @@ export function SectorMappingsManagement() {
         newMappingId = result.data?.id;
         toast.success("Mapping created");
       } else if (newValue && mappingId) {
-        const response = await fetch(`/api/admin/sector-mappings/${mappingId}`, {
+        const response = await apiFetch(`/api/admin/sector-mappings/${mappingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ budgetClassificationId: newValue }),
@@ -501,7 +502,7 @@ export function SectorMappingsManagement() {
         }
         toast.success("Mapping updated");
       } else if (!newValue && mappingId) {
-        const response = await fetch(`/api/admin/sector-mappings/${mappingId}`, {
+        const response = await apiFetch(`/api/admin/sector-mappings/${mappingId}`, {
           method: "DELETE",
         });
         if (!response.ok) {
@@ -587,7 +588,7 @@ export function SectorMappingsManagement() {
       let newMappingId: string | undefined = mappingId;
 
       if (newValue && !mappingId) {
-        const response = await fetch("/api/admin/organization-mappings", {
+        const response = await apiFetch("/api/admin/organization-mappings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ organizationId, budgetClassificationId: newValue }),
@@ -600,7 +601,7 @@ export function SectorMappingsManagement() {
         newMappingId = result.data?.id;
         toast.success("Mapping created");
       } else if (newValue && mappingId) {
-        const response = await fetch(`/api/admin/organization-mappings/${mappingId}`, {
+        const response = await apiFetch(`/api/admin/organization-mappings/${mappingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ budgetClassificationId: newValue }),
@@ -611,7 +612,7 @@ export function SectorMappingsManagement() {
         }
         toast.success("Mapping updated");
       } else if (!newValue && mappingId) {
-        const response = await fetch(`/api/admin/organization-mappings/${mappingId}`, {
+        const response = await apiFetch(`/api/admin/organization-mappings/${mappingId}`, {
           method: "DELETE",
         });
         if (!response.ok) {
@@ -679,7 +680,7 @@ export function SectorMappingsManagement() {
       let newMappingId: string | undefined = mappingId;
 
       if (newValue && !mappingId) {
-        const response = await fetch("/api/admin/organization-administrative-mappings", {
+        const response = await apiFetch("/api/admin/organization-administrative-mappings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ organizationId, budgetClassificationId: newValue }),
@@ -692,7 +693,7 @@ export function SectorMappingsManagement() {
         newMappingId = result.data?.id;
         toast.success("Mapping created");
       } else if (newValue && mappingId) {
-        const response = await fetch(`/api/admin/organization-administrative-mappings/${mappingId}`, {
+        const response = await apiFetch(`/api/admin/organization-administrative-mappings/${mappingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ budgetClassificationId: newValue }),
@@ -703,7 +704,7 @@ export function SectorMappingsManagement() {
         }
         toast.success("Mapping updated");
       } else if (!newValue && mappingId) {
-        const response = await fetch(`/api/admin/organization-administrative-mappings/${mappingId}`, {
+        const response = await apiFetch(`/api/admin/organization-administrative-mappings/${mappingId}`, {
           method: "DELETE",
         });
         if (!response.ok) {
@@ -771,7 +772,7 @@ export function SectorMappingsManagement() {
       let newMappingId: string | undefined = mappingId;
 
       if (newValue && !mappingId) {
-        const response = await fetch("/api/admin/finance-type-mappings", {
+        const response = await apiFetch("/api/admin/finance-type-mappings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -789,7 +790,7 @@ export function SectorMappingsManagement() {
         newMappingId = result.data?.id;
         toast.success("Mapping created");
       } else if (newValue && mappingId) {
-        const response = await fetch(`/api/admin/finance-type-mappings/${mappingId}`, {
+        const response = await apiFetch(`/api/admin/finance-type-mappings/${mappingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ budgetClassificationId: newValue }),
@@ -800,7 +801,7 @@ export function SectorMappingsManagement() {
         }
         toast.success("Mapping updated");
       } else if (!newValue && mappingId) {
-        const response = await fetch(`/api/admin/finance-type-mappings/${mappingId}`, {
+        const response = await apiFetch(`/api/admin/finance-type-mappings/${mappingId}`, {
           method: "DELETE",
         });
         if (!response.ok) {

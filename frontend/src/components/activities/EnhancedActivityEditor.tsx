@@ -41,6 +41,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -231,7 +232,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     setSaving(prev => ({ ...prev, activity_scope: true }));
     
     try {
-      const response = await fetch('/api/activities/field', {
+      const response = await apiFetch('/api/activities/field', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -442,7 +443,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
     setSaving(prev => ({ ...prev, other_identifiers: true }));
 
     try {
-      const response = await fetch(`/api/activities/field`, {
+      const response = await apiFetch(`/api/activities/field`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

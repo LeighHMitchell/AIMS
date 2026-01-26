@@ -39,6 +39,7 @@ import { toast } from 'sonner';
 import { LanguageSearchableSelect } from '@/components/forms/LanguageSearchableSelect';
 import { useFieldAutosave } from '@/hooks/use-field-autosave-new';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface MetadataTabProps {
   activityId: string;
@@ -225,7 +226,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
   const handleReportingOrgSave = async (newReportingOrgId: string) => {
     setSavingReportingOrg(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/reporting-org`, {
+      const response = await apiFetch(`/api/activities/${activityId}/reporting-org`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -280,7 +281,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
       setError(null);
       
       console.log('[MetadataTab] Fetching metadata for activity ID:', activityId);
-      const response = await fetch(`/api/activities/${activityId}/metadata`, {
+      const response = await apiFetch(`/api/activities/${activityId}/metadata`, {
         cache: 'no-store', // Force fresh data, no caching
         headers: {
           'Cache-Control': 'no-cache',

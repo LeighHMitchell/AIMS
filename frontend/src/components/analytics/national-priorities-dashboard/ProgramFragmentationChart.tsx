@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { MeasureType, FragmentationData } from "@/types/national-priorities";
 import { FragmentationHeatmap } from "./FragmentationHeatmap";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ProgramFragmentationChartProps {
   measure: MeasureType;
@@ -28,7 +29,7 @@ export function ProgramFragmentationChart({
         maxDonors: "10",
       });
 
-      const response = await fetch(`/api/analytics/fragmentation/program?${params}`);
+      const response = await apiFetch(`/api/analytics/fragmentation/program?${params}`);
       const result = await response.json();
 
       if (!result.success) {

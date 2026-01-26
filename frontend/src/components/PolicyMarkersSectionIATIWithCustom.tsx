@@ -16,6 +16,7 @@ import { HelpText } from '@/components/ui/help-text';
 import { toast } from 'sonner';
 import { usePolicyMarkersAutosave } from '@/hooks/use-policy-markers-autosave';
 import { useUser } from '@/hooks/useUser';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Types
 type VisibilityLevel = 'public' | 'organization' | 'hidden';
@@ -189,7 +190,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     const fetchMarkers = async () => {
       try {
         // Pass activity_id to get activity-scoped custom markers
-        const response = await fetch(`/api/policy-markers?activity_id=${activityId}`);
+        const response = await apiFetch(`/api/policy-markers?activity_id=${activityId}`);
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
           throw new Error(errorData.error || `HTTP ${response.status}`);
@@ -371,7 +372,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     }
 
     try {
-      const response = await fetch('/api/policy-markers', {
+      const response = await apiFetch('/api/policy-markers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -481,7 +482,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     }
 
     try {
-      const response = await fetch('/api/policy-markers', {
+      const response = await apiFetch('/api/policy-markers', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -547,7 +548,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
     }
 
     try {
-      const response = await fetch(`/api/policy-markers?id=${markerId}`, {
+      const response = await apiFetch(`/api/policy-markers?id=${markerId}`, {
         method: 'DELETE',
       });
 

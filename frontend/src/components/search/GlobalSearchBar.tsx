@@ -22,6 +22,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { SearchResultRow } from './SearchResultRow'
 import type { SearchResult, SearchResultType, SEARCH_RESULT_ORDER, RESULT_TYPE_LABELS } from '@/types/search'
 import { normalizeSearchResults, type LegacySearchResult } from '@/lib/search-normalizer'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Result type ordering and labels
 const searchResultOrder: SearchResultType[] = [
@@ -170,8 +171,7 @@ export function GlobalSearchBar({
     setShowSuggestions(true)
 
     try {
-      const response = await fetch(
-        `/api/search/suggestions?q=${encodeURIComponent(searchQuery)}&limit=8`,
+      const response = await apiFetch(`/api/search/suggestions?q=${encodeURIComponent(searchQuery)}&limit=8`,
         {
           headers: {
             'Accept': 'application/json',
@@ -227,8 +227,7 @@ export function GlobalSearchBar({
       setIsSearching(true)
       setError(null)
 
-      const response = await fetch(
-        `/api/search?q=${encodeURIComponent(searchQuery)}`,
+      const response = await apiFetch(`/api/search?q=${encodeURIComponent(searchQuery)}`,
         {
           signal: abortControllerRef.current.signal,
           headers: {

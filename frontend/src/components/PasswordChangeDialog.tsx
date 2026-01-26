@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface PasswordChangeDialogProps {
   open: boolean;
@@ -41,7 +42,7 @@ export function PasswordChangeDialog({ open, onOpenChange, userId }: PasswordCha
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/change-password', {
+      const response = await apiFetch('/api/auth/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

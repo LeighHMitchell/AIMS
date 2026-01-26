@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface LocationFragmentationChartProps {
   measure?: MeasureType;
@@ -40,7 +41,7 @@ export function LocationFragmentationChart({
         maxDonors: "10",
       });
 
-      const response = await fetch(`/api/analytics/fragmentation/location?${params}`);
+      const response = await apiFetch(`/api/analytics/fragmentation/location?${params}`);
       const result = await response.json();
 
       if (!result.success) {

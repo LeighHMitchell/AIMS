@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { format } from 'date-fns'
 import { useCustomYears } from '@/hooks/useCustomYears'
 import { getCustomYearLabel } from '@/types/custom-years'
+import { apiFetch } from '@/lib/api-fetch';
 
 const COLOURS = {
   primaryScarlet: '#dc2625',
@@ -142,7 +143,7 @@ export function OrganizationSpendTrajectoryChart({
         setLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/organizations/${organizationId}/spend-trajectory`)
+        const response = await apiFetch(`/api/organizations/${organizationId}/spend-trajectory`)
 
         if (!response.ok) {
           const errorData = await response.json()

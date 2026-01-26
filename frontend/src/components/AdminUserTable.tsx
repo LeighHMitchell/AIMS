@@ -42,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { apiFetch } from '@/lib/api-fetch';
 
 type SortField = 'name' | 'organization' | 'role' | 'status' | 'lastLogin'
 type SortOrder = 'asc' | 'desc'
@@ -126,7 +127,7 @@ export function AdminUserTable() {
       }
 
       // Fetch users using the API endpoint that includes organization data
-      const response = await fetch('/api/users', { signal: abortController.signal })
+      const response = await apiFetch('/api/users', { signal: abortController.signal })
 
       // Check if this request was aborted
       if (abortController.signal.aborted) {
@@ -373,7 +374,7 @@ export function AdminUserTable() {
 
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/users?id=${deleteUserTarget.id}`, {
+      const response = await apiFetch(`/api/users?id=${deleteUserTarget.id}`, {
         method: 'DELETE',
       })
 
@@ -408,7 +409,7 @@ export function AdminUserTable() {
   const handleStatusToggle = async (userId: string, newStatus: boolean) => {
     setSavingUserId(userId)
     try {
-      const response = await fetch('/api/users/update', {
+      const response = await apiFetch('/api/users/update', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: userId, is_active: newStatus })
@@ -446,7 +447,7 @@ export function AdminUserTable() {
   const savePhoneEdit = async (userId: string) => {
     setSavingUserId(userId)
     try {
-      const response = await fetch('/api/users/update', {
+      const response = await apiFetch('/api/users/update', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: userId, telephone: editPhoneValue })
@@ -491,7 +492,7 @@ export function AdminUserTable() {
 
     setSavingUserId(userId)
     try {
-      const response = await fetch('/api/users/change-email-simple', {
+      const response = await apiFetch('/api/users/change-email-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, newEmail: editEmailValue })

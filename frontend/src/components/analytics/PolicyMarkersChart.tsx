@@ -31,6 +31,7 @@ import {
   ArrowDown
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface PolicyMarker {
   id: string
@@ -107,7 +108,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
         params.append('significanceLevels', selectedSignificance.join(','))
       }
 
-      const response = await fetch(`/api/analytics/policy-markers?${params}`)
+      const response = await apiFetch(`/api/analytics/policy-markers?${params}`)
       const result = await response.json()
 
       if (!result.success) {
@@ -143,7 +144,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
         params.append('significanceLevels', selectedSignificance.join(','))
       }
 
-      const response = await fetch(`/api/analytics/policy-markers-time-series?${params}`)
+      const response = await apiFetch(`/api/analytics/policy-markers-time-series?${params}`)
       const result = await response.json()
 
       if (!result.success) {

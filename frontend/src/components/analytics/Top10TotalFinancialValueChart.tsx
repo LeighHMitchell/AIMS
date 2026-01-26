@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BarChart3, DollarSign } from 'lucide-react'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Top10TotalFinancialValueChartProps {
   dateRange: {
@@ -66,7 +67,7 @@ export function Top10TotalFinancialValueChart({
       }
 
       console.log('[Top10TotalFinancialValue] Fetching from:', `/api/analytics/top-10/total-financial-value?${params}`)
-      const response = await fetch(`/api/analytics/top-10/total-financial-value?${params}`)
+      const response = await apiFetch(`/api/analytics/top-10/total-financial-value?${params}`)
       if (!response.ok) {
         const errorText = await response.text()
         console.error('[Top10TotalFinancialValue] Error response:', errorText)

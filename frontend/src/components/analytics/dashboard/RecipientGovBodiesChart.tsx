@@ -49,6 +49,7 @@ import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
 import { CHART_COLOR_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { apiFetch } from '@/lib/api-fetch';
 
 type ViewMode = "bar" | "pie" | "table";
 type MetricType = "budgets" | "plannedDisbursements" | "commitments" | "disbursements";
@@ -97,7 +98,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
       setLoading(true);
 
       const params = new URLSearchParams({ measure: metric });
-      const response = await fetch(`/api/analytics/dashboard?${params}`);
+      const response = await apiFetch(`/api/analytics/dashboard?${params}`);
       const result = await response.json();
 
       if (!result.success) {

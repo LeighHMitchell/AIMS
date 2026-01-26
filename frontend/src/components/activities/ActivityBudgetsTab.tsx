@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { apiFetch } from '@/lib/api-fetch';
 // USD conversion now happens server-side - no client-side API needed
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 // Removed shared HeroCard import - using local simple version
@@ -427,7 +428,7 @@ export default function ActivityBudgetsTab({
         console.log('[ActivityBudgetsTab] Fetching budgets for activity:', activityId);
 
         // Use API endpoint instead of direct Supabase query to avoid RLS issues
-        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+        const response = await apiFetch(`/api/activities/${activityId}/budgets`, {
           cache: 'no-store'
         });
         if (!response.ok) {
@@ -786,7 +787,7 @@ export default function ActivityBudgetsTab({
     // Save the new budget via API
     (async () => {
       try {
-        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+        const response = await apiFetch(`/api/activities/${activityId}/budgets`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newBudget)
@@ -866,7 +867,7 @@ export default function ActivityBudgetsTab({
     // Save the new budget via API
     (async () => {
       try {
-        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+        const response = await apiFetch(`/api/activities/${activityId}/budgets`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newBudget)
@@ -1094,7 +1095,7 @@ export default function ActivityBudgetsTab({
     // Save the new budget via API
     (async () => {
       try {
-        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+        const response = await apiFetch(`/api/activities/${activityId}/budgets`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newBudget)
@@ -1407,7 +1408,7 @@ export default function ActivityBudgetsTab({
 
       if (modalBudget.id) {
         // Update existing budget
-        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+        const response = await apiFetch(`/api/activities/${activityId}/budgets`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(budgetPayload)
@@ -1423,7 +1424,7 @@ export default function ActivityBudgetsTab({
         toast.success('Budget updated successfully');
       } else {
         // Create new budget
-        const response = await fetch(`/api/activities/${activityId}/budgets`, {
+        const response = await apiFetch(`/api/activities/${activityId}/budgets`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(budgetPayload)

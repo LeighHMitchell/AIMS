@@ -62,6 +62,7 @@ import {
   CLASSIFICATION_TYPE_DESCRIPTIONS,
   BudgetClassificationFormData,
 } from "@/types/aid-on-budget";
+import { apiFetch } from '@/lib/api-fetch';
 
 type SortColumn = "code" | "name" | "nameLocal" | "status";
 type SortDirection = "asc" | "desc";
@@ -242,8 +243,7 @@ export function BudgetClassificationsManagement() {
       params.set("type", filterType);
       if (!showInactive) params.set("activeOnly", "true");
 
-      const response = await fetch(
-        `/api/admin/budget-classifications?${params.toString()}`
+      const response = await apiFetch(`/api/admin/budget-classifications?${params.toString()}`
       );
       const data = await response.json();
 
@@ -353,7 +353,7 @@ export function BudgetClassificationsManagement() {
     }
 
     try {
-      const response = await fetch(`/api/admin/budget-classifications/${item.id}`, {
+      const response = await apiFetch(`/api/admin/budget-classifications/${item.id}`, {
         method: "DELETE",
       });
       const data = await response.json();

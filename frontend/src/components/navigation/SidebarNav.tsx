@@ -51,6 +51,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { QuickAddActivityModal } from "@/components/modals/QuickAddActivityModal"
+import { apiFetch } from '@/lib/api-fetch';
 
 interface SidebarNavProps {
   userRole?: string
@@ -221,7 +222,7 @@ export function SidebarNav({
                       if (isImporting) return;
                       setIsImporting(true);
                       try {
-                        const response = await fetch('/api/activities', {
+                        const response = await apiFetch('/api/activities', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({

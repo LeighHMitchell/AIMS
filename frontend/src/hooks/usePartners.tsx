@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 export interface Partner {
   id: string;
@@ -34,7 +35,7 @@ export function usePartners() {
   const fetchPartners = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/partners');
+      const response = await apiFetch('/api/partners');
       if (!response.ok) {
         throw new Error('Failed to fetch partners');
       }
@@ -52,7 +53,7 @@ export function usePartners() {
 
   const createPartner = async (partner: Omit<Partner, 'id' | 'createdAt' | 'updatedAt'>, user?: any) => {
     try {
-      const response = await fetch('/api/partners', {
+      const response = await apiFetch('/api/partners', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...partner, user }),
@@ -80,7 +81,7 @@ export function usePartners() {
       console.log('[AIMS DEBUG usePartners] Updates:', updates);
       console.log('[AIMS DEBUG usePartners] User:', user);
       
-      const response = await fetch('/api/partners', {
+      const response = await apiFetch('/api/partners', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...updates, user }),
@@ -116,7 +117,7 @@ export function usePartners() {
 
   const deletePartner = async (id: string) => {
     try {
-      const response = await fetch(`/api/partners/${id}`, {
+      const response = await apiFetch(`/api/partners/${id}`, {
         method: 'DELETE',
       });
       

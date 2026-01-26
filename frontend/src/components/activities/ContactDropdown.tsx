@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Contact {
   id?: string;
@@ -60,7 +61,7 @@ export function ContactDropdown({
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       
-      const response = await fetch(`/api/rolodex?${params}`);
+      const response = await apiFetch(`/api/rolodex?${params}`);
       if (response.ok) {
         const data = await response.json();
         // Transform the data to match our Contact interface

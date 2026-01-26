@@ -41,6 +41,7 @@ import {
 } from '@/lib/schemas/location';
 import { countries } from '@/data/countries';
 import { Menu } from 'bloom-menu';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface SectorData {
   code: string;
@@ -109,7 +110,7 @@ export default function LocationsTab({
       setIsLoading(true);
       setError(null);
 
-        const response = await fetch(`/api/activities/${activityId}/locations`);
+        const response = await apiFetch(`/api/activities/${activityId}/locations`);
         if (!response.ok) {
         throw new Error('Failed to load locations');
         }
@@ -146,7 +147,7 @@ export default function LocationsTab({
     }
 
     try {
-      const response = await fetch(`/api/activities/${activityId}`);
+      const response = await apiFetch(`/api/activities/${activityId}`);
       if (!response.ok) {
         console.error('Failed to load activity data for map');
         return;
@@ -251,7 +252,7 @@ export default function LocationsTab({
   // Handle delete location
   const handleDeleteLocation = useCallback(async (locationId: string) => {
     try {
-      const response = await fetch(`/api/activities/${activityId}/locations/${locationId}`, {
+      const response = await apiFetch(`/api/activities/${activityId}/locations/${locationId}`, {
         method: 'DELETE',
       });
 
@@ -282,7 +283,7 @@ export default function LocationsTab({
         location_name: `${location.location_name} (Copy)`,
       };
 
-      const response = await fetch(`/api/activities/${activityId}/locations`, {
+      const response = await apiFetch(`/api/activities/${activityId}/locations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

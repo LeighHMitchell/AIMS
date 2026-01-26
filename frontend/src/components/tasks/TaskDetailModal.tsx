@@ -48,6 +48,7 @@ import {
 } from '@/types/task';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface TaskDetailModalProps {
   open: boolean;
@@ -95,7 +96,7 @@ export function TaskDetailModal({
 
     try {
       // Fetch task details
-      const taskResponse = await fetch(`/api/tasks/${taskId}?userId=${userId}`);
+      const taskResponse = await apiFetch(`/api/tasks/${taskId}?userId=${userId}`);
       if (!taskResponse.ok) {
         throw new Error('Failed to fetch task details');
       }
@@ -105,7 +106,7 @@ export function TaskDetailModal({
       let attachments: TaskAttachment[] = [];
       setAttachmentError(null);
       try {
-        const attachmentsResponse = await fetch(`/api/tasks/${taskId}/attachments?userId=${userId}`);
+        const attachmentsResponse = await apiFetch(`/api/tasks/${taskId}/attachments?userId=${userId}`);
         if (attachmentsResponse.ok) {
           const attachmentsData = await attachmentsResponse.json();
           attachments = attachmentsData.data || [];
@@ -150,8 +151,7 @@ export function TaskDetailModal({
 
   const handleDownload = async (attachment: TaskAttachment) => {
     try {
-      const response = await fetch(
-        `/api/tasks/${taskId}/attachments/${attachment.id}?userId=${userId}`
+      const response = await apiFetch(`/api/tasks/${taskId}/attachments/${attachment.id}?userId=${userId}`
       );
       if (!response.ok) throw new Error('Download failed');
 

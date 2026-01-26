@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
 import { LoadingText } from '@/components/ui/loading-text';
+import { apiFetch } from '@/lib/api-fetch';
 
 const ringVariants: Variants = {
   idle: { rotate: 0 },
@@ -77,7 +78,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
   const fetchNotifications = useCallback(async () => {
     const fetchStartTime = Date.now();
     try {
-      const response = await fetch(`/api/notifications/user?userId=${userId}&limit=10`);
+      const response = await apiFetch(`/api/notifications/user?userId=${userId}&limit=10`);
       if (response.ok) {
         const data = await response.json();
         console.log('[NotificationBell] Fetched notifications:', {
@@ -116,7 +117,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
 
   const markAsRead = async (notificationIds: string[]) => {
     try {
-      await fetch('/api/notifications/user', {
+      await apiFetch('/api/notifications/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, notificationIds }),
@@ -145,7 +146,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
       setOpen(false); // Close the dropdown
 
       // Then make the API call
-      const response = await fetch('/api/notifications/user', {
+      const response = await apiFetch('/api/notifications/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, markAllRead: true }),

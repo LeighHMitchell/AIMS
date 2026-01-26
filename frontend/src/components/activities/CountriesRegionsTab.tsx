@@ -33,6 +33,7 @@ import { IATI_REGIONS, IATIRegion, searchRegions } from '@/data/iati-regions';
 import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-select';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { apiFetch } from '@/lib/api-fetch';
 
 export interface CountryAllocation {
   id: string;
@@ -256,7 +257,7 @@ export default function CountriesRegionsTab({
     setError(null);
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/countries-regions`);
+      const response = await apiFetch(`/api/activities/${activityId}/countries-regions`);
       if (!response.ok) {
         throw new Error('Failed to load countries/regions data');
       }
@@ -339,7 +340,7 @@ export default function CountriesRegionsTab({
     setAllocationStatus(newStatus);
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/countries-regions`, {
+      const response = await apiFetch(`/api/activities/${activityId}/countries-regions`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

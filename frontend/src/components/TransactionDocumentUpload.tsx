@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 export interface TransactionDocument {
   id: string;
@@ -105,7 +106,7 @@ export function TransactionDocumentUpload({
     }
 
     try {
-      const response = await fetch('/api/transactions/documents/upload', {
+      const response = await apiFetch('/api/transactions/documents/upload', {
         method: 'POST',
         body: formData
       });
@@ -211,7 +212,7 @@ export function TransactionDocumentUpload({
 
   const removeDocument = async (documentId: string) => {
     try {
-      const response = await fetch(`/api/transactions/documents?id=${documentId}`, {
+      const response = await apiFetch(`/api/transactions/documents?id=${documentId}`, {
         method: 'DELETE'
       });
 

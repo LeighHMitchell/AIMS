@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Budget, BudgetFilter, BudgetResponse } from "@/types/budget";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface BudgetHookParams {
   searchQuery?: string;
@@ -62,7 +63,7 @@ export function useBudgets(params: BudgetHookParams = {}) {
         queryParams.append("limit", params.limit.toString());
       }
 
-      const response = await fetch(`/api/budgets/list?${queryParams.toString()}`, {
+      const response = await apiFetch(`/api/budgets/list?${queryParams.toString()}`, {
         cache: 'no-store'
       });
       

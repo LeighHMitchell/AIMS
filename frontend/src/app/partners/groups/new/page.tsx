@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Organization {
   id: string
@@ -48,7 +49,7 @@ export default function NewGroupPage() {
 
   const fetchOrganizations = async () => {
     try {
-      const response = await fetch('/api/organizations')
+      const response = await apiFetch('/api/organizations')
       if (response.ok) {
         const data = await response.json()
         setOrganizations(data)
@@ -69,7 +70,7 @@ export default function NewGroupPage() {
     setLoading(true)
     
     try {
-      const response = await fetch('/api/custom-groups', {
+      const response = await apiFetch('/api/custom-groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -46,6 +46,7 @@ import {
   ENHANCED_CHART_COLORS,
   ClassificationType,
 } from "@/types/aid-on-budget";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface EnhancedAidOnBudgetChartProps {
   refreshKey?: number;
@@ -297,8 +298,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       }
       params.set("classificationType", classificationType);
 
-      const response = await fetch(
-        `/api/analytics/aid-on-budget-enhanced?${params.toString()}`
+      const response = await apiFetch(`/api/analytics/aid-on-budget-enhanced?${params.toString()}`
       );
       const result = await response.json();
 
@@ -335,8 +335,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         params.set("budgetStatus", budgetStatusFilter);
       }
 
-      const response = await fetch(
-        `/api/analytics/aid-on-budget-activities?${params.toString()}`
+      const response = await apiFetch(`/api/analytics/aid-on-budget-activities?${params.toString()}`
       );
       const result = await response.json();
 

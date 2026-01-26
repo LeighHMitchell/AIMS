@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/hooks/useUser';
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function DebugSectorsPage() {
   const { user } = useUser();
@@ -25,7 +26,7 @@ export default function DebugSectorsPage() {
     addLog('🔍 Loading activity data from API...');
     
     try {
-      const response = await fetch(`/api/activities/${activityId}`);
+      const response = await apiFetch(`/api/activities/${activityId}`);
       
       if (!response.ok) {
         addLog(`❌ API Error: ${response.status}`);
@@ -54,7 +55,7 @@ export default function DebugSectorsPage() {
     addLog('🗄️ Loading sectors directly from database...');
     
     try {
-      const response = await fetch('/api/test-sectors-db', {
+      const response = await apiFetch('/api/test-sectors-db', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ activityId })
@@ -98,7 +99,7 @@ export default function DebugSectorsPage() {
     addLog('➕ Adding test sector via API...');
     
     try {
-      const response = await fetch('/api/activities/field', {
+      const response = await apiFetch('/api/activities/field', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -22,6 +22,7 @@ import {
 import { useUser } from '@/hooks/useUser';
 import StrategiesGanttChart from './StrategiesGanttChart';
 import { StrategyForm } from './StrategyForm';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Strategy {
   id: string;
@@ -87,7 +88,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
         ...(user?.id && { userId: user.id })
       });
 
-      const response = await fetch(`/api/strategies?${params}`);
+      const response = await apiFetch(`/api/strategies?${params}`);
       if (response.ok) {
         const data = await response.json();
         setStrategies(data);
@@ -119,7 +120,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
     if (!user?.id || !confirm('Are you sure you want to delete this strategy?')) return;
 
     try {
-      const response = await fetch(`/api/strategies?id=${strategyId}&userId=${user.id}`, {
+      const response = await apiFetch(`/api/strategies?id=${strategyId}&userId=${user.id}`, {
         method: 'DELETE',
       });
 

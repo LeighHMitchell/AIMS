@@ -9,6 +9,7 @@ import {
   SectorTimeSeriesData,
   SectorTimeSeriesFilters 
 } from '@/types/sector-analytics'
+import { apiFetch } from '@/lib/api-fetch';
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -127,7 +128,7 @@ export function useSectorTimeSeries(
         params.append('sectors', sectorsKey)
       }
 
-      const response = await fetch(`/api/analytics/sectors-time-series?${params}`)
+      const response = await apiFetch(`/api/analytics/sectors-time-series?${params}`)
       const result: SectorTimeSeriesResponse = await response.json()
 
       if (!result.success) {

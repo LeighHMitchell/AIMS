@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { ValidationQueueSkeleton } from "@/components/skeletons/ValidationQueueSkeleton";
 import { StatusIcon } from "@/components/ui/status-icon";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Activity {
   id: string;
@@ -57,7 +58,7 @@ export default function ValidationsPage() {
 
   const fetchActivities = async () => {
     try {
-      const res = await fetch("/api/activities");
+      const res = await apiFetch("/api/activities");
       if (!res.ok) throw new Error("Failed to fetch activities");
       const data = await res.json();
       setActivities(data);

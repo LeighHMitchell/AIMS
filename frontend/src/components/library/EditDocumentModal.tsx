@@ -25,6 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface EditDocumentModalProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        const response = await fetch('/api/organizations');
+        const response = await apiFetch('/api/organizations');
         if (response.ok) {
           const data = await response.json();
           setOrganizations(data.organizations || data || []);
@@ -169,7 +170,7 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
         languageCodes: languageCodes,
       };
 
-      const response = await fetch(`/api/library/${docId}`, {
+      const response = await apiFetch(`/api/library/${docId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

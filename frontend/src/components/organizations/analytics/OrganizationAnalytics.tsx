@@ -14,6 +14,7 @@ import { ProjectsTable } from './ProjectsTable';
 import { OrgProjectMap } from './OrgProjectMap';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Map, BarChart3 } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface AnalyticsData {
   summaryMetrics: {
@@ -55,7 +56,7 @@ export function OrganizationAnalytics({
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/organizations/${organizationId}/analytics`);
+      const response = await apiFetch(`/api/organizations/${organizationId}/analytics`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch analytics data');

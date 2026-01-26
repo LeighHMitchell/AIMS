@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { LoadingText } from '@/components/ui/loading-text';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface CommentsDrawerProps {
   activityId: string;
@@ -507,7 +508,7 @@ export function CommentsDrawer({
       if (activeTab === 'resolved') params.append('status', 'Resolved');
       params.append('includeArchived', 'false');
 
-      const response = await fetch(`/api/activities/${activityId}/comments?${params}`);
+      const response = await apiFetch(`/api/activities/${activityId}/comments?${params}`);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -572,7 +573,7 @@ export function CommentsDrawer({
     if (!activityId || activityId === '' || activityId === 'new') return;
 
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments/unread-count`);
+      const response = await apiFetch(`/api/activities/${activityId}/comments/unread-count`);
       if (response.ok) {
         const data = await response.json();
         setUnreadCount(data.count || 0);
@@ -587,7 +588,7 @@ export function CommentsDrawer({
 
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -622,7 +623,7 @@ export function CommentsDrawer({
 
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments/${commentId}/replies`, {
+      const response = await apiFetch(`/api/activities/${activityId}/comments/${commentId}/replies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -651,7 +652,7 @@ export function CommentsDrawer({
     if (!user) return;
 
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -681,7 +682,7 @@ export function CommentsDrawer({
     }
 
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

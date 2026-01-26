@@ -14,6 +14,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Activity, Table as TableIcon } from 'lucide-react'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Top10ActiveProjectsChartProps {
   filters?: {
@@ -80,7 +81,7 @@ export function Top10ActiveProjectsChart({
         params.append('sector', filters.sector)
       }
 
-      const response = await fetch(`/api/analytics/top-10/active-projects?${params}`)
+      const response = await apiFetch(`/api/analytics/top-10/active-projects?${params}`)
       if (!response.ok) {
         const errorText = await response.text()
         console.error('[Top10ActiveProjectsChart] API error:', response.status, errorText)

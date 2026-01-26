@@ -53,6 +53,7 @@ import {
 } from '@/types/task';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { apiFetch } from '@/lib/api-fetch';
 
 type SortField = 'task' | 'priority' | 'status' | 'deadline' | 'assignees' | 'progress';
 type SortDirection = 'asc' | 'desc';
@@ -93,7 +94,7 @@ async function downloadAttachment(taskId: string, attachmentId: string, fileName
 
     console.log('[Download] Fetching signed URL for:', { taskId, attachmentId, fileName });
 
-    const response = await fetch(`/api/tasks/${taskId}/attachments/${attachmentId}?userId=${userId}`);
+    const response = await apiFetch(`/api/tasks/${taskId}/attachments/${attachmentId}?userId=${userId}`);
     const data = await response.json();
 
     console.log('[Download] API response:', data);

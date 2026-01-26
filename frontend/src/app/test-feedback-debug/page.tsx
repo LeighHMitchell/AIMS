@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/hooks/useUser';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function TestFeedbackDebugPage() {
   const { user } = useUser();
@@ -17,7 +18,7 @@ export default function TestFeedbackDebugPage() {
   const checkDebugData = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/debug/feedback-attachments');
+      const response = await apiFetch('/api/debug/feedback-attachments');
       if (response.ok) {
         const data = await response.json();
         setDebugData(data);
@@ -53,7 +54,7 @@ export default function TestFeedbackDebugPage() {
       uploadFormData.append('file', selectedFile);
       uploadFormData.append('userId', user.id);
 
-      const uploadResponse = await fetch('/api/feedback/upload', {
+      const uploadResponse = await apiFetch('/api/feedback/upload', {
         method: 'POST',
         body: uploadFormData,
       });
@@ -67,7 +68,7 @@ export default function TestFeedbackDebugPage() {
       console.log('[Test] File uploaded:', uploadData);
 
       // Then submit feedback with attachment
-      const feedbackResponse = await fetch('/api/feedback', {
+      const feedbackResponse = await apiFetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

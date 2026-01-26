@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { SectorModeResponse } from '@/app/api/activities/[id]/sector-mode/route'
 import { AggregatedSector, AggregateTransactionSectorsResponse } from '@/app/api/activities/[id]/aggregate-transaction-sectors/route'
+import { apiFetch } from '@/lib/api-fetch';
 
 export type SectorAllocationMode = 'activity' | 'transaction'
 
@@ -63,7 +64,7 @@ export function useSectorAllocationMode({
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/activities/${activityId}/sector-mode`)
+      const response = await apiFetch(`/api/activities/${activityId}/sector-mode`)
       const data: SectorModeResponse = await response.json()
       
       if (!data.success) {
@@ -92,7 +93,7 @@ export function useSectorAllocationMode({
     try {
       setIsLoadingAggregation(true)
       
-      const response = await fetch(`/api/activities/${activityId}/aggregate-transaction-sectors`)
+      const response = await apiFetch(`/api/activities/${activityId}/aggregate-transaction-sectors`)
       const data: AggregateTransactionSectorsResponse = await response.json()
       
       if (!data.success) {
@@ -114,7 +115,7 @@ export function useSectorAllocationMode({
     if (!activityId) return false
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/aggregate-transaction-sectors`, {
+      const response = await apiFetch(`/api/activities/${activityId}/aggregate-transaction-sectors`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sectors })
@@ -162,7 +163,7 @@ export function useSectorAllocationMode({
       }
       
       // Now switch the mode
-      const response = await fetch(`/api/activities/${activityId}/sector-mode`, {
+      const response = await apiFetch(`/api/activities/${activityId}/sector-mode`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: newMode })

@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -24,10 +25,30 @@ export function EnhancedDatePicker({
   const [isOpen, setIsOpen] = useState(false)
   const [displayValue, setDisplayValue] = useState('')
   const [viewDate, setViewDate] = useState(value || new Date())
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  React.useEffect(() => {
+  // Set up portal container on mount
+  useEffect(() => {
+    setPortalContainer(document.body)
+  }, [])
+
+  // Update dropdown position when opening
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      })
+    }
+  }, [isOpen])
+
+  useEffect(() => {
     if (value) {
       setDisplayValue(formatDate(value, format))
       setViewDate(value)
@@ -37,9 +58,13 @@ export function EnhancedDatePicker({
   }, [value, format])
 
   // Handle clicking outside to close calendar
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+      const clickedInsideContainer = containerRef.current?.contains(target)
+      const clickedInsideDropdown = dropdownRef.current?.contains(target)
+      
+      if (!clickedInsideContainer && !clickedInsideDropdown) {
         setIsOpen(false)
       }
     }
@@ -127,7 +152,12 @@ export function EnhancedDatePicker({
     }
   }
 
-  const handleInputBlur = () => {
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Don't process blur if clicking inside the calendar container
+    if (containerRef.current?.contains(e.relatedTarget as Node)) {
+      return;
+    }
+    
     if (displayValue) {
       const parsedDate = parseDate(displayValue, format)
       if (parsedDate) {
@@ -221,9 +251,10 @@ export function EnhancedDatePicker({
           value={displayValue}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
-          onClick={(e) => {
-            // Allow input editing without closing calendar
-            e.stopPropagation();
+          onFocus={() => {
+            if (!disabled) {
+              setIsOpen(true);
+            }
           }}
           disabled={disabled}
           placeholder={placeholder}
@@ -232,13 +263,21 @@ export function EnhancedDatePicker({
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
             "disabled:bg-gray-100 disabled:cursor-not-allowed",
             "text-sm font-normal",
-            "bg-white"
+            "bg-white cursor-pointer"
           )}
         />
       </div>
       
-      {isOpen && !disabled && (
-        <div className="absolute z-50 bottom-full mb-1 p-4 bg-white border border-gray-300 rounded-lg shadow-lg">
+      {isOpen && !disabled && portalContainer && createPortal(
+        <div 
+          ref={dropdownRef}
+          className="fixed z-[9999] p-4 bg-white border border-gray-300 rounded-lg shadow-lg"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            minWidth: Math.max(dropdownPosition.width, 280)
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <button
@@ -320,7 +359,8 @@ export function EnhancedDatePicker({
               Today
             </button>
           </div>
-        </div>
+        </div>,
+        portalContainer
       )}
     </div>
   )

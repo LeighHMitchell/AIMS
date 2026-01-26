@@ -15,6 +15,7 @@ import { getOrganizationRoleName } from '@/data/iati-organization-roles';
 import { getOrganizationTypeName } from '@/data/iati-organization-types';
 import Image from 'next/image';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface OrganisationsSectionProps {
   activityId?: string;
@@ -110,7 +111,7 @@ export default function OrganisationsSection({
     try {
       if (editingOrg) {
         // Update existing organization
-        const response = await fetch(`/api/activities/${activityId}/participating-organizations`, {
+        const response = await apiFetch(`/api/activities/${activityId}/participating-organizations`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -167,8 +168,7 @@ export default function OrganisationsSection({
 
     try {
       // Delete using the participating org ID
-      const response = await fetch(
-        `/api/activities/${activityId}/participating-organizations?id=${org.id}`,
+      const response = await apiFetch(`/api/activities/${activityId}/participating-organizations?id=${org.id}`,
         { method: 'DELETE' }
       );
 

@@ -18,6 +18,7 @@ import { TaskDeliveryStep } from './steps/TaskDeliveryStep';
 import { TaskScheduleStep } from './steps/TaskScheduleStep';
 import { TaskAttachmentsStep } from './steps/TaskAttachmentsStep';
 import { TaskReviewStep } from './steps/TaskReviewStep';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface TaskCreationWizardProps {
   open: boolean;
@@ -59,7 +60,7 @@ export function TaskCreationWizard({
   useEffect(() => {
     if (open && userId) {
       setTaskableLoading(true);
-      fetch(`/api/users/taskable?userId=${userId}`)
+      apiFetch(`/api/users/taskable?userId=${userId}`)
         .then(res => res.ok ? res.json() : Promise.reject('Failed to fetch'))
         .then(data => {
           setTaskableUsers(data.users || []);

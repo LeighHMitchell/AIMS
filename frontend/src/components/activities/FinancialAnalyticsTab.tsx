@@ -45,6 +45,7 @@ import {
 } from '@/utils/year-allocation'
 import { useOrganizations } from '@/hooks/use-organizations'
 import { ActivitySpendTrajectoryChart } from '@/components/charts/ActivitySpendTrajectoryChart'
+import { apiFetch } from '@/lib/api-fetch';
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -696,7 +697,7 @@ export default function FinancialAnalyticsTab({
   const fetchFinancialAnalytics = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/activities/${activityId}/financial-analytics`)
+      const response = await apiFetch(`/api/activities/${activityId}/financial-analytics`)
       
       if (!response.ok) {
         throw new Error('Failed to fetch financial analytics')

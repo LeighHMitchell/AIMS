@@ -16,6 +16,7 @@ import { AlertCircle, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PieChartSkeleton } from "@/components/ui/skeleton-loader";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface SectorData {
   sectorCode: string;
@@ -54,7 +55,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/analytics/sectors?topN=${topN}`);
+      const response = await apiFetch(`/api/analytics/sectors?topN=${topN}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

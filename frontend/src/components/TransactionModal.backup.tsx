@@ -69,6 +69,7 @@ import { Switch } from '@/components/ui/switch';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { useTransactionFieldAutosave } from '@/hooks/use-transaction-field-autosave';
 import { IATI_FIELD_HELP } from '@/components/ActivityFieldHelpers';
+import { apiFetch } from '@/lib/api-fetch';
 // Remove lodash import (not used)
 // import { uniqBy } from 'lodash';
 
@@ -385,7 +386,7 @@ export default function TransactionModal({
     if (transactionId && open) {
       const fetchDocuments = async () => {
         try {
-          const response = await fetch(`/api/transactions/documents?transactionId=${transactionId}`);
+          const response = await apiFetch(`/api/transactions/documents?transactionId=${transactionId}`);
           if (response.ok) {
             const data = await response.json();
             setDocuments(data.documents || []);
@@ -673,21 +674,21 @@ export default function TransactionModal({
       let response;
       // If we have an autosaved transaction, update it instead of creating a new one
       if (createdTransactionId) {
-        response = await fetch('/api/transactions', {
+        response = await apiFetch('/api/transactions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...submissionData, id: createdTransactionId })
         });
       } else if (isEditing && (transaction?.uuid || transaction?.id)) {
         // Update existing transaction (edit mode)
-        response = await fetch('/api/transactions', {
+        response = await apiFetch('/api/transactions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...submissionData, id: transaction.uuid || transaction.id })
         });
       } else {
         // Create new transaction
-        response = await fetch('/api/transactions', {
+        response = await apiFetch('/api/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(submissionData)
@@ -970,7 +971,7 @@ export default function TransactionModal({
     
     try {
       const payload = getTransactionPayload({ ...data, activity_id: activityId });
-      const response = await fetch('/api/transactions', {
+      const response = await apiFetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -999,7 +1000,7 @@ export default function TransactionModal({
       
       // Save any pending fields (with same abort controller)
       if (Object.keys(pendingFields).length > 0) {
-        await fetch('/api/transactions', {
+        await apiFetch('/api/transactions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...pendingFields, id: saved.id || saved.uuid }),
@@ -1143,7 +1144,7 @@ export default function TransactionModal({
                                     // Use the same pattern as other autosave fields
                                     // You may want to create a transactionTypeAutosave hook for consistency
                                     // For now, do a direct PATCH
-                                    fetch(`/api/data-clinic/transactions/${transactionId}`, {
+                                    apiFetch(`/api/data-clinic/transactions/${transactionId}`, {
                                       method: 'PATCH',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ field: 'transaction_type', value: opt.code, userId: user?.id })

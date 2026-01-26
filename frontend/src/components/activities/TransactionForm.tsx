@@ -36,6 +36,7 @@ import {
   TRANSACTION_TOAST_IDS 
 } from '@/lib/toast-manager';
 import { CopyField } from '@/components/ui/copy-field';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Common currencies
 const COMMON_CURRENCIES = [
@@ -404,14 +405,14 @@ export default function TransactionForm({
       let response;
       if (transaction && transaction.uuid) {
         // Update existing transaction
-        response = await fetch(`/api/activities/${activityId}/transactions/${transaction.uuid}`, {
+        response = await apiFetch(`/api/activities/${activityId}/transactions/${transaction.uuid}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(submissionData)
         });
       } else {
         // Create new transaction
-        response = await fetch(`/api/activities/${activityId}/transactions`, {
+        response = await apiFetch(`/api/activities/${activityId}/transactions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(submissionData)
@@ -476,7 +477,7 @@ export default function TransactionForm({
     }
     try {
       // Existing transaction: call API
-      await fetch(`/api/activities/${activityId}/transactions/${transaction.id}/field`, {
+      await apiFetch(`/api/activities/${activityId}/transactions/${transaction.id}/field`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [field]: value }),
@@ -945,7 +946,7 @@ export default function TransactionForm({
                     
                     if (activityId) {
                       try {
-                        const response = await fetch(`/api/activities/${activityId}`);
+                        const response = await apiFetch(`/api/activities/${activityId}`);
                         if (response.ok) {
                           const activity = await response.json();
                           console.log('[TransactionForm] Fetched activity IATI ID:', activity.iati_identifier);
@@ -992,7 +993,7 @@ export default function TransactionForm({
                     
                     if (activityId) {
                       try {
-                        const response = await fetch(`/api/activities/${activityId}`);
+                        const response = await apiFetch(`/api/activities/${activityId}`);
                         if (response.ok) {
                           const activity = await response.json();
                           console.log('[TransactionForm] Fetched activity IATI ID:', activity.iati_identifier);

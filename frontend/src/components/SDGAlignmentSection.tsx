@@ -46,6 +46,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SDG_GOALS, SDG_TARGETS, getTargetsForGoal } from "@/data/sdg-targets";
 import { toast } from "sonner";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Alignment strength types
 type AlignmentStrength = 'primary' | 'secondary' | 'indirect';
@@ -127,7 +128,7 @@ export default function SDGAlignmentSection({
     const timeout = setTimeout(async () => {
       setIsSaving(true);
       try {
-        const response = await fetch(`/api/activities/${activityId}`, {
+        const response = await apiFetch(`/api/activities/${activityId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sdgMappings: updatedMappings })

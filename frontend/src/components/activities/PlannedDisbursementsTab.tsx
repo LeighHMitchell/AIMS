@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { FinancialSummaryCards } from '@/components/FinancialSummaryCards';
+import { apiFetch } from '@/lib/api-fetch';
 // USD conversion now happens server-side - no client-side API needed
 // Removed shared HeroCard import - using local simple version
 import {
@@ -234,7 +235,7 @@ export default function PlannedDisbursementsTab({
 
   // Handler to update organization type via API
   const handleOrgTypeUpdate = async (orgId: string, newTypeCode: string) => {
-    const response = await fetch(`/api/organizations/${orgId}`, {
+    const response = await apiFetch(`/api/organizations/${orgId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ Organisation_Type_Code: newTypeCode })
@@ -697,7 +698,7 @@ export default function PlannedDisbursementsTab({
       onLoadingChange?.(true);
       try {
         // Use API endpoint instead of direct Supabase query to avoid RLS issues
-        const response = await fetch(`/api/activities/${activityId}/planned-disbursements`, {
+        const response = await apiFetch(`/api/activities/${activityId}/planned-disbursements`, {
           cache: 'no-store'
         });
         if (!response.ok) {
@@ -722,7 +723,7 @@ export default function PlannedDisbursementsTab({
           let orgData: Record<string, any> = {};
           if (orgIds.size > 0) {
             try {
-              const orgResponse = await fetch('/api/organizations');
+              const orgResponse = await apiFetch('/api/organizations');
               if (orgResponse.ok) {
                 const allOrgs = await orgResponse.json();
                 // Filter to only the organizations we need
@@ -1027,7 +1028,7 @@ export default function PlannedDisbursementsTab({
           ...(user?.id && { updated_by: user.id }),
         };
         
-        const response = await fetch('/api/planned-disbursements', {
+        const response = await apiFetch('/api/planned-disbursements', {
           method: 'PUT',
           cache: 'no-store',
           headers: {
@@ -1048,7 +1049,7 @@ export default function PlannedDisbursementsTab({
         savedId = disbursement.id;
       } else {
         // Insert new
-        const response = await fetch('/api/planned-disbursements', {
+        const response = await apiFetch('/api/planned-disbursements', {
           method: 'POST',
           cache: 'no-store',
           headers: {
@@ -1118,7 +1119,7 @@ export default function PlannedDisbursementsTab({
     setDeleteLoading(id);
 
     try {
-      const response = await fetch(`/api/planned-disbursements?id=${id}`, {
+      const response = await apiFetch(`/api/planned-disbursements?id=${id}`, {
         method: 'DELETE',
         cache: 'no-store',
       });
@@ -1167,7 +1168,7 @@ export default function PlannedDisbursementsTab({
       // Prepare data for API - exclude frontend-only fields and use snake_case
       const { usdAmount, ...disbursementData } = newDisbursement;
       
-      const response = await fetch('/api/planned-disbursements', {
+      const response = await apiFetch('/api/planned-disbursements', {
         method: 'POST',
         cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
@@ -1228,7 +1229,7 @@ export default function PlannedDisbursementsTab({
     try {
       // Delete all selected disbursements
       await Promise.all(selectedArray.map(async (id) => {
-        const response = await fetch(`/api/planned-disbursements?id=${id}`, {
+        const response = await apiFetch(`/api/planned-disbursements?id=${id}`, {
           method: 'DELETE',
           cache: 'no-store',
         });
@@ -1414,7 +1415,7 @@ export default function PlannedDisbursementsTab({
           ...(user?.id && { updated_by: user.id }),
         };
         
-        const response = await fetch('/api/planned-disbursements', {
+        const response = await apiFetch('/api/planned-disbursements', {
           method: 'PUT',
           cache: 'no-store',
           headers: {
@@ -1435,7 +1436,7 @@ export default function PlannedDisbursementsTab({
         toast.success('Planned disbursement updated successfully');
       } else {
         // Insert new
-        const response = await fetch('/api/planned-disbursements', {
+        const response = await apiFetch('/api/planned-disbursements', {
           method: 'POST',
           cache: 'no-store',
           headers: {
@@ -2719,7 +2720,7 @@ export default function PlannedDisbursementsTab({
                   if (activityId) {
                     // Fetch activity details to get IATI identifier
                     try {
-                      const response = await fetch(`/api/activities/${activityId}`);
+                      const response = await apiFetch(`/api/activities/${activityId}`);
                       if (response.ok) {
                         const activity = await response.json();
                         console.log('[PlannedDisbursement] Fetched activity IATI ID:', activity.iati_identifier);
@@ -2775,7 +2776,7 @@ export default function PlannedDisbursementsTab({
                   if (activityId) {
                     // Fetch activity details to get IATI identifier
                     try {
-                      const response = await fetch(`/api/activities/${activityId}`);
+                      const response = await apiFetch(`/api/activities/${activityId}`);
                       if (response.ok) {
                         const activity = await response.json();
                         updateFormField('receiver_activity_id', activity.iati_identifier || '');

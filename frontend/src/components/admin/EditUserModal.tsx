@@ -22,6 +22,7 @@ import { toast } from "sonner"
 import { LockedField } from "@/components/ui/locked-field"
 import { OrganizationDropdownWithLogo, OrganizationWithLogo } from "@/components/ui/organization-dropdown-with-logo"
 import { useUser } from "@/hooks/useUser"
+import { apiFetch } from '@/lib/api-fetch';
 
 interface EditUserModalProps {
   isOpen: boolean
@@ -225,7 +226,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
 
       console.log('[EditUserModal] Updating user:', form.email)
 
-      const response = await fetch(`/api/users/${form.id}`, {
+      const response = await apiFetch(`/api/users/${form.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

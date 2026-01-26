@@ -150,9 +150,15 @@ export async function POST(request: NextRequest) {
       message: 'Login successful' 
     });
     
-    // Set all Supabase session cookies on the response
+    // Set all Supabase session cookies on the response with explicit options
+    // for better cross-browser compatibility (especially Edge on Windows)
     for (const cookie of cookiesToSet) {
-      response.cookies.set(cookie.name, cookie.value, cookie.options);
+      response.cookies.set(cookie.name, cookie.value, {
+        ...cookie.options,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+      });
     }
     
     console.log('[Auth Login] Set', cookiesToSet.length, 'cookies on response');

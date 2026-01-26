@@ -127,6 +127,7 @@ import {
 import { getCountryCode } from '@/lib/country-utils'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Organization {
   id: string
@@ -394,7 +395,7 @@ export default function OrganizationProfilePage() {
         }
 
         // Fetch organization details
-        const orgResponse = await fetch(`/api/organizations/${params.id}`, {
+        const orgResponse = await apiFetch(`/api/organizations/${params.id}`, {
           signal: abortControllerRef.current.signal
         })
         if (!orgResponse.ok) throw new Error('Failed to fetch organization')
@@ -403,7 +404,7 @@ export default function OrganizationProfilePage() {
 
         // Fetch temporal metadata
         try {
-          const temporalResponse = await fetch(`/api/organizations/${params.id}/temporal-metadata`, {
+          const temporalResponse = await apiFetch(`/api/organizations/${params.id}/temporal-metadata`, {
             signal: abortControllerRef.current.signal
           })
           if (temporalResponse.ok) {
@@ -416,7 +417,7 @@ export default function OrganizationProfilePage() {
 
         // Fetch role distribution
         try {
-          const roleResponse = await fetch(`/api/organizations/${params.id}/role-distribution`, {
+          const roleResponse = await apiFetch(`/api/organizations/${params.id}/role-distribution`, {
             signal: abortControllerRef.current.signal
           })
           if (roleResponse.ok) {
@@ -425,7 +426,7 @@ export default function OrganizationProfilePage() {
             
             // Fetch role metrics after role distribution is loaded
             try {
-              const roleMetricsResponse = await fetch(`/api/organizations/${params.id}/role-metrics`, {
+              const roleMetricsResponse = await apiFetch(`/api/organizations/${params.id}/role-metrics`, {
                 signal: abortControllerRef.current.signal
               })
               if (roleMetricsResponse.ok) {
@@ -442,7 +443,7 @@ export default function OrganizationProfilePage() {
 
         // Fetch health metrics
         try {
-          const healthResponse = await fetch(`/api/organizations/${params.id}/health-metrics`, {
+          const healthResponse = await apiFetch(`/api/organizations/${params.id}/health-metrics`, {
             signal: abortControllerRef.current.signal
           })
           if (healthResponse.ok) {
@@ -455,7 +456,7 @@ export default function OrganizationProfilePage() {
 
         // Fetch organization documents from the new organization_documents table
         try {
-          const orgDocsResponse = await fetch(`/api/organizations/${params.id}/documents`, {
+          const orgDocsResponse = await apiFetch(`/api/organizations/${params.id}/documents`, {
             signal: abortControllerRef.current.signal
           })
           if (orgDocsResponse.ok) {
@@ -479,7 +480,7 @@ export default function OrganizationProfilePage() {
 
         // Fetch activities with budget data
         try {
-          const activitiesResponse = await fetch(`/api/activities?organization_id=${params.id}`, {
+          const activitiesResponse = await apiFetch(`/api/activities?organization_id=${params.id}`, {
             signal: abortControllerRef.current.signal
           })
           if (activitiesResponse.ok) {
@@ -493,7 +494,7 @@ export default function OrganizationProfilePage() {
 
                 // Fetch budgets
                 try {
-                  const budgetResponse = await fetch(`/api/activities/${activity.id}/budgets`, {
+                  const budgetResponse = await apiFetch(`/api/activities/${activity.id}/budgets`, {
                     signal: abortControllerRef.current?.signal
                   })
 
@@ -512,7 +513,7 @@ export default function OrganizationProfilePage() {
 
                 // Fetch transactions to calculate disbursements (exclude linked to show only org's reported data)
                 try {
-                  const transactionsResponse = await fetch(`/api/activities/${activity.id}/transactions?includeLinked=false`, {
+                  const transactionsResponse = await apiFetch(`/api/activities/${activity.id}/transactions?includeLinked=false`, {
                     signal: abortControllerRef.current?.signal
                   })
 
@@ -605,7 +606,7 @@ export default function OrganizationProfilePage() {
             try {
               const activityDocsPromises = activitiesWithBudgets.map(async (activity) => {
                 try {
-                  const docsResponse = await fetch(`/api/activities/${activity.id}/documents`, {
+                  const docsResponse = await apiFetch(`/api/activities/${activity.id}/documents`, {
                     signal: abortControllerRef.current?.signal
                   })
                   if (docsResponse.ok) {
@@ -634,8 +635,7 @@ export default function OrganizationProfilePage() {
               const activitiesTransformed = await Promise.all(
                 activitiesWithBudgets.map(async (activity) => {
                   try {
-                    const participatingOrgsResponse = await fetch(
-                      `/api/activities/${activity.id}/participating-organizations`,
+                    const participatingOrgsResponse = await apiFetch(`/api/activities/${activity.id}/participating-organizations`,
                       { signal: abortControllerRef.current?.signal }
                     )
                     if (participatingOrgsResponse.ok) {
@@ -732,7 +732,7 @@ export default function OrganizationProfilePage() {
                 const partnerOrgDetails = await Promise.all(
                   partnerOrgIdsArray.map(async (orgId) => {
                     try {
-                      const orgResponse = await fetch(`/api/organizations/${orgId}`, {
+                      const orgResponse = await apiFetch(`/api/organizations/${orgId}`, {
                         signal: abortControllerRef.current?.signal
                       })
                       if (orgResponse.ok) {
@@ -758,7 +758,7 @@ export default function OrganizationProfilePage() {
               if (activity.publication_status !== 'published') continue
 
               try {
-                const budgetResponse = await fetch(`/api/activities/${activity.id}/budgets`, {
+                const budgetResponse = await apiFetch(`/api/activities/${activity.id}/budgets`, {
                   signal: abortControllerRef.current?.signal
                 })
 
@@ -806,7 +806,7 @@ export default function OrganizationProfilePage() {
               // if (activity.publication_status !== 'published') continue
               
               try {
-                const sectorsResponse = await fetch(`/api/activities/${activity.id}/sectors`, {
+                const sectorsResponse = await apiFetch(`/api/activities/${activity.id}/sectors`, {
                   signal: abortControllerRef.current?.signal
                 })
                 
@@ -866,7 +866,7 @@ export default function OrganizationProfilePage() {
             
             for (const activity of activitiesWithBudgets) {
               try {
-                const pdResponse = await fetch(`/api/activities/${activity.id}/planned-disbursements`, {
+                const pdResponse = await apiFetch(`/api/activities/${activity.id}/planned-disbursements`, {
                   signal: abortControllerRef.current?.signal
                 })
                 
@@ -929,7 +929,7 @@ export default function OrganizationProfilePage() {
               for (const activity of publishedActivities) {
                 try {
                   // Exclude linked transactions to show only org's directly reported data
-                  const txnResponse = await fetch(`/api/activities/${activity.id}/transactions?includeLinked=false`, {
+                  const txnResponse = await apiFetch(`/api/activities/${activity.id}/transactions?includeLinked=false`, {
                     signal: abortControllerRef.current?.signal
                   })
 
@@ -1002,7 +1002,7 @@ export default function OrganizationProfilePage() {
 
             // Fetch subnational allocation data for map
             try {
-              const subnationalResponse = await fetch(`/api/analytics/dashboard?measure=disbursements&organizationId=${params.id}`, {
+              const subnationalResponse = await apiFetch(`/api/analytics/dashboard?measure=disbursements&organizationId=${params.id}`, {
                 signal: abortControllerRef.current?.signal
               })
               if (subnationalResponse.ok) {
@@ -1035,7 +1035,7 @@ export default function OrganizationProfilePage() {
 
         // Fetch organization contacts
         try {
-          const contactsResponse = await fetch(`/api/organizations/${params.id}/contacts`, {
+          const contactsResponse = await apiFetch(`/api/organizations/${params.id}/contacts`, {
             signal: abortControllerRef.current.signal
           })
           if (contactsResponse.ok) {
@@ -1345,7 +1345,7 @@ export default function OrganizationProfilePage() {
     
     setIsDeleting(true)
     try {
-      const response = await fetch('/api/activities', {
+      const response = await apiFetch('/api/activities', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

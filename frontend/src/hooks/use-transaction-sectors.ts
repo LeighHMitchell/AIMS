@@ -8,6 +8,7 @@ import {
   CopyFromActivityRequest
 } from '@/types/transaction';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UseTransactionSectorsOptions {
   transactionId: string;
@@ -125,7 +126,7 @@ export function useTransactionSectors({
     setError(null);
     
     try {
-      const response = await fetch(`/api/transactions/${transactionId}/sectors`);
+      const response = await apiFetch(`/api/transactions/${transactionId}/sectors`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -158,7 +159,7 @@ export function useTransactionSectors({
         sector_lines: lines
       };
       
-      const response = await fetch(`/api/transactions/${transactionId}/sectors`, {
+      const response = await apiFetch(`/api/transactions/${transactionId}/sectors`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -234,7 +235,7 @@ export function useTransactionSectors({
     
     // If it's a saved line, delete from API
     try {
-      const response = await fetch(`/api/transactions/${transactionId}/sectors/${id}`, {
+      const response = await apiFetch(`/api/transactions/${transactionId}/sectors/${id}`, {
         method: 'DELETE',
       });
       
@@ -273,7 +274,7 @@ export function useTransactionSectors({
         scale_to_transaction: scaleToTransaction
       };
       
-      const response = await fetch(`/api/transactions/${transactionId}/sectors/copy-from-activity`, {
+      const response = await apiFetch(`/api/transactions/${transactionId}/sectors/copy-from-activity`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -323,7 +324,7 @@ export function useTransactionSectors({
     if (!transactionId) return false;
     
     try {
-      const response = await fetch(`/api/transactions/${transactionId}/sectors`, {
+      const response = await apiFetch(`/api/transactions/${transactionId}/sectors`, {
         method: 'DELETE',
       });
       

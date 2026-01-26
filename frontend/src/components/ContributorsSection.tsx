@@ -13,6 +13,7 @@ import { OrganizationSearchableSelect } from "@/components/ui/organization-searc
 import { useOrganizations } from "@/hooks/use-organizations";
 import { useContributors, ActivityContributor } from "@/hooks/use-contributors";
 import { isOrganizationContributor, getContributorOrganizationId } from "@/lib/contributor-utils";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ContributorsSectionProps {
   contributors: ActivityContributor[];
@@ -237,7 +238,7 @@ export default function ContributorsSection({
     
     try {
       console.log('[Debug] Checking user data for ID:', user.id);
-      const response = await fetch(`/api/debug-current-user?userId=${user.id}`);
+      const response = await apiFetch(`/api/debug-current-user?userId=${user.id}`);
       const data = await response.json();
       console.log('[Debug] User data from API:', data);
       alert(`User data check complete. Check console for details.\n\nComputed Name: ${data.computedName}`);

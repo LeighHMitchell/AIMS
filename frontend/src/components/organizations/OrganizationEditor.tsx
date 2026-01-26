@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-fetch'
 import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -65,7 +66,7 @@ export function OrganizationEditor({
     if (organizationId && !organization && !isCreating) {
       const fetchOrg = async () => {
         try {
-          const response = await fetch(`/api/organizations/${organizationId}`)
+          const response = await apiFetch(`/api/organizations/${organizationId}`)
           if (response.ok) {
             const data = await response.json()
             setOrganization(data)
@@ -83,9 +84,8 @@ export function OrganizationEditor({
   // Handle organization creation
   const handleCreate = useCallback(async (orgData: Partial<Organization>) => {
     try {
-      const response = await fetch('/api/organizations', {
+      const response = await apiFetch('/api/organizations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orgData)
       })
 
@@ -125,9 +125,8 @@ export function OrganizationEditor({
     setSaving(true)
     try {
       const id = organizationId || organization?.id
-      const response = await fetch(`/api/organizations/${id}`, {
+      const response = await apiFetch(`/api/organizations/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
 
@@ -158,7 +157,7 @@ export function OrganizationEditor({
 
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/organizations/${currentOrgId}`, {
+      const response = await apiFetch(`/api/organizations/${currentOrgId}`, {
         method: 'DELETE',
       })
 

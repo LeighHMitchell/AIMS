@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { exportToCSV } from '@/lib/csv-export';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Format currency with abbreviations (K, M, B)
 const formatCurrencyAbbreviated = (value: number) => {
@@ -121,7 +122,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`/api/organizations/${organizationId}/budgets`);
+        const response = await apiFetch(`/api/organizations/${organizationId}/budgets`);
         if (!response.ok) throw new Error('Failed to fetch budgets');
         const data = await response.json();
         setBudgets(data || []);

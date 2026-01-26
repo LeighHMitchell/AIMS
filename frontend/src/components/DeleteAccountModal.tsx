@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Trash2, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface DeleteAccountModalProps {
   isOpen: boolean;
@@ -36,7 +37,7 @@ export function DeleteAccountModal({
   const handleExportData = async () => {
     setIsExporting(true);
     try {
-      const response = await fetch(`/api/users/export-data?userId=${userId}`);
+      const response = await apiFetch(`/api/users/export-data?userId=${userId}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -83,7 +84,7 @@ export function DeleteAccountModal({
     setError(null);
 
     try {
-      const response = await fetch('/api/users/delete-account', {
+      const response = await apiFetch('/api/users/delete-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

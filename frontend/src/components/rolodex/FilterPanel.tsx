@@ -27,6 +27,7 @@ import {
 import { RolodexFilters } from '@/app/api/rolodex/route';
 import { COUNTRY_NAMES, getAllRoles, SOURCE_LABELS, getContactTypeCategories, CONTACT_TYPE_CATEGORIES, ROLE_CATEGORIES, getRolesByCategory } from './utils/roleLabels';
 import { LoadingText } from '@/components/ui/loading-text';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface FilterPanelProps {
   filters: RolodexFilters;
@@ -63,14 +64,14 @@ export function FilterPanel({
     const fetchOptions = async () => {
       try {
         // Fetch organizations
-        const orgResponse = await fetch('/api/organizations');
+        const orgResponse = await apiFetch('/api/organizations');
         if (orgResponse.ok) {
           const orgs = await orgResponse.json();
           setOrganizations(orgs.slice(0, 100)); // Limit for performance
         }
 
         // Fetch activities
-        const actResponse = await fetch('/api/activities');
+        const actResponse = await apiFetch('/api/activities');
         if (actResponse.ok) {
           const acts = await actResponse.json();
           setActivities(acts.slice(0, 100)); // Limit for performance

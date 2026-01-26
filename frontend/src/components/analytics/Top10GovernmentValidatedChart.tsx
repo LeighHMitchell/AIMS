@@ -14,6 +14,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { BarChart3, CheckCircle2, Table as TableIcon } from 'lucide-react'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Top10GovernmentValidatedChartProps {
   dateRange: {
@@ -72,7 +73,7 @@ export function Top10GovernmentValidatedChart({
         params.append('sector', filters.sector)
       }
 
-      const response = await fetch(`/api/analytics/top-10/government-validated?${params}`)
+      const response = await apiFetch(`/api/analytics/top-10/government-validated?${params}`)
       if (!response.ok) {
         const errorText = await response.text()
         console.error('[Top10GovernmentValidatedChart] API error:', response.status, errorText)

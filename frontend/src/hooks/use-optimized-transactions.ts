@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Transaction } from '@/types/transaction';
+import { apiFetch } from '@/lib/api-fetch';
 
 /**
  * Optimized Transactions Hook
@@ -143,7 +144,7 @@ export function useOptimizedTransactions(
         limit: pageSize.toString()
       });
 
-      const res = await fetch(`/api/activities/${activityId}/transactions?${params}`, {
+      const res = await apiFetch(`/api/activities/${activityId}/transactions?${params}`, {
         signal: abortControllerRef.current.signal,
         cache: 'no-store',
         headers: {
@@ -223,7 +224,7 @@ export function useOptimizedTransactions(
   // CRUD operations
   const addTransaction = useCallback(async (transaction: Partial<Transaction>) => {
     try {
-      const res = await fetch(`/api/activities/${activityId}/transactions`, {
+      const res = await apiFetch(`/api/activities/${activityId}/transactions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -247,7 +248,7 @@ export function useOptimizedTransactions(
 
   const updateTransaction = useCallback(async (id: string, updates: Partial<Transaction>) => {
     try {
-      const res = await fetch(`/api/activities/${activityId}/transactions/${id}`, {
+      const res = await apiFetch(`/api/activities/${activityId}/transactions/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -270,7 +271,7 @@ export function useOptimizedTransactions(
 
   const deleteTransaction = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`/api/activities/${activityId}/transactions/${id}`, {
+      const res = await apiFetch(`/api/activities/${activityId}/transactions/${id}`, {
         method: 'DELETE'
       });
 

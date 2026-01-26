@@ -55,7 +55,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://lhiayyjwkjkjkxvhcenw.supabase.co https://*.supabase.co https://api.fxratesapi.com https://api.exchangerate-api.com https://api.exchangerate.host https://api.iatistandard.org https://nominatim.openstreetmap.org https://unpkg.com https://basemaps.cartocdn.com https://*.cartocdn.com https://tiles.openfreemap.org https://*.openstreetmap.org https://*.openstreetmap.fr",
+              "connect-src 'self' https://lhiayyjwkjkjkxvhcenw.supabase.co https://*.supabase.co https://api.fxratesapi.com https://api.exchangerate-api.com https://api.exchangerate.host https://api.iatistandard.org https://nominatim.openstreetmap.org https://unpkg.com https://basemaps.cartocdn.com https://*.cartocdn.com https://tiles.openfreemap.org https://*.openstreetmap.org https://*.openstreetmap.fr https://server.arcgisonline.com",
               "frame-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",

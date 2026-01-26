@@ -30,6 +30,7 @@ import { AidPredictabilityChart } from "./AidPredictabilityChart";
 import { ProgramFragmentationChart } from "./ProgramFragmentationChart";
 import { SectorFragmentationChart } from "./SectorFragmentationChart";
 import { LocationFragmentationChart } from "./LocationFragmentationChart";
+import { apiFetch } from '@/lib/api-fetch';
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) {
@@ -55,7 +56,7 @@ export function Dashboard() {
       setError(null);
 
       const params = new URLSearchParams({ measure });
-      const response = await fetch(`/api/analytics/dashboard?${params}`);
+      const response = await apiFetch(`/api/analytics/dashboard?${params}`);
       const result = await response.json();
 
       if (!result.success) {

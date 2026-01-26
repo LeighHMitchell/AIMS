@@ -17,6 +17,7 @@ import { BarChart3, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ODAByFlowTypeChartProps {
   dateRange: {
@@ -69,7 +70,7 @@ export function ODAByFlowTypeChart({
         params.append('sector', filters.sector)
       }
 
-      const response = await fetch(`/api/analytics/top-10/oda-by-flow-type?${params}`)
+      const response = await apiFetch(`/api/analytics/top-10/oda-by-flow-type?${params}`)
       if (!response.ok) {
         throw new Error('Failed to fetch data')
       }

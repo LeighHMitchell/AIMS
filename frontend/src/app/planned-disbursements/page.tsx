@@ -26,6 +26,7 @@ import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { LoadingText } from "@/components/ui/loading-text";
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function PlannedDisbursementsPage() {
   const router = useRouter();
@@ -137,7 +138,7 @@ export default function PlannedDisbursementsPage() {
   // Fetch organizations for filter dropdown
   const fetchOrganizations = async () => {
     try {
-      const response = await fetch('/api/organizations');
+      const response = await apiFetch('/api/organizations');
       if (response.ok) {
         const data = await response.json();
         setOrganizations(data.organizations || data);
@@ -166,7 +167,7 @@ export default function PlannedDisbursementsPage() {
       if (filters.types.length > 0) params.append('types', filters.types.join(','));
       if (filters.organizations.length > 0) params.append('organizations', filters.organizations.join(','));
 
-      const response = await fetch(`/api/planned-disbursements/list?${params}`);
+      const response = await apiFetch(`/api/planned-disbursements/list?${params}`);
       if (response.ok) {
         const data = await response.json();
         console.log('[Planned Disbursements Page] Sample disbursement from API:', data.disbursements?.[0]);
@@ -204,7 +205,7 @@ export default function PlannedDisbursementsPage() {
           params.append('endDay', selectedYear.endDay.toString());
         }
 
-        const response = await fetch(`/api/planned-disbursements/yearly-summary?${params.toString()}`);
+        const response = await apiFetch(`/api/planned-disbursements/yearly-summary?${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
           setYearlySummary(data.years || []);
@@ -309,7 +310,7 @@ export default function PlannedDisbursementsPage() {
     }
 
     try {
-      const response = await fetch(`/api/planned-disbursements/${disbursementId}`, {
+      const response = await apiFetch(`/api/planned-disbursements/${disbursementId}`, {
         method: 'DELETE',
       });
 
@@ -352,7 +353,7 @@ export default function PlannedDisbursementsPage() {
     setIsBulkDeleting(true);
 
     try {
-      const response = await fetch('/api/planned-disbursements/bulk-delete', {
+      const response = await apiFetch('/api/planned-disbursements/bulk-delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { apiFetch } from '@/lib/api-fetch';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ViewMode = "bar" | "table";
@@ -167,7 +168,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
         params.set("dateTo", to.toISOString());
       }
 
-      const response = await fetch(`/api/analytics/top-capital-spend-activities?${params}`);
+      const response = await apiFetch(`/api/analytics/top-capital-spend-activities?${params}`);
       const result = await response.json();
 
       if (!result.success) {

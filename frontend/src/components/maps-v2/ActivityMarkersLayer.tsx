@@ -175,7 +175,7 @@ function ActivityLocationMarker({
     if (map) {
       map.flyTo({
         center: [lng, lat],
-        zoom: 18,
+        zoom: 14, // Safe zoom level that works with satellite imagery
         duration: 1500,
       });
     }

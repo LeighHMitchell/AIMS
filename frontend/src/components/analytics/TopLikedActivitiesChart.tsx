@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { IATI_ORGANIZATION_TYPES } from '@/data/iati-organization-types'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Color palette
 const COLORS = {
@@ -71,7 +72,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
       if (orgType && orgType !== 'all') {
         params.append('orgType', orgType)
       }
-      const response = await fetch(`/api/analytics/top-liked-activities?${params.toString()}`)
+      const response = await apiFetch(`/api/analytics/top-liked-activities?${params.toString()}`)
       const result = await response.json()
 
       if (!response.ok || !result.success) {

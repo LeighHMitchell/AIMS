@@ -14,6 +14,7 @@ import { getOrgTypeLabel } from '@/lib/org-type-mappings'
 import { useRouter } from 'next/navigation'
 // @ts-ignore
 import sectorGroupData from '@/data/SectorGroup.json'
+import { apiFetch } from '@/lib/api-fetch';
 
 /**
  * Aid Ecosystem Solar System
@@ -339,7 +340,7 @@ export function AidEcosystemSolarSystem({
         }
       }
 
-      const response = await fetch(`/api/analytics/ecosystem?${params}`)
+      const response = await apiFetch(`/api/analytics/ecosystem?${params}`)
       const result = await response.json()
 
       if (!result.success) {

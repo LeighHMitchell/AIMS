@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 export interface ActivityContributor {
   id: string;
@@ -46,7 +47,7 @@ export function useContributors(activityId: string | undefined) {
       setError(null);
       
       console.log('[useContributors] Fetching contributors for activity:', activityId);
-      const response = await fetch(`/api/activity-contributors?activityId=${activityId}`);
+      const response = await apiFetch(`/api/activity-contributors?activityId=${activityId}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch contributors: ${response.status}`);
@@ -86,7 +87,7 @@ export function useContributors(activityId: string | undefined) {
     try {
       console.log('[useContributors] Adding contributor:', contributorData);
       
-      const response = await fetch(`/api/activity-contributors`, {
+      const response = await apiFetch(`/api/activity-contributors`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,7 +128,7 @@ export function useContributors(activityId: string | undefined) {
     try {
       console.log('[useContributors] Updating contributor:', contributorId, updates);
       
-      const response = await fetch(`/api/activities/${activityId}/contributors`, {
+      const response = await apiFetch(`/api/activities/${activityId}/contributors`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -166,7 +167,7 @@ export function useContributors(activityId: string | undefined) {
     try {
       console.log('[useContributors] Removing contributor:', contributorId);
       
-      const response = await fetch(`/api/activity-contributors?contributorId=${contributorId}`, {
+      const response = await apiFetch(`/api/activity-contributors?contributorId=${contributorId}`, {
         method: 'DELETE',
       });
 

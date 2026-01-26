@@ -1,3 +1,4 @@
+import { apiFetch } from '@/lib/api-fetch';
 /**
  * Client-side helper for currency conversion
  * Calls the server-side API to avoid CSP restrictions
@@ -29,7 +30,7 @@ export async function convertToUSD(
     const dateStr = date.toISOString().split('T')[0];
     
     // Call server-side API
-    const response = await fetch('/api/currency/convert', {
+    const response = await apiFetch('/api/currency/convert', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -88,7 +89,7 @@ export async function convertToUSDCached(
       date: dateStr,
     });
 
-    const response = await fetch(`/api/currency/convert?${params.toString()}`, {
+    const response = await apiFetch(`/api/currency/convert?${params.toString()}`, {
       method: 'GET',
     });
 

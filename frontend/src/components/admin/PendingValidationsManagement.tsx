@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { TRANSACTION_TYPE_LABELS } from '@/types/transaction';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface PendingActivity {
   id: string;
@@ -296,7 +297,7 @@ export function PendingValidationsManagement() {
   const fetchPendingValidations = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/pending-validations?type=all');
+      const response = await apiFetch('/api/admin/pending-validations?type=all');
       if (!response.ok) {
         throw new Error('Failed to fetch pending validations');
       }
@@ -319,7 +320,7 @@ export function PendingValidationsManagement() {
   const handleValidateActivity = async (id: string, validated: boolean) => {
     setValidatingIds(prev => new Set(prev).add(id));
     try {
-      const response = await fetch('/api/admin/pending-validations', {
+      const response = await apiFetch('/api/admin/pending-validations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'activity', id, validated }),
@@ -354,7 +355,7 @@ export function PendingValidationsManagement() {
   const handleValidateTransaction = async (id: string, validated: boolean) => {
     setValidatingIds(prev => new Set(prev).add(id));
     try {
-      const response = await fetch('/api/admin/pending-validations', {
+      const response = await apiFetch('/api/admin/pending-validations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'transaction', id, validated }),

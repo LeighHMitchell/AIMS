@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_COLOR_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
+import { apiFetch } from '@/lib/api-fetch';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ViewMode = "bar" | "pie" | "table";
@@ -170,7 +171,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
         params.set("dateTo", to.toISOString());
       }
 
-      const response = await fetch(`/api/analytics/top-sectors?${params}`);
+      const response = await apiFetch(`/api/analytics/top-sectors?${params}`);
       const result = await response.json();
 
       if (!result.success) {

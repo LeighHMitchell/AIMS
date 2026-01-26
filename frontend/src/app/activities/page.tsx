@@ -113,6 +113,7 @@ import {
   columnDescriptions,
   ACTIVITY_COLUMNS_LOCALSTORAGE_KEY,
 } from "./columns";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Dynamically import SectorHierarchyFilter to avoid hydration issues
 const SectorHierarchyFilter = dynamic(
@@ -743,7 +744,7 @@ const router = useRouter();
 
   const fetchOrganizations = async () => {
     try {
-      const res = await fetch("/api/organizations", {
+      const res = await apiFetch("/api/organizations", {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -842,7 +843,7 @@ const router = useRouter();
       setLegacyError(null);
       const timestamp = new Date().getTime();
       const limitParam = `limit=500`;
-      const res = await fetch(`/api/activities-simple?page=1&${limitParam}&t=${timestamp}`, {
+      const res = await apiFetch(`/api/activities-simple?page=1&${limitParam}&t=${timestamp}`, {
         method: 'GET',
         cache: 'no-store',
         signal: abortControllerRef.current.signal,
@@ -971,7 +972,7 @@ const router = useRouter();
         }
       }
       
-      const res = await fetch("/api/activities", {
+      const res = await apiFetch("/api/activities", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -1118,7 +1119,7 @@ const router = useRouter();
   const handleExportActivityXML = async (activityId: string) => {
     toast.loading("Generating IATI XML...", { id: "export-xml" });
     try {
-      const response = await fetch(`/api/activities/${activityId}/export-iati`);
+      const response = await apiFetch(`/api/activities/${activityId}/export-iati`);
       if (!response.ok) throw new Error('Export failed');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -1172,7 +1173,7 @@ const router = useRouter();
         setLegacyActivities(remainingActivities);
       }
       
-      const response = await fetch('/api/activities', {
+      const response = await apiFetch('/api/activities', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2526,7 +2527,7 @@ const router = useRouter();
                             e.preventDefault();
                             // Verify activity exists before navigating (lightweight check)
                             try {
-                              const checkRes = await fetch(`/api/activities/${activity.id}?fields=id`, {
+                              const checkRes = await apiFetch(`/api/activities/${activity.id}?fields=id`, {
                                 method: 'GET'
                               });
                               

@@ -14,6 +14,7 @@ import { GmailLogin } from "@/components/auth/GmailLogin";
 import { supabase } from "@/lib/supabase";
 import { WavesBackground } from "@/components/landing/WavesBackground";
 import { getHomeRouteFromApiData } from "@/lib/navigation-utils";
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function LoginPage() {
         console.log("[Login] No existing session to clear");
       }
       
-      const response = await fetch("/api/auth/login", {
+      const response = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

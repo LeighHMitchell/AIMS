@@ -17,6 +17,7 @@ import { parseIATIOrganization, validateIATIOrganizationXML } from '@/lib/iati-o
 import { IATIOrgImportFieldsTable, OrgImportField } from './IATIOrgImportFieldsTable'
 import { useSystemSettings } from '@/hooks/useSystemSettings'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface IATIOrgImportTabProps {
   organizationId: string
@@ -63,7 +64,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
     if (!organizationId) return null
 
     try {
-      const response = await fetch(`/api/organizations/${organizationId}`)
+      const response = await apiFetch(`/api/organizations/${organizationId}`)
       if (!response.ok) throw new Error('Failed to fetch organization')
       return await response.json()
     } catch (error) {
@@ -444,7 +445,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
 
       setImportProgress(30)
 
-      const response = await fetch(`/api/organizations/${organizationId}/import-iati-org`, {
+      const response = await apiFetch(`/api/organizations/${organizationId}/import-iati-org`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

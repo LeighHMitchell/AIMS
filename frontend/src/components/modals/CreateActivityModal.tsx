@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface CreateActivityModalProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ export function CreateActivityModal({ isOpen, onClose }: CreateActivityModalProp
     
     try {
       // Create the activity with just the title
-      const response = await fetch('/api/activities', {
+      const response = await apiFetch('/api/activities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

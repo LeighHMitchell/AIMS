@@ -41,6 +41,7 @@ import {
   ArchiveRestore,
   Trash,
 } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ActivityCommentsProps {
   activityId: string;
@@ -180,14 +181,14 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
   const fetchUsersAndOrgs = async () => {
     try {
       // Fetch users from the activity contributors/participants
-      const usersResponse = await fetch('/api/users?limit=100');
+      const usersResponse = await apiFetch('/api/users?limit=100');
       if (usersResponse.ok) {
         const users = await usersResponse.json();
         setAvailableUsers(users);
       }
 
       // Fetch organizations
-      const orgsResponse = await fetch('/api/organizations?limit=100');
+      const orgsResponse = await apiFetch('/api/organizations?limit=100');
       if (orgsResponse.ok) {
         const orgs = await orgsResponse.json();
         setAvailableOrgs(orgs);
@@ -202,7 +203,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     if (!user) return;
     
     try {
-      const response = await fetch(`/api/notifications?userId=${user.id}&unreadOnly=true`);
+      const response = await apiFetch(`/api/notifications?userId=${user.id}&unreadOnly=true`);
       if (response.ok) {
         const notifs = await response.json();
         setNotifications(notifs);
@@ -291,7 +292,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     if (!newComment.trim() || !user) return;
 
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -328,7 +329,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     const inheritedType = parentComment?.type || 'Feedback';
 
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -362,7 +363,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     if (!user) return;
 
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -389,7 +390,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     if (!user) return;
 
     try {
-      const res = await fetch(`/api/activities/${activityId}/comments`, {
+      const res = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -413,7 +414,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     if (!user) return;
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -462,7 +463,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     }
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -488,7 +489,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     if (!user) return;
     
     try {
-      const response = await fetch(`/api/activities/${activityId}/comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/comments`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

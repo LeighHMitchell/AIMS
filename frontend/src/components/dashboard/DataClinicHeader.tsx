@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Download, Loader2, Stethoscope } from 'lucide-react';
 import { toast } from 'sonner';
 import { convertToCSV, downloadCSV, formatDateForCSV, CSVColumn } from '@/lib/csv-utils';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface DataClinicHeaderProps {
   organizationId: string;
@@ -50,15 +51,13 @@ export function DataClinicHeader({ organizationId }: DataClinicHeaderProps) {
       setDownloading(true);
 
       // Fetch focal points data
-      const focalPointsResponse = await fetch(
-        `/api/data-clinic/focal-points?organization_id=${organizationId}`
+      const focalPointsResponse = await apiFetch(`/api/data-clinic/focal-points?organization_id=${organizationId}`
       );
       const focalPointsData = await focalPointsResponse.json();
       const focalPointActivities: ActivityWithFocalPoints[] = focalPointsData.activities || [];
 
       // Fetch all activities for image check
-      const activitiesResponse = await fetch(
-        `/api/activities?organization_id=${organizationId}`
+      const activitiesResponse = await apiFetch(`/api/activities?organization_id=${organizationId}`
       );
       const activitiesData = await activitiesResponse.json();
       const allActivities = Array.isArray(activitiesData) 

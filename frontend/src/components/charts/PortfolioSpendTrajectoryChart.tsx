@@ -27,6 +27,7 @@ import {
 import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
 import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Colour palette as specified
 const COLOURS = {
@@ -160,7 +161,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
   useEffect(() => {
     const fetchCustomYears = async () => {
       try {
-        const response = await fetch('/api/custom-years')
+        const response = await apiFetch('/api/custom-years')
         if (response.ok) {
           const result = await response.json()
           const years = result.data || []
@@ -274,7 +275,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
         setError(null)
 
         // Fetch main portfolio spend data
-        const response = await fetch('/api/analytics/portfolio-spend-trajectory')
+        const response = await apiFetch('/api/analytics/portfolio-spend-trajectory')
 
         if (!response.ok) {
           const errorData = await response.json()

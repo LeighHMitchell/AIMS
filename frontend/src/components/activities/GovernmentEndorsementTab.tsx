@@ -43,6 +43,7 @@ import {
   ProjectReferenceRow,
 } from '@/types/project-references';
 import { format } from 'date-fns';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface GovernmentEndorsementTabProps {
   activityId: string;
@@ -132,7 +133,7 @@ export default function GovernmentEndorsementTab({
   };
 
   const handleManualSave = async () => {
-    const success = await saveEndorsement(formData);
+    const success = await saveEndorsement(formData, false); // Not silent - show toast for manual save
     if (success) {
       setHasUnsavedChanges(false);
       setLastSaved(new Date());
@@ -154,7 +155,7 @@ export default function GovernmentEndorsementTab({
   const fetchProjectReferences = async () => {
     setLoadingRefs(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/project-references`);
+      const response = await apiFetch(`/api/activities/${activityId}/project-references`);
       if (response.ok) {
         const data = await response.json();
         setProjectReferences(data.data || []);
@@ -241,8 +242,7 @@ export default function GovernmentEndorsementTab({
     if (!window.confirm('Delete this project reference?')) return;
 
     try {
-      const response = await fetch(
-        `/api/activities/${activityId}/project-references?referenceId=${refId}`,
+      const response = await apiFetch(`/api/activities/${activityId}/project-references?referenceId=${refId}`,
         { method: 'DELETE' }
       );
 
@@ -260,7 +260,7 @@ export default function GovernmentEndorsementTab({
   const handleSetPrimary = async (ref: ProjectReference) => {
     setSavingRef(true);
     try {
-      const response = await fetch(`/api/activities/${activityId}/project-references`, {
+      const response = await apiFetch(`/api/activities/${activityId}/project-references`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

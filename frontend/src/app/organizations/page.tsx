@@ -58,6 +58,7 @@ import {
 import Link from 'next/link'
 import { OrganisationCardSkeleton } from '@/components/ui/skeleton-loader'
 import { getCountryCode, getCountryFullName, COUNTRY_ISO_CODES } from '@/lib/country-utils'
+import { apiFetch } from '@/lib/api-fetch';
 // Using Button components for view toggle instead of ToggleGroup
 
 // Performance constants
@@ -1350,7 +1351,7 @@ function OrganizationsPageContent() {
     typesControllerRef.current = new AbortController()
     
     try {
-      const response = await fetch('/api/organization-types', {
+      const response = await apiFetch('/api/organization-types', {
         signal: typesControllerRef.current.signal
       })
       if (response.ok) {
@@ -1382,7 +1383,7 @@ function OrganizationsPageContent() {
     
     setLoadingCustomGroups(true)
     try {
-      const response = await fetch('/api/custom-groups?includeMembers=true', {
+      const response = await apiFetch('/api/custom-groups?includeMembers=true', {
         signal: groupsControllerRef.current.signal
       })
       if (response.ok) {
@@ -1471,13 +1472,13 @@ function OrganizationsPageContent() {
       // Add timestamp for cache busting when needed (after create/update)
       const cacheBuster = bustCache ? `&_=${Date.now()}` : '';
       const [orgsResponse, summaryResponse] = await Promise.all([
-        fetch(`/api/organizations-list?limit=500${cacheBuster}`, {
+        apiFetch(`/api/organizations-list?limit=500${cacheBuster}`, {
           signal: mainFetchControllerRef.current.signal,
           headers: {
             'Cache-Control': bustCache ? 'no-cache' : 'max-age=60',
           }
         }),
-        fetch(`/api/organizations/summary${bustCache ? `?_=${Date.now()}` : ''}`, {
+        apiFetch(`/api/organizations/summary${bustCache ? `?_=${Date.now()}` : ''}`, {
           signal: mainFetchControllerRef.current.signal,
           headers: {
             'Cache-Control': bustCache ? 'no-cache' : 'max-age=60', // 1 minute client cache (reduced from 5 min)
@@ -1557,7 +1558,7 @@ function OrganizationsPageContent() {
   const handleConfirmDelete = async () => {
     if (!selectedOrganization) return
     
-    const response = await fetch(`/api/organizations?id=${selectedOrganization.id}`, {
+    const response = await apiFetch(`/api/organizations?id=${selectedOrganization.id}`, {
       method: 'DELETE'
     })
     
@@ -1878,7 +1879,7 @@ function OrganizationsPageContent() {
                             if (!confirm('Are you sure you want to delete this group?')) return
 
                             try {
-                              const response = await fetch(`/api/custom-groups/${group.id}`, {
+                              const response = await apiFetch(`/api/custom-groups/${group.id}`, {
                                 method: 'DELETE'
                               })
 
@@ -1976,7 +1977,7 @@ function OrganizationsPageContent() {
                                     onClick={async () => {
                                       if (!confirm('Are you sure you want to delete this group?')) return
                                       try {
-                                        const response = await fetch(`/api/custom-groups/${group.id}`, {
+                                        const response = await apiFetch(`/api/custom-groups/${group.id}`, {
                                           method: 'DELETE'
                                         })
                                         if (response.ok) {

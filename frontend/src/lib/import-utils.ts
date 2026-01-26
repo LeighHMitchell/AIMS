@@ -1,4 +1,5 @@
 import { MappingTemplate, FieldMapping, ImportEntityType } from '@/types/import';
+import { apiFetch } from '@/lib/api-fetch';
 
 const MAPPING_TEMPLATES_KEY = 'aims_import_mapping_templates';
 
@@ -58,7 +59,7 @@ export class ImportLogger {
     fileName: string
   ): Promise<void> {
     try {
-      await fetch('/api/import-logs', {
+      await apiFetch('/api/import-logs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

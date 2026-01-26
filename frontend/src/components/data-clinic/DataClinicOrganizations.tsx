@@ -17,6 +17,7 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/hooks/useUser";
 import { EditableCell } from "./EditableCell";
+import { apiFetch } from '@/lib/api-fetch';
 
 type Organization = {
   id: string;
@@ -62,7 +63,7 @@ export function DataClinicOrganizations() {
 
   const fetchOrganizationsWithGaps = async () => {
     try {
-      const res = await fetch('/api/data-clinic/organizations?missing_fields=true');
+      const res = await apiFetch('/api/data-clinic/organizations?missing_fields=true');
       if (!res.ok) throw new Error('Failed to fetch organizations');
       
       const data = await res.json();
@@ -149,7 +150,7 @@ export function DataClinicOrganizations() {
 
   const saveFieldValue = async (organizationId: string, field: string, value: string) => {
     try {
-      const res = await fetch(`/api/data-clinic/organizations/${organizationId}`, {
+      const res = await apiFetch(`/api/data-clinic/organizations/${organizationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ field, value, userId: user?.id })
@@ -177,7 +178,7 @@ export function DataClinicOrganizations() {
     }
 
     try {
-      const res = await fetch('/api/data-clinic/bulk-update', {
+      const res = await apiFetch('/api/data-clinic/bulk-update', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, Activity, Building2, Loader2 } from 'lucide-react';
 import { getContactTypeCategories } from './utils/roleLabels';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ContactTypeStats {
   contact_type: string;
@@ -22,7 +23,7 @@ export function RolodexStats({ totalCount = 0, filters }: RolodexStatsProps) {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/rolodex/stats');
+        const response = await apiFetch('/api/rolodex/stats');
         if (response.ok) {
           const data = await response.json();
           setStats(data.stats || []);

@@ -21,6 +21,7 @@ import {
   CheckCircle,
   Search,
 } from 'lucide-react'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Available context sections for organization
 const ORGANIZATION_SECTIONS = [
@@ -125,7 +126,7 @@ export function OrganizationComments({
         params.append('includeArchived', 'false')
       }
 
-      const res = await fetch(`/api/organizations/${organizationId}/comments?${params}`)
+      const res = await apiFetch(`/api/organizations/${organizationId}/comments?${params}`)
       
       if (!res.ok) {
         if (res.status === 404) {
@@ -150,7 +151,7 @@ export function OrganizationComments({
     if (!newComment.trim() || !user) return
 
     try {
-      const res = await fetch(`/api/organizations/${organizationId}/comments`, {
+      const res = await apiFetch(`/api/organizations/${organizationId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -176,7 +177,7 @@ export function OrganizationComments({
     if (!replyContent.trim() || !user) return
 
     try {
-      const res = await fetch(`/api/organizations/${organizationId}/comments`, {
+      const res = await apiFetch(`/api/organizations/${organizationId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

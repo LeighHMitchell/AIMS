@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useDropzone } from 'react-dropzone'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Organization {
   id: string
@@ -70,7 +71,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
 
   const fetchOrganizations = async () => {
     try {
-      const response = await fetch('/api/organizations')
+      const response = await apiFetch('/api/organizations')
       if (response.ok) {
         const data = await response.json()
         setOrganizations(data)
@@ -143,7 +144,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
         logoFormData.append('file', logoFile)
         logoFormData.append('type', 'logo')
         
-        const logoResponse = await fetch('/api/upload', {
+        const logoResponse = await apiFetch('/api/upload', {
           method: 'POST',
           body: logoFormData
         })
@@ -159,7 +160,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
         bannerFormData.append('file', bannerFile)
         bannerFormData.append('type', 'banner')
         
-        const bannerResponse = await fetch('/api/upload', {
+        const bannerResponse = await apiFetch('/api/upload', {
           method: 'POST',
           body: bannerFormData
         })
@@ -170,7 +171,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
         }
       }
 
-      const response = await fetch('/api/custom-groups', {
+      const response = await apiFetch('/api/custom-groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

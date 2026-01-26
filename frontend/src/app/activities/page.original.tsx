@@ -34,6 +34,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import Link from 'next/link';
 import { IATISyncStatusIndicator, IATISyncStatusBadge } from '@/components/activities/IATISyncStatusIndicator';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Aid Type mappings (simplified)
 const AID_TYPE_LABELS: Record<string, string> = {
@@ -224,7 +225,7 @@ function ActivitiesPageContent() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await fetch("/api/organizations");
+      const res = await apiFetch("/api/organizations");
       if (res.ok) {
         const orgs = await res.json();
         setOrganizations(orgs);
@@ -328,7 +329,7 @@ function ActivitiesPageContent() {
       const timestamp = new Date().getTime();
       // Always fetch up to 500 for client-side filtering, but respect the API's limit
       const limitParam = `limit=500`;
-      const res = await fetch(`/api/activities-simple?page=1&${limitParam}&t=${timestamp}`, {
+      const res = await apiFetch(`/api/activities-simple?page=1&${limitParam}&t=${timestamp}`, {
         cache: 'no-store',
         signal: abortControllerRef.current.signal, // Add abort signal
         headers: {
@@ -431,7 +432,7 @@ function ActivitiesPageContent() {
         setDeleteActivityId(null);
       }
       
-      const res = await fetch("/api/activities", {
+      const res = await apiFetch("/api/activities", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -462,7 +463,7 @@ function ActivitiesPageContent() {
       // Verify deletion by checking if it still exists
       setTimeout(async () => {
         try {
-          const checkRes = await fetch(`/api/activities-simple?t=${Date.now()}`);
+          const checkRes = await apiFetch(`/api/activities-simple?t=${Date.now()}`);
           if (checkRes.ok) {
             const data = await checkRes.json();
             const activities = data.data || data;

@@ -28,6 +28,7 @@ import {
 import { format } from 'date-fns';
 import { IATIXMLParser, validateIATIXML } from '@/lib/xml-parser';
 import { IatiImportFieldsTable } from '@/components/activities/IatiImportFieldsTable';
+import { apiFetch } from '@/lib/api-fetch';
 // Inline strings for demo - in production would come from i18n
 const iatiImportStrings = {
   modalTitle: 'External Publisher Detected',
@@ -880,7 +881,7 @@ export function ExternalPublisherModal({
         requestBody.iati_data = iatiData;
       }
 
-      const response = await fetch('/api/iati/import-as-reporting-org', {
+      const response = await apiFetch('/api/iati/import-as-reporting-org', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)

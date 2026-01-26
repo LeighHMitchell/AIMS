@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Fixed autosave implementation for activity editor
 export function useActivityAutosave() {
@@ -70,7 +71,7 @@ export function useActivityAutosave() {
           fieldsCount: Object.keys(payload).length
         });
         
-        const response = await fetch('/api/activities', {
+        const response = await apiFetch('/api/activities', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

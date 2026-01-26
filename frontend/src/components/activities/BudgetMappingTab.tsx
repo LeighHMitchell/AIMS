@@ -21,6 +21,7 @@ import { BudgetStatusField } from "@/components/activities/BudgetStatusField";
 import { BudgetStatusType } from "@/types/activity-budget-status";
 import { ClassificationType, CLASSIFICATION_TYPE_LABELS, BudgetClassification } from "@/types/aid-on-budget";
 import { toast } from "sonner";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface BudgetMappingTabProps {
   activityId: string;
@@ -112,7 +113,7 @@ export default function BudgetMappingTab({
 
   const loadBudgetClassifications = async () => {
     try {
-      const response = await fetch('/api/admin/budget-classifications?flat=true');
+      const response = await apiFetch('/api/admin/budget-classifications?flat=true');
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -132,7 +133,7 @@ export default function BudgetMappingTab({
   const loadCountryBudgetItems = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/activities/${activityId}/country-budget-items`);
+      const response = await apiFetch(`/api/activities/${activityId}/country-budget-items`);
       if (response.ok) {
         const data = await response.json();
         const items = data.country_budget_items || [];
@@ -150,7 +151,7 @@ export default function BudgetMappingTab({
   const loadSuggestions = async () => {
     try {
       setLoadingSuggestions(true);
-      const response = await fetch(`/api/activities/${activityId}/budget-suggestions`);
+      const response = await apiFetch(`/api/activities/${activityId}/budget-suggestions`);
       if (response.ok) {
         const data = await response.json();
         setSuggestions(data);
@@ -165,7 +166,7 @@ export default function BudgetMappingTab({
   const handleApplySuggestions = async (overwriteExisting: boolean = false) => {
     try {
       setApplyingSuggestions(true);
-      const response = await fetch(`/api/activities/${activityId}/budget-suggestions`, {
+      const response = await apiFetch(`/api/activities/${activityId}/budget-suggestions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ overwriteExisting }),
@@ -213,7 +214,7 @@ export default function BudgetMappingTab({
         activity_id: activityId
       };
 
-      const response = await fetch(`/api/activities/${activityId}/country-budget-items`, {
+      const response = await apiFetch(`/api/activities/${activityId}/country-budget-items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -243,8 +244,7 @@ export default function BudgetMappingTab({
 
     try {
       setSaving(true);
-      const response = await fetch(
-        `/api/activities/${activityId}/country-budget-items?vocabulary=${vocabularyCode}`,
+      const response = await apiFetch(`/api/activities/${activityId}/country-budget-items?vocabulary=${vocabularyCode}`,
         { method: 'DELETE' }
       );
 

@@ -123,6 +123,7 @@ import { AidEcosystemSolarSystem } from '@/components/analytics/AidEcosystemSola
 
 // Financial Totals Bar Chart
 import { FinancialTotalsBarChart } from '@/components/analytics/FinancialTotalsBarChart'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface KPIData {
   totalDisbursed: number
@@ -256,9 +257,9 @@ export default function AnalyticsDashboardPage() {
 
       // Fetch aid types, finance types, and flow types
       const [aidTypesRes, financeTypesRes, flowTypesRes] = await Promise.all([
-        fetch('/api/analytics/aid-types'),
-        fetch('/api/analytics/finance-types'),
-        fetch('/api/analytics/flow-types')
+        apiFetch('/api/analytics/aid-types'),
+        apiFetch('/api/analytics/finance-types'),
+        apiFetch('/api/analytics/flow-types')
       ])
 
       if (aidTypesRes.ok) {
@@ -498,7 +499,7 @@ export default function AnalyticsDashboardPage() {
         params.append('publicationStatus', sectorAnalyticsFilters.publicationStatus)
       }
 
-      const response = await fetch(`/api/analytics/sectors-analytics?${params}`)
+      const response = await apiFetch(`/api/analytics/sectors-analytics?${params}`)
       const result: SectorAnalyticsResponse = await response.json()
 
       if (result.success) {
@@ -524,7 +525,7 @@ export default function AnalyticsDashboardPage() {
   const fetchCoordinationData = async () => {
     try {
       setCoordinationLoading(true)
-      const response = await fetch(`/api/analytics/coordination?view=${coordinationView}`)
+      const response = await apiFetch(`/api/analytics/coordination?view=${coordinationView}`)
       const result = await response.json()
 
       if (result.success) {

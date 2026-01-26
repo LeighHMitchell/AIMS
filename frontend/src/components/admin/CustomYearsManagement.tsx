@@ -49,6 +49,7 @@ import {
   getCustomYearLabel,
   validateCustomYear,
 } from "@/types/custom-years";
+import { apiFetch } from '@/lib/api-fetch';
 
 /**
  * Calculate the end date as the day before the start date (for a full 12-month year)
@@ -97,7 +98,7 @@ export function CustomYearsManagement() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch("/api/admin/custom-years?activeOnly=false");
+      const response = await apiFetch("/api/admin/custom-years?activeOnly=false");
       const result = await response.json();
 
       if (!response.ok) {
@@ -230,7 +231,7 @@ export function CustomYearsManagement() {
   // Handle set as default
   const handleSetDefault = async (year: CustomYear) => {
     try {
-      const response = await fetch(`/api/admin/custom-years/${year.id}`, {
+      const response = await apiFetch(`/api/admin/custom-years/${year.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isDefault: true }),
@@ -262,7 +263,7 @@ export function CustomYearsManagement() {
     }
 
     try {
-      const response = await fetch(`/api/admin/custom-years/${year.id}`, {
+      const response = await apiFetch(`/api/admin/custom-years/${year.id}`, {
         method: "DELETE",
       });
 

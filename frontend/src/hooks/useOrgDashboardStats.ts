@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { OrgDashboardStats } from '@/types/dashboard';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UseOrgDashboardStatsReturn {
   stats: OrgDashboardStats | null;
@@ -34,7 +35,7 @@ export function useOrgDashboardStats(
         params.append('userId', userId);
       }
 
-      const response = await fetch(`/api/dashboard/org-stats?${params.toString()}`);
+      const response = await apiFetch(`/api/dashboard/org-stats?${params.toString()}`);
 
       if (!response.ok) {
         const errorData = await response.json();

@@ -5,6 +5,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface OrganizationExportData {
   profile: any;
@@ -26,10 +27,10 @@ async function fetchOrganizationExportData(orgId: string): Promise<OrganizationE
       transactionsRes,
       contactsRes
     ] = await Promise.all([
-      fetch(`${baseUrl}/api/organizations/${orgId}`),
-      fetch(`${baseUrl}/api/organizations/${orgId}/activities`),
-      fetch(`${baseUrl}/api/organizations/${orgId}/transactions`),
-      fetch(`${baseUrl}/api/organizations/${orgId}/contacts`)
+      apiFetch(`${baseUrl}/api/organizations/${orgId}`),
+      apiFetch(`${baseUrl}/api/organizations/${orgId}/activities`),
+      apiFetch(`${baseUrl}/api/organizations/${orgId}/transactions`),
+      apiFetch(`${baseUrl}/api/organizations/${orgId}/contacts`)
     ]);
 
     const [profile, activities, transactions, contacts] = await Promise.all([

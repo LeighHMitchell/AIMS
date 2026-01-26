@@ -18,6 +18,7 @@ import { DataClinicDuplicates } from "@/components/data-clinic/DataClinicDuplica
 import { Stethoscope, Bug, RefreshCw, Copy, FileText, ArrowLeftRight, Wallet, Building2, Clock, CalendarDays, PieChart } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function DataClinicPage() {
   const { user } = useUser();
@@ -34,7 +35,7 @@ export default function DataClinicPage() {
     // Auto-run debug on mount if there are issues
     const checkDebug = async () => {
       try {
-        const res = await fetch('/api/data-clinic/debug');
+        const res = await apiFetch('/api/data-clinic/debug');
         const data = await res.json();
         if (data.summary?.migrationRequired) {
           setDebugInfo(data);
@@ -53,7 +54,7 @@ export default function DataClinicPage() {
   const handleDebugCheck = async () => {
     setIsLoadingDebug(true);
     try {
-      const res = await fetch('/api/data-clinic/debug');
+      const res = await apiFetch('/api/data-clinic/debug');
       const data = await res.json();
       setDebugInfo(data);
       setShowDebug(true);

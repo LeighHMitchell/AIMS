@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Upload, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ParseResult {
   activities: any[];
@@ -61,7 +62,7 @@ export default function IATIImportPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/iati/parse', {
+      const response = await apiFetch('/api/iati/parse', {
         method: 'POST',
         body: formData,
       });
@@ -86,7 +87,7 @@ export default function IATIImportPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/iati/import', {
+      const response = await apiFetch('/api/iati/import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -159,7 +160,7 @@ export default function IATIImportPage() {
                     const formData = new FormData();
                     formData.append('file', file);
                     try {
-                      const response = await fetch('/api/iati/debug', {
+                      const response = await apiFetch('/api/iati/debug', {
                         method: 'POST',
                         body: formData,
                       });

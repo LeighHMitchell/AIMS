@@ -17,6 +17,7 @@ import {
 import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-select';
 import { toast } from 'sonner';
 import { IATI_RELATIONSHIP_TYPES } from '@/data/iati-relationship-types';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface LinkExternalActivityModalProps {
   isOpen: boolean;
@@ -59,8 +60,7 @@ export function LinkExternalActivityModal({
         external_activity_title: externalTitle.trim() || null,
       };
 
-      const response = await fetch(
-        `/api/activities/${activityId}/related-activities`,
+      const response = await apiFetch(`/api/activities/${activityId}/related-activities`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

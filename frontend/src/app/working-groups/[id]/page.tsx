@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface WorkingGroupMember {
   id: string
@@ -94,7 +95,7 @@ export default function WorkingGroupProfilePage() {
   const fetchWorkingGroupDetails = async (id: string | string[]) => {
     try {
       const groupId = Array.isArray(id) ? id[0] : id
-      const response = await fetch(`/api/working-groups/${groupId}`)
+      const response = await apiFetch(`/api/working-groups/${groupId}`)
       if (!response.ok) throw new Error('Failed to fetch working group')
       
       const data = await response.json()
@@ -122,7 +123,7 @@ export default function WorkingGroupProfilePage() {
     if (!workingGroup) return
 
     try {
-      const response = await fetch(`/api/working-groups/${workingGroup.id}`, {
+      const response = await apiFetch(`/api/working-groups/${workingGroup.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description: editedDescription }),

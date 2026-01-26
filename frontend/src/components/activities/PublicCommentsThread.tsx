@@ -24,6 +24,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 import { PublicComment, formatCommentTimestamp } from "@/types/public-comment";
+import { apiFetch } from '@/lib/api-fetch';
 
 // ============================================================================
 // TYPES
@@ -484,7 +485,7 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
     setComments(prev => [optimisticComment, ...prev]);
 
     try {
-      const response = await fetch(`/api/activities/${activityId}/public-comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/public-comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -538,7 +539,7 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
     }));
 
     try {
-      const response = await fetch(`/api/activities/${activityId}/public-comments`, {
+      const response = await apiFetch(`/api/activities/${activityId}/public-comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -575,8 +576,7 @@ export function PublicCommentsThread({ activityId }: PublicCommentsThreadProps) 
     if (!currentUser) return;
 
     try {
-      const response = await fetch(
-        `/api/activities/${activityId}/public-comments/${commentId}/like`,
+      const response = await apiFetch(`/api/activities/${activityId}/public-comments/${commentId}/like`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -25,6 +25,7 @@ import ActivityLocationsHeatmap from './maps/ActivityLocationsHeatmap';
 import {
   type LocationSchema,
 } from '@/lib/schemas/location';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface LocationsTabProps {
   activityId?: string;
@@ -69,7 +70,7 @@ export default function LocationsTabNew({
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/activities/${activityId}/locations`);
+      const response = await apiFetch(`/api/activities/${activityId}/locations`);
       if (!response.ok) {
         throw new Error('Failed to load locations');
       }
@@ -173,7 +174,7 @@ export default function LocationsTabNew({
   // Handle delete location
   const handleDeleteLocation = useCallback(async (locationId: string) => {
     try {
-      const response = await fetch(`/api/locations/${locationId}`, {
+      const response = await apiFetch(`/api/locations/${locationId}`, {
         method: 'DELETE',
       });
 

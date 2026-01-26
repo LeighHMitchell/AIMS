@@ -12,6 +12,7 @@ import { CalendarSkeleton } from '@/components/ui/skeleton-loader'
 import { EventCreateModal } from '@/components/calendar/EventCreateModal'
 import { EventDetailModal } from '@/components/calendar/EventDetailModal'
 import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Dynamic import for FullCalendar to avoid SSR issues
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false })
@@ -50,7 +51,7 @@ export default function CalendarPage() {
   // Fetch events from API
   const fetchEvents = async () => {
     try {
-      const response = await fetch('/api/calendar-events')
+      const response = await apiFetch('/api/calendar-events')
       if (response.ok) {
         const data = await response.json()
         setEvents(data.events || [])

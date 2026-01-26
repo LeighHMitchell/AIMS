@@ -38,6 +38,7 @@ import {
 import { IATIImportSkeleton } from '@/components/skeletons'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ImportSummary {
   activities: number
@@ -141,7 +142,7 @@ export default function IATIImportPage() {
       formData.append('file', xmlFile)
       
       setParsingProgress(50)
-      const response = await fetch('/api/iati/parse', {
+      const response = await apiFetch('/api/iati/parse', {
         method: 'POST',
         body: formData
       })
@@ -210,7 +211,7 @@ export default function IATIImportPage() {
     try {
       setParsingProgress(30)
       
-      const response = await fetch('/api/iati/parse-snippet', {
+      const response = await apiFetch('/api/iati/parse-snippet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ xmlContent: snippetContent })
@@ -312,7 +313,7 @@ export default function IATIImportPage() {
         importState.organizations.selected.has(o.ref)
       )
 
-      const response = await fetch('/api/iati/import', {
+      const response = await apiFetch('/api/iati/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -377,7 +378,7 @@ export default function IATIImportPage() {
         importState.activities.selected.has(a.iatiIdentifier)
       )
 
-      const response = await fetch('/api/iati/import', {
+      const response = await apiFetch('/api/iati/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -442,7 +443,7 @@ export default function IATIImportPage() {
         importState.transactions.selected.has(`${i}`)
       )
 
-      const response = await fetch('/api/iati/import', {
+      const response = await apiFetch('/api/iati/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -578,7 +579,7 @@ export default function IATIImportPage() {
   const fetchImportHistory = async () => {
     setLoadingHistory(true)
     try {
-      const response = await fetch('/api/iati/history')
+      const response = await apiFetch('/api/iati/history')
       if (response.ok) {
         const data = await response.json()
         setImportHistory(data)
@@ -810,7 +811,7 @@ export default function IATIImportPage() {
                               
                               // Fetch XML from URL using the existing API
                               console.log('[IATI Import] Fetching XML from URL:', urlContent.trim())
-                              const fetchResponse = await fetch('/api/xml/fetch', {
+                              const fetchResponse = await apiFetch('/api/xml/fetch', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ url: urlContent.trim() })
@@ -827,7 +828,7 @@ export default function IATIImportPage() {
                               
                               // Now parse the XML content (reuse existing parse logic)
                               setParsingProgress(50)
-                              const parseResponse = await fetch('/api/iati/parse', {
+                              const parseResponse = await apiFetch('/api/iati/parse', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ xmlContent: content })

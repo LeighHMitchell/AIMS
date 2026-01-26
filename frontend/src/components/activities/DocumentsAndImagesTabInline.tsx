@@ -70,6 +70,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Document Type Filter Component
 interface DocumentTypeFilterProps {
@@ -266,7 +267,7 @@ export function DocumentsAndImagesTabInline({
       
       try {
         console.log('[DocumentsTab] Loading documents for activity:', activityId);
-        const response = await fetch(`/api/activities/${activityId}/documents`);
+        const response = await apiFetch(`/api/activities/${activityId}/documents`);
         if (response.ok) {
           const data = await response.json();
           console.log('[DocumentsTab] Loaded documents:', data);
@@ -491,7 +492,7 @@ export function DocumentsAndImagesTabInline({
       ));
       
       console.log('[DocumentsTab] Making upload request to:', `/api/activities/${activityId}/documents/upload`);
-      const response = await fetch(`/api/activities/${activityId}/documents/upload`, {
+      const response = await apiFetch(`/api/activities/${activityId}/documents/upload`, {
         method: 'POST',
         body: formData,
       });

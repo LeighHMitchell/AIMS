@@ -9,6 +9,7 @@ import type {
   TemplateListResponse,
   TemplateDetailResponse,
 } from '@/types/task';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UseTaskTemplatesOptions {
   userId?: string;
@@ -57,7 +58,7 @@ export function useTaskTemplates({
       if (filters.task_type) params.append('task_type', filters.task_type);
       if (filters.is_active !== undefined) params.append('is_active', String(filters.is_active));
 
-      const response = await fetch(`/api/tasks/templates?${params.toString()}`);
+      const response = await apiFetch(`/api/tasks/templates?${params.toString()}`);
       const data: TemplateListResponse = await response.json();
 
       if (!response.ok || !data.success) {
@@ -83,7 +84,7 @@ export function useTaskTemplates({
     }
 
     try {
-      const response = await fetch(`/api/tasks/templates/${id}?userId=${userId}`);
+      const response = await apiFetch(`/api/tasks/templates/${id}?userId=${userId}`);
       const data: TemplateDetailResponse = await response.json();
 
       if (!response.ok || !data.success) {
@@ -112,7 +113,7 @@ export function useTaskTemplates({
     setError(null);
 
     try {
-      const response = await fetch('/api/tasks/templates', {
+      const response = await apiFetch('/api/tasks/templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, ...data }),
@@ -153,7 +154,7 @@ export function useTaskTemplates({
     setError(null);
 
     try {
-      const response = await fetch(`/api/tasks/templates/${id}`, {
+      const response = await apiFetch(`/api/tasks/templates/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, ...data }),
@@ -192,8 +193,7 @@ export function useTaskTemplates({
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/tasks/templates/${id}?userId=${userId}`,
+      const response = await apiFetch(`/api/tasks/templates/${id}?userId=${userId}`,
         { method: 'DELETE' }
       );
 

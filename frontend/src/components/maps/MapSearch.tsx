@@ -5,6 +5,7 @@ import { Search, X, Loader2, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { apiFetch } from '@/lib/api-fetch';
 import {
   Command,
   CommandEmpty,
@@ -98,7 +99,7 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
 
     try {
       // Use our API route to proxy the geocoding request
-      const response = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
+      const response = await apiFetch(`/api/geocode?q=${encodeURIComponent(query)}`)
 
       if (!response.ok) {
         throw new Error('Search failed')

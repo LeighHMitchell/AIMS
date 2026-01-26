@@ -25,6 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { apiFetch } from '@/lib/api-fetch';
 
 /**
  * Convert a filename like "dfat-design-monitoring-evaluation-learning-standards"
@@ -83,7 +84,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        const response = await fetch('/api/organizations');
+        const response = await apiFetch('/api/organizations');
         if (response.ok) {
           const data = await response.json();
           setOrganizations(data.organizations || data || []);
@@ -241,7 +242,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
         formData.append('recipientCountries', JSON.stringify(recipientCountries));
       }
 
-      const response = await fetch('/api/library/upload', {
+      const response = await apiFetch('/api/library/upload', {
         method: 'POST',
         body: formData,
       });

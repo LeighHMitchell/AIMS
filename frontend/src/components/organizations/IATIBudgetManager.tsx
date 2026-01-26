@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Edit2, Trash2, DollarSign, Building2, Globe2, MapPin, Loader2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { apiFetch } from '@/lib/api-fetch';
 
 interface BudgetLine {
   id?: string;
@@ -94,7 +95,7 @@ export function IATIBudgetManager({
     setError(null);
 
     try {
-      const response = await fetch(`/api/organizations/${organizationId}/iati-budgets`);
+      const response = await apiFetch(`/api/organizations/${organizationId}/iati-budgets`);
       if (!response.ok) {
         throw new Error('Failed to fetch budgets');
       }
@@ -165,8 +166,7 @@ export function IATIBudgetManager({
     }
 
     try {
-      const response = await fetch(
-        `/api/organizations/${organizationId}/iati-budgets?budgetId=${budgetToDelete.id}`,
+      const response = await apiFetch(`/api/organizations/${organizationId}/iati-budgets?budgetId=${budgetToDelete.id}`,
         { method: 'DELETE' }
       );
 
@@ -216,7 +216,7 @@ export function IATIBudgetManager({
 
       const isEditing = editingBudget.id && !editingBudget.id.startsWith('temp-');
 
-      const response = await fetch(`/api/organizations/${organizationId}/iati-budgets`, {
+      const response = await apiFetch(`/api/organizations/${organizationId}/iati-budgets`, {
         method: isEditing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingBudget),
@@ -292,7 +292,7 @@ export function IATIBudgetManager({
     // If in self-contained mode and budget has a real ID, save to API
     if (!isControlled && organizationId && budget.id && !budget.id.startsWith('temp-')) {
       try {
-        await fetch(`/api/organizations/${organizationId}/iati-budgets`, {
+        await apiFetch(`/api/organizations/${organizationId}/iati-budgets`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(budget),
@@ -323,7 +323,7 @@ export function IATIBudgetManager({
     // If in self-contained mode and budget has a real ID, save to API
     if (!isControlled && organizationId && budget.id && !budget.id.startsWith('temp-')) {
       try {
-        await fetch(`/api/organizations/${organizationId}/iati-budgets`, {
+        await apiFetch(`/api/organizations/${organizationId}/iati-budgets`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(budget),

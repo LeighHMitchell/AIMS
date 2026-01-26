@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { CustomYear } from "@/types/custom-years";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UseCustomYearsResult {
   /** All active custom years */
@@ -35,7 +36,7 @@ export function useCustomYears(): UseCustomYearsResult {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/custom-years");
+      const response = await apiFetch("/api/custom-years");
       const result = await response.json();
 
       if (!response.ok || !result.success) {

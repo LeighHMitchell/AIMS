@@ -42,6 +42,7 @@ import {
   TRANSACTION_STATUS
 } from "@/utils/transactionMigrationHelper";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
+import { apiFetch } from '@/lib/api-fetch';
 
 // Define FINANCE_TYPES locally since it's not exported from the helper
 const FINANCE_TYPES: Record<string, string> = {
@@ -381,7 +382,7 @@ export default function TransactionsManager({
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        const response = await fetch('/api/organizations');
+        const response = await apiFetch('/api/organizations');
         if (response.ok) {
           const data = await response.json();
           setOrganizations(data);
@@ -441,7 +442,7 @@ export default function TransactionsManager({
         try {
           setIsLoading(true);
           console.log('[TransactionsManager] No transactions provided, fetching for activity:', activityId);
-          const response = await fetch(`/api/activities/${activityId}/transactions`);
+          const response = await apiFetch(`/api/activities/${activityId}/transactions`);
           if (response.ok) {
             const responseData = await response.json();
             
@@ -500,7 +501,7 @@ export default function TransactionsManager({
     if (!activityPartnerId && activityId && activityId !== 'new') {
       const fetchActivityData = async () => {
         try {
-          const response = await fetch(`/api/activities/${activityId}`);
+          const response = await apiFetch(`/api/activities/${activityId}`);
           if (response.ok) {
             const activityData = await response.json();
             setFetchedActivityPartnerId(activityData.partner_id || null);
@@ -583,7 +584,7 @@ export default function TransactionsManager({
       let response;
       if (editingTransaction) {
         // Update existing transaction
-        response = await fetch('/api/transactions', {
+        response = await apiFetch('/api/transactions', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -593,7 +594,7 @@ export default function TransactionsManager({
         });
       } else {
         // Create new transaction
-        response = await fetch('/api/transactions', {
+        response = await apiFetch('/api/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(transactionData)
@@ -650,7 +651,7 @@ export default function TransactionsManager({
 
     setDeleteLoading(id);
     try {
-      const response = await fetch(`/api/transactions?id=${id}`, {
+      const response = await apiFetch(`/api/transactions?id=${id}`, {
         method: 'DELETE'
       });
 
@@ -708,7 +709,7 @@ export default function TransactionsManager({
     try {
       // Delete all selected transactions
       await Promise.all(selectedArray.map(async (id) => {
-        const response = await fetch(`/api/transactions?id=${id}`, {
+        const response = await apiFetch(`/api/transactions?id=${id}`, {
           method: 'DELETE'
         });
         if (!response.ok) {
@@ -736,7 +737,7 @@ export default function TransactionsManager({
 
   const handleAcceptTransaction = async (transactionId: string, acceptingActivityId: string) => {
     try {
-      const response = await fetch(`/api/transactions/${transactionId}/accept`, {
+      const response = await apiFetch(`/api/transactions/${transactionId}/accept`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -778,7 +779,7 @@ export default function TransactionsManager({
 
   const handleRejectTransaction = async (transactionId: string, rejectionReason?: string) => {
     try {
-      const response = await fetch(`/api/transactions/${transactionId}/reject`, {
+      const response = await apiFetch(`/api/transactions/${transactionId}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -20,6 +20,7 @@ import {
   DisbursementChannel,
   TiedStatus 
 } from "@/types/transaction";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface TransactionDetail {
   id: string;
@@ -71,7 +72,7 @@ export default function TransactionDetailPage() {
     
     try {
       setLoading(true);
-      const response = await fetch(`/api/transactions/${params.id}`);
+      const response = await apiFetch(`/api/transactions/${params.id}`);
       
       if (!response.ok) {
         throw new Error("Failed to fetch transaction");

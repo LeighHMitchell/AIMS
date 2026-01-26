@@ -32,6 +32,7 @@ import { LoadingText } from '@/components/ui/loading-text'
 import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
 import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { apiFetch } from '@/lib/api-fetch';
 
 // Color palette
 const COLORS = {
@@ -187,7 +188,7 @@ export function ProjectOrgCountsBySector({
   useEffect(() => {
     const fetchCustomYears = async () => {
       try {
-        const response = await fetch('/api/custom-years')
+        const response = await apiFetch('/api/custom-years')
         if (response.ok) {
           const result = await response.json()
           const years = result.data || []
@@ -221,7 +222,7 @@ export function ProjectOrgCountsBySector({
     const fetchActualDataRange = async () => {
       try {
         // Query for min/max years with actual data
-        const response = await fetch('/api/analytics/sector-disbursement-summary?dateFrom=2000-01-01&dateTo=2050-12-31&groupByLevel=1')
+        const response = await apiFetch('/api/analytics/sector-disbursement-summary?dateFrom=2000-01-01&dateTo=2050-12-31&groupByLevel=1')
         if (response.ok) {
           const result = await response.json()
           const sectors = result.sectors || []
@@ -295,7 +296,7 @@ export function ProjectOrgCountsBySector({
         params.append('dateTo', localDateRange.to.toISOString().split('T')[0])
         params.append('groupByLevel', groupByLevel)
 
-        const response = await fetch(`/api/analytics/sector-disbursement-summary?${params.toString()}`)
+        const response = await apiFetch(`/api/analytics/sector-disbursement-summary?${params.toString()}`)
 
         if (!response.ok) {
           throw new Error('Failed to fetch data')

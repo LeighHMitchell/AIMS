@@ -19,6 +19,7 @@ import { OrganizationCombobox } from '@/components/ui/organization-combobox';
 import { useOrganizations } from '@/hooks/use-organizations';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ParticipatingOrganization {
   id: string;
@@ -72,7 +73,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
   const fetchParticipatingOrgs = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/activities/${activityId}/participating-organizations`);
+      const response = await apiFetch(`/api/activities/${activityId}/participating-organizations`);
       if (!response.ok) {
         throw new Error('Failed to fetch participating organizations');
       }
@@ -95,7 +96,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
 
     try {
       setAddingOrg(true);
-      const response = await fetch(`/api/activities/${activityId}/participating-organizations`, {
+      const response = await apiFetch(`/api/activities/${activityId}/participating-organizations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,8 +128,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
   // Remove participating organization
   const removeParticipatingOrg = async (organizationId: string, roleType: string) => {
     try {
-      const response = await fetch(
-        `/api/activities/${activityId}/participating-organizations?organization_id=${organizationId}&role_type=${roleType}`,
+      const response = await apiFetch(`/api/activities/${activityId}/participating-organizations?organization_id=${organizationId}&role_type=${roleType}`,
         { method: 'DELETE' }
       );
 

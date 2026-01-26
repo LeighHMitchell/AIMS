@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ForwardSpendingSurvey, FSSForecast, FSS_PRIORITY_LEVELS } from '@/types/fss';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface ForwardSpendingSurveyTabProps {
   activityId: string;
@@ -90,7 +91,7 @@ export default function ForwardSpendingSurveyTab({
       setLoading(true);
       console.log('[FSS Tab] Fetching FSS for activity:', activityId);
 
-      const response = await fetch(`/api/activities/${activityId}/fss`);
+      const response = await apiFetch(`/api/activities/${activityId}/fss`);
       if (!response.ok) {
         throw new Error('Failed to fetch FSS data');
       }
@@ -151,7 +152,7 @@ export default function ForwardSpendingSurveyTab({
       setSavingFss(true);
       console.log('[FSS Tab] Saving FSS:', updatedFss);
 
-      const response = await fetch(`/api/activities/${activityId}/fss`, {
+      const response = await apiFetch(`/api/activities/${activityId}/fss`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -185,7 +186,7 @@ export default function ForwardSpendingSurveyTab({
     }
 
     try {
-      const response = await fetch(`/api/activities/${activityId}/fss`, {
+      const response = await apiFetch(`/api/activities/${activityId}/fss`, {
         method: 'DELETE'
       });
 
@@ -401,7 +402,7 @@ export default function ForwardSpendingSurveyTab({
     try {
       setDeleteLoading(forecastId);
       
-      const response = await fetch(`/api/fss/forecasts?id=${forecastId}`, {
+      const response = await apiFetch(`/api/fss/forecasts?id=${forecastId}`, {
         method: 'DELETE'
       });
 

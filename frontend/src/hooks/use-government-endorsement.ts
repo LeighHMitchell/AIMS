@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GovernmentEndorsement, GovernmentEndorsementFormData } from '@/types/government-endorsement';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UseGovernmentEndorsementReturn {
   endorsement: GovernmentEndorsement | null;
   loading: boolean;
   saving: boolean;
   error: string | null;
-  saveEndorsement: (data: GovernmentEndorsementFormData) => Promise<boolean>;
+  saveEndorsement: (data: GovernmentEndorsementFormData, silent?: boolean) => Promise<boolean>;
   deleteEndorsement: () => Promise<boolean>;
   refreshEndorsement: () => Promise<void>;
 }
@@ -25,7 +26,7 @@ export function useGovernmentEndorsement(activityId: string): UseGovernmentEndor
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/activities/${activityId}/government-endorsement`);
+      const response = await apiFetch(`/api/activities/${activityId}/government-endorsement`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -41,14 +42,14 @@ export function useGovernmentEndorsement(activityId: string): UseGovernmentEndor
     }
   }, [activityId]);
 
-  const saveEndorsement = useCallback(async (data: GovernmentEndorsementFormData): Promise<boolean> => {
+  const saveEndorsement = useCallback(async (data: GovernmentEndorsementFormData, silent: boolean = true): Promise<boolean> => {
     if (!activityId) return false;
     
     try {
       setSaving(true);
       setError(null);
       
-      const response = await fetch(`/api/activities/${activityId}/government-endorsement`, {
+      const response = await apiFetch(`/api/activities/${activityId}/government-endorsement`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,12 +65,16 @@ export function useGovernmentEndorsement(activityId: string): UseGovernmentEndor
       const result = await response.json();
       setEndorsement(result.endorsement);
       
-      toast.success('Government endorsement saved successfully');
+      // Only show toast if not silent (autosave is silent by default)
+      if (!silent) {
+        toast.success('Endorsement details saved');
+      }
       return true;
     } catch (err) {
       console.error('Error saving government endorsement:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to save endorsement data';
       setError(errorMessage);
+      // Always show error toasts
       toast.error(`Failed to save: ${errorMessage}`);
       return false;
     } finally {
@@ -84,7 +89,7 @@ export function useGovernmentEndorsement(activityId: string): UseGovernmentEndor
       setSaving(true);
       setError(null);
       
-      const response = await fetch(`/api/activities/${activityId}/government-endorsement`, {
+      const response = await apiFetch(`/api/activities/${activityId}/government-endorsement`, {
         method: 'DELETE',
       });
       

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from './useUser';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface UseBookmarksReturn {
   bookmarkedIds: Set<string>;
@@ -30,7 +31,7 @@ export function useBookmarks(): UseBookmarksReturn {
 
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/bookmarks?userId=${user.id}`);
+        const response = await apiFetch(`/api/bookmarks?userId=${user.id}`);
         
         if (response.ok) {
           const data = await response.json();
@@ -68,7 +69,7 @@ export function useBookmarks(): UseBookmarksReturn {
       setBookmarkedIds((prev) => new Set([...prev, activityId]));
 
       try {
-        const response = await fetch('/api/bookmarks', {
+        const response = await apiFetch('/api/bookmarks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: user.id, activityId }),
@@ -111,8 +112,7 @@ export function useBookmarks(): UseBookmarksReturn {
       });
 
       try {
-        const response = await fetch(
-          `/api/bookmarks/${activityId}?userId=${user.id}`,
+        const response = await apiFetch(`/api/bookmarks/${activityId}?userId=${user.id}`,
           { method: 'DELETE' }
         );
 

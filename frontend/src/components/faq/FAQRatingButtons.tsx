@@ -10,6 +10,7 @@ import { useUser } from '@/hooks/useUser';
 import { FAQRatingSummary, RatingType } from '@/types/faq-enhanced';
 import { cn } from '@/lib/utils';
 import { LoadingText } from '@/components/ui/loading-text';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface FAQRatingButtonsProps {
   faqId: string;
@@ -81,7 +82,7 @@ export function FAQRatingButtons({ faqId, ratingType, label }: FAQRatingButtonsP
 
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/faq/${faqId}/ratings`, {
+      const response = await apiFetch(`/api/faq/${faqId}/ratings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

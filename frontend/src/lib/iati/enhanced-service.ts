@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { FIELD_MAPPINGS, mapIatiToAims, validateIatiData } from '@/lib/iati-field-mapper';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Enhanced IATI Service with better error handling and caching
 export class IATIServiceEnhanced {
@@ -353,8 +354,7 @@ export class IATIAutoSyncService {
   static async syncActivity(activityId: string, autoSyncFields: string[]): Promise<boolean> {
     try {
       // Use the compare endpoint to get IATI data
-      const compareResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/activities/${activityId}/compare-iati`,
+      const compareResponse = await apiFetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/activities/${activityId}/compare-iati`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -379,8 +379,7 @@ export class IATIAutoSyncService {
         return acc;
       }, {} as Record<string, boolean>);
 
-      const importResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/activities/${activityId}/import-iati`,
+      const importResponse = await apiFetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/activities/${activityId}/import-iati`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

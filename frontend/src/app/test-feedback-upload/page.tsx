@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/hooks/useUser';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, CheckCircle, XCircle } from 'lucide-react';
+import { apiFetch } from '@/lib/api-fetch';
 
 export default function TestFeedbackUploadPage() {
   const { user } = useUser();
@@ -41,7 +42,7 @@ export default function TestFeedbackUploadPage() {
       uploadFormData.append('file', selectedFile);
       uploadFormData.append('userId', user.id);
 
-      const uploadResponse = await fetch('/api/feedback/upload', {
+      const uploadResponse = await apiFetch('/api/feedback/upload', {
         method: 'POST',
         body: uploadFormData,
       });

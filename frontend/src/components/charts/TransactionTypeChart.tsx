@@ -16,6 +16,7 @@ import { AlertCircle, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PieChartSkeleton, BarChartSkeleton } from "@/components/ui/skeleton-loader";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface TransactionTypeData {
   transactionType: string;
@@ -53,7 +54,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/analytics/transaction-types`);
+      const response = await apiFetch(`/api/analytics/transaction-types`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

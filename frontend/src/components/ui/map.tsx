@@ -113,7 +113,11 @@ type MapProps = {
   };
   /** Map projection type. Use `{ type: "globe" }` for 3D globe view. */
   projection?: MapLibreGL.ProjectionSpecification;
-} & Omit<MapLibreGL.MapOptions, "container" | "style">;
+  /** Maximum zoom level. Can be changed dynamically. */
+  maxZoom?: number;
+  /** Minimum zoom level. Can be changed dynamically. */
+  minZoom?: number;
+} & Omit<MapLibreGL.MapOptions, "container" | "style" | "maxZoom" | "minZoom">;
 
 type MapRef = MapLibreGL.Map;
 
@@ -128,7 +132,7 @@ const DefaultLoader = () => (
 );
 
 const Map = forwardRef<MapRef, MapProps>(function Map(
-  { children, theme: themeProp, styles, projection, ...props },
+  { children, theme: themeProp, styles, projection, maxZoom, minZoom, ...props },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -170,6 +174,8 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
       attributionControl: {
         compact: true,
       },
+      ...(maxZoom !== undefined && { maxZoom }),
+      ...(minZoom !== undefined && { minZoom }),
       ...props,
     });
 
@@ -217,6 +223,31 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
     mapInstance.setStyle(newStyle, { diff: true });
   }, [mapInstance, resolvedTheme, mapStyles, clearStyleTimeout]);
+
+  // Handle maxZoom/minZoom prop changes dynamically
+  useEffect(() => {
+    if (!mapInstance) return;
+
+    if (maxZoom !== undefined) {
+      mapInstance.setMaxZoom(maxZoom);
+      // If current zoom exceeds new max, clamp it
+      if (mapInstance.getZoom() > maxZoom) {
+        mapInstance.setZoom(maxZoom);
+      }
+    }
+  }, [mapInstance, maxZoom]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+
+    if (minZoom !== undefined) {
+      mapInstance.setMinZoom(minZoom);
+      // If current zoom is below new min, clamp it
+      if (mapInstance.getZoom() < minZoom) {
+        mapInstance.setZoom(minZoom);
+      }
+    }
+  }, [mapInstance, minZoom]);
 
   const contextValue = useMemo(
     () => ({

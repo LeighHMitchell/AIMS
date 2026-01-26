@@ -24,6 +24,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { RELATIONSHIP_TYPES } from "@/data/iati-relationship-types";
+import { apiFetch } from '@/lib/api-fetch';
 
 interface Activity {
   id: string;
@@ -87,8 +88,7 @@ export function AddLinkedActivityModal({
     const searchActivities = async () => {
       setSearching(true);
       try {
-        const response = await fetch(
-          `/api/activities/search?q=${encodeURIComponent(searchQuery)}&limit=10`
+        const response = await apiFetch(`/api/activities/search?q=${encodeURIComponent(searchQuery)}&limit=10`
         );
         if (response.ok) {
           const data = await response.json();
@@ -139,8 +139,7 @@ export function AddLinkedActivityModal({
             }),
       };
 
-      const response = await fetch(
-        `/api/activities/${activityId}/related-activities`,
+      const response = await apiFetch(`/api/activities/${activityId}/related-activities`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

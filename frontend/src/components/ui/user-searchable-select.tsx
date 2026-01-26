@@ -16,6 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { apiFetch } from '@/lib/api-fetch';
 
 export interface UserOption {
   id: string;
@@ -65,8 +66,7 @@ export function UserSearchableSelect({
     setLoading(true);
     try {
       console.log('[User Search] Searching for:', searchQuery);
-      const response = await fetch(
-        `/api/users/search?q=${encodeURIComponent(searchQuery)}`
+      const response = await apiFetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}`
       );
       if (response.ok) {
         const data = await response.json();
