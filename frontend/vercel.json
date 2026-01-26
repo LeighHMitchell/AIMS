@@ -71,7 +71,7 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
         { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.iatistandard.org https://nominatim.openstreetmap.org; font-src 'self' data:; object-src 'none';" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.iatistandard.org https://nominatim.openstreetmap.org https://api.fxratesapi.com https://api.exchangerate-api.com https://api.exchangerate.host https://basemaps.cartocdn.com https://*.cartocdn.com https://tiles.openfreemap.org https://*.openstreetmap.org https://*.openstreetmap.fr https://unpkg.com; font-src 'self' data:; object-src 'none'; frame-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self' blob: https://unpkg.com https://cdnjs.cloudflare.com https://basemaps.cartocdn.com https://*.cartocdn.com;" }
       ]
     }
   ],
