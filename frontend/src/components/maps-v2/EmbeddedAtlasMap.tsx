@@ -89,12 +89,10 @@ function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
       </MarkerContent>
 
       <MarkerTooltip className="!p-0 !bg-white !text-foreground max-w-[280px] overflow-hidden">
-        {location.activity?.banner ? (
+        {location.activity?.banner && (
           <div className="w-full h-14 overflow-hidden">
             <img src={location.activity.banner} alt="" className="w-full h-full object-cover" />
           </div>
-        ) : (
-          <div className="w-full h-10 bg-gradient-to-r from-slate-600 to-slate-400" />
         )}
         
         <div className="p-2">
@@ -120,12 +118,10 @@ function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
       </MarkerTooltip>
 
       <MarkerPopup className="!p-0 !bg-white !text-foreground min-w-[300px] max-w-[360px] overflow-hidden" closeButton>
-        {location.activity?.banner ? (
+        {location.activity?.banner && (
           <div className="w-full h-20 overflow-hidden -m-3 mb-3" style={{ width: 'calc(100% + 24px)' }}>
             <img src={location.activity.banner} alt="" className="w-full h-full object-cover" />
           </div>
-        ) : (
-          <div className="w-full h-14 bg-gradient-to-r from-slate-600 to-slate-400 -m-3 mb-3" style={{ width: 'calc(100% + 24px)' }} />
         )}
         
         <h3 className="font-bold text-sm text-slate-700 mb-2 leading-tight">

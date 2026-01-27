@@ -1,25 +1,9 @@
 'use client';
 
-// LocationMap component for displaying interactive maps
-import { memo, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, LayersControl, useMapEvents } from 'react-leaflet';
-import type { Map as LeafletMap } from 'leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-import MapEventsClient from './MapEventsClient';
-
+import { memo, useEffect, useCallback, useRef } from 'react';
+import { Map, MapControls, MapMarker, MarkerContent, MarkerPopup, useMap } from '@/components/ui/map';
+import type MapLibreGL from 'maplibre-gl';
 import type { LocationSchema } from '@/lib/schemas/location';
-
-// Fix default marker icons when bundling with Next.js
-if (typeof window !== 'undefined') {
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  });
-}
 
 type MapLayerKey = 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri';
 
@@ -32,9 +16,9 @@ interface MapLayerConfig {
 }
 
 interface LocationMapProps {
-  mapCenter: [number, number];
+  mapCenter: [number, number]; // [lat, lng] - will convert to [lng, lat] for MapLibre
   mapZoom: number;
-  mapRef: React.RefObject<LeafletMap | null>;
+  mapRef: React.RefObject<MapLibreGL.Map | null>;
   mapLayers: Record<MapLayerKey, MapLayerConfig>;
   currentLayer: MapLayerKey;
   getLayerUrl: () => string;
@@ -42,7 +26,7 @@ interface LocationMapProps {
   onMapError: () => void;
   existingLocations: LocationSchema[];
   currentLocationId?: string;
-  markerPosition: [number, number] | null;
+  markerPosition: [number, number] | null; // [lat, lng]
   onMarkerDragEnd: (lat: number, lng: number) => void;
   onMapClick: (lat: number, lng: number) => void;
   locationName?: string | null;
@@ -50,18 +34,50 @@ interface LocationMapProps {
   displayLongitude?: number | null;
 }
 
-function LayerChangeHandler({ onLayerChange, mapLayers }: { onLayerChange: (layer: MapLayerKey) => void; mapLayers: Record<MapLayerKey, MapLayerConfig> }) {
-  useMapEvents({
-    baselayerchange(event) {
-      const name = event.name as string;
-      // Find the layer key that matches this display name
-      const layerEntry = Object.entries(mapLayers).find(([_, layer]) => layer.name === name);
-      if (layerEntry) {
-        onLayerChange(layerEntry[0] as MapLayerKey);
-      }
-    },
-  });
+// Map style URLs for MapLibre (using Carto's vector tiles)
+const MAP_STYLES: Record<MapLayerKey, string> = {
+  osm_standard: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+  osm_humanitarian: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', // Similar to OSM
+  cyclosm: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+  opentopo: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+  satellite_esri: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', // Note: True satellite requires API key
+};
 
+// Component to handle map click events
+function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+  const { map, isLoaded } = useMap();
+  
+  useEffect(() => {
+    if (!isLoaded || !map) return;
+    
+    const handleClick = (e: MapLibreGL.MapMouseEvent) => {
+      onMapClick(e.lngLat.lat, e.lngLat.lng);
+    };
+    
+    map.on('click', handleClick);
+    
+    return () => {
+      map.off('click', handleClick);
+    };
+  }, [isLoaded, map, onMapClick]);
+  
+  return null;
+}
+
+// Component to handle map ref forwarding
+function MapRefHandler({ mapRef }: { mapRef: React.RefObject<MapLibreGL.Map | null> }) {
+  const { map, isLoaded } = useMap();
+  
+  useEffect(() => {
+    if (isLoaded && map) {
+      (mapRef as React.MutableRefObject<MapLibreGL.Map | null>).current = map;
+    }
+    
+    return () => {
+      (mapRef as React.MutableRefObject<MapLibreGL.Map | null>).current = null;
+    };
+  }, [isLoaded, map, mapRef]);
+  
   return null;
 }
 
@@ -83,84 +99,84 @@ function LocationMapComponent({
   displayLatitude,
   displayLongitude,
 }: LocationMapProps) {
-  // Ensure map ref is reset when modal closes
-  useEffect(() => {
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        (mapRef as React.MutableRefObject<LeafletMap | null>).current = null;
-      }
-    };
-  }, [mapRef]);
+  // Convert center from [lat, lng] to MapLibre's [lng, lat]
+  const mapLibreCenter: [number, number] = [mapCenter[1], mapCenter[0]];
+  
+  // Handle drag end - convert from MapLibre's {lng, lat} to callback's (lat, lng)
+  const handleDragEnd = useCallback((lngLat: { lng: number; lat: number }) => {
+    onMarkerDragEnd(lngLat.lat, lngLat.lng);
+  }, [onMarkerDragEnd]);
 
   return (
-    <MapContainer center={mapCenter} zoom={mapZoom} style={{ height: '100%', width: '100%' }} ref={mapRef as any}>
-      <LayersControl position="topright" style={{ zIndex: 1000 }}>
-        {Object.entries(mapLayers).map(([key, layer]) => (
-          <LayersControl.BaseLayer
-            key={key}
-            checked={currentLayer === key}
-            name={layer.name}
-          >
-            <TileLayer
-              attribution={layer.attribution}
-              url={getLayerUrl()}
-              eventHandlers={{ tileerror: onMapError }}
-            />
-          </LayersControl.BaseLayer>
-        ))}
-      </LayersControl>
-      <LayerChangeHandler onLayerChange={onLayerChange} mapLayers={mapLayers} />
+    <Map
+      center={mapLibreCenter}
+      zoom={mapZoom}
+      styles={{
+        light: MAP_STYLES[currentLayer],
+        dark: MAP_STYLES[currentLayer],
+      }}
+    >
+      <MapControls position="top-right" showZoom />
+      <MapRefHandler mapRef={mapRef} />
+      <MapClickHandler onMapClick={onMapClick} />
+      
+      {/* Existing location markers */}
       {existingLocations
         .filter((loc) => loc.latitude && loc.longitude && loc.id !== currentLocationId)
         .map((loc) => (
-          <Marker key={loc.id} position={[loc.latitude!, loc.longitude!]}
+          <MapMarker 
+            key={loc.id} 
+            longitude={loc.longitude!} 
+            latitude={loc.latitude!}
           >
-            <Popup>
-              <div>
+            <MarkerContent className="opacity-60">
+              <div className="h-3 w-3 rounded-full border-2 border-white bg-gray-500 shadow-md" />
+            </MarkerContent>
+            <MarkerPopup>
+              <div className="text-sm">
                 <strong>{loc.location_name}</strong>
                 {loc.site_type && (
                   <>
                     <br />
-                    {loc.site_type.replace('_', ' ')}
+                    <span className="text-muted-foreground">
+                      {loc.site_type.replace('_', ' ')}
+                    </span>
                   </>
                 )}
               </div>
-            </Popup>
-          </Marker>
+            </MarkerPopup>
+          </MapMarker>
         ))}
 
+      {/* Current/draggable marker */}
       {markerPosition && (
-        <Marker
-          position={markerPosition}
+        <MapMarker
+          longitude={markerPosition[1]}
+          latitude={markerPosition[0]}
           draggable
-          eventHandlers={{
-            dragend: (event) => {
-              const leafletMarker = event.target as L.Marker;
-              const { lat, lng } = leafletMarker.getLatLng();
-              onMarkerDragEnd(lat, lng);
-            },
-          }}
+          onDragEnd={handleDragEnd}
         >
-          <Popup>
-            <div>
+          <MarkerContent>
+            <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg ring-2 ring-blue-200" />
+          </MarkerContent>
+          <MarkerPopup>
+            <div className="text-sm">
               <strong>{locationName || 'New Location'}</strong>
-              {displayLatitude !== undefined && displayLongitude !== undefined && displayLatitude !== null && displayLongitude !== null && (
+              {displayLatitude !== undefined && displayLongitude !== undefined && 
+               displayLatitude !== null && displayLongitude !== null && (
                 <>
                   <br />
-                  {displayLatitude.toFixed(6)}, {displayLongitude.toFixed(6)}
+                  <span className="text-muted-foreground font-mono text-xs">
+                    {displayLatitude.toFixed(6)}, {displayLongitude.toFixed(6)}
+                  </span>
                 </>
               )}
             </div>
-          </Popup>
-        </Marker>
+          </MarkerPopup>
+        </MapMarker>
       )}
-
-      <LayerChangeHandler onLayerChange={onLayerChange} />
-      <MapEventsClient onMapClick={onMapClick} />
-    </MapContainer>
+    </Map>
   );
 }
 
 export default memo(LocationMapComponent);
-

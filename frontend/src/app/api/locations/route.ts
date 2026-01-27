@@ -40,8 +40,10 @@ export async function GET(request: NextRequest) {
         actual_end_date,
         banner,
         icon,
-        organizations (
-          name
+        organizations:reporting_org_id (
+          name,
+          acronym,
+          logo
         )
       `)
       .in('id', activityIds);
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch budgets for these activities - use USD-converted values
     const { data: budgets, error: budgetsError } = await supabase
-      .from('budgets')
+      .from('activity_budgets')
       .select('activity_id, usd_value')
       .in('activity_id', activityIds);
 
@@ -175,6 +177,8 @@ export async function GET(request: NextRequest) {
           status: activity.activity_status,
           organization_id: activity.reporting_org_id,
           organization_name: activity.organizations?.name,
+          organization_acronym: activity.organizations?.acronym,
+          organization_logo: activity.organizations?.logo,
           sectors: sectorsMap.get(location.activity_id) || [],
           totalBudget: budgetsMap.get(location.activity_id) || 0,
           totalPlannedDisbursement: pdMap.get(location.activity_id) || 0,

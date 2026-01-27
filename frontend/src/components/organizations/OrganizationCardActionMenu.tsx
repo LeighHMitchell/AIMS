@@ -34,6 +34,13 @@ export function OrganizationCardActionMenu({
   const hasExport = onExportPDF || onExportExcel;
 
   return (
+    <div 
+      data-menu-root="true" 
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
     <Menu.Root direction="bottom" anchor="start">
       <Menu.Container
         buttonSize={32}
@@ -109,5 +116,6 @@ export function OrganizationCardActionMenu({
         </Menu.Content>
       </Menu.Container>
     </Menu.Root>
+    </div>
   );
 }

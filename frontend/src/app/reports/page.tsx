@@ -3,6 +3,8 @@
 import React from "react"
 import { MainLayout } from '@/components/layout/main-layout'
 import { ReportCard, ReportHeader } from "@/components/reports/ReportCard"
+import { CustomReportBuilder } from "@/components/reports/CustomReportBuilder"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   FileText,
   DollarSign,
@@ -12,6 +14,7 @@ import {
   MapPin,
   AlertCircle,
   ShieldCheck,
+  BarChart3,
 } from "lucide-react"
 
 // Report configurations
@@ -163,7 +166,7 @@ const dataQualityReports: ReportConfig[] = [
 export default function ReportsPage() {
   return (
     <MainLayout>
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Header */}
         <header>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
@@ -171,89 +174,111 @@ export default function ReportsPage() {
             Reports
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Download pre-formatted CSV reports for analysis and reporting. Click any report to generate and download the latest data.
+            Download pre-formatted reports or design your own custom pivot tables.
           </p>
         </header>
 
-        {/* Activity Reports */}
-        <section>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-            Activity Reports
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activityReports.map((report) => (
-              <ReportCard
-                key={report.filename}
-                title={report.title}
-                description={report.description}
-                icon={report.icon}
-                apiEndpoint={report.apiEndpoint}
-                filename={report.filename}
-                headers={report.headers}
-              />
-            ))}
-          </div>
-        </section>
+        {/* Tabs for Standard vs Custom Reports */}
+        <Tabs defaultValue="standard" className="w-full">
+          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap justify-center">
+            <TabsTrigger value="standard" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Standard Reports
+            </TabsTrigger>
+            <TabsTrigger value="custom" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Design Your Own
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Financial Reports */}
-        <section>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-            Financial Reports
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {financialReports.map((report) => (
-              <ReportCard
-                key={report.filename}
-                title={report.title}
-                description={report.description}
-                icon={report.icon}
-                apiEndpoint={report.apiEndpoint}
-                filename={report.filename}
-                headers={report.headers}
-              />
-            ))}
-          </div>
-        </section>
+          {/* Standard Reports Tab */}
+          <TabsContent value="standard" className="space-y-8 mt-0 border-0 p-0">
+            {/* Activity Reports */}
+            <section>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                Activity Reports
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activityReports.map((report) => (
+                  <ReportCard
+                    key={report.filename}
+                    title={report.title}
+                    description={report.description}
+                    icon={report.icon}
+                    apiEndpoint={report.apiEndpoint}
+                    filename={report.filename}
+                    headers={report.headers}
+                  />
+                ))}
+              </div>
+            </section>
 
-        {/* Organization Reports */}
-        <section>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-            Organization Reports
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {organizationReports.map((report) => (
-              <ReportCard
-                key={report.filename}
-                title={report.title}
-                description={report.description}
-                icon={report.icon}
-                apiEndpoint={report.apiEndpoint}
-                filename={report.filename}
-                headers={report.headers}
-              />
-            ))}
-          </div>
-        </section>
+            {/* Financial Reports */}
+            <section>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                Financial Reports
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {financialReports.map((report) => (
+                  <ReportCard
+                    key={report.filename}
+                    title={report.title}
+                    description={report.description}
+                    icon={report.icon}
+                    apiEndpoint={report.apiEndpoint}
+                    filename={report.filename}
+                    headers={report.headers}
+                  />
+                ))}
+              </div>
+            </section>
 
-        {/* Data Quality Reports */}
-        <section>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-            Data Quality Reports
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {dataQualityReports.map((report) => (
-              <ReportCard
-                key={report.filename}
-                title={report.title}
-                description={report.description}
-                icon={report.icon}
-                apiEndpoint={report.apiEndpoint}
-                filename={report.filename}
-                headers={report.headers}
-              />
-            ))}
-          </div>
-        </section>
+            {/* Organization Reports */}
+            <section>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                Organization Reports
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {organizationReports.map((report) => (
+                  <ReportCard
+                    key={report.filename}
+                    title={report.title}
+                    description={report.description}
+                    icon={report.icon}
+                    apiEndpoint={report.apiEndpoint}
+                    filename={report.filename}
+                    headers={report.headers}
+                  />
+                ))}
+              </div>
+            </section>
+
+            {/* Data Quality Reports */}
+            <section>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                Data Quality Reports
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {dataQualityReports.map((report) => (
+                  <ReportCard
+                    key={report.filename}
+                    title={report.title}
+                    description={report.description}
+                    icon={report.icon}
+                    apiEndpoint={report.apiEndpoint}
+                    filename={report.filename}
+                    headers={report.headers}
+                  />
+                ))}
+              </div>
+            </section>
+          </TabsContent>
+
+          {/* Custom Report Builder Tab */}
+          <TabsContent value="custom" className="mt-0 border-0 p-0">
+            <CustomReportBuilder />
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   )

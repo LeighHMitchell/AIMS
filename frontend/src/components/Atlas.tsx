@@ -632,7 +632,7 @@ export default function Atlas() {
               {/* Map Container */}
               <div className="h-[92vh] min-h-[800px] w-full relative rounded-lg overflow-hidden border border-gray-200">
                 {/* Controls Bar - positioned above map */}
-                <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-2">
+                <div className="absolute top-3 left-3 right-3 z-20 flex items-center gap-2">
                   {/* Filters */}
                   <Popover open={statusFilterOpen} onOpenChange={handleStatusFilterOpen}>
                     <PopoverTrigger asChild>
@@ -794,7 +794,7 @@ export default function Atlas() {
                       <SelectTrigger className="!w-[180px] min-w-[180px] bg-white shadow-md border-gray-300 text-xs h-9">
                         <SelectValue placeholder="Map style" />
                       </SelectTrigger>
-                      <SelectContent className="z-[1001]">
+                      <SelectContent className="z-[9999]">
                         {Object.entries(MAP_STYLES).map(([key, style]) => (
                           <SelectItem key={key} value={key}>
                             {style.name}
@@ -838,10 +838,11 @@ export default function Atlas() {
                   zoom={homeCountryZoom}
                   minZoom={2}
                   maxZoom={mapStyle === 'satellite_imagery' ? 14.9 : 18}
+                  scrollZoom={false}
                 >
                   
                   {/* 3D/Reset Controls - positioned inside Map context on same line as filters */}
-                  <div className="absolute top-3 right-[290px] z-[1001]">
+                  <div className="absolute top-3 right-[290px] z-20">
                     <Map3DController 
                       homeCountryCenter={homeCountryCenter} 
                       homeCountryZoom={homeCountryZoom} 

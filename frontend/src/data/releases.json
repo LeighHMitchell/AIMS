@@ -1,6 +1,22 @@
 {
-  "currentVersion": "1.5.0",
+  "currentVersion": "1.6.0",
   "releases": [
+    {
+      "version": "1.6.0",
+      "date": "2026-01-28",
+      "changes": [
+        "New Custom Report Builder with interactive pivot table for ad-hoc analysis",
+        "Design Your Own tab allows creating custom reports with drag-and-drop fields",
+        "Save and load pivot table configurations for reusable report templates",
+        "Filter pivot data by organization, year, and transaction type",
+        "Export pivot table results directly to CSV with one click",
+        "Major map architecture cleanup - removed 20+ deprecated map components",
+        "Streamlined MarkersLayer and ActivityMarkersLayer with improved clustering",
+        "OrgActivitiesMap rewritten with better organization filtering",
+        "Activity editor location handling improvements",
+        "CSV export enhanced with proper handling of special characters and formulas"
+      ]
+    },
     {
       "version": "1.5.0",
       "date": "2026-01-27",

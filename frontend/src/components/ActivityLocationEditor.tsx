@@ -1,8 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
-import { MapContainer, TileLayer, GeoJSON, useMap } from "react-leaflet"
-import L from "leaflet"
+import React, { useState, useEffect, useId } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,17 +11,10 @@ import { Badge } from "@/components/ui/badge"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { MapPin, Globe, Info, Check, ChevronsUpDown, X, Search } from "lucide-react"
-import { toast } from "sonner"
+import { Globe, Check, ChevronsUpDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-// Fix for default markers in react-leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-})
+import { Map, MapControls, MapMarker, MarkerContent, useMap } from '@/components/ui/map'
+import type MapLibreGL from 'maplibre-gl'
 
 // IATI Activity Scope Codes
 const ACTIVITY_SCOPES = [
@@ -98,7 +89,7 @@ const REGIONS = [
 ]
 
 // Myanmar GeoJSON boundaries (simplified - in production, load from file)
-const MYANMAR_GEOJSON = {
+const MYANMAR_GEOJSON: GeoJSON.FeatureCollection = {
   "type": "FeatureCollection",
   "features": [
     {
@@ -183,16 +174,99 @@ function MultiSelect({
   )
 }
 
-// Map controller component
-function MapController({ bounds }: { bounds?: L.LatLngBounds }) {
-  const map = useMap()
-  
+// GeoJSON Layer component for MapLibre
+function GeoJSONLayer({ 
+  data, 
+  fillColor = '#3b82f6',
+  fillOpacity = 0.3,
+  lineColor = '#1e3a8a',
+  lineWidth = 2
+}: { 
+  data: GeoJSON.FeatureCollection;
+  fillColor?: string;
+  fillOpacity?: number;
+  lineColor?: string;
+  lineWidth?: number;
+}) {
+  const { map, isLoaded } = useMap()
+  const id = useId()
+  const sourceId = `geojson-source-${id}`
+  const fillLayerId = `geojson-fill-${id}`
+  const lineLayerId = `geojson-line-${id}`
+
   useEffect(() => {
-    if (bounds) {
-      map.fitBounds(bounds, { padding: [20, 20] })
+    if (!isLoaded || !map) return
+
+    // Add source
+    if (!map.getSource(sourceId)) {
+      map.addSource(sourceId, {
+        type: 'geojson',
+        data: data
+      })
     }
-  }, [bounds, map])
-  
+
+    // Add fill layer
+    if (!map.getLayer(fillLayerId)) {
+      map.addLayer({
+        id: fillLayerId,
+        type: 'fill',
+        source: sourceId,
+        paint: {
+          'fill-color': fillColor,
+          'fill-opacity': fillOpacity
+        }
+      })
+    }
+
+    // Add line layer
+    if (!map.getLayer(lineLayerId)) {
+      map.addLayer({
+        id: lineLayerId,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': lineColor,
+          'line-width': lineWidth
+        }
+      })
+    }
+
+    return () => {
+      try {
+        if (map.getLayer(lineLayerId)) map.removeLayer(lineLayerId)
+        if (map.getLayer(fillLayerId)) map.removeLayer(fillLayerId)
+        if (map.getSource(sourceId)) map.removeSource(sourceId)
+      } catch {
+        // Map might be destroyed
+      }
+    }
+  }, [isLoaded, map, data, sourceId, fillLayerId, lineLayerId, fillColor, fillOpacity, lineColor, lineWidth])
+
+  return null
+}
+
+// Map click handler component
+function MapClickHandler({ 
+  onMapClick 
+}: { 
+  onMapClick: (lat: number, lng: number) => void 
+}) {
+  const { map, isLoaded } = useMap()
+
+  useEffect(() => {
+    if (!isLoaded || !map) return
+
+    const handleClick = (e: MapLibreGL.MapMouseEvent) => {
+      onMapClick(e.lngLat.lat, e.lngLat.lng)
+    }
+
+    map.on('click', handleClick)
+
+    return () => {
+      map.off('click', handleClick)
+    }
+  }, [isLoaded, map, onMapClick])
+
   return null
 }
 
@@ -239,13 +313,13 @@ export default function ActivityLocationEditor({
     ? MYANMAR_TOWNSHIPS.filter(t => t.region === selectedRegion)
     : []
 
-  // Style for highlighted regions
-  const highlightStyle = {
-    fillColor: "#3b82f6",
-    fillOpacity: 0.3,
-    color: "#1e3a8a",
-    weight: 2,
-    opacity: 1
+  // Handle map click for single location
+  const handleMapClick = (lat: number, lng: number) => {
+    setSingleLocation(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng
+    }))
   }
 
   return (
@@ -337,30 +411,22 @@ export default function ActivityLocationEditor({
             </Select>
           </div>
 
-          {/* Static country map */}
+          {/* Static country map with GeoJSON */}
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Country Coverage</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64 overflow-hidden rounded border">
-                <MapContainer
-                  center={[19.0, 96.5]}
+                <Map
+                  center={[96.5, 19.0]}
                   zoom={5}
-                  style={{ height: '100%', width: '100%' }}
-                  scrollWheelZoom={false}
-                  dragging={false}
-                  zoomControl={false}
+                  minZoom={3}
+                  maxZoom={8}
                 >
-                  <TileLayer
-                    url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
-                    attribution='&copy; OpenStreetMap contributors'
-                  />
-                  <GeoJSON 
-                    data={MYANMAR_GEOJSON as any}
-                    style={highlightStyle}
-                  />
-                </MapContainer>
+                  <MapControls position="top-right" showZoom />
+                  <GeoJSONLayer data={MYANMAR_GEOJSON} />
+                </Map>
               </div>
             </CardContent>
           </Card>
@@ -387,25 +453,19 @@ export default function ActivityLocationEditor({
               <CardTitle className="text-sm">Selected Regions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 overflow-hidden rounded border">
-                <MapContainer
-                  center={[19.0, 96.5]}
+              <div className="h-64 overflow-hidden rounded border relative">
+                <Map
+                  center={[96.5, 19.0]}
                   zoom={6}
-                  style={{ height: '100%', width: '100%' }}
-                  scrollWheelZoom={true}
-                  zoomControl={true}
                 >
-                  <TileLayer
-                    url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
-                    attribution='&copy; OpenStreetMap contributors'
-                  />
-                  {/* In production, load actual GeoJSON for each selected region */}
-                  {selectedRegionMulti.length > 0 && (
-                    <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded shadow z-10">
-                      {selectedRegionMulti.length} regions selected
-                    </div>
-                  )}
-                </MapContainer>
+                  <MapControls position="top-right" showZoom />
+                </Map>
+                {/* Overlay showing selection count */}
+                {selectedRegionMulti.length > 0 && (
+                  <div className="absolute top-2 left-2 bg-white px-2 py-1 rounded shadow text-xs z-10">
+                    {selectedRegionMulti.length} regions selected
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -442,18 +502,12 @@ export default function ActivityLocationEditor({
               </CardHeader>
               <CardContent>
                 <div className="h-64 overflow-hidden rounded border">
-                  <MapContainer
-                    center={[19.0, 96.5]}
+                  <Map
+                    center={[96.5, 19.0]}
                     zoom={8}
-                    style={{ height: '100%', width: '100%' }}
-                    scrollWheelZoom={true}
-                    zoomControl={true}
                   >
-                    <TileLayer
-                      url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
-                      attribution='&copy; OpenStreetMap contributors'
-                    />
-                  </MapContainer>
+                    <MapControls position="top-right" showZoom />
+                  </Map>
                 </div>
               </CardContent>
             </Card>
@@ -515,18 +569,12 @@ export default function ActivityLocationEditor({
               </CardHeader>
               <CardContent>
                 <div className="h-64 overflow-hidden rounded border">
-                  <MapContainer
-                    center={[19.0, 96.5]}
+                  <Map
+                    center={[96.5, 19.0]}
                     zoom={12}
-                    style={{ height: '100%', width: '100%' }}
-                    scrollWheelZoom={true}
-                    zoomControl={true}
                   >
-                    <TileLayer
-                      url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
-                      attribution='&copy; OpenStreetMap contributors'
-                    />
-                  </MapContainer>
+                    <MapControls position="top-right" showZoom />
+                  </Map>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
                   Click on the map to add a specific location within this township (optional)
@@ -563,19 +611,31 @@ export default function ActivityLocationEditor({
             </CardHeader>
             <CardContent>
               <div className="h-64 overflow-hidden rounded border">
-                <MapContainer
-                  center={[singleLocation.latitude, singleLocation.longitude]}
+                <Map
+                  center={[singleLocation.longitude, singleLocation.latitude]}
                   zoom={12}
-                  style={{ height: '100%', width: '100%' }}
-                  scrollWheelZoom={true}
-                  zoomControl={true}
                 >
-                  <TileLayer
-                    url="https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
-                    attribution='&copy; OpenStreetMap contributors'
-                  />
-                  {/* Add marker component here */}
-                </MapContainer>
+                  <MapControls position="top-right" showZoom />
+                  <MapClickHandler onMapClick={handleMapClick} />
+                  
+                  {/* Location marker */}
+                  <MapMarker
+                    longitude={singleLocation.longitude}
+                    latitude={singleLocation.latitude}
+                    draggable
+                    onDragEnd={({ lng, lat }) => {
+                      setSingleLocation(prev => ({
+                        ...prev,
+                        latitude: lat,
+                        longitude: lng
+                      }))
+                    }}
+                  >
+                    <MarkerContent>
+                      <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg" />
+                    </MarkerContent>
+                  </MapMarker>
+                </Map>
               </div>
               <p className="text-xs text-gray-500 mt-2">
                 Click on the map or search for an address to set the location

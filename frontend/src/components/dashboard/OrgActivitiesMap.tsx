@@ -5,142 +5,49 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, RotateCcw, Flame, CircleDot, Layers, Mountain, Satellite } from 'lucide-react';
+import { MapPin, RotateCcw, Flame, CircleDot } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
 import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter';
 import { apiFetch } from '@/lib/api-fetch';
+import { Map, MapControls, useMap } from '@/components/ui/map';
+import type MapLibreGL from 'maplibre-gl';
 
-// Dynamic imports for map components
-const MapContainer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const ZoomControl = dynamic(
-  () => import('react-leaflet').then((mod) => mod.ZoomControl),
-  { ssr: false }
-);
+// Dynamic imports for map layers (SSR disabled)
 const MarkersLayer = dynamic(
-  () => import('@/components/maps/MarkersLayer'),
+  () => import('@/components/maps-v2/MarkersLayer'),
   { ssr: false }
 );
 const HeatmapLayer = dynamic(
-  () => import('@/components/maps/HeatmapLayer'),
+  () => import('@/components/maps-v2/HeatmapLayer'),
   { ssr: false }
 );
 
-// Leaflet instance and hooks
-let L: any = null;
-let useMapEventsHook: any = null;
+// Map style configurations for MapLibre
+type MapLayerType = 'cartodb_voyager' | 'cartodb_dark' | 'osm_bright' | 'terrain' | 'satellite';
 
-// Load Leaflet dependencies
-const loadLeafletDependencies = () => {
-  if (typeof window !== 'undefined' && !L) {
-    try {
-      L = require('leaflet');
-      const ReactLeaflet = require('react-leaflet');
-      useMapEventsHook = ReactLeaflet.useMapEvents;
-      require('leaflet/dist/leaflet.css');
-      require('leaflet.heat');
-      
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-      });
-    } catch (error) {
-      console.error('Failed to load Leaflet dependencies:', error);
-    }
-  }
-};
-
-// Map layer configurations
-type MapLayerType = 'cartodb_voyager' | 'osm_standard' | 'osm_humanitarian' | 'opentopo' | 'satellite_esri';
-
-const MAP_LAYERS: Record<MapLayerType, { name: string; url: string; attribution: string }> = {
+const MAP_STYLES: Record<MapLayerType, { name: string; style: string }> = {
   cartodb_voyager: {
-    name: 'Streets (CartoDB)',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '© OpenStreetMap contributors, © CARTO',
+    name: 'Streets',
+    style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
   },
-  osm_standard: {
-    name: 'OpenStreetMap',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors',
+  cartodb_dark: {
+    name: 'Dark',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   },
-  osm_humanitarian: {
-    name: 'Humanitarian (HOT)',
-    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © HOT',
+  osm_bright: {
+    name: 'Light',
+    style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
   },
-  opentopo: {
+  terrain: {
     name: 'Terrain',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © OpenTopoMap',
+    style: 'https://api.maptiler.com/maps/outdoor/style.json?key=get_your_own_key',
   },
-  satellite_esri: {
+  satellite: {
     name: 'Satellite',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '© Esri',
+    style: 'https://api.maptiler.com/maps/hybrid/style.json?key=get_your_own_key',
   }
 };
-
-// Map initializer component
-function MapInitializer({ bounds }: { bounds: [[number, number], [number, number]] | null }) {
-  if (!useMapEventsHook || typeof window === 'undefined') {
-    return null;
-  }
-  
-  const map = useMapEventsHook({});
-
-  useEffect(() => {
-    if (map) {
-      if (map.dragging && !map.dragging.enabled()) {
-        map.dragging.enable();
-      }
-      if (map.scrollWheelZoom && map.scrollWheelZoom.enabled()) {
-        map.scrollWheelZoom.disable();
-      }
-      if (map.touchZoom && !map.touchZoom.enabled()) {
-        map.touchZoom.enable();
-      }
-      
-      // Fit to bounds with padding if bounds exist
-      if (bounds) {
-        setTimeout(() => {
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
-        }, 100);
-      }
-      
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 150);
-    }
-  }, [map, bounds]);
-  
-  return null;
-}
-
-// Map reset component
-function MapReset({ shouldReset, bounds }: { shouldReset: boolean; bounds: [[number, number], [number, number]] | null }) {
-  if (!useMapEventsHook || typeof window === 'undefined') {
-    return null;
-  }
-
-  const map = useMapEventsHook({});
-
-  useEffect(() => {
-    if (!map || !shouldReset || !bounds) return;
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
-  }, [map, shouldReset, bounds]);
-
-  return null;
-}
 
 // Heatmap data preparation
 const prepareHeatmapPoints = (locations: LocationData[]) => {
@@ -205,12 +112,57 @@ interface LocationData {
   } | null;
 }
 
+// Helper component to fit bounds when map loads
+function MapBoundsHandler({ 
+  bounds, 
+  shouldReset 
+}: { 
+  bounds: [[number, number], [number, number]] | null;
+  shouldReset: boolean;
+}) {
+  const { map, isLoaded } = useMap();
+  const initialFitDone = useRef(false);
+
+  // Initial fit to bounds
+  useEffect(() => {
+    if (!isLoaded || !map || !bounds || initialFitDone.current) return;
+    
+    // Convert bounds from [lat, lng] to MapLibre format [lng, lat]
+    const sw: [number, number] = [bounds[0][1], bounds[0][0]]; // [lng, lat]
+    const ne: [number, number] = [bounds[1][1], bounds[1][0]]; // [lng, lat]
+    
+    setTimeout(() => {
+      map.fitBounds([sw, ne], {
+        padding: 50,
+        maxZoom: 12,
+        duration: 1000
+      });
+      initialFitDone.current = true;
+    }, 100);
+  }, [isLoaded, map, bounds]);
+
+  // Reset handler
+  useEffect(() => {
+    if (!isLoaded || !map || !bounds || !shouldReset) return;
+    
+    const sw: [number, number] = [bounds[0][1], bounds[0][0]];
+    const ne: [number, number] = [bounds[1][1], bounds[1][0]];
+    
+    map.fitBounds([sw, ne], {
+      padding: 50,
+      maxZoom: 12,
+      duration: 1000
+    });
+  }, [isLoaded, map, bounds, shouldReset]);
+
+  return null;
+}
+
 export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [mapLayer, setMapLayer] = useState<MapLayerType>('cartodb_voyager');
+  const [mapStyle, setMapStyle] = useState<MapLayerType>('cartodb_voyager');
   const [viewMode, setViewMode] = useState<ViewMode>('markers');
   const [shouldResetMap, setShouldResetMap] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -219,21 +171,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
     sectors: [],
     subSectors: [],
   });
-  const mapRef = useRef<any>(null);
-
-  // Load Leaflet dependencies on mount
-  useEffect(() => {
-    loadLeafletDependencies();
-    
-    const checkInterval = setInterval(() => {
-      if (L && useMapEventsHook) {
-        setIsMapLoaded(true);
-        clearInterval(checkInterval);
-      }
-    }, 100);
-
-    return () => clearInterval(checkInterval);
-  }, []);
+  const mapRef = useRef<MapLibreGL.Map | null>(null);
 
   // Fetch locations
   useEffect(() => {
@@ -301,7 +239,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
     return filtered;
   }, [validLocations, statusFilter, sectorFilter]);
 
-  // Calculate bounds to fit all markers with padding
+  // Calculate bounds to fit all markers with padding (in [lat, lng] format for internal use)
   const mapBounds = useMemo((): [[number, number], [number, number]] | null => {
     if (filteredLocations.length === 0) {
       return null;
@@ -325,8 +263,8 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
     ];
   }, [filteredLocations]);
 
-  // Default center for empty state
-  const defaultCenter: [number, number] = [12.5, 105.0]; // Cambodia
+  // Default center for empty state - MapLibre uses [lng, lat]
+  const defaultCenter: [number, number] = [105.0, 12.5]; // Cambodia [lng, lat]
 
   const handleReset = () => {
     setShouldResetMap(true);
@@ -427,14 +365,14 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
 
               {/* Right side map controls */}
               <div className="flex items-center gap-1.5">
-                <Select value={mapLayer} onValueChange={(value) => setMapLayer(value as MapLayerType)}>
-                  <SelectTrigger className="w-[130px] bg-white shadow-md border-gray-300 text-xs h-9">
+                <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapLayerType)}>
+                  <SelectTrigger className="w-[100px] bg-white shadow-md border-gray-300 text-xs h-9">
                     <SelectValue placeholder="Map type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(MAP_LAYERS).map(([key, layer]) => (
+                    {Object.entries(MAP_STYLES).slice(0, 3).map(([key, style]) => (
                       <SelectItem key={key} value={key}>
-                        {layer.name}
+                        {style.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -473,70 +411,52 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               </div>
             </div>
 
-            {isMapLoaded && L && useMapEventsHook ? (
-              <MapContainer
-                key={`org-map-${organizationId}-${mapLayer}`}
-                ref={mapRef}
-                center={defaultCenter}
-                zoom={6}
-                minZoom={2}
-                maxBounds={[[-90, -180], [90, 180]]}
-                maxBoundsViscosity={1.0}
-                style={{ height: '100%', width: '100%' }}
-                zoomControl={false}
-                scrollWheelZoom={false}
-              >
-                <ZoomControl position="topright" />
-                <TileLayer
-                  attribution={MAP_LAYERS[mapLayer].attribution}
-                  url={MAP_LAYERS[mapLayer].url}
-                  keepBuffer={2}
-                  updateWhenIdle={false}
-                  updateWhenZooming={false}
-                  noWrap={true}
+            {/* MapLibre Map */}
+            <Map
+              key={`org-map-${organizationId}-${mapStyle}`}
+              ref={mapRef}
+              center={defaultCenter}
+              zoom={6}
+              minZoom={2}
+              styles={{
+                light: MAP_STYLES[mapStyle].style,
+                dark: MAP_STYLES[mapStyle].style,
+              }}
+            >
+              <MapControls position="top-right" showZoom />
+              
+              {/* Markers mode */}
+              {viewMode === 'markers' && filteredLocations.length > 0 && (
+                <MarkersLayer locations={filteredLocations} />
+              )}
+
+              {/* Heatmap mode */}
+              {viewMode === 'heatmap' && filteredLocations.length > 0 && (
+                <HeatmapLayer 
+                  points={prepareHeatmapPoints(filteredLocations)}
+                  options={{
+                    radius: 30,
+                    intensity: 1,
+                    opacity: 0.8,
+                    maxZoom: 12,
+                    colorStops: [
+                      [0, 'rgba(49, 54, 149, 0)'],
+                      [0.2, '#313695'],
+                      [0.3, '#4575b4'],
+                      [0.4, '#74add1'],
+                      [0.5, '#abd9e9'],
+                      [0.6, '#ffffbf'],
+                      [0.7, '#fee090'],
+                      [0.8, '#fdae61'],
+                      [0.9, '#f46d43'],
+                      [1.0, '#d73027']
+                    ]
+                  }}
                 />
-                
-                {/* Markers mode */}
-                {viewMode === 'markers' && filteredLocations.length > 0 && (
-                  <MarkersLayer locations={filteredLocations} />
-                )}
+              )}
 
-                {/* Heatmap mode */}
-                {viewMode === 'heatmap' && filteredLocations.length > 0 && (
-                  <HeatmapLayer 
-                    points={prepareHeatmapPoints(filteredLocations)}
-                    options={{
-                      radius: 30,
-                      blur: 20,
-                      maxZoom: 12,
-                      max: 1.0,
-                      minOpacity: 0.5,
-                      gradient: {
-                        0.2: '#313695',
-                        0.3: '#4575b4', 
-                        0.4: '#74add1',
-                        0.5: '#abd9e9',
-                        0.6: '#ffffbf',
-                        0.7: '#fee090',
-                        0.8: '#fdae61',
-                        0.9: '#f46d43',
-                        1.0: '#d73027'
-                      }
-                    }}
-                  />
-                )}
-
-                <MapInitializer bounds={mapBounds} />
-                <MapReset shouldReset={shouldResetMap} bounds={mapBounds} />
-              </MapContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full bg-gray-50">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                  <div className="text-sm text-gray-600">Loading map...</div>
-                </div>
-              </div>
-            )}
+              <MapBoundsHandler bounds={mapBounds} shouldReset={shouldResetMap} />
+            </Map>
 
             {/* No results overlay */}
             {filteredLocations.length === 0 && validLocations.length > 0 && (

@@ -1958,8 +1958,8 @@ export default function PlannedDisbursementsTab({
                               };
                               
                               return (
-                                <div className="flex items-center gap-2 font-medium min-w-0">
-                                  <div className="flex items-center gap-1.5 min-w-0 flex-1 max-w-[45%]">
+                                <div className="flex items-center gap-1.5 font-medium overflow-hidden">
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                                     <OrganizationLogo
                                       logo={disbursement.provider_org_logo}
                                       name={providerDisplay}
@@ -1970,7 +1970,7 @@ export default function PlannedDisbursementsTab({
                                     </OrganizationHoverCard>
                                   </div>
                                   <span className="text-muted-foreground flex-shrink-0">→</span>
-                                  <div className="flex items-center gap-1.5 min-w-0 flex-1 max-w-[45%]">
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                                     <OrganizationLogo
                                       logo={disbursement.receiver_org_logo}
                                       name={receiverDisplay}

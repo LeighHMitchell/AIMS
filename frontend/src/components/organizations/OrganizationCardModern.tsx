@@ -82,17 +82,24 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
   const idLabel = organization.iati_org_id ? 'IATI Org ID' : 'Org ID';
 
   return (
-    <Link href={orgUrl} className="block">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
-        whileHover={{ y: -8 }}
-        className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden border ${className}`}
-        style={{ backgroundColor: 'white' }}
-        role="article"
-        aria-label={`Organization: ${organization.name}`}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
+      whileHover={{ y: -8 }}
+      className={`group relative flex w-full flex-col rounded-3xl shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer isolate overflow-hidden border ${className}`}
+      style={{ backgroundColor: 'white' }}
+      role="article"
+      aria-label={`Organization: ${organization.name}`}
+    >
+      {/* Invisible link overlay - covers the card but sits below interactive elements */}
+      <Link 
+        href={orgUrl} 
+        className="absolute inset-0 z-0"
+        aria-label={`View ${organization.name}`}
       >
+        <span className="sr-only">View organization</span>
+      </Link>
       {/* Banner/Poster Section */}
       <div className="relative h-48 w-full overflow-hidden" style={{ backgroundColor: colors.blueSlate }}>
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
@@ -108,8 +115,8 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
           </div>
         )}
 
-        {/* Action Menu - Top Left */}
-        <div className="absolute top-4 left-4 z-20" onClick={(e) => e.stopPropagation()}>
+        {/* Action Menu - Top Left - z-30 to be above the link overlay (z-0) */}
+        <div className="absolute top-4 left-4 z-30">
           <OrganizationCardActionMenu
             organizationId={organization.id}
             onEdit={onEdit ? () => onEdit(organization) : undefined}
@@ -208,10 +215,11 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
               <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{displayId}</span>
               <button
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   copyToClipboard(displayId);
                 }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10"
                 title="Copy ID"
               >
                 <Copy className="w-3 h-3" style={{ color: colors.coolSteel }} />
@@ -222,10 +230,11 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
             {organization.website && (
               <button
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   window.open(organization.website, '_blank');
                 }}
-                className="flex items-center gap-1 text-[10px] hover:underline"
+                className="flex items-center gap-1 text-[10px] hover:underline relative z-10"
                 style={{ color: colors.blueSlate }}
               >
                 <ExternalLink className="w-3 h-3" />
@@ -236,7 +245,6 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
         </div>
       </div>
     </motion.div>
-    </Link>
   );
 };
 

@@ -140,9 +140,9 @@ import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
 import { NormalizedOrgRef } from "@/components/ui/normalized-org-ref"
 import LocationCard from "@/components/locations/LocationCard"
 
-// Dynamic import to avoid SSR issues with Leaflet
-const ActivityLocationsMapView = dynamic(
-  () => import('@/components/maps/ActivityLocationsMapView'),
+// Dynamic import for MapLibre-based map view
+const ActivityLocationsMapViewV2 = dynamic(
+  () => import('@/components/maps/ActivityLocationsMapViewV2'),
   { ssr: false, loading: () => <div className="flex items-center justify-center h-96">Loading map...</div> }
 )
 import type { LocationSchema } from "@/lib/schemas/location"
@@ -203,42 +203,6 @@ const TAG_COLOR_VARIANTS = [
 const getTagColorVariant = (tagName: string) => {
   const hash = tagName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return TAG_COLOR_VARIANTS[hash % TAG_COLOR_VARIANTS.length];
-};
-
-// Map layer configurations - same as Atlas
-type MapLayerType = 'cartodb_voyager' | 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri';
-
-const MAP_LAYERS: Record<MapLayerType, { name: string; url: string; attribution: string }> = {
-  cartodb_voyager: {
-    name: 'Streets (CartoDB Voyager)',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '© OpenStreetMap contributors, © CARTO'
-  },
-  osm_standard: {
-    name: 'OpenStreetMap Standard',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors'
-  },
-  osm_humanitarian: {
-    name: 'Humanitarian (HOT)',
-    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © HOT'
-  },
-  cyclosm: {
-    name: 'CyclOSM Transport',
-    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © CyclOSM'
-  },
-  opentopo: {
-    name: 'OpenTopo Terrain',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © OpenTopoMap'
-  },
-  satellite_esri: {
-    name: 'Satellite Imagery',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '© Esri'
-  }
 };
 
 // Aid Type mappings
@@ -540,7 +504,6 @@ export default function ActivityDetailPage() {
   const [sectorBreakdownView, setSectorBreakdownView] = useState<'chart' | 'table'>('chart')
   const [sectorFlowView, setSectorFlowView] = useState<'flow' | 'distribution'>('flow')
   const [locationsView, setLocationsView] = useState<'cards' | 'table'>('cards')
-  const [mapLayer, setMapLayer] = useState<MapLayerType>('cartodb_voyager')
   const [sectorViewMode, setSectorViewMode] = useState<'sankey' | 'pie' | 'bar' | 'table'>('bar')
   const [sectorMetricMode, setSectorMetricMode] = useState<'percentage' | 'budget' | 'planned' | 'actual'>('percentage')
   const [sectorBarGroupingMode, setSectorBarGroupingMode] = useState<'sector' | 'category' | 'group'>('category')
@@ -4408,59 +4371,35 @@ export default function ActivityDetailPage() {
                   <div className="md:col-span-2">
                     <Card className="border-slate-200 h-full">
                       <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <CardTitle className="text-slate-900 flex items-center gap-2">
-                              <MapPin className="h-5 w-5" />
-                              Activity Locations Map
-                            </CardTitle>
-                            <CardDescription>
-                              Map showing all activity locations in Myanmar
-                            </CardDescription>
-                          </div>
-                          {/* Map Layer Selector */}
-                          <Select value={mapLayer} onValueChange={(value) => setMapLayer(value as MapLayerType)}>
-                            <SelectTrigger className="w-[400px]">
-                              <Layers className="h-4 w-4 mr-2" />
-                              <SelectValue placeholder="Map type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(MAP_LAYERS).map(([key, layer]) => (
-                                <SelectItem key={key} value={key}>
-                                  {layer.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        <CardTitle className="text-slate-900 flex items-center gap-2">
+                          <MapPin className="h-5 w-5" />
+                          Activity Locations Map
+                        </CardTitle>
+                        <CardDescription>
+                          Map showing all activity locations. Use controls to switch styles and view modes.
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        {activityLocations.length > 0 ? (
-                          <div className="h-96 rounded-md overflow-hidden border border-slate-200">
-                            <ActivityLocationsMapView
-                              locations={activityLocations.map(loc => ({
-                                id: loc.id,
-                                location_name: loc.location_name,
-                                latitude: loc.latitude,
-                                longitude: loc.longitude,
-                                site_type: loc.site_type,
-                                state_region_name: loc.state_region_name,
-                              }))}
-                              mapCenter={[19.0, 96.5]}
-                              mapZoom={6}
-                              currentLayer={mapLayer}
-                              layerUrl={MAP_LAYERS[mapLayer].url}
-                              layerAttribution={MAP_LAYERS[mapLayer].attribution}
-                            />
-                          </div>
-                        ) : (
-                          <div className="h-96 flex items-center justify-center bg-slate-50 rounded-md border border-slate-200">
-                            <div className="text-center">
-                              <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                              <p className="text-slate-500">No location data available</p>
-                            </div>
-                          </div>
-                        )}
+                        <div className="h-96 rounded-md overflow-hidden border border-slate-200">
+                          <ActivityLocationsMapViewV2
+                            locations={activityLocations.map(loc => ({
+                              id: loc.id,
+                              location_name: loc.location_name,
+                              latitude: loc.latitude,
+                              longitude: loc.longitude,
+                              site_type: loc.site_type,
+                              state_region_name: loc.state_region_name,
+                              township_name: loc.township_name,
+                              district_name: loc.district_name,
+                              village_name: loc.village_name,
+                              description: loc.description,
+                              location_description: loc.location_description,
+                            }))}
+                            mapCenter={[19.0, 96.5]}
+                            mapZoom={6}
+                            activityTitle={activity?.title}
+                          />
+                        </div>
                       </CardContent>
                     </Card>
                   </div>

@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Building2 } from 'lucide-react';
 import { MapMarker, MarkerContent, MarkerPopup, MarkerTooltip, useMap } from '@/components/ui/map';
 import { Badge } from '@/components/ui/badge';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import type { LocationSchema } from '@/lib/schemas/location';
 
 interface SectorData {
@@ -20,6 +21,8 @@ interface ActivityData {
   title: string;
   status?: string;
   organization_name?: string;
+  organization_acronym?: string;
+  organization_logo?: string;
   sectors?: SectorData[];
   totalBudget?: number;
   totalPlannedDisbursement?: number;
@@ -64,7 +67,7 @@ const getSectorColor = (categoryCode?: string): string => {
 const getStatusInfo = (status?: string): { label: string; color: string; bgColor: string } => {
   const statusMap: Record<string, { label: string; color: string; bgColor: string }> = {
     '1': { label: 'Pipeline', color: '#6b7280', bgColor: '#f3f4f6' },
-    '2': { label: 'Implementation', color: '#059669', bgColor: '#d1fae5' },
+    '2': { label: 'Implementation', color: '#ffffff', bgColor: '#3C6255' },
     '3': { label: 'Finalisation', color: '#d97706', bgColor: '#fef3c7' },
     '4': { label: 'Closed', color: '#374151', bgColor: '#e5e7eb' },
     '5': { label: 'Cancelled', color: '#dc2626', bgColor: '#fee2e2' },
@@ -121,7 +124,99 @@ const getFullAddress = (location: LocationSchema): string => {
   return parts.join(', ') || '-';
 };
 
-// Sector breakdown bar component
+// Timeline progress visualization component
+function TimelineProgress({ 
+  actualStartDate, 
+  plannedEndDate 
+}: { 
+  actualStartDate?: string; 
+  plannedEndDate?: string;
+}) {
+  if (!actualStartDate || !plannedEndDate) return null;
+  
+  const startDate = new Date(actualStartDate);
+  const endDate = new Date(plannedEndDate);
+  const today = new Date();
+  
+  // Calculate total duration and elapsed time
+  const totalDuration = endDate.getTime() - startDate.getTime();
+  const elapsedTime = today.getTime() - startDate.getTime();
+  
+  // Calculate progress percentage (capped at 100%)
+  let progressPercent = totalDuration > 0 ? (elapsedTime / totalDuration) * 100 : 0;
+  progressPercent = Math.max(0, Math.min(100, progressPercent));
+  
+  const formatTimelineDate = (dateStr: string): string => {
+    try {
+      return new Date(dateStr).toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return '-';
+    }
+  };
+  
+  return (
+    <div className="mb-3">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-2">Project Timeline</div>
+      
+      {/* Date labels */}
+      <div className="flex justify-between mb-1.5">
+        <div>
+          <div className="text-[10px] text-slate-400">Actual Start</div>
+          <div className="text-xs font-semibold text-slate-800">{formatTimelineDate(actualStartDate)}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] text-slate-400">Planned End</div>
+          <div className="text-xs font-semibold text-slate-800">{formatTimelineDate(plannedEndDate)}</div>
+        </div>
+      </div>
+      
+      {/* Progress bar */}
+      <div className="relative h-3 mb-1.5">
+        <div className="absolute inset-0 flex rounded-sm overflow-hidden">
+          {/* Completed portion */}
+          <div 
+            className="h-full" 
+            style={{ 
+              width: `${progressPercent}%`, 
+              backgroundColor: '#1e3a5f' 
+            }} 
+          />
+          {/* Remaining portion */}
+          <div 
+            className="h-full" 
+            style={{ 
+              width: `${100 - progressPercent}%`, 
+              backgroundColor: '#c7d9ed' 
+            }} 
+          />
+        </div>
+        {/* Progress marker line */}
+        <div 
+          className="absolute top-0 h-full w-0.5"
+          style={{ 
+            left: `${progressPercent}%`,
+            backgroundColor: '#0f2744',
+            transform: 'translateX(-50%)'
+          }}
+        />
+      </div>
+      
+      {/* Progress percentage */}
+      <div className="flex justify-end">
+        <div className="text-right">
+          <div className="text-[10px] text-slate-400">Progress by time</div>
+          <div className="text-xs font-semibold text-slate-800">{Math.round(progressPercent)}%</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Sector breakdown bar component with hover popup
 function SectorBar({ sectors }: { sectors?: SectorData[] }) {
   if (!sectors || sectors.length === 0) return null;
   
@@ -133,21 +228,51 @@ function SectorBar({ sectors }: { sectors?: SectorData[] }) {
   
   return (
     <div className="mb-3">
-      <div className="text-[10px] font-semibold text-slate-500 mb-1.5">Sector Breakdown</div>
-      <div className="flex h-2.5 rounded-full overflow-hidden bg-slate-100">
-        {normalizedSectors.map((sector, idx) => {
-          const color = getSectorColor(sector.categoryCode || sector.code);
-          const width = Math.max(sector.normalizedPercentage, 2);
-          return (
-            <div
-              key={idx}
-              style={{ width: `${width}%`, backgroundColor: color }}
-              className="h-full"
-              title={`${sector.name || sector.categoryName}: ${sector.percentage}%`}
-            />
-          );
-        })}
-      </div>
+      <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1.5">Sector Breakdown</div>
+      <HoverCard openDelay={200} closeDelay={100}>
+        <HoverCardTrigger asChild>
+          <div className="flex h-3 rounded-full overflow-hidden bg-slate-100 cursor-pointer">
+            {normalizedSectors.map((sector, idx) => {
+              const color = getSectorColor(sector.categoryCode || sector.code);
+              const width = Math.max(sector.normalizedPercentage, 2);
+              return (
+                <div
+                  key={idx}
+                  style={{ width: `${width}%`, backgroundColor: color }}
+                  className="h-full"
+                />
+              );
+            })}
+          </div>
+        </HoverCardTrigger>
+        <HoverCardContent 
+          className="w-80 p-3" 
+          side="top" 
+          align="start"
+          style={{ backgroundColor: 'white' }}
+        >
+          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-2">Sectors</div>
+          <div className="space-y-1.5">
+            {normalizedSectors.map((sector, idx) => {
+              const color = getSectorColor(sector.categoryCode || sector.code);
+              return (
+                <div key={idx} className="flex items-center gap-2">
+                  <div 
+                    className="w-2.5 h-2.5 rounded-sm flex-shrink-0" 
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="text-xs text-slate-700 flex-1">
+                    {sector.name || sector.categoryName || 'Unknown Sector'}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-800">
+                    {sector.percentage}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </HoverCardContent>
+      </HoverCard>
     </div>
   );
 }
@@ -199,12 +324,10 @@ function ActivityLocationMarker({
       {/* Tooltip on hover */}
       <MarkerTooltip className="!p-0 !bg-white !text-foreground max-w-[300px] overflow-hidden">
         {/* Banner */}
-        {activity?.banner ? (
+        {activity?.banner && (
           <div className="w-full h-16 overflow-hidden">
             <img src={activity.banner} alt="" className="w-full h-full object-cover" />
           </div>
-        ) : (
-          <div className="w-full h-12 bg-gradient-to-r from-slate-600 to-slate-400" />
         )}
         
         <div className="p-2.5">
@@ -241,16 +364,14 @@ function ActivityLocationMarker({
       {/* Popup on click */}
       <MarkerPopup className="!p-0 !bg-white !text-foreground min-w-[350px] max-w-[420px] overflow-hidden" closeButton>
         {/* Banner */}
-        {activity?.banner ? (
+        {activity?.banner && (
           <div className="w-full h-24 overflow-hidden -m-3 mb-3" style={{ width: 'calc(100% + 24px)' }}>
             <img src={activity.banner} alt="" className="w-full h-full object-cover" />
           </div>
-        ) : (
-          <div className="w-full h-16 bg-gradient-to-r from-slate-600 to-slate-400 -m-3 mb-3" style={{ width: 'calc(100% + 24px)' }} />
         )}
         
         {/* Location Name */}
-        <h3 className="font-bold text-base text-slate-700 mb-1 leading-tight">
+        <h3 className="text-sm font-semibold text-slate-800 mb-0.5 leading-tight">
           {location.location_name || 'Unnamed Location'}
         </h3>
         
@@ -261,51 +382,84 @@ function ActivityLocationMarker({
         
         <hr className="border-slate-200 mb-3" />
         
-        {/* Two column info */}
-        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-          <div>
-            <div className="text-slate-500 text-[10px] font-medium mb-0.5">Organisation</div>
-            <div className="text-slate-700">{activity?.organization_name || '-'}</div>
+        {/* Reporting Organisation */}
+        <div className="mb-2">
+          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1">Reporting Organisation</div>
+          <div className="flex items-center gap-2">
+            {activity?.organization_logo ? (
+              <img 
+                src={activity.organization_logo} 
+                alt="" 
+                className="h-6 w-6 rounded object-contain flex-shrink-0"
+              />
+            ) : (
+              <div className="h-6 w-6 rounded bg-slate-100 flex items-center justify-center flex-shrink-0">
+                <Building2 className="h-4 w-4 text-slate-400" />
+              </div>
+            )}
+            <span className="text-xs text-slate-700">
+              {activity?.organization_name || '-'}
+              {activity?.organization_acronym && activity?.organization_acronym !== activity?.organization_name && (
+                <span className="text-slate-500"> ({activity.organization_acronym})</span>
+              )}
+            </span>
           </div>
-          <div>
-            <div className="text-slate-500 text-[10px] font-medium mb-0.5">Status</div>
-            <Badge 
-              variant="secondary" 
-              className="text-[10px] px-1.5 py-0"
-              style={{ backgroundColor: statusInfo.bgColor, color: statusInfo.color }}
-            >
-              {statusInfo.label}
-            </Badge>
-          </div>
+        </div>
+        
+        {/* Status */}
+        <div className="mb-3">
+          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1">Status</div>
+          <Badge 
+            variant="secondary" 
+            className="text-xs px-2 py-0.5"
+            style={{ backgroundColor: statusInfo.bgColor, color: statusInfo.color }}
+          >
+            {statusInfo.label}
+          </Badge>
         </div>
         
         {/* Site Type */}
         {'site_type' in location && location.site_type && (
-          <div className="text-xs mb-3">
-            <div className="text-slate-500 text-[10px] font-medium mb-0.5">Site Type</div>
-            <div className="text-slate-700">{formatSiteType(location.site_type)}</div>
+          <div className="mb-3">
+            <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-0.5">Site Type</div>
+            <div className="text-xs text-slate-700">{formatSiteType(location.site_type)}</div>
           </div>
         )}
         
         {/* Address */}
-        <div className="text-xs mb-3">
-          <div className="text-slate-500 text-[10px] font-medium mb-0.5">Address</div>
-          <div className="text-slate-700 leading-snug">{getFullAddress(location)}</div>
+        <div className="mb-3">
+          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-0.5">Address</div>
+          <div className="text-xs text-slate-700 leading-snug">{getFullAddress(location)}</div>
         </div>
         
         {/* Coordinates */}
-        <div className="text-xs mb-3">
-          <div className="text-slate-500 text-[10px] font-medium mb-0.5">Coordinates</div>
-          <div className="font-mono text-[10px] text-slate-700 bg-slate-50 px-2 py-1 rounded inline-block">
-            {lat.toFixed(6)}, {lng.toFixed(6)}
+        <div className="mb-3">
+          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-0.5">Coordinates</div>
+          <div className="flex items-center gap-2">
+            <div className="font-mono text-xs text-slate-700 bg-slate-50 px-2 py-1 rounded">
+              {lat.toFixed(6)}, {lng.toFixed(6)}
+            </div>
+            <a 
+              href={`https://www.google.com/maps?q=${lat},${lng}&t=k`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open in Google Maps"
+              className="hover:opacity-80"
+            >
+              <img 
+                src="https://www.gstatic.com/marketing-cms/assets/images/0f/9a/58f1d92b46069b4a8bdc556b612c/google-maps.webp" 
+                alt="Open in Google Maps" 
+                className="h-4 w-4"
+              />
+            </a>
           </div>
         </div>
         
         {/* Description */}
         {(location.description || location.location_description || ('activity_location_description' in location && location.activity_location_description)) && (
-          <div className="text-xs mb-3">
-            <div className="text-slate-500 text-[10px] font-medium mb-0.5">Description</div>
-            <div className="text-slate-700 leading-snug italic">
+          <div className="mb-3">
+            <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-0.5">Description</div>
+            <div className="text-xs text-slate-600 leading-snug italic">
               {location.description || location.location_description || ('activity_location_description' in location && location.activity_location_description)}
             </div>
           </div>
@@ -317,40 +471,33 @@ function ActivityLocationMarker({
         {/* Financial Summary */}
         {activity && (activity.totalBudget || activity.totalPlannedDisbursement || activity.totalCommitments || activity.totalDisbursed) && (
           <div className="mb-3">
-            <div className="text-[10px] font-semibold text-slate-500 mb-1.5">Financial Summary</div>
-            <div className="rounded border border-slate-200 overflow-hidden text-xs">
+            <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1.5">Financial Summary</div>
+            <div className="rounded border border-slate-200 overflow-hidden">
               <div className="flex justify-between px-2.5 py-1.5 bg-white">
-                <span className="text-slate-500">Total Budgeted</span>
-                <span className="font-semibold text-slate-700">{formatCompactCurrency(activity.totalBudget)}</span>
+                <span className="text-xs text-slate-500">Total Budgeted</span>
+                <span className="text-xs font-semibold text-slate-800">{formatCompactCurrency(activity.totalBudget)}</span>
               </div>
               <div className="flex justify-between px-2.5 py-1.5 bg-slate-50">
-                <span className="text-slate-500">Total Planned Disbursement</span>
-                <span className="font-semibold text-slate-700">{formatCompactCurrency(activity.totalPlannedDisbursement)}</span>
+                <span className="text-xs text-slate-500">Total Planned Disbursement</span>
+                <span className="text-xs font-semibold text-slate-800">{formatCompactCurrency(activity.totalPlannedDisbursement)}</span>
               </div>
               <div className="flex justify-between px-2.5 py-1.5 bg-white">
-                <span className="text-slate-500">Total Committed</span>
-                <span className="font-semibold text-slate-700">{formatCompactCurrency(activity.totalCommitments)}</span>
+                <span className="text-xs text-slate-500">Total Committed</span>
+                <span className="text-xs font-semibold text-slate-800">{formatCompactCurrency(activity.totalCommitments)}</span>
               </div>
               <div className="flex justify-between px-2.5 py-1.5 bg-slate-50">
-                <span className="text-slate-500">Total Disbursed</span>
-                <span className="font-semibold text-slate-700">{formatCompactCurrency(activity.totalDisbursed)}</span>
+                <span className="text-xs text-slate-500">Total Disbursed</span>
+                <span className="text-xs font-semibold text-slate-800">{formatCompactCurrency(activity.totalDisbursed)}</span>
               </div>
             </div>
           </div>
         )}
         
-        {/* Timeline */}
-        {activity && (activity.plannedStartDate || activity.plannedEndDate || activity.actualStartDate || activity.actualEndDate) && (
-          <div>
-            <div className="text-[10px] font-semibold text-slate-500 mb-1.5">Project Timeline</div>
-            <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-              <div className="text-slate-500">Planned Start: <span className="font-medium text-slate-700">{formatDate(activity.plannedStartDate)}</span></div>
-              <div className="text-slate-500">Planned End: <span className="font-medium text-slate-700">{formatDate(activity.plannedEndDate)}</span></div>
-              <div className="text-slate-500">Actual Start: <span className="font-medium text-slate-700">{formatDate(activity.actualStartDate)}</span></div>
-              <div className="text-slate-500">Actual End: <span className="font-medium text-slate-700">{activity.actualEndDate ? formatDate(activity.actualEndDate) : 'N/A'}</span></div>
-            </div>
-          </div>
-        )}
+        {/* Timeline Progress Visualization */}
+        <TimelineProgress 
+          actualStartDate={activity?.actualStartDate} 
+          plannedEndDate={activity?.plannedEndDate} 
+        />
         
         {/* View Activity Link */}
         {activity?.id && (

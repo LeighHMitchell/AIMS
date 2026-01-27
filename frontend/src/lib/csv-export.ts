@@ -91,6 +91,12 @@ export function formatArrayForCSV(array: any[] | null | undefined, separator: st
  * @param headers - Array of header definitions with key (data property) and label (column header)
  * @param filename - Name for the downloaded file (without .csv extension)
  */
+/**
+ * Export tabular data to CSV format and trigger download
+ * @param data - Array of objects representing rows
+ * @param headers - Array of header definitions with key (data property) and label (column header)
+ * @param filename - Name for the downloaded file (without .csv extension)
+ */
 export function exportTableToCSV(
   data: Record<string, unknown>[],
   headers: { key: string; label: string }[],
