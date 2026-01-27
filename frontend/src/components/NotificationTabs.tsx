@@ -1,13 +1,15 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NotificationItem } from "@/components/NotificationItem"
-import { AtSign, Bell, AlertCircle, Loader2, RefreshCw } from "lucide-react"
+import { AtSign, Bell, AlertCircle, Loader2, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardContent } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { apiFetch } from '@/lib/api-fetch';
 
 export interface Notification {
@@ -52,6 +54,20 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Pagination state - separate for each tab
+  const [mentionsPage, setMentionsPage] = useState(1)
+  const [systemPage, setSystemPage] = useState(1)
+  const [pageLimit, setPageLimit] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem("notifications-page-limit")
+      if (saved) {
+        const savedLimit = Number(saved)
+        if (savedLimit > 0) return savedLimit
+      }
+    }
+    return 10
+  })
 
   const fetchNotifications = useCallback(async (showLoadingIndicator = true) => {
     if (showLoadingIndicator) {
@@ -161,6 +177,153 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
   const unreadMentions = mentionNotifications.filter(n => !n.isRead).length
   const unreadSystem = systemNotifications.filter(n => !n.isRead).length
 
+  // Pagination calculations for mentions tab
+  const mentionsTotalPages = Math.ceil(mentionNotifications.length / pageLimit)
+  const mentionsStartIndex = (mentionsPage - 1) * pageLimit
+  const mentionsEndIndex = Math.min(mentionsStartIndex + pageLimit, mentionNotifications.length)
+  const paginatedMentions = useMemo(() => 
+    mentionNotifications.slice(mentionsStartIndex, mentionsEndIndex),
+    [mentionNotifications, mentionsStartIndex, mentionsEndIndex]
+  )
+
+  // Pagination calculations for system tab
+  const systemTotalPages = Math.ceil(systemNotifications.length / pageLimit)
+  const systemStartIndex = (systemPage - 1) * pageLimit
+  const systemEndIndex = Math.min(systemStartIndex + pageLimit, systemNotifications.length)
+  const paginatedSystem = useMemo(() => 
+    systemNotifications.slice(systemStartIndex, systemEndIndex),
+    [systemNotifications, systemStartIndex, systemEndIndex]
+  )
+
+  // Reset to page 1 when page limit changes
+  const handlePageLimitChange = (newLimit: number) => {
+    setPageLimit(newLimit)
+    setMentionsPage(1)
+    setSystemPage(1)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("notifications-page-limit", newLimit.toString())
+    }
+  }
+
+  // Pagination component to avoid duplication
+  const PaginationControls = ({ 
+    currentPage, 
+    setCurrentPage, 
+    totalPages, 
+    totalItems, 
+    startIndex, 
+    endIndex,
+    itemLabel 
+  }: { 
+    currentPage: number
+    setCurrentPage: (page: number) => void
+    totalPages: number
+    totalItems: number
+    startIndex: number
+    endIndex: number
+    itemLabel: string
+  }) => {
+    if (totalItems === 0) return null
+
+    return (
+      <Card className="mt-4">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-gray-600">
+              Showing {Math.min(startIndex + 1, totalItems)} to {Math.min(endIndex, totalItems)} of {totalItems} {itemLabel}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                First
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum
+                  if (totalPages <= 5) {
+                    pageNum = i + 1
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i
+                  } else {
+                    pageNum = currentPage - 2 + i
+                  }
+
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {pageNum}
+                    </Button>
+                  )
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                Last
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Items per page:</label>
+              <Select
+                value={pageLimit.toString()}
+                onValueChange={(value) => handlePageLimitChange(Number(value))}
+              >
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -242,13 +405,24 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
           )}
           
           {mentionNotifications.length > 0 ? (
-            mentionNotifications.map(notification => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                onMarkAsRead={handleMarkAsRead}
+            <>
+              {paginatedMentions.map(notification => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={handleMarkAsRead}
+                />
+              ))}
+              <PaginationControls
+                currentPage={mentionsPage}
+                setCurrentPage={setMentionsPage}
+                totalPages={mentionsTotalPages}
+                totalItems={mentionNotifications.length}
+                startIndex={mentionsStartIndex}
+                endIndex={mentionsEndIndex}
+                itemLabel="mentions"
               />
-            ))
+            </>
           ) : (
             <div className="text-center py-12">
               <AtSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -274,13 +448,24 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
           )}
           
           {systemNotifications.length > 0 ? (
-            systemNotifications.map(notification => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                onMarkAsRead={handleMarkAsRead}
+            <>
+              {paginatedSystem.map(notification => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={handleMarkAsRead}
+                />
+              ))}
+              <PaginationControls
+                currentPage={systemPage}
+                setCurrentPage={setSystemPage}
+                totalPages={systemTotalPages}
+                totalItems={systemNotifications.length}
+                startIndex={systemStartIndex}
+                endIndex={systemEndIndex}
+                itemLabel="notifications"
               />
-            ))
+            </>
           ) : (
             <div className="text-center py-12">
               <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />

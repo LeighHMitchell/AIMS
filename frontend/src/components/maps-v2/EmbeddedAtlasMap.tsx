@@ -82,7 +82,10 @@ function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
       latitude={lat}
     >
       <MarkerContent>
-        <div className="size-4 rounded-full bg-primary border-2 border-white shadow-lg" />
+        <MapPin
+          className="fill-[#DC2625] stroke-white"
+          size={28}
+        />
       </MarkerContent>
 
       <MarkerTooltip className="!p-0 !bg-white !text-foreground max-w-[280px] overflow-hidden">

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { MapPin } from 'lucide-react';
 import { MapMarker, MarkerContent, MarkerPopup, MarkerTooltip, useMap } from '@/components/ui/map';
 import { Badge } from '@/components/ui/badge';
 import type { LocationSchema } from '@/lib/schemas/location';
@@ -189,7 +190,10 @@ function ActivityLocationMarker({
     >
       {/* Custom marker appearance */}
       <MarkerContent>
-        <div className="size-4 rounded-full bg-primary border-2 border-white shadow-lg" />
+        <MapPin
+          className="fill-[#DC2625] stroke-white"
+          size={28}
+        />
       </MarkerContent>
 
       {/* Tooltip on hover */}

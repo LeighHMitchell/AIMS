@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronUp, ChevronDown } from 'lucide-react'
+import { ThumbsUp, ThumbsDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useActivityVote, VoteValue } from '@/hooks/use-activity-vote'
 import {
@@ -165,7 +165,7 @@ export function ActivityVote({
                 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
               >
-                <ChevronUp className={config.icon} strokeWidth={userVote === 1 ? 3 : 2} />
+                <ThumbsUp className={config.icon} strokeWidth={userVote === 1 ? 3 : 2} />
               </motion.div>
             </motion.button>
           </TooltipTrigger>
@@ -221,7 +221,7 @@ export function ActivityVote({
                 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
               >
-                <ChevronDown className={config.icon} strokeWidth={userVote === -1 ? 3 : 2} />
+                <ThumbsDown className={config.icon} strokeWidth={userVote === -1 ? 3 : 2} />
               </motion.div>
             </motion.button>
           </TooltipTrigger>

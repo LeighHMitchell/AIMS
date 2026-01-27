@@ -262,7 +262,7 @@ export default function OrganizationEditorNavigation({
 
         {/* Delete Organization Button */}
         {organizationCreated && organization?.id && onDelete && (
-          <div className="mt-auto pt-6 border-t border-gray-200">
+          <div className="mt-auto pt-6">
             <button
               type="button"
               onClick={onDelete}

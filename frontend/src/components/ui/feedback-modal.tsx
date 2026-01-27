@@ -447,6 +447,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             <Button 
               type="submit" 
               disabled={isSubmitting || !selectedCategory || !message.trim()}
+              className="min-w-[160px]"
             >
               {isUploading ? (
                 <>

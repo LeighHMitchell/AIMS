@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CornerDownRight,
@@ -274,9 +276,9 @@ function CommentItem({
                 {comment.user.name}
               </span>
               {comment.user.role && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                  {comment.user.role}
-                </span>
+                <Badge variant={getRoleBadgeVariant(comment.user.role)} className="text-xs">
+                  {getRoleDisplayLabel(comment.user.role)}
+                </Badge>
               )}
               <time className="text-xs text-muted-foreground">
                 {formatCommentTimestamp(comment.timestamp)}

@@ -2705,6 +2705,8 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         governmentInputs={governmentInputs} 
         onChange={setGovernmentInputs} 
       />;
+    case "readiness_checklist":
+      return <ReadinessChecklistTab activityId={general.id} />;
     case "documents":
       return <DocumentsAndImagesTabInline
         documents={documents}
@@ -5032,6 +5034,19 @@ function NewActivityPageContent() {
                     </button>
                   </div>
                   {/* Autosave Status Indicator removed per UX request */}
+                  {/* Publication Status Badge */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 ${
+                      general.publicationStatus === 'published' 
+                        ? 'text-green-600 bg-green-100' 
+                        : 'text-gray-600 bg-gray-100'
+                    }`}>
+                      {general.publicationStatus === 'published' 
+                        ? <><Megaphone className="w-3 h-3" /> Published</>
+                        : <><FileText className="w-3 h-3" /> Unpublished</>
+                      }
+                    </span>
+                  </div>
                   {/* Validation Status Badge */}
                   {general.submissionStatus && general.submissionStatus !== 'draft' && (
                     <div className="mt-2 flex items-center gap-2">

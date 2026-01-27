@@ -125,6 +125,7 @@ export default function ActivityEditorNavigation({
       title: "Administration",
       sections: [
         { id: "metadata", label: "Metadata" },
+        { id: "readiness_checklist", label: "Readiness Checklist" },
         ...(showGovernmentInputs ? [{ id: "government", label: "Government Inputs" }] : [])
       ]
     }
@@ -231,7 +232,7 @@ export default function ActivityEditorNavigation({
 
         {/* Delete Activity Button */}
         {activityCreated && activityId && onDelete && (
-          <div className="mt-auto pt-6 border-t border-gray-200">
+          <div className="mt-auto pt-6">
             <button
               type="button"
               onClick={onDelete}

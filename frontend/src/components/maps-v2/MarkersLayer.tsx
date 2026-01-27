@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { MapPin } from 'lucide-react';
 import { MapMarker, MarkerContent, MarkerPopup, MarkerTooltip, useMap } from '@/components/ui/map';
 import { Badge } from '@/components/ui/badge';
 
@@ -192,7 +193,10 @@ function LocationMarker({ location }: { location: LocationData }) {
     >
       {/* Custom marker appearance */}
       <MarkerContent>
-        <div className="size-4 rounded-full bg-primary border-2 border-white shadow-lg" />
+        <MapPin
+          className="fill-[#DC2625] stroke-white"
+          size={28}
+        />
       </MarkerContent>
 
       {/* Tooltip on hover */}
