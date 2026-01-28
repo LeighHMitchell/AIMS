@@ -50,7 +50,7 @@ export function VersionBadge() {
               <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
                 v{latestRelease.version}
               </span>
-              <span className="text-xs text-muted-foreground">Latest</span>
+              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded" style={{ backgroundColor: '#3C6255', color: 'white' }}>Latest</span>
             </div>
           </div>
 

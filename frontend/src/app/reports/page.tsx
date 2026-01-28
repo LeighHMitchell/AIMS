@@ -180,14 +180,17 @@ export default function ReportsPage() {
 
         {/* Tabs for Standard vs Custom Reports */}
         <Tabs defaultValue="standard" className="w-full">
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap justify-center">
-            <TabsTrigger value="standard" className="gap-2">
+          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+            <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4" />
               Standard Reports
             </TabsTrigger>
-            <TabsTrigger value="custom" className="gap-2">
+            <TabsTrigger value="custom" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <BarChart3 className="h-4 w-4" />
               Design Your Own
+              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded" style={{ backgroundColor: '#3C6255', color: 'white' }}>
+                New
+              </span>
             </TabsTrigger>
           </TabsList>
 

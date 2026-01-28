@@ -29,9 +29,13 @@ const FIELD_LABELS: Record<string, string> = {
   'sector_category': 'Sector Category',
   'sector_percentage': 'Sector %',
   'aid_type': 'Aid Type',
+  'aid_type_code': 'Aid Type Code',
   'finance_type': 'Finance Type',
+  'finance_type_code': 'Finance Type Code',
   'flow_type': 'Flow Type',
+  'flow_type_code': 'Flow Type Code',
   'tied_status': 'Tied Status',
+  'tied_status_code': 'Tied Status Code',
   'activity_scope': 'Activity Scope',
   'collaboration_type': 'Collaboration Type',
 };
@@ -88,7 +92,8 @@ export async function GET(request: NextRequest) {
     }
     
     if (fiscalYears.length > 0) {
-      query = query.in('fiscal_year', fiscalYears.map(y => parseInt(y, 10)));
+      // fiscal_year is now TEXT in the view, so we keep them as strings
+      query = query.in('fiscal_year', fiscalYears);
     }
 
     // Apply row limit for performance

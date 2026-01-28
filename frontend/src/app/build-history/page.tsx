@@ -5,7 +5,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { History, Calendar, CheckCircle2, Sparkles } from 'lucide-react'
+import { History, Calendar, CheckCircle2, Rocket } from 'lucide-react'
 import releases from '@/data/releases.json'
 
 interface Release {
@@ -70,7 +70,7 @@ export default function BuildHistoryPage() {
                       }`}
                     >
                       {isLatest ? (
-                        <Sparkles className="h-5 w-5" />
+                        <Rocket className="h-5 w-5" />
                       ) : isFirst ? (
                         <CheckCircle2 className="h-5 w-5" />
                       ) : (
@@ -89,7 +89,7 @@ export default function BuildHistoryPage() {
                               </span>
                             </CardTitle>
                             {isLatest && (
-                              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              <Badge style={{ backgroundColor: '#3C6255', color: 'white' }} className="hover:opacity-90">
                                 Latest
                               </Badge>
                             )}

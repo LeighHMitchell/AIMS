@@ -296,6 +296,19 @@ function ActivityLocationMarker({
   
   if (isNaN(lat) || isNaN(lng)) return null;
 
+  const handleClick = () => {
+    if (map) {
+      // Position marker at the very top center of the map
+      const container = map.getContainer();
+      const mapHeight = container.clientHeight;
+      map.easeTo({
+        center: [lng, lat],
+        padding: { top: 60, bottom: mapHeight - 100 }, // Push marker to top of map
+        duration: 500,
+      });
+    }
+  };
+
   const handleDoubleClick = (e: MouseEvent) => {
     e.stopPropagation();
     if (map) {
@@ -311,6 +324,7 @@ function ActivityLocationMarker({
     <MapMarker
       longitude={lng}
       latitude={lat}
+      onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
       {/* Custom marker appearance */}
@@ -375,10 +389,19 @@ function ActivityLocationMarker({
           {location.location_name || 'Unnamed Location'}
         </h3>
         
-        {/* Activity Title */}
-        <div className="text-xs text-slate-500 mb-3">
-          {activity?.title || 'Untitled Activity'}
-        </div>
+        {/* Activity Title - Clickable to view activity */}
+        {activity?.id ? (
+          <a 
+            href={`/activities/${activity.id}`}
+            className="block text-xs text-slate-500 mb-3 hover:text-slate-700 cursor-pointer transition-colors"
+          >
+            {activity?.title || 'Untitled Activity'}
+          </a>
+        ) : (
+          <div className="text-xs text-slate-500 mb-3">
+            {activity?.title || 'Untitled Activity'}
+          </div>
+        )}
         
         <hr className="border-slate-200 mb-3" />
         
@@ -499,17 +522,6 @@ function ActivityLocationMarker({
           plannedEndDate={activity?.plannedEndDate} 
         />
         
-        {/* View Activity Link */}
-        {activity?.id && (
-          <div className="mt-3 pt-3 border-t border-slate-200">
-            <a 
-              href={`/activities/${activity.id}`}
-              className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium"
-            >
-              View Full Activity Details →
-            </a>
-          </div>
-        )}
       </MarkerPopup>
     </MapMarker>
   );

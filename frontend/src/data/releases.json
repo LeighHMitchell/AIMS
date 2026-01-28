@@ -1,6 +1,18 @@
 {
-  "currentVersion": "1.6.0",
+  "currentVersion": "1.6.1",
   "releases": [
+    {
+      "version": "1.6.1",
+      "date": "2026-01-28",
+      "changes": [
+        "Fixed pivot table displaying codes instead of names for Aid Type, Finance Type, Flow Type, and Tied Status",
+        "Added number format toggle - switch between abbreviated (K/M/B) and full numbers in pivot tables",
+        "Map markers now reposition to top of viewport when clicked for better popup visibility",
+        "Activity titles in map popups are now clickable links to the activity detail page",
+        "Improved pivot table data refresh handling when filters change",
+        "Fixed fiscal year filtering in pivot reports"
+      ]
+    },
     {
       "version": "1.6.0",
       "date": "2026-01-28",

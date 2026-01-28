@@ -70,16 +70,31 @@ const formatCompactCurrency = (amount?: number): string => {
 
 // Individual marker component for embedded map
 function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
+  const { map } = useMap();
   const lat = Number(location.latitude);
   const lng = Number(location.longitude);
   const statusInfo = getStatusInfo(location.activity?.status);
   
   if (isNaN(lat) || isNaN(lng)) return null;
 
+  const handleClick = () => {
+    if (map) {
+      // Position marker at the very top center of the map
+      const container = map.getContainer();
+      const mapHeight = container.clientHeight;
+      map.easeTo({
+        center: [lng, lat],
+        padding: { top: 60, bottom: mapHeight - 100 }, // Push marker to top of map
+        duration: 500,
+      });
+    }
+  };
+
   return (
     <MapMarker
       longitude={lng}
       latitude={lat}
+      onClick={handleClick}
     >
       <MarkerContent>
         <MapPin
@@ -124,9 +139,19 @@ function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
           </div>
         )}
         
-        <h3 className="font-bold text-sm text-slate-700 mb-2 leading-tight">
-          {location.activity?.title || 'Untitled Activity'}
-        </h3>
+        {/* Title - Clickable to view activity */}
+        {location.activity?.id ? (
+          <a 
+            href={`/activities/${location.activity.id}`}
+            className="block font-bold text-sm text-slate-700 mb-2 leading-tight hover:text-slate-500 cursor-pointer transition-colors"
+          >
+            {location.activity?.title || 'Untitled Activity'}
+          </a>
+        ) : (
+          <h3 className="font-bold text-sm text-slate-700 mb-2 leading-tight">
+            {location.activity?.title || 'Untitled Activity'}
+          </h3>
+        )}
         
         <hr className="border-slate-200 mb-2" />
         
@@ -164,16 +189,6 @@ function EmbeddedMarker({ location }: { location: EmbeddedLocation }) {
           </div>
         )}
         
-        {location.activity?.id && (
-          <div className="mt-2 pt-2 border-t border-slate-200">
-            <a 
-              href={`/activities/${location.activity.id}`}
-              className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium"
-            >
-              View Full Activity Details →
-            </a>
-          </div>
-        )}
       </MarkerPopup>
     </MapMarker>
   );

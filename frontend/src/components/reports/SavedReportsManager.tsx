@@ -108,6 +108,13 @@ export function SavedReportsManager({
       return
     }
 
+    // Validate config has required fields
+    if (!currentConfig || typeof currentConfig !== 'object') {
+      toast.error('Invalid report configuration')
+      console.error('Invalid config:', currentConfig)
+      return
+    }
+
     setIsSaving(true)
     try {
       const url = editingReportId 
@@ -116,30 +123,46 @@ export function SavedReportsManager({
       
       const method = editingReportId ? 'PATCH' : 'POST'
       
+      const payload = {
+        name: reportName.trim(),
+        description: reportDescription.trim() || null,
+        config: {
+          rows: currentConfig.rows || [],
+          cols: currentConfig.cols || [],
+          vals: currentConfig.vals || [],
+          aggregatorName: currentConfig.aggregatorName || 'Sum',
+          rendererName: currentConfig.rendererName || 'Table',
+          valueFilter: currentConfig.valueFilter || {},
+        },
+        is_public: isPublic,
+        is_template: isTemplate,
+      }
+      
+      console.log('[SavedReportsManager] Saving report:', { url, method, payload })
+      
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: reportName.trim(),
-          description: reportDescription.trim() || null,
-          config: currentConfig,
-          is_public: isPublic,
-          is_template: isTemplate,
-        }),
+        body: JSON.stringify(payload),
       })
 
+      const responseData = await response.json()
+      console.log('[SavedReportsManager] Save response:', { status: response.status, data: responseData })
+
       if (response.ok) {
-        toast.success(editingReportId ? 'Report updated' : 'Report saved')
+        toast.success(editingReportId ? 'Report updated' : 'Report saved successfully')
         setShowSaveDialog(false)
         resetSaveDialog()
         fetchSavedReports()
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to save report')
+        // Show more detailed error message
+        const errorMessage = responseData.details || responseData.error || 'Failed to save report'
+        console.error('[SavedReportsManager] Save failed:', responseData)
+        toast.error(errorMessage)
       }
     } catch (error) {
-      console.error('Error saving report:', error)
-      toast.error('Failed to save report')
+      console.error('[SavedReportsManager] Error saving report:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to save report. Please try again.')
     } finally {
       setIsSaving(false)
     }

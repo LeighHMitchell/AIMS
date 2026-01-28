@@ -110,7 +110,7 @@ export function SidebarNav({
         { name: "Search", href: "/search", show: true },
         { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true, underDevelopment: true },
         { name: "Portfolios", href: "/partners", show: true, underDevelopment: true },
-        { name: "Reports", href: "/reports", show: true, underDevelopment: true },
+        { name: "Reports", href: "/reports", show: true, isNew: true },
       ]
     },
     {
@@ -426,7 +426,7 @@ export function SidebarNav({
                               >
                                 {item.name}
                                 {'isNew' in item && item.isNew && (
-                                  <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full" style={{ backgroundColor: '#3C6255', color: 'white' }}>
+                                  <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded" style={{ backgroundColor: '#3C6255', color: 'white' }}>
                                     New
                                   </span>
                                 )}
@@ -456,9 +456,9 @@ export function SidebarNav({
                                       <span className="flex items-center gap-2">
                                         {item.name}
                                         {'isNew' in item && item.isNew && (
-                                          <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full" style={{ backgroundColor: '#3C6255', color: 'white' }}>
-                                            New
-                                          </span>
+<span className="px-1.5 py-0.5 text-[10px] font-semibold rounded" style={{ backgroundColor: '#3C6255', color: 'white' }}>
+                                    New
+                                  </span>
                                         )}
                                         {'underDevelopment' in item && item.underDevelopment && (
                                           <Construction className="h-3.5 w-3.5 text-gray-400" />

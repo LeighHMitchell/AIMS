@@ -299,6 +299,19 @@ function LocationMarker({ location }: { location: LocationData }) {
   
   if (isNaN(lat) || isNaN(lng)) return null;
 
+  const handleClick = () => {
+    if (map) {
+      // Position marker at the very top center of the map
+      const container = map.getContainer();
+      const mapHeight = container.clientHeight;
+      map.easeTo({
+        center: [lng, lat],
+        padding: { top: 60, bottom: mapHeight - 100 }, // Push marker to top of map
+        duration: 500,
+      });
+    }
+  };
+
   const handleDoubleClick = (e: MouseEvent) => {
     e.stopPropagation();
     if (map) {
@@ -314,6 +327,7 @@ function LocationMarker({ location }: { location: LocationData }) {
     <MapMarker
       longitude={lng}
       latitude={lat}
+      onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
       {/* Custom marker appearance */}
@@ -366,10 +380,13 @@ function LocationMarker({ location }: { location: LocationData }) {
           </div>
         )}
         
-        {/* Title */}
-        <h3 className="text-sm font-semibold text-slate-800 mb-3 leading-tight">
+        {/* Title - Clickable to view activity */}
+        <a 
+          href={`/activities/${location.activity_id}`}
+          className="block text-sm font-semibold text-slate-800 mb-3 leading-tight hover:text-slate-600 cursor-pointer transition-colors"
+        >
           {location.activity?.title || 'Untitled Activity'}
-        </h3>
+        </a>
         
         <hr className="border-slate-200 mb-3" />
         
@@ -470,15 +487,6 @@ function LocationMarker({ location }: { location: LocationData }) {
           plannedEndDate={location.activity?.plannedEndDate} 
         />
         
-        {/* View Activity Link */}
-        <div className="mt-3 pt-3 border-t border-slate-200">
-          <a 
-            href={`/activities/${location.activity_id}`}
-            className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium"
-          >
-            View Full Activity Details →
-          </a>
-        </div>
       </MarkerPopup>
     </MapMarker>
   );
