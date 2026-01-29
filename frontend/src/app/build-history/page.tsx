@@ -4,8 +4,13 @@ import React from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { History, Calendar, CheckCircle2, Rocket } from 'lucide-react'
+import { History, Calendar, CheckCircle2, Rocket, HelpCircle } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import releases from '@/data/releases.json'
 
 interface Release {
@@ -35,7 +40,26 @@ export default function BuildHistoryPage() {
             <div className="flex items-center space-x-3">
               <History className="h-8 w-8 text-gray-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Build History</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold text-gray-900">Build History</h1>
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground transition-colors">
+                          <HelpCircle className="h-5 w-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-xs p-3">
+                        <div className="space-y-1">
+                          <p className="font-medium text-sm">About Build History</p>
+                          <p className="text-xs text-muted-foreground">
+                            This page shows all production releases of æther Myanmar. Each release includes bug fixes, new features, and improvements. You can also hover over the version badge in the sidebar to see the latest changes at a glance.
+                          </p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   A timeline of all releases and updates to æther Myanmar
                 </p>
@@ -139,22 +163,6 @@ export default function BuildHistoryPage() {
             </div>
           </div>
 
-          {/* Help section */}
-          <Card className="mt-8 bg-muted/30 border-muted">
-            <CardContent className="p-4">
-              <div className="flex items-start space-x-3">
-                <History className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <h3 className="font-medium text-foreground mb-1">About Build History</h3>
-                  <p className="text-sm text-muted-foreground">
-                    This page shows all production releases of æther Myanmar. Each release includes 
-                    bug fixes, new features, and improvements. You can also hover over the version 
-                    badge in the sidebar to see the latest changes at a glance.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </MainLayout>

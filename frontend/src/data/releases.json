@@ -1,6 +1,20 @@
 {
-  "currentVersion": "1.6.1",
+  "currentVersion": "1.7.0",
   "releases": [
+    {
+      "version": "1.7.0",
+      "date": "2026-01-29",
+      "changes": [
+        "12 new pre-configured report templates including Regional Funding, Sector Trends, and Policy Marker Coverage",
+        "Added new pivot fields: State/Region, Implementing Partners, Funding Organizations, Policy Markers, Humanitarian Scope",
+        "Smart column sorting - Activity Status and Transaction Types now sort in logical order",
+        "Atlas map now shows activity counts per sector in the filter panel",
+        "Global loading bar indicator for Atlas map data loading",
+        "Option to show only sectors with activities in sector filter",
+        "Improved sector hierarchy filter with expandable categories",
+        "Enhanced map markers layer with better clustering performance"
+      ]
+    },
     {
       "version": "1.6.1",
       "date": "2026-01-28",

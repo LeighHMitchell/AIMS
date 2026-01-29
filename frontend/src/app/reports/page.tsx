@@ -185,10 +185,10 @@ export default function ReportsPage() {
               <FileText className="h-4 w-4" />
               Standard Reports
             </TabsTrigger>
-            <TabsTrigger value="custom" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="custom" className="group gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <BarChart3 className="h-4 w-4" />
               Design Your Own
-              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded" style={{ backgroundColor: '#3C6255', color: 'white' }}>
+              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-[#3C6255] text-white group-data-[state=active]:bg-white group-data-[state=active]:text-[#3C6255]">
                 New
               </span>
             </TabsTrigger>

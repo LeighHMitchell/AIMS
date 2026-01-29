@@ -12,6 +12,10 @@ const FIELD_LABELS: Record<string, string> = {
   'activity_status_code': 'Status Code',
   'start_date': 'Start Date',
   'end_date': 'End Date',
+  'planned_start_date': 'Planned Start Date',
+  'planned_end_date': 'Planned End Date',
+  'actual_start_date': 'Actual Start Date',
+  'actual_end_date': 'Actual End Date',
   'reporting_org_name': 'Development Partner',
   'reporting_org_type': 'Organization Type',
   'transaction_type': 'Transaction Type',
@@ -38,6 +42,16 @@ const FIELD_LABELS: Record<string, string> = {
   'tied_status_code': 'Tied Status Code',
   'activity_scope': 'Activity Scope',
   'collaboration_type': 'Collaboration Type',
+  // New fields
+  'subnational_region': 'State/Region',
+  'subnational_percentage': 'Regional %',
+  'is_nationwide': 'Is Nationwide',
+  'implementing_partners': 'Implementing Partners',
+  'funding_organizations': 'Funding Organizations',
+  'policy_markers_list': 'Policy Markers',
+  'is_humanitarian': 'Is Humanitarian',
+  'humanitarian_scope_type': 'Humanitarian Type',
+  'humanitarian_scope_code': 'Humanitarian Code',
 };
 
 export async function GET(request: NextRequest) {

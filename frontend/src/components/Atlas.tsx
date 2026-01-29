@@ -42,6 +42,7 @@ import { MapSearch } from '@/components/maps/MapSearch';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
 import { useOrganizations } from '@/hooks/use-organizations';
 import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/data/country-coordinates';
+import { useLoadingBar } from '@/hooks/useLoadingBar';
 
 // mapcn map components
 import { Map, MapControls, useMap } from '@/components/ui/map';
@@ -347,6 +348,7 @@ export default function Atlas() {
     sectors: [],
     subSectors: [],
   });
+  const [showOnlyActiveSectors, setShowOnlyActiveSectors] = useState(true);
 
   // Fetch organizations with logos
   const { organizations: allOrganizations } = useOrganizations();
@@ -406,6 +408,18 @@ export default function Atlas() {
     details: Record<string, any>;
   }>({ breakdowns: {}, details: {} });
   const [subnationalLoading, setSubnationalLoading] = useState(true);
+
+  // Global loading bar for top-of-screen progress indicator
+  const { startLoading, stopLoading } = useLoadingBar();
+
+  // Show/hide global loading bar based on loading state
+  useEffect(() => {
+    if (loading || subnationalLoading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [loading, subnationalLoading, startLoading, stopLoading]);
 
   // Fetch locations from API
   useEffect(() => {
@@ -504,6 +518,45 @@ export default function Atlas() {
 
     return filtered;
   }, [validLocations, statusFilter, orgFilter, sectorFilter]);
+
+  // Calculate activity counts per sector (based on status/org filters, but NOT sector filter)
+  // This ensures the counts show what's available to filter, not just what's currently selected
+  const sectorActivityCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    
+    // Filter locations by status and org only (not by sector)
+    let locationsForCounting = validLocations;
+    if (statusFilter.length > 0) {
+      locationsForCounting = locationsForCounting.filter(loc => 
+        loc.activity?.status && statusFilter.includes(loc.activity.status)
+      );
+    }
+    if (orgFilter.length > 0) {
+      locationsForCounting = locationsForCounting.filter(loc => 
+        loc.activity?.organization_name && orgFilter.includes(loc.activity.organization_name)
+      );
+    }
+    
+    // Track unique activities per sector to avoid double counting locations
+    const sectorActivities: Record<string, Set<string>> = {};
+    
+    locationsForCounting.forEach(location => {
+      const activityId = location.activity_id;
+      location.activity?.sectors?.forEach(sector => {
+        if (!sectorActivities[sector.code]) {
+          sectorActivities[sector.code] = new Set();
+        }
+        sectorActivities[sector.code].add(activityId);
+      });
+    });
+    
+    // Convert sets to counts
+    Object.entries(sectorActivities).forEach(([code, activities]) => {
+      counts[code] = activities.size;
+    });
+    
+    return counts;
+  }, [validLocations, statusFilter, orgFilter]);
 
   // Get unique organizations for filter with logo data
   const organizations = useMemo(() => {
@@ -775,6 +828,9 @@ export default function Atlas() {
                     onChange={setSectorFilter}
                     open={sectorFilterOpen}
                     onOpenChange={handleSectorFilterOpen}
+                    activityCounts={sectorActivityCounts}
+                    showOnlyActiveSectors={showOnlyActiveSectors}
+                    onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
                     className="!w-[280px] min-w-[280px] bg-white shadow-md border-gray-300 h-9 text-xs"
                   />
                   
@@ -829,7 +885,6 @@ export default function Atlas() {
                 
                 {/* MapLibre Map */}
                 <Map
-                  key={mapStyle === 'satellite_imagery' ? 'satellite' : 'standard'}
                   styles={{
                     light: MAP_STYLES[mapStyle].light,
                     dark: MAP_STYLES[mapStyle].dark,

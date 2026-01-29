@@ -19,6 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { createHierarchicalSectors } from '@/data/sector-hierarchy';
 
 export interface SectorFilterSelection {
@@ -35,6 +36,9 @@ interface SectorHierarchyFilterProps {
   availableSectorCodes?: string[]; // Optional: only show sectors that exist in data
   open?: boolean; // Controlled open state
   onOpenChange?: (open: boolean) => void; // Callback when open state changes
+  activityCounts?: Record<string, number>; // Map of sector code to activity count
+  showOnlyActiveSectors?: boolean; // Toggle to show only active sectors
+  onShowOnlyActiveSectorsChange?: (value: boolean) => void; // Callback for toggle change
 }
 
 interface HierarchicalSector {
@@ -59,6 +63,9 @@ export function SectorHierarchyFilter({
   availableSectorCodes,
   open: controlledOpen,
   onOpenChange,
+  activityCounts = {},
+  showOnlyActiveSectors = true,
+  onShowOnlyActiveSectorsChange,
 }: SectorHierarchyFilterProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -113,6 +120,41 @@ export function SectorHierarchyFilter({
 
     return { groupMap, categoryMap, sectorMap };
   }, [hierarchicalSectors]);
+
+  // Calculate aggregated activity counts for categories and groups
+  const aggregatedCounts = React.useMemo(() => {
+    const categoryCounts: Record<string, number> = {};
+    const groupCounts: Record<string, number> = {};
+    
+    // Aggregate sub-sector counts to categories
+    hierarchicalSectors.forEach(group => {
+      let groupTotal = 0;
+      group.categories.forEach(category => {
+        let categoryTotal = 0;
+        category.sectors.forEach(sector => {
+          const count = activityCounts[sector.code] || 0;
+          categoryTotal += count;
+        });
+        categoryCounts[category.code] = categoryTotal;
+        groupTotal += categoryTotal;
+      });
+      groupCounts[group.code] = groupTotal;
+    });
+    
+    return { categoryCounts, groupCounts };
+  }, [hierarchicalSectors, activityCounts]);
+
+  // Helper to get activity count for any sector code
+  const getActivityCount = (code: string, level: 'group' | 'category' | 'subsector'): number => {
+    if (level === 'group') return aggregatedCounts.groupCounts[code] || 0;
+    if (level === 'category') return aggregatedCounts.categoryCounts[code] || 0;
+    return activityCounts[code] || 0;
+  };
+
+  // Helper to check if a sector is inactive (has no activities)
+  const isInactive = (code: string, level: 'group' | 'category' | 'subsector'): boolean => {
+    return showOnlyActiveSectors && getActivityCount(code, level) === 0;
+  };
 
   // Filter sectors based on available codes if provided
   const filteredHierarchy = React.useMemo(() => {
@@ -300,19 +342,32 @@ export function SectorHierarchyFilter({
             )}
           </div>
           
+          {/* Show Only Active Sectors Toggle */}
+          <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+            <span className="text-xs font-medium text-muted-foreground">Show only active sectors</span>
+            <Switch 
+              checked={showOnlyActiveSectors} 
+              onCheckedChange={onShowOnlyActiveSectorsChange}
+            />
+          </div>
+          
           <Command shouldFilter={false}>
             {searchFilteredHierarchy.length === 0 && (
               <CommandEmpty>No sectors found.</CommandEmpty>
             )}
             <ScrollArea className="h-[400px]">
-              {searchFilteredHierarchy.map((group) => (
+              {searchFilteredHierarchy.map((group) => {
+                const groupCount = getActivityCount(group.code, 'group');
+                const groupInactive = isInactive(group.code, 'group');
+                return (
                 <React.Fragment key={group.code}>
                   <CommandGroup 
                     heading={
-                      <div className="flex items-center justify-between w-full">
-                        <span className="font-semibold text-foreground">
+                      <div className={cn("flex items-center justify-between w-full", groupInactive && "opacity-50")}>
+                        <span className={cn("font-semibold", groupInactive ? "text-gray-400" : "text-foreground")}>
                           <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2">{group.code}</code>
                           {group.name}
+                          <span className="text-gray-500 font-normal ml-1">({groupCount})</span>
                         </span>
                         <Badge 
                           variant={selected.sectorCategories.includes(group.code) ? "default" : "outline"}
@@ -327,13 +382,16 @@ export function SectorHierarchyFilter({
                       </div>
                     }
                   >
-                    {group.categories.map((category) => (
+                    {group.categories.map((category) => {
+                      const categoryCount = getActivityCount(category.code, 'category');
+                      const categoryInactive = isInactive(category.code, 'category');
+                      return (
                       <React.Fragment key={category.code}>
                         {/* Category Level (3-digit) */}
                         <CommandItem
                           value={`category-${category.code}`}
                           onSelect={() => handleToggleSector(category.code)}
-                          className="pl-4 font-medium bg-muted/30"
+                          className={cn("pl-4 font-medium bg-muted/30", categoryInactive && "opacity-50")}
                         >
                           <Check
                             className={cn(
@@ -342,19 +400,20 @@ export function SectorHierarchyFilter({
                             )}
                           />
                           <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2 shrink-0">{category.code}</code>
-                          <span className="truncate">{category.name}</span>
-                          <Badge variant="secondary" className="ml-auto text-[10px] shrink-0">
-                            {category.sectors.length}
-                          </Badge>
+                          <span className={cn("truncate", categoryInactive && "text-gray-400")}>{category.name}</span>
+                          <span className="text-gray-500 ml-1">({categoryCount})</span>
                         </CommandItem>
                         
                         {/* Sub-sector Level (5-digit) */}
-                        {category.sectors.map((sector) => (
+                        {category.sectors.map((sector) => {
+                          const sectorCount = getActivityCount(sector.code, 'subsector');
+                          const sectorInactive = isInactive(sector.code, 'subsector');
+                          return (
                           <CommandItem
                             key={sector.code}
                             value={`subsector-${sector.code}`}
                             onSelect={() => handleToggleSubSector(sector.code)}
-                            className="pl-8"
+                            className={cn("pl-8", sectorInactive && "opacity-50")}
                           >
                             <Check
                               className={cn(
@@ -363,15 +422,19 @@ export function SectorHierarchyFilter({
                               )}
                             />
                             <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2 shrink-0">{sector.code}</code>
-                            <span className="truncate">{sector.name}</span>
+                            <span className={cn("truncate", sectorInactive && "text-gray-400")}>{sector.name}</span>
+                            <span className="text-gray-500 ml-1">({sectorCount})</span>
                           </CommandItem>
-                        ))}
+                          );
+                        })}
                       </React.Fragment>
-                    ))}
+                      );
+                    })}
                   </CommandGroup>
                   <CommandSeparator />
                 </React.Fragment>
-              ))}
+                );
+              })}
             </ScrollArea>
           </Command>
           

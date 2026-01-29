@@ -32,6 +32,9 @@ const PivotTableUI = dynamic(
 // Import CSS for react-pivottable
 import 'react-pivottable/pivottable.css'
 
+// Import sorting utilities from react-pivottable
+import { naturalSort, sortAs } from 'react-pivottable/Utilities'
+
 // Field label mapping for user-friendly names
 const FIELD_LABELS: Record<string, string> = {
   'activity_id': 'Activity ID',
@@ -41,6 +44,10 @@ const FIELD_LABELS: Record<string, string> = {
   'activity_status_code': 'Status Code',
   'start_date': 'Start Date',
   'end_date': 'End Date',
+  'planned_start_date': 'Planned Start Date',
+  'planned_end_date': 'Planned End Date',
+  'actual_start_date': 'Actual Start Date',
+  'actual_end_date': 'Actual End Date',
   'reporting_org_name': 'Development Partner',
   'reporting_org_type': 'Organization Type',
   'transaction_type': 'Transaction Type',
@@ -67,6 +74,16 @@ const FIELD_LABELS: Record<string, string> = {
   'tied_status_code': 'Tied Status Code',
   'activity_scope': 'Activity Scope',
   'collaboration_type': 'Collaboration Type',
+  // New fields
+  'subnational_region': 'State/Region',
+  'subnational_percentage': 'Regional %',
+  'is_nationwide': 'Is Nationwide',
+  'implementing_partners': 'Implementing Partners',
+  'funding_organizations': 'Funding Organizations',
+  'policy_markers_list': 'Policy Markers',
+  'is_humanitarian': 'Is Humanitarian',
+  'humanitarian_scope_type': 'Humanitarian Type',
+  'humanitarian_scope_code': 'Humanitarian Code',
 }
 
 // Attributes to hide from the pivot UI (internal IDs and codes)
@@ -84,7 +101,66 @@ const HIDDEN_ATTRIBUTES = [
   'activity_created_at',
   'activity_updated_at',
   'transaction_created_at',
+  // Hide some internal fields from new additions
+  'subnational_percentage',
+  'is_nationwide',
+  'humanitarian_scope_code',
 ]
+
+// Custom sorters for pivot table columns and rows
+// Uses friendly field labels (not database column names)
+const PIVOT_SORTERS: Record<string, (a: string, b: string) => number> = {
+  // Numeric fields - use natural sort for proper number ordering
+  'Year': naturalSort,
+  'Month': naturalSort,
+  'Amount (USD)': naturalSort,
+  'Original Amount': naturalSort,
+  'Sector %': naturalSort,
+  'Sector Code': naturalSort,
+  'Status Code': naturalSort,
+  'Transaction Type Code': naturalSort,
+  'Aid Type Code': naturalSort,
+  'Finance Type Code': naturalSort,
+  'Flow Type Code': naturalSort,
+  'Tied Status Code': naturalSort,
+  'Sector Category Code': naturalSort,
+  
+  // Date fields - natural sort handles ISO date strings correctly
+  'Transaction Date': naturalSort,
+  'Start Date': naturalSort,
+  'End Date': naturalSort,
+  
+  // Activity Status - logical progression order
+  'Activity Status': sortAs([
+    'Pipeline/Identification',
+    'Implementation',
+    'Finalisation',
+    'Closed',
+    'Cancelled',
+    'Suspended',
+  ]),
+  
+  // Transaction Types - logical order (commitments before disbursements)
+  'Transaction Type': sortAs([
+    'Incoming Commitment',
+    'Outgoing Commitment',
+    'Commitment',
+    'Incoming Funds',
+    'Disbursement',
+    'Expenditure',
+    'Interest Payment',
+    'Loan Repayment',
+    'Reimbursement',
+    'Purchase of Equity',
+    'Sale of Equity',
+    'Credit Guarantee',
+    'Incoming Pledge',
+    'Outgoing Pledge',
+  ]),
+  
+  // Quarter - sort Q1, Q2, Q3, Q4 in order
+  'Quarter': sortAs(['Q1', 'Q2', 'Q3', 'Q4']),
+}
 
 // Number formatting utility
 function formatNumber(value: number, abbreviated: boolean): string {
@@ -97,11 +173,277 @@ function formatNumber(value: number, abbreviated: boolean): string {
   return value.toLocaleString('en-US', { maximumFractionDigits: 2 })
 }
 
-// Default pivot configuration
+// Create custom aggregators with configurable number formatting
+// react-pivottable expects: aggregator(attributeArray)() -> returns aggregator instance
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function createCustomAggregators(abbreviated: boolean): Record<string, any> {
+  const fmt = (value: number) => formatNumber(value, abbreviated)
+  
+  return {
+    'Count': () => () => {
+      let count = 0
+      return {
+        push: () => { count++ },
+        value: () => count,
+        format: fmt,
+      }
+    },
+    
+    'Count Unique Values': ([attr]: string[]) => () => {
+      const seen = new Set<unknown>()
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) seen.add(record[attr])
+        },
+        value: () => seen.size,
+        format: fmt,
+        numInputs: 1,
+      }
+    },
+    
+    'List Unique Values': ([attr]: string[]) => () => {
+      const seen = new Set<string>()
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            const val = record[attr]
+            if (val !== null && val !== undefined) {
+              seen.add(String(val))
+            }
+          }
+        },
+        value: () => Array.from(seen).sort().join(', '),
+        format: (v: unknown) => String(v),
+        numInputs: 1,
+      }
+    },
+    
+    'Sum': ([attr]: string[]) => () => {
+      let total = 0
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            const val = parseFloat(String(record[attr]))
+            if (!isNaN(val)) total += val
+          }
+        },
+        value: () => total,
+        format: fmt,
+        numInputs: 1,
+      }
+    },
+    
+    'Integer Sum': ([attr]: string[]) => () => {
+      let total = 0
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            const val = parseInt(String(record[attr]), 10)
+            if (!isNaN(val)) total += val
+          }
+        },
+        value: () => total,
+        format: (v: number) => formatNumber(Math.round(v), abbreviated),
+        numInputs: 1,
+      }
+    },
+    
+    'Average': ([attr]: string[]) => () => {
+      let total = 0
+      let count = 0
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            const val = parseFloat(String(record[attr]))
+            if (!isNaN(val)) {
+              total += val
+              count++
+            }
+          }
+        },
+        value: () => (count > 0 ? total / count : 0),
+        format: fmt,
+        numInputs: 1,
+      }
+    },
+    
+    'Median': ([attr]: string[]) => () => {
+      const values: number[] = []
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            const val = parseFloat(String(record[attr]))
+            if (!isNaN(val)) values.push(val)
+          }
+        },
+        value: () => {
+          if (values.length === 0) return 0
+          const sorted = [...values].sort((a, b) => a - b)
+          const mid = Math.floor(sorted.length / 2)
+          return sorted.length % 2 !== 0
+            ? sorted[mid]
+            : (sorted[mid - 1] + sorted[mid]) / 2
+        },
+        format: fmt,
+        numInputs: 1,
+      }
+    },
+    
+    'Minimum': ([attr]: string[]) => () => {
+      let min = Infinity
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            const val = parseFloat(String(record[attr]))
+            if (!isNaN(val) && val < min) min = val
+          }
+        },
+        value: () => (min === Infinity ? 0 : min),
+        format: fmt,
+        numInputs: 1,
+      }
+    },
+    
+    'Maximum': ([attr]: string[]) => () => {
+      let max = -Infinity
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            const val = parseFloat(String(record[attr]))
+            if (!isNaN(val) && val > max) max = val
+          }
+        },
+        value: () => (max === -Infinity ? 0 : max),
+        format: fmt,
+        numInputs: 1,
+      }
+    },
+    
+    'First': ([attr]: string[]) => () => {
+      let first: unknown = null
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (first === null && attr) {
+            first = record[attr]
+          }
+        },
+        value: () => first,
+        format: (v: unknown) => (v === null ? '' : String(v)),
+        numInputs: 1,
+      }
+    },
+    
+    'Last': ([attr]: string[]) => () => {
+      let last: unknown = null
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            last = record[attr]
+          }
+        },
+        value: () => last,
+        format: (v: unknown) => (v === null ? '' : String(v)),
+        numInputs: 1,
+      }
+    },
+    
+    'Sum over Sum': ([attr1, attr2]: string[]) => () => {
+      let sumNum = 0
+      let sumDenom = 0
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr1 && attr2) {
+            const num = parseFloat(String(record[attr1]))
+            const denom = parseFloat(String(record[attr2]))
+            if (!isNaN(num)) sumNum += num
+            if (!isNaN(denom)) sumDenom += denom
+          }
+        },
+        value: () => (sumDenom !== 0 ? sumNum / sumDenom : 0),
+        format: fmt,
+        numInputs: 2,
+      }
+    },
+    
+    'Sum as Fraction of Total': ([attr]: string[]) => () => {
+      let sum = 0
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            const val = parseFloat(String(record[attr]))
+            if (!isNaN(val)) sum += val
+          }
+        },
+        value: () => sum,
+        format: (v: number) => `${(v * 100).toFixed(1)}%`,
+        numInputs: 1,
+      }
+    },
+    
+    'Sum as Fraction of Rows': ([attr]: string[]) => () => {
+      let sum = 0
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            const val = parseFloat(String(record[attr]))
+            if (!isNaN(val)) sum += val
+          }
+        },
+        value: () => sum,
+        format: (v: number) => `${(v * 100).toFixed(1)}%`,
+        numInputs: 1,
+      }
+    },
+    
+    'Sum as Fraction of Columns': ([attr]: string[]) => () => {
+      let sum = 0
+      return {
+        push: (record: Record<string, unknown>) => {
+          if (attr) {
+            const val = parseFloat(String(record[attr]))
+            if (!isNaN(val)) sum += val
+          }
+        },
+        value: () => sum,
+        format: (v: number) => `${(v * 100).toFixed(1)}%`,
+        numInputs: 1,
+      }
+    },
+    
+    'Count as Fraction of Total': () => () => {
+      let count = 0
+      return {
+        push: () => { count++ },
+        value: () => count,
+        format: (v: number) => `${(v * 100).toFixed(1)}%`,
+      }
+    },
+    
+    'Count as Fraction of Rows': () => () => {
+      let count = 0
+      return {
+        push: () => { count++ },
+        value: () => count,
+        format: (v: number) => `${(v * 100).toFixed(1)}%`,
+      }
+    },
+    
+    'Count as Fraction of Columns': () => () => {
+      let count = 0
+      return {
+        push: () => { count++ },
+        value: () => count,
+        format: (v: number) => `${(v * 100).toFixed(1)}%`,
+      }
+    },
+  }
+}
+
+// Default pivot configuration (uses friendly labels to match transformed data)
 const DEFAULT_PIVOT_STATE: PivotConfig = {
-  rows: ['fiscal_year'],
-  cols: ['reporting_org_name'],
-  vals: ['transaction_value_usd'],
+  rows: ['Year'],
+  cols: ['Development Partner'],
+  vals: ['Amount (USD)'],
   aggregatorName: 'Sum',
   rendererName: 'Table',
 }
@@ -118,8 +460,8 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
   const [dataInfo, setDataInfo] = useState<{ totalRows: number; truncated: boolean } | null>(null)
   const [dataVersion, setDataVersion] = useState(0) // Used to force pivot re-render when data changes
   
-  // Number format toggle (default: abbreviated)
-  const [useAbbreviatedNumbers, setUseAbbreviatedNumbers] = useState(true)
+  // Number format toggle (default: full numbers)
+  const [useAbbreviatedNumbers, setUseAbbreviatedNumbers] = useState(false)
   
   // Field search filter
   const [fieldSearch, setFieldSearch] = useState('')
@@ -134,6 +476,12 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
     transactionTypes: [],
     fiscalYears: [],
   })
+
+  // Memoized custom aggregators - rebuilt when number format toggle changes
+  const customAggregators = useMemo(
+    () => createCustomAggregators(useAbbreviatedNumbers),
+    [useAbbreviatedNumbers]
+  )
 
   // Transform data to use friendly field names
   const transformData = useCallback((data: Record<string, unknown>[]) => {
@@ -292,11 +640,11 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
                     className="gap-2 min-w-[100px]"
                   >
                     <Hash className="h-4 w-4" />
-                    {useAbbreviatedNumbers ? '23.2M' : 'Full'}
+                    {useAbbreviatedNumbers ? 'Compact' : 'Full #s'}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{useAbbreviatedNumbers ? 'Click to show full numbers' : 'Click to show abbreviated numbers'}</p>
+                  <p>{useAbbreviatedNumbers ? 'Currently showing compact (1.2M). Click to show full numbers.' : 'Currently showing full numbers. Click to show compact (1.2M).'}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -393,16 +741,12 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
                 key={`pivot-${dataVersion}-${useAbbreviatedNumbers}`}
                 data={reportData}
                 onChange={(s: PivotConfig) => setPivotState(s)}
-                rows={pivotState.rows}
-                cols={pivotState.cols}
-                vals={pivotState.vals}
-                aggregatorName={pivotState.aggregatorName}
-                rendererName={pivotState.rendererName}
-                valueFilter={pivotState.valueFilter}
+                {...pivotState}
+                sorters={PIVOT_SORTERS}
+                aggregators={customAggregators}
                 hiddenAttributes={computedHiddenAttributes}
                 hiddenFromAggregators={['Activity Title', 'IATI Identifier', 'Activity ID']}
                 unusedOrientationCutoff={Infinity}
-                {...pivotState}
               />
             </div>
           )}
@@ -415,6 +759,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
             <li>Drag field names from the unused area to &ldquo;rows&rdquo; or &ldquo;columns&rdquo; to create your pivot table structure</li>
             <li>Click the dropdown arrow on a field to filter values, or drag it back to remove</li>
             <li>Drag numeric fields to &ldquo;values&rdquo; and select an aggregation (Sum, Average, Count, etc.)</li>
+            <li>Columns and rows are automatically sorted (years, dates, amounts numerically; statuses and transaction types logically)</li>
             <li>Use the search box above to quickly find fields by name</li>
             <li>Toggle the number format button to switch between abbreviated (23.2M) and full values</li>
             <li>Use the renderer dropdown to switch between table, heatmap, and chart views</li>

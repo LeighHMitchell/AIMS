@@ -4,6 +4,17 @@
 declare module 'react-pivottable/PivotTableUI' {
   import * as React from 'react';
   
+  // Aggregator instance returned by aggregator factory
+  export interface Aggregator {
+    push: (record: Record<string, unknown>) => void;
+    value: () => number;
+    format: (value: number) => string;
+    numInputs?: number;
+  }
+  
+  // Aggregator factory function type
+  export type AggregatorFactory = (attributeArray: string[]) => Aggregator;
+  
   export interface PivotTableUIProps {
     data: Record<string, unknown>[];
     onChange: (state: PivotState) => void;
@@ -20,6 +31,7 @@ declare module 'react-pivottable/PivotTableUI' {
     hiddenFromDragDrop?: string[];
     unusedOrientationCutoff?: number;
     menuLimit?: number;
+    aggregators?: Record<string, AggregatorFactory>;
     [key: string]: unknown;
   }
   

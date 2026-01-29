@@ -247,10 +247,9 @@ export function SectorMiniBar({
                 />
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs">
-                <div className="text-xs flex flex-wrap items-baseline gap-1.5">
-                  <span className="font-mono text-[11px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{sector.code}</span>
-                  <span className="font-medium">{displayName.replace(/^\d+\s*[-–]\s*/, '')}</span>
-                  <span className="text-gray-500">{percentage}%</span>
+                <div className="text-xs">
+                  <div className="font-medium">{sector.code} {displayName.replace(/^\d+\s*[-–]\s*/, '')}</div>
+                  <div className="text-gray-500">{percentage}%</div>
                 </div>
               </TooltipContent>
             </Tooltip>

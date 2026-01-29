@@ -90,7 +90,7 @@ const getStatusInfo = (status?: string): { label: string; color: string; bgColor
     '3': { label: 'Finalisation', color: '#d97706', bgColor: '#fef3c7' },
     '4': { label: 'Closed', color: '#374151', bgColor: '#e5e7eb' },
     '5': { label: 'Cancelled', color: '#dc2626', bgColor: '#fee2e2' },
-    '6': { label: 'Suspended', color: '#9333ea', bgColor: '#f3e8ff' },
+    '6': { label: 'Suspended', color: '#6b7280', bgColor: '#f3f4f6' },
   };
   const key = status?.toLowerCase() || '';
   return statusMap[key] || statusMap[status || ''] || { label: status || 'Unknown', color: '#6b7280', bgColor: '#f3f4f6' };
@@ -229,7 +229,39 @@ function TimelineProgress({
   );
 }
 
-// Sector breakdown bar component with hover popup
+// Individual sector segment component with hover
+function SectorSegment({ sector, width }: { sector: SectorData & { normalizedPercentage: number }, width: number }) {
+  const color = getSectorColor(sector.categoryCode || sector.code);
+  
+  return (
+    <HoverCard openDelay={200} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        <div
+          style={{ width: `${width}%`, backgroundColor: color }}
+          className="h-full cursor-pointer"
+        />
+      </HoverCardTrigger>
+      <HoverCardContent 
+        className="w-auto p-2 px-3" 
+        side="top" 
+        align="center"
+        style={{ backgroundColor: 'white' }}
+      >
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <div 
+            className="w-2.5 h-2.5 rounded-sm flex-shrink-0" 
+            style={{ backgroundColor: color }}
+          />
+          <span className="text-xs font-mono text-slate-700">{sector.code}</span>
+          <span className="text-xs text-slate-700">{sector.name || sector.categoryName || 'Unknown Sector'}</span>
+          <span className="text-xs font-semibold text-slate-800">{sector.percentage}%</span>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
+// Sector breakdown bar component with individual hover
 function SectorBar({ sectors }: { sectors?: SectorData[] }) {
   if (!sectors || sectors.length === 0) return null;
   
@@ -242,50 +274,18 @@ function SectorBar({ sectors }: { sectors?: SectorData[] }) {
   return (
     <div className="mb-3">
       <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1.5">Sector Breakdown</div>
-      <HoverCard openDelay={200} closeDelay={100}>
-        <HoverCardTrigger asChild>
-          <div className="flex h-3 rounded-full overflow-hidden bg-slate-100 cursor-pointer">
-            {normalizedSectors.map((sector, idx) => {
-              const color = getSectorColor(sector.categoryCode || sector.code);
-              const width = Math.max(sector.normalizedPercentage, 2);
-              return (
-                <div
-                  key={idx}
-                  style={{ width: `${width}%`, backgroundColor: color }}
-                  className="h-full"
-                />
-              );
-            })}
-          </div>
-        </HoverCardTrigger>
-        <HoverCardContent 
-          className="w-80 p-3" 
-          side="top" 
-          align="start"
-          style={{ backgroundColor: 'white' }}
-        >
-          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-2">Sectors</div>
-          <div className="space-y-1.5">
-            {normalizedSectors.map((sector, idx) => {
-              const color = getSectorColor(sector.categoryCode || sector.code);
-              return (
-                <div key={idx} className="flex items-center gap-2">
-                  <div 
-                    className="w-2.5 h-2.5 rounded-sm flex-shrink-0" 
-                    style={{ backgroundColor: color }}
-                  />
-                  <span className="text-xs text-slate-700 flex-1">
-                    {sector.name || sector.categoryName || 'Unknown Sector'}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-800">
-                    {sector.percentage}%
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </HoverCardContent>
-      </HoverCard>
+      <div className="flex h-3 rounded-full overflow-hidden bg-slate-100">
+        {normalizedSectors.map((sector, idx) => {
+          const width = Math.max(sector.normalizedPercentage, 2);
+          return (
+            <SectorSegment
+              key={idx}
+              sector={sector}
+              width={width}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -383,7 +383,7 @@ function LocationMarker({ location }: { location: LocationData }) {
         {/* Title - Clickable to view activity */}
         <a 
           href={`/activities/${location.activity_id}`}
-          className="block text-sm font-semibold text-slate-800 mb-3 leading-tight hover:text-slate-600 cursor-pointer transition-colors"
+          className="block text-base font-semibold text-slate-800 mb-3 leading-tight hover:text-slate-600 cursor-pointer transition-colors pr-6"
         >
           {location.activity?.title || 'Untitled Activity'}
         </a>
@@ -408,7 +408,7 @@ function LocationMarker({ location }: { location: LocationData }) {
             <span className="text-xs text-slate-700">
               {location.activity?.organization_name || '-'}
               {location.activity?.organization_acronym && location.activity?.organization_acronym !== location.activity?.organization_name && (
-                <span className="text-slate-500"> ({location.activity.organization_acronym})</span>
+                <span className="text-slate-700"> ({location.activity.organization_acronym})</span>
               )}
             </span>
           </div>
@@ -431,6 +431,9 @@ function LocationMarker({ location }: { location: LocationData }) {
           <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-0.5">Address</div>
           <div className="text-xs text-slate-700 leading-snug">{getFullAddress(location)}</div>
         </div>
+        
+        {/* Divider */}
+        <hr className="border-slate-200 mb-3" />
         
         {/* Coordinates */}
         <div className="mb-3">
@@ -455,8 +458,14 @@ function LocationMarker({ location }: { location: LocationData }) {
           </div>
         </div>
         
+        {/* Divider */}
+        <hr className="border-slate-200 mb-3" />
+        
         {/* Sector Breakdown */}
         <SectorBar sectors={location.activity?.sectors} />
+        
+        {/* Divider */}
+        <hr className="border-slate-200 mb-3" />
         
         {/* Financial Summary */}
         <div className="mb-3">
@@ -480,6 +489,9 @@ function LocationMarker({ location }: { location: LocationData }) {
             </div>
           </div>
         </div>
+        
+        {/* Divider */}
+        <hr className="border-slate-200 mb-3" />
         
         {/* Timeline Progress Visualization */}
         <TimelineProgress 

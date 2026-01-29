@@ -11,16 +11,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   Save, 
   FolderOpen, 
@@ -30,9 +28,18 @@ import {
   Globe,
   Clock,
   User,
-  FileText
+  FileText,
+  LayoutGrid,
+  Pencil
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 export interface PivotConfig {
   rows: string[]
@@ -216,94 +223,108 @@ export function SavedReportsManager({
     setShowSaveDialog(true)
   }
 
+  // State for load report popover
+  const [loadPopoverOpen, setLoadPopoverOpen] = useState(false)
+
   // Group reports by type
   const templateReports = savedReports.filter(r => r.is_template)
   const publicReports = savedReports.filter(r => r.is_public && !r.is_template)
   const myReports = savedReports.filter(r => !r.is_template && !r.is_public)
+  // Combine user reports (my reports + public from others)
+  const userReports = [...myReports, ...publicReports]
+
+  const handleLoadAndClose = (report: SavedReport) => {
+    handleLoad(report)
+    setLoadPopoverOpen(false)
+  }
 
   return (
     <>
       <div className="flex items-center gap-2">
-        {/* Load Reports Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        {/* Load Reports Popover */}
+        <Popover open={loadPopoverOpen} onOpenChange={setLoadPopoverOpen}>
+          <PopoverTrigger asChild>
             <Button variant="outline" className="gap-2">
-              <FolderOpen className="h-4 w-4" />
+              <LayoutGrid className="h-4 w-4" />
               Load Report
               <ChevronDown className="h-4 w-4" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-72">
-            {isLoading ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Loading...
-              </div>
-            ) : savedReports.length === 0 ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                No saved reports
-              </div>
-            ) : (
-              <>
-                {/* Templates */}
-                {templateReports.length > 0 && (
-                  <>
-                    <DropdownMenuLabel className="flex items-center gap-2 text-xs">
-                      <Star className="h-3 w-3 text-yellow-500" />
-                      Templates
-                    </DropdownMenuLabel>
-                    {templateReports.map(report => (
-                      <ReportMenuItem 
-                        key={report.id} 
-                        report={report} 
-                        onLoad={handleLoad}
-                        onEdit={isAdmin ? handleEditClick : undefined}
-                        onDelete={isAdmin ? handleDelete : undefined}
-                      />
-                    ))}
-                    <DropdownMenuSeparator />
-                  </>
-                )}
+          </PopoverTrigger>
+          <PopoverContent 
+            align="end" 
+            className="w-[1200px] p-0"
+            sideOffset={8}
+          >
+            <TooltipProvider delayDuration={300}>
+              {isLoading ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Loading reports...
+                </div>
+              ) : (
+                <div className="flex divide-x">
+                  {/* Left Side: Template Reports */}
+                  <div className="flex-[3] p-4">
+                    <div className="flex items-center gap-2 mb-3 pb-2 border-b">
+                      <Star className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="font-semibold text-sm">Report Templates</h3>
+                      <span className="text-xs text-muted-foreground">({templateReports.length})</span>
+                    </div>
+                    <ScrollArea className="h-[280px]">
+                      {templateReports.length === 0 ? (
+                        <div className="text-sm text-muted-foreground text-center py-8">
+                          No templates available
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-5 gap-3 pr-2">
+                          {templateReports.map(report => (
+                            <ReportCard 
+                              key={report.id} 
+                              report={report} 
+                              onLoad={handleLoadAndClose}
+                              onEdit={isAdmin ? handleEditClick : undefined}
+                              onDelete={isAdmin ? handleDelete : undefined}
+                              variant="template"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </div>
 
-                {/* Public Reports */}
-                {publicReports.length > 0 && (
-                  <>
-                    <DropdownMenuLabel className="flex items-center gap-2 text-xs">
-                      <Globe className="h-3 w-3 text-blue-500" />
-                      Public Reports
-                    </DropdownMenuLabel>
-                    {publicReports.map(report => (
-                      <ReportMenuItem 
-                        key={report.id} 
-                        report={report} 
-                        onLoad={handleLoad}
-                      />
-                    ))}
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-
-                {/* My Reports */}
-                {myReports.length > 0 && (
-                  <>
-                    <DropdownMenuLabel className="flex items-center gap-2 text-xs">
-                      <User className="h-3 w-3 text-green-500" />
-                      My Reports
-                    </DropdownMenuLabel>
-                    {myReports.map(report => (
-                      <ReportMenuItem 
-                        key={report.id} 
-                        report={report} 
-                        onLoad={handleLoad}
-                        onEdit={handleEditClick}
-                        onDelete={handleDelete}
-                      />
-                    ))}
-                  </>
-                )}
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                  {/* Right Side: User Reports */}
+                  <div className="flex-[2] p-4">
+                    <div className="flex items-center gap-2 mb-3 pb-2 border-b">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="font-semibold text-sm">My Saved Reports</h3>
+                      <span className="text-xs text-muted-foreground">({userReports.length})</span>
+                    </div>
+                    <ScrollArea className="h-[280px]">
+                      {userReports.length === 0 ? (
+                        <div className="text-sm text-muted-foreground text-center py-8">
+                          <p>No saved reports yet</p>
+                          <p className="text-xs mt-1">Configure your pivot table and click &quot;Save Report&quot;</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-3 pr-2">
+                          {userReports.map(report => (
+                            <ReportCard 
+                              key={report.id} 
+                              report={report} 
+                              onLoad={handleLoadAndClose}
+                              onEdit={report.is_public && report.created_by !== null ? undefined : handleEditClick}
+                              onDelete={report.is_public && report.created_by !== null ? undefined : handleDelete}
+                              variant={report.is_public ? "public" : "user"}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </div>
+                </div>
+              )}
+            </TooltipProvider>
+          </PopoverContent>
+        </Popover>
 
         {/* Save Button */}
         <Button onClick={openSaveDialog} variant="outline" className="gap-2">
@@ -384,56 +405,65 @@ export function SavedReportsManager({
   )
 }
 
-// Report menu item sub-component
-interface ReportMenuItemProps {
+// Report card sub-component for grid layout
+interface ReportCardProps {
   report: SavedReport
   onLoad: (report: SavedReport) => void
   onEdit?: (report: SavedReport) => void
   onDelete?: (reportId: string) => void
+  variant: 'template' | 'user' | 'public'
 }
 
-function ReportMenuItem({ report, onLoad, onEdit, onDelete }: ReportMenuItemProps) {
-  return (
-    <div className="group relative">
-      <DropdownMenuItem 
-        onClick={() => onLoad(report)}
-        className="flex items-start gap-2 pr-16"
-      >
-        <FileText className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-        <div className="min-w-0 flex-1">
-          <div className="font-medium truncate">{report.name}</div>
-          {report.description && (
-            <div className="text-xs text-muted-foreground truncate">
-              {report.description}
-            </div>
-          )}
-          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-            <Clock className="h-3 w-3" />
-            {new Date(report.updated_at).toLocaleDateString()}
-          </div>
+function ReportCard({ report, onLoad, onEdit, onDelete, variant }: ReportCardProps) {
+  const cardContent = (
+    <div 
+      className="group relative rounded-md border bg-card p-3 cursor-pointer transition-all hover:shadow-md hover:border-foreground/20 hover:bg-accent/50"
+      onClick={() => onLoad(report)}
+    >
+      {/* Icon badge */}
+      <div className="absolute -top-2 -right-2 rounded-full p-1 bg-background shadow-sm border text-muted-foreground">
+        {variant === 'template' && <Star className="h-3 w-3" />}
+        {variant === 'user' && <User className="h-3 w-3" />}
+        {variant === 'public' && <Globe className="h-3 w-3" />}
+      </div>
+
+      {/* Content */}
+      <div className="pr-4">
+        <div className="font-medium text-sm leading-tight line-clamp-2 mb-1">
+          {report.name}
         </div>
-      </DropdownMenuItem>
-      
+        {report.description && (
+          <div className="text-xs text-muted-foreground line-clamp-1 mb-2">
+            {report.description}
+          </div>
+        )}
+        <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {new Date(report.updated_at).toLocaleDateString()}
+        </div>
+      </div>
+
+      {/* Action buttons */}
       {(onEdit || onDelete) && (
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute bottom-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {onEdit && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-6 w-6 bg-background/80 hover:bg-background"
               onClick={(e) => {
                 e.stopPropagation()
                 onEdit(report)
               }}
             >
-              <Save className="h-3 w-3" />
+              <Pencil className="h-3 w-3" />
             </Button>
           )}
           {onDelete && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-destructive hover:text-destructive"
+              className="h-6 w-6 bg-background/80 hover:bg-background text-destructive hover:text-destructive"
               onClick={(e) => {
                 e.stopPropagation()
                 onDelete(report.id)
@@ -445,5 +475,24 @@ function ReportMenuItem({ report, onLoad, onEdit, onDelete }: ReportMenuItemProp
         </div>
       )}
     </div>
+  )
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {cardContent}
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-xs">
+        <div className="space-y-1">
+          <p className="font-semibold">{report.name}</p>
+          {report.description && (
+            <p className="text-xs text-muted-foreground">{report.description}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Last updated: {new Date(report.updated_at).toLocaleDateString()}
+          </p>
+        </div>
+      </TooltipContent>
+    </Tooltip>
   )
 }
