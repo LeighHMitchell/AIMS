@@ -586,21 +586,21 @@ export function OrganizationSpendTrajectoryChart({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold">Portfolio Spend Trajectory</CardTitle>
           <div className="flex items-center gap-2">
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex">
               <Button
-                variant={viewMode === 'chart' ? 'default' : 'ghost'}
+                variant={viewMode === 'chart' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('chart')}
-                className="h-7 px-2"
+                className="h-7 px-2 rounded-r-none"
                 title="Chart view"
               >
                 <BarChart3 className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className="h-7 px-2"
+                className="h-7 px-2 rounded-l-none"
                 title="Table view"
               >
                 <TableIcon className="h-4 w-4" />

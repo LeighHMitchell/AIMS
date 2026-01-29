@@ -121,7 +121,7 @@
     "jspdf-autotable": "^5.0.2",
     "lodash": "^4.17.21",
     "lru-cache": "^11.1.0",
-    "lucide-react": "^0.323.0",
+    "lucide-react": "^0.563.0",
     "maplibre-gl": "^5.16.0",
     "motion": "^12.23.26",
     "next": "^14.2.32",

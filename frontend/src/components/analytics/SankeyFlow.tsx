@@ -503,12 +503,13 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-slate-700">View:</span>
-            <div className="flex gap-1">
+            <div className="flex">
               <Button
                 variant={viewMode === 'periodic' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('periodic')}
                 disabled={chartType === 'sankey'}
+                className="rounded-r-none"
               >
                 Periodic
               </Button>
@@ -517,6 +518,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
                 size="sm"
                 onClick={() => setViewMode('cumulative')}
                 disabled={chartType === 'sankey'}
+                className="rounded-l-none"
               >
                 Cumulative
               </Button>

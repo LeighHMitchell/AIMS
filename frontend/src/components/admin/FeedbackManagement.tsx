@@ -646,12 +646,12 @@ export function FeedbackManagement() {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">View</label>
-              <div className="flex gap-2">
+              <div className="flex">
                 <Button
                   variant={!showArchived ? "default" : "outline"}
                   size="sm"
                   onClick={() => setShowArchived(false)}
-                  className="flex-1"
+                  className="flex-1 rounded-r-none"
                 >
                   Active
                 </Button>
@@ -659,7 +659,7 @@ export function FeedbackManagement() {
                   variant={showArchived ? "default" : "outline"}
                   size="sm"
                   onClick={() => setShowArchived(true)}
-                  className="flex-1"
+                  className="flex-1 rounded-l-none"
                 >
                   <Archive className="h-4 w-4 mr-1" />
                   Archived

@@ -882,19 +882,19 @@ export function PlannedActualDisbursementBySector({
             </div>
 
             {/* Chart/Table Toggle */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex">
               <Button
-                variant={viewMode === 'chart' ? 'default' : 'ghost'}
+                variant={viewMode === 'chart' ? 'default' : 'outline'}
                 size="sm"
-                className="h-8"
+                className="h-8 rounded-r-none"
                 onClick={() => setViewMode('chart')}
               >
                 Chart
               </Button>
               <Button
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="sm"
-                className="h-8"
+                className="h-8 rounded-l-none"
                 onClick={() => setViewMode('table')}
               >
                 Table

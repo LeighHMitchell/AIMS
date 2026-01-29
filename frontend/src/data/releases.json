@@ -1,6 +1,22 @@
 {
-  "currentVersion": "1.7.0",
+  "currentVersion": "1.8.0",
   "releases": [
+    {
+      "version": "1.8.0",
+      "date": "2026-01-30",
+      "changes": [
+        "Pivot table cell drill-down - click any cell to see underlying transactions with activity links",
+        "Pinned reports feature - star your favorite reports for quick access",
+        "Filter breadcrumbs in pivot reports showing all applied filters at a glance",
+        "Field preview tooltips showing sample values when hovering over available fields",
+        "Dynamic fiscal year support with configurable fiscal year periods",
+        "Enhanced pivot view with transaction month breakdown and improved code handling",
+        "Organization profile social media buttons redesigned with colored brand logos and hover effects",
+        "Library filters updated with modern checkbox styling and file type icons",
+        "New activity editor navigation improvements",
+        "Improved hierarchical sector select with better UX"
+      ]
+    },
     {
       "version": "1.7.0",
       "date": "2026-01-29",

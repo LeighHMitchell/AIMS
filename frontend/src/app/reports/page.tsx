@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { useSearchParams, useRouter } from 'next/navigation'
 import { MainLayout } from '@/components/layout/main-layout'
 import { ReportCard, ReportHeader } from "@/components/reports/ReportCard"
 import { CustomReportBuilder } from "@/components/reports/CustomReportBuilder"
@@ -164,6 +165,19 @@ const dataQualityReports: ReportConfig[] = [
 ]
 
 export default function ReportsPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  
+  // Get current tab from URL, default to "standard"
+  const currentTab = searchParams.get('tab') || 'standard'
+  
+  // Handle tab change by updating URL
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', value)
+    router.replace(`/reports?${params.toString()}`, { scroll: false })
+  }
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -179,7 +193,7 @@ export default function ReportsPage() {
         </header>
 
         {/* Tabs for Standard vs Custom Reports */}
-        <Tabs defaultValue="standard" className="w-full">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
             <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4" />

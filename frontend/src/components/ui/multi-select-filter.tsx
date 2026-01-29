@@ -110,13 +110,24 @@ export function MultiSelectFilter({
             {icon}
             <span className="truncate">{getDisplayText()}</span>
           </div>
-          {safeValue.length > 0 ? (
-            <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs shrink-0">
-              {safeValue.length}
-            </Badge>
-          ) : (
-            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          )}
+          <div className="flex items-center gap-1 ml-1 shrink-0">
+            {safeValue.length > 0 ? (
+              <>
+                <Badge variant="secondary" className="px-1.5 py-0 text-xs">
+                  {safeValue.length}
+                </Badge>
+                <X 
+                  className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()  // Prevent dropdown from opening
+                    clearAll()
+                  }}
+                />
+              </>
+            ) : (
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            )}
+          </div>
         </Button>
       </PopoverTrigger>
       <PopoverContent className={cn("p-0 w-[315px]", dropdownClassName)} align="start">

@@ -22,6 +22,10 @@ interface PivotFiltersProps {
   onChange: (filters: PivotFilterState) => void
   onApply: () => void
   isLoading?: boolean
+  onFilterOptionsLoaded?: (options: {
+    organizationLabels: Map<string, string>
+    sectorLabels: Map<string, string>
+  }) => void
 }
 
 // Activity status options based on IATI standard
@@ -63,7 +67,7 @@ const generateFiscalYearOptions = (): MultiSelectOption[] => {
 
 const FISCAL_YEAR_OPTIONS = generateFiscalYearOptions()
 
-export function PivotFilters({ filters, onChange, onApply, isLoading }: PivotFiltersProps) {
+export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOptionsLoaded }: PivotFiltersProps) {
   const [organizations, setOrganizations] = useState<MultiSelectOption[]>([])
   const [sectors, setSectors] = useState<MultiSelectOption[]>([])
   const [loadingOptions, setLoadingOptions] = useState(true)
@@ -73,11 +77,14 @@ export function PivotFilters({ filters, onChange, onApply, isLoading }: PivotFil
     async function fetchFilterOptions() {
       setLoadingOptions(true)
       try {
+        let orgOptions: MultiSelectOption[] = []
+        let sectorOptions: MultiSelectOption[] = []
+
         // Fetch organizations
         const orgsResponse = await fetch('/api/organizations')
         if (orgsResponse.ok) {
           const orgsData = await orgsResponse.json()
-          const orgOptions = (orgsData.data || orgsData || []).map((org: { id: string; name: string; acronym?: string }) => ({
+          orgOptions = (orgsData.data || orgsData || []).map((org: { id: string; name: string; acronym?: string }) => ({
             value: org.id,
             label: org.acronym ? `${org.acronym} - ${org.name}` : org.name,
             code: org.acronym,
@@ -89,12 +96,23 @@ export function PivotFilters({ filters, onChange, onApply, isLoading }: PivotFil
         const sectorsResponse = await fetch('/api/codelists/sector')
         if (sectorsResponse.ok) {
           const sectorsData = await sectorsResponse.json()
-          const sectorOptions = (sectorsData.data || sectorsData || []).map((sector: { code: string; name: string }) => ({
+          sectorOptions = (sectorsData.data || sectorsData || []).map((sector: { code: string; name: string }) => ({
             value: sector.code,
             label: sector.name,
             code: sector.code,
           }))
           setSectors(sectorOptions)
+        }
+
+        // Notify parent component of loaded options for breadcrumb labels
+        if (onFilterOptionsLoaded) {
+          const organizationLabels = new Map<string, string>()
+          orgOptions.forEach(opt => organizationLabels.set(opt.value, opt.label))
+          
+          const sectorLabels = new Map<string, string>()
+          sectorOptions.forEach(opt => sectorLabels.set(opt.value, opt.label))
+          
+          onFilterOptionsLoaded({ organizationLabels, sectorLabels })
         }
       } catch (error) {
         console.error('Error fetching filter options:', error)
@@ -104,7 +122,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading }: PivotFil
     }
 
     fetchFilterOptions()
-  }, [])
+  }, [onFilterOptionsLoaded])
 
   const handleStartDateChange = (date: Date | null) => {
     onChange({ ...filters, startDate: date })

@@ -154,11 +154,12 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
               Compare planned vs actual disbursements across sectors
             </CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex">
             <Button
               variant={viewMode === 'chart' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('chart')}
+              className="rounded-r-none"
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Chart
@@ -167,6 +168,7 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
               variant={viewMode === 'table' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('table')}
+              className="rounded-l-none"
             >
               <TableIcon className="h-4 w-4 mr-2" />
               Table

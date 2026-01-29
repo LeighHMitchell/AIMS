@@ -287,22 +287,22 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
             </SelectContent>
           </Select>
 
-          {/* View toggle buttons - styled like SectorTimeSeriesPanel */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          {/* View toggle buttons */}
+          <div className="flex">
             <Button
-              variant={viewMode === 'score' ? 'default' : 'ghost'}
+              variant={viewMode === 'score' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('score')}
-              className="h-8"
+              className="h-8 rounded-r-none"
               title="Net Score"
             >
               <TrendingUp className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'pyramid' ? 'default' : 'ghost'}
+              variant={viewMode === 'pyramid' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('pyramid')}
-              className="h-8"
+              className="h-8 rounded-l-none"
               title="Pyramid"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

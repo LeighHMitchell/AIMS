@@ -353,20 +353,20 @@ export default function LocationsTab({
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">Activity Locations</h3>
           {locations.length > 0 && (
-            <div className="flex items-center gap-1 border rounded-md p-1">
+            <div className="flex items-center">
               <Button
-                variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'cards' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('cards')}
-                className="h-7 px-2"
+                className="h-7 px-2 rounded-r-none"
               >
                 <LayoutGrid className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className="h-7 px-2"
+                className="h-7 px-2 rounded-l-none"
               >
                 <TableIcon className="h-4 w-4" />
               </Button>

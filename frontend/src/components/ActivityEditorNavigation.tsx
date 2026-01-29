@@ -11,6 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { ACTIVITY_OVERVIEW_SECTIONS, isActivityOverviewSection } from "@/components/activities/groups"
 
 interface NavigationSection {
   id: string
@@ -52,6 +53,13 @@ export default function ActivityEditorNavigation({
     // Don't allow section change when disabled (saving in progress)
     if (disabled) {
       return;
+    }
+    
+    // For Activity Overview sections, dispatch a scroll event if we're already in that group
+    // The ActivityOverviewGroup component listens for this event
+    if (isActivityOverviewSection(sectionId) && isActivityOverviewSection(activeSection)) {
+      // We're scrolling within the Activity Overview group
+      window.dispatchEvent(new CustomEvent('scrollToSection', { detail: sectionId }))
     }
     
     // Call the original onSectionChange handler
@@ -157,14 +165,21 @@ export default function ActivityEditorNavigation({
             
             {/* Group Sections with Vertical Connector */}
             <div className="relative">
-              {/* Vertical Connector Line */}
+              {/* Vertical Connector Line - blue for Activity Overview group to indicate scroll behavior */}
               <div
-                className="absolute left-[12px] top-0 bottom-0 w-px bg-gray-200"
+                className={cn(
+                  "absolute left-[12px] top-0 bottom-0 w-px",
+                  group.title === "Activity Overview" ? "bg-blue-200" : "bg-gray-200"
+                )}
                 style={{ height: '100%' }}
               />
               
               {/* Menu Items */}
-              <div className="space-y-0.5 ml-3">
+              <div className={cn(
+                "space-y-0.5 ml-3",
+                // Add subtle visual indicator for Activity Overview scrollable group
+                group.title === "Activity Overview" && "border-l border-blue-100 pl-1"
+              )}>
                 {group.sections.map((section) => {
                   const isLocked = !activityCreated && section.id !== "general" && section.id !== "xml-import"
                   const isActive = activeSection === section.id

@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { SearchableSelect, SearchableSelectOption } from '@/components/ui/searchable-select';
 import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
-import { X, FileText, Receipt, Building2, Target, BarChart3, Library, Calendar } from 'lucide-react';
+import { X, FileText, Receipt, Building2, Target, BarChart3, Library, Calendar, File, FileImage, FileVideo, FileSpreadsheet, FileCode } from 'lucide-react';
 import { DOCUMENT_CATEGORIES } from '@/lib/iatiDocumentLink';
 import type { LibraryFilters, DocumentSourceType } from '@/types/library-document';
 
@@ -32,14 +32,18 @@ const SOURCE_TYPE_OPTIONS: Array<{
   { value: 'standalone', label: 'Library', icon: <Library className="h-4 w-4" /> },
 ];
 
-// Format group options
-const FORMAT_OPTIONS = [
-  { value: 'application/pdf', label: 'PDF' },
-  { value: 'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document', label: 'Word Documents' },
-  { value: 'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv', label: 'Spreadsheets' },
-  { value: 'image/jpeg,image/png,image/gif,image/webp,image/svg+xml', label: 'Images' },
-  { value: 'video/mp4,video/webm', label: 'Videos' },
-  { value: 'application/json,application/xml,text/xml', label: 'Data Files' },
+// Format group options with icons
+const FORMAT_OPTIONS: Array<{
+  value: string;
+  label: string;
+  icon: React.ReactNode;
+}> = [
+  { value: 'application/pdf', label: 'PDF', icon: <File className="h-4 w-4" /> },
+  { value: 'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document', label: 'Word Documents', icon: <FileText className="h-4 w-4" /> },
+  { value: 'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv', label: 'Spreadsheets', icon: <FileSpreadsheet className="h-4 w-4" /> },
+  { value: 'image/jpeg,image/png,image/gif,image/webp,image/svg+xml', label: 'Images', icon: <FileImage className="h-4 w-4" /> },
+  { value: 'video/mp4,video/webm', label: 'Videos', icon: <FileVideo className="h-4 w-4" /> },
+  { value: 'application/json,application/xml,text/xml', label: 'Data Files', icon: <FileCode className="h-4 w-4" /> },
 ];
 
 // Category options for multi-select
@@ -140,11 +144,11 @@ export function LibraryFiltersPanel({
       <CardContent className="p-4 overflow-visible">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {/* Source Type Filter */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <Label className="text-sm font-medium">Source Type</Label>
-            <div className="space-y-2">
+            <div className="flex flex-col gap-4">
               {SOURCE_TYPE_OPTIONS.map(option => (
-                <div key={option.value} className="flex items-center space-x-2">
+                <div key={option.value} className="flex items-center gap-2">
                   <Checkbox
                     id={`source-${option.value}`}
                     checked={filters.sourceTypes?.includes(option.value) || false}
@@ -152,24 +156,24 @@ export function LibraryFiltersPanel({
                       handleSourceTypeToggle(option.value, checked as boolean)
                     }
                   />
-                  <label
+                  <Label
                     htmlFor={`source-${option.value}`}
-                    className="flex items-center gap-2 text-sm cursor-pointer"
+                    className="flex items-center gap-2 text-sm cursor-pointer font-normal"
                   >
                     {option.icon}
                     {option.label}
-                  </label>
+                  </Label>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Format Filter */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <Label className="text-sm font-medium">File Format</Label>
-            <div className="space-y-2">
+            <div className="flex flex-col gap-4">
               {FORMAT_OPTIONS.map(option => (
-                <div key={option.value} className="flex items-center space-x-2">
+                <div key={option.value} className="flex items-center gap-2">
                   <Checkbox
                     id={`format-${option.label}`}
                     checked={isFormatGroupSelected(option.value)}
@@ -177,12 +181,13 @@ export function LibraryFiltersPanel({
                       handleFormatToggle(option.value, checked as boolean)
                     }
                   />
-                  <label
+                  <Label
                     htmlFor={`format-${option.label}`}
-                    className="text-sm cursor-pointer"
+                    className="flex items-center gap-2 text-sm cursor-pointer font-normal"
                   >
+                    {option.icon}
                     {option.label}
-                  </label>
+                  </Label>
                 </div>
               ))}
             </div>

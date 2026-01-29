@@ -568,11 +568,12 @@ export function ResultsReadOnlyView({
         <TabsContent value="indicators" className="mt-4">
           {/* View Mode Toggle */}
           <div className="flex justify-end mb-4">
-            <div className="flex gap-2">
+            <div className="flex">
               <Button
                 variant={viewMode === 'visualization' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('visualization')}
+                className="rounded-r-none"
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Charts
@@ -581,6 +582,7 @@ export function ResultsReadOnlyView({
                 variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('table')}
+                className="rounded-l-none"
               >
                 <Table2 className="h-4 w-4 mr-2" />
                 Table

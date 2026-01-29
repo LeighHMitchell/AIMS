@@ -165,21 +165,21 @@ export function Top10ActiveProjectsChart({
     <div className="space-y-4">
       {/* View Mode Toggle */}
       <div className="flex justify-end">
-        <div className="flex gap-1 border rounded-lg p-1 bg-white">
+        <div className="flex">
           <Button
-            variant={viewMode === 'bar' ? 'default' : 'ghost'}
+            variant={viewMode === 'bar' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setViewMode('bar')}
-            className="h-8"
+            className="h-8 rounded-r-none"
             title="Bar Chart"
           >
             <BarChart3 className="h-4 w-4" />
           </Button>
           <Button
-            variant={viewMode === 'table' ? 'default' : 'ghost'}
+            variant={viewMode === 'table' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setViewMode('table')}
-            className="h-8"
+            className="h-8 rounded-l-none"
             title="Table"
           >
             <TableIcon className="h-4 w-4" />

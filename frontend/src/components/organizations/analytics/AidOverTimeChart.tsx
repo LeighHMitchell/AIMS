@@ -89,12 +89,12 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
           <CardTitle className="text-lg font-semibold text-slate-900">
             Aid Over Time
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex">
             <Button
               variant={viewMode === 'detailed' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('detailed')}
-              className={viewMode === 'detailed' ? 'bg-slate-600 hover:bg-slate-700' : ''}
+              className={`rounded-r-none ${viewMode === 'detailed' ? 'bg-slate-600 hover:bg-slate-700' : ''}`}
             >
               <TrendingUp className="h-4 w-4 mr-2" />
               Detailed
@@ -103,7 +103,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
               variant={viewMode === 'comparison' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('comparison')}
-              className={viewMode === 'comparison' ? 'bg-slate-600 hover:bg-slate-700' : ''}
+              className={`rounded-l-none ${viewMode === 'comparison' ? 'bg-slate-600 hover:bg-slate-700' : ''}`}
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Comparison

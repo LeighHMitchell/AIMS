@@ -112,6 +112,7 @@ import { HumanitarianTab } from "@/components/activities/HumanitarianTab";
 import { DeleteActivityDialog } from "@/components/DeleteActivityDialog";
 import { ReadinessChecklistTab } from "@/components/activities/readiness";
 import { apiFetch } from '@/lib/api-fetch';
+import { ActivityOverviewGroup, ACTIVITY_OVERVIEW_SECTIONS, isActivityOverviewSection } from "@/components/activities/groups";
 
 // Utility function to format date without timezone conversion
 const formatDateToString = (date: Date | null): string => {
@@ -2483,11 +2484,11 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
   
   // The parent component handles skeleton display via tabLoading state
 
-  switch (section) {
-    case "metadata":
-      return <MetadataTab activityId={general.id} />;
-    case "general":
-      return <GeneralSection
+  // Check if this is an Activity Overview section - render grouped component
+  if (isActivityOverviewSection(section)) {
+    return (
+      <ActivityOverviewGroup
+        // General state and handlers
         general={general}
         setGeneral={setGeneral}
         user={user}
@@ -2498,7 +2499,67 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         onTitleAutosaveState={onTitleAutosaveState}
         clearSavedFormData={clearSavedFormData}
         isNewActivity={isNewActivity}
-      />;
+        
+        // Sectors props
+        sectors={sectors}
+        setSectors={setSectors}
+        setSectorValidation={setSectorValidation}
+        setSectorsCompletionStatusWithLogging={setSectorsCompletionStatusWithLogging}
+        onSectorExportLevelChange={onSectorExportLevelChange}
+        
+        // Humanitarian props
+        setHumanitarian={setHumanitarian}
+        setHumanitarianScopes={setHumanitarianScopes}
+        
+        // Countries/Regions props
+        countries={countries}
+        regions={regions}
+        setCountries={setCountries}
+        setRegions={setRegions}
+        onGeographyLevelChange={onGeographyLevelChange}
+        
+        // Locations props
+        specificLocations={specificLocations}
+        coverageAreas={coverageAreas}
+        advancedLocations={advancedLocations}
+        setSpecificLocations={setSpecificLocations}
+        setCoverageAreas={setCoverageAreas}
+        setAdvancedLocations={setAdvancedLocations}
+        subnationalBreakdowns={subnationalBreakdowns}
+        setSubnationalBreakdowns={setSubnationalBreakdowns}
+        
+        // Permissions
+        permissions={permissions}
+        
+        // Scroll integration
+        onActiveSectionChange={onSectionChange}
+        initialSection={section}
+        activityCreated={!!general.id}
+        
+        // Render function for GeneralSection (defined inline in page.tsx)
+        renderGeneralSection={() => (
+          <GeneralSection
+            general={general}
+            setGeneral={setGeneral}
+            user={user}
+            getDateFieldStatus={getDateFieldStatus}
+            setHasUnsavedChanges={setHasUnsavedChanges}
+            updateActivityNestedField={updateActivityNestedField}
+            setShowActivityCreatedAlert={setShowActivityCreatedAlert}
+            onTitleAutosaveState={onTitleAutosaveState}
+            clearSavedFormData={clearSavedFormData}
+            isNewActivity={isNewActivity}
+          />
+        )}
+      />
+    );
+  }
+
+  switch (section) {
+    case "metadata":
+      return <MetadataTab activityId={general.id} />;
+    // Note: general, sectors, humanitarian, country-region, and locations
+    // are now handled by ActivityOverviewGroup above
     case "iati":
       return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -2521,49 +2582,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           />
         </div>
       );
-    case "sectors":
-      return (
-        <div className="w-full">
-          <ImprovedSectorAllocationForm
-              allocations={sectors}
-              onChange={(newSectors) => {
-                console.log('🎯 [AIMS] === SECTORS CHANGED IN FORM ===');
-                console.log('📊 [AIMS] New sectors:', JSON.stringify(newSectors, null, 2));
-                console.log('📈 [AIMS] Sector count:', newSectors.length);
-                setSectors(newSectors);
-              }}
-              onValidationChange={setSectorValidation}
-              onCompletionStatusChange={setSectorsCompletionStatusWithLogging}
-              activityId={general.id}
-              sectorExportLevel={general.sectorExportLevel || 'activity'}
-              onSectorExportLevelChange={onSectorExportLevelChange}
-            />
-        </div>
-      );
-    case "humanitarian":
-      return (
-        <HumanitarianTab 
-          activityId={general.id || ''}
-          readOnly={!permissions?.canEditActivity}
-          onDataChange={(data) => {
-            setHumanitarian(data.humanitarian);
-            setHumanitarianScopes(data.humanitarianScopes);
-          }}
-        />
-      );
-    case "country-region":
-      return (
-        <CountriesRegionsTab
-          activityId={general.id || ''}
-          countries={countries}
-          regions={regions}
-          onCountriesChange={setCountries}
-          onRegionsChange={setRegions}
-          canEdit={permissions?.canEditActivity ?? true}
-          geographyLevel={general.geographyLevel || 'activity'}
-          onGeographyLevelChange={onGeographyLevelChange}
-        />
-      );
+    // Note: sectors, humanitarian, country-region are now handled by ActivityOverviewGroup above
     case "organisations":
       return <OrganisationsSection
         activityId={general.id}
@@ -2589,21 +2608,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           }
         }}
       />;
-    case "locations":
-      return <CombinedLocationsTab 
-        specificLocations={specificLocations}
-        coverageAreas={coverageAreas}
-        onSpecificLocationsChange={setSpecificLocations}
-        onCoverageAreasChange={setCoverageAreas}
-        advancedLocations={advancedLocations}
-        onAdvancedLocationsChange={setAdvancedLocations}
-        activityId={general.id}
-        canEdit={permissions?.canEditActivity ?? true}
-        onSubnationalDataChange={setSubnationalBreakdowns}
-        subnationalBreakdowns={subnationalBreakdowns}
-        activityTitle={general.title}
-        activitySector={general.primarySector}
-      />;
+    // Note: locations is now handled by ActivityOverviewGroup above
     case "finances":
       return <EnhancedFinancesSection 
         activityId={general.id || "new"}
@@ -4674,6 +4679,19 @@ function NewActivityPageContent() {
       return;
     }
     
+    // If switching within the Activity Overview group, just scroll instead of full tab change
+    if (isActivityOverviewSection(value) && isActivityOverviewSection(activeSection)) {
+      console.log('[AIMS Performance] Scrolling within Activity Overview group to:', value);
+      // Dispatch scroll event that ActivityOverviewGroup listens for
+      window.dispatchEvent(new CustomEvent('scrollToSection', { detail: value }));
+      setActiveSection(value);
+      // Update URL
+      const params = new URLSearchParams(window.location.search);
+      params.set('section', value);
+      window.history.replaceState({}, '', `?${params.toString()}`);
+      return;
+    }
+    
     // Auto-create draft activity when navigating to IATI Import without an existing activity
     // No default values - all data will come from the IATI import
     if (value === 'xml-import' && !general.id) {
@@ -5234,12 +5252,15 @@ function NewActivityPageContent() {
           
           <div className="px-0 pr-6 md:pr-8 pb-32">
             <section>
-              <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-2xl font-semibold">{getSectionLabel(activeSection)}</h2>
-                <HelpTextTooltip content={getSectionHelpText(activeSection)}>
-                  <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
-                </HelpTextTooltip>
-              </div>
+              {/* Hide section header for Activity Overview group - group renders its own headers */}
+              {!isActivityOverviewSection(activeSection) && (
+                <div className="flex items-center gap-3 mb-6">
+                  <h2 className="text-2xl font-semibold">{getSectionLabel(activeSection)}</h2>
+                  <HelpTextTooltip content={getSectionHelpText(activeSection)}>
+                    <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+                  </HelpTextTooltip>
+                </div>
+              )}
               {tabLoading ? (
                 getTabSkeleton(activeSection)
               ) : (

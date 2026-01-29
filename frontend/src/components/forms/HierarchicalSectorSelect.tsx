@@ -117,6 +117,17 @@ export function HierarchicalSectorSelect({
 }: HierarchicalSectorSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Auto-focus search input when popover opens
+  React.useEffect(() => {
+    if (open) {
+      // Small delay to ensure the popover is fully rendered
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    }
+  }, [open]);
 
   const hierarchicalData = React.useMemo(() => transformToHierarchy(), []);
 
@@ -227,6 +238,7 @@ export function HierarchicalSectorSelect({
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <Input
+              ref={inputRef}
               placeholder={searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}

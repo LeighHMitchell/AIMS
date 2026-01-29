@@ -286,22 +286,26 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                   Sync External Links
                 </Button>
               )}
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('table')}
-              >
-                <List className="h-4 w-4 mr-2" />
-                Table
-              </Button>
-              <Button
-                variant={viewMode === 'graph' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('graph')}
-              >
-                <Network className="h-4 w-4 mr-2" />
-                Network Graph
-              </Button>
+              <div className="flex">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="rounded-r-none"
+                >
+                  <List className="h-4 w-4 mr-2" />
+                  Table
+                </Button>
+                <Button
+                  variant={viewMode === 'graph' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('graph')}
+                  className="rounded-l-none"
+                >
+                  <Network className="h-4 w-4 mr-2" />
+                  Network Graph
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>

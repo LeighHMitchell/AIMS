@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -30,7 +30,8 @@ import {
   User,
   FileText,
   LayoutGrid,
-  Pencil
+  Pencil,
+  Pin
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -80,6 +81,9 @@ export function SavedReportsManager({
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   
+  // Pinned reports state
+  const [pinnedReportIds, setPinnedReportIds] = useState<Set<string>>(new Set())
+  
   // Save dialog state
   const [reportName, setReportName] = useState('')
   const [reportDescription, setReportDescription] = useState('')
@@ -87,9 +91,10 @@ export function SavedReportsManager({
   const [isTemplate, setIsTemplate] = useState(false)
   const [editingReportId, setEditingReportId] = useState<string | null>(null)
 
-  // Fetch saved reports on mount
+  // Fetch saved reports and pinned reports on mount
   useEffect(() => {
     fetchSavedReports()
+    fetchPinnedReports()
   }, [])
 
   const fetchSavedReports = async () => {
@@ -106,6 +111,72 @@ export function SavedReportsManager({
       console.error('Error fetching saved reports:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchPinnedReports = async () => {
+    try {
+      const response = await fetch('/api/reports/pinned-reports')
+      if (response.ok) {
+        const data = await response.json()
+        setPinnedReportIds(new Set(data.pinnedIds || []))
+      }
+    } catch (error) {
+      console.error('Error fetching pinned reports:', error)
+    }
+  }
+
+  const handleTogglePin = async (reportId: string) => {
+    // Find the report to check if it's a template or user report
+    const report = savedReports.find(r => r.id === reportId)
+    if (!report) return
+
+    const isTemplate = report.is_template
+    
+    // Count current pins by type
+    const pinnedTemplateCount = templateReportsRaw.filter(r => pinnedReportIds.has(r.id)).length
+    const pinnedUserCount = userReportsRaw.filter(r => pinnedReportIds.has(r.id)).length
+
+    // Check if already at max (4 per section) and trying to pin
+    if (!pinnedReportIds.has(reportId)) {
+      if (isTemplate && pinnedTemplateCount >= 4) {
+        toast.error('You can only pin up to 4 report templates')
+        return
+      }
+      if (!isTemplate && pinnedUserCount >= 4) {
+        toast.error('You can only pin up to 4 saved reports')
+        return
+      }
+    }
+
+    try {
+      const response = await fetch('/api/reports/pinned-reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Update local state
+        setPinnedReportIds(prev => {
+          const newSet = new Set(prev)
+          if (data.action === 'unpinned') {
+            newSet.delete(reportId)
+            toast.success('Report unpinned')
+          } else {
+            newSet.add(reportId)
+            toast.success('Report pinned')
+          }
+          return newSet
+        })
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to update pin status')
+      }
+    } catch (error) {
+      console.error('Error toggling pin:', error)
+      toast.error('Failed to update pin status')
     }
   }
 
@@ -227,11 +298,25 @@ export function SavedReportsManager({
   const [loadPopoverOpen, setLoadPopoverOpen] = useState(false)
 
   // Group reports by type
-  const templateReports = savedReports.filter(r => r.is_template)
+  const templateReportsRaw = savedReports.filter(r => r.is_template)
   const publicReports = savedReports.filter(r => r.is_public && !r.is_template)
   const myReports = savedReports.filter(r => !r.is_template && !r.is_public)
   // Combine user reports (my reports + public from others)
-  const userReports = [...myReports, ...publicReports]
+  const userReportsRaw = [...myReports, ...publicReports]
+
+  // Sort reports with pinned first
+  const sortByPinned = (reports: SavedReport[]) => {
+    return [...reports].sort((a, b) => {
+      const aPinned = pinnedReportIds.has(a.id)
+      const bPinned = pinnedReportIds.has(b.id)
+      if (aPinned && !bPinned) return -1
+      if (!aPinned && bPinned) return 1
+      return 0
+    })
+  }
+
+  const templateReports = useMemo(() => sortByPinned(templateReportsRaw), [templateReportsRaw, pinnedReportIds])
+  const userReports = useMemo(() => sortByPinned(userReportsRaw), [userReportsRaw, pinnedReportIds])
 
   const handleLoadAndClose = (report: SavedReport) => {
     handleLoad(report)
@@ -252,7 +337,7 @@ export function SavedReportsManager({
           </PopoverTrigger>
           <PopoverContent 
             align="end" 
-            className="w-[1200px] p-0"
+            className="w-[1400px] p-0"
             sideOffset={8}
           >
             <TooltipProvider delayDuration={300}>
@@ -269,13 +354,14 @@ export function SavedReportsManager({
                       <h3 className="font-semibold text-sm">Report Templates</h3>
                       <span className="text-xs text-muted-foreground">({templateReports.length})</span>
                     </div>
-                    <ScrollArea className="h-[280px]">
+                    <ScrollArea className="h-[380px]">
+                      <div className="pt-4 pr-4">
                       {templateReports.length === 0 ? (
                         <div className="text-sm text-muted-foreground text-center py-8">
                           No templates available
                         </div>
                       ) : (
-                        <div className="grid grid-cols-5 gap-3 pr-2">
+                        <div className="grid grid-cols-4 gap-4">
                           {templateReports.map(report => (
                             <ReportCard 
                               key={report.id} 
@@ -284,10 +370,13 @@ export function SavedReportsManager({
                               onEdit={isAdmin ? handleEditClick : undefined}
                               onDelete={isAdmin ? handleDelete : undefined}
                               variant="template"
+                              isPinned={pinnedReportIds.has(report.id)}
+                              onTogglePin={handleTogglePin}
                             />
                           ))}
                         </div>
                       )}
+                      </div>
                     </ScrollArea>
                   </div>
 
@@ -298,14 +387,15 @@ export function SavedReportsManager({
                       <h3 className="font-semibold text-sm">My Saved Reports</h3>
                       <span className="text-xs text-muted-foreground">({userReports.length})</span>
                     </div>
-                    <ScrollArea className="h-[280px]">
+                    <ScrollArea className="h-[380px]">
+                      <div className="pt-4 pr-4">
                       {userReports.length === 0 ? (
                         <div className="text-sm text-muted-foreground text-center py-8">
                           <p>No saved reports yet</p>
                           <p className="text-xs mt-1">Configure your pivot table and click &quot;Save Report&quot;</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-3 gap-3 pr-2">
+                        <div className="grid grid-cols-2 gap-4">
                           {userReports.map(report => (
                             <ReportCard 
                               key={report.id} 
@@ -314,10 +404,13 @@ export function SavedReportsManager({
                               onEdit={report.is_public && report.created_by !== null ? undefined : handleEditClick}
                               onDelete={report.is_public && report.created_by !== null ? undefined : handleDelete}
                               variant={report.is_public ? "public" : "user"}
+                              isPinned={pinnedReportIds.has(report.id)}
+                              onTogglePin={handleTogglePin}
                             />
                           ))}
                         </div>
                       )}
+                      </div>
                     </ScrollArea>
                   </div>
                 </div>
@@ -412,19 +505,31 @@ interface ReportCardProps {
   onEdit?: (report: SavedReport) => void
   onDelete?: (reportId: string) => void
   variant: 'template' | 'user' | 'public'
+  isPinned?: boolean
+  onTogglePin?: (reportId: string) => void
 }
 
-function ReportCard({ report, onLoad, onEdit, onDelete, variant }: ReportCardProps) {
+function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = false, onTogglePin }: ReportCardProps) {
   const cardContent = (
     <div 
-      className="group relative rounded-md border bg-card p-3 cursor-pointer transition-all hover:shadow-md hover:border-foreground/20 hover:bg-accent/50"
+      className="group relative rounded-md border bg-card p-4 cursor-pointer transition-all hover:shadow-md hover:border-foreground/20 hover:bg-accent/50 min-h-[110px]"
       onClick={() => onLoad(report)}
     >
-      {/* Icon badge */}
-      <div className="absolute -top-2 -right-2 rounded-full p-1 bg-background shadow-sm border text-muted-foreground">
-        {variant === 'template' && <Star className="h-3 w-3" />}
-        {variant === 'user' && <User className="h-3 w-3" />}
-        {variant === 'public' && <Globe className="h-3 w-3" />}
+      {/* Pin icon badge */}
+      <div 
+        className={cn(
+          "absolute top-2 right-2 rounded-full p-1.5 cursor-pointer transition-colors",
+          isPinned 
+            ? "bg-red-100 hover:bg-red-200" 
+            : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+        )}
+        onClick={(e) => {
+          e.stopPropagation()
+          onTogglePin?.(report.id)
+        }}
+        title={isPinned ? "Unpin report" : "Pin report"}
+      >
+        <Pin className={cn("h-3 w-3", isPinned && "fill-[#DC2625]")} style={isPinned ? { color: '#DC2625' } : undefined} />
       </div>
 
       {/* Content */}
@@ -433,7 +538,7 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant }: ReportCardPro
           {report.name}
         </div>
         {report.description && (
-          <div className="text-xs text-muted-foreground line-clamp-1 mb-2">
+          <div className="text-xs text-muted-foreground line-clamp-2 mb-2">
             {report.description}
           </div>
         )}

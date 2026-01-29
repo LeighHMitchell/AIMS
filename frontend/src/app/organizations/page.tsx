@@ -1733,10 +1733,11 @@ function OrganizationsPageContent() {
             </div>
             
             {/* View Toggle */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <Button
                 variant={viewMode === 'card' ? 'default' : 'outline'}
                 size="sm"
+                className="rounded-r-none"
                 onClick={() => {
                   setViewMode('card')
                   localStorage.setItem('organizationViewMode', 'card')
@@ -1748,6 +1749,7 @@ function OrganizationsPageContent() {
               <Button
                 variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="sm"
+                className="rounded-l-none"
                 onClick={() => {
                   setViewMode('table')
                   localStorage.setItem('organizationViewMode', 'table')

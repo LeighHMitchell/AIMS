@@ -442,11 +442,12 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
 
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-slate-700">View:</span>
-              <div className="flex gap-1">
+              <div className="flex">
                 <Button
                   variant={viewMode === 'sankey' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('sankey')}
+                  className="rounded-r-none"
                 >
                   <Activity className="h-4 w-4" />
                 </Button>
@@ -454,6 +455,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                   variant={viewMode === 'table' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('table')}
+                  className="rounded-l-none"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>

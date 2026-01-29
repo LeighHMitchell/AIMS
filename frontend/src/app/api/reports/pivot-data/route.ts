@@ -1,9 +1,15 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { 
+  YearType, 
+  calculateAllFiscalYears, 
+  generateYearTypeLabels 
+} from '@/lib/fiscal-year-utils';
 
 export const dynamic = 'force-dynamic';
 
-// Field mapping for human-readable labels
+// Field mapping for human-readable labels (static fields only)
+// Dynamic fiscal year labels are generated from custom_years table
 const FIELD_LABELS: Record<string, string> = {
   'activity_id': 'Activity ID',
   'iati_identifier': 'IATI Identifier',
@@ -16,14 +22,17 @@ const FIELD_LABELS: Record<string, string> = {
   'planned_end_date': 'Planned End Date',
   'actual_start_date': 'Actual Start Date',
   'actual_end_date': 'Actual End Date',
-  'reporting_org_name': 'Development Partner',
+  'reporting_org_name': 'Organization Name',
+  'reporting_org_acronym': 'Organization Acronym',
+  'reporting_org_full': 'Organization Name + Acronym',
   'reporting_org_type': 'Organization Type',
   'transaction_type': 'Transaction Type',
   'transaction_type_code': 'Transaction Type Code',
-  'transaction_value_usd': 'Amount (USD)',
+  'transaction_value_usd': 'Transaction Amount (USD)',
   'transaction_value_original': 'Original Amount',
   'transaction_currency': 'Currency',
   'transaction_date': 'Transaction Date',
+  'effective_date': 'Effective Date',
   'fiscal_year': 'Year',
   'fiscal_quarter': 'Quarter',
   'fiscal_month': 'Month',
@@ -42,7 +51,7 @@ const FIELD_LABELS: Record<string, string> = {
   'tied_status_code': 'Tied Status Code',
   'activity_scope': 'Activity Scope',
   'collaboration_type': 'Collaboration Type',
-  // New fields
+  // Sub-national fields
   'subnational_region': 'State/Region',
   'subnational_percentage': 'Regional %',
   'is_nationwide': 'Is Nationwide',
@@ -52,6 +61,14 @@ const FIELD_LABELS: Record<string, string> = {
   'is_humanitarian': 'Is Humanitarian',
   'humanitarian_scope_type': 'Humanitarian Type',
   'humanitarian_scope_code': 'Humanitarian Code',
+  // Record type for filtering
+  'record_type': 'Record Type',
+  'record_id': 'Record ID',
+  // New amount columns
+  'planned_disbursement_value_usd': 'Planned Disbursement (USD)',
+  'budget_value_usd': 'Budget Amount (USD)',
+  'amount_usd': 'Amount (USD)',
+  // Note: Fiscal year columns are now generated dynamically from custom_years table
 };
 
 export async function GET(request: NextRequest) {
@@ -74,6 +91,26 @@ export async function GET(request: NextRequest) {
     const transactionTypes = searchParams.getAll('transactionTypes');
     const fiscalYears = searchParams.getAll('fiscalYears');
     const limit = parseInt(searchParams.get('limit') || '50000', 10);
+
+    // Fetch active year types from custom_years table
+    const { data: yearTypesData, error: yearTypesError } = await supabase
+      .from('custom_years')
+      .select('id, name, short_name, start_month, start_day')
+      .eq('is_active', true)
+      .order('display_order');
+
+    if (yearTypesError) {
+      console.error('[Pivot Data API] Error fetching year types:', yearTypesError);
+      // Continue without year types - not fatal
+    }
+
+    const yearTypes: YearType[] = (yearTypesData || []).map(yt => ({
+      id: yt.id,
+      name: yt.name,
+      short_name: yt.short_name || yt.name,
+      start_month: yt.start_month,
+      start_day: yt.start_day,
+    }));
 
     // Build query against the pivot_report_data view
     let query = supabase
@@ -123,12 +160,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Transform data - add dynamic fiscal year columns for each year type
+    const transformedData = (data || []).map(row => {
+      const effectiveDate = row.effective_date;
+      const fiscalYearValues = calculateAllFiscalYears(effectiveDate, yearTypes);
+      return {
+        ...row,
+        ...fiscalYearValues,
+      };
+    });
+
+    // Build dynamic field labels (merge static labels with dynamic year type labels)
+    const dynamicYearLabels = generateYearTypeLabels(yearTypes);
+    const allFieldLabels = {
+      ...FIELD_LABELS,
+      ...dynamicYearLabels,
+    };
+
     // Return data with field labels metadata
     const response = NextResponse.json({
-      data: data || [],
-      fieldLabels: FIELD_LABELS,
-      totalRows: data?.length || 0,
-      truncated: data?.length === limit,
+      data: transformedData,
+      fieldLabels: allFieldLabels,
+      yearTypes: yearTypes,
+      totalRows: transformedData.length,
+      truncated: transformedData.length === limit,
       error: null
     });
     
