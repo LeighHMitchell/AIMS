@@ -112,7 +112,7 @@ import { HumanitarianTab } from "@/components/activities/HumanitarianTab";
 import { DeleteActivityDialog } from "@/components/DeleteActivityDialog";
 import { ReadinessChecklistTab } from "@/components/activities/readiness";
 import { apiFetch } from '@/lib/api-fetch';
-import { ActivityOverviewGroup, ACTIVITY_OVERVIEW_SECTIONS, isActivityOverviewSection } from "@/components/activities/groups";
+import { ActivityOverviewGroup, ACTIVITY_OVERVIEW_SECTIONS, isActivityOverviewSection, StakeholdersGroup, STAKEHOLDERS_SECTIONS, isStakeholdersSection } from "@/components/activities/groups";
 
 // Utility function to format date without timezone conversion
 const formatDateToString = (date: Date | null): string => {
@@ -2484,74 +2484,117 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
   
   // The parent component handles skeleton display via tabLoading state
 
-  // Check if this is an Activity Overview section - render grouped component
-  if (isActivityOverviewSection(section)) {
+  // Check if this is an Activity Overview or Stakeholders section - render both grouped components
+  // for continuous scrolling between the two groups
+  if (isActivityOverviewSection(section) || isStakeholdersSection(section)) {
     return (
-      <ActivityOverviewGroup
-        // General state and handlers
-        general={general}
-        setGeneral={setGeneral}
-        user={user}
-        getDateFieldStatus={getDateFieldStatus}
-        setHasUnsavedChanges={setHasUnsavedChanges}
-        updateActivityNestedField={updateActivityNestedField}
-        setShowActivityCreatedAlert={setShowActivityCreatedAlert}
-        onTitleAutosaveState={onTitleAutosaveState}
-        clearSavedFormData={clearSavedFormData}
-        isNewActivity={isNewActivity}
-        
-        // Sectors props
-        sectors={sectors}
-        setSectors={setSectors}
-        setSectorValidation={setSectorValidation}
-        setSectorsCompletionStatusWithLogging={setSectorsCompletionStatusWithLogging}
-        onSectorExportLevelChange={onSectorExportLevelChange}
-        
-        // Humanitarian props
-        setHumanitarian={setHumanitarian}
-        setHumanitarianScopes={setHumanitarianScopes}
-        
-        // Countries/Regions props
-        countries={countries}
-        regions={regions}
-        setCountries={setCountries}
-        setRegions={setRegions}
-        onGeographyLevelChange={onGeographyLevelChange}
-        
-        // Locations props
-        specificLocations={specificLocations}
-        coverageAreas={coverageAreas}
-        advancedLocations={advancedLocations}
-        setSpecificLocations={setSpecificLocations}
-        setCoverageAreas={setCoverageAreas}
-        setAdvancedLocations={setAdvancedLocations}
-        subnationalBreakdowns={subnationalBreakdowns}
-        setSubnationalBreakdowns={setSubnationalBreakdowns}
-        
-        // Permissions
-        permissions={permissions}
-        
-        // Scroll integration
-        onActiveSectionChange={onSectionChange}
-        initialSection={section}
-        activityCreated={!!general.id}
-        
-        // Render function for GeneralSection (defined inline in page.tsx)
-        renderGeneralSection={() => (
-          <GeneralSection
-            general={general}
-            setGeneral={setGeneral}
-            user={user}
-            getDateFieldStatus={getDateFieldStatus}
-            setHasUnsavedChanges={setHasUnsavedChanges}
-            updateActivityNestedField={updateActivityNestedField}
-            setShowActivityCreatedAlert={setShowActivityCreatedAlert}
-            onTitleAutosaveState={onTitleAutosaveState}
-            clearSavedFormData={clearSavedFormData}
-            isNewActivity={isNewActivity}
-          />
-        )}
-      />
+      <>
+        <ActivityOverviewGroup
+          // General state and handlers
+          general={general}
+          setGeneral={setGeneral}
+          user={user}
+          getDateFieldStatus={getDateFieldStatus}
+          setHasUnsavedChanges={setHasUnsavedChanges}
+          updateActivityNestedField={updateActivityNestedField}
+          setShowActivityCreatedAlert={setShowActivityCreatedAlert}
+          onTitleAutosaveState={onTitleAutosaveState}
+          clearSavedFormData={clearSavedFormData}
+          isNewActivity={isNewActivity}
+
+          // Sectors props
+          sectors={sectors}
+          setSectors={setSectors}
+          setSectorValidation={setSectorValidation}
+          setSectorsCompletionStatusWithLogging={setSectorsCompletionStatusWithLogging}
+          onSectorExportLevelChange={onSectorExportLevelChange}
+
+          // Humanitarian props
+          setHumanitarian={setHumanitarian}
+          setHumanitarianScopes={setHumanitarianScopes}
+
+          // Countries/Regions props
+          countries={countries}
+          regions={regions}
+          setCountries={setCountries}
+          setRegions={setRegions}
+          onGeographyLevelChange={onGeographyLevelChange}
+
+          // Locations props
+          specificLocations={specificLocations}
+          coverageAreas={coverageAreas}
+          advancedLocations={advancedLocations}
+          setSpecificLocations={setSpecificLocations}
+          setCoverageAreas={setCoverageAreas}
+          setAdvancedLocations={setAdvancedLocations}
+          subnationalBreakdowns={subnationalBreakdowns}
+          setSubnationalBreakdowns={setSubnationalBreakdowns}
+
+          // Permissions
+          permissions={permissions}
+
+          // Scroll integration
+          onActiveSectionChange={onSectionChange}
+          initialSection={section}
+          activityCreated={!!general.id}
+
+          // Render function for GeneralSection (defined inline in page.tsx)
+          renderGeneralSection={() => (
+            <GeneralSection
+              general={general}
+              setGeneral={setGeneral}
+              user={user}
+              getDateFieldStatus={getDateFieldStatus}
+              setHasUnsavedChanges={setHasUnsavedChanges}
+              updateActivityNestedField={updateActivityNestedField}
+              setShowActivityCreatedAlert={setShowActivityCreatedAlert}
+              onTitleAutosaveState={onTitleAutosaveState}
+              clearSavedFormData={clearSavedFormData}
+              isNewActivity={isNewActivity}
+            />
+          )}
+        />
+
+        <StakeholdersGroup
+          // Activity context
+          activityId={general.id}
+          currentUserId={user?.id}
+          permissions={permissions}
+
+          // Scroll integration
+          onActiveSectionChange={onSectionChange}
+          initialSection={section}
+          activityCreated={!!general.id}
+
+          // OrganisationsSection props
+          extendingPartners={extendingPartners}
+          implementingPartners={implementingPartners}
+          governmentPartners={governmentPartners}
+          fundingPartners={fundingPartners}
+          onOrganisationsChange={(field, value) => {
+            switch(field) {
+              case 'extendingPartners':
+                setExtendingPartners(value);
+                break;
+              case 'implementingPartners':
+                setImplementingPartners(value);
+                break;
+              case 'governmentPartners':
+                setGovernmentPartners(value);
+                break;
+              case 'fundingPartners':
+                setFundingPartners(value);
+                break;
+            }
+          }}
+
+          // Callbacks for data changes
+          onParticipatingOrganizationsChange={setParticipatingOrgsCount}
+          onContactsChange={setContacts}
+          onFocalPointsChange={(focalPoints) => setFocalPointsCount(focalPoints.length)}
+          onLinkedActivitiesCountChange={setLinkedActivitiesCount}
+        />
+      </>
     );
   }
 
@@ -2582,33 +2625,8 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           />
         </div>
       );
-    // Note: sectors, humanitarian, country-region are now handled by ActivityOverviewGroup above
-    case "organisations":
-      return <OrganisationsSection
-        activityId={general.id}
-        extendingPartners={extendingPartners}
-        implementingPartners={implementingPartners}
-        governmentPartners={governmentPartners}
-        fundingPartners={fundingPartners}
-        onParticipatingOrganizationsChange={setParticipatingOrgsCount}
-        onChange={(field, value) => {
-          switch(field) {
-            case 'extendingPartners':
-              setExtendingPartners(value);
-              break;
-            case 'implementingPartners':
-              setImplementingPartners(value);
-              break;
-            case 'governmentPartners':
-              setGovernmentPartners(value);
-              break;
-            case 'fundingPartners':
-              setFundingPartners(value);
-              break;
-          }
-        }}
-      />;
-    // Note: locations is now handled by ActivityOverviewGroup above
+    // Note: sectors, humanitarian, country-region, locations are now handled by ActivityOverviewGroup above
+    // Note: organisations, contacts, focal_points, linked_activities are now handled by StakeholdersGroup above
     case "finances":
       return <EnhancedFinancesSection 
         activityId={general.id || "new"}
@@ -2694,17 +2712,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           setConditionsCount(conditions.length);
         }}
       />;
-    case "contacts":
-      return <ContactsTab 
-        activityId={general.id}
-        readOnly={!permissions?.canEditActivity}
-        onContactsChange={setContacts}
-      />;
-    case "focal_points":
-      return <FocalPointsTab 
-        activityId={general.id}
-        onFocalPointsChange={(focalPoints) => setFocalPointsCount(focalPoints.length)}
-      />;
     case "government":
       return <GovernmentInputsSectionEnhanced 
         governmentInputs={governmentInputs} 
@@ -2744,16 +2751,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         }}
         onDataChange={setCountryBudgetItemsCount}
         totalBudgetUSD={totalBudgetUSD}
-      />;
-    case "linked_activities":
-      return <LinkedActivitiesEditorTab 
-        activityId={general.id} 
-        currentUserId={user?.id}
-        canEdit={permissions?.canEditActivity ?? true}
-        onCountChange={(count: number) => {
-          // Mirror other tabs' pattern: feed count into tab completion calculation via memo deps
-          setLinkedActivitiesCount(count);
-        }}
       />;
     default:
       return null;
@@ -4679,10 +4676,14 @@ function NewActivityPageContent() {
       return;
     }
     
-    // If switching within the Activity Overview group, just scroll instead of full tab change
-    if (isActivityOverviewSection(value) && isActivityOverviewSection(activeSection)) {
-      console.log('[AIMS Performance] Scrolling within Activity Overview group to:', value);
-      // Dispatch scroll event that ActivityOverviewGroup listens for
+    // If switching within or between Activity Overview and Stakeholders groups,
+    // just scroll instead of full tab change (continuous scrolling)
+    const isValueInScrollableGroup = isActivityOverviewSection(value) || isStakeholdersSection(value);
+    const isCurrentInScrollableGroup = isActivityOverviewSection(activeSection) || isStakeholdersSection(activeSection);
+
+    if (isValueInScrollableGroup && isCurrentInScrollableGroup) {
+      console.log('[AIMS Performance] Scrolling to section:', value, 'from:', activeSection);
+      // Dispatch scroll event that both groups listen for
       window.dispatchEvent(new CustomEvent('scrollToSection', { detail: value }));
       setActiveSection(value);
       // Update URL
@@ -4691,7 +4692,7 @@ function NewActivityPageContent() {
       window.history.replaceState({}, '', `?${params.toString()}`);
       return;
     }
-    
+
     // Auto-create draft activity when navigating to IATI Import without an existing activity
     // No default values - all data will come from the IATI import
     if (value === 'xml-import' && !general.id) {

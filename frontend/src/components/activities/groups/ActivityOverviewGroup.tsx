@@ -246,7 +246,7 @@ export function ActivityOverviewGroup({
   // Intersection Observer for lazy loading sections
   useEffect(() => {
     if (!activityCreated) return
-    
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -261,15 +261,60 @@ export function ActivityOverviewGroup({
         threshold: 0,
       }
     )
-    
+
     // Observe all section elements
     const sectionElements = [sectorsRef.current, humanitarianRef.current, countryRegionRef.current, locationsRef.current]
     sectionElements.forEach((el) => {
       if (el) observer.observe(el)
     })
-    
+
     return () => observer.disconnect()
   }, [activityCreated, activateSection])
+
+  // Background preloading - load remaining sections during browser idle time
+  useEffect(() => {
+    if (!activityCreated) return
+
+    // Wait for initial render to complete before background loading
+    const initialDelay = setTimeout(() => {
+      const sectionsToPreload = ['sectors', 'humanitarian', 'country-region', 'locations']
+      let currentIndex = 0
+
+      const preloadNext = () => {
+        if (currentIndex >= sectionsToPreload.length) return
+
+        const sectionId = sectionsToPreload[currentIndex]
+        // Only activate if not already active
+        if (!activeSections.has(sectionId)) {
+          activateSection(sectionId)
+        }
+        currentIndex++
+
+        // Schedule next preload during idle time
+        if (currentIndex < sectionsToPreload.length) {
+          if ('requestIdleCallback' in window) {
+            (window as any).requestIdleCallback(() => {
+              // Add small delay to avoid loading everything at once
+              setTimeout(preloadNext, 100)
+            }, { timeout: 2000 })
+          } else {
+            // Fallback for Safari
+            setTimeout(preloadNext, 300)
+          }
+        }
+      }
+
+      // Start preloading during idle time
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(preloadNext, { timeout: 3000 })
+      } else {
+        // Fallback for Safari
+        setTimeout(preloadNext, 500)
+      }
+    }, 1000) // Wait 1 second after mount before background loading
+
+    return () => clearTimeout(initialDelay)
+  }, [activityCreated, activateSection, activeSections])
   
   return (
     <div className="activity-overview-group space-y-0">

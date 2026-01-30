@@ -121,6 +121,9 @@ import { PortfolioSpendTrajectoryChart } from '@/components/charts/PortfolioSpen
 import { OrganizationalPositioningMap } from '@/components/analytics/OrganizationalPositioningMap'
 import { AidEcosystemSolarSystem } from '@/components/analytics/AidEcosystemSolarSystem'
 
+// Intervention Tree Map
+import { InterventionTreeMap } from '@/components/analytics/InterventionTreeMap'
+
 // Financial Totals Bar Chart
 import { FinancialTotalsBarChart } from '@/components/analytics/FinancialTotalsBarChart'
 import { apiFetch } from '@/lib/api-fetch';
@@ -665,6 +668,7 @@ export default function AnalyticsDashboardPage() {
                   <TabsTrigger value="partner-network" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Partner Network</TabsTrigger>
                   <TabsTrigger value="aid-ecosystem" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Aid Ecosystem</TabsTrigger>
                   <TabsTrigger value="operations" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Operations</TabsTrigger>
+                  <TabsTrigger value="tree-map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Tree Map</TabsTrigger>
                 </TabsList>
 
                 {/* ==================== PORTFOLIO SUMMARY TAB ==================== */}
@@ -1311,6 +1315,25 @@ export default function AnalyticsDashboardPage() {
                 </CardContent>
               </Card> */}
                       </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* ==================== TREE MAP TAB ==================== */}
+                {/* Contains: Intervention Tree Map - Violence Types > Approaches > Interventions */}
+                <TabsContent value="tree-map">
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Intervention Tree Map</h2>
+                      <p className="text-gray-600 mb-4">
+                        Explore interventions by violence type, approach, and specific programs.
+                        Click on categories to drill down into the hierarchy.
+                      </p>
+                      <Card className="bg-white border-slate-200">
+                        <CardContent className="p-6">
+                          <InterventionTreeMap />
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
                 </TabsContent>
