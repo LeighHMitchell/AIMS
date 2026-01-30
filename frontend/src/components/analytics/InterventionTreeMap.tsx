@@ -1,19 +1,25 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as d3 from "d3";
 import { Button } from "@/components/ui/button";
-import { ZoomOut, Download } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ZoomOut, Download, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 
-// Effectiveness-based color palette (4 colors for interventions)
-const EFFECTIVENESS_COLORS: Record<string, string> = {
-  "Always Works": "#52796f",      // Dark Green (Deep Teal)
-  "Mostly Works": "#cce1db",      // Light Green (Frozen Water)
-  "Sometimes Works": "#ff9090",   // Light Red (Grapefruit Pink)
-  "Never Works": "#dc2625",       // Dark Red (Primary Scarlet)
+// Direction-based color palette (4 colors for interventions)
+const DIRECTION_COLORS: Record<string, string> = {
+  "Favorable & Significant": "#52796f",      // Dark Green (Deep Teal)
+  "Favorable": "#cce1db",                     // Light Green (Frozen Water)
+  "Unfavorable": "#ff9090",                   // Light Red (Grapefruit Pink)
+  "Unfavorable & Significant": "#dc2625",    // Dark Red (Primary Scarlet)
 };
 
-const EFFECTIVENESS_LEVELS = ["Always Works", "Mostly Works", "Sometimes Works", "Never Works"];
+const DIRECTION_LEVELS = ["Favorable & Significant", "Favorable", "Unfavorable", "Unfavorable & Significant"];
+const VIOLENCE_TYPES = ["Sexual Violence", "Physical Violence"];
+const INTERVENTION_TYPES = ["Multi-Level", "Multi-Component", "Curriculum-Based"];
 
 // Parent tier colors (grays) - lighter overall so interventions pop
 const LEVEL_1_COLOR = "#94a3b8";  // Medium slate for Sexual Violence / Physical Violence
@@ -26,117 +32,105 @@ const FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hel
 // Animation duration in milliseconds
 const TRANSITION_DURATION = 500;
 
-// School-based VAWG intervention names
-const MOCK_INTERVENTIONS = [
-  "Safe Schools Initiative",
-  "Gender Equity Curriculum",
-  "Teacher Training on GBV Response",
-  "Student Peer Educator Program",
-  "School Counseling Services",
-  "Bystander Intervention Training",
-  "Respectful Relationships Education",
-  "Anti-Bullying & Harassment Policy",
-  "Girls' Empowerment Clubs",
-  "Boys' Positive Masculinity Program",
-  "School Safety Audits",
-  "Reporting & Referral Systems",
-  "Parent-School Partnership Program",
-  "Digital Safety & Cyberbullying Prevention",
-  "Comprehensive Sexuality Education",
-  "Conflict Resolution Training",
-  "Safe Spaces for Girls",
-  "School-Based Health Services",
-  "Arts-Based Prevention Program",
-  "Sports for Gender Equality",
-  "Student Rights Awareness Campaign",
-  "Teacher Code of Conduct Training",
-];
+// Interface for flat table data
+interface InterventionRow {
+  id: string;
+  violenceType: string;
+  interventionType: string;
+  name: string;
+  sampleSize: number;
+  direction: string;
+  description: string;
+}
 
-const MOCK_COUNTRIES = [
-  "Kenya",
-  "Uganda",
-  "Tanzania",
-  "Rwanda",
-  "Ethiopia",
-  "Nigeria",
-  "Ghana",
-  "South Africa",
-  "Zambia",
-  "Malawi",
-];
+// Generate initial mock data as flat rows
+function generateInitialData(): InterventionRow[] {
+  const interventionNames = [
+    "Safe Schools Initiative",
+    "Gender Equity Curriculum",
+    "Teacher Training on GBV Response",
+    "Student Peer Educator Program",
+    "School Counseling Services",
+    "Bystander Intervention Training",
+    "Respectful Relationships Education",
+    "Anti-Bullying & Harassment Policy",
+    "Girls' Empowerment Clubs",
+    "Boys' Positive Masculinity Program",
+    "School Safety Audits",
+    "Reporting & Referral Systems",
+  ];
 
-// School-based VAWG intervention descriptions
-const MOCK_DESCRIPTIONS = [
-  "A whole-school approach creating safe learning environments through policy, training, and student engagement to prevent violence against girls.",
-  "Curriculum integrating gender equality concepts across subjects, challenging stereotypes and promoting respectful relationships from early grades.",
-  "Comprehensive training for educators on recognizing signs of abuse, responding appropriately, and supporting affected students.",
-  "Training selected students as peer educators to facilitate discussions on consent, healthy relationships, and reporting mechanisms.",
-  "Professional counseling services within schools providing support for students experiencing or at risk of gender-based violence.",
-  "Teaching students and staff to safely intervene when witnessing harassment, bullying, or violent behavior in school settings.",
-  "Age-appropriate lessons on building healthy relationships, understanding consent, and recognizing abusive behaviors.",
-  "Development and implementation of clear policies prohibiting harassment and violence with defined consequences and reporting procedures.",
-  "After-school clubs providing safe spaces for girls to build confidence, leadership skills, and support networks.",
-  "Programs engaging boys in discussions about healthy masculinity, respect, and their role in preventing violence.",
-  "Systematic assessments of school facilities and practices to identify and address safety risks for girls and vulnerable students.",
-  "Establishing clear, confidential pathways for students to report incidents and access appropriate support services.",
-  "Engaging parents and caregivers in prevention efforts through workshops, communication, and home-school collaboration.",
-  "Education on online safety, recognizing cyber harassment, and responsible digital citizenship to prevent technology-facilitated abuse.",
-  "Evidence-based sexuality education covering consent, relationships, gender identity, and protection from exploitation.",
-  "Teaching students non-violent communication and conflict resolution skills to reduce aggression and bullying.",
-  "Designated safe areas within schools where girls can seek support, study, and connect with mentors.",
-  "School-based health services providing reproductive health information, support for survivors, and referrals.",
-  "Using drama, visual arts, and creative expression to explore themes of respect, consent, and healthy relationships.",
-  "Sports programs promoting gender equality, teamwork, and respect while providing safe recreational activities for all students.",
-  "Campaigns educating students about their rights to safety and education free from violence and discrimination.",
-  "Training teachers on professional boundaries, appropriate conduct, and their responsibilities in protecting students.",
-];
+  const descriptions = [
+    "A whole-school approach creating safe learning environments through policy, training, and student engagement.",
+    "Curriculum integrating gender equality concepts across subjects, challenging stereotypes.",
+    "Comprehensive training for educators on recognizing signs of abuse and responding appropriately.",
+    "Training selected students as peer educators to facilitate discussions on consent and healthy relationships.",
+    "Professional counseling services within schools providing support for at-risk students.",
+    "Teaching students and staff to safely intervene when witnessing harassment or violence.",
+    "Age-appropriate lessons on building healthy relationships and understanding consent.",
+    "Clear policies prohibiting harassment and violence with defined consequences.",
+    "After-school clubs providing safe spaces for girls to build confidence and leadership skills.",
+    "Programs engaging boys in discussions about healthy masculinity and respect.",
+    "Systematic assessments of school facilities to identify and address safety risks.",
+    "Establishing clear, confidential pathways for students to report incidents.",
+  ];
 
-// Generate mock hierarchical data
-function generateMockData() {
-  const approaches = ["Multi-Level", "Multi-Component", "Curriculum-Based"];
-  const violenceTypes = ["Sexual Violence", "Physical Violence"];
+  const rows: InterventionRow[] = [];
+  let id = 1;
 
-  // Shuffle and distribute interventions
-  const shuffledInterventions = [...MOCK_INTERVENTIONS].sort(() => Math.random() - 0.5);
-  let interventionIndex = 0;
+  VIOLENCE_TYPES.forEach((violenceType) => {
+    INTERVENTION_TYPES.forEach((interventionType) => {
+      // Add 2-3 interventions per combination
+      const numInterventions = Math.floor(Math.random() * 2) + 2;
+      for (let i = 0; i < numInterventions; i++) {
+        const idx = (id - 1) % interventionNames.length;
+        rows.push({
+          id: String(id++),
+          violenceType,
+          interventionType,
+          name: interventionNames[idx],
+          sampleSize: Math.floor(Math.random() * 400) + 100,
+          direction: DIRECTION_LEVELS[Math.floor(Math.random() * DIRECTION_LEVELS.length)],
+          description: descriptions[idx],
+        });
+      }
+    });
+  });
 
-  const data = {
+  return rows;
+}
+
+// Convert flat rows to hierarchical tree map data
+function convertToHierarchy(rows: InterventionRow[]): TreeMapNode {
+  const hierarchy: TreeMapNode = {
     name: "Interventions",
-    children: violenceTypes.map((violenceType) => ({
+    children: VIOLENCE_TYPES.map((violenceType) => ({
       name: violenceType,
-      children: approaches.map((approach) => {
-        const numInterventions = Math.floor(Math.random() * 4) + 3; // 3-6 interventions
-        const interventions = [];
-        for (let i = 0; i < numInterventions; i++) {
-          const idx = interventionIndex % shuffledInterventions.length;
-          const effectiveness = EFFECTIVENESS_LEVELS[Math.floor(Math.random() * EFFECTIVENESS_LEVELS.length)];
-          interventions.push({
-            name: shuffledInterventions[idx],
-            value: Math.floor(Math.random() * 900) + 100,
-            color: EFFECTIVENESS_COLORS[effectiveness],
-            country: MOCK_COUNTRIES[Math.floor(Math.random() * MOCK_COUNTRIES.length)],
-            effectiveness: effectiveness,
-            description: MOCK_DESCRIPTIONS[idx % MOCK_DESCRIPTIONS.length],
-          });
-          interventionIndex++;
-        }
-        return {
-          name: approach,
-          children: interventions,
-        };
-      }),
-    })),
+      children: INTERVENTION_TYPES.map((interventionType) => ({
+        name: interventionType,
+        children: rows
+          .filter((r) => r.violenceType === violenceType && r.interventionType === interventionType)
+          .map((r) => ({
+            id: r.id,
+            name: r.name,
+            value: r.sampleSize,
+            color: DIRECTION_COLORS[r.direction],
+            direction: r.direction,
+            description: r.description,
+          })),
+      })).filter((a) => a.children && a.children.length > 0),
+    })).filter((v) => v.children && v.children.length > 0),
   };
 
-  return data;
+  return hierarchy;
 }
 
 interface TreeMapNode {
   name: string;
+  id?: string;
   value?: number;
   color?: string;
-  country?: string;
-  effectiveness?: string;
+  direction?: string;
   description?: string;
   children?: TreeMapNode[];
 }
@@ -147,10 +141,61 @@ interface TooltipState {
   y: number;
   content: {
     name: string;
-    country?: string;
-    effectiveness?: string;
+    direction?: string;
     description?: string;
   } | null;
+}
+
+// Expandable Textarea Component
+function ExpandableTextarea({
+  value,
+  onChange,
+  placeholder,
+  minRows = 2,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  minRows?: number;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  const lineHeight = 18;
+  const baseHeight = minRows * lineHeight + 12; // padding
+  const expandedHeight = Math.max(baseHeight, Math.min(150, (value.split('\n').length + 1) * lineHeight + 12));
+
+  return (
+    <div className="relative">
+      <Textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="text-xs resize-none pr-8 transition-all duration-200"
+        style={{
+          height: isExpanded ? expandedHeight : baseHeight,
+          minHeight: baseHeight,
+        }}
+      />
+      <button
+        type="button"
+        onClick={toggleExpand}
+        className="absolute right-1 top-1 p-1 text-slate-400 hover:text-slate-600 rounded"
+        title={isExpanded ? "Collapse" : "Expand"}
+      >
+        {isExpanded ? (
+          <ChevronUp className="h-3 w-3" />
+        ) : (
+          <ChevronDown className="h-3 w-3" />
+        )}
+      </button>
+    </div>
+  );
 }
 
 export function InterventionTreeMap() {
@@ -165,9 +210,45 @@ export function InterventionTreeMap() {
   });
   const [currentRoot, setCurrentRoot] = useState<d3.HierarchyRectangularNode<TreeMapNode> | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<string[]>(["Interventions"]);
-  const [mockData] = useState(() => generateMockData());
   const [isAnimating, setIsAnimating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Editable data state
+  const [tableData, setTableData] = useState<InterventionRow[]>(() => generateInitialData());
+
+  // Convert table data to hierarchy for tree map
+  const treeMapData = useMemo(() => convertToHierarchy(tableData), [tableData]);
+
+  // Handle row updates
+  const updateRow = useCallback((id: string, field: keyof InterventionRow, value: string | number) => {
+    setTableData((prev) =>
+      prev.map((row) =>
+        row.id === id ? { ...row, [field]: value } : row
+      )
+    );
+  }, []);
+
+  // Add new row
+  const addRow = useCallback(() => {
+    const newId = String(Math.max(...tableData.map((r) => parseInt(r.id))) + 1);
+    setTableData((prev) => [
+      ...prev,
+      {
+        id: newId,
+        violenceType: VIOLENCE_TYPES[0],
+        interventionType: INTERVENTION_TYPES[0],
+        name: "New Intervention",
+        sampleSize: 100,
+        direction: DIRECTION_LEVELS[0],
+        description: "Description of the intervention",
+      },
+    ]);
+  }, [tableData]);
+
+  // Delete row
+  const deleteRow = useCallback((id: string) => {
+    setTableData((prev) => prev.filter((row) => row.id !== id));
+  }, []);
 
   // Handle resize
   useEffect(() => {
@@ -202,9 +283,7 @@ export function InterventionTreeMap() {
         .paddingOuter(6)
         .paddingTop(28)
         .paddingInner((node) => {
-          // More padding between top-level categories (Sexual Violence / Physical Violence)
           if (node.depth === 0) return 16;
-          // Less padding between level 2 items
           if (node.depth === 1) return 4;
           return 2;
         })
@@ -215,7 +294,7 @@ export function InterventionTreeMap() {
     [dimensions]
   );
 
-  // Export to JPEG - draw directly on canvas for perfect rendering
+  // Export to JPEG
   const handleExportJPG = useCallback(() => {
     if (isExporting) return;
 
@@ -224,17 +303,14 @@ export function InterventionTreeMap() {
 
     setTimeout(() => {
       try {
-        // Get current treemap nodes
-        const root = createTreemap(mockData);
+        const root = createTreemap(treeMapData);
         const displayRoot = currentRoot || root;
         const nodes = displayRoot.descendants().filter((d) => d.depth > 0);
 
         const { width, height } = dimensions;
-
-        // Canvas settings
         const legendHeight = 50;
         const padding = 24;
-        const scale = 2; // Higher resolution
+        const scale = 2;
 
         const canvas = document.createElement("canvas");
         canvas.width = (width + padding * 2) * scale;
@@ -243,35 +319,28 @@ export function InterventionTreeMap() {
         const ctx = canvas.getContext("2d")!;
         ctx.scale(scale, scale);
 
-        // White background
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
 
-        // Draw legend
         ctx.font = "600 12px Arial, sans-serif";
         ctx.fillStyle = "#475569";
-        ctx.fillText("Effectiveness:", padding, padding + 14);
+        ctx.fillText("Direction:", padding, padding + 14);
 
-        let legendX = padding + 90;
-        EFFECTIVENESS_LEVELS.forEach((level) => {
-          // Color box
-          ctx.fillStyle = EFFECTIVENESS_COLORS[level];
+        let legendX = padding + 70;
+        DIRECTION_LEVELS.forEach((level) => {
+          ctx.fillStyle = DIRECTION_COLORS[level];
           ctx.fillRect(legendX, padding + 2, 16, 16);
           ctx.strokeStyle = "#e2e8f0";
           ctx.lineWidth = 1;
           ctx.strokeRect(legendX, padding + 2, 16, 16);
-
-          // Label
           ctx.fillStyle = "#475569";
           ctx.font = "500 11px Arial, sans-serif";
           ctx.fillText(level, legendX + 20, padding + 14);
           legendX += ctx.measureText(level).width + 45;
         });
 
-        // Draw treemap cells
         const offsetY = legendHeight + padding;
 
-        // Helper to get node color
         const getNodeColor = (d: d3.HierarchyRectangularNode<TreeMapNode>) => {
           if (d.data.color) return d.data.color;
           if (d.depth === 1) return LEVEL_1_COLOR;
@@ -279,13 +348,11 @@ export function InterventionTreeMap() {
           return LEVEL_2_COLOR;
         };
 
-        // Helper to get text color
         const getTextColor = (bgColor: string) => {
           const darkColors = ["#dc2625", "#52796f"];
           return darkColors.includes(bgColor) ? "#ffffff" : "#1e293b";
         };
 
-        // Sort nodes so parents are drawn first, then children on top
         const sortedNodes = [...nodes].sort((a, b) => a.depth - b.depth);
 
         sortedNodes.forEach((d) => {
@@ -295,7 +362,6 @@ export function InterventionTreeMap() {
           const h = d.y1 - d.y0;
           const color = getNodeColor(d);
 
-          // Draw rectangle with rounded corners
           ctx.fillStyle = color;
           ctx.beginPath();
           const radius = 4;
@@ -311,23 +377,19 @@ export function InterventionTreeMap() {
           ctx.closePath();
           ctx.fill();
 
-          // Draw border
           ctx.strokeStyle = BORDER_COLOR;
           ctx.lineWidth = d.depth === 1 ? 2 : 1;
           ctx.stroke();
 
-          // Draw text
           const textColor = getTextColor(color);
           ctx.fillStyle = textColor;
 
           if (d.children) {
-            // Parent label (top-left)
             if (w > 60) {
               ctx.font = d.depth === 1 ? "700 14px Arial, sans-serif" : "600 12px Arial, sans-serif";
               ctx.fillText(d.data.name, x + 6, y + 18);
             }
           } else {
-            // Leaf label (centered, with word wrap)
             if (w > 40 && h > 30) {
               ctx.font = "500 11px Arial, sans-serif";
               ctx.textAlign = "center";
@@ -352,11 +414,8 @@ export function InterventionTreeMap() {
               });
               if (currentLine) lines.push(currentLine);
 
-              // Limit lines to fit
               const maxLines = Math.floor((h - 8) / lineHeight);
               const displayLines = lines.slice(0, maxLines);
-
-              // Draw centered lines
               const totalHeight = displayLines.length * lineHeight;
               const startY = y + (h - totalHeight) / 2 + lineHeight / 2;
 
@@ -364,14 +423,12 @@ export function InterventionTreeMap() {
                 ctx.fillText(line, x + w / 2, startY + i * lineHeight);
               });
 
-              // Reset alignment
               ctx.textAlign = "left";
               ctx.textBaseline = "alphabetic";
             }
           }
         });
 
-        // Export as JPEG
         canvas.toBlob((blob) => {
           if (blob) {
             const downloadUrl = URL.createObjectURL(blob);
@@ -389,56 +446,45 @@ export function InterventionTreeMap() {
         setIsExporting(false);
       }
     }, 100);
-  }, [isExporting, createTreemap, mockData, currentRoot, dimensions]);
+  }, [isExporting, createTreemap, treeMapData, currentRoot, dimensions]);
 
   // Draw the treemap with animations
   useEffect(() => {
-    if (!svgRef.current || !mockData) return;
+    if (!svgRef.current || !treeMapData) return;
 
     const svg = d3.select(svgRef.current);
     const { width, height } = dimensions;
-    const root = createTreemap(mockData);
+    const root = createTreemap(treeMapData);
 
-    // If we have a current zoomed root, use it; otherwise use the full root
     const displayRoot = currentRoot || root;
 
-    // Get the nodes at the appropriate depth for display
     const getDisplayNodes = (node: d3.HierarchyRectangularNode<TreeMapNode>) => {
       return node.descendants().filter((d) => d.depth > 0);
     };
 
     const nodes = getDisplayNodes(displayRoot);
 
-    // Create color scale for nodes based on depth and effectiveness
     const getNodeColor = (d: d3.HierarchyRectangularNode<TreeMapNode>) => {
-      // Level 3 (interventions) - use effectiveness-based colors
       if (d.data.color) return d.data.color;
-      // Level 1 (Sexual Violence / Physical Violence) - slate gray
       if (d.depth === 1) return LEVEL_1_COLOR;
-      // Level 2 (Multi-Level / Multi-Component / Curriculum-Based) - lighter slate
       if (d.depth === 2) return LEVEL_2_COLOR;
       return LEVEL_2_COLOR;
     };
 
-    // Get text color based on background
     const getTextColor = (bgColor: string) => {
-      // For dark colors, use white text; for light colors, use dark text
       const darkColors = ["#dc2625", "#52796f"];
       return darkColors.includes(bgColor) ? "#ffffff" : "#1e293b";
     };
 
-    // Main group
     let g = svg.select<SVGGElement>("g.main-group");
     if (g.empty()) {
       g = svg.append("g").attr("class", "main-group");
     }
 
-    // DATA JOIN for cells
     const cell = g
       .selectAll<SVGGElement, d3.HierarchyRectangularNode<TreeMapNode>>("g.cell")
-      .data(nodes, (d) => d.data.name + "-" + d.depth);
+      .data(nodes, (d) => (d.data.id ? d.data.id : d.data.name + "-" + d.depth));
 
-    // EXIT - animate out old cells
     cell.exit()
       .transition()
       .duration(TRANSITION_DURATION)
@@ -446,14 +492,12 @@ export function InterventionTreeMap() {
       .attr("transform", (d) => `translate(${width / 2},${height / 2})`)
       .remove();
 
-    // ENTER - create new cells
     const cellEnter = cell.enter()
       .append("g")
       .attr("class", "cell")
       .attr("transform", (d) => `translate(${d.x0},${d.y0})`)
       .style("opacity", 0);
 
-    // Add rectangles to new cells
     cellEnter
       .append("rect")
       .attr("class", "cell-rect")
@@ -466,21 +510,32 @@ export function InterventionTreeMap() {
       .attr("rx", 4)
       .style("cursor", (d) => (d.children ? "pointer" : "default"));
 
-    // Add parent labels to new cells
     cellEnter
       .filter((d) => Boolean(d.children))
-      .append("text")
-      .attr("class", "parent-label")
-      .attr("x", 6)
-      .attr("y", 18)
-      .attr("font-family", FONT_FAMILY)
-      .attr("font-size", (d) => (d.depth === 1 ? 14 : 12))
-      .attr("font-weight", (d) => (d.depth === 1 ? 700 : 600))
-      .attr("fill", (d) => getTextColor(getNodeColor(d)))
+      .append("foreignObject")
+      .attr("class", "parent-label-container")
+      .attr("x", 4)
+      .attr("y", 2)
+      .attr("width", (d) => Math.max(0, d.x1 - d.x0 - 8))
+      .attr("height", 24)
       .attr("pointer-events", "none")
-      .style("opacity", 0);
+      .style("opacity", 0)
+      .append("xhtml:div")
+      .attr("class", "parent-label")
+      .style("width", "100%")
+      .style("height", "100%")
+      .style("display", "flex")
+      .style("align-items", "center")
+      .style("font-family", FONT_FAMILY)
+      .style("font-size", (d) => (d.depth === 1 ? "14px" : "12px"))
+      .style("font-weight", (d) => (d.depth === 1 ? "700" : "600"))
+      .style("color", (d) => getTextColor(getNodeColor(d)))
+      .style("line-height", "1.2")
+      .style("overflow", "hidden")
+      .style("text-overflow", "ellipsis")
+      .style("white-space", "nowrap")
+      .text((d) => d.data.name);
 
-    // Add foreignObject for leaf labels (allows text wrapping)
     cellEnter
       .filter((d) => !d.children)
       .append("foreignObject")
@@ -507,17 +562,14 @@ export function InterventionTreeMap() {
       .style("word-wrap", "break-word")
       .style("padding", "2px");
 
-    // MERGE - update all cells (existing + new)
     const cellMerge = cellEnter.merge(cell);
 
-    // Animate position
     cellMerge
       .transition()
       .duration(TRANSITION_DURATION)
       .attr("transform", (d) => `translate(${d.x0},${d.y0})`)
       .style("opacity", 1);
 
-    // Animate rectangles
     cellMerge.select<SVGRectElement>("rect.cell-rect")
       .on("click", function (event, d) {
         if (d.children && !isAnimating) {
@@ -535,7 +587,7 @@ export function InterventionTreeMap() {
           .duration(150)
           .attr("fill-opacity", d.children ? 0.8 : 1);
 
-        if (!d.children && d.data.country) {
+        if (!d.children && d.data.direction) {
           const rect = svgRef.current?.getBoundingClientRect();
           if (rect) {
             setTooltip({
@@ -544,8 +596,7 @@ export function InterventionTreeMap() {
               y: event.clientY - rect.top,
               content: {
                 name: d.data.name,
-                country: d.data.country,
-                effectiveness: d.data.effectiveness,
+                direction: d.data.direction,
                 description: d.data.description,
               },
             });
@@ -575,15 +626,16 @@ export function InterventionTreeMap() {
       .attr("height", (d) => Math.max(0, d.y1 - d.y0))
       .attr("fill", (d) => getNodeColor(d));
 
-    // Update parent labels
-    cellMerge.select<SVGTextElement>("text.parent-label")
+    cellMerge.select<SVGForeignObjectElement>("foreignObject.parent-label-container")
       .transition()
       .duration(TRANSITION_DURATION)
-      .style("opacity", (d) => (d.x1 - d.x0 > 60 ? 1 : 0))
-      .attr("fill", (d) => getTextColor(getNodeColor(d)))
-      .text((d) => d.data.name); // Show full category names without truncation
+      .attr("width", (d) => Math.max(0, d.x1 - d.x0 - 8))
+      .style("opacity", (d) => (d.x1 - d.x0 > 60 ? 1 : 0));
 
-    // Update leaf label containers (foreignObject)
+    cellMerge.select<HTMLDivElement>("foreignObject.parent-label-container div.parent-label")
+      .style("color", (d) => getTextColor(getNodeColor(d)))
+      .text((d) => d.data.name);
+
     cellMerge.select<SVGForeignObjectElement>("foreignObject.leaf-label-container")
       .transition()
       .duration(TRANSITION_DURATION)
@@ -591,12 +643,11 @@ export function InterventionTreeMap() {
       .attr("height", (d) => Math.max(0, d.y1 - d.y0 - 8))
       .style("opacity", (d) => ((d.x1 - d.x0) > 40 && (d.y1 - d.y0) > 30 ? 1 : 0));
 
-    // Update leaf label text content and colors
     cellMerge.select<HTMLDivElement>("foreignObject.leaf-label-container div.leaf-label-text")
       .style("color", (d) => getTextColor(d.data.color || "#f1f4f8"))
       .text((d) => d.data.name);
 
-  }, [mockData, dimensions, currentRoot, createTreemap, isAnimating]);
+  }, [treeMapData, dimensions, currentRoot, createTreemap, isAnimating]);
 
   const handleZoomOut = useCallback(() => {
     if (breadcrumbs.length > 1 && !isAnimating) {
@@ -670,14 +721,14 @@ export function InterventionTreeMap() {
         </div>
       </div>
 
-      {/* Legend - Effectiveness-based */}
+      {/* Legend - Direction-based */}
       <div className="flex flex-wrap items-center gap-4 mb-4 text-xs">
-        <span className="text-slate-600 font-medium">Effectiveness:</span>
-        {EFFECTIVENESS_LEVELS.map((level) => (
+        <span className="text-slate-600 font-medium">Direction:</span>
+        {DIRECTION_LEVELS.map((level) => (
           <div key={level} className="flex items-center gap-1">
             <div
               className="w-4 h-4 rounded border border-slate-300"
-              style={{ backgroundColor: EFFECTIVENESS_COLORS[level] }}
+              style={{ backgroundColor: DIRECTION_COLORS[level] }}
             />
             <span className="text-slate-600">{level}</span>
           </div>
@@ -704,23 +755,19 @@ export function InterventionTreeMap() {
           <div className="font-semibold text-base mb-2">{tooltip.content.name}</div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-slate-400">Country:</span>
-              <span className="text-emerald-400">{tooltip.content.country}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400">Effectiveness:</span>
+              <span className="text-slate-400">Direction:</span>
               <span
                 className={
-                  tooltip.content.effectiveness === "Always Works"
+                  tooltip.content.direction === "Favorable & Significant"
                     ? "text-teal-400"
-                    : tooltip.content.effectiveness === "Mostly Works"
+                    : tooltip.content.direction === "Favorable"
                     ? "text-green-300"
-                    : tooltip.content.effectiveness === "Sometimes Works"
+                    : tooltip.content.direction === "Unfavorable"
                     ? "text-orange-300"
                     : "text-red-400"
                 }
               >
-                {tooltip.content.effectiveness}
+                {tooltip.content.direction}
               </span>
             </div>
             <div className="mt-2 pt-2 border-t border-slate-700">
@@ -736,6 +783,158 @@ export function InterventionTreeMap() {
       <p className="text-xs text-slate-500 mt-3 text-center">
         Click on a category to zoom in. Use the breadcrumbs or Zoom Out button to navigate back.
       </p>
+
+      {/* Data Table */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-slate-900">Intervention Data</h3>
+          <Button onClick={addRow} size="sm" className="flex items-center gap-1">
+            <Plus className="h-4 w-4" />
+            Add Intervention
+          </Button>
+        </div>
+        <div className="border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="w-[130px] text-left">Violence Type</TableHead>
+                  <TableHead className="w-[140px] text-left">Intervention Type</TableHead>
+                  <TableHead className="w-[220px] text-left">Intervention Name</TableHead>
+                  <TableHead className="w-[90px]">Sample Size</TableHead>
+                  <TableHead className="w-[160px]">Direction</TableHead>
+                  <TableHead className="min-w-[250px]">Description</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tableData.map((row) => (
+                  <TableRow key={row.id} className="align-top">
+                    {/* Violence Type - Left aligned, two lines */}
+                    <TableCell className="align-top">
+                      <Select
+                        value={row.violenceType}
+                        onValueChange={(value) => updateRow(row.id, "violenceType", value)}
+                      >
+                        <SelectTrigger className="h-auto min-h-[40px] text-xs text-left justify-start">
+                          <SelectValue>
+                            <span className="whitespace-normal text-left leading-tight">{row.violenceType}</span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VIOLENCE_TYPES.map((type) => (
+                            <SelectItem key={type} value={type} className="text-xs">
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    {/* Intervention Type - Left aligned chip */}
+                    <TableCell className="align-top">
+                      <Select
+                        value={row.interventionType}
+                        onValueChange={(value) => updateRow(row.id, "interventionType", value)}
+                      >
+                        <SelectTrigger className="h-auto min-h-[40px] text-xs text-left justify-start">
+                          <SelectValue>
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                              {row.interventionType}
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent align="start">
+                          {INTERVENTION_TYPES.map((type) => (
+                            <SelectItem key={type} value={type} className="text-xs">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                {type}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    {/* Intervention Name - Two lines, expandable */}
+                    <TableCell className="align-top">
+                      <ExpandableTextarea
+                        value={row.name}
+                        onChange={(value) => updateRow(row.id, "name", value)}
+                        placeholder="Intervention name..."
+                        minRows={2}
+                      />
+                    </TableCell>
+                    {/* Sample Size */}
+                    <TableCell className="align-top">
+                      <Input
+                        type="number"
+                        value={row.sampleSize}
+                        onChange={(e) => updateRow(row.id, "sampleSize", parseInt(e.target.value) || 0)}
+                        className="h-10 text-xs w-20"
+                        min={1}
+                      />
+                    </TableCell>
+                    {/* Direction */}
+                    <TableCell className="align-top">
+                      <Select
+                        value={row.direction}
+                        onValueChange={(value) => updateRow(row.id, "direction", value)}
+                      >
+                        <SelectTrigger className="h-10 text-xs">
+                          <SelectValue>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded flex-shrink-0"
+                                style={{ backgroundColor: DIRECTION_COLORS[row.direction] }}
+                              />
+                              <span className="truncate">{row.direction}</span>
+                            </div>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DIRECTION_LEVELS.map((level) => (
+                            <SelectItem key={level} value={level} className="text-xs">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded"
+                                  style={{ backgroundColor: DIRECTION_COLORS[level] }}
+                                />
+                                {level}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    {/* Description - Two lines, expandable */}
+                    <TableCell className="align-top">
+                      <ExpandableTextarea
+                        value={row.description}
+                        onChange={(value) => updateRow(row.id, "description", value)}
+                        placeholder="Description..."
+                        minRows={2}
+                      />
+                    </TableCell>
+                    {/* Delete */}
+                    <TableCell className="align-top">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteRow(row.id)}
+                        className="h-10 w-10 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+        <p className="text-xs text-slate-500 mt-2">
+          Edit the table above to update the tree map visualization. The "Sample Size" column determines the size of each intervention block.
+        </p>
+      </div>
     </div>
   );
 }
