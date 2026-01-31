@@ -294,7 +294,7 @@ export default function CalendarPage() {
         </div>
 
         <div className="space-y-4">
-          <Card className="bg-[#f1f4f8] border-[#cfd0d5] rounded-xl">
+          <Card className="bg-white border-[#cfd0d5] rounded-xl">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg text-[#4c5568]">

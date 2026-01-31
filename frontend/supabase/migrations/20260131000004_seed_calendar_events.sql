@@ -1,5 +1,5 @@
 -- Seed calendar events throughout 2026
--- Using the new color palette: Primary Scarlet (#dc2625), Pale Slate (#cfd0d5), Blue Slate (#4c5568), Cool Steel (#7b95a7), Platinum (#f1f4f8)
+-- Color palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
 
 INSERT INTO calendar_events (title, description, start, "end", location, type, status, color, organizer_id, organizer_name, attendees) VALUES
 
