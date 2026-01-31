@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { Calendar, Clock, MapPin, Plus, Users, Filter } from 'lucide-react'
+import { Calendar, Clock, MapPin, Plus, Users, Filter, History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -51,6 +51,7 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [viewingDate, setViewingDate] = useState<Date | null>(null)
   const [hoveredEvent, setHoveredEvent] = useState<{ event: CalendarEvent; x: number; y: number } | null>(null)
+  const [showPastMeetings, setShowPastMeetings] = useState(false)
 
   // Fetch events from API
   const fetchEvents = async () => {
@@ -294,42 +295,90 @@ export default function CalendarPage() {
 
         <div className="space-y-4">
           <Card className="bg-[#f1f4f8] border-[#cfd0d5] rounded-xl">
-            <CardHeader>
-              <CardTitle className="text-lg text-[#4c5568]">Quick Stats</CardTitle>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg text-[#4c5568]">
+                  {showPastMeetings ? 'Past Meetings' : 'Upcoming Meetings'}
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPastMeetings(!showPastMeetings)}
+                  className="text-xs text-[#7b95a7] hover:text-[#4c5568] h-8 px-2"
+                >
+                  <History className="h-3.5 w-3.5 mr-1" />
+                  {showPastMeetings ? 'Show Upcoming' : 'Show Past'}
+                </Button>
+              </div>
+              <CardDescription className="text-[#7b95a7]">
+                {showPastMeetings
+                  ? `${filteredEvents.filter(e => new Date(e.start) <= new Date()).length} past`
+                  : `${filteredEvents.filter(e => new Date(e.start) > new Date()).length} upcoming`
+                }
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[#4c5568]">Total Events</span>
-                <Badge variant="secondary" className="bg-white text-[#4c5568]">{filteredEvents.length}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[#4c5568]">Upcoming</span>
-                <Badge variant="outline" className="border-[#cfd0d5] text-[#4c5568]">
-                  {filteredEvents.filter(e => new Date(e.start) > new Date()).length}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[#4c5568]">Pending Approval</span>
-                <Badge variant="outline" className="border-[#cfd0d5] text-[#4c5568]">
-                  {filteredEvents.filter(e => e.status === 'pending').length}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#f1f4f8] border-[#cfd0d5] rounded-xl">
-            <CardHeader>
-              <CardTitle className="text-lg text-[#4c5568]">Event Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-[#4c5568]"></div>
-                <span className="text-sm text-[#4c5568]">Approved</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded border-2 border-dashed border-[#4c5568] bg-transparent"></div>
-                <span className="text-sm text-[#4c5568]">Pending Approval</span>
-              </div>
+            <CardContent className="space-y-3 max-h-[400px] overflow-y-auto">
+              {filteredEvents
+                .filter(e => showPastMeetings
+                  ? new Date(e.start) <= new Date()
+                  : new Date(e.start) > new Date()
+                )
+                .sort((a, b) => showPastMeetings
+                  ? new Date(b.start).getTime() - new Date(a.start).getTime()
+                  : new Date(a.start).getTime() - new Date(b.start).getTime()
+                )
+                .slice(0, 20)
+                .map(event => (
+                  <div
+                    key={event.id}
+                    className={`p-3 bg-white rounded-lg cursor-pointer hover:shadow-md transition-shadow ${
+                      event.status === 'pending' ? 'border-l-4 border-dashed' : 'border-l-4'
+                    }`}
+                    style={{ borderLeftColor: event.color || '#4c5568' }}
+                    onClick={() => {
+                      setSelectedEvent(event)
+                      setShowDetailModal(true)
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm text-[#4c5568] truncate">{event.title}</h4>
+                        <div className="flex items-center gap-1 mt-1 text-xs text-[#7b95a7]">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(event.start).toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                        <div className="flex items-center gap-1 mt-0.5 text-xs text-[#7b95a7]">
+                          <Clock className="h-3 w-3" />
+                          {formatTime(event.start)}
+                          {event.end && ` - ${formatTime(event.end)}`}
+                        </div>
+                        {event.location && (
+                          <div className="flex items-center gap-1 mt-0.5 text-xs text-[#7b95a7]">
+                            <MapPin className="h-3 w-3" />
+                            <span className="truncate">{event.location}</span>
+                          </div>
+                        )}
+                      </div>
+                      {event.status === 'pending' && (
+                        <Badge variant="outline" className="text-xs border-[#cfd0d5] text-[#4c5568]">
+                          Pending
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              {filteredEvents.filter(e => showPastMeetings
+                ? new Date(e.start) <= new Date()
+                : new Date(e.start) > new Date()
+              ).length === 0 && (
+                <p className="text-sm text-[#7b95a7] text-center py-4">
+                  {showPastMeetings ? 'No past meetings' : 'No upcoming meetings'}
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
