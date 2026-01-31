@@ -130,16 +130,11 @@ export function EventDetailModal({
   })
 
   const colorPresets = [
-    { color: '#dc2625', name: 'Red' },
-    { color: '#ea580c', name: 'Orange' },
-    { color: '#ca8a04', name: 'Yellow' },
-    { color: '#16a34a', name: 'Green' },
-    { color: '#0891b2', name: 'Cyan' },
-    { color: '#2563eb', name: 'Blue' },
-    { color: '#7c3aed', name: 'Purple' },
-    { color: '#db2777', name: 'Pink' },
-    { color: '#4c5568', name: 'Gray' },
-    { color: '#7b95a7', name: 'Steel' },
+    { color: '#dc2625', name: 'Primary Scarlet' },
+    { color: '#cfd0d5', name: 'Pale Slate' },
+    { color: '#4c5568', name: 'Blue Slate' },
+    { color: '#7b95a7', name: 'Cool Steel' },
+    { color: '#f1f4f8', name: 'Platinum' },
   ]
   const [participants, setParticipants] = useState<Participant[]>([])
   const [documents, setDocuments] = useState<EventDocument[]>([])

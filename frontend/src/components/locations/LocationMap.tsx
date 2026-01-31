@@ -34,13 +34,60 @@ interface LocationMapProps {
   displayLongitude?: number | null;
 }
 
-// Map style URLs for MapLibre (using Carto's vector tiles)
-const MAP_STYLES: Record<MapLayerKey, string> = {
+// HOT (Humanitarian OpenStreetMap Team) raster tile style
+// Using local proxy to bypass CORS restrictions
+const HOT_STYLE = {
+  version: 8 as const,
+  sources: {
+    'hot-osm': {
+      type: 'raster' as const,
+      tiles: [
+        '/api/tiles/hot/{z}/{x}/{y}.png'
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team',
+      maxzoom: 19
+    }
+  },
+  layers: [{
+    id: 'hot-osm-layer',
+    type: 'raster' as const,
+    source: 'hot-osm',
+    minzoom: 0,
+    maxzoom: 22
+  }]
+};
+
+// ESRI Satellite raster tile style
+const SATELLITE_STYLE = {
+  version: 8 as const,
+  sources: {
+    'esri-satellite': {
+      type: 'raster' as const,
+      tiles: [
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+      ],
+      tileSize: 256,
+      attribution: '© Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+      maxzoom: 19
+    }
+  },
+  layers: [{
+    id: 'esri-satellite-layer',
+    type: 'raster' as const,
+    source: 'esri-satellite',
+    minzoom: 0,
+    maxzoom: 22
+  }]
+};
+
+// Map style URLs for MapLibre (using Carto's vector tiles and raster tiles)
+const MAP_STYLES: Record<MapLayerKey, string | typeof HOT_STYLE> = {
   osm_standard: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
-  osm_humanitarian: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', // Similar to OSM
+  osm_humanitarian: HOT_STYLE,
   cyclosm: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
-  opentopo: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
-  satellite_esri: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', // Note: True satellite requires API key
+  opentopo: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  satellite_esri: SATELLITE_STYLE,
 };
 
 // Component to handle map click events
@@ -109,11 +156,12 @@ function LocationMapComponent({
 
   return (
     <Map
+      key={`location-map-${currentLayer}`}
       center={mapLibreCenter}
       zoom={mapZoom}
       styles={{
-        light: MAP_STYLES[currentLayer],
-        dark: MAP_STYLES[currentLayer],
+        light: MAP_STYLES[currentLayer] as string | object,
+        dark: MAP_STYLES[currentLayer] as string | object,
       }}
     >
       <MapControls position="top-right" showZoom />

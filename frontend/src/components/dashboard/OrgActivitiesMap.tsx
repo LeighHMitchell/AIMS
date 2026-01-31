@@ -24,9 +24,33 @@ const HeatmapLayer = dynamic(
 );
 
 // Map style configurations for MapLibre
-type MapLayerType = 'cartodb_voyager' | 'cartodb_dark' | 'osm_bright' | 'terrain' | 'satellite';
+type MapLayerType = 'cartodb_voyager' | 'cartodb_dark' | 'osm_bright' | 'hot' | 'terrain' | 'satellite';
 
-const MAP_STYLES: Record<MapLayerType, { name: string; style: string }> = {
+// HOT (Humanitarian OpenStreetMap Team) raster tile style
+// Using local proxy to bypass CORS restrictions
+const HOT_STYLE = {
+  version: 8 as const,
+  sources: {
+    'hot-osm': {
+      type: 'raster' as const,
+      tiles: [
+        '/api/tiles/hot/{z}/{x}/{y}.png'
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team',
+      maxzoom: 19
+    }
+  },
+  layers: [{
+    id: 'hot-osm-layer',
+    type: 'raster' as const,
+    source: 'hot-osm',
+    minzoom: 0,
+    maxzoom: 22
+  }]
+};
+
+const MAP_STYLES: Record<MapLayerType, { name: string; style: string | typeof HOT_STYLE }> = {
   cartodb_voyager: {
     name: 'Streets',
     style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
@@ -38,6 +62,10 @@ const MAP_STYLES: Record<MapLayerType, { name: string; style: string }> = {
   osm_bright: {
     name: 'Light',
     style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  },
+  hot: {
+    name: 'Humanitarian',
+    style: HOT_STYLE,
   },
   terrain: {
     name: 'Terrain',
@@ -366,11 +394,11 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               {/* Right side map controls */}
               <div className="flex items-center gap-1.5">
                 <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapLayerType)}>
-                  <SelectTrigger className="w-[100px] bg-white shadow-md border-gray-300 text-xs h-9">
+                  <SelectTrigger className="w-[120px] bg-white shadow-md border-gray-300 text-xs h-9">
                     <SelectValue placeholder="Map type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(MAP_STYLES).slice(0, 3).map(([key, style]) => (
+                    {Object.entries(MAP_STYLES).slice(0, 4).map(([key, style]) => (
                       <SelectItem key={key} value={key}>
                         {style.name}
                       </SelectItem>
@@ -419,8 +447,8 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
               zoom={6}
               minZoom={2}
               styles={{
-                light: MAP_STYLES[mapStyle].style,
-                dark: MAP_STYLES[mapStyle].style,
+                light: MAP_STYLES[mapStyle].style as string | object,
+                dark: MAP_STYLES[mapStyle].style as string | object,
               }}
             >
               <MapControls position="top-right" showZoom />

@@ -339,34 +339,63 @@ function LocationMarker({ location }: { location: LocationData }) {
       </MarkerContent>
 
       {/* Tooltip on hover */}
-      <MarkerTooltip className="!p-0 !bg-white !text-foreground max-w-[300px] overflow-hidden">
+      <MarkerTooltip className="!p-0 !bg-white !text-foreground max-w-[320px] overflow-hidden">
         {/* Banner */}
         {location.activity?.banner && (
           <div className="w-full h-16 overflow-hidden">
             <img src={location.activity.banner} alt="" className="w-full h-full object-cover" />
           </div>
         )}
-        
+
         <div className="p-2.5">
           {/* Title */}
-          <div className="font-semibold text-xs text-slate-700 mb-2 line-clamp-2">
+          <div className="font-semibold text-xs text-slate-700 mb-2 leading-snug">
             {location.activity?.title || 'Untitled Activity'}
           </div>
-          
-          {/* Quick info */}
-          <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-            <div className="text-slate-500">Location</div>
-            <div className="text-slate-700 truncate">{location.location_name || 'Unnamed'}</div>
-            
-            {location.activity?.organization_name && (
-              <>
-                <div className="text-slate-500">Organisation</div>
-                <div className="text-slate-700 truncate">{location.activity.organization_name}</div>
-              </>
+
+          {/* Status & Budget Row */}
+          <div className="flex items-center gap-2 mb-2">
+            <Badge
+              variant="secondary"
+              className="text-[10px] px-1.5 py-0"
+              style={{ backgroundColor: statusInfo.bgColor, color: statusInfo.color }}
+            >
+              {statusInfo.label}
+            </Badge>
+            {location.activity?.totalBudget && location.activity.totalBudget > 0 && (
+              <span className="text-[10px] font-semibold text-slate-600">
+                {formatCompactCurrency(location.activity.totalBudget)}
+              </span>
             )}
-            
-            <div className="text-slate-500">Status</div>
-            <div className="text-slate-700">{statusInfo.label}</div>
+          </div>
+
+          {/* Organisation with logo */}
+          {location.activity?.organization_name && (
+            <div className="flex items-start gap-2 mb-2">
+              {location.activity?.organization_logo ? (
+                <img
+                  src={location.activity.organization_logo}
+                  alt=""
+                  className="h-5 w-5 rounded object-contain flex-shrink-0 mt-0.5"
+                />
+              ) : (
+                <div className="h-5 w-5 rounded bg-slate-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Building2 className="h-3 w-3 text-slate-400" />
+                </div>
+              )}
+              <div className="text-[10px] text-slate-700 leading-snug">
+                {location.activity.organization_name}
+                {location.activity?.organization_acronym && location.activity?.organization_acronym !== location.activity?.organization_name && (
+                  <span className="text-slate-500"> ({location.activity.organization_acronym})</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Location */}
+          <div className="text-[10px]">
+            <span className="text-slate-500">Location: </span>
+            <span className="text-slate-700 leading-snug">{location.location_name || 'Unnamed'}</span>
           </div>
         </div>
       </MarkerTooltip>

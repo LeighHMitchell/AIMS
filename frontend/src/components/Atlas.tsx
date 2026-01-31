@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Map as MapIcon, 
-  RotateCcw, 
-  MapPin, 
-  Flame, 
-  BarChart3, 
+import {
+  Map as MapIcon,
+  RotateCcw,
+  MapPin,
+  Flame,
+  BarChart3,
   CircleDot,
   ChevronsUpDown,
   Check,
@@ -22,7 +22,9 @@ import {
   ChevronRight,
   ChevronDown,
   Mountain,
-  X
+  X,
+  Cross,
+  Layers
 } from 'lucide-react';
 import {
   Table,
@@ -45,7 +47,7 @@ import { getCountryCoordinates, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '@/d
 import { useLoadingBar } from '@/hooks/useLoadingBar';
 
 // mapcn map components
-import { Map, MapControls, useMap } from '@/components/ui/map';
+import { Map, MapControls, useMap, MapPopup } from '@/components/ui/map';
 
 // Dynamic import for MyanmarRegionsMap (SVG-based, no MapLibre needed)
 const MyanmarRegionsMap = dynamic(() => import('@/components/MyanmarRegionsMap'), { ssr: false });
@@ -54,6 +56,31 @@ const MyanmarRegionsMap = dynamic(() => import('@/components/MyanmarRegionsMap')
 const MarkersLayer = dynamic(() => import('./maps-v2/MarkersLayer'), { ssr: false });
 const HeatmapLayer = dynamic(() => import('./maps-v2/HeatmapLayer'), { ssr: false });
 const MapFlyTo = dynamic(() => import('./maps-v2/MapFlyTo'), { ssr: false });
+const HealthFacilitiesLayer = dynamic(() => import('./maps-v2/HealthFacilitiesLayer'), { ssr: false });
+
+// HOT (Humanitarian OpenStreetMap Team) raster tile style
+// Using local proxy to bypass CORS restrictions from the French OSM server
+const HOT_STYLE = {
+  version: 8 as const,
+  sources: {
+    'hot-osm': {
+      type: 'raster' as const,
+      tiles: [
+        '/api/tiles/hot/{z}/{x}/{y}.png'
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team',
+      maxzoom: 19
+    }
+  },
+  layers: [{
+    id: 'hot-osm-layer',
+    type: 'raster' as const,
+    source: 'hot-osm',
+    minzoom: 0,
+    maxzoom: 22
+  }]
+};
 
 // Map style configurations for mapcn
 const MAP_STYLES = {
@@ -66,6 +93,11 @@ const MAP_STYLES = {
     name: 'Voyager',
     light: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
     dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  },
+  hot: {
+    name: 'Humanitarian (HOT)',
+    light: HOT_STYLE,
+    dark: HOT_STYLE,
   },
   osm_liberty: {
     name: 'OpenStreetMap Liberty',
@@ -174,6 +206,54 @@ interface LocationData {
 type ViewMode = 'markers' | 'heatmap';
 type TabMode = 'map' | 'subnational';
 
+// Map Position Tracker Component - saves and restores position when style changes
+function MapPositionTracker({
+  savedPosition,
+  onPositionChange
+}: {
+  savedPosition: { center: [number, number]; zoom: number; pitch: number; bearing: number } | null;
+  onPositionChange: (position: { center: [number, number]; zoom: number; pitch: number; bearing: number }) => void;
+}) {
+  const { map, isLoaded } = useMap();
+  const restoredRef = React.useRef(false);
+
+  // Restore saved position when map loads
+  useEffect(() => {
+    if (!map || !isLoaded || !savedPosition || restoredRef.current) return;
+
+    // Jump to saved position immediately (no animation)
+    map.jumpTo({
+      center: savedPosition.center,
+      zoom: savedPosition.zoom,
+      pitch: savedPosition.pitch,
+      bearing: savedPosition.bearing,
+    });
+    restoredRef.current = true;
+  }, [map, isLoaded, savedPosition]);
+
+  // Track position changes
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+
+    const handleMoveEnd = () => {
+      const center = map.getCenter();
+      onPositionChange({
+        center: [center.lng, center.lat],
+        zoom: map.getZoom(),
+        pitch: map.getPitch(),
+        bearing: map.getBearing(),
+      });
+    };
+
+    map.on('moveend', handleMoveEnd);
+    return () => {
+      map.off('moveend', handleMoveEnd);
+    };
+  }, [map, isLoaded, onPositionChange]);
+
+  return null;
+}
+
 // Map 3D Controller Component (uses useMap inside Map context)
 function Map3DController({ 
   homeCountryCenter, 
@@ -237,46 +317,51 @@ function Map3DController({
   if (!isLoaded) return null;
 
   return (
-    <div className="relative">
-      <div className="flex items-center gap-1.5">
-        {is3DMode ? (
-          <Button
-            onClick={handle2DView}
-            variant="outline"
-            size="sm"
-            title="2D View"
-            className="bg-white shadow-md border-gray-300 h-9 px-2.5"
-          >
-            <MapIcon className="h-4 w-4 mr-1.5" />
-            <span className="text-xs">2D</span>
-          </Button>
-        ) : (
-          <Button
-            onClick={handle3DView}
-            variant="outline"
-            size="sm"
-            title="3D View"
-            className="bg-white shadow-md border-gray-300 h-9 px-2.5"
-          >
-            <Mountain className="h-4 w-4 mr-1.5" />
-            <span className="text-xs">3D</span>
-          </Button>
-        )}
+    <div className="flex items-center gap-2">
+      {/* 2D/3D Toggle */}
+      {is3DMode ? (
         <Button
-          onClick={handleReset}
+          onClick={handle2DView}
           variant="outline"
           size="sm"
-          title="Reset view"
-          className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
+          title="2D View"
+          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
         >
-          <RotateCcw className="h-4 w-4" />
+          <MapIcon className="h-4 w-4 mr-1.5" />
+          <span className="text-xs">2D</span>
         </Button>
-      </div>
-      <div className="absolute top-full left-0 mt-1.5 rounded-md bg-white/90 backdrop-blur px-2 py-1 text-[10px] font-mono border border-gray-300 shadow-md flex gap-2 whitespace-nowrap z-[1]">
+      ) : (
+        <Button
+          onClick={handle3DView}
+          variant="outline"
+          size="sm"
+          title="3D View"
+          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+        >
+          <Mountain className="h-4 w-4 mr-1.5" />
+          <span className="text-xs">3D</span>
+        </Button>
+      )}
+
+      {/* Reset Button */}
+      <Button
+        onClick={handleReset}
+        variant="outline"
+        size="sm"
+        title="Reset view"
+        className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
+      >
+        <RotateCcw className="h-4 w-4" />
+      </Button>
+
+      {/* Stats Display */}
+      <div className="rounded-md bg-white/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-gray-300 shadow-md flex items-center gap-3 whitespace-nowrap">
         <span className="text-gray-600">Zoom: {zoom}</span>
         {is3DMode && (
           <>
+            <span className="text-gray-400">|</span>
             <span className="text-gray-600">Pitch: {pitch}°</span>
+            <span className="text-gray-400">|</span>
             <span className="text-gray-600">Bearing: {bearing}°</span>
           </>
         )}
@@ -295,7 +380,41 @@ export default function Atlas() {
   const [orgFilterOpen, setOrgFilterOpen] = useState(false);
   const [orgFilterSearch, setOrgFilterSearch] = useState('');
   const [sectorFilterOpen, setSectorFilterOpen] = useState(false);
-  
+
+  // Data layers visibility
+  const [showHealthFacilities, setShowHealthFacilities] = useState(false);
+  const [homeCountryCode, setHomeCountryCode] = useState<string>('MM'); // Default to Myanmar
+  const [layersPopoverOpen, setLayersPopoverOpen] = useState(false);
+
+  // Preserve map position when switching styles
+  const [savedMapPosition, setSavedMapPosition] = useState<{
+    center: [number, number];
+    zoom: number;
+    pitch: number;
+    bearing: number;
+  } | null>(null);
+
+  // Health facilities loading state
+  const [healthFacilitiesLoading, setHealthFacilitiesLoading] = useState(false);
+  const [healthFacilitiesCount, setHealthFacilitiesCount] = useState<number | null>(null);
+
+  // Selected health facility for popup
+  const [selectedFacility, setSelectedFacility] = useState<{
+    facility: {
+      id: string;
+      name: string;
+      type: string;
+      operator?: string;
+      operatorType?: string;
+      beds?: number;
+      emergency?: boolean;
+      wheelchair?: string;
+      phone?: string;
+      openingHours?: string;
+    };
+    coordinates: [number, number];
+  } | null>(null);
+
   // Toggle status selection
   const toggleStatusFilter = (code: string) => {
     setStatusFilter(prev => 
@@ -320,14 +439,16 @@ export default function Atlas() {
     if (open) {
       setOrgFilterOpen(false);
       setSectorFilterOpen(false);
+      setLayersPopoverOpen(false);
     }
   };
-  
+
   const handleOrgFilterOpen = (open: boolean) => {
     setOrgFilterOpen(open);
     if (open) {
       setStatusFilterOpen(false);
       setSectorFilterOpen(false);
+      setLayersPopoverOpen(false);
     }
   };
   
@@ -336,6 +457,16 @@ export default function Atlas() {
     if (open) {
       setStatusFilterOpen(false);
       setOrgFilterOpen(false);
+      setLayersPopoverOpen(false);
+    }
+  };
+
+  const handleLayersPopoverOpen = (open: boolean) => {
+    setLayersPopoverOpen(open);
+    if (open) {
+      setStatusFilterOpen(false);
+      setOrgFilterOpen(false);
+      setSectorFilterOpen(false);
     }
   };
   // Sorting state for subnational breakdown table
@@ -371,6 +502,7 @@ export default function Atlas() {
             const countryCoords = getCountryCoordinates(data.homeCountry)
             setHomeCountryCenter(countryCoords.center)
             setHomeCountryZoom(countryCoords.zoom)
+            setHomeCountryCode(data.homeCountry) // For data layers
           }
         }
       } catch (error) {
@@ -682,236 +814,271 @@ export default function Atlas() {
         <CardContent>
           <Tabs value={tabMode} onValueChange={(value) => setTabMode(value as TabMode)}>
             <TabsContent value="map" className="space-y-4">
-              {/* Map Container */}
-              <div className="h-[92vh] min-h-[800px] w-full relative rounded-lg overflow-hidden border border-gray-200">
-                {/* Controls Bar - positioned above map */}
-                <div className="absolute top-3 left-3 right-3 z-20 flex items-center gap-2">
-                  {/* Filters */}
-                  <Popover open={statusFilterOpen} onOpenChange={handleStatusFilterOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={statusFilterOpen}
-                        className="!w-[150px] min-w-[150px] justify-between bg-white shadow-md border-gray-300 text-xs h-9 font-normal"
-                      >
-                        <span className="truncate">
-                          {statusFilter.length === 0 
-                            ? 'All Statuses' 
-                            : statusFilter.length === 1 
-                              ? ACTIVITY_STATUS_GROUPS.flatMap(g => g.options).find(s => s.code === statusFilter[0])?.name || statusFilter[0]
-                              : `${statusFilter.length} statuses`}
-                        </span>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {statusFilter.length > 0 && (
-                            <X
-                              className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setStatusFilter([]);
-                              }}
-                            />
-                          )}
-                          <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                        </div>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[250px] p-0" align="start">
-                      <Command>
-                        <CommandList>
-                          <CommandGroup>
-                            {ACTIVITY_STATUS_GROUPS.map((group) => (
-                              <React.Fragment key={group.label}>
-                                {group.options.map((status) => (
-                                  <CommandItem
-                                    key={status.code}
-                                    value={status.code}
-                                    onSelect={() => toggleStatusFilter(status.code)}
-                                    className="flex items-center text-xs"
-                                  >
-                                    <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0", statusFilter.includes(status.code) ? "opacity-100" : "opacity-0")} />
-                                    <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2">{status.code}</code>
-                                    <span>{status.name}</span>
-                                  </CommandItem>
-                                ))}
-                              </React.Fragment>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  
-                  <Popover open={orgFilterOpen} onOpenChange={handleOrgFilterOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={orgFilterOpen}
-                        className="!w-[200px] min-w-[200px] justify-between bg-white shadow-md border-gray-300 text-xs h-9 font-normal"
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <Building2 className="h-4 w-4 text-gray-500 shrink-0" />
-                          <span className="truncate">
-                            {orgFilter.length === 0 
-                              ? 'All Organizations' 
-                              : orgFilter.length === 1 
-                                ? orgFilter[0]
-                                : `${orgFilter.length} organizations`}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {orgFilter.length > 0 && (
-                            <X
-                              className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOrgFilter([]);
-                              }}
-                            />
-                          )}
-                          <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                        </div>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[350px] p-0" align="start">
-                      <Command>
-                        <CommandInput 
-                          placeholder="Search organizations..." 
-                          value={orgFilterSearch}
-                          onValueChange={setOrgFilterSearch}
-                          className="text-xs"
-                        />
-                        <CommandList>
-                          <CommandEmpty>No organization found.</CommandEmpty>
-                          <CommandGroup>
-                            {organizations
-                              .filter(org => 
-                                org.name.toLowerCase().includes(orgFilterSearch.toLowerCase()) ||
-                                (org.acronym && org.acronym.toLowerCase().includes(orgFilterSearch.toLowerCase()))
-                              )
-                              .map((org) => (
+              {/* Filters Bar - Above the map */}
+              <div className="flex items-center gap-2">
+                <Popover open={statusFilterOpen} onOpenChange={handleStatusFilterOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={statusFilterOpen}
+                      className="w-[150px] justify-between text-xs h-9 font-normal"
+                    >
+                      <span className="truncate">
+                        {statusFilter.length === 0
+                          ? 'All Statuses'
+                          : statusFilter.length === 1
+                            ? ACTIVITY_STATUS_GROUPS.flatMap(g => g.options).find(s => s.code === statusFilter[0])?.name || statusFilter[0]
+                            : `${statusFilter.length} statuses`}
+                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {statusFilter.length > 0 && (
+                          <X
+                            className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setStatusFilter([]);
+                            }}
+                          />
+                        )}
+                        <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[250px] p-0" align="start">
+                    <Command>
+                      <CommandList>
+                        <CommandGroup>
+                          {ACTIVITY_STATUS_GROUPS.map((group) => (
+                            <React.Fragment key={group.label}>
+                              {group.options.map((status) => (
                                 <CommandItem
-                                  key={org.name}
-                                  value={org.name}
-                                  onSelect={() => toggleOrgFilter(org.name)}
-                                  className="flex items-start text-xs py-2"
+                                  key={status.code}
+                                  value={status.code}
+                                  onSelect={() => toggleStatusFilter(status.code)}
+                                  className="flex items-center text-xs"
                                 >
-                                  <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0 mt-0.5", orgFilter.includes(org.name) ? "opacity-100" : "opacity-0")} />
-                                  <div className="h-5 w-5 mr-2 shrink-0 flex items-center justify-center mt-0.5">
-                                    {org.logo ? (
-                                      <img 
-                                        src={org.logo} 
-                                        alt={org.name} 
-                                        className="h-5 w-5 rounded-sm object-contain"
-                                        onError={(e) => {
-                                          (e.target as HTMLImageElement).style.display = 'none';
-                                          (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                                        }}
-                                      />
-                                    ) : null}
-                                    <Building2 className={cn("h-4 w-4 text-gray-400", org.logo ? "hidden" : "")} />
-                                  </div>
-                                  <span className="break-words">
-                                    {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
-                                  </span>
+                                  <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0", statusFilter.includes(status.code) ? "opacity-100" : "opacity-0")} />
+                                  <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2">{status.code}</code>
+                                  <span>{status.name}</span>
                                 </CommandItem>
                               ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                      </PopoverContent>
-                  </Popover>
-                  
-                  <SectorHierarchyFilter
-                    selected={sectorFilter}
-                    onChange={setSectorFilter}
-                    open={sectorFilterOpen}
-                    onOpenChange={handleSectorFilterOpen}
-                    activityCounts={sectorActivityCounts}
-                    showOnlyActiveSectors={showOnlyActiveSectors}
-                    onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
-                    className="!w-[280px] min-w-[280px] bg-white shadow-md border-gray-300 h-9 text-xs"
-                  />
-                  
-                  {/* Search */}
-                  <MapSearch
-                    onLocationSelect={handleLocationSearch}
-                    className="w-[180px]"
-                    placeholder="Search location..."
-                  />
-                  
-                  {/* Spacer */}
-                  <div className="flex-1" />
-                  
-                  {/* Map Controls */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
-                      <SelectTrigger className="!w-[180px] min-w-[180px] bg-white shadow-md border-gray-300 text-xs h-9">
-                        <SelectValue placeholder="Map style" />
-                      </SelectTrigger>
-                      <SelectContent className="z-[9999]">
-                        {Object.entries(MAP_STYLES).map(([key, style]) => (
-                          <SelectItem key={key} value={key}>
-                            {style.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                            </React.Fragment>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
 
-                    {/* View Mode Toggle */}
-                    <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
-                      <Button
-                        onClick={() => setViewMode('markers')}
-                        variant="ghost"
-                        size="sm"
-                        title="Show markers"
-                        className={`rounded-none border-0 h-9 w-9 p-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
-                      >
-                        <CircleDot className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        onClick={() => setViewMode('heatmap')}
-                        variant="ghost"
-                        size="sm"
-                        title="Show heatmap"
-                        className={`rounded-none border-0 border-l border-gray-300 h-9 w-9 p-0 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
-                      >
-                        <Flame className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                <Popover open={orgFilterOpen} onOpenChange={handleOrgFilterOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={orgFilterOpen}
+                      className="w-[200px] justify-between text-xs h-9 font-normal"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Building2 className="h-4 w-4 text-gray-500 shrink-0" />
+                        <span className="truncate">
+                          {orgFilter.length === 0
+                            ? 'All Organizations'
+                            : orgFilter.length === 1
+                              ? orgFilter[0]
+                              : `${orgFilter.length} organizations`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {orgFilter.length > 0 && (
+                          <X
+                            className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOrgFilter([]);
+                            }}
+                          />
+                        )}
+                        <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[350px] p-0" align="start">
+                    <Command>
+                      <CommandInput
+                        placeholder="Search organizations..."
+                        value={orgFilterSearch}
+                        onValueChange={setOrgFilterSearch}
+                        className="text-xs"
+                      />
+                      <CommandList>
+                        <CommandEmpty>No organization found.</CommandEmpty>
+                        <CommandGroup>
+                          {organizations
+                            .filter(org =>
+                              org.name.toLowerCase().includes(orgFilterSearch.toLowerCase()) ||
+                              (org.acronym && org.acronym.toLowerCase().includes(orgFilterSearch.toLowerCase()))
+                            )
+                            .map((org) => (
+                              <CommandItem
+                                key={org.name}
+                                value={org.name}
+                                onSelect={() => toggleOrgFilter(org.name)}
+                                className="flex items-start text-xs py-2"
+                              >
+                                <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0 mt-0.5", orgFilter.includes(org.name) ? "opacity-100" : "opacity-0")} />
+                                <div className="h-5 w-5 mr-2 shrink-0 flex items-center justify-center mt-0.5">
+                                  {org.logo ? (
+                                    <img
+                                      src={org.logo}
+                                      alt={org.name}
+                                      className="h-5 w-5 rounded-sm object-contain"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                      }}
+                                    />
+                                  ) : null}
+                                  <Building2 className={cn("h-4 w-4 text-gray-400", org.logo ? "hidden" : "")} />
+                                </div>
+                                <span className="break-words">
+                                  {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
+                                </span>
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+
+                <SectorHierarchyFilter
+                  selected={sectorFilter}
+                  onChange={setSectorFilter}
+                  open={sectorFilterOpen}
+                  onOpenChange={handleSectorFilterOpen}
+                  activityCounts={sectorActivityCounts}
+                  showOnlyActiveSectors={showOnlyActiveSectors}
+                  onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
+                  className="w-[200px] h-9 text-xs"
+                />
+
+                <div className="flex-1" />
+
+                <div className="text-sm text-muted-foreground">
+                  {filteredLocations.length} location{filteredLocations.length !== 1 ? 's' : ''}
+                  {(statusFilter.length > 0 || orgFilter.length > 0 || sectorFilter.sectorCategories.length > 0 || sectorFilter.sectors.length > 0 || sectorFilter.subSectors.length > 0) &&
+                    ` (filtered from ${validLocations.length})`
+                  }
                 </div>
-                
+              </div>
+
+              {/* Map Container */}
+              <div className="h-[85vh] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-gray-200">
                 {/* MapLibre Map */}
                 <Map
+                  key={`atlas-map-${mapStyle}`}
                   styles={{
-                    light: MAP_STYLES[mapStyle].light,
-                    dark: MAP_STYLES[mapStyle].dark,
+                    light: MAP_STYLES[mapStyle].light as string | object,
+                    dark: MAP_STYLES[mapStyle].dark as string | object,
                   }}
                   center={[homeCountryCenter[1], homeCountryCenter[0]]} // MapLibre uses [lng, lat]
                   zoom={homeCountryZoom}
                   minZoom={2}
-                  maxZoom={mapStyle === 'satellite_imagery' ? 14.9 : 18}
+                  maxZoom={mapStyle === 'satellite_imagery' || mapStyle === 'hot' ? 18 : 18}
                   scrollZoom={false}
                 >
-                  
-                  {/* 3D/Reset Controls - positioned inside Map context on same line as filters */}
-                  <div className="absolute top-3 right-[290px] z-20">
-                    <Map3DController 
-                      homeCountryCenter={homeCountryCenter} 
-                      homeCountryZoom={homeCountryZoom} 
+                  {/* Top Controls Bar - inside Map for useMap() access */}
+                  <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-2">
+                    {/* Search */}
+                    <MapSearch
+                      onLocationSelect={handleLocationSearch}
+                      className="w-[200px]"
+                      placeholder="Search location..."
                     />
+
+                    {/* 3D Controls */}
+                    <Map3DController
+                      homeCountryCenter={homeCountryCenter}
+                      homeCountryZoom={homeCountryZoom}
+                    />
+
+                    {/* Spacer */}
+                    <div className="flex-1" />
+
+                    {/* Map Style & Controls */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
+                        <SelectTrigger className="w-[160px] bg-white shadow-md border-gray-300 text-xs h-9">
+                          <SelectValue placeholder="Map style" />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999]">
+                          {Object.entries(MAP_STYLES).map(([key, style]) => (
+                            <SelectItem key={key} value={key}>
+                              {style.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Health Facilities Toggle */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowHealthFacilities(!showHealthFacilities);
+                          if (showHealthFacilities) {
+                            setHealthFacilitiesCount(null);
+                          }
+                        }}
+                        title={showHealthFacilities && healthFacilitiesCount ? `${healthFacilitiesCount.toLocaleString()} health facilities` : "Toggle Health Facilities layer"}
+                        className={`bg-white shadow-md border-gray-300 h-9 px-3 gap-2 ${showHealthFacilities ? 'bg-red-50 border-red-300 text-red-700' : ''}`}
+                      >
+                        {healthFacilitiesLoading ? (
+                          <div className="h-4 w-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                        ) : (
+                          <Cross className="h-4 w-4" />
+                        )}
+                        <span className="text-xs">
+                          {healthFacilitiesLoading ? 'Loading...' :
+                           showHealthFacilities && healthFacilitiesCount ? `Health (${healthFacilitiesCount.toLocaleString()})` :
+                           'Health'}
+                        </span>
+                        {showHealthFacilities && !healthFacilitiesLoading && <Check className="h-3 w-3" />}
+                      </Button>
+
+                      {/* View Mode Toggle */}
+                      <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
+                        <Button
+                          onClick={() => setViewMode('markers')}
+                          variant="ghost"
+                          size="sm"
+                          title="Show markers"
+                          className={`rounded-none border-0 h-9 w-9 p-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                        >
+                          <CircleDot className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          onClick={() => setViewMode('heatmap')}
+                          variant="ghost"
+                          size="sm"
+                          title="Show heatmap"
+                          className={`rounded-none border-0 border-l border-gray-300 h-9 w-9 p-0 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
+                        >
+                          <Flame className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <MapControls 
-                    position="bottom-right" 
-                    showZoom={true} 
+
+                  <MapControls
+                    position="bottom-right"
+                    showZoom={true}
                     showCompass={true}
                     showLocate={true}
                     showFullscreen={true}
                   />
-                  
+
                   {/* Markers Mode */}
                   {viewMode === 'markers' && filteredLocations.length > 0 && (
                     <MarkersLayer locations={filteredLocations} />
@@ -921,11 +1088,128 @@ export default function Atlas() {
                   {viewMode === 'heatmap' && heatmapPoints.length > 0 && (
                     <HeatmapLayer points={heatmapPoints} />
                   )}
-                  
+
+                  {/* Health Facilities Layer */}
+                  <HealthFacilitiesLayer
+                    country={homeCountryCode}
+                    visible={showHealthFacilities}
+                    onFacilityClick={(facility, coordinates) => {
+                      setSelectedFacility({ facility, coordinates });
+                    }}
+                    onLoadingChange={setHealthFacilitiesLoading}
+                    onFacilityCountChange={setHealthFacilitiesCount}
+                  />
+
+                  {/* Health Facility Popup */}
+                  {selectedFacility && (
+                    <MapPopup
+                      longitude={selectedFacility.coordinates[0]}
+                      latitude={selectedFacility.coordinates[1]}
+                      onClose={() => setSelectedFacility(null)}
+                      closeButton
+                      className="!p-0 !bg-white !text-foreground"
+                    >
+                      <div className="p-3 min-w-[280px] max-w-[320px]">
+                        {/* Facility Type Badge */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${
+                            selectedFacility.facility.type === 'hospital' ? 'bg-red-100 text-red-700' :
+                            selectedFacility.facility.type === 'clinic' ? 'bg-orange-100 text-orange-700' :
+                            selectedFacility.facility.type === 'pharmacy' ? 'bg-green-100 text-green-700' :
+                            selectedFacility.facility.type === 'doctors' ? 'bg-cyan-100 text-cyan-700' :
+                            selectedFacility.facility.type === 'dentist' ? 'bg-purple-100 text-purple-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                            {selectedFacility.facility.type.replace('_', ' ')}
+                          </span>
+                          {selectedFacility.facility.emergency && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">
+                              Emergency
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Name */}
+                        <h3 className="font-bold text-sm text-slate-800 mb-2">
+                          {selectedFacility.facility.name}
+                        </h3>
+
+                        <hr className="border-slate-200 mb-2" />
+
+                        {/* Details Grid */}
+                        <div className="space-y-1.5 text-xs">
+                          {selectedFacility.facility.operator && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Operator</span>
+                              <span className="text-slate-700 text-right max-w-[180px] truncate">
+                                {selectedFacility.facility.operator}
+                              </span>
+                            </div>
+                          )}
+                          {selectedFacility.facility.operatorType && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Operator Type</span>
+                              <span className="text-slate-700 capitalize">
+                                {selectedFacility.facility.operatorType}
+                              </span>
+                            </div>
+                          )}
+                          {selectedFacility.facility.beds && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Beds</span>
+                              <span className="text-slate-700">{selectedFacility.facility.beds}</span>
+                            </div>
+                          )}
+                          {selectedFacility.facility.wheelchair && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Wheelchair Access</span>
+                              <span className={`capitalize ${
+                                selectedFacility.facility.wheelchair === 'yes' ? 'text-green-600' :
+                                selectedFacility.facility.wheelchair === 'no' ? 'text-red-600' :
+                                'text-slate-700'
+                              }`}>
+                                {selectedFacility.facility.wheelchair}
+                              </span>
+                            </div>
+                          )}
+                          {selectedFacility.facility.phone && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Phone</span>
+                              <a href={`tel:${selectedFacility.facility.phone}`} className="text-blue-600 hover:underline">
+                                {selectedFacility.facility.phone}
+                              </a>
+                            </div>
+                          )}
+                          {selectedFacility.facility.openingHours && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Hours</span>
+                              <span className="text-slate-700 text-right max-w-[180px]">
+                                {selectedFacility.facility.openingHours}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Source Attribution */}
+                        <div className="mt-3 pt-2 border-t border-slate-100">
+                          <p className="text-[10px] text-slate-400">
+                            Data from OpenStreetMap
+                          </p>
+                        </div>
+                      </div>
+                    </MapPopup>
+                  )}
+
+                  {/* Position Tracker - saves position for style changes */}
+                  <MapPositionTracker
+                    savedPosition={savedMapPosition}
+                    onPositionChange={setSavedMapPosition}
+                  />
+
                   {/* Fly To Handler */}
-                  <MapFlyTo 
-                    target={flyToTarget} 
-                    onComplete={() => setFlyToTarget(null)} 
+                  <MapFlyTo
+                    target={flyToTarget}
+                    onComplete={() => setFlyToTarget(null)}
                   />
                 </Map>
                 

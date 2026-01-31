@@ -31,6 +31,51 @@ const MAP_STYLES = {
     light: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
     dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   },
+  hot: {
+    name: 'Humanitarian (HOT)',
+    light: {
+      version: 8 as const,
+      sources: {
+        'hot-osm': {
+          type: 'raster' as const,
+          tiles: [
+            '/api/tiles/hot/{z}/{x}/{y}.png'
+          ],
+          tileSize: 256,
+          attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team',
+          maxzoom: 19
+        }
+      },
+      layers: [{
+        id: 'hot-osm-layer',
+        type: 'raster' as const,
+        source: 'hot-osm',
+        minzoom: 0,
+        maxzoom: 22
+      }]
+    },
+    dark: {
+      version: 8 as const,
+      sources: {
+        'hot-osm': {
+          type: 'raster' as const,
+          tiles: [
+            '/api/tiles/hot/{z}/{x}/{y}.png'
+          ],
+          tileSize: 256,
+          attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team',
+          maxzoom: 19
+        }
+      },
+      layers: [{
+        id: 'hot-osm-layer',
+        type: 'raster' as const,
+        source: 'hot-osm',
+        minzoom: 0,
+        maxzoom: 22
+      }]
+    }
+  },
   satellite_imagery: {
     name: 'Satellite Imagery',
     light: {
@@ -254,7 +299,7 @@ export default function ActivityLocationsMapViewV2({
 
       {/* MapLibre Map */}
       <Map
-        key={mapStyle === 'satellite_imagery' ? 'satellite' : 'standard'}
+        key={mapStyle === 'satellite_imagery' ? 'satellite' : mapStyle === 'hot' ? 'hot' : 'standard'}
         styles={{
           light: MAP_STYLES[mapStyle].light,
           dark: MAP_STYLES[mapStyle].dark,
@@ -262,7 +307,7 @@ export default function ActivityLocationsMapViewV2({
         center={mapLibreCenter}
         zoom={mapZoom}
         minZoom={3}
-        maxZoom={mapStyle === 'satellite_imagery' ? 14.9 : 18}
+        maxZoom={mapStyle === 'satellite_imagery' || mapStyle === 'hot' ? 18 : 18}
         scrollZoom={false}
       >
         {/* Auto-fit bounds to show all markers */}

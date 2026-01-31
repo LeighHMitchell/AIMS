@@ -1,6 +1,21 @@
 {
-  "currentVersion": "1.9.0",
+  "currentVersion": "1.10.0",
   "releases": [
+    {
+      "version": "1.10.0",
+      "date": "2026-01-31",
+      "changes": [
+        "Humanitarian OpenStreetMap Team (HOT) tile layer added to Atlas and all map components",
+        "Health Facilities data layer - toggle to show hospitals, clinics, pharmacies from OpenStreetMap",
+        "Health facility popup with details: name, type, operator, beds, wheelchair access, phone, hours",
+        "Loading indicator for health facilities showing spinner and facility count while fetching",
+        "Map position preservation - switching tile layers no longer resets your view",
+        "Unified map controls bar - search, 3D/2D toggle, reset, zoom stats all on same line",
+        "Enhanced marker tooltip with org logo, name, acronym, status badge (green for implementation), and budget",
+        "Text wrapping in marker tooltips for long activity titles, org names, and locations",
+        "Calendar event modals updated with white background styling"
+      ]
+    },
     {
       "version": "1.9.0",
       "date": "2026-01-31",
