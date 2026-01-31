@@ -10,18 +10,18 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { 
-  Calendar, 
-  Clock, 
-  Link as LinkIcon, 
-  Bell, 
-  Video, 
-  Sparkles, 
-  Puzzle, 
-  Users, 
-  X, 
-  AlertCircle, 
-  ChevronUp, 
+import {
+  Calendar,
+  Clock,
+  Link as LinkIcon,
+  Bell,
+  Video,
+  Sparkles,
+  Puzzle,
+  Users,
+  X,
+  AlertCircle,
+  ChevronUp,
   ChevronDown,
   Check,
   HelpCircle,
@@ -31,7 +31,14 @@ import {
   Trash2,
   MapPin,
   Tag,
-  User
+  User,
+  Palette,
+  Building2,
+  FileText,
+  Upload,
+  Download,
+  File,
+  Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUser } from '@/hooks/useUser'
@@ -46,14 +53,33 @@ interface CalendarEvent {
   location?: string
   type: 'meeting' | 'deadline' | 'workshop' | 'conference' | 'other'
   status: 'pending' | 'approved'
+  color?: string
   organizerId: string
   organizerName: string
+  organizerOrganizationId?: string
+  organizerOrganizationName?: string
   attendees?: string[]
   meetingLink?: string
   notificationMinutes?: number
   recordingEnabled?: boolean
   aiNotetaking?: boolean
   integrations?: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+interface EventDocument {
+  id: string
+  eventId: string
+  fileName: string
+  fileType: string
+  fileSize: number
+  fileUrl: string
+  storagePath: string
+  uploadedById: string
+  uploadedByName: string
+  documentType: 'agenda' | 'minutes' | 'background' | 'presentation' | 'handout' | 'other'
+  description?: string
   createdAt: string
   updatedAt: string
 }
@@ -94,6 +120,7 @@ export function EventDetailModal({
     end: '',
     location: '',
     type: 'meeting' as 'meeting' | 'deadline' | 'workshop' | 'conference' | 'other',
+    color: '#4c5568',
     meetingLink: '',
     meetingLinkType: 'google-meet' as 'google-meet' | 'zoom' | 'teams' | 'other',
     notificationMinutes: 30,
@@ -101,7 +128,26 @@ export function EventDetailModal({
     aiNotetaking: false,
     integrations: [] as string[]
   })
+
+  const colorPresets = [
+    { color: '#dc2625', name: 'Red' },
+    { color: '#ea580c', name: 'Orange' },
+    { color: '#ca8a04', name: 'Yellow' },
+    { color: '#16a34a', name: 'Green' },
+    { color: '#0891b2', name: 'Cyan' },
+    { color: '#2563eb', name: 'Blue' },
+    { color: '#7c3aed', name: 'Purple' },
+    { color: '#db2777', name: 'Pink' },
+    { color: '#4c5568', name: 'Gray' },
+    { color: '#7b95a7', name: 'Steel' },
+  ]
   const [participants, setParticipants] = useState<Participant[]>([])
+  const [documents, setDocuments] = useState<EventDocument[]>([])
+  const [loadingDocuments, setLoadingDocuments] = useState(false)
+  const [uploadingDocument, setUploadingDocument] = useState(false)
+  const [documentType, setDocumentType] = useState<'agenda' | 'minutes' | 'background' | 'presentation' | 'handout' | 'other'>('other')
+  const [documentDescription, setDocumentDescription] = useState('')
+  const fileInputRef = { current: null as HTMLInputElement | null }
   const [rsvpStatus, setRsvpStatus] = useState<'yes' | 'no' | 'maybe' | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -114,6 +160,7 @@ export function EventDetailModal({
         end: event.end ? new Date(event.end).toISOString().slice(0, 16) : '',
         location: event.location || '',
         type: event.type || 'meeting',
+        color: event.color || '#4c5568',
         meetingLink: event.meetingLink || '',
         meetingLinkType: 'google-meet',
         notificationMinutes: event.notificationMinutes || 30,
@@ -121,7 +168,7 @@ export function EventDetailModal({
         aiNotetaking: event.aiNotetaking || false,
         integrations: event.integrations || []
       })
-      
+
       // Convert attendees to participants
       if (event.attendees) {
         setParticipants(event.attendees.map((attendee, index) => ({
@@ -131,8 +178,109 @@ export function EventDetailModal({
           email: attendee.includes('@') ? attendee : undefined
         })))
       }
+
+      // Fetch documents
+      fetchDocuments(event.id)
     }
   }, [event])
+
+  const fetchDocuments = async (eventId: string) => {
+    setLoadingDocuments(true)
+    try {
+      const response = await apiFetch(`/api/calendar-events/${eventId}/documents`)
+      if (response.ok) {
+        const data = await response.json()
+        setDocuments(data.documents || [])
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error)
+    } finally {
+      setLoadingDocuments(false)
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !event) return
+
+    setUploadingDocument(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('documentType', documentType)
+      formData.append('description', documentDescription)
+
+      const response = await fetch(`/api/calendar-events/${event.id}/documents`, {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to upload document')
+      }
+
+      toast.success('Document uploaded successfully')
+      setDocumentDescription('')
+      setDocumentType('other')
+      fetchDocuments(event.id)
+    } catch (error) {
+      console.error('Error uploading document:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to upload document')
+    } finally {
+      setUploadingDocument(false)
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const handleDownloadDocument = async (doc: EventDocument) => {
+    try {
+      const response = await apiFetch(`/api/calendar-events/${event?.id}/documents/${doc.id}`)
+      if (!response.ok) throw new Error('Failed to get download URL')
+
+      const data = await response.json()
+      window.open(data.downloadUrl, '_blank')
+    } catch (error) {
+      console.error('Error downloading document:', error)
+      toast.error('Failed to download document')
+    }
+  }
+
+  const handleDeleteDocument = async (doc: EventDocument) => {
+    if (!confirm('Are you sure you want to delete this document?')) return
+
+    try {
+      const response = await apiFetch(`/api/calendar-events/${event?.id}/documents/${doc.id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) throw new Error('Failed to delete document')
+
+      toast.success('Document deleted successfully')
+      setDocuments(prev => prev.filter(d => d.id !== doc.id))
+    } catch (error) {
+      console.error('Error deleting document:', error)
+      toast.error('Failed to delete document')
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
+
+  const getDocumentTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      agenda: 'Agenda',
+      minutes: 'Minutes',
+      background: 'Background',
+      presentation: 'Presentation',
+      handout: 'Handout',
+      other: 'Other'
+    }
+    return labels[type] || type
+  }
 
   if (!isOpen || !event) return null
 
@@ -226,6 +374,7 @@ export function EventDetailModal({
           end: formData.end,
           location: formData.location,
           type: formData.type,
+          color: formData.color,
           meetingLink: formData.meetingLink,
           notificationMinutes: formData.notificationMinutes,
           recordingEnabled: formData.recordingEnabled,
@@ -435,8 +584,8 @@ export function EventDetailModal({
               </div>
               <div className="flex-1">
                 {isEditing ? (
-                  <Select 
-                    value={formData.type} 
+                  <Select
+                    value={formData.type}
                     onValueChange={(value: any) => setFormData(prev => ({ ...prev, type: value }))}
                   >
                     <SelectTrigger className="w-auto border-0 bg-[#f1f4f8] h-auto px-3 py-1.5">
@@ -454,6 +603,48 @@ export function EventDetailModal({
                   <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal capitalize">
                     {event.type || 'Other'}
                   </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Color */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 w-32 flex-shrink-0">
+                <Palette className="h-4 w-4 text-[#4c5568]" />
+                <Label className="text-sm font-medium text-[#4c5568]">Color</Label>
+              </div>
+              <div className="flex-1">
+                {isEditing ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {colorPresets.map((preset) => (
+                      <button
+                        key={preset.color}
+                        type="button"
+                        className={`w-6 h-6 rounded-full border-2 transition-all ${
+                          formData.color === preset.color
+                            ? 'border-gray-900 scale-110'
+                            : 'border-transparent hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: preset.color }}
+                        onClick={() => setFormData(prev => ({ ...prev, color: preset.color }))}
+                        title={preset.name}
+                      />
+                    ))}
+                    <input
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                      className="w-6 h-6 rounded-full cursor-pointer border-0 p-0 overflow-hidden"
+                      title="Custom color"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-6 h-6 rounded-full"
+                      style={{ backgroundColor: event.color || '#4c5568' }}
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -492,6 +683,21 @@ export function EventDetailModal({
                 </Badge>
               </div>
             </div>
+
+            {/* Organization */}
+            {event.organizerOrganizationName && (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 w-32 flex-shrink-0">
+                  <Building2 className="h-4 w-4 text-[#4c5568]" />
+                  <Label className="text-sm font-medium text-[#4c5568]">Organization</Label>
+                </div>
+                <div className="flex-1">
+                  <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal">
+                    {event.organizerOrganizationName}
+                  </Badge>
+                </div>
+              </div>
+            )}
 
             {/* Link */}
             {(event.meetingLink || isEditing) && (
@@ -730,6 +936,118 @@ export function EventDetailModal({
                 )}
               </div>
             )}
+
+            {/* Documents */}
+            <div className="space-y-3 pt-4 border-t border-[#cfd0d5]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-[#4c5568]" />
+                  <Label className="text-sm font-medium text-[#4c5568]">
+                    Documents {documents.length > 0 && `(${documents.length})`}
+                  </Label>
+                </div>
+                {canEdit && (
+                  <div className="flex items-center gap-2">
+                    <Select value={documentType} onValueChange={(value: any) => setDocumentType(value)}>
+                      <SelectTrigger className="w-[120px] h-8 text-xs">
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="agenda">Agenda</SelectItem>
+                        <SelectItem value="minutes">Minutes</SelectItem>
+                        <SelectItem value="background">Background</SelectItem>
+                        <SelectItem value="presentation">Presentation</SelectItem>
+                        <SelectItem value="handout">Handout</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif"
+                        disabled={uploadingDocument}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        disabled={uploadingDocument}
+                        asChild
+                      >
+                        <span>
+                          {uploadingDocument ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-1" />
+                              Upload
+                            </>
+                          )}
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {loadingDocuments ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-[#4c5568]" />
+                </div>
+              ) : documents.length === 0 ? (
+                <p className="text-sm text-[#4c5568] italic py-2">No documents attached</p>
+              ) : (
+                <div className="space-y-2">
+                  {documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-2 bg-[#f1f4f8] rounded-lg"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <File className="h-4 w-4 text-[#4c5568] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{doc.fileName}</p>
+                          <div className="flex items-center gap-2 text-xs text-[#4c5568]">
+                            <Badge variant="outline" className="text-xs py-0 px-1">
+                              {getDocumentTypeLabel(doc.documentType)}
+                            </Badge>
+                            <span>{formatFileSize(doc.fileSize)}</span>
+                            <span>by {doc.uploadedByName}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleDownloadDocument(doc)}
+                          title="Download"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        {(doc.uploadedById === user?.id || user?.role === 'admin' || user?.id === event.organizerId) && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-[#dc2625] hover:text-[#dc2625]"
+                            onClick={() => handleDeleteDocument(doc)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* RSVP Footer */}
             <div className="flex items-center justify-between pt-4 border-t border-[#cfd0d5]">

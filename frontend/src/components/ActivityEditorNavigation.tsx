@@ -11,7 +11,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ACTIVITY_OVERVIEW_SECTIONS, isActivityOverviewSection, isStakeholdersSection } from "@/components/activities/groups"
+import {
+  ACTIVITY_OVERVIEW_SECTIONS,
+  isActivityOverviewSection,
+  isStakeholdersSection,
+  isFundingDeliverySection,
+  isStrategicAlignmentSection,
+  isSupportingInfoSection
+} from "@/components/activities/groups"
 
 interface NavigationSection {
   id: string
@@ -48,32 +55,72 @@ export default function ActivityEditorNavigation({
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  // Helper to check if a section belongs to any scrollable group
+  const isScrollableSection = (sectionId: string) => {
+    return isActivityOverviewSection(sectionId) ||
+           isStakeholdersSection(sectionId) ||
+           isFundingDeliverySection(sectionId) ||
+           isStrategicAlignmentSection(sectionId) ||
+           isSupportingInfoSection(sectionId)
+  }
+
+  // Helper to get the linked scroll group for a section
+  // All five groups are linked together for continuous scrolling:
+  // Activity Overview -> Stakeholders -> Funding & Delivery -> Strategic Alignment -> Supporting Info
+  const getLinkedScrollGroup = (sectionId: string) => {
+    if (isActivityOverviewSection(sectionId) ||
+        isStakeholdersSection(sectionId) ||
+        isFundingDeliverySection(sectionId) ||
+        isStrategicAlignmentSection(sectionId) ||
+        isSupportingInfoSection(sectionId)) {
+      return 'main-editor-scroll'
+    }
+    return null
+  }
+
   // Enhanced section change handler that updates URL
   const handleSectionChange = (sectionId: string) => {
     // Don't allow section change when disabled (saving in progress)
     if (disabled) {
       return;
     }
-    
-    // For Activity Overview or Stakeholders sections, dispatch a scroll event
-    // Both groups are rendered together and listen for scroll events
-    const isTargetScrollable = isActivityOverviewSection(sectionId) || isStakeholdersSection(sectionId)
-    const isCurrentScrollable = isActivityOverviewSection(activeSection) || isStakeholdersSection(activeSection)
 
-    if (isTargetScrollable && isCurrentScrollable) {
-      // Scrolling within or between the scrollable groups
+    // For scrollable sections, scroll directly to the element
+    const targetGroup = getLinkedScrollGroup(sectionId)
+
+    if (targetGroup) {
+      // Dispatch scroll event for any scrollable section (for backwards compatibility)
       window.dispatchEvent(new CustomEvent('scrollToSection', { detail: sectionId }))
+
+      // Scroll directly using DOM - this is more reliable during re-renders
+      const element = document.getElementById(sectionId)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+
+      // Delay state updates until after scroll starts to prevent re-render from resetting scroll
+      setTimeout(() => {
+        // Call the original onSectionChange handler
+        onSectionChange(sectionId)
+
+        // Update URL with the new section parameter
+        const params = new URLSearchParams(searchParams?.toString() || '')
+        params.set('section', sectionId)
+
+        // Use replace to avoid adding to browser history for each tab switch
+        router.replace(`?${params.toString()}`, { scroll: false })
+      }, 50)
+    } else {
+      // For non-scrollable sections, update state immediately
+      onSectionChange(sectionId)
+
+      // Update URL with the new section parameter
+      const params = new URLSearchParams(searchParams?.toString() || '')
+      params.set('section', sectionId)
+
+      // Use replace to avoid adding to browser history for each tab switch
+      router.replace(`?${params.toString()}`, { scroll: false })
     }
-    
-    // Call the original onSectionChange handler
-    onSectionChange(sectionId)
-    
-    // Update URL with the new section parameter
-    const params = new URLSearchParams(searchParams?.toString() || '')
-    params.set('section', sectionId)
-    
-    // Use replace to avoid adding to browser history for each tab switch
-    router.replace(`?${params.toString()}`, { scroll: false })
   }
   const navigationGroups: NavigationGroup[] = [
     {
@@ -168,11 +215,16 @@ export default function ActivityEditorNavigation({
             
             {/* Group Sections with Vertical Connector */}
             <div className="relative">
-              {/* Vertical Connector Line - blue for scrollable groups to indicate scroll behavior */}
+              {/* Vertical Connector Line - blue for all linked scrollable groups */}
               <div
                 className={cn(
                   "absolute left-[12px] top-0 bottom-0 w-px",
-                  (group.title === "Activity Overview" || group.title === "Stakeholders") ? "bg-blue-200" : "bg-gray-200"
+                  // All five groups are linked for continuous scrolling (blue)
+                  (group.title === "Activity Overview" || group.title === "Stakeholders" ||
+                   group.title === "Funding & Delivery" || group.title === "Strategic Alignment" ||
+                   group.title === "Supporting Info")
+                    ? "bg-blue-200"
+                    : "bg-gray-200"
                 )}
                 style={{ height: '100%' }}
               />
@@ -180,8 +232,10 @@ export default function ActivityEditorNavigation({
               {/* Menu Items */}
               <div className={cn(
                 "space-y-0.5 ml-3",
-                // Add subtle visual indicator for scrollable groups
-                (group.title === "Activity Overview" || group.title === "Stakeholders") && "border-l border-blue-100 pl-1"
+                // Add subtle visual indicator for linked scrollable groups
+                (group.title === "Activity Overview" || group.title === "Stakeholders" ||
+                 group.title === "Funding & Delivery" || group.title === "Strategic Alignment" ||
+                 group.title === "Supporting Info") && "border-l border-blue-100 pl-1"
               )}>
                 {group.sections.map((section) => {
                   const isLocked = !activityCreated && section.id !== "general" && section.id !== "xml-import"

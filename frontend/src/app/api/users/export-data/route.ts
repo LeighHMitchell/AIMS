@@ -3,32 +3,73 @@ import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+// Helper to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
 export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/users/export-data - Starting request');
-  
-  const { supabase, response } = await requireAuth();
-  if (response) return response;
-  
+
+  const { supabase, user: authUser, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    if (!supabase) {
+    if (!supabase || !authUser) {
       return NextResponse.json(
-        { error: 'Supabase is not configured' },
-        { status: 500 }
+        { error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
     // Get user ID from query params
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
-    
-    if (!userId) {
+    const targetUserId = searchParams.get('userId');
+
+    if (!targetUserId) {
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
       );
     }
 
-    // Fetch user profile
+    // SECURITY: Validate user ID format
+    if (!isValidUUID(targetUserId)) {
+      return NextResponse.json(
+        { error: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
+
+    // SECURITY: Fetch authenticated user's role from database
+    const { data: authUserProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('id', authUser.id)
+      .single();
+
+    if (profileError || !authUserProfile) {
+      console.error('[AIMS] Error fetching auth user profile:', profileError);
+      return NextResponse.json(
+        { error: 'Failed to verify user permissions' },
+        { status: 500 }
+      );
+    }
+
+    const isSuperUser = authUserProfile.role === 'super_user' || authUserProfile.role === 'admin';
+    const isOwnData = authUser.id === targetUserId;
+
+    // SECURITY: Authorization check - can only export own data OR super_user can export any
+    if (!isOwnData && !isSuperUser) {
+      console.warn(`[AIMS] IDOR attempt blocked: User ${authUser.id} tried to export data for user ${targetUserId}`);
+      return NextResponse.json(
+        { error: 'Forbidden: You can only export your own data' },
+        { status: 403 }
+      );
+    }
+
+    // Fetch user profile for the target user
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select(`
@@ -41,7 +82,7 @@ export async function GET(request: NextRequest) {
           country
         )
       `)
-      .eq('id', userId)
+      .eq('id', targetUserId)
       .single();
 
     if (userError || !userData) {
@@ -67,7 +108,7 @@ export async function GET(request: NextRequest) {
           activity_status
         )
       `)
-      .eq('linked_user_id', userId);
+      .eq('linked_user_id', targetUserId);
 
     if (contactsError) {
       console.error('[AIMS] Error fetching activity contacts:', contactsError);
@@ -85,7 +126,7 @@ export async function GET(request: NextRequest) {
           name
         )
       `)
-      .eq('user_id', userId);
+      .eq('user_id', targetUserId);
 
     if (commentsError) {
       console.error('[AIMS] Error fetching organization comments:', commentsError);
@@ -103,7 +144,7 @@ export async function GET(request: NextRequest) {
           iati_identifier
         )
       `)
-      .eq('user_id', userId);
+      .eq('user_id', targetUserId);
 
     if (bookmarksError) {
       console.error('[AIMS] Error fetching bookmarks:', bookmarksError);
@@ -113,7 +154,7 @@ export async function GET(request: NextRequest) {
     const { data: feedback, error: feedbackError } = await supabase
       .from('feedback')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', targetUserId);
 
     if (feedbackError) {
       console.error('[AIMS] Error fetching feedback:', feedbackError);
@@ -123,7 +164,7 @@ export async function GET(request: NextRequest) {
     const { data: faqQuestions, error: faqError } = await supabase
       .from('faq_questions')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', targetUserId);
 
     if (faqError) {
       console.error('[AIMS] Error fetching FAQ questions:', faqError);
@@ -132,8 +173,9 @@ export async function GET(request: NextRequest) {
     // Compile export data
     const exportData = {
       exportDate: new Date().toISOString(),
-      exportedBy: userData.email,
-      
+      exportedBy: authUserProfile.role === 'super_user' ? `Admin (${authUser.email})` : userData.email,
+      exportedForUser: userData.email,
+
       personalInfo: {
         id: userData.id,
         email: userData.email,
@@ -170,7 +212,7 @@ export async function GET(request: NextRequest) {
         createdAt: userData.created_at,
         updatedAt: userData.updated_at,
       },
-      
+
       activityInvolvement: activityContacts?.map(contact => ({
         activityId: contact.activities?.id,
         activityTitle: contact.activities?.title,
@@ -180,7 +222,7 @@ export async function GET(request: NextRequest) {
         hasEditingRights: contact.has_editing_rights,
         role: contact.role,
       })) || [],
-      
+
       organizationComments: orgComments?.map(comment => ({
         id: comment.id,
         organizationId: comment.organizations?.id,
@@ -188,14 +230,14 @@ export async function GET(request: NextRequest) {
         comment: comment.comment,
         createdAt: comment.created_at,
       })) || [],
-      
+
       bookmarkedActivities: bookmarks?.map(bookmark => ({
         activityId: bookmark.activities?.id,
         activityTitle: bookmark.activities?.title,
         iatiIdentifier: bookmark.activities?.iati_identifier,
         bookmarkedAt: bookmark.created_at,
       })) || [],
-      
+
       feedbackSubmissions: feedback?.map(item => ({
         id: item.id,
         category: item.category,
@@ -204,7 +246,7 @@ export async function GET(request: NextRequest) {
         status: item.status,
         createdAt: item.created_at,
       })) || [],
-      
+
       faqQuestions: faqQuestions?.map(question => ({
         id: question.id,
         question: question.question,
@@ -213,12 +255,12 @@ export async function GET(request: NextRequest) {
       })) || [],
     };
 
-    console.log('[AIMS] Successfully compiled export data for user:', userId);
+    console.log('[AIMS] Successfully compiled export data for user:', targetUserId, 'requested by:', authUser.id);
 
     // Return as downloadable JSON file
     const jsonString = JSON.stringify(exportData, null, 2);
     const fileName = `aims-data-export-${userData.email.replace('@', '_at_')}-${new Date().toISOString().split('T')[0]}.json`;
-    
+
     return new NextResponse(jsonString, {
       status: 200,
       headers: {
@@ -226,7 +268,7 @@ export async function GET(request: NextRequest) {
         'Content-Disposition': `attachment; filename="${fileName}"`,
       },
     });
-    
+
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
@@ -235,5 +277,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
-

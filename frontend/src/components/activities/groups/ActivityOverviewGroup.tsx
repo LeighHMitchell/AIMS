@@ -188,10 +188,11 @@ export function ActivityOverviewGroup({
   const [sectionsRevealed, setSectionsRevealed] = useState(activityCreated)
   
   // Update parent when active section changes (for sidebar highlighting)
+  // Only update if the active section belongs to this group
   useEffect(() => {
-    if (activeSection) {
+    if (activeSection && isActivityOverviewSection(activeSection)) {
       onActiveSectionChange(activeSection)
-      
+
       // Update URL without triggering navigation
       const params = new URLSearchParams(window.location.search)
       params.set('section', activeSection)
@@ -257,7 +258,7 @@ export function ActivityOverviewGroup({
         })
       },
       {
-        rootMargin: '200px 0px 200px 0px', // Preload 200px before visible
+        rootMargin: '800px 0px 800px 0px', // Preload 800px before visible for seamless loading
         threshold: 0,
       }
     )
@@ -271,49 +272,20 @@ export function ActivityOverviewGroup({
     return () => observer.disconnect()
   }, [activityCreated, activateSection])
 
-  // Background preloading - load remaining sections during browser idle time
+  // Aggressive preloading - load all sections quickly for seamless scrolling
   useEffect(() => {
     if (!activityCreated) return
 
-    // Wait for initial render to complete before background loading
-    const initialDelay = setTimeout(() => {
-      const sectionsToPreload = ['sectors', 'humanitarian', 'country-region', 'locations']
-      let currentIndex = 0
+    // Preload all sections immediately with minimal staggering
+    const sectionsToPreload = ['sectors', 'humanitarian', 'country-region', 'locations']
 
-      const preloadNext = () => {
-        if (currentIndex >= sectionsToPreload.length) return
-
-        const sectionId = sectionsToPreload[currentIndex]
-        // Only activate if not already active
+    sectionsToPreload.forEach((sectionId, index) => {
+      setTimeout(() => {
         if (!activeSections.has(sectionId)) {
           activateSection(sectionId)
         }
-        currentIndex++
-
-        // Schedule next preload during idle time
-        if (currentIndex < sectionsToPreload.length) {
-          if ('requestIdleCallback' in window) {
-            (window as any).requestIdleCallback(() => {
-              // Add small delay to avoid loading everything at once
-              setTimeout(preloadNext, 100)
-            }, { timeout: 2000 })
-          } else {
-            // Fallback for Safari
-            setTimeout(preloadNext, 300)
-          }
-        }
-      }
-
-      // Start preloading during idle time
-      if ('requestIdleCallback' in window) {
-        (window as any).requestIdleCallback(preloadNext, { timeout: 3000 })
-      } else {
-        // Fallback for Safari
-        setTimeout(preloadNext, 500)
-      }
-    }, 1000) // Wait 1 second after mount before background loading
-
-    return () => clearTimeout(initialDelay)
+      }, 50 * index) // 50ms stagger between sections
+    })
   }, [activityCreated, activateSection, activeSections])
   
   return (
@@ -322,7 +294,7 @@ export function ActivityOverviewGroup({
       <section 
         id="general" 
         ref={generalRef as React.RefObject<HTMLElement>}
-        className="scroll-mt-0 pb-8"
+        className="scroll-mt-0 pb-16"
       >
         {renderGeneralSection()}
       </section>
@@ -334,13 +306,13 @@ export function ActivityOverviewGroup({
           <section 
             id="sectors" 
             ref={sectorsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-8 pb-8"
+            className="scroll-mt-0 pt-16 pb-16"
           >
             <SectionHeader 
               id="sectors"
               title={getSectionLabel('sectors')}
               helpText={getSectionHelpText('sectors')}
-              showDivider={true}
+              showDivider={false}
             />
             {isSectionActive('sectors') || activeSections.has('sectors') ? (
               <div className="w-full">
@@ -368,13 +340,13 @@ export function ActivityOverviewGroup({
           <section 
             id="humanitarian" 
             ref={humanitarianRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-8 pb-8"
+            className="scroll-mt-0 pt-16 pb-16"
           >
             <SectionHeader 
               id="humanitarian"
               title={getSectionLabel('humanitarian')}
               helpText={getSectionHelpText('humanitarian')}
-              showDivider={true}
+              showDivider={false}
             />
             {isSectionActive('humanitarian') || activeSections.has('humanitarian') ? (
               <HumanitarianTab 
@@ -394,13 +366,13 @@ export function ActivityOverviewGroup({
           <section 
             id="country-region" 
             ref={countryRegionRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-8 pb-8"
+            className="scroll-mt-0 pt-16 pb-16"
           >
             <SectionHeader 
               id="country-region"
               title={getSectionLabel('country-region')}
               helpText={getSectionHelpText('country-region')}
-              showDivider={true}
+              showDivider={false}
             />
             {isSectionActive('country-region') || activeSections.has('country-region') ? (
               <CountriesRegionsTab
@@ -422,13 +394,13 @@ export function ActivityOverviewGroup({
           <section 
             id="locations" 
             ref={locationsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-8 pb-8"
+            className="scroll-mt-0 pt-16 pb-16"
           >
             <SectionHeader 
               id="locations"
               title={getSectionLabel('locations')}
               helpText={getSectionHelpText('locations')}
-              showDivider={true}
+              showDivider={false}
             />
             {isSectionActive('locations') || activeSections.has('locations') ? (
               <CombinedLocationsTab 

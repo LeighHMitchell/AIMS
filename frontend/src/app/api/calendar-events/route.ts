@@ -49,8 +49,11 @@ export async function GET(request: NextRequest) {
       location: event.location,
       type: event.type,
       status: event.status,
+      color: event.color || '#4c5568',
       organizerId: event.organizer_id,
       organizerName: event.organizer_name,
+      organizerOrganizationId: event.organizer_organization_id,
+      organizerOrganizationName: event.organizer_organization_name,
       attendees: event.attendees,
       meetingLink: event.meeting_link,
       notificationMinutes: event.notification_minutes,
@@ -100,15 +103,16 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     console.log('[Calendar API] Request body:', JSON.stringify(body, null, 2))
-    const { 
-      title, 
-      description, 
-      start, 
-      end, 
-      location, 
-      type, 
-      organizerId, 
-      organizerName, 
+    const {
+      title,
+      description,
+      start,
+      end,
+      location,
+      type,
+      color,
+      organizerId,
+      organizerName,
       attendees,
       meetingLink,
       notificationMinutes,
@@ -119,6 +123,21 @@ export async function POST(request: NextRequest) {
 
     if (!title || !start || !organizerId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Fetch the organizer's organization info
+    let organizerOrganizationId = null
+    let organizerOrganizationName = null
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organization_id, organizations(id, name)')
+      .eq('id', organizerId)
+      .single()
+
+    if (profile?.organization_id) {
+      organizerOrganizationId = profile.organization_id
+      organizerOrganizationName = (profile.organizations as any)?.name || null
     }
 
     // Validate event type
@@ -152,8 +171,11 @@ export async function POST(request: NextRequest) {
       end: endDate?.toISOString() || null,
       location: location || null,
       type: type || 'other',
+      color: color || '#4c5568',
       organizer_id: organizerId,
       organizer_name: organizerName,
+      organizer_organization_id: organizerOrganizationId,
+      organizer_organization_name: organizerOrganizationName,
       attendees: attendees || [],
       status: 'pending' // All new events start as pending
     }
@@ -191,8 +213,11 @@ export async function POST(request: NextRequest) {
       location: event.location,
       type: event.type,
       status: event.status,
+      color: event.color || '#4c5568',
       organizerId: event.organizer_id,
       organizerName: event.organizer_name,
+      organizerOrganizationId: event.organizer_organization_id,
+      organizerOrganizationName: event.organizer_organization_name,
       attendees: event.attendees,
       meetingLink: event.meeting_link,
       notificationMinutes: event.notification_minutes,

@@ -52,6 +52,36 @@ interface ActivityCardModernProps {
   isLoading?: boolean;
 }
 
+// Activity status label mapping
+const getActivityStatusLabel = (status?: string): string => {
+  if (!status) return '';
+  switch (status) {
+    case '1':
+    case 'pipeline':
+    case 'planning':
+      return 'Pipeline';
+    case '2':
+    case 'implementation':
+    case 'active':
+      return 'Implementation';
+    case '3':
+    case 'completed':
+    case 'finalisation':
+      return 'Finalisation';
+    case '4':
+    case 'closed':
+      return 'Closed';
+    case '5':
+    case 'cancelled':
+      return 'Cancelled';
+    case '6':
+    case 'suspended':
+      return 'Suspended';
+    default:
+      return status;
+  }
+};
+
 // Currency formatting utility
 const formatCurrency = (value: number) => {
   if (value >= 1000000) {
@@ -202,6 +232,14 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
                 <span style={{ color: colors.paleSlate }}>Published</span>
               ) : (
                 <span style={{ color: colors.coolSteel }}>Unpublished</span>
+              )}
+              {activity.activity_status && (
+                <>
+                  <span>•</span>
+                  <span style={{ color: colors.paleSlate }}>
+                    {getActivityStatusLabel(activity.activity_status)}
+                  </span>
+                </>
               )}
             </div>
           </motion.div>

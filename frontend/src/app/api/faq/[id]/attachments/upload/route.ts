@@ -1,26 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
+import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/faq/[id]/attachments/upload
  * Upload a file for FAQ attachment
+ * SECURITY: Requires authentication
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // SECURITY: Require authentication before any file operations
+  const { user, response: authResponse } = await requireAuth();
+  if (authResponse) {
+    return authResponse;
+  }
+
   try {
     const { id: faqId } = await params;
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const userId = formData.get('userId') as string;
+    // SECURITY: Ignore client-provided userId - use authenticated user's ID instead
+    // const userId = formData.get('userId') as string; // REMOVED - security risk
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
+
+    // Use authenticated user's ID for all operations
+    const userId = user!.id;
 
     console.log('[FAQ Attachment Upload] File received:', {
       name: file.name,
@@ -79,14 +91,15 @@ export async function POST(
       }, { status: 500 });
     }
 
-    // Create Supabase client with service role for file operations
+    // SECURITY: Only reached after authentication succeeds
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Generate unique filename and storage path
+    // SECURITY: Path includes authenticated user's ID for audit trail
     const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'bin';
     const timestamp = Date.now();
     const uniqueFilename = `${timestamp}_${uuidv4()}.${fileExtension}`;
-    const storagePath = `faq-attachments/${faqId}/${uniqueFilename}`;
+    const storagePath = `faq-attachments/${faqId}/${userId}/${uniqueFilename}`;
 
     console.log('[FAQ Attachment Upload] Uploading to path:', storagePath);
 
@@ -126,7 +139,8 @@ export async function POST(
       filename: file.name,
       type: file.type,
       size: file.size,
-      path: storagePath
+      path: storagePath,
+      uploadedBy: userId
     });
 
   } catch (error) {
@@ -144,7 +158,7 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }

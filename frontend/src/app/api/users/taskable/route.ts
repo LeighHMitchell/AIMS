@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,8 +77,10 @@ export async function GET(request: NextRequest) {
       .limit(limit);
 
     // Apply search filter
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (search) {
-      usersQuery = usersQuery.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
+      const escapedSearch = escapeIlikeWildcards(search);
+      usersQuery = usersQuery.or(`first_name.ilike.%${escapedSearch}%,last_name.ilike.%${escapedSearch}%,email.ilike.%${escapedSearch}%`);
     }
 
     // Get available roles (always return these)

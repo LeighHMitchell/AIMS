@@ -112,7 +112,23 @@ import { HumanitarianTab } from "@/components/activities/HumanitarianTab";
 import { DeleteActivityDialog } from "@/components/DeleteActivityDialog";
 import { ReadinessChecklistTab } from "@/components/activities/readiness";
 import { apiFetch } from '@/lib/api-fetch';
-import { ActivityOverviewGroup, ACTIVITY_OVERVIEW_SECTIONS, isActivityOverviewSection, StakeholdersGroup, STAKEHOLDERS_SECTIONS, isStakeholdersSection } from "@/components/activities/groups";
+import {
+  ActivityOverviewGroup,
+  ACTIVITY_OVERVIEW_SECTIONS,
+  isActivityOverviewSection,
+  StakeholdersGroup,
+  STAKEHOLDERS_SECTIONS,
+  isStakeholdersSection,
+  FundingDeliveryGroup,
+  FUNDING_DELIVERY_SECTIONS,
+  isFundingDeliverySection,
+  StrategicAlignmentGroup,
+  STRATEGIC_ALIGNMENT_SECTIONS,
+  isStrategicAlignmentSection,
+  SupportingInfoGroup,
+  SUPPORTING_INFO_SECTIONS,
+  isSupportingInfoSection
+} from "@/components/activities/groups";
 
 // Utility function to format date without timezone conversion
 const formatDateToString = (date: Date | null): string => {
@@ -2484,9 +2500,27 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
   
   // The parent component handles skeleton display via tabLoading state
 
-  // Check if this is an Activity Overview or Stakeholders section - render both grouped components
-  // for continuous scrolling between the two groups
-  if (isActivityOverviewSection(section) || isStakeholdersSection(section)) {
+  // Memoize the renderGeneralSection callback to prevent unnecessary re-renders of ActivityOverviewGroup
+  const renderGeneralSection = useCallback(() => (
+    <GeneralSection
+      general={general}
+      setGeneral={setGeneral}
+      user={user}
+      getDateFieldStatus={getDateFieldStatus}
+      setHasUnsavedChanges={setHasUnsavedChanges}
+      updateActivityNestedField={updateActivityNestedField}
+      setShowActivityCreatedAlert={setShowActivityCreatedAlert}
+      onTitleAutosaveState={onTitleAutosaveState}
+      clearSavedFormData={clearSavedFormData}
+      isNewActivity={isNewActivity}
+    />
+  ), [general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, clearSavedFormData, isNewActivity]);
+
+  // Check if this is any scrollable section - render all five grouped components
+  // for continuous scrolling: Activity Overview -> Stakeholders -> Funding & Delivery -> Strategic Alignment -> Supporting Info
+  if (isActivityOverviewSection(section) || isStakeholdersSection(section) ||
+      isFundingDeliverySection(section) || isStrategicAlignmentSection(section) ||
+      isSupportingInfoSection(section)) {
     return (
       <>
         <ActivityOverviewGroup
@@ -2538,21 +2572,8 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           initialSection={section}
           activityCreated={!!general.id}
 
-          // Render function for GeneralSection (defined inline in page.tsx)
-          renderGeneralSection={() => (
-            <GeneralSection
-              general={general}
-              setGeneral={setGeneral}
-              user={user}
-              getDateFieldStatus={getDateFieldStatus}
-              setHasUnsavedChanges={setHasUnsavedChanges}
-              updateActivityNestedField={updateActivityNestedField}
-              setShowActivityCreatedAlert={setShowActivityCreatedAlert}
-              onTitleAutosaveState={onTitleAutosaveState}
-              clearSavedFormData={clearSavedFormData}
-              isNewActivity={isNewActivity}
-            />
-          )}
+          // Render function for GeneralSection (memoized above)
+          renderGeneralSection={renderGeneralSection}
         />
 
         <StakeholdersGroup
@@ -2594,6 +2615,89 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           onFocalPointsChange={(focalPoints) => setFocalPointsCount(focalPoints.length)}
           onLinkedActivitiesCountChange={setLinkedActivitiesCount}
         />
+
+        <FundingDeliveryGroup
+          // Activity context
+          activityId={general.id}
+          general={general}
+          setGeneral={setGeneral}
+          permissions={permissions}
+
+          // Scroll integration
+          onActiveSectionChange={onSectionChange}
+          initialSection={section}
+          activityCreated={!!general.id}
+
+          // Finances props
+          transactions={transactions}
+          setTransactions={setTransactions}
+          refreshTransactions={refreshTransactions}
+          initialTransactionId={transactionId}
+          geographyLevel={general.geographyLevel || 'activity'}
+          activitySectors={sectors}
+
+          // Callbacks
+          onBudgetsChange={setBudgets}
+          onDisbursementsChange={handlePlannedDisbursementsChange}
+          onFssChange={setForwardSpendCount}
+          onResultsChange={handleResultsChange}
+          onCapitalSpendChange={(percentage) => setCapitalSpendPercentage(percentage)}
+          onFinancingTermsChange={(hasData) => setFinancingTermsCount(hasData ? 1 : 0)}
+          onConditionsChange={(conditions) => setConditionsCount(conditions.length)}
+        />
+
+        <StrategicAlignmentGroup
+          // Activity context
+          activityId={general.id}
+          userId={user?.id}
+          permissions={permissions}
+
+          // Scroll integration
+          onActiveSectionChange={onSectionChange}
+          initialSection={section}
+          activityCreated={!!general.id}
+
+          // SDG props
+          sdgMappings={sdgMappings}
+          onSdgMappingsChange={setSdgMappings}
+
+          // Budget Mapping props
+          general={general}
+          setGeneral={setGeneral}
+          onCountryBudgetItemsChange={setCountryBudgetItemsCount}
+          totalBudgetUSD={totalBudgetUSD}
+
+          // Tags props
+          tags={tags}
+          onTagsChange={setTags}
+
+          // Working Groups props
+          workingGroups={workingGroups}
+          onWorkingGroupsChange={setWorkingGroups}
+          setHasUnsavedChanges={setHasUnsavedChanges}
+
+          // Policy Markers props
+          policyMarkers={policyMarkers}
+          onPolicyMarkersChange={setPolicyMarkers}
+        />
+
+        <SupportingInfoGroup
+          // Activity context
+          activityId={general.id}
+          general={general}
+          setGeneral={setGeneral}
+          permissions={permissions}
+
+          // Scroll integration
+          onActiveSectionChange={onSectionChange}
+          initialSection={section}
+          activityCreated={!!general.id}
+
+          // Documents props
+          documents={documents}
+          onDocumentsChange={setDocuments}
+          documentsAutosave={documentsAutosave}
+        />
       </>
     );
   }
@@ -2627,91 +2731,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       );
     // Note: sectors, humanitarian, country-region, locations are now handled by ActivityOverviewGroup above
     // Note: organisations, contacts, focal_points, linked_activities are now handled by StakeholdersGroup above
-    case "finances":
-      return <EnhancedFinancesSection 
-        activityId={general.id || "new"}
-        general={general}
-        transactions={transactions}
-        onTransactionsChange={setTransactions}
-        onRefreshNeeded={refreshTransactions}
-        initialTransactionId={transactionId}
-        onDefaultsChange={(field, value) => {
-          console.log('[AIMS DEBUG] Default field changed:', field, '=', value);
-          console.log('[AIMS DEBUG] Current general.id:', general.id);
-          console.log('[AIMS DEBUG] Current general.title:', general.title);
-          
-          if (field === 'defaultFlowType') {
-            setGeneral((g: any) => ({ ...g, defaultFlowType: value }));
-          } else if (field === 'defaultTiedStatus') {
-            setGeneral((g: any) => ({ ...g, defaultTiedStatus: value }));
-          } else {
-            setGeneral((g: any) => ({ ...g, [field]: value }));
-          }
-          // Log the general state after update
-          setTimeout(() => {
-            console.log('[AIMS DEBUG] General state after update:', general);
-            console.log('[AIMS DEBUG] Specific field value:', general[field]);
-          }, 100);
-        }}
-        disabled={false}
-        geographyLevel={general.geographyLevel || 'activity'}
-        activitySectors={sectors}
-      />;
-    case "budgets":
-      return <ActivityBudgetsTab 
-        activityId={general.id}
-        startDate={general.plannedStartDate || general.actualStartDate || ""}
-        endDate={general.plannedEndDate || general.actualEndDate || ""}
-        defaultCurrency={general.defaultCurrency || "USD"}
-        onBudgetsChange={setBudgets}
-      />;
-    case "planned-disbursements":
-      return <PlannedDisbursementsTab 
-        activityId={general.id}
-        startDate={general.plannedStartDate || general.actualStartDate || ""}
-        endDate={general.plannedEndDate || general.actualEndDate || ""}
-        defaultCurrency={general.defaultCurrency || "USD"}
-        readOnly={!permissions?.canEditActivity}
-        onDisbursementsChange={handlePlannedDisbursementsChange}
-      />;
-    case "forward-spending-survey":
-      return <ForwardSpendingSurveyTab 
-        activityId={general.id}
-        readOnly={!permissions?.canEditActivity}
-        onFssChange={setForwardSpendCount}
-      />;
-    case "results":
-      return <ResultsTab 
-        activityId={general.id} 
-        readOnly={!permissions?.canEditActivity}
-        onResultsChange={handleResultsChange}
-        defaultLanguage="en"
-      />;
-    case "capital-spend":
-      return <CapitalSpendTab 
-        activityId={general.id} 
-        readOnly={!permissions?.canEditActivity}
-        onCapitalSpendChange={(percentage) => {
-          setCapitalSpendPercentage(percentage);
-        }}
-      />;
-    case "financing-terms":
-      return <FinancingTermsTab 
-        activityId={general.id} 
-        readOnly={!permissions?.canEditActivity}
-        onFinancingTermsChange={(hasData) => {
-          setFinancingTermsCount(hasData ? 1 : 0);
-        }}
-      />;
-    case "conditions":
-      return <ConditionsTab 
-        activityId={general.id} 
-        readOnly={!permissions?.canEditActivity}
-        defaultLanguage="en"
-        onConditionsChange={(conditions) => {
-          setConditionsCount(conditions.length);
-        }}
-      />;
+    // Note: finances, budgets, planned-disbursements, forward-spending-survey, results, capital-spend, financing-terms, conditions are now handled by FundingDeliveryGroup above
     case "government":
       return <GovernmentInputsSectionEnhanced 
         governmentInputs={governmentInputs} 
@@ -2719,39 +2739,8 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       />;
     case "readiness_checklist":
       return <ReadinessChecklistTab activityId={general.id} />;
-    case "documents":
-      return <DocumentsAndImagesTabInline
-        documents={documents}
-        onChange={(newDocuments) => {
-          setDocuments(newDocuments);
-          documentsAutosave.saveNow(newDocuments);
-        }}
-        activityId={general.id}
-        locale="en"
-      />;
-    case "aid_effectiveness":
-      return <AidEffectivenessForm general={general} onUpdate={setGeneral} />;
-    case "sdg":
-      return <SDGAlignmentSection sdgMappings={sdgMappings} onUpdate={setSdgMappings} activityId={general.id} />;
-    case "tags":
-      return <TagsSection activityId={general.id} tags={tags} onChange={setTags} />;
-    case "working_groups":
-      return <WorkingGroupsSection activityId={general.id} workingGroups={workingGroups} onChange={setWorkingGroups} setHasUnsavedChanges={setHasUnsavedChanges} />;
-    case "policy_markers":
-      return <PolicyMarkersSectionIATIWithCustom activityId={general.id} policyMarkers={policyMarkers} onChange={setPolicyMarkers} setHasUnsavedChanges={setHasUnsavedChanges} />;
-    case "country-budget":
-      return <BudgetMappingTab
-        activityId={general.id}
-        userId={user?.id}
-        budgetStatus={general.budgetStatus}
-        onBudgetPercentage={general.onBudgetPercentage}
-        budgetStatusNotes={general.budgetStatusNotes}
-        onActivityChange={(field, value) => {
-          setGeneral((g: any) => ({ ...g, [field]: value }));
-        }}
-        onDataChange={setCountryBudgetItemsCount}
-        totalBudgetUSD={totalBudgetUSD}
-      />;
+    // Note: sdg, country-budget, tags, working_groups, policy_markers are now handled by StrategicAlignmentGroup above
+    // Note: documents, aid_effectiveness are now handled by SupportingInfoGroup above
     default:
       return null;
   }
@@ -4676,10 +4665,19 @@ function NewActivityPageContent() {
       return;
     }
     
-    // If switching within or between Activity Overview and Stakeholders groups,
+    // If switching within or between any scrollable groups,
     // just scroll instead of full tab change (continuous scrolling)
-    const isValueInScrollableGroup = isActivityOverviewSection(value) || isStakeholdersSection(value);
-    const isCurrentInScrollableGroup = isActivityOverviewSection(activeSection) || isStakeholdersSection(activeSection);
+    // All five groups are linked: Activity Overview -> Stakeholders -> Funding & Delivery -> Strategic Alignment -> Supporting Info
+    const isValueInScrollableGroup = isActivityOverviewSection(value) ||
+                                      isStakeholdersSection(value) ||
+                                      isFundingDeliverySection(value) ||
+                                      isStrategicAlignmentSection(value) ||
+                                      isSupportingInfoSection(value);
+    const isCurrentInScrollableGroup = isActivityOverviewSection(activeSection) ||
+                                        isStakeholdersSection(activeSection) ||
+                                        isFundingDeliverySection(activeSection) ||
+                                        isStrategicAlignmentSection(activeSection) ||
+                                        isSupportingInfoSection(activeSection);
 
     if (isValueInScrollableGroup && isCurrentInScrollableGroup) {
       console.log('[AIMS Performance] Scrolling to section:', value, 'from:', activeSection);
@@ -5253,8 +5251,12 @@ function NewActivityPageContent() {
           
           <div className="px-0 pr-6 md:pr-8 pb-32">
             <section>
-              {/* Hide section header for Activity Overview group - group renders its own headers */}
-              {!isActivityOverviewSection(activeSection) && (
+              {/* Hide section header for all scrollable groups - each group renders its own headers */}
+              {!isActivityOverviewSection(activeSection) &&
+               !isStakeholdersSection(activeSection) &&
+               !isFundingDeliverySection(activeSection) &&
+               !isStrategicAlignmentSection(activeSection) &&
+               !isSupportingInfoSection(activeSection) && (
                 <div className="flex items-center gap-3 mb-6">
                   <h2 className="text-2xl font-semibold">{getSectionLabel(activeSection)}</h2>
                   <HelpTextTooltip content={getSectionHelpText(activeSection)}>

@@ -104,6 +104,7 @@ const safeFormatDate = (dateStr: string | null | undefined, formatStr: string, f
 
 export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCurrency = 'USD' }: OrganizationPlannedDisbursementsTabProps) {
   const [disbursements, setDisbursements] = useState<OrganizationPlannedDisbursement[]>([]);
+  const [organizations, setOrganizations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,18 +123,29 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
   // Grouped view
   const [groupedView, setGroupedView] = useState(false);
 
-  // Fetch planned disbursements
+  // Fetch planned disbursements and organizations
   useEffect(() => {
-    const fetchDisbursements = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await apiFetch(`/api/organizations/${organizationId}/planned-disbursements`);
-        if (!response.ok) throw new Error('Failed to fetch planned disbursements');
-        const data = await response.json();
-        setDisbursements(data || []);
+
+        // Fetch disbursements and organizations in parallel
+        const [disbursementsResponse, orgsResponse] = await Promise.all([
+          apiFetch(`/api/organizations/${organizationId}/planned-disbursements`),
+          apiFetch('/api/organizations')
+        ]);
+
+        if (!disbursementsResponse.ok) throw new Error('Failed to fetch planned disbursements');
+        const disbursementsData = await disbursementsResponse.json();
+        setDisbursements(disbursementsData || []);
+
+        if (orgsResponse.ok) {
+          const orgsData = await orgsResponse.json();
+          setOrganizations(orgsData || []);
+        }
       } catch (err) {
-        console.error('Error fetching planned disbursements:', err);
+        console.error('Error fetching data:', err);
         setError('Failed to load planned disbursements');
       } finally {
         setLoading(false);
@@ -141,9 +153,27 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
     };
 
     if (organizationId) {
-      fetchDisbursements();
+      fetchData();
     }
   }, [organizationId]);
+
+  // Helper to get org logo by ID
+  const getOrgLogo = (orgId: string | undefined): string | null => {
+    if (!orgId) return null;
+    const org = organizations.find((o: any) => o.id === orgId);
+    return org?.logo || null;
+  };
+
+  // Helper to get org acronym or name
+  const getOrgAcronymOrName = (orgId: string | undefined, fallbackName?: string): string => {
+    if (orgId) {
+      const org = organizations.find((o: any) => o.id === orgId);
+      if (org) {
+        return org.acronym || org.name;
+      }
+    }
+    return fallbackName || '-';
+  };
 
   // Get unique activities for filter dropdown
   const uniqueActivities = useMemo(() => {
@@ -535,24 +565,24 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                             {/* Provider */}
                             <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                               <OrganizationLogo
-                                src={disbursement.provider_org_logo || undefined}
-                                alt={disbursement.provider_org_acronym || disbursement.provider_org_name || 'Provider'}
+                                logo={getOrgLogo(disbursement.provider_org_id) || disbursement.provider_org_logo}
+                                name={getOrgAcronymOrName(disbursement.provider_org_id, disbursement.provider_org_name)}
                                 size="sm"
                               />
                               <span className="text-sm">
-                                {disbursement.provider_org_acronym || disbursement.provider_org_name || '-'}
+                                {getOrgAcronymOrName(disbursement.provider_org_id, disbursement.provider_org_name)}
                               </span>
                             </div>
                             <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                             {/* Receiver */}
                             <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                               <OrganizationLogo
-                                src={disbursement.receiver_org_logo || undefined}
-                                alt={disbursement.receiver_org_acronym || disbursement.receiver_org_name || 'Receiver'}
+                                logo={getOrgLogo(disbursement.receiver_org_id) || disbursement.receiver_org_logo}
+                                name={getOrgAcronymOrName(disbursement.receiver_org_id, disbursement.receiver_org_name)}
                                 size="sm"
                               />
                               <span className="text-sm">
-                                {disbursement.receiver_org_acronym || disbursement.receiver_org_name || '-'}
+                                {getOrgAcronymOrName(disbursement.receiver_org_id, disbursement.receiver_org_name)}
                               </span>
                             </div>
                           </div>
@@ -611,24 +641,24 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                         {/* Provider */}
                         <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                           <OrganizationLogo
-                            src={disbursement.provider_org_logo || undefined}
-                            alt={disbursement.provider_org_acronym || disbursement.provider_org_name || 'Provider'}
+                            logo={getOrgLogo(disbursement.provider_org_id) || disbursement.provider_org_logo}
+                            name={getOrgAcronymOrName(disbursement.provider_org_id, disbursement.provider_org_name)}
                             size="sm"
                           />
                           <span className="text-sm">
-                            {disbursement.provider_org_acronym || disbursement.provider_org_name || '-'}
+                            {getOrgAcronymOrName(disbursement.provider_org_id, disbursement.provider_org_name)}
                           </span>
                         </div>
                         <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                         {/* Receiver */}
                         <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                           <OrganizationLogo
-                            src={disbursement.receiver_org_logo || undefined}
-                            alt={disbursement.receiver_org_acronym || disbursement.receiver_org_name || 'Receiver'}
+                            logo={getOrgLogo(disbursement.receiver_org_id) || disbursement.receiver_org_logo}
+                            name={getOrgAcronymOrName(disbursement.receiver_org_id, disbursement.receiver_org_name)}
                             size="sm"
                           />
                           <span className="text-sm">
-                            {disbursement.receiver_org_acronym || disbursement.receiver_org_name || '-'}
+                            {getOrgAcronymOrName(disbursement.receiver_org_id, disbursement.receiver_org_name)}
                           </span>
                         </div>
                       </div>

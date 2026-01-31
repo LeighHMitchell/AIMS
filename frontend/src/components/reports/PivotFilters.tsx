@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { MultiSelectFilter, MultiSelectOption } from '@/components/ui/multi-select-filter'
-import { Calendar, Building2, Activity, Layers, Filter, RefreshCw } from 'lucide-react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Calendar, Building2, Activity, Layers, Filter, RefreshCw, ChevronRight } from 'lucide-react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 
@@ -15,6 +16,7 @@ export interface PivotFilterState {
   sectorCodes: string[]
   transactionTypes: string[]
   fiscalYears: string[]
+  recordTypes: string[]
 }
 
 interface PivotFiltersProps {
@@ -55,6 +57,13 @@ const TRANSACTION_TYPE_OPTIONS: MultiSelectOption[] = [
   { value: '13', label: 'Incoming Pledge', code: '13' },
 ]
 
+// Record type options (Transaction, Planned Disbursement, Budget)
+const RECORD_TYPE_OPTIONS: MultiSelectOption[] = [
+  { value: 'Transaction', label: 'Transactions' },
+  { value: 'Planned Disbursement', label: 'Planned Disbursements' },
+  { value: 'Budget', label: 'Budgets' },
+]
+
 // Generate fiscal year options for the last 20 years
 const generateFiscalYearOptions = (): MultiSelectOption[] => {
   const currentYear = new Date().getFullYear()
@@ -71,6 +80,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
   const [organizations, setOrganizations] = useState<MultiSelectOption[]>([])
   const [sectors, setSectors] = useState<MultiSelectOption[]>([])
   const [loadingOptions, setLoadingOptions] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
 
   // Fetch organizations and sectors for filter options
   useEffect(() => {
@@ -141,154 +151,183 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
       sectorCodes: [],
       transactionTypes: [],
       fiscalYears: [],
+      recordTypes: [],
     })
   }
 
-  const hasActiveFilters = 
-    filters.startDate || 
-    filters.endDate || 
-    filters.organizationIds.length > 0 || 
-    filters.statuses.length > 0 || 
+  const hasActiveFilters =
+    filters.startDate ||
+    filters.endDate ||
+    filters.organizationIds.length > 0 ||
+    filters.statuses.length > 0 ||
     filters.sectorCodes.length > 0 ||
     filters.transactionTypes.length > 0 ||
-    filters.fiscalYears.length > 0
+    filters.fiscalYears.length > 0 ||
+    filters.recordTypes.length > 0
 
   return (
-    <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          Filters
-        </h3>
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearFilters}
-            className="text-xs"
-          >
-            Clear all
-          </Button>
-        )}
-      </div>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="bg-muted/30 rounded-lg border">
+        <CollapsibleTrigger asChild>
+          <button className="flex items-center justify-between w-full p-4 text-left hover:bg-muted/50 transition-colors rounded-lg">
+            <h3 className="text-sm font-medium flex items-center gap-2">
+              <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
+              <Filter className="h-4 w-4" />
+              Filters
+              {hasActiveFilters && (
+                <span className="text-xs text-muted-foreground font-normal">(active)</span>
+              )}
+            </h3>
+            {hasActiveFilters && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleClearFilters()
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                Clear all
+              </span>
+            )}
+          </button>
+        </CollapsibleTrigger>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Date Range */}
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            Transaction Date Range
-          </label>
-          <div className="flex gap-2">
-            <DatePicker
-              selected={filters.startDate}
-              onChange={handleStartDateChange}
-              selectsStart
-              startDate={filters.startDate}
-              endDate={filters.endDate}
-              placeholderText="Start"
-              className="w-full h-9 px-3 text-sm border rounded-md bg-background"
-              dateFormat="MMM d, yyyy"
-            />
-            <DatePicker
-              selected={filters.endDate}
-              onChange={handleEndDateChange}
-              selectsEnd
-              startDate={filters.startDate}
-              endDate={filters.endDate}
-              minDate={filters.startDate || undefined}
-              placeholderText="End"
-              className="w-full h-9 px-3 text-sm border rounded-md bg-background"
-              dateFormat="MMM d, yyyy"
-            />
+        <CollapsibleContent>
+          <div className="px-4 pb-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Date Range */}
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  Transaction Date Range
+                </label>
+                <div className="flex gap-2">
+                  <DatePicker
+                    selected={filters.startDate}
+                    onChange={handleStartDateChange}
+                    selectsStart
+                    startDate={filters.startDate}
+                    endDate={filters.endDate}
+                    placeholderText="Start"
+                    className="w-full h-9 px-3 text-sm border rounded-md bg-background"
+                    dateFormat="MMM d, yyyy"
+                  />
+                  <DatePicker
+                    selected={filters.endDate}
+                    onChange={handleEndDateChange}
+                    selectsEnd
+                    startDate={filters.startDate}
+                    endDate={filters.endDate}
+                    minDate={filters.startDate || undefined}
+                    placeholderText="End"
+                    className="w-full h-9 px-3 text-sm border rounded-md bg-background"
+                    dateFormat="MMM d, yyyy"
+                  />
+                </div>
+              </div>
+
+              {/* Organization Filter */}
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Building2 className="h-3 w-3" />
+                  Development Partner
+                </label>
+                <MultiSelectFilter
+                  options={organizations}
+                  value={filters.organizationIds}
+                  onChange={(value) => onChange({ ...filters, organizationIds: value })}
+                  placeholder={loadingOptions ? "Loading..." : "Select partners..."}
+                  searchPlaceholder="Search organizations..."
+                  icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Activity Status Filter */}
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Activity className="h-3 w-3" />
+                  Activity Status
+                </label>
+                <MultiSelectFilter
+                  options={ACTIVITY_STATUS_OPTIONS}
+                  value={filters.statuses}
+                  onChange={(value) => onChange({ ...filters, statuses: value })}
+                  placeholder="Select statuses..."
+                  icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Sector Filter */}
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Layers className="h-3 w-3" />
+                  Sector
+                </label>
+                <MultiSelectFilter
+                  options={sectors}
+                  value={filters.sectorCodes}
+                  onChange={(value) => onChange({ ...filters, sectorCodes: value })}
+                  placeholder={loadingOptions ? "Loading..." : "Select sectors..."}
+                  searchPlaceholder="Search sectors..."
+                  icon={<Layers className="h-4 w-4 text-muted-foreground" />}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Transaction Type Filter */}
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                  Transaction Type
+                </label>
+                <MultiSelectFilter
+                  options={TRANSACTION_TYPE_OPTIONS}
+                  value={filters.transactionTypes}
+                  onChange={(value) => onChange({ ...filters, transactionTypes: value })}
+                  placeholder="Select types..."
+                  className="w-full"
+                />
+              </div>
+
+              {/* Fiscal Year Filter */}
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                  Fiscal Year
+                </label>
+                <MultiSelectFilter
+                  options={FISCAL_YEAR_OPTIONS}
+                  value={filters.fiscalYears}
+                  onChange={(value) => onChange({ ...filters, fiscalYears: value })}
+                  placeholder="Select years..."
+                  className="w-full"
+                />
+              </div>
+
+              {/* Record Type Filter */}
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                  Record Type
+                </label>
+                <MultiSelectFilter
+                  options={RECORD_TYPE_OPTIONS}
+                  value={filters.recordTypes}
+                  onChange={(value) => onChange({ ...filters, recordTypes: value })}
+                  placeholder="All record types..."
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button onClick={onApply} disabled={isLoading} className="gap-2">
+                {isLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
+                {isLoading ? 'Loading...' : 'Apply Filters'}
+              </Button>
+            </div>
           </div>
-        </div>
-
-        {/* Organization Filter */}
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground flex items-center gap-1">
-            <Building2 className="h-3 w-3" />
-            Development Partner
-          </label>
-          <MultiSelectFilter
-            options={organizations}
-            value={filters.organizationIds}
-            onChange={(value) => onChange({ ...filters, organizationIds: value })}
-            placeholder={loadingOptions ? "Loading..." : "Select partners..."}
-            searchPlaceholder="Search organizations..."
-            icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
-            className="w-full"
-          />
-        </div>
-
-        {/* Activity Status Filter */}
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground flex items-center gap-1">
-            <Activity className="h-3 w-3" />
-            Activity Status
-          </label>
-          <MultiSelectFilter
-            options={ACTIVITY_STATUS_OPTIONS}
-            value={filters.statuses}
-            onChange={(value) => onChange({ ...filters, statuses: value })}
-            placeholder="Select statuses..."
-            icon={<Activity className="h-4 w-4 text-muted-foreground" />}
-            className="w-full"
-          />
-        </div>
-
-        {/* Sector Filter */}
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground flex items-center gap-1">
-            <Layers className="h-3 w-3" />
-            Sector
-          </label>
-          <MultiSelectFilter
-            options={sectors}
-            value={filters.sectorCodes}
-            onChange={(value) => onChange({ ...filters, sectorCodes: value })}
-            placeholder={loadingOptions ? "Loading..." : "Select sectors..."}
-            searchPlaceholder="Search sectors..."
-            icon={<Layers className="h-4 w-4 text-muted-foreground" />}
-            className="w-full"
-          />
-        </div>
-
-        {/* Transaction Type Filter */}
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground flex items-center gap-1">
-            Transaction Type
-          </label>
-          <MultiSelectFilter
-            options={TRANSACTION_TYPE_OPTIONS}
-            value={filters.transactionTypes}
-            onChange={(value) => onChange({ ...filters, transactionTypes: value })}
-            placeholder="Select types..."
-            className="w-full"
-          />
-        </div>
-
-        {/* Fiscal Year Filter */}
-        <div className="space-y-2">
-          <label className="text-xs text-muted-foreground flex items-center gap-1">
-            Fiscal Year
-          </label>
-          <MultiSelectFilter
-            options={FISCAL_YEAR_OPTIONS}
-            value={filters.fiscalYears}
-            onChange={(value) => onChange({ ...filters, fiscalYears: value })}
-            placeholder="Select years..."
-            className="w-full"
-          />
-        </div>
+        </CollapsibleContent>
       </div>
-
-      <div className="flex justify-end pt-2">
-        <Button onClick={onApply} disabled={isLoading} className="gap-2">
-          {isLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
-          {isLoading ? 'Loading...' : 'Apply Filters'}
-        </Button>
-      </div>
-    </div>
+    </Collapsible>
   )
 }

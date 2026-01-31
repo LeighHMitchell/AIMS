@@ -1,80 +1,54 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
 
-// Health check endpoint - intentionally public for monitoring
+/**
+ * SECURITY: Minimal health check endpoint for monitoring services.
+ *
+ * This endpoint is intentionally public for uptime monitors, load balancers,
+ * and deployment readiness probes.
+ *
+ * IMPORTANT: This endpoint must NEVER expose:
+ * - Database table names or structure
+ * - Row counts or data statistics
+ * - Environment variable status
+ * - Error messages or stack traces
+ * - Any internal implementation details
+ *
+ * The only valid responses are:
+ * - 200 { "status": "ok" } - Service is healthy
+ * - 503 { "status": "error" } - Service is unhealthy
+ */
 export async function GET() {
-  const checks = {
-    timestamp: new Date().toISOString(),
-    status: 'checking',
-    database: {
-      connected: false,
-      error: null as string | null
-    },
-    tables: {
-      activities: { exists: false, count: 0, error: null as string | null },
-      transactions: { exists: false, count: 0, error: null as string | null },
-      activity_sectors: { exists: false, count: 0, error: null as string | null },
-      activity_contacts: { exists: false, count: 0, error: null as string | null },
-      organizations: { exists: false, count: 0, error: null as string | null },
-      users: { exists: false, count: 0, error: null as string | null }
-    },
-    environment: {
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing',
-      supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
-      supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Set' : 'Missing'
-    }
-  };
-
   try {
-    const supabase = getSupabaseAdmin();
-    
-    // Test database connection
-    if (!supabase) {
-      checks.database.error = 'Supabase admin client not initialized';
-      checks.status = 'error';
-      return NextResponse.json(checks, { status: 500 });
+    // SECURITY: Perform minimal connectivity check WITHOUT using service role key.
+    // We only verify that the application can respond - no database enumeration.
+    //
+    // If deeper health checks are needed for internal monitoring, create a
+    // separate authenticated endpoint (e.g., /api/admin/diagnostics) that
+    // requires super_user authentication.
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    // Check if essential configuration exists (do NOT reveal which are missing)
+    if (!supabaseUrl || !supabaseAnonKey) {
+      // Return generic error - do not specify what is misconfigured
+      return NextResponse.json(
+        { status: 'error' },
+        { status: 503 }
+      );
     }
 
-    // Simple connection test
-    const { error: connError } = await supabase.from('activities').select('id').limit(1);
-    if (connError) {
-      checks.database.error = connError.message;
-      checks.status = 'error';
-      return NextResponse.json(checks, { status: 500 });
-    }
-    
-    checks.database.connected = true;
-
-    // Check each table
-    const tables = ['activities', 'transactions', 'activity_sectors', 'activity_contacts', 'organizations', 'users'] as const;
-    
-    for (const table of tables) {
-      try {
-        const { count, error } = await supabase
-          .from(table)
-          .select('*', { count: 'exact', head: true });
-        
-        if (error) {
-          checks.tables[table].error = error.message;
-        } else {
-          checks.tables[table].exists = true;
-          checks.tables[table].count = count || 0;
-        }
-      } catch (e) {
-        checks.tables[table].error = e instanceof Error ? e.message : 'Unknown error';
-      }
-    }
-
-    // Determine overall status
-    const allTablesOk = Object.values(checks.tables).every(t => t.exists && !t.error);
-    checks.status = checks.database.connected && allTablesOk ? 'healthy' : 'degraded';
-
-    return NextResponse.json(checks, { 
-      status: checks.status === 'healthy' ? 200 : 503 
-    });
-  } catch (error) {
-    checks.database.error = error instanceof Error ? error.message : 'Unknown error';
-    checks.status = 'error';
-    return NextResponse.json(checks, { status: 500 });
+    // Application is configured and responding
+    return NextResponse.json(
+      { status: 'ok' },
+      { status: 200 }
+    );
+  } catch {
+    // SECURITY: Catch all errors and return generic response.
+    // Never expose error details to unauthenticated callers.
+    return NextResponse.json(
+      { status: 'error' },
+      { status: 503 }
+    );
   }
 }

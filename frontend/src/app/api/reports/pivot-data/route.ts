@@ -90,6 +90,7 @@ export async function GET(request: NextRequest) {
     const sectorCodes = searchParams.getAll('sectorCodes');
     const transactionTypes = searchParams.getAll('transactionTypes');
     const fiscalYears = searchParams.getAll('fiscalYears');
+    const recordTypes = searchParams.getAll('recordTypes');
     const limit = parseInt(searchParams.get('limit') || '50000', 10);
 
     // Fetch active year types from custom_years table
@@ -118,12 +119,14 @@ export async function GET(request: NextRequest) {
       .select('*');
 
     // Apply filters conditionally
+    // Note: Use 'effective_date' which is the standardized date field in the view
+    // (transaction_date for transactions, period_start for planned disbursements/budgets)
     if (startDate) {
-      query = query.gte('transaction_date', startDate);
+      query = query.gte('effective_date', startDate);
     }
-    
+
     if (endDate) {
-      query = query.lte('transaction_date', endDate);
+      query = query.lte('effective_date', endDate);
     }
     
     if (organizationIds.length > 0) {
@@ -147,6 +150,11 @@ export async function GET(request: NextRequest) {
       query = query.in('fiscal_year', fiscalYears);
     }
 
+    if (recordTypes.length > 0) {
+      // Filter by record type (Transaction, Planned Disbursement, Budget)
+      query = query.in('record_type', recordTypes);
+    }
+
     // Apply row limit for performance
     query = query.limit(limit);
 
@@ -160,13 +168,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Transform data - add dynamic fiscal year columns for each year type
+    // Transform data - add dynamic fiscal year columns and convert booleans
     const transformedData = (data || []).map(row => {
       const effectiveDate = row.effective_date;
       const fiscalYearValues = calculateAllFiscalYears(effectiveDate, yearTypes);
       return {
         ...row,
         ...fiscalYearValues,
+        // Convert boolean fields to Yes/No for better pivot display
+        is_humanitarian: row.is_humanitarian === true ? 'Yes' : row.is_humanitarian === false ? 'No' : null,
+        is_nationwide: row.is_nationwide === true ? 'Yes' : row.is_nationwide === false ? 'No' : null,
+        is_original_currency: row.is_original_currency === true ? 'Yes' : row.is_original_currency === false ? 'No' : null,
       };
     });
 

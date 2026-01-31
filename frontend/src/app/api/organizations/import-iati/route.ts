@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { parseIATIOrganization, validateIATIOrganizationXML } from '@/lib/iati-organization-parser';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { validateUrlSafety } from '@/lib/security-utils';
 
 interface ImportIATIRequest {
   iatiId?: string;
@@ -158,13 +159,25 @@ async function fetchIATIOrganizationFromRegistry(iatiId: string): Promise<string
 
 /**
  * Fetch XML content from a URL
+ * SECURITY: Validates URL safety to prevent SSRF attacks
  */
 async function fetchXMLFromURL(url: string): Promise<string> {
+  // SECURITY: Validate URL is safe before fetching (SSRF protection)
+  const validationError = await validateUrlSafety(url, {
+    allowHttp: true,  // Some IATI feeds are HTTP-only
+    logPrefix: '[IATI Import]'
+  });
+  if (validationError) {
+    throw new Error(`URL validation failed: ${validationError}`);
+  }
+
+  // SECURITY: Disable redirects to prevent redirect-based SSRF bypass
   const response = await fetch(url, {
     headers: {
       'Accept': 'application/xml, text/xml, */*',
       'User-Agent': 'AIMS-IATI-Importer/1.0'
     },
+    redirect: 'error',
   });
 
   if (!response.ok) {

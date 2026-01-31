@@ -6,17 +6,42 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 
 // Set maximum request body size to 10MB for profile pictures
-export const maxDuration = 60; // Maximum allowed duration for Vercel Hobby is 60 seconds
+export const maxDuration = 60;
 
 // Configure route segment for larger body size
-export const runtime = 'nodejs'; // Use Node.js runtime for better body parsing
+export const runtime = 'nodejs';
+
+// SECURITY: Valid role values - must match USER_ROLES in types/user.ts
+const VALID_ROLES = [
+  'super_user',
+  'admin',  // Legacy admin role
+  'dev_partner_tier_1',
+  'dev_partner_tier_2',
+  'gov_partner_tier_1',
+  'gov_partner_tier_2',
+  'public_user'
+] as const;
+
+// SECURITY: Default role for new users created by non-admins
+const DEFAULT_ROLE = 'public_user';
+
+// Helper to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+// SECURITY: Validate role value against allowed enum
+function isValidRole(role: unknown): role is typeof VALID_ROLES[number] {
+  return typeof role === 'string' && VALID_ROLES.includes(role as any);
+}
 
 export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/users - Starting request (Supabase)');
-  
+
   const { supabase, response } = await requireAuth();
   if (response) return response;
-  
+
   try {
     if (!supabase) {
       return NextResponse.json(
@@ -27,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const email = searchParams.get('email');
-    
+
     let query = supabase.from('users').select(`
       *,
       organizations:organization_id (
@@ -39,13 +64,13 @@ export async function GET(request: NextRequest) {
         country
       )
     `);
-    
+
     if (email) {
       query = query.eq('email', email).single();
     }
-    
+
     const { data, error } = await query;
-    
+
     if (error) {
       console.error('[AIMS] Error from Supabase:', error);
       if (error.code === 'PGRST116' && email) {
@@ -59,7 +84,7 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
-    
+
     // Transform data to match frontend User type expectations
     const transformUser = (user: any) => ({
       ...user,
@@ -69,14 +94,13 @@ export async function GET(request: NextRequest) {
       lastName: user.last_name,
       suffix: user.suffix,
       gender: user.gender,
-      profilePicture: user.avatar_url, // Map avatar_url to profilePicture
-      authProvider: user.auth_provider, // Track how user authenticates
+      profilePicture: user.avatar_url,
+      authProvider: user.auth_provider,
       organisation: user.organisation || user.organizations?.name,
       organization: user.organizations,
       contactType: user.contact_type,
       faxNumber: user.fax_number,
       notes: user.notes,
-      // Address component fields
       mailingAddress: user.mailing_address,
       addressLine1: user.address_line_1,
       addressLine2: user.address_line_2,
@@ -85,26 +109,14 @@ export async function GET(request: NextRequest) {
       country: user.country,
       postalCode: user.postal_code
     });
-    
-    const transformedData = Array.isArray(data) 
+
+    const transformedData = Array.isArray(data)
       ? data.map(transformUser)
       : transformUser(data);
-    
+
     console.log('[AIMS] Successfully fetched from Supabase');
-    // Debug: Log address fields for first user
-    if (Array.isArray(data) && data.length > 0) {
-      console.log('[AIMS] Sample user address fields from DB:', {
-        address_line_1: data[0].address_line_1,
-        address_line_2: data[0].address_line_2,
-        city: data[0].city,
-        state_province: data[0].state_province,
-        country: data[0].country,
-        postal_code: data[0].postal_code,
-        mailing_address: data[0].mailing_address
-      });
-    }
     return NextResponse.json(transformedData);
-    
+
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
@@ -116,15 +128,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   console.log('[AIMS] POST /api/users - Starting request (Supabase)');
-  
-  const { supabase, response } = await requireAuth();
-  if (response) return response;
-  
+
+  const { supabase, user: authUser, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    if (!supabase) {
+    if (!supabase || !authUser) {
       return NextResponse.json(
-        { error: 'Supabase is not configured' },
-        { status: 500 }
+        { error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
@@ -137,48 +149,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // SECURITY: Fetch authenticated user's role to check permissions
+    const { data: authUserProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('id', authUser.id)
+      .single();
+
+    if (profileError || !authUserProfile) {
+      console.error('[AIMS] Error fetching auth user profile:', profileError);
+      return NextResponse.json(
+        { error: 'Failed to verify user permissions' },
+        { status: 500 }
+      );
+    }
+
+    const isSuperUser = authUserProfile.role === 'super_user' || authUserProfile.role === 'admin';
+
     const body = await request.json();
-    
+
     console.log('[AIMS] Creating user with email:', body.email);
-    
-    // Check if user with this email already exists in the users table (use admin client to bypass RLS)
+
+    // Check if user with this email already exists
     const { data: existingUsers, error: checkError } = await supabaseAdmin
       .from('users')
       .select('id, email')
       .eq('email', body.email);
-    
-    console.log('[AIMS] Email check result:', { 
-      email: body.email,
-      existingUsers, 
-      checkError,
-      count: existingUsers?.length 
-    });
-    
+
     if (existingUsers && existingUsers.length > 0) {
-      console.log('[AIMS] User profile already exists with email:', body.email, 'ID:', existingUsers[0].id);
+      console.log('[AIMS] User profile already exists with email:', body.email);
       return NextResponse.json(
         { error: 'A user with this email address already exists' },
-        { status: 409 } // Conflict
+        { status: 409 }
       );
     }
-    
-    // Create auth user first (using admin client with service role key)
-    // Note: createUser will fail with an error if the email is already registered
+
+    // Create auth user first
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
       password: body.password || `TempPass${Date.now()}!`,
       email_confirm: true,
     });
-    
+
     if (authError) {
       console.error('[AIMS] Error creating auth user:', authError);
-      // Check if auth user already exists (email already registered)
-      if (authError.message?.includes('already been registered') || 
+      if (authError.message?.includes('already been registered') ||
           authError.message?.includes('already exists') ||
           authError.message?.includes('unique constraint') ||
           authError.code === 'email_exists') {
         return NextResponse.json(
-          { error: 'A user with this email address already exists. The previous user may not have been fully deleted - please contact an administrator.' },
+          { error: 'A user with this email address already exists.' },
           { status: 409 }
         );
       }
@@ -187,19 +207,40 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     console.log('[AIMS] Created auth user with ID:', authData.user.id);
-    
-    // Note: A database trigger (handle_new_auth_user) automatically creates a basic profile
-    // when an auth user is created. We need to UPDATE that profile with the full data,
-    // not INSERT a new one.
-    
-    // Build the profile update data
-    const userProfileData: any = {
+
+    // SECURITY: Determine role with proper authorization
+    let assignedRole = DEFAULT_ROLE;
+
+    if (body.role !== undefined) {
+      if (!isSuperUser) {
+        // Non-admin trying to set a role - log and use default
+        console.warn(`[AIMS] PRIVILEGE ESCALATION BLOCKED: User ${authUser.id} (role: ${authUserProfile.role}) attempted to create user with role "${body.role}"`);
+        // Use default role, don't return error to avoid leaking info
+        assignedRole = DEFAULT_ROLE;
+      } else {
+        // Super user can set roles - validate the value
+        if (!isValidRole(body.role)) {
+          console.warn(`[AIMS] Invalid role value rejected: "${body.role}"`);
+          // Clean up the auth user we just created
+          await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+          return NextResponse.json(
+            { error: `Invalid role value: ${body.role}` },
+            { status: 400 }
+          );
+        }
+        assignedRole = body.role;
+        console.log(`[AIMS] Role assignment authorized: Super user ${authUser.id} creating user with role ${assignedRole}`);
+      }
+    }
+
+    // Build the profile update data with explicit field allowlist
+    const userProfileData: Record<string, any> = {
       email: body.email,
       first_name: body.first_name || '',
       last_name: body.last_name || '',
-      role: body.role || 'dev_partner_tier_1',
+      role: assignedRole,  // SECURITY: Server-controlled role assignment
       organization_id: body.organization_id || null,
       organisation: body.organisation || null,
       department: body.department || null,
@@ -208,25 +249,24 @@ export async function POST(request: NextRequest) {
       website: body.website || null,
       mailing_address: body.mailing_address || null,
       updated_at: new Date().toISOString()
-    }
+    };
 
     // Add optional fields if they exist in the request
-    if (body.title !== undefined) userProfileData.title = body.title === 'none' ? null : body.title
-    if (body.middle_name !== undefined) userProfileData.middle_name = body.middle_name
-    if (body.suffix !== undefined) userProfileData.suffix = body.suffix === 'none' ? null : body.suffix
-    if (body.contact_type !== undefined) userProfileData.contact_type = body.contact_type === 'none' ? null : body.contact_type
-
-    if (body.fax_number !== undefined) userProfileData.fax_number = body.fax_number
-    if (body.notes !== undefined) userProfileData.notes = body.notes
-    if (body.avatar_url !== undefined) userProfileData.avatar_url = body.avatar_url
+    if (body.title !== undefined) userProfileData.title = body.title === 'none' ? null : body.title;
+    if (body.middle_name !== undefined) userProfileData.middle_name = body.middle_name;
+    if (body.suffix !== undefined) userProfileData.suffix = body.suffix === 'none' ? null : body.suffix;
+    if (body.contact_type !== undefined) userProfileData.contact_type = body.contact_type === 'none' ? null : body.contact_type;
+    if (body.fax_number !== undefined) userProfileData.fax_number = body.fax_number;
+    if (body.notes !== undefined) userProfileData.notes = body.notes;
+    if (body.avatar_url !== undefined) userProfileData.avatar_url = body.avatar_url;
 
     // Add address component fields
-    if (body.address_line_1 !== undefined) userProfileData.address_line_1 = body.address_line_1
-    if (body.address_line_2 !== undefined) userProfileData.address_line_2 = body.address_line_2
-    if (body.city !== undefined) userProfileData.city = body.city
-    if (body.state_province !== undefined) userProfileData.state_province = body.state_province
-    if (body.country !== undefined) userProfileData.country = body.country
-    if (body.postal_code !== undefined) userProfileData.postal_code = body.postal_code
+    if (body.address_line_1 !== undefined) userProfileData.address_line_1 = body.address_line_1;
+    if (body.address_line_2 !== undefined) userProfileData.address_line_2 = body.address_line_2;
+    if (body.city !== undefined) userProfileData.city = body.city;
+    if (body.state_province !== undefined) userProfileData.state_province = body.state_province;
+    if (body.country !== undefined) userProfileData.country = body.country;
+    if (body.postal_code !== undefined) userProfileData.postal_code = body.postal_code;
 
     // Update the profile that was auto-created by the database trigger
     const { data, error } = await supabaseAdmin
@@ -235,20 +275,20 @@ export async function POST(request: NextRequest) {
       .eq('id', authData.user.id)
       .select()
       .single();
-    
+
     if (error) {
       console.error('[AIMS] Error updating user profile:', error);
-      // Clean up auth user if profile update fails (using admin client)
+      // Clean up auth user if profile update fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json(
         { error: error.message },
         { status: 400 }
       );
     }
-    
-    console.log('[AIMS] Created user in Supabase:', data.email);
+
+    console.log('[AIMS] Created user in Supabase:', data.email, 'with role:', data.role);
     return NextResponse.json(data, { status: 201 });
-    
+
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
@@ -260,15 +300,15 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   console.log('[AIMS] PUT /api/users - Starting request (Supabase)');
-  
-  const { supabase, response } = await requireAuth();
-  if (response) return response;
-  
+
+  const { supabase, user: authUser, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    if (!supabase) {
+    if (!supabase || !authUser) {
       return NextResponse.json(
-        { error: 'Supabase is not configured' },
-        { status: 500 }
+        { error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
@@ -282,76 +322,139 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log('[AIMS] PUT /api/users - Received body:', body);
-    
-    const { id, profile_picture, ...updateData } = body;
-    
-    if (!id) {
+    const targetUserId = body.id;
+
+    if (!targetUserId) {
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
       );
     }
-    
-    console.log('[AIMS] PUT /api/users - updateData after destructuring:', updateData);
-    console.log('[AIMS] PUT /api/users - department in updateData:', updateData.department);
-    console.log('[AIMS] PUT /api/users - organization_id in updateData:', updateData.organization_id);
-    
-    // Map frontend field names to database column names
-    const dbUpdateData = {
-      ...updateData,
+
+    // SECURITY: Validate target user ID format
+    if (!isValidUUID(targetUserId)) {
+      return NextResponse.json(
+        { error: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
+
+    // SECURITY: Fetch authenticated user's role from database
+    const { data: authUserProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('id', authUser.id)
+      .single();
+
+    if (profileError || !authUserProfile) {
+      console.error('[AIMS] Error fetching auth user profile:', profileError);
+      return NextResponse.json(
+        { error: 'Failed to verify user permissions' },
+        { status: 500 }
+      );
+    }
+
+    const isSuperUser = authUserProfile.role === 'super_user' || authUserProfile.role === 'admin';
+    const isOwnProfile = authUser.id === targetUserId;
+
+    // SECURITY: Authorization check - must be own profile OR super_user
+    if (!isOwnProfile && !isSuperUser) {
+      console.warn(`[AIMS] IDOR attempt blocked: User ${authUser.id} tried to update user ${targetUserId}`);
+      return NextResponse.json(
+        { error: 'Forbidden: You can only update your own profile' },
+        { status: 403 }
+      );
+    }
+
+    console.log('[AIMS] PUT /api/users - Updating user:', targetUserId);
+
+    // SECURITY: Build update data with explicit field allowlist (no mass assignment)
+    const dbUpdateData: Record<string, any> = {
       updated_at: new Date().toISOString()
     };
-    
-    // Ensure the new fields are included if provided
-    if ('contact_type' in updateData) dbUpdateData.contact_type = updateData.contact_type;
-    if ('fax_number' in updateData) dbUpdateData.fax_number = updateData.fax_number;
-    if ('notes' in updateData) dbUpdateData.notes = updateData.notes;
-    if ('suffix' in updateData) dbUpdateData.suffix = updateData.suffix === 'none' ? null : updateData.suffix;
-    
-    console.log('[AIMS] PUT /api/users - dbUpdateData being sent to database:', dbUpdateData);
-    console.log('[AIMS] PUT /api/users - organization_id in dbUpdateData:', dbUpdateData.organization_id);
-    
-    // Handle profile picture mapping
-    if (profile_picture !== undefined) {
-      dbUpdateData.avatar_url = profile_picture;
+
+    // Explicitly copy only allowed fields (defense against mass assignment)
+    const allowedFields = [
+      'first_name', 'last_name', 'middle_name', 'title', 'suffix',
+      'organization_id', 'organisation', 'department', 'job_title',
+      'telephone', 'website', 'mailing_address', 'avatar_url',
+      'contact_type', 'fax_number', 'notes',
+      'address_line_1', 'address_line_2', 'city', 'state_province', 'country', 'postal_code'
+    ];
+
+    for (const field of allowedFields) {
+      if (body[field] !== undefined) {
+        if ((field === 'title' || field === 'suffix' || field === 'contact_type') && body[field] === 'none') {
+          dbUpdateData[field] = null;
+        } else {
+          dbUpdateData[field] = body[field];
+        }
+      }
     }
-    
+
+    // Handle profile picture mapping
+    if (body.profile_picture !== undefined) {
+      dbUpdateData.avatar_url = body.profile_picture;
+    }
+
+    // SECURITY: Role handling - only super_user can change roles
+    if (body.role !== undefined) {
+      if (!isSuperUser) {
+        console.warn(`[AIMS] PRIVILEGE ESCALATION BLOCKED: User ${authUser.id} (role: ${authUserProfile.role}) attempted to set role to "${body.role}"`);
+        return NextResponse.json(
+          { error: 'Forbidden: You do not have permission to change user roles' },
+          { status: 403 }
+        );
+      }
+
+      // Validate role value
+      if (!isValidRole(body.role)) {
+        console.warn(`[AIMS] Invalid role value rejected: "${body.role}"`);
+        return NextResponse.json(
+          { error: `Invalid role value: ${body.role}` },
+          { status: 400 }
+        );
+      }
+
+      // SECURITY: Prevent self-role-escalation
+      if (isOwnProfile && body.role === 'super_user' && authUserProfile.role !== 'super_user') {
+        console.warn(`[AIMS] SELF-ESCALATION BLOCKED: User ${authUser.id} attempted to make themselves super_user`);
+        return NextResponse.json(
+          { error: 'Forbidden: Cannot escalate your own privileges' },
+          { status: 403 }
+        );
+      }
+
+      dbUpdateData.role = body.role;
+      console.log(`[AIMS] Role change authorized: User ${authUser.id} setting ${targetUserId} role to ${body.role}`);
+    }
+
     // Verify organization exists if organization_id is being set
     if (dbUpdateData.organization_id) {
-      console.log('[AIMS] Verifying organization exists:', dbUpdateData.organization_id);
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('id, name')
         .eq('id', dbUpdateData.organization_id)
         .single();
-      
+
       if (orgError || !orgData) {
-        console.error('[AIMS] Organization not found:', dbUpdateData.organization_id, orgError);
+        console.error('[AIMS] Organization not found:', dbUpdateData.organization_id);
         return NextResponse.json(
           { error: `Organization not found: ${dbUpdateData.organization_id}` },
           { status: 400 }
         );
       }
-      console.log('[AIMS] Organization verified:', orgData);
-      
-      // Also set the organisation text field for backward compatibility
+
       dbUpdateData.organisation = orgData.name;
-      console.log('[AIMS] Setting organisation text field to:', orgData.name);
     } else if (dbUpdateData.organization_id === null) {
-      // If organization_id is being cleared, also clear the organisation text field
       dbUpdateData.organisation = null;
-      console.log('[AIMS] Clearing organisation text field');
     }
 
     // Update user profile
-    console.log('[AIMS] About to update user with ID:', id);
-    console.log('[AIMS] Update data being sent to Supabase:', JSON.stringify(dbUpdateData, null, 2));
-    
     const { data, error } = await supabase
       .from('users')
       .update(dbUpdateData)
-      .eq('id', id)
+      .eq('id', targetUserId)
       .select(`
         *,
         organizations:organization_id (
@@ -364,31 +467,24 @@ export async function PUT(request: NextRequest) {
         )
       `)
       .single();
-    
+
     if (error) {
       console.error('[AIMS] Supabase error updating user:', error);
-      console.error('[AIMS] Error code:', error.code);
-      console.error('[AIMS] Error message:', error.message);
-      console.error('[AIMS] Error details:', error.details);
-      console.error('[AIMS] Error hint:', error.hint);
       return NextResponse.json(
-        { error: error.message, code: error.code, details: error.details },
+        { error: error.message },
         { status: 400 }
       );
     }
-    
+
     if (!data) {
-      console.error('[AIMS] No data returned from Supabase update');
       return NextResponse.json(
         { error: 'No data returned from update' },
         { status: 500 }
       );
     }
-    
-    console.log('[AIMS] Updated user in Supabase - returned data:', data);
-    console.log('[AIMS] Department in returned data:', data?.department);
-    console.log('[AIMS] Organization ID in returned data:', data?.organization_id);
-    
+
+    console.log('[AIMS] Updated user in Supabase:', data.email);
+
     // Transform data to match frontend User type expectations
     const transformedData = {
       ...data,
@@ -398,14 +494,13 @@ export async function PUT(request: NextRequest) {
       lastName: data.last_name,
       suffix: data.suffix,
       gender: data.gender,
-      profilePicture: data.avatar_url, // Map avatar_url to profilePicture
-      authProvider: data.auth_provider, // Track how user authenticates
+      profilePicture: data.avatar_url,
+      authProvider: data.auth_provider,
       organisation: data.organisation || data.organizations?.name,
       organization: data.organizations,
       contactType: data.contact_type,
       faxNumber: data.fax_number,
       notes: data.notes,
-      // Address component fields
       mailingAddress: data.mailing_address,
       addressLine1: data.address_line_1,
       addressLine2: data.address_line_2,
@@ -414,9 +509,9 @@ export async function PUT(request: NextRequest) {
       country: data.country,
       postalCode: data.postal_code
     };
-    
+
     return NextResponse.json(transformedData);
-    
+
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
@@ -428,15 +523,15 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   console.log('[AIMS] DELETE /api/users - Starting request (Supabase)');
-  
-  const { supabase, response } = await requireAuth();
-  if (response) return response;
-  
+
+  const { supabase, user: authUser, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    if (!supabase) {
+    if (!supabase || !authUser) {
       return NextResponse.json(
-        { error: 'Supabase is not configured' },
-        { status: 500 }
+        { error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
@@ -450,61 +545,92 @@ export async function DELETE(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const id = searchParams.get('id');
-    
-    if (!id) {
+    const targetUserId = searchParams.get('id');
+
+    if (!targetUserId) {
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
       );
     }
 
-    // First, clean up activity_logs to avoid FK constraint violation
-    // Set user_id to null for any activity logs created by this user
-    const { error: activityLogsError } = await supabase
-      .from('activity_logs')
-      .update({ user_id: null })
-      .eq('user_id', id);
-
-    if (activityLogsError) {
-      console.error('[AIMS] Error cleaning up activity_logs:', activityLogsError);
-      // Continue anyway - the table might not exist or have no records
-    }
-
-    // Delete from users table
-    const { error: profileError } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', id);
-    
-    if (profileError) {
-      console.error('[AIMS] Error deleting user profile:', profileError);
+    // SECURITY: Validate target user ID format
+    if (!isValidUUID(targetUserId)) {
       return NextResponse.json(
-        { error: profileError.message },
+        { error: 'Invalid user ID format' },
         { status: 400 }
       );
     }
-    
-    // Delete auth user (using admin client with service role key)
-    console.log('[AIMS] Attempting to delete auth user with ID:', id);
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
-    
+
+    // SECURITY: Fetch authenticated user's role from database
+    const { data: authUserProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('id', authUser.id)
+      .single();
+
+    if (profileError || !authUserProfile) {
+      console.error('[AIMS] Error fetching auth user profile:', profileError);
+      return NextResponse.json(
+        { error: 'Failed to verify user permissions' },
+        { status: 500 }
+      );
+    }
+
+    const isSuperUser = authUserProfile.role === 'super_user' || authUserProfile.role === 'admin';
+
+    // SECURITY: Only super_user can delete users via this endpoint
+    if (!isSuperUser) {
+      console.warn(`[AIMS] Unauthorized delete attempt: User ${authUser.id} tried to delete user ${targetUserId}`);
+      return NextResponse.json(
+        { error: 'Forbidden: Only administrators can delete user accounts' },
+        { status: 403 }
+      );
+    }
+
+    console.log('[AIMS] DELETE /api/users - Super user deleting user:', targetUserId);
+
+    // Clean up activity_logs to avoid FK constraint violation
+    const { error: activityLogsError } = await supabase
+      .from('activity_logs')
+      .update({ user_id: null })
+      .eq('user_id', targetUserId);
+
+    if (activityLogsError) {
+      console.error('[AIMS] Error cleaning up activity_logs:', activityLogsError);
+    }
+
+    // Delete from users table
+    const { error: profileDeleteError } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', targetUserId);
+
+    if (profileDeleteError) {
+      console.error('[AIMS] Error deleting user profile:', profileDeleteError);
+      return NextResponse.json(
+        { error: profileDeleteError.message },
+        { status: 400 }
+      );
+    }
+
+    // Delete auth user
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
+
     if (authError) {
       console.error('[AIMS] Error deleting auth user:', authError);
-      console.error('[AIMS] Auth deletion failed for user ID:', id, '- Error:', authError.message);
-      // Return error instead of silently continuing
       return NextResponse.json(
-        { 
-          error: `User profile deleted but failed to delete authentication record: ${authError.message}. Please contact an administrator.`,
-          partialSuccess: true 
+        {
+          error: `User profile deleted but failed to delete authentication record: ${authError.message}`,
+          partialSuccess: true
         },
         { status: 500 }
       );
     }
-    
-    console.log('[AIMS] Successfully deleted user (profile + auth) with ID:', id);
+
+    console.log('[AIMS] Successfully deleted user:', targetUserId);
     return NextResponse.json({ success: true });
-    
+
   } catch (error) {
     console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
@@ -512,4 +638,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

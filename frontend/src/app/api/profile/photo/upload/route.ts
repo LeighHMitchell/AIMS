@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
+import { requireAuth } from '@/lib/auth';
 
-// Create Supabase client with service role key for file uploads
+// Supabase configuration - only used after authentication succeeds
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(request: NextRequest) {
+  // SECURITY: Require authentication before any file operations
+  const { user, response: authResponse } = await requireAuth();
+  if (authResponse) {
+    return authResponse;
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -46,12 +53,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Supabase client with service role for file operations
+    // SECURITY: Only reached after authentication succeeds
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Create a unique filename
     const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const uniqueFilename = `${uuidv4()}.${fileExtension}`;
-    const filePath = `profiles/${uniqueFilename}`;
+    // SECURITY: Scope profile photos to authenticated user's ID
+    const filePath = `profiles/${user!.id}/${uniqueFilename}`;
 
     // Convert File to ArrayBuffer for Supabase
     const fileBuffer = await file.arrayBuffer();
@@ -79,14 +88,15 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(filePath);
 
     const publicUrl = publicUrlData.publicUrl;
-    
+
     return NextResponse.json({
       url: publicUrl,
       filename: file.name,
       size: file.size,
       mimeType: file.type,
       uploadedAt: new Date().toISOString(),
-      path: data.path
+      path: data.path,
+      uploadedBy: user!.id
     });
   } catch (error) {
     console.error('Profile photo upload error:', error);
@@ -97,14 +107,14 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Add OPTIONS method for CORS if needed
+// OPTIONS for CORS preflight - does not perform any file operations
 export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
-} 
+}

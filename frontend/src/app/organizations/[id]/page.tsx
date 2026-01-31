@@ -83,6 +83,7 @@ import { CumulativeFinancialOverview } from '@/components/analytics/CumulativeFi
 import { SectorDisbursementOverTime } from '@/components/analytics/SectorDisbursementOverTime'
 import { SubnationalAllocationsChart } from '@/components/analytics/national-priorities-dashboard/SubnationalAllocationsChart'
 import MyanmarRegionsMap from '@/components/MyanmarRegionsMap'
+import { OrganizationActivityLocationsMap } from '@/components/organizations/OrganizationActivityLocationsMap'
 import { AidPredictabilityChart } from '@/components/analytics/national-priorities-dashboard/AidPredictabilityChart'
 import { ExpandableChartCard } from '@/components/analytics/ExpandableChartCard'
 import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization'
@@ -1159,7 +1160,7 @@ export default function OrganizationProfilePage() {
       .reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
 
     const lastYearCommitments = commitmentTransactions
-      .filter(txn => txn.transaction_date && new Date(txn.transaction_date).getFullYear() < currentYear)
+      .filter(txn => txn.transaction_date && new Date(txn.transaction_date).getFullYear() === currentYear - 1)
       .reduce((sum, txn) => sum + (txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)), 0)
 
     return {
@@ -1172,6 +1173,8 @@ export default function OrganizationProfilePage() {
       currentYearCommitments,
       lastYearCommitments,
       activeActivities: safeActivities.filter(a => ['2', '3'].includes(a.activity_status)).length, // 2=Implementation, 3=Finalisation
+      pipelineActivities: safeActivities.filter(a => a.activity_status === '1').length, // 1=Pipeline/Identification
+      closedActivities: safeActivities.filter(a => ['4', '5', '6'].includes(a.activity_status)).length, // 4=Closed, 5=Cancelled, 6=Suspended
       totalActivities: safeActivities.length
     }
   }
@@ -1288,8 +1291,8 @@ export default function OrganizationProfilePage() {
 
     // Commitments (from transactions - type '2')
     const currentYearCommitments = totals.currentYearCommitments || 0
-    const totalLastYearCommitments = totals.lastYearCommitments || 0
-    const commitmentChange = (totals.totalPortfolioValue || 0) - totalLastYearCommitments
+    const lastYearCommitments = totals.lastYearCommitments || 0
+    const commitmentChange = currentYearCommitments - lastYearCommitments
 
     // Disbursements (from disbursementsByYear)
     const currentYearDisbursements = disbursementsByYear.find(d => d.year === currentYear)?.disbursements || 0
@@ -1309,8 +1312,8 @@ export default function OrganizationProfilePage() {
     const currentDisbursedPercent = totals.totalPortfolioValue > 0
       ? (totals.totalDisbursements / totals.totalPortfolioValue) * 100
       : 0
-    const lastYearDisbursedPercent = totalLastYearCommitments > 0
-      ? (totalLastYearDisbursements / totalLastYearCommitments) * 100
+    const lastYearDisbursedPercent = lastYearCommitments > 0
+      ? (totalLastYearDisbursements / lastYearCommitments) * 100
       : 0
     const disbursedPercentChange = currentDisbursedPercent - lastYearDisbursedPercent
 
@@ -1406,7 +1409,7 @@ export default function OrganizationProfilePage() {
                 hasMore={hasMoreLikes}
               />
               <Link href={`/organizations/${id}/edit`}>
-                <Button className="bg-slate-600 hover:bg-slate-700">
+                <Button className="bg-black hover:bg-gray-800">
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Organization
                 </Button>
@@ -2742,7 +2745,7 @@ export default function OrganizationProfilePage() {
                   Partnerships
                 </TabsTrigger>
                 <TabsTrigger value="geography" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Geography
+                  Locations
                 </TabsTrigger>
                 <TabsTrigger value="contacts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Contacts
@@ -2831,6 +2834,7 @@ export default function OrganizationProfilePage() {
                                   description: activity.description,
                                   acronym: activity.acronym,
                                   activity_status: activity.activity_status,
+                                  publication_status: activity.publication_status,
                                   planned_start_date: activity.planned_start_date,
                                   planned_end_date: activity.planned_end_date,
                                   updated_at: activity.updated_at,
@@ -3110,7 +3114,7 @@ export default function OrganizationProfilePage() {
                   </Card>
               </TabsContent>
 
-              <TabsContent value="budgets" className="p-6">
+              <TabsContent value="budgets" className="p-6 data-[state=inactive]:hidden" forceMount>
                 {params?.id && (
                   <OrganizationBudgetsTab
                     organizationId={params.id as string}
@@ -3119,7 +3123,7 @@ export default function OrganizationProfilePage() {
                 )}
               </TabsContent>
 
-              <TabsContent value="planned-disbursements" className="p-6">
+              <TabsContent value="planned-disbursements" className="p-6 data-[state=inactive]:hidden" forceMount>
                 {params?.id && (
                   <OrganizationPlannedDisbursementsTab
                     organizationId={params.id as string}
@@ -3128,7 +3132,7 @@ export default function OrganizationProfilePage() {
                 )}
               </TabsContent>
 
-              <TabsContent value="transactions" className="p-6">
+              <TabsContent value="transactions" className="p-6 data-[state=inactive]:hidden" forceMount>
                 <div className="space-y-6">
                   {/* Transaction Activity Calendar at the top */}
                   <TransactionActivityCalendar filters={{ donor: params?.id as string }} />
@@ -3143,7 +3147,7 @@ export default function OrganizationProfilePage() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="financial-analytics" className="p-6">
+              <TabsContent value="financial-analytics" className="p-6 data-[state=inactive]:hidden" forceMount>
                 <div className="space-y-6">
                   {/* Analytics Charts - 2 per row */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -3190,7 +3194,7 @@ export default function OrganizationProfilePage() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="sectors" className="p-6">
+              <TabsContent value="sectors" className="p-6 data-[state=inactive]:hidden" forceMount>
                 <div className="space-y-6">
                   {/* Sector Financial Trends Chart */}
                   <Card className="border-slate-200">
@@ -3254,7 +3258,7 @@ export default function OrganizationProfilePage() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="sdgs" className="p-6">
+              <TabsContent value="sdgs" className="p-6 data-[state=inactive]:hidden" forceMount>
                 <div className="space-y-6">
                   <Card className="border-slate-200">
                     <CardHeader>
@@ -3318,7 +3322,7 @@ export default function OrganizationProfilePage() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="partnerships" className="p-6">
+              <TabsContent value="partnerships" className="p-6 data-[state=inactive]:hidden" forceMount>
                 {(() => {
                   // Aggregate partner data across all activities
                   const partnerMap = new Map<string, {
@@ -3960,17 +3964,49 @@ export default function OrganizationProfilePage() {
                 })()}
               </TabsContent>
 
-              <TabsContent value="geography" className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Subnational Allocations Chart */}
-                  <SubnationalAllocationsChart organizationId={params.id as string} />
+              <TabsContent value="geography" className="p-6 data-[state=inactive]:hidden" forceMount>
+                <Tabs defaultValue="activity-locations" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="activity-locations" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Activity Locations
+                    </TabsTrigger>
+                    <TabsTrigger value="subnational-allocation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Subnational Allocation
+                    </TabsTrigger>
+                  </TabsList>
 
-                  {/* Myanmar Regions Map */}
-                  <MyanmarRegionsMap breakdowns={subnationalMapData} />
-                </div>
+                  <TabsContent value="activity-locations" className="mt-0">
+                    <Card className="border-slate-200">
+                      <CardHeader>
+                        <CardTitle className="text-slate-900 flex items-center gap-2">
+                          <MapPin className="h-5 w-5" />
+                          Activity Locations
+                        </CardTitle>
+                        <p className="text-sm text-slate-500">
+                          Map showing all locations where this organization has reported activities
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <OrganizationActivityLocationsMap organizationId={params.id as string} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="subnational-allocation" className="mt-0">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Subnational Allocations Chart */}
+                      <SubnationalAllocationsChart organizationId={params.id as string} />
+
+                      {/* Myanmar Regions Map */}
+                      <MyanmarRegionsMap breakdowns={subnationalMapData} />
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
 
-              <TabsContent value="contacts" className="p-6">
+              <TabsContent value="contacts" className="p-6 data-[state=inactive]:hidden" forceMount>
                 <Card className="border-slate-200">
                   <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="text-slate-900">Organization Contacts</CardTitle>
@@ -4221,7 +4257,7 @@ export default function OrganizationProfilePage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="documents" className="p-6">
+              <TabsContent value="documents" className="p-6 data-[state=inactive]:hidden" forceMount>
                 <Card className="border-slate-200">
                   <CardHeader>
                     <div className="flex items-center justify-between">

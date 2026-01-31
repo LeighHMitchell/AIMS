@@ -42,7 +42,7 @@ export async function GET(
       return NextResponse.json([]);
     }
 
-    // Fetch all planned disbursements for those activities
+    // Fetch all planned disbursements for those activities with organization JOINs
     const { data: disbursements, error: disbursementsError } = await supabase
       .from('planned_disbursements')
       .select(`
@@ -66,7 +66,19 @@ export async function GET(
         usd_conversion_date,
         usd_convertible,
         created_at,
-        updated_at
+        updated_at,
+        provider_organization:organizations!provider_org_id (
+          id,
+          name,
+          acronym,
+          logo
+        ),
+        receiver_organization:organizations!receiver_org_id (
+          id,
+          name,
+          acronym,
+          logo
+        )
       `)
       .in('activity_id', activityIds)
       .order('period_start', { ascending: false });
@@ -89,42 +101,24 @@ export async function GET(
       // Continue without titles rather than failing
     }
 
-    // Get organization logos for provider and receiver orgs
-    const allOrgIds = new Set<string>();
-    (disbursements || []).forEach(d => {
-      if (d.provider_org_id) allOrgIds.add(d.provider_org_id);
-      if (d.receiver_org_id) allOrgIds.add(d.receiver_org_id);
-    });
-
-    const { data: organizations, error: orgsError } = await supabase
-      .from('organizations')
-      .select('id, name, acronym, icon')
-      .in('id', Array.from(allOrgIds));
-
-    if (orgsError) {
-      console.error('[AIMS] Error fetching organizations:', orgsError);
-      // Continue without org details rather than failing
-    }
-
-    // Create lookup maps
+    // Create activity lookup map
     const activityMap = new Map(
       (activities || []).map(a => [a.id, { title: a.title_narrative, acronym: a.acronym }])
     );
 
-    const orgMap = new Map(
-      (organizations || []).map(o => [o.id, { name: o.name, acronym: o.acronym, logo: o.icon }])
-    );
-
-    // Enrich disbursements with activity and org info
-    const enrichedDisbursements = (disbursements || []).map(disbursement => ({
-      ...disbursement,
-      activity_title: activityMap.get(disbursement.activity_id)?.title || 'Unknown Activity',
-      activity_acronym: activityMap.get(disbursement.activity_id)?.acronym || null,
-      provider_org_logo: disbursement.provider_org_id ? orgMap.get(disbursement.provider_org_id)?.logo : null,
-      provider_org_acronym: disbursement.provider_org_id ? orgMap.get(disbursement.provider_org_id)?.acronym : null,
-      receiver_org_logo: disbursement.receiver_org_id ? orgMap.get(disbursement.receiver_org_id)?.logo : null,
-      receiver_org_acronym: disbursement.receiver_org_id ? orgMap.get(disbursement.receiver_org_id)?.acronym : null
-    }));
+    // Enrich disbursements with activity info (org info comes from JOIN)
+    const enrichedDisbursements = (disbursements || []).map((disbursement: any) => {
+      return {
+        ...disbursement,
+        activity_title: activityMap.get(disbursement.activity_id)?.title || 'Unknown Activity',
+        activity_acronym: activityMap.get(disbursement.activity_id)?.acronym || null,
+        // Use organization data from JOIN
+        provider_org_logo: disbursement.provider_organization?.logo || null,
+        provider_org_acronym: disbursement.provider_organization?.acronym || null,
+        receiver_org_logo: disbursement.receiver_organization?.logo || null,
+        receiver_org_acronym: disbursement.receiver_organization?.acronym || null
+      };
+    });
 
     return NextResponse.json(enrichedDisbursements);
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,13 +48,16 @@ export async function GET(request: NextRequest) {
     const startDay = searchParams.get('startDay') ? parseInt(searchParams.get('startDay')!) : null;
     const useCustomYear = startMonth !== null && startDay !== null;
     
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
+    const escapedSearch = search ? escapeIlikeWildcards(search) : '';
+
     // Find activity IDs matching the search term (for activity title search)
     let matchingActivityIds: string[] = [];
     if (search) {
       const { data: matchingActivities } = await supabase
         .from('activities')
         .select('id')
-        .ilike('title_narrative', `%${search}%`);
+        .ilike('title_narrative', `%${escapedSearch}%`);
       matchingActivityIds = matchingActivities?.map(a => a.id) || [];
     }
     
@@ -95,9 +99,9 @@ export async function GET(request: NextRequest) {
     // Apply search - search org names, description, and activity title (via matching activity IDs)
     if (search) {
       if (matchingActivityIds.length > 0) {
-        query = query.or(`provider_org_name.ilike.%${search}%,receiver_org_name.ilike.%${search}%,description.ilike.%${search}%,activity_id.in.(${matchingActivityIds.join(',')})`);
+        query = query.or(`provider_org_name.ilike.%${escapedSearch}%,receiver_org_name.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%,activity_id.in.(${matchingActivityIds.join(',')})`);
       } else {
-        query = query.or(`provider_org_name.ilike.%${search}%,receiver_org_name.ilike.%${search}%,description.ilike.%${search}%`);
+        query = query.or(`provider_org_name.ilike.%${escapedSearch}%,receiver_org_name.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%`);
       }
     }
     

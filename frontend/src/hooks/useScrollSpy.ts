@@ -54,6 +54,22 @@ export function useScrollSpy(
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
   const isScrollingProgrammatically = useRef(false)
 
+  // Listen for global scroll events to pause scroll spy during programmatic scrolls
+  useEffect(() => {
+    const handleGlobalScroll = (event: CustomEvent<string>) => {
+      // When any section is being scrolled to, pause this scroll spy
+      isScrollingProgrammatically.current = true
+      setTimeout(() => {
+        isScrollingProgrammatically.current = false
+      }, 1200) // Slightly longer than the scroll animation
+    }
+
+    window.addEventListener('scrollToSection', handleGlobalScroll as EventListener)
+    return () => {
+      window.removeEventListener('scrollToSection', handleGlobalScroll as EventListener)
+    }
+  }, [])
+
   // Debounced function to update active section based on intersections
   const updateActiveSection = useCallback(() => {
     if (debounceTimeout.current) {
@@ -131,19 +147,29 @@ export function useScrollSpy(
 
   // Scroll to a specific section with smooth animation
   const scrollToSection = useCallback((sectionId: string) => {
+    // First try to find in our sections array (for refs)
     const section = sections.find(s => s.id === sectionId)
-    if (!section?.ref.current) {
+    let element = section?.ref.current
+
+    // Fallback: use document.getElementById if ref not available
+    // This is more reliable during re-renders when refs might not be attached yet
+    if (!element) {
+      element = document.getElementById(sectionId)
+    }
+
+    if (!element) {
+      console.warn(`[useScrollSpy] Could not find element for section: ${sectionId}`)
       return
     }
 
     // Mark that we're scrolling programmatically to prevent scroll spy updates
     isScrollingProgrammatically.current = true
-    
+
     // Update active section immediately for responsive UI
     setActiveSection(sectionId)
 
     // Scroll to section
-    section.ref.current.scrollIntoView({
+    element.scrollIntoView({
       behavior: 'smooth',
       block: 'start',
     })

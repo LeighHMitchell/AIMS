@@ -11,7 +11,6 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { CalendarSkeleton } from '@/components/ui/skeleton-loader'
 import { EventCreateModal } from '@/components/calendar/EventCreateModal'
 import { EventDetailModal } from '@/components/calendar/EventDetailModal'
-import { supabase } from '@/lib/supabase'
 import { apiFetch } from '@/lib/api-fetch';
 
 // Dynamic import for FullCalendar to avoid SSR issues
@@ -31,8 +30,11 @@ interface CalendarEvent {
   location?: string
   type: 'meeting' | 'deadline' | 'workshop' | 'conference' | 'other'
   status: 'pending' | 'approved'
+  color?: string
   organizerId: string
   organizerName: string
+  organizerOrganizationId?: string
+  organizerOrganizationName?: string
   attendees?: string[]
   createdAt: string
   updatedAt: string
@@ -41,12 +43,14 @@ interface CalendarEvent {
 export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'meeting' | 'deadline' | 'workshop'>('all')
+  const [filter, setFilter] = useState<'all' | 'meeting' | 'deadline' | 'workshop' | 'conference' | 'other'>('all')
   const [view, setView] = useState<'month' | 'list'>('month')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [viewingDate, setViewingDate] = useState<Date | null>(null)
+  const [hoveredEvent, setHoveredEvent] = useState<{ event: CalendarEvent; x: number; y: number } | null>(null)
 
   // Fetch events from API
   const fetchEvents = async () => {
@@ -67,42 +71,40 @@ export default function CalendarPage() {
     fetchEvents()
   }, [])
 
-  // Filter events based on selected filter
+  // Filter events based on selected filter (show both approved and pending)
   const filteredEvents = events.filter(event => {
-    if (filter === 'all') return event.status === 'approved'
-    return event.status === 'approved' && event.type === filter
+    const validStatus = event.status === 'approved' || event.status === 'pending'
+    if (filter === 'all') return validStatus
+    return validStatus && event.type === filter
   })
 
   // Convert events for FullCalendar
-  const calendarEvents = filteredEvents.map(event => ({
-    id: event.id,
-    title: event.title,
-    start: event.start,
-    end: event.end,
-    backgroundColor: getEventColor(event.type),
-    borderColor: getEventColor(event.type),
-    textColor: '#ffffff',
-    extendedProps: {
-      description: event.description,
-      location: event.location,
-      type: event.type,
-      organizerName: event.organizerName,
-    }
-  }))
+  const calendarEvents = filteredEvents.map(event => {
+    const isPending = event.status === 'pending'
+    const eventColor = event.color || '#4c5568'
 
-  function getEventColor(type: string): string {
-    switch (type) {
-      case 'meeting': return '#7b95a7' // Cool Steel
-      case 'deadline': return '#dc2625' // Primary Scarlet
-      case 'workshop': return '#4c5568' // Blue Slate
-      case 'conference': return '#7b95a7' // Cool Steel
-      default: return '#4c5568' // Blue Slate
+    return {
+      id: event.id,
+      title: isPending ? `${event.title} (Pending)` : event.title,
+      start: event.start,
+      end: event.end,
+      backgroundColor: isPending ? 'transparent' : eventColor,
+      borderColor: eventColor,
+      textColor: isPending ? eventColor : '#ffffff',
+      classNames: isPending ? ['pending-event'] : [],
+      extendedProps: {
+        description: event.description,
+        location: event.location,
+        type: event.type,
+        status: event.status,
+        color: eventColor,
+        organizerName: event.organizerName,
+      }
     }
-  }
+  })
 
   const handleDateClick = (arg: any) => {
-    setSelectedDate(new Date(arg.dateStr))
-    setShowAddModal(true)
+    setViewingDate(new Date(arg.dateStr))
   }
 
   const handleEventClick = (clickInfo: any) => {
@@ -111,6 +113,51 @@ export default function CalendarPage() {
       setSelectedEvent(clickedEvent)
       setShowDetailModal(true)
     }
+  }
+
+  const handleEventMouseEnter = (info: any) => {
+    const event = filteredEvents.find(e => e.id === info.event.id)
+    if (event) {
+      const rect = info.el.getBoundingClientRect()
+      setHoveredEvent({
+        event,
+        x: rect.left + rect.width / 2,
+        y: rect.top
+      })
+    }
+  }
+
+  const handleEventMouseLeave = () => {
+    setHoveredEvent(null)
+  }
+
+  // Get events for the selected viewing date
+  const eventsForSelectedDate = viewingDate
+    ? filteredEvents.filter(event => {
+        const eventDate = new Date(event.start)
+        return (
+          eventDate.getFullYear() === viewingDate.getFullYear() &&
+          eventDate.getMonth() === viewingDate.getMonth() &&
+          eventDate.getDate() === viewingDate.getDate()
+        )
+      })
+    : []
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  const formatTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
   }
 
   if (loading) {
@@ -123,6 +170,53 @@ export default function CalendarPage() {
 
   return (
     <MainLayout>
+      <style jsx global>{`
+        .pending-event {
+          border-style: dashed !important;
+          border-width: 2px !important;
+          background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 5px,
+            rgba(0, 0, 0, 0.05) 5px,
+            rgba(0, 0, 0, 0.05) 10px
+          ) !important;
+        }
+        .pending-event .fc-event-title {
+          font-style: italic;
+        }
+        .fc .fc-toolbar-title {
+          font-size: 1.25rem !important;
+          font-weight: 600 !important;
+        }
+        .fc .fc-toolbar {
+          flex-wrap: nowrap !important;
+        }
+        .fc .fc-toolbar-chunk {
+          display: flex;
+          align-items: center;
+        }
+        .fc .fc-button {
+          background-color: transparent !important;
+          border: 1px solid #cfd0d5 !important;
+          color: #4c5568 !important;
+          border-radius: 0.5rem !important;
+          padding: 0.5rem !important;
+        }
+        .fc .fc-button:hover {
+          background-color: #f1f4f8 !important;
+        }
+        .fc .fc-button-primary:not(:disabled).fc-button-active {
+          background-color: #4c5568 !important;
+          color: white !important;
+        }
+        .fc .fc-today-button {
+          padding: 0.5rem 1rem !important;
+        }
+        .fc-event {
+          cursor: pointer;
+        }
+      `}</style>
       <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <div>
@@ -136,7 +230,7 @@ export default function CalendarPage() {
         </div>
         
         <div className="flex items-center gap-2">
-          <Select value={filter} onValueChange={(value: 'all' | 'meeting' | 'deadline' | 'workshop') => setFilter(value)}>
+          <Select value={filter} onValueChange={(value: 'all' | 'meeting' | 'deadline' | 'workshop' | 'conference' | 'other') => setFilter(value)}>
             <SelectTrigger className="w-[140px]">
               <Filter className="h-4 w-4" />
               <SelectValue />
@@ -146,6 +240,8 @@ export default function CalendarPage() {
               <SelectItem value="meeting">Meetings</SelectItem>
               <SelectItem value="deadline">Deadlines</SelectItem>
               <SelectItem value="workshop">Workshops</SelectItem>
+              <SelectItem value="conference">Conferences</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
           
@@ -172,12 +268,13 @@ export default function CalendarPage() {
             <CardContent className="p-6">
               {typeof window !== 'undefined' && (
                 <FullCalendar
+                  key={view}
                   plugins={[dayGridPlugin, listPlugin, interactionPlugin]}
                   initialView={view === 'month' ? 'dayGridMonth' : 'listWeek'}
                   headerToolbar={{
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: view === 'month' ? 'dayGridMonth' : 'listWeek'
+                    left: 'prev',
+                    center: 'title today',
+                    right: 'next'
                   }}
                   events={calendarEvents}
                   height="auto"
@@ -186,6 +283,8 @@ export default function CalendarPage() {
                   eventDisplay="block"
                   dateClick={handleDateClick}
                   eventClick={handleEventClick}
+                  eventMouseEnter={handleEventMouseEnter}
+                  eventMouseLeave={handleEventMouseLeave}
                   selectable={true}
                 />
               )}
@@ -200,7 +299,7 @@ export default function CalendarPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[#4c5568]">This Month</span>
+                <span className="text-sm text-[#4c5568]">Total Events</span>
                 <Badge variant="secondary" className="bg-white text-[#4c5568]">{filteredEvents.length}</Badge>
               </div>
               <div className="flex items-center justify-between">
@@ -209,34 +308,180 @@ export default function CalendarPage() {
                   {filteredEvents.filter(e => new Date(e.start) > new Date()).length}
                 </Badge>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-[#4c5568]">Pending Approval</span>
+                <Badge variant="outline" className="border-[#cfd0d5] text-[#4c5568]">
+                  {filteredEvents.filter(e => e.status === 'pending').length}
+                </Badge>
+              </div>
             </CardContent>
           </Card>
 
           <Card className="bg-[#f1f4f8] border-[#cfd0d5] rounded-xl">
             <CardHeader>
-              <CardTitle className="text-lg text-[#4c5568]">Legend</CardTitle>
+              <CardTitle className="text-lg text-[#4c5568]">Event Status</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#7b95a7' }}></div>
-                <span className="text-sm text-[#4c5568]">Meetings</span>
+                <div className="w-3 h-3 rounded bg-[#4c5568]"></div>
+                <span className="text-sm text-[#4c5568]">Approved</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#dc2625' }}></div>
-                <span className="text-sm text-[#4c5568]">Deadlines</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#4c5568' }}></div>
-                <span className="text-sm text-[#4c5568]">Workshops</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#7b95a7' }}></div>
-                <span className="text-sm text-[#4c5568]">Conferences</span>
+                <div className="w-3 h-3 rounded border-2 border-dashed border-[#4c5568] bg-transparent"></div>
+                <span className="text-sm text-[#4c5568]">Pending Approval</span>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Selected Date Events */}
+      {viewingDate && (
+        <Card className="bg-white border-[#cfd0d5] rounded-xl">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg text-[#4c5568]">
+                {formatDate(viewingDate)}
+              </CardTitle>
+              <CardDescription>
+                {eventsForSelectedDate.length} event{eventsForSelectedDate.length !== 1 ? 's' : ''} on this day
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedDate(viewingDate)
+                  setShowAddModal(true)
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Event
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewingDate(null)}
+              >
+                Clear
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {eventsForSelectedDate.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No events scheduled for this day
+              </p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {eventsForSelectedDate.map(event => {
+                  const eventColor = event.color || '#4c5568'
+                  return (
+                  <Card
+                    key={event.id}
+                    className={`cursor-pointer hover:shadow-md transition-shadow ${
+                      event.status === 'pending' ? 'border-dashed border-2' : ''
+                    }`}
+                    style={{ borderColor: eventColor }}
+                    onClick={() => {
+                      setSelectedEvent(event)
+                      setShowDetailModal(true)
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm truncate">{event.title}</h4>
+                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            {formatTime(event.start)}
+                            {event.end && ` - ${formatTime(event.end)}`}
+                          </div>
+                          {event.location && (
+                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                              <MapPin className="h-3 w-3" />
+                              <span className="truncate">{event.location}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge
+                            variant="secondary"
+                            className="text-xs"
+                            style={{ backgroundColor: eventColor, color: 'white' }}
+                          >
+                            {event.type}
+                          </Badge>
+                          {event.status === 'pending' && (
+                            <Badge variant="outline" className="text-xs">
+                              Pending
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      {event.description && (
+                        <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
+                          {event.description}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Hover Tooltip */}
+      {hoveredEvent && (
+        <div
+          className="fixed z-50 bg-white border border-[#cfd0d5] rounded-lg shadow-lg p-3 pointer-events-none"
+          style={{
+            left: hoveredEvent.x,
+            top: hoveredEvent.y - 10,
+            transform: 'translate(-50%, -100%)',
+            maxWidth: '280px'
+          }}
+        >
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: hoveredEvent.event.color || '#4c5568' }}
+              />
+              <div className="font-medium text-sm">{hoveredEvent.event.title}</div>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {formatTime(hoveredEvent.event.start)}
+              {hoveredEvent.event.end && ` - ${formatTime(hoveredEvent.event.end)}`}
+            </div>
+            {hoveredEvent.event.location && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3" />
+                {hoveredEvent.event.location}
+              </div>
+            )}
+            {hoveredEvent.event.organizerName && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Users className="h-3 w-3" />
+                {hoveredEvent.event.organizerName}
+              </div>
+            )}
+            {hoveredEvent.event.status === 'pending' && (
+              <Badge variant="outline" className="text-xs mt-1">
+                Pending Approval
+              </Badge>
+            )}
+          </div>
+          <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-full">
+            <div className="border-8 border-transparent border-t-white" style={{ marginTop: '-1px' }}></div>
+          </div>
+        </div>
+      )}
 
       {/* Event Creation Modal */}
       <EventCreateModal

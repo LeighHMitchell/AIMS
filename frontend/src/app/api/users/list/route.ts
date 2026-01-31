@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 export async function GET(request: NextRequest) {
   const { supabase, response } = await requireAuth();
@@ -35,8 +36,10 @@ export async function GET(request: NextRequest) {
       .order('first_name', { ascending: true, nullsFirst: false });
 
     // Add search filter if provided
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (search) {
-      query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,organisation.ilike.%${search}%,department.ilike.%${search}%`);
+      const escapedSearch = escapeIlikeWildcards(search);
+      query = query.or(`first_name.ilike.%${escapedSearch}%,last_name.ilike.%${escapedSearch}%,email.ilike.%${escapedSearch}%,organisation.ilike.%${escapedSearch}%,department.ilike.%${escapedSearch}%`);
     }
 
     // Add role filter if provided

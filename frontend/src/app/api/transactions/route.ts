@@ -10,6 +10,7 @@ import {
   cleanDateValue
 } from '@/lib/transaction-field-cleaner';
 import { inferAndApplyBudgetLines } from '@/lib/transaction-budget-inference';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -151,17 +152,19 @@ export async function GET(request: Request) {
     const transactionSource = searchParams.get('transactionSource') || 'all';
     
     // Find activity IDs matching the search term (for activity title search)
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     let matchingActivityIds: string[] = [];
+    const escapedSearch = search ? escapeIlikeWildcards(search) : '';
     if (search) {
       const { data: matchingActivities, error: activitySearchError } = await supabase
         .from('activities')
         .select('id')
-        .ilike('title_narrative', `%${search}%`);
-      
+        .ilike('title_narrative', `%${escapedSearch}%`);
+
       if (activitySearchError) {
         console.error('[AIMS] Error searching activities:', activitySearchError);
       }
-      
+
       matchingActivityIds = matchingActivities?.map(a => a.id) || [];
       console.log(`[AIMS] Search term: "${search}", found ${matchingActivityIds.length} matching activities:`, matchingActivityIds);
     }
@@ -233,11 +236,12 @@ export async function GET(request: Request) {
     }
     
     // Apply search - search org names, description, and activity title (via matching activity IDs)
+    // SECURITY: Uses escapedSearch defined earlier to prevent filter injection
     if (search) {
       if (matchingActivityIds.length > 0) {
-        query = query.or(`provider_org_name.ilike.%${search}%,receiver_org_name.ilike.%${search}%,description.ilike.%${search}%,activity_id.in.(${matchingActivityIds.join(',')})`);
+        query = query.or(`provider_org_name.ilike.%${escapedSearch}%,receiver_org_name.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%,activity_id.in.(${matchingActivityIds.join(',')})`);
       } else {
-        query = query.or(`provider_org_name.ilike.%${search}%,receiver_org_name.ilike.%${search}%,description.ilike.%${search}%`);
+        query = query.or(`provider_org_name.ilike.%${escapedSearch}%,receiver_org_name.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%`);
       }
     }
     

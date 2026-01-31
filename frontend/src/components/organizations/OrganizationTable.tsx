@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Flag from "react-world-flags";
@@ -285,14 +286,18 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="font-medium line-clamp-2 flex items-start gap-1.5">
-                                <span className="flex-1">
+                                <Link
+                                  href={`/organizations/${org.id}`}
+                                  className="flex-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   {org.name}
                                   {org.acronym && (
                                     <span>
                                       {' '}({org.acronym})
                                     </span>
                                   )}
-                                </span>
+                                </Link>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();

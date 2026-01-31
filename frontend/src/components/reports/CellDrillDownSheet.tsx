@@ -31,7 +31,7 @@ interface DrillDownTransaction {
   iati_identifier: string | null
   title: string | null
   transaction_value_usd: number | null
-  transaction_date: string | null
+  effective_date: string | null
   transaction_type: string | null
   reporting_org_name: string | null
   sector_name: string | null
@@ -90,7 +90,7 @@ function formatDate(dateStr: string | null): string {
 }
 
 // Sorting types
-type SortField = 'title' | 'iati_identifier' | 'transaction_type' | 'reporting_org_name' | 'transaction_value_usd' | 'transaction_date'
+type SortField = 'title' | 'iati_identifier' | 'transaction_type' | 'reporting_org_name' | 'transaction_value_usd' | 'effective_date'
 type SortDirection = 'asc' | 'desc'
 
 export function CellDrillDownSheet({
@@ -135,6 +135,7 @@ export function CellDrillDownSheet({
               sectorCodes: filters.sectorCodes,
               transactionTypes: filters.transactionTypes,
               fiscalYears: filters.fiscalYears,
+              recordTypes: filters.recordTypes,
             },
           }),
         })
@@ -202,7 +203,7 @@ export function CellDrillDownSheet({
       { key: 'reporting_org_name', label: 'Development Partner' },
       { key: 'transaction_type', label: 'Transaction Type' },
       { key: 'transaction_value_usd', label: 'Amount (USD)' },
-      { key: 'transaction_date', label: 'Date' },
+      { key: 'effective_date', label: 'Date' },
       { key: 'sector_name', label: 'Sector' },
     ]
 
@@ -374,10 +375,10 @@ export function CellDrillDownSheet({
                       </th>
                       <th 
                         className="text-right p-2 font-medium cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleSort('transaction_date')}
+                        onClick={() => handleSort('effective_date')}
                       >
                         Date
-                        <SortIndicator field="transaction_date" />
+                        <SortIndicator field="effective_date" />
                       </th>
                     </tr>
                   </thead>
@@ -416,7 +417,7 @@ export function CellDrillDownSheet({
                         </td>
                         <td className="p-2 text-right text-muted-foreground">
                           <div className="flex items-center justify-end gap-2">
-                            <span>{formatDate(row.transaction_date)}</span>
+                            <span>{formatDate(row.effective_date)}</span>
                             <Link 
                               href={`/activities/${row.activity_id}`}
                               target="_blank"

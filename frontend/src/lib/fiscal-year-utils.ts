@@ -105,20 +105,20 @@ export function calculateAllFiscalYears(
 
 /**
  * Generate field labels for all year types with the appropriate type suffix.
- * 
+ *
  * @param yearTypes - Array of year type definitions from custom_years
- * @returns Object with field keys mapped to display labels with "·Abc" suffix
+ * @returns Object with field keys mapped to display labels with "[Abc]" suffix
  */
 export function generateYearTypeLabels(
   yearTypes: YearType[]
 ): Record<string, string> {
   const labels: Record<string, string> = {};
-  
+
   for (const yearType of yearTypes) {
     const fieldKey = yearTypeToFieldKey(yearType.name);
-    // Use suffix format matching FIELD_LABELS in CustomReportBuilder.tsx
-    labels[fieldKey] = `${yearType.name} ·Abc`;
+    // Use bracket suffix format matching FIELD_LABELS in CustomReportBuilder.tsx
+    labels[fieldKey] = `${yearType.name} [Abc]`;
   }
-  
+
   return labels;
 }

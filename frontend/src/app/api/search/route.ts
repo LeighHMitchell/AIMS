@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase-simple'
+import { requireAuth } from '@/lib/auth'
 import { searchCache, cacheKeys } from '@/lib/search-cache'
 import { highlightSearchResults, extractSearchTerms } from '@/lib/search-highlighting'
+import { escapeIlikeWildcards, sanitizeSearchInput } from '@/lib/security-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,20 +16,37 @@ interface SearchResult {
 }
 
 export async function GET(request: NextRequest) {
-  console.log('[AIMS API] GET /api/search - Starting supercharged search request')
+  // SECURITY: Require authentication before any search operations.
+  // Search results include PII (emails, phone numbers, names) that must not
+  // be exposed to unauthenticated users.
+  const { supabase, user, response: authResponse } = await requireAuth()
+  if (authResponse) {
+    return authResponse
+  }
+
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 500 }
+    )
+  }
+
+  console.log(`[AIMS API] GET /api/search - Authenticated user: ${user?.id}`)
 
   const startTime = Date.now()
   let searchAnalyticsData = null
 
   try {
     const searchParams = request.nextUrl.searchParams
-    const query = searchParams.get('q') || ''
+    const rawQuery = searchParams.get('q')
     const page = Math.max(parseInt(searchParams.get('page') || '1'), 1)
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
     const offset = (page - 1) * limit
     const includeFuzzy = searchParams.get('fuzzy') !== 'false' // Default to true
 
-    if (!query.trim()) {
+    // SECURITY: Sanitize and validate search input
+    const query = sanitizeSearchInput(rawQuery);
+    if (!query) {
       return NextResponse.json({
         results: [],
         total: 0,
@@ -38,21 +56,19 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Track search analytics
+    // Track search analytics with authenticated user ID
     searchAnalyticsData = {
       search_query: query,
       search_type: 'global',
-      user_id: null,
+      user_id: user?.id || null,
       ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       user_agent: request.headers.get('user-agent') || 'unknown'
     }
 
-    const supabase = createClient()
-    if (!supabase) {
-      throw new Error('Failed to create Supabase client')
-    }
+    const searchTerm = query  // Already sanitized above
 
-    const searchTerm = query.trim()
+    // SECURITY: Escape wildcards for ILIKE queries (used in sector search)
+    const escapedSearchTerm = escapeIlikeWildcards(searchTerm);
 
     // Check cache first
     const cacheKey = cacheKeys.search(searchTerm, page, limit)
@@ -78,15 +94,16 @@ export async function GET(request: NextRequest) {
         include_fuzzy: includeFuzzy,
         min_similarity: 0.3
       }),
-      
+
       // Sectors still need separate query (not in RPC since they use activity_sectors table)
+      // SECURITY: Use escaped search term to prevent wildcard injection
       supabase
         .from('activity_sectors')
         .select('sector_code, sector_name')
-        .ilike('sector_name', `%${searchTerm}%`)
+        .ilike('sector_name', `%${escapedSearchTerm}%`)
         .order('sector_name')
         .limit(limit),
-      
+
       // Get counts for pagination
       supabase.rpc('search_count', {
         search_query: searchTerm
@@ -99,7 +116,7 @@ export async function GET(request: NextRequest) {
     }
 
     const rpcResults: SearchResult[] = searchResult.data || []
-    
+
     // Process sectors (deduplicate)
     let sectors: any[] = []
     if (!sectorsResult.error && sectorsResult.data) {
@@ -110,7 +127,7 @@ export async function GET(request: NextRequest) {
             id: sector.sector_code,
             sector_code: sector.sector_code,
             sector_name: sector.sector_name,
-            level: sector.sector_code?.length === 3 ? 'category' : 
+            level: sector.sector_code?.length === 3 ? 'category' :
                    sector.sector_code?.length === 5 ? 'subsector' : 'sector'
           })
         }
@@ -172,7 +189,7 @@ export async function GET(request: NextRequest) {
           })
         }
       })),
-      
+
       // Sectors (formatted separately)
       ...sectors.map(sector => ({
         id: sector.sector_code,
@@ -246,24 +263,32 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('[AIMS API] Search error:', error)
-    
+
     // Fallback to legacy search if RPC fails (e.g., migration not yet applied)
-    return fallbackLegacySearch(request)
+    // SECURITY: Pass authenticated supabase client to fallback
+    return fallbackLegacySearch(request, supabase, user?.id)
   }
 }
 
 // Fallback to legacy ILIKE search if RPC is not available
-async function fallbackLegacySearch(request: NextRequest) {
+// SECURITY: This function is only called from authenticated context
+async function fallbackLegacySearch(
+  request: NextRequest,
+  supabase: any,
+  userId: string | undefined
+) {
   console.log('[AIMS API] Falling back to legacy search')
-  
+
   try {
     const searchParams = request.nextUrl.searchParams
-    const query = searchParams.get('q') || ''
+    const rawQuery = searchParams.get('q')
     const page = Math.max(parseInt(searchParams.get('page') || '1'), 1)
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
     const offset = (page - 1) * limit
 
-    if (!query.trim()) {
+    // SECURITY: Sanitize and validate search input
+    const query = sanitizeSearchInput(rawQuery);
+    if (!query) {
       return NextResponse.json({
         results: [],
         total: 0,
@@ -273,60 +298,64 @@ async function fallbackLegacySearch(request: NextRequest) {
       })
     }
 
-    const supabase = createClient()
     if (!supabase) {
       throw new Error('Failed to create Supabase client')
     }
 
-    const searchTerm = query.trim()
+    const searchTerm = query;  // Already sanitized
+
+    // SECURITY: Escape SQL ILIKE wildcards to prevent filter injection
+    // Without this, a search for "%" would return ALL rows (data enumeration attack)
+    const escapedTerm = escapeIlikeWildcards(searchTerm);
 
     // Run all searches in parallel for better performance
+    // SECURITY: All ILIKE patterns use escapedTerm to prevent wildcard injection
     const [activitiesResult, orgsResult, usersResult, tagsResult, contactsResult, sectorsResult] = await Promise.all([
       // Activities
       supabase
         .from('activities')
         .select('id, title_narrative, acronym, other_identifier, iati_identifier, activity_status, updated_at, created_by_org_name, created_by_org_acronym, icon', { count: 'exact' })
-        .or(`title_narrative.ilike.%${searchTerm}%,acronym.ilike.%${searchTerm}%,other_identifier.ilike.%${searchTerm}%,iati_identifier.ilike.%${searchTerm}%`)
+        .or(`title_narrative.ilike.%${escapedTerm}%,acronym.ilike.%${escapedTerm}%,other_identifier.ilike.%${escapedTerm}%,iati_identifier.ilike.%${escapedTerm}%`)
         .range(offset, offset + limit - 1)
         .order('updated_at', { ascending: false }),
-      
+
       // Organizations
       supabase
         .from('organizations')
         .select('id, name, acronym, iati_org_id, type, country, logo, banner', { count: 'exact' })
-        .or(`name.ilike.%${searchTerm}%,acronym.ilike.%${searchTerm}%,iati_org_id.ilike.%${searchTerm}%`)
+        .or(`name.ilike.%${escapedTerm}%,acronym.ilike.%${escapedTerm}%,iati_org_id.ilike.%${escapedTerm}%`)
         .range(offset, offset + limit - 1)
         .order('name'),
-      
+
       // Users
       supabase
         .from('users')
         .select('id, email, first_name, last_name, avatar_url')
-        .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+        .or(`first_name.ilike.%${escapedTerm}%,last_name.ilike.%${escapedTerm}%,email.ilike.%${escapedTerm}%`)
         .limit(limit)
         .order('first_name'),
-      
+
       // Tags
       supabase
         .from('tags')
         .select('id, name, code, created_at, activity_tags(count)')
-        .ilike('name', `%${searchTerm}%`)
+        .ilike('name', `%${escapedTerm}%`)
         .limit(limit)
         .order('name'),
-      
+
       // Contacts
       supabase
         .from('activity_contacts')
         .select('id, activity_id, type, title, first_name, middle_name, last_name, position, organisation, email, phone')
-        .or(`first_name.ilike.%${searchTerm}%,middle_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
+        .or(`first_name.ilike.%${escapedTerm}%,middle_name.ilike.%${escapedTerm}%,last_name.ilike.%${escapedTerm}%`)
         .limit(limit)
         .order('first_name'),
-      
+
       // Sectors
       supabase
         .from('activity_sectors')
         .select('sector_code, sector_name')
-        .ilike('sector_name', `%${searchTerm}%`)
+        .ilike('sector_name', `%${escapedTerm}%`)
         .order('sector_name')
         .limit(limit)
     ])
@@ -339,7 +368,7 @@ async function fallbackLegacySearch(request: NextRequest) {
       activity_count: tag.activity_tags?.[0]?.count || 0
     }))
     const contacts = contactsResult.data || []
-    
+
     // Deduplicate sectors
     const uniqueSectors = new Map<string, any>()
     ;(sectorsResult.data || []).forEach((sector: any) => {
@@ -348,7 +377,7 @@ async function fallbackLegacySearch(request: NextRequest) {
           id: sector.sector_code,
           sector_code: sector.sector_code,
           sector_name: sector.sector_name,
-          level: sector.sector_code?.length === 3 ? 'category' : 
+          level: sector.sector_code?.length === 3 ? 'category' :
                  sector.sector_code?.length === 5 ? 'subsector' : 'sector'
         })
       }
@@ -421,7 +450,7 @@ async function fallbackLegacySearch(request: NextRequest) {
         const subtitleParts = []
         if (contact.position) subtitleParts.push(contact.position)
         if (contact.organisation) subtitleParts.push(contact.organisation)
-        
+
         return {
           id: contact.id,
           type: 'contact' as const,

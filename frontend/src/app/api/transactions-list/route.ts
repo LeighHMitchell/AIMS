@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 /**
  * Lightweight Transactions List API
@@ -103,8 +104,10 @@ export async function GET(request: NextRequest) {
       query = query.lte('transaction_date', dateTo);
     }
 
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (search) {
-      query = query.or(`provider_org_name.ilike.%${search}%,receiver_org_name.ilike.%${search}%,description.ilike.%${search}%`);
+      const escapedSearch = escapeIlikeWildcards(search);
+      query = query.or(`provider_org_name.ilike.%${escapedSearch}%,receiver_org_name.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%`);
     }
 
     // Apply sorting

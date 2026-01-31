@@ -8,14 +8,15 @@ export async function PATCH(
   try {
     const { id } = params
     const body = await request.json()
-    const { 
-      status, 
-      title, 
-      description, 
-      start, 
-      end, 
-      location, 
+    const {
+      status,
+      title,
+      description,
+      start,
+      end,
+      location,
       type,
+      color,
       meetingLink,
       notificationMinutes,
       recordingEnabled,
@@ -37,6 +38,7 @@ export async function PATCH(
     if (end !== undefined) updateData.end = end ? new Date(end).toISOString() : null
     if (location !== undefined) updateData.location = location
     if (type !== undefined) updateData.type = type
+    if (color !== undefined) updateData.color = color
     if (meetingLink !== undefined) updateData.meeting_link = meetingLink
     if (notificationMinutes !== undefined) updateData.notification_minutes = notificationMinutes
     if (recordingEnabled !== undefined) updateData.recording_enabled = recordingEnabled
@@ -69,8 +71,11 @@ export async function PATCH(
       location: event.location,
       type: event.type,
       status: event.status,
+      color: event.color || '#4c5568',
       organizerId: event.organizer_id,
       organizerName: event.organizer_name,
+      organizerOrganizationId: event.organizer_organization_id,
+      organizerOrganizationName: event.organizer_organization_name,
       attendees: event.attendees,
       meetingLink: event.meeting_link,
       notificationMinutes: event.notification_minutes,

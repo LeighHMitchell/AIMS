@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 /**
  * Search users by name or email
@@ -21,6 +22,9 @@ export async function GET(request: NextRequest) {
     console.log('[User Search API] Searching for:', query);
 
     // Search users by first_name, last_name, or email
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
+    const escapedQuery = escapeIlikeWildcards(query);
+
     // Use explicit relationship name to avoid ambiguity with multiple foreign keys
     const { data: users, error } = await supabase
       .from('users')
@@ -36,7 +40,7 @@ export async function GET(request: NextRequest) {
           acronym
         )
       `)
-      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
+      .or(`first_name.ilike.%${escapedQuery}%,last_name.ilike.%${escapedQuery}%,email.ilike.%${escapedQuery}%`)
       .limit(10)
       .order('last_name', { ascending: true });
 

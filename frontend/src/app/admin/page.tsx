@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar, Activity, Target, ClipboardList } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar, Activity, Target } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
@@ -22,45 +22,7 @@ import { ProjectReferencesManagement } from "@/components/admin/ProjectReference
 import { EventManagement } from "@/components/calendar/EventManagement"
 import { UserActivityDashboard } from "@/components/admin/UserActivityDashboard"
 import { NationalPrioritiesManagement } from "@/components/admin/NationalPrioritiesManagement"
-import { ReadinessTemplateManagement } from "@/components/admin/ReadinessTemplateManagement"
-import { ReadinessItemManagement } from "@/components/admin/ReadinessItemManagement"
 import { LoadingText } from "@/components/ui/loading-text"
-import { apiFetch } from '@/lib/api-fetch';
-
-function ReadinessChecklistAdminSection() {
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [selectedTemplateName, setSelectedTemplateName] = useState<string>("");
-
-  if (selectedTemplateId) {
-    return (
-      <ReadinessItemManagement
-        templateId={selectedTemplateId}
-        templateName={selectedTemplateName}
-        onBack={() => {
-          setSelectedTemplateId(null);
-          setSelectedTemplateName("");
-        }}
-      />
-    );
-  }
-
-  return (
-    <ReadinessTemplateManagement
-      onSelectTemplate={(templateId) => {
-        // Fetch template name
-        apiFetch(`/api/admin/readiness/templates/${templateId}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.template) {
-              setSelectedTemplateName(data.template.name);
-              setSelectedTemplateId(templateId);
-            }
-          });
-      }}
-    />
-  );
-}
-
 function AdminPageContent() {
   const { user, isLoading } = useUser()
   const router = useRouter()
@@ -69,7 +31,7 @@ function AdminPageContent() {
   const [activeSubTab, setActiveSubTab] = useState("classifications")
 
   // Valid tab values
-  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "calendar-events", "readiness-checklist"]
+  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "calendar-events"]
   const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget", "national-priorities"]
 
   useEffect(() => {
@@ -203,10 +165,6 @@ function AdminPageContent() {
               <Calendar className="h-4 w-4" />
               Calendar Events
             </TabsTrigger>
-            <TabsTrigger value="readiness-checklist" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <ClipboardList className="h-4 w-4" />
-              Readiness Checklist
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
@@ -290,10 +248,6 @@ function AdminPageContent() {
 
           <TabsContent value="calendar-events" className="space-y-6">
             <EventManagement />
-          </TabsContent>
-
-          <TabsContent value="readiness-checklist" className="space-y-6">
-            <ReadinessChecklistAdminSection />
           </TabsContent>
         </Tabs>
       </div>

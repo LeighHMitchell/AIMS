@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 /**
  * Contact search across activity_contacts table
@@ -24,6 +25,10 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[Contacts Search API] Searching activity_contacts for:', query, 'limit:', limit);
+
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
+    const escapedQuery = escapeIlikeWildcards(query);
+
     // Search activity_contacts table with organization join
     const { data: contacts, error: contactsError } = await supabase
       .from('activity_contacts')
@@ -48,7 +53,7 @@ export async function GET(request: NextRequest) {
           acronym
         )
       `)
-      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,organisation_name.ilike.%${query}%`)
+      .or(`first_name.ilike.%${escapedQuery}%,last_name.ilike.%${escapedQuery}%,email.ilike.%${escapedQuery}%,organisation_name.ilike.%${escapedQuery}%`)
       .limit(limit)
       .order('last_name', { ascending: true });
 

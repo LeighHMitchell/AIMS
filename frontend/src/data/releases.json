@@ -1,6 +1,22 @@
 {
-  "currentVersion": "1.8.0",
+  "currentVersion": "1.9.0",
   "releases": [
+    {
+      "version": "1.9.0",
+      "date": "2026-01-31",
+      "changes": [
+        "New StakeholdersGroup component for improved activity editor stakeholder management",
+        "Enhanced ActivityOverviewGroup with additional fields and better layout",
+        "Improved ActivityEditorNavigation with refined structure and navigation",
+        "Updated activity creation page with improved layout and workflow",
+        "Tree map table field improvements: Approach renamed to Intervention Type, Value to Sample Size, Effectiveness to Direction",
+        "New Direction labels: Favorable & Significant, Favorable, Unfavorable, Unfavorable & Significant",
+        "Real-time dynamic updates when editing intervention names in tree map table",
+        "Text wrapping for parent tier labels (Level 1 & Level 2) in tree map visualization",
+        "Improved D3 data join with stable IDs for smoother tree map updates",
+        "New analytics visualization capabilities for enhanced data insights"
+      ]
+    },
     {
       "version": "1.8.0",
       "date": "2026-01-30",

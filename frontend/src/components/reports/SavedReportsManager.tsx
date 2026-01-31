@@ -49,6 +49,17 @@ export interface PivotConfig {
   aggregatorName: string
   rendererName: string
   valueFilter?: Record<string, Record<string, boolean>>
+  // Optional filter state saved with report
+  filters?: {
+    startDate?: string | null
+    endDate?: string | null
+    organizationIds?: string[]
+    statuses?: string[]
+    sectorCodes?: string[]
+    transactionTypes?: string[]
+    fiscalYears?: string[]
+    recordTypes?: string[]
+  }
   [key: string]: unknown
 }
 
@@ -211,6 +222,7 @@ export function SavedReportsManager({
           aggregatorName: currentConfig.aggregatorName || 'Sum',
           rendererName: currentConfig.rendererName || 'Table',
           valueFilter: currentConfig.valueFilter || {},
+          filters: currentConfig.filters || {},
         },
         is_public: isPublic,
         is_template: isTemplate,

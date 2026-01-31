@@ -6,6 +6,7 @@ import { validatePolicyMarkerSignificance } from '@/lib/policy-marker-validation
 import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize-server';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { inferTransactionParties, ParticipatingOrg as InferenceParticipatingOrg, ReportingOrg } from '@/lib/iati/inference';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 interface ImportRequest {
   fields: Record<string, boolean>;
@@ -774,14 +775,17 @@ export async function POST(
         if (!orgId && (org.name || org.narrative)) {
           const searchName = (org.name || org.narrative || '').trim();
           if (searchName) {
+            // SECURITY: Escape ILIKE wildcards to prevent filter injection
+            const escapedSearchName = escapeIlikeWildcards(searchName);
+
             // Try exact match first
             const { data: exactMatch } = await supabase
               .from('organizations')
               .select('id, name')
-              .ilike('name', searchName)
+              .ilike('name', escapedSearchName)
               .limit(1)
               .maybeSingle();
-            
+
             if (exactMatch) {
               orgId = exactMatch.id;
               method = 'matched by name (exact)';
@@ -789,12 +793,12 @@ export async function POST(
               console.log(`[IATI Import] ✓ Found existing organization: "${exactMatch.name || orgName}" (${method})`);
               return { id: orgId, method, wasExisting };
             }
-            
+
             // Try partial match
             const { data: partialMatches } = await supabase
               .from('organizations')
               .select('id, name')
-              .ilike('name', `%${searchName}%`)
+              .ilike('name', `%${escapedSearchName}%`)
               .limit(1);
             
             if (partialMatches && partialMatches.length > 0) {
@@ -853,10 +857,12 @@ export async function POST(
               // Try by name
               const searchName = (org.name || org.narrative || '').trim();
               if (searchName) {
+                // SECURITY: Escape ILIKE wildcards
+                const escapedName = escapeIlikeWildcards(searchName);
                 const { data: existing } = await supabase
                   .from('organizations')
                   .select('id, name')
-                  .ilike('name', searchName)
+                  .ilike('name', escapedName)
                   .maybeSingle();
                 
                 if (existing) {

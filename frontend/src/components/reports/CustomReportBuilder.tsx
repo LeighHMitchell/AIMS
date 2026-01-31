@@ -47,12 +47,13 @@ const FIELD_TYPES: Record<string, 'text' | 'number' | 'date' | 'percent' | 'bool
   'planned_disbursement_value_usd': 'number',
   'budget_value_usd': 'number',
   'amount_usd': 'number',
+  'weighted_amount_usd': 'number',
   'fiscal_month': 'number',
-  
+
   // Percentage fields
   'sector_percentage': 'percent',
   'subnational_percentage': 'percent',
-  
+
   // Date fields
   'start_date': 'date',
   'end_date': 'date',
@@ -62,11 +63,12 @@ const FIELD_TYPES: Record<string, 'text' | 'number' | 'date' | 'percent' | 'bool
   'actual_end_date': 'date',
   'transaction_date': 'date',
   'effective_date': 'date',
-  
+
   // Boolean fields
   'is_nationwide': 'boolean',
   'is_humanitarian': 'boolean',
-  
+  'is_original_currency': 'boolean',
+
   // All others default to 'text' (including year fields which display as text)
 }
 
@@ -155,15 +157,17 @@ const FIELD_LABELS: Record<string, string> = {
   'planned_disbursement_value_usd': `Planned Disbursement (USD) ${TYPE_SUFFIX.NUMERIC}`,
   'budget_value_usd': `Budget Amount (USD) ${TYPE_SUFFIX.NUMERIC}`,
   'amount_usd': `Amount (USD) ${TYPE_SUFFIX.NUMERIC}`,
+  'weighted_amount_usd': `Weighted Amount (USD) ${TYPE_SUFFIX.NUMERIC}`,
   'fiscal_month': `Month ${TYPE_SUFFIX.NUMERIC}`,
-  
+
   // Percentage fields
   'sector_percentage': `Sector % ${TYPE_SUFFIX.PERCENT}`,
   'subnational_percentage': `Regional % ${TYPE_SUFFIX.PERCENT}`,
-  
+
   // Boolean fields
   'is_nationwide': `Is Nationwide ${TYPE_SUFFIX.BOOLEAN}`,
   'is_humanitarian': `Is Humanitarian ${TYPE_SUFFIX.BOOLEAN}`,
+  'is_original_currency': `Is Original Currency ${TYPE_SUFFIX.BOOLEAN}`,
 }
 
 // Attributes to hide from the pivot UI (internal IDs and codes)
@@ -607,6 +611,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
     sectorCodes: [],
     transactionTypes: [],
     fiscalYears: [],
+    recordTypes: [],
   })
   
   // Filter option labels for breadcrumbs
@@ -696,17 +701,35 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
   // This ensures all 12 months appear even if there's no data for some months
   const paddedReportData = useMemo(() => {
     const allFields = [...pivotState.rows, ...pivotState.cols]
+
+    // Filter out non-Transaction records when Transaction Type is used as a dimension
+    // Planned Disbursements and Budgets have NULL transaction_type, so they would appear as blank rows
+    const transactionTypeField = `Transaction Type ${TYPE_SUFFIX.TEXT}`
+    const recordTypeField = `Record Type ${TYPE_SUFFIX.TEXT}`
+    const usesTransactionType = allFields.includes(transactionTypeField)
+
+    let filteredData = reportData
+    if (usesTransactionType) {
+      // Keep only Transaction records (filter out Planned Disbursements and Budgets)
+      // Also ensure transaction_type has a value (not null/undefined/empty)
+      filteredData = reportData.filter(row => {
+        const recordType = row[recordTypeField]
+        const transactionType = row[transactionTypeField]
+        return recordType === 'Transaction' && transactionType != null && transactionType !== ''
+      })
+    }
+
     const hasMonthField = allFields.includes(MONTH_FIELD)
     // Check for any year field (Calendar Year, Australian Fiscal Year, etc.)
     const yearField = allFields.find(f => f.includes('Year') && f.includes(TYPE_SUFFIX.TEXT))
 
-    if (!hasMonthField || !yearField || reportData.length === 0) {
-      return reportData
+    if (!hasMonthField || !yearField || filteredData.length === 0) {
+      return filteredData
     }
 
     // Get all unique year values from the data
     const uniqueYears = new Set<string>()
-    reportData.forEach(row => {
+    filteredData.forEach(row => {
       const yearValue = row[yearField]
       if (yearValue !== null && yearValue !== undefined) {
         uniqueYears.add(String(yearValue))
@@ -715,7 +738,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
 
     // Track existing year-month combinations
     const existingCombos = new Set<string>()
-    reportData.forEach(row => {
+    filteredData.forEach(row => {
       const yearValue = row[yearField]
       const monthValue = row[MONTH_FIELD]
       if (yearValue !== null && yearValue !== undefined && monthValue) {
@@ -737,7 +760,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
       })
     })
 
-    return [...reportData, ...placeholderRows]
+    return [...filteredData, ...placeholderRows]
   }, [reportData, pivotState.rows, pivotState.cols])
 
   // Transform data to use friendly field names
@@ -817,10 +840,10 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
   const fetchPivotData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const params = new URLSearchParams()
-      
+
       if (filters.startDate) {
         params.append('startDate', filters.startDate.toISOString().split('T')[0])
       }
@@ -832,6 +855,21 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
       filters.sectorCodes.forEach(c => params.append('sectorCodes', c))
       filters.transactionTypes.forEach(t => params.append('transactionTypes', t))
       filters.fiscalYears.forEach(y => params.append('fiscalYears', y))
+
+      // Determine effective record types:
+      // If Transaction Type is used as a dimension (row or col), automatically filter to only
+      // "Transaction" records since Planned Disbursements and Budgets don't have transaction types
+      const transactionTypeField = `Transaction Type ${TYPE_SUFFIX.TEXT}`
+      const usesTransactionType = pivotState.rows.includes(transactionTypeField) ||
+                                   pivotState.cols.includes(transactionTypeField)
+
+      let effectiveRecordTypes = filters.recordTypes
+      if (usesTransactionType && filters.recordTypes.length === 0) {
+        // Auto-filter to Transaction records when Transaction Type is a dimension
+        effectiveRecordTypes = ['Transaction']
+      }
+
+      effectiveRecordTypes.forEach(r => params.append('recordTypes', r))
 
       const response = await fetch(`/api/reports/pivot-data?${params.toString()}`)
       
@@ -870,7 +908,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
     } finally {
       setIsLoading(false)
     }
-  }, [filters, transformData])
+  }, [filters, transformData, pivotState.rows, pivotState.cols])
 
   // Load data on initial render
   useEffect(() => {
@@ -1004,6 +1042,22 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
       vals: config.vals.map(v => FIELD_LABELS[v] || v),
     }
     setPivotState(transformedConfig)
+
+    // Restore filters if saved with report
+    if (config.filters) {
+      setFilters({
+        startDate: config.filters.startDate ? new Date(config.filters.startDate) : null,
+        endDate: config.filters.endDate ? new Date(config.filters.endDate) : null,
+        organizationIds: config.filters.organizationIds || [],
+        statuses: config.filters.statuses || [],
+        sectorCodes: config.filters.sectorCodes || [],
+        transactionTypes: config.filters.transactionTypes || [],
+        fiscalYears: config.filters.fiscalYears || [],
+        recordTypes: config.filters.recordTypes || [],
+      })
+      // Trigger data refresh with new filters
+      setTimeout(() => fetchPivotData(), 100)
+    }
   }
 
   // Get current config with original field names (for saving)
@@ -1012,14 +1066,61 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
     const reverseLabelMap = Object.fromEntries(
       Object.entries(FIELD_LABELS).map(([k, v]) => [v, k])
     )
-    
+
     return {
       ...pivotState,
       rows: pivotState.rows.map(r => reverseLabelMap[r] || r),
       cols: pivotState.cols.map(c => reverseLabelMap[c] || c),
       vals: pivotState.vals.map(v => reverseLabelMap[v] || v),
+      // Include current filters in saved config
+      filters: {
+        startDate: filters.startDate?.toISOString().split('T')[0] || null,
+        endDate: filters.endDate?.toISOString().split('T')[0] || null,
+        organizationIds: filters.organizationIds,
+        statuses: filters.statuses,
+        sectorCodes: filters.sectorCodes,
+        transactionTypes: filters.transactionTypes,
+        fiscalYears: filters.fiscalYears,
+        recordTypes: filters.recordTypes,
+      },
     }
   }
+
+  // Handle pivot state changes with deduplication
+  // When dragging a field from rows to cols (or vice versa), the library's Sortable.js
+  // creates a duplicate instead of moving. This handler removes the duplicate.
+  const handlePivotStateChange = useCallback((newState: PivotConfig) => {
+    // Find fields that appear in both rows and cols
+    const duplicates = newState.rows.filter(field => newState.cols.includes(field))
+
+    if (duplicates.length === 0) {
+      // No duplicates, just set the state
+      setPivotState(newState)
+      return
+    }
+
+    // For each duplicate, determine where it was originally and remove from there
+    const deduplicatedState = { ...newState }
+
+    for (const field of duplicates) {
+      const wasInRows = pivotState.rows.includes(field)
+      const wasInCols = pivotState.cols.includes(field)
+
+      if (wasInRows && !wasInCols) {
+        // Field was moved from rows to cols - remove from rows
+        deduplicatedState.rows = deduplicatedState.rows.filter(f => f !== field)
+      } else if (wasInCols && !wasInRows) {
+        // Field was moved from cols to rows - remove from cols
+        deduplicatedState.cols = deduplicatedState.cols.filter(f => f !== field)
+      } else {
+        // Field was in neither (dragged from unused to both somehow) or in both already
+        // Remove from cols to keep it in rows (arbitrary choice)
+        deduplicatedState.cols = deduplicatedState.cols.filter(f => f !== field)
+      }
+    }
+
+    setPivotState(deduplicatedState)
+  }, [pivotState.rows, pivotState.cols])
 
   // Handle filter options loaded from PivotFilters
   const handleFilterOptionsLoaded = useCallback((options: {
@@ -1064,6 +1165,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
       sectorCodes: [],
       transactionTypes: [],
       fiscalYears: [],
+      recordTypes: [],
     })
     // Auto-apply after clearing
     setTimeout(() => {
@@ -1276,6 +1378,18 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
               </span>
             )}
           </div>
+        )}
+
+        {/* Warning when mixing record types */}
+        {filters.recordTypes.length === 0 && dataInfo && (
+          <Alert className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              <strong>Data accuracy warning:</strong> You are viewing all record types together (Transactions + Planned Disbursements + Budgets).
+              Summing amounts across these types may be misleading. Use the <strong>Record Type</strong> filter to analyze specific data types,
+              or use <strong>Weighted Amount (USD)</strong> for accurate sector-level analysis.
+            </AlertDescription>
+          </Alert>
         )}
 
         {/* Error state */}
@@ -1607,9 +1721,9 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
               return () => observer.disconnect()
             }}>
               <PivotTableUI
-                key={`pivot-${dataVersion}-${useAbbreviatedNumbers}-${[...pivotState.rows, ...pivotState.cols].find(f => f.includes('Year')) || 'none'}`}
+                key={`pivot-${dataVersion}-${useAbbreviatedNumbers}-${paddedReportData.length}-${[...pivotState.rows, ...pivotState.cols].find(f => f.includes('Year')) || 'none'}`}
                 data={paddedReportData}
-                onChange={(s: PivotConfig) => setPivotState(s)}
+                onChange={handlePivotStateChange}
                 {...pivotState}
                 sorters={dynamicSorters}
                 aggregators={customAggregators}

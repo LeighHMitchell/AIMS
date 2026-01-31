@@ -3,27 +3,51 @@ import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+// Helper to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
 export async function POST(request: NextRequest) {
   console.log('[AIMS] POST /api/users/delete-account - Starting request');
-  
-  const { supabase, response } = await requireAuth();
-  if (response) return response;
-  
+
+  const { supabase, user: authUser, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
-    if (!supabase) {
+    if (!supabase || !authUser) {
       return NextResponse.json(
-        { error: 'Supabase is not configured' },
-        { status: 500 }
+        { error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
     const body = await request.json();
     const { userId, confirmEmail } = body;
-    
+
     if (!userId) {
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
+      );
+    }
+
+    // SECURITY: Validate user ID format
+    if (!isValidUUID(userId)) {
+      return NextResponse.json(
+        { error: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
+
+    // SECURITY: Users can only delete their own account via this endpoint
+    // This prevents IDOR attacks where an attacker provides another user's ID
+    if (userId !== authUser.id) {
+      console.warn(`[AIMS] IDOR attempt blocked: User ${authUser.id} tried to delete account ${userId}`);
+      return NextResponse.json(
+        { error: 'Forbidden: You can only delete your own account' },
+        { status: 403 }
       );
     }
 
@@ -35,10 +59,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the user to verify they exist and check their role
+    // SECURITY: Using authUser.id (verified from session) not userId from request
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('id, email, role, first_name, last_name')
-      .eq('id', userId)
+      .eq('id', authUser.id)
       .single();
 
     if (userError || !userData) {
@@ -49,7 +74,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify the email matches
+    // Verify the email matches (additional confirmation)
     if (userData.email.toLowerCase() !== confirmEmail.toLowerCase()) {
       return NextResponse.json(
         { error: 'Email confirmation does not match' },
@@ -60,7 +85,7 @@ export async function POST(request: NextRequest) {
     // Check if user is an admin/super_user - they cannot delete themselves
     if (userData.role === 'super_user' || userData.role === 'admin') {
       return NextResponse.json(
-        { 
+        {
           error: 'Admin accounts cannot be self-deleted',
           message: 'Admin accounts must be deleted by another administrator from Admin > Users'
         },
@@ -70,14 +95,16 @@ export async function POST(request: NextRequest) {
 
     console.log('[AIMS] Starting account deletion for user:', userData.email);
 
+    // Use authUser.id consistently for all operations
+    const targetUserId = authUser.id;
+
     // Step 1: Anonymize organization comments
     const { error: anonymizeCommentsError } = await supabase
       .from('organization_comments')
-      .update({ 
+      .update({
         user_name: 'Deleted User',
-        // Keep user_id for reference but the display name is anonymized
       })
-      .eq('user_id', userId);
+      .eq('user_id', targetUserId);
 
     if (anonymizeCommentsError) {
       console.error('[AIMS] Error anonymizing organization comments:', anonymizeCommentsError);
@@ -89,11 +116,10 @@ export async function POST(request: NextRequest) {
     // Step 2: Clear focal point assignments (set linked_user_id to null)
     const { error: clearFocalPointsError } = await supabase
       .from('activity_contacts')
-      .update({ 
+      .update({
         linked_user_id: null,
-        // Keep the contact record but unlink from user
       })
-      .eq('linked_user_id', userId);
+      .eq('linked_user_id', targetUserId);
 
     if (clearFocalPointsError) {
       console.error('[AIMS] Error clearing focal point assignments:', clearFocalPointsError);
@@ -106,7 +132,7 @@ export async function POST(request: NextRequest) {
     const { error: activityLogsError } = await supabase
       .from('activity_logs')
       .update({ user_id: null })
-      .eq('user_id', userId);
+      .eq('user_id', targetUserId);
 
     if (activityLogsError) {
       console.error('[AIMS] Error cleaning up activity_logs:', activityLogsError);
@@ -116,16 +142,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 4: Delete from public.users table
-    // This will cascade delete:
-    // - activity_bookmarks (ON DELETE CASCADE)
-    // - user_notifications (ON DELETE CASCADE)
-    // - feedback (ON DELETE CASCADE)
-    // And set to NULL:
-    // - Various created_by/updated_by fields (ON DELETE SET NULL)
     const { error: deleteProfileError } = await supabase
       .from('users')
       .delete()
-      .eq('id', userId);
+      .eq('id', targetUserId);
 
     if (deleteProfileError) {
       console.error('[AIMS] Error deleting user profile:', deleteProfileError);
@@ -138,12 +158,11 @@ export async function POST(request: NextRequest) {
     console.log('[AIMS] Deleted user from public.users');
 
     // Step 5: Delete from auth.users
-    const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId);
+    const { error: authDeleteError } = await supabase.auth.admin.deleteUser(targetUserId);
 
     if (authDeleteError) {
       console.error('[AIMS] Error deleting auth user:', authDeleteError);
       // Profile already deleted, log the error but return success
-      // The auth user will be orphaned but won't be able to access anything
     } else {
       console.log('[AIMS] Deleted user from auth.users');
     }
@@ -155,7 +174,7 @@ export async function POST(request: NextRequest) {
       message: 'Account deleted successfully',
       deletedEmail: userData.email,
     });
-    
+
   } catch (error) {
     console.error('[AIMS] Unexpected error during account deletion:', error);
     return NextResponse.json(
@@ -164,5 +183,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

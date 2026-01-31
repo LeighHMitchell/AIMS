@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,9 @@ export async function GET(request: NextRequest) {
       .select('*');
     
     if (searchQuery) {
-      query = query.ilike('name', `%${searchQuery}%`);
+      // SECURITY: Escape ILIKE wildcards to prevent filter injection
+      const escapedQuery = escapeIlikeWildcards(searchQuery);
+      query = query.ilike('name', `%${escapedQuery}%`);
     }
     
     // Order by usage (most recently created first, then alphabetically)

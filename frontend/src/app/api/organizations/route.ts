@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -52,8 +53,9 @@ export async function GET(request: NextRequest) {
     }
     
     // Filter by search term (fuzzy search on name and acronym)
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (searchTerm && searchTerm.trim() && !iatiOrgId) {
-      const cleanSearchTerm = searchTerm.trim();
+      const cleanSearchTerm = escapeIlikeWildcards(searchTerm.trim());
       query = query.or(`name.ilike.%${cleanSearchTerm}%,acronym.ilike.%${cleanSearchTerm}%`);
     }
     

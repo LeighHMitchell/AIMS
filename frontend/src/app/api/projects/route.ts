@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { findSimilarProjects } from '@/lib/project-matching';
 import { PROJECT_STATUS } from '@/types/project';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -39,8 +40,10 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     // Filter by search term
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+      const escapedSearch = escapeIlikeWildcards(search);
+      query = query.or(`title.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%`);
     }
 
     // Filter by status

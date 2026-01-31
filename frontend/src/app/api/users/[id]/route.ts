@@ -3,70 +3,145 @@ import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic'
 
+// SECURITY: Valid role values - must match USER_ROLES in types/user.ts
+const VALID_ROLES = [
+  'super_user',
+  'admin',  // Legacy admin role
+  'dev_partner_tier_1',
+  'dev_partner_tier_2',
+  'gov_partner_tier_1',
+  'gov_partner_tier_2',
+  'public_user'
+] as const;
+
+// Helper to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+// SECURITY: Validate role value against allowed enum
+function isValidRole(role: unknown): role is typeof VALID_ROLES[number] {
+  return typeof role === 'string' && VALID_ROLES.includes(role as any);
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[AIMS] PUT /api/users/[id] - Starting request for user:', id)
-  
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, user: authUser, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    const { id } = await params;
-    if (!supabase) {
+    const { id: targetUserId } = await params;
+
+    // SECURITY: Validate target user ID format
+    if (!targetUserId || !isValidUUID(targetUserId)) {
       return NextResponse.json(
-        { error: 'Supabase is not configured' },
+        { error: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
+
+    if (!supabase || !authUser) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // SECURITY: Fetch authenticated user's role from database
+    const { data: authUserProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('id', authUser.id)
+      .single();
+
+    if (profileError || !authUserProfile) {
+      console.error('[AIMS] Error fetching auth user profile:', profileError);
+      return NextResponse.json(
+        { error: 'Failed to verify user permissions' },
         { status: 500 }
-      )
+      );
     }
 
-    const body = await request.json()
-    console.log('[AIMS] PUT /api/users/[id] - Update data:', body)
-    
-    // Update user profile (using existing database columns)
-    const updateData: any = {
-      first_name: body.first_name,
-      last_name: body.last_name,
-      role: body.role,
-      organization_id: body.organization_id,
-      organisation: body.organisation,
-      department: body.department,
-      telephone: body.telephone,
-      website: body.website,
-      mailing_address: body.mailing_address,
+    const isSuperUser = authUserProfile.role === 'super_user' || authUserProfile.role === 'admin';
+    const isOwnProfile = authUser.id === targetUserId;
+
+    // SECURITY: Authorization check - must be own profile OR super_user
+    if (!isOwnProfile && !isSuperUser) {
+      console.warn(`[AIMS] IDOR attempt blocked: User ${authUser.id} tried to update user ${targetUserId}`);
+      return NextResponse.json(
+        { error: 'Forbidden: You can only update your own profile' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    console.log('[AIMS] PUT /api/users/[id] - Update data for user:', targetUserId);
+
+    // SECURITY: Build update data with explicit field allowlist (no mass assignment)
+    const updateData: Record<string, any> = {
       updated_at: new Date().toISOString()
+    };
+
+    // Explicitly copy only allowed fields (defense against mass assignment)
+    const allowedFields = [
+      'first_name', 'last_name', 'middle_name', 'title', 'suffix',
+      'organization_id', 'organisation', 'department', 'job_title',
+      'telephone', 'website', 'mailing_address', 'avatar_url',
+      'contact_type', 'fax_number', 'notes',
+      'address_line_1', 'address_line_2', 'city', 'state_province', 'country', 'postal_code'
+    ];
+
+    for (const field of allowedFields) {
+      if (body[field] !== undefined) {
+        // Handle special 'none' values
+        if ((field === 'title' || field === 'suffix' || field === 'contact_type') && body[field] === 'none') {
+          updateData[field] = null;
+        } else {
+          updateData[field] = body[field];
+        }
+      }
     }
 
-    // Add optional fields that exist in the database schema
-    if (body.title !== undefined) updateData.title = body.title === 'none' ? null : body.title
-    if (body.middle_name !== undefined) updateData.middle_name = body.middle_name
-    if (body.suffix !== undefined) updateData.suffix = body.suffix === 'none' ? null : body.suffix
-    if (body.job_title !== undefined) updateData.job_title = body.job_title
-    if (body.avatar_url !== undefined) updateData.avatar_url = body.avatar_url
-    
-    // Try to add contact fields - they may exist from migrations
-    try {
-      if (body.contact_type !== undefined) updateData.contact_type = body.contact_type === 'none' ? null : body.contact_type
+    // SECURITY: Role handling - only super_user can change roles
+    if (body.role !== undefined) {
+      if (!isSuperUser) {
+        // Non-admin user attempting to change role
+        console.warn(`[AIMS] PRIVILEGE ESCALATION BLOCKED: User ${authUser.id} (role: ${authUserProfile.role}) attempted to set role to "${body.role}"`);
+        return NextResponse.json(
+          { error: 'Forbidden: You do not have permission to change user roles' },
+          { status: 403 }
+        );
+      }
 
-      if (body.fax_number !== undefined) updateData.fax_number = body.fax_number
-      if (body.notes !== undefined) updateData.notes = body.notes
-    } catch (error) {
-      console.log('[API] Some contact fields not available yet:', error)
+      // Super user is changing a role - validate the role value
+      if (!isValidRole(body.role)) {
+        console.warn(`[AIMS] Invalid role value rejected: "${body.role}"`);
+        return NextResponse.json(
+          { error: `Invalid role value: ${body.role}` },
+          { status: 400 }
+        );
+      }
+
+      // SECURITY: Prevent self-role-escalation (even for admins)
+      if (isOwnProfile && body.role === 'super_user' && authUserProfile.role !== 'super_user') {
+        console.warn(`[AIMS] SELF-ESCALATION BLOCKED: User ${authUser.id} attempted to make themselves super_user`);
+        return NextResponse.json(
+          { error: 'Forbidden: Cannot escalate your own privileges' },
+          { status: 403 }
+        );
+      }
+
+      updateData.role = body.role;
+      console.log(`[AIMS] Role change authorized: User ${authUser.id} setting ${targetUserId} role to ${body.role}`);
     }
-
-    // Add address component fields
-    if (body.address_line_1 !== undefined) updateData.address_line_1 = body.address_line_1 || null
-    if (body.address_line_2 !== undefined) updateData.address_line_2 = body.address_line_2 || null
-    if (body.city !== undefined) updateData.city = body.city || null
-    if (body.state_province !== undefined) updateData.state_province = body.state_province || null
-    if (body.country !== undefined) updateData.country = body.country || null
-    if (body.postal_code !== undefined) updateData.postal_code = body.postal_code || null
 
     const { data, error } = await supabase
       .from('users')
       .update(updateData)
-      .eq('id', id)
+      .eq('id', targetUserId)
       .select(`
         *,
         organizations:organization_id (
@@ -78,18 +153,18 @@ export async function PUT(
           country
         )
       `)
-      .single()
-    
+      .single();
+
     if (error) {
-      console.error('[AIMS] Error updating user profile:', error)
+      console.error('[AIMS] Error updating user profile:', error);
       return NextResponse.json(
         { error: error.message },
         { status: 400 }
-      )
+      );
     }
-    
-    console.log('[AIMS] Updated user in Supabase:', data.email)
-    
+
+    console.log('[AIMS] Updated user in Supabase:', data.email);
+
     // Transform data to match frontend User type expectations
     const transformedData = {
       ...data,
@@ -99,13 +174,12 @@ export async function PUT(
       lastName: data.last_name,
       suffix: data.suffix,
       gender: data.gender,
-      profilePicture: data.avatar_url, // Map avatar_url to profilePicture
+      profilePicture: data.avatar_url,
       organisation: data.organisation || data.organizations?.name,
       organization: data.organizations,
       contactType: data.contact_type,
       faxNumber: data.fax_number,
       notes: data.notes,
-      // Address component fields
       addressLine1: data.address_line_1,
       addressLine2: data.address_line_2,
       city: data.city,
@@ -114,15 +188,15 @@ export async function PUT(
       postalCode: data.postal_code,
       mailingAddress: data.mailing_address
     };
-    
-    return NextResponse.json(transformedData, { status: 200 })
-    
+
+    return NextResponse.json(transformedData, { status: 200 });
+
   } catch (error) {
-    console.error('[AIMS] Unexpected error:', error)
+    console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Failed to update user' },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -130,50 +204,85 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[AIMS] DELETE /api/users/[id] - Starting request for user:', id)
-  
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, user: authUser, response: authResponse } = await requireAuth();
     if (authResponse) return authResponse;
 
-    const { id } = await params;
-    if (!supabase) {
+    const { id: targetUserId } = await params;
+
+    // SECURITY: Validate target user ID format
+    if (!targetUserId || !isValidUUID(targetUserId)) {
       return NextResponse.json(
-        { error: 'Supabase is not configured' },
-        { status: 500 }
-      )
+        { error: 'Invalid user ID format' },
+        { status: 400 }
+      );
     }
 
-    // First, delete the user profile
-    const { error: profileError } = await supabase
+    if (!supabase || !authUser) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // SECURITY: Fetch authenticated user's role from database
+    const { data: authUserProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('id', authUser.id)
+      .single();
+
+    if (profileError || !authUserProfile) {
+      console.error('[AIMS] Error fetching auth user profile:', profileError);
+      return NextResponse.json(
+        { error: 'Failed to verify user permissions' },
+        { status: 500 }
+      );
+    }
+
+    const isSuperUser = authUserProfile.role === 'super_user' || authUserProfile.role === 'admin';
+
+    // SECURITY: Only super_user can delete users via this endpoint
+    if (!isSuperUser) {
+      console.warn(`[AIMS] Unauthorized delete attempt: User ${authUser.id} tried to delete user ${targetUserId}`);
+      return NextResponse.json(
+        { error: 'Forbidden: Only administrators can delete user accounts' },
+        { status: 403 }
+      );
+    }
+
+    console.log('[AIMS] DELETE /api/users/[id] - Super user deleting user:', targetUserId);
+
+    // Delete the user profile
+    const { error: deleteError } = await supabase
       .from('users')
       .delete()
-      .eq('id', id)
-    
-    if (profileError) {
-      console.error('[AIMS] Error deleting user profile:', profileError)
+      .eq('id', targetUserId);
+
+    if (deleteError) {
+      console.error('[AIMS] Error deleting user profile:', deleteError);
       return NextResponse.json(
-        { error: profileError.message },
+        { error: deleteError.message },
         { status: 400 }
-      )
+      );
     }
-    
+
     // Then delete the auth user
-    const { error: authError } = await supabase.auth.admin.deleteUser(id)
-    
+    const { error: authError } = await supabase.auth.admin.deleteUser(targetUserId);
+
     if (authError) {
-      console.error('[AIMS] Error deleting auth user:', authError)
-      // Profile is already deleted, so we'll continue
+      console.error('[AIMS] Error deleting auth user:', authError);
+      // Profile is already deleted, log but continue
     }
-    
-    console.log('[AIMS] Deleted user:', id)
-    return NextResponse.json({ success: true }, { status: 200 })
-    
+
+    console.log('[AIMS] Deleted user:', targetUserId);
+    return NextResponse.json({ success: true }, { status: 200 });
+
   } catch (error) {
-    console.error('[AIMS] Unexpected error:', error)
+    console.error('[AIMS] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Failed to delete user' },
       { status: 500 }
-    )
+    );
   }
 }

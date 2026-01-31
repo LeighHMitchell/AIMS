@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 /**
  * Lightweight Organizations List API
@@ -58,8 +59,10 @@ export async function GET(request: NextRequest) {
       `, { count: 'exact' });
 
     // Apply search filter
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (search) {
-      query = query.or(`name.ilike.%${search}%,acronym.ilike.%${search}%`);
+      const escapedSearch = escapeIlikeWildcards(search);
+      query = query.or(`name.ilike.%${escapedSearch}%,acronym.ilike.%${escapedSearch}%`);
     }
 
     // Apply type filter

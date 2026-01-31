@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,14 +83,16 @@ export async function GET(request: NextRequest) {
     }
     
     // Apply search filter if provided (search by activity title)
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (search) {
+      const escapedSearch = escapeIlikeWildcards(search);
       const activityIds = new Set(filteredBudgets.map(b => b.activity_id).filter(Boolean));
       if (activityIds.size > 0) {
         const { data: activities } = await supabase
           .from('activities')
           .select('id, title_narrative')
           .in('id', Array.from(activityIds))
-          .ilike('title_narrative', `%${search}%`);
+          .ilike('title_narrative', `%${escapedSearch}%`);
         
         const matchingActivityIds = new Set(activities?.map(a => a.id) || []);
         filteredBudgets = filteredBudgets.filter(b => matchingActivityIds.has(b.activity_id));

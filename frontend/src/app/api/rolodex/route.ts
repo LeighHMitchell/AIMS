@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 export interface RolodexPerson {
   id: string;
@@ -131,11 +132,14 @@ export async function GET(request: NextRequest) {
     console.log('[AIMS Rolodex] Users query with organization join:', usersQuery);
     
     // Apply user filters
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (filters.search) {
-      usersQuery = usersQuery.or(`email.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%`);
+      const escapedSearch = escapeIlikeWildcards(filters.search);
+      usersQuery = usersQuery.or(`email.ilike.%${escapedSearch}%,first_name.ilike.%${escapedSearch}%,last_name.ilike.%${escapedSearch}%`);
     }
     if (filters.role) {
-      usersQuery = usersQuery.ilike('role', `%${filters.role}%`);
+      const escapedRole = escapeIlikeWildcards(filters.role);
+      usersQuery = usersQuery.ilike('role', `%${escapedRole}%`);
     }
     if (filters.organization) {
       usersQuery = usersQuery.eq('organization_id', filters.organization);
@@ -208,11 +212,14 @@ export async function GET(request: NextRequest) {
     console.log('[AIMS Rolodex] Contacts query with organization join:', contactsQuery);
     
     // Apply contact filters
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (filters.search) {
-      contactsQuery = contactsQuery.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,position.ilike.%${filters.search}%`);
+      const escapedSearch = escapeIlikeWildcards(filters.search);
+      contactsQuery = contactsQuery.or(`first_name.ilike.%${escapedSearch}%,last_name.ilike.%${escapedSearch}%,email.ilike.%${escapedSearch}%,position.ilike.%${escapedSearch}%`);
     }
     if (filters.role) {
-      contactsQuery = contactsQuery.or(`position.ilike.%${filters.role}%,type.ilike.%${filters.role}%`);
+      const escapedRole = escapeIlikeWildcards(filters.role);
+      contactsQuery = contactsQuery.or(`position.ilike.%${escapedRole}%,type.ilike.%${escapedRole}%`);
     }
     if (filters.organization) {
       contactsQuery = contactsQuery.eq('organisation_id', filters.organization);

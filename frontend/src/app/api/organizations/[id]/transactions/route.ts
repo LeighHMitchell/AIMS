@@ -50,7 +50,7 @@ export async function GET(
       return NextResponse.json([]);
     }
 
-    // Fetch ALL transactions for those activities (not just where org is provider/receiver)
+    // Fetch ALL transactions for those activities with organization JOINs
     const { data: ownTransactions, error: transactionsError } = await supabase
       .from('transactions')
       .select(`
@@ -79,7 +79,19 @@ export async function GET(
         exchange_rate_used,
         usd_conversion_date,
         created_at,
-        updated_at
+        updated_at,
+        provider_organization:organizations!provider_org_id (
+          id,
+          name,
+          acronym,
+          logo
+        ),
+        receiver_organization:organizations!receiver_org_id (
+          id,
+          name,
+          acronym,
+          logo
+        )
       `)
       .in('activity_id', activityIds)
       .order('transaction_date', { ascending: false });
@@ -123,7 +135,7 @@ export async function GET(
           if (linkedActivityIds.size > 0) {
             console.log(`[AIMS] Fetching transactions from ${linkedActivityIds.size} linked activities`);
             
-            // Fetch transactions from linked activities
+            // Fetch transactions from linked activities with organization JOINs
             const { data: linkedTransactions, error: linkedError } = await supabase
               .from('transactions')
               .select(`
@@ -152,7 +164,19 @@ export async function GET(
                 exchange_rate_used,
                 usd_conversion_date,
                 created_at,
-                updated_at
+                updated_at,
+                provider_organization:organizations!provider_org_id (
+                  id,
+                  name,
+                  acronym,
+                  logo
+                ),
+                receiver_organization:organizations!receiver_org_id (
+                  id,
+                  name,
+                  acronym,
+                  logo
+                )
               `)
               .in('activity_id', Array.from(linkedActivityIds))
               .order('transaction_date', { ascending: false });
@@ -192,50 +216,27 @@ export async function GET(
       // Continue without titles rather than failing
     }
 
-    // Get organization logos for provider and receiver orgs
-    const allOrgIds = new Set<string>();
-    allTransactions.forEach(t => {
-      if (t.provider_org_id) allOrgIds.add(t.provider_org_id);
-      if (t.receiver_org_id) allOrgIds.add(t.receiver_org_id);
-    });
-
-    let organizations: any[] = [];
-    if (allOrgIds.size > 0) {
-      const { data: orgsData, error: orgsError } = await supabase
-        .from('organizations')
-        .select('id, name, acronym, icon')
-        .in('id', Array.from(allOrgIds));
-
-      if (orgsError) {
-        console.error('[AIMS] Error fetching organizations:', orgsError);
-        // Continue without org details rather than failing
-      } else {
-        organizations = orgsData || [];
-      }
-    }
-
-    // Create lookup maps
+    // Create activity lookup map
     const activityMap = new Map(
       (activities || []).map(a => [a.id, { title: a.title_narrative, acronym: a.acronym }])
     );
 
-    const orgMap = new Map(
-      organizations.map(o => [o.id, { name: o.name, acronym: o.acronym, logo: o.icon }])
-    );
-
-    // Enrich transactions with activity and org info
-    const enrichedTransactions = allTransactions.map(transaction => ({
-      ...transaction,
-      activity_title: activityMap.get(transaction.activity_id)?.title || 'Unknown Activity',
-      activity_acronym: activityMap.get(transaction.activity_id)?.acronym || null,
-      linked_from_activity_title: transaction.transaction_source === 'linked' 
-        ? activityMap.get(transaction.activity_id)?.title 
-        : undefined,
-      provider_org_logo: transaction.provider_org_id ? orgMap.get(transaction.provider_org_id)?.logo : null,
-      provider_org_acronym: transaction.provider_org_id ? orgMap.get(transaction.provider_org_id)?.acronym : null,
-      receiver_org_logo: transaction.receiver_org_id ? orgMap.get(transaction.receiver_org_id)?.logo : null,
-      receiver_org_acronym: transaction.receiver_org_id ? orgMap.get(transaction.receiver_org_id)?.acronym : null
-    }));
+    // Enrich transactions with activity info (org info comes from JOIN)
+    const enrichedTransactions = allTransactions.map((transaction: any) => {
+      return {
+        ...transaction,
+        activity_title: activityMap.get(transaction.activity_id)?.title || 'Unknown Activity',
+        activity_acronym: activityMap.get(transaction.activity_id)?.acronym || null,
+        linked_from_activity_title: transaction.transaction_source === 'linked'
+          ? activityMap.get(transaction.activity_id)?.title
+          : undefined,
+        // Use organization data from JOIN
+        provider_org_logo: transaction.provider_organization?.logo || null,
+        provider_org_acronym: transaction.provider_organization?.acronym || null,
+        receiver_org_logo: transaction.receiver_organization?.logo || null,
+        receiver_org_acronym: transaction.receiver_organization?.acronym || null
+      };
+    });
 
     // Sort all transactions by date (since we merged two sets)
     enrichedTransactions.sort((a, b) => {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import type { CreateTemplateRequest, TaskPriority, TaskType, TargetScope } from '@/types/task';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,8 +41,10 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     // Filter by search term
+    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (search) {
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,default_title.ilike.%${search}%`);
+      const escapedSearch = escapeIlikeWildcards(search);
+      query = query.or(`name.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%,default_title.ilike.%${escapedSearch}%`);
     }
 
     // Filter by system template flag

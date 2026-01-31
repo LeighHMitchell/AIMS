@@ -7,6 +7,7 @@ import { USER_ROLES } from '@/types/user';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { sanitizeIatiDescriptionServerSafe } from '@/lib/sanitize-server';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
+import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -493,10 +494,12 @@ export async function POST(request: NextRequest) {
 
     // Step 3: Only use name match as last resort (and only if no IATI ID was provided)
     if (!matchingOrg && reportingOrgName && !reportingOrgRef) {
+      // SECURITY: Escape ILIKE wildcards to prevent filter injection
+      const escapedReportingOrgName = escapeIlikeWildcards(reportingOrgName);
       const { data: orgsByName } = await supabase
         .from('organizations')
         .select('id, name, iati_org_id, alias_refs, acronym')
-        .ilike('name', `%${reportingOrgName}%`)
+        .ilike('name', `%${escapedReportingOrgName}%`)
         .limit(10);
 
       // Find exact or close name match
@@ -2192,10 +2195,12 @@ export async function POST(request: NextRequest) {
             
             // Try to find by name if not found by ref
             if (!orgId && orgName && orgName !== 'Unknown Organization') {
+              // SECURITY: Escape ILIKE wildcards
+              const escapedOrgName = escapeIlikeWildcards(orgName);
               const { data: nameMatch } = await supabase
                 .from('organizations')
                 .select('id, name')
-                .ilike('name', orgName)
+                .ilike('name', escapedOrgName)
                 .maybeSingle();
               
               if (nameMatch) {
@@ -2233,10 +2238,12 @@ export async function POST(request: NextRequest) {
                     if (existing) orgId = existing.id;
                   }
                   if (!orgId && orgName) {
+                    // SECURITY: Escape ILIKE wildcards
+                    const escapedName = escapeIlikeWildcards(orgName);
                     const { data: existing } = await supabase
                       .from('organizations')
                       .select('id')
-                      .ilike('name', orgName)
+                      .ilike('name', escapedName)
                       .maybeSingle();
                     if (existing) orgId = existing.id;
                   }

@@ -158,6 +158,7 @@ export function FilterBreadcrumbs({
     filters.sectorCodes.length > 0 ? 1 : 0,
     filters.transactionTypes.length > 0 ? 1 : 0,
     filters.fiscalYears.length > 0 ? 1 : 0,
+    filters.recordTypes.length > 0 ? 1 : 0,
   ].reduce((a, b) => a + b, 0)
 
   if (activeFilterCount === 0) {
@@ -262,6 +263,17 @@ export function FilterBreadcrumbs({
             values={filters.fiscalYears}
             maxDisplay={3}
             onRemove={() => onRemove('fiscalYears')}
+          />
+        )}
+
+        {/* Record Types */}
+        {filters.recordTypes.length > 0 && (
+          <FilterChip
+            icon={<Layers className="h-3.5 w-3.5" />}
+            label="Record Type"
+            values={filters.recordTypes}
+            maxDisplay={2}
+            onRemove={() => onRemove('recordTypes')}
           />
         )}
 

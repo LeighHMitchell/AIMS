@@ -13,22 +13,27 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { DatePicker } from '@/components/ui/date-picker'
 import { MapSearch } from '@/components/maps/MapSearch'
-import { 
-  Calendar, 
-  Clock, 
-  Link as LinkIcon, 
-  Bell, 
-  Users, 
-  X, 
-  AlertCircle, 
-  ChevronUp, 
+import {
+  Calendar,
+  Clock,
+  Link as LinkIcon,
+  Bell,
+  Users,
+  X,
+  AlertCircle,
+  ChevronUp,
   ChevronDown,
   Check,
   HelpCircle,
   MoreVertical,
   Search,
   MapPin,
-  Tag
+  Tag,
+  Palette,
+  FileText,
+  Upload,
+  File,
+  Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUser } from '@/hooks/useUser'
@@ -81,14 +86,38 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
     end: '',
     location: '',
     type: 'meeting' as 'meeting' | 'deadline' | 'workshop' | 'conference' | 'other',
+    color: '#4c5568',
     attendees: [] as string[],
     meetingLink: '',
     meetingLinkType: 'google-meet' as 'google-meet' | 'zoom' | 'teams' | 'other',
     notificationMinutes: 30
   })
+
+  const colorPresets = [
+    { color: '#dc2625', name: 'Red' },
+    { color: '#ea580c', name: 'Orange' },
+    { color: '#ca8a04', name: 'Yellow' },
+    { color: '#16a34a', name: 'Green' },
+    { color: '#0891b2', name: 'Cyan' },
+    { color: '#2563eb', name: 'Blue' },
+    { color: '#7c3aed', name: 'Purple' },
+    { color: '#db2777', name: 'Pink' },
+    { color: '#4c5568', name: 'Gray' },
+    { color: '#7b95a7', name: 'Steel' },
+  ]
   const [participants, setParticipants] = useState<Participant[]>([])
   const [rsvpStatus, setRsvpStatus] = useState<'yes' | 'no' | 'maybe' | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Document upload state
+  interface PendingDocument {
+    file: File
+    documentType: 'agenda' | 'minutes' | 'background' | 'presentation' | 'handout' | 'other'
+    description: string
+  }
+  const [pendingDocuments, setPendingDocuments] = useState<PendingDocument[]>([])
+  const [documentType, setDocumentType] = useState<'agenda' | 'minutes' | 'background' | 'presentation' | 'handout' | 'other'>('agenda')
+  const [uploadingDocuments, setUploadingDocuments] = useState(false)
 
   // Initialize date if selectedDate is provided
   useEffect(() => {
@@ -260,14 +289,14 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
       status: 'pending',
       avatar: person.profile_photo
     }
-    
+
     setParticipants(prev => [...prev, newParticipant])
     setFormData(prev => ({
       ...prev,
       attendees: [...prev.attendees, person.email || person.name]
     }))
     setParticipantSearchQuery('')
-    setParticipantSearchOpen(false)
+    // Keep dropdown open for multi-select
   }
 
   const removeParticipant = (id: string) => {
@@ -278,6 +307,88 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
         ...prev,
         attendees: prev.attendees.filter(a => a !== participant.name && a !== participant.email)
       }))
+    }
+  }
+
+  // Document handling
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size exceeds 10MB limit')
+      return
+    }
+
+    // Validate file type
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'text/csv',
+      'image/jpeg',
+      'image/png',
+      'image/gif'
+    ]
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Allowed: PDF, Word, Excel, PowerPoint, text, CSV, and images')
+      return
+    }
+
+    setPendingDocuments(prev => [...prev, {
+      file,
+      documentType,
+      description: ''
+    }])
+
+    // Reset input
+    e.target.value = ''
+  }
+
+  const removePendingDocument = (index: number) => {
+    setPendingDocuments(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
+
+  const getDocumentTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      agenda: 'Agenda',
+      minutes: 'Minutes',
+      background: 'Background',
+      presentation: 'Presentation',
+      handout: 'Handout',
+      other: 'Other'
+    }
+    return labels[type] || type
+  }
+
+  const uploadDocumentsToEvent = async (eventId: string) => {
+    for (const doc of pendingDocuments) {
+      try {
+        const formData = new FormData()
+        formData.append('file', doc.file)
+        formData.append('documentType', doc.documentType)
+        formData.append('description', doc.description)
+
+        await fetch(`/api/calendar-events/${eventId}/documents`, {
+          method: 'POST',
+          body: formData
+        })
+      } catch (error) {
+        console.error('Error uploading document:', error)
+      }
     }
   }
 
@@ -316,6 +427,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
           end: formData.end,
           location: formData.location,
           type: formData.type,
+          color: formData.color,
           organizerId: user.id,
           organizerName: user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}`.trim() : null) || user.email || 'Unknown',
           attendees: formData.attendees,
@@ -331,8 +443,16 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
       }
 
       const result = await response.json()
+
+      // Upload any pending documents
+      if (pendingDocuments.length > 0 && result.event?.id) {
+        setUploadingDocuments(true)
+        await uploadDocumentsToEvent(result.event.id)
+        setUploadingDocuments(false)
+      }
+
       toast.success('Event created successfully! It will be reviewed for approval.')
-      
+
       // Reset form
       setFormData({
         title: '',
@@ -341,6 +461,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
         end: '',
         location: '',
         type: 'meeting',
+        color: '#4c5568',
         attendees: [],
         meetingLink: '',
         meetingLinkType: 'google-meet',
@@ -351,7 +472,8 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
       setEndTime('')
       setParticipants([])
       setRsvpStatus(null)
-      
+      setPendingDocuments([])
+
       onEventCreated()
       onClose()
     } catch (error) {
@@ -486,6 +608,42 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Color */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 w-32 flex-shrink-0">
+                <Palette className="h-4 w-4 text-[#4c5568]" />
+                <Label className="text-sm font-medium text-[#4c5568]">Color</Label>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {colorPresets.map((preset) => (
+                    <button
+                      key={preset.color}
+                      type="button"
+                      className={`w-7 h-7 rounded-full border-2 transition-all ${
+                        formData.color === preset.color
+                          ? 'border-gray-900 scale-110'
+                          : 'border-transparent hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: preset.color }}
+                      onClick={() => setFormData(prev => ({ ...prev, color: preset.color }))}
+                      title={preset.name}
+                    />
+                  ))}
+                  <div className="relative">
+                    <input
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                      className="w-7 h-7 rounded-full cursor-pointer border-0 p-0 overflow-hidden"
+                      style={{ WebkitAppearance: 'none' }}
+                      title="Custom color"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -642,43 +800,118 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                   </Command>
                 </PopoverContent>
               </Popover>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {participants.map((participant) => (
-                  <Badge 
-                    key={participant.id} 
-                    variant="secondary" 
-                    className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-sm font-normal flex items-center gap-2"
-                  >
-                    <Avatar className="h-5 w-5">
-                      <AvatarImage src={participant.avatar || participant.profile_photo} />
-                      <AvatarFallback className="text-xs bg-[#7b95a7] text-white">
-                        {getInitials(participant.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    {participant.status === 'yes' && (
-                      <div className="h-4 w-4 rounded-full bg-green-500 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-white" />
+              {participants.length > 0 && (
+                <div className="flex items-center gap-3 mt-3">
+                  <div className="flex -space-x-2">
+                    {participants.slice(0, 8).map((participant, index) => (
+                      <div
+                        key={participant.id}
+                        className="relative group"
+                        style={{ zIndex: participants.length - index }}
+                      >
+                        <Avatar className="h-9 w-9 border-2 border-white ring-2 ring-transparent hover:ring-[#dc2625] cursor-pointer transition-all">
+                          <AvatarImage src={participant.avatar || participant.profile_photo} />
+                          <AvatarFallback className="text-xs bg-[#7b95a7] text-white">
+                            {getInitials(participant.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <button
+                          type="button"
+                          onClick={() => removeParticipant(participant.id)}
+                          className="absolute -top-1 -right-1 h-4 w-4 bg-[#dc2625] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-2.5 w-2.5 text-white" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                          {participant.name}
+                        </div>
+                      </div>
+                    ))}
+                    {participants.length > 8 && (
+                      <div className="h-9 w-9 rounded-full bg-[#f1f4f8] border-2 border-white flex items-center justify-center">
+                        <span className="text-xs font-medium text-[#4c5568]">+{participants.length - 8}</span>
                       </div>
                     )}
-                    {participant.status === 'maybe' && (
-                      <HelpCircle className="h-4 w-4 text-[#4c5568]" />
-                    )}
-                    {participant.status === 'pending' && (
-                      <HelpCircle className="h-4 w-4 text-[#cfd0d5]" />
-                    )}
-                    <span>{participant.name}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto p-0 ml-1 hover:bg-transparent"
-                      onClick={() => removeParticipant(participant.id)}
-                    >
-                      <X className="h-3 w-3" />
+                  </div>
+                  <span className="text-sm text-[#4c5568]">
+                    {participants.length} participant{participants.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Documents */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-[#4c5568]" />
+                  <Label className="text-sm font-medium text-[#4c5568]">
+                    Documents {pendingDocuments.length > 0 && `(${pendingDocuments.length})`}
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={documentType} onValueChange={(value: any) => setDocumentType(value)}>
+                    <SelectTrigger className="w-[120px] h-8 text-xs">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="agenda">Agenda</SelectItem>
+                      <SelectItem value="minutes">Minutes</SelectItem>
+                      <SelectItem value="background">Background</SelectItem>
+                      <SelectItem value="presentation">Presentation</SelectItem>
+                      <SelectItem value="handout">Handout</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif"
+                    />
+                    <Button type="button" variant="outline" size="sm" className="h-8" asChild>
+                      <span>
+                        <Upload className="h-4 w-4 mr-1" />
+                        Add File
+                      </span>
                     </Button>
-                  </Badge>
-                ))}
+                  </label>
+                </div>
               </div>
+
+              {pendingDocuments.length > 0 && (
+                <div className="space-y-2">
+                  {pendingDocuments.map((doc, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 bg-[#f1f4f8] rounded-lg"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <File className="h-4 w-4 text-[#4c5568] flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{doc.file.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-[#4c5568]">
+                            <Badge variant="outline" className="text-xs py-0 px-1">
+                              {getDocumentTypeLabel(doc.documentType)}
+                            </Badge>
+                            <span>{formatFileSize(doc.file.size)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-[#dc2625] hover:text-[#dc2625]"
+                        onClick={() => removePendingDocument(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Description */}
@@ -749,7 +982,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                   Cancel
                 </Button>
                 <Button type="submit" disabled={loading} className="bg-[#dc2625] hover:bg-[#dc2625]/90 rounded-lg">
-                  {loading ? 'Creating...' : 'Create Event'}
+                  {loading ? (uploadingDocuments ? 'Uploading docs...' : 'Creating...') : 'Create Event'}
                 </Button>
                 <Button type="button" variant="ghost" size="sm" className="rounded-lg">
                   <MoreVertical className="h-4 w-4" />

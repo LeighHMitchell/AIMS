@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
+import { requireAuth } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+  // SECURITY: Require authentication before any file operations
+  const { user, response: authResponse } = await requireAuth();
+  if (authResponse) {
+    return authResponse;
+  }
+
   try {
     const data = await request.formData();
     const file: File | null = data.get('file') as unknown as File;
@@ -24,7 +31,7 @@ export async function POST(request: NextRequest) {
     // Validate Supabase configuration
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
+
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json(
         { error: 'Supabase storage not configured' },
@@ -32,14 +39,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Supabase client with service role for file operations
+    // SECURITY: Only reached after authentication succeeds
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Generate unique filename and storage path
+    // SECURITY: Path is scoped to authenticated user's ID
     const fileExtension = file.name.split('.').pop();
     const fileName = `${type}-${uuidv4()}.${fileExtension}`;
-    const storagePath = `custom-groups/${fileName}`;
-    
+    const storagePath = `custom-groups/${user!.id}/${fileName}`;
+
     // Convert File to ArrayBuffer for Supabase
     const fileBuffer = await file.arrayBuffer();
 
@@ -66,22 +74,23 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(storagePath);
 
     const publicUrl = publicUrlData.publicUrl;
-    
+
     console.log('[Upload API] File uploaded successfully to Supabase:', {
       originalName: file.name,
       fileName,
       url: publicUrl,
-      size: file.size
+      size: file.size,
+      uploadedBy: user!.id
     });
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       success: true,
       url: publicUrl,
       fileName,
       originalName: file.name,
       size: file.size
     });
-    
+
   } catch (error) {
     console.error('[Upload API] Error uploading file:', error);
     return NextResponse.json(
@@ -97,7 +106,7 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }

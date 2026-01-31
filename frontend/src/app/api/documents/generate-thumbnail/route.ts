@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import { generatePdfThumbnail } from '@/lib/thumbnail-generator';
-import { writeFile, mkdir, unlink, rmdir } from 'fs/promises';
+import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { requireAuth } from '@/lib/auth';
+import { validateUrlSafety } from '@/lib/security-utils';
 
 // Create Supabase client with service role key for file uploads
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -17,6 +19,12 @@ const MAX_PDF_SIZE = 10 * 1024 * 1024;
 const DOWNLOAD_TIMEOUT = 30000;
 
 export async function POST(request: NextRequest) {
+  // SECURITY: Require authentication before any operations
+  const { user, response: authResponse } = await requireAuth();
+  if (authResponse) {
+    return authResponse;
+  }
+
   try {
     const { url, activityId } = await request.json();
 
@@ -27,25 +35,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate URL format
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(url);
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        return NextResponse.json(
-          { error: 'URL must use http:// or https://' },
-          { status: 400 }
-        );
-      }
-    } catch {
-      return NextResponse.json(
-        { error: 'Invalid URL format' },
-        { status: 400 }
-      );
+    // SECURITY: Validate URL is safe before fetching (SSRF protection)
+    // Note: We allow HTTP here since some PDFs are hosted on HTTP-only servers
+    const validationError = await validateUrlSafety(url, {
+      allowHttp: true,
+      logPrefix: '[Generate Thumbnail]'
+    });
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 403 });
     }
 
     // Check if it's likely a PDF (by extension or content-type)
-    const isLikelyPdf = 
+    const isLikelyPdf =
       url.toLowerCase().endsWith('.pdf') ||
       url.toLowerCase().includes('application/pdf') ||
       url.toLowerCase().includes('pdf');
@@ -65,6 +66,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log(`[Generate Thumbnail] User ${user?.id} generating thumbnail for: ${url}`);
+
     // Create Supabase client with service role for file operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -74,11 +77,13 @@ export async function POST(request: NextRequest) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT);
 
+      // SECURITY: Disable redirects to prevent redirect-based SSRF bypass
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; AIMS-ThumbnailGenerator/1.0)',
         },
+        redirect: 'error',
       });
 
       clearTimeout(timeoutId);
@@ -122,6 +127,13 @@ export async function POST(request: NextRequest) {
           { status: 408 }
         );
       }
+      // SECURITY: Handle redirect errors gracefully
+      if (error instanceof Error && error.message.includes('redirect')) {
+        return NextResponse.json(
+          { error: 'URL redirects are not allowed for security reasons' },
+          { status: 403 }
+        );
+      }
       if (error instanceof Error) {
         return NextResponse.json(
           { error: `Failed to download PDF: ${error.message}` },
@@ -137,7 +149,7 @@ export async function POST(request: NextRequest) {
     // Create temporary directory for PDF processing
     const tempDir = join(process.cwd(), 'temp', 'pdf-thumbnails');
     await mkdir(tempDir, { recursive: true });
-    
+
     const tempPdfPath = join(tempDir, `pdf_${uuidv4()}.pdf`);
 
     try {
@@ -229,7 +241,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Add OPTIONS method for CORS if needed
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
@@ -239,18 +251,3 @@ export async function OPTIONS(request: NextRequest) {
     },
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -133,6 +133,7 @@ const getTransactionTypeLabelPlural = (type: string): string => {
 
 export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 'USD' }: OrganizationTransactionsTabProps) {
   const [transactions, setTransactions] = useState<OrganizationTransaction[]>([]);
+  const [organizations, setOrganizations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -151,21 +152,32 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
   // Grouped view
   const [groupedView, setGroupedView] = useState(false);
 
-  // Fetch transactions
+  // Fetch transactions and organizations
   useEffect(() => {
-    const fetchTransactions = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await apiFetch(`/api/organizations/${organizationId}/transactions`);
-        const data = await response.json();
-        if (!response.ok) {
-          console.error('API error:', data);
-          throw new Error(data?.error || 'Failed to fetch transactions');
+
+        // Fetch transactions and organizations in parallel
+        const [transactionsResponse, orgsResponse] = await Promise.all([
+          apiFetch(`/api/organizations/${organizationId}/transactions`),
+          apiFetch('/api/organizations')
+        ]);
+
+        const transactionsData = await transactionsResponse.json();
+        if (!transactionsResponse.ok) {
+          console.error('API error:', transactionsData);
+          throw new Error(transactionsData?.error || 'Failed to fetch transactions');
         }
-        setTransactions(data || []);
+        setTransactions(transactionsData || []);
+
+        if (orgsResponse.ok) {
+          const orgsData = await orgsResponse.json();
+          setOrganizations(orgsData || []);
+        }
       } catch (err) {
-        console.error('Error fetching transactions:', err);
+        console.error('Error fetching data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load transactions');
       } finally {
         setLoading(false);
@@ -173,9 +185,27 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
     };
 
     if (organizationId) {
-      fetchTransactions();
+      fetchData();
     }
   }, [organizationId]);
+
+  // Helper to get org logo by ID
+  const getOrgLogo = (orgId: string | undefined): string | null => {
+    if (!orgId) return null;
+    const org = organizations.find((o: any) => o.id === orgId);
+    return org?.logo || null;
+  };
+
+  // Helper to get org acronym or name
+  const getOrgAcronymOrName = (orgId: string | undefined, fallbackName?: string): string => {
+    if (orgId) {
+      const org = organizations.find((o: any) => o.id === orgId);
+      if (org) {
+        return org.acronym || org.name;
+      }
+    }
+    return fallbackName || '-';
+  };
 
   // Get unique transaction types for filter
   const transactionTypes = useMemo(() => {
@@ -633,24 +663,24 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                             {/* Provider */}
                             <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                               <OrganizationLogo
-                                src={transaction.provider_org_logo || undefined}
-                                alt={transaction.provider_org_acronym || transaction.provider_org_name || 'Provider'}
+                                logo={getOrgLogo(transaction.provider_org_id) || transaction.provider_org_logo}
+                                name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
                                 size="sm"
                               />
                               <span className="text-sm">
-                                {transaction.provider_org_acronym || transaction.provider_org_name || '-'}
+                                {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
                               </span>
                             </div>
                             <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                             {/* Receiver */}
                             <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                               <OrganizationLogo
-                                src={transaction.receiver_org_logo || undefined}
-                                alt={transaction.receiver_org_acronym || transaction.receiver_org_name || 'Receiver'}
+                                logo={getOrgLogo(transaction.receiver_org_id) || transaction.receiver_org_logo}
+                                name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
                                 size="sm"
                               />
                               <span className="text-sm">
-                                {transaction.receiver_org_acronym || transaction.receiver_org_name || '-'}
+                                {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
                               </span>
                             </div>
                           </div>
@@ -705,24 +735,24 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                         {/* Provider */}
                         <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                           <OrganizationLogo
-                            src={transaction.provider_org_logo || undefined}
-                            alt={transaction.provider_org_acronym || transaction.provider_org_name || 'Provider'}
+                            logo={getOrgLogo(transaction.provider_org_id) || transaction.provider_org_logo}
+                            name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
                             size="sm"
                           />
                           <span className="text-sm">
-                            {transaction.provider_org_acronym || transaction.provider_org_name || '-'}
+                            {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
                           </span>
                         </div>
                         <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                         {/* Receiver */}
                         <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                           <OrganizationLogo
-                            src={transaction.receiver_org_logo || undefined}
-                            alt={transaction.receiver_org_acronym || transaction.receiver_org_name || 'Receiver'}
+                            logo={getOrgLogo(transaction.receiver_org_id) || transaction.receiver_org_logo}
+                            name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
                             size="sm"
                           />
                           <span className="text-sm">
-                            {transaction.receiver_org_acronym || transaction.receiver_org_name || '-'}
+                            {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
                           </span>
                         </div>
                       </div>

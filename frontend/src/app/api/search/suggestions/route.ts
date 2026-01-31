@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-simple'
 import { searchCache, cacheKeys } from '@/lib/search-cache'
 import { highlightSearchResults, extractSearchTerms } from '@/lib/search-highlighting'
+import { escapeIlikeWildcards } from '@/lib/security-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,10 +82,11 @@ export async function GET(request: NextRequest) {
       }),
       
       // Popular searches (fire and forget style - don't block on this)
+      // SECURITY: Escape ILIKE wildcards to prevent filter injection
       supabase
         .from('search_analytics')
         .select('search_query')
-        .ilike('search_query', `%${query}%`)
+        .ilike('search_query', `%${escapeIlikeWildcards(query)}%`)
         .order('created_at', { ascending: false })
         .limit(5)
     ])

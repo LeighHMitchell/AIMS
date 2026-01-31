@@ -133,8 +133,9 @@ export function StakeholdersGroup({
   const [sectionsRevealed, setSectionsRevealed] = useState(activityCreated)
 
   // Update parent when active section changes (for sidebar highlighting)
+  // Only update if the active section belongs to this group
   useEffect(() => {
-    if (activeSection) {
+    if (activeSection && isStakeholdersSection(activeSection)) {
       onActiveSectionChange(activeSection)
 
       // Update URL without triggering navigation
@@ -203,7 +204,7 @@ export function StakeholdersGroup({
         })
       },
       {
-        rootMargin: '200px 0px 200px 0px', // Preload 200px before visible
+        rootMargin: '800px 0px 800px 0px', // Preload 800px before visible for seamless loading
         threshold: 0,
       }
     )
@@ -222,50 +223,20 @@ export function StakeholdersGroup({
     return () => observer.disconnect()
   }, [activityCreated, activateSection])
 
-  // Background preloading - load remaining sections during browser idle time
-  // Delayed slightly longer than ActivityOverviewGroup to prioritize that group first
+  // Aggressive preloading - load all sections quickly for seamless scrolling
   useEffect(() => {
     if (!activityCreated) return
 
-    // Wait for initial render and ActivityOverviewGroup to complete loading first
-    const initialDelay = setTimeout(() => {
-      const sectionsToPreload = ['organisations', 'contacts', 'focal_points', 'linked_activities']
-      let currentIndex = 0
+    // Preload all sections with minimal staggering
+    const sectionsToPreload = ['organisations', 'contacts', 'focal_points', 'linked_activities']
 
-      const preloadNext = () => {
-        if (currentIndex >= sectionsToPreload.length) return
-
-        const sectionId = sectionsToPreload[currentIndex]
-        // Only activate if not already active
+    sectionsToPreload.forEach((sectionId, index) => {
+      setTimeout(() => {
         if (!activeSections.has(sectionId)) {
           activateSection(sectionId)
         }
-        currentIndex++
-
-        // Schedule next preload during idle time
-        if (currentIndex < sectionsToPreload.length) {
-          if ('requestIdleCallback' in window) {
-            (window as any).requestIdleCallback(() => {
-              // Add small delay to avoid loading everything at once
-              setTimeout(preloadNext, 100)
-            }, { timeout: 2000 })
-          } else {
-            // Fallback for Safari
-            setTimeout(preloadNext, 300)
-          }
-        }
-      }
-
-      // Start preloading during idle time
-      if ('requestIdleCallback' in window) {
-        (window as any).requestIdleCallback(preloadNext, { timeout: 3000 })
-      } else {
-        // Fallback for Safari
-        setTimeout(preloadNext, 500)
-      }
-    }, 2500) // Wait 2.5 seconds - gives ActivityOverviewGroup priority
-
-    return () => clearTimeout(initialDelay)
+      }, 200 + (50 * index)) // Start after 200ms, 50ms stagger between sections
+    })
   }, [activityCreated, activateSection, activeSections])
 
   return (
@@ -284,7 +255,7 @@ export function StakeholdersGroup({
           <section
             id="organisations"
             ref={organisationsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pb-8"
+            className="scroll-mt-0 pb-16"
           >
             <SectionHeader
               id="organisations"
@@ -311,13 +282,13 @@ export function StakeholdersGroup({
           <section
             id="contacts"
             ref={contactsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-8 pb-8"
+            className="scroll-mt-0 pt-16 pb-16"
           >
             <SectionHeader
               id="contacts"
               title={getSectionLabel('contacts')}
               helpText={getSectionHelpText('contacts')}
-              showDivider={true}
+              showDivider={false}
             />
             {isSectionActive('contacts') || activeSections.has('contacts') ? (
               <ContactsTab
@@ -334,13 +305,13 @@ export function StakeholdersGroup({
           <section
             id="focal_points"
             ref={focalPointsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-8 pb-8"
+            className="scroll-mt-0 pt-16 pb-16"
           >
             <SectionHeader
               id="focal_points"
               title={getSectionLabel('focal_points')}
               helpText={getSectionHelpText('focal_points')}
-              showDivider={true}
+              showDivider={false}
             />
             {isSectionActive('focal_points') || activeSections.has('focal_points') ? (
               <FocalPointsTab
@@ -356,13 +327,13 @@ export function StakeholdersGroup({
           <section
             id="linked_activities"
             ref={linkedActivitiesRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-8 pb-8"
+            className="scroll-mt-0 pt-16 pb-16"
           >
             <SectionHeader
               id="linked_activities"
               title={getSectionLabel('linked_activities')}
               helpText={getSectionHelpText('linked_activities')}
-              showDivider={true}
+              showDivider={false}
             />
             {isSectionActive('linked_activities') || activeSections.has('linked_activities') ? (
               <LinkedActivitiesEditorTab
