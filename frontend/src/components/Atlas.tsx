@@ -51,8 +51,8 @@ import { useLoadingBar } from '@/hooks/useLoadingBar';
 // mapcn map components
 import { Map, MapControls, useMap, MapPopup } from '@/components/ui/map';
 
-// Dynamic import for MyanmarRegionsMap (SVG-based, no MapLibre needed)
-const MyanmarRegionsMap = dynamic(() => import('@/components/MyanmarRegionsMap'), { ssr: false });
+// Dynamic import for SubnationalChoroplethMap (MapLibre-based with township support)
+const SubnationalChoroplethMap = dynamic(() => import('@/components/maps/SubnationalChoroplethMap').then(mod => ({ default: mod.SubnationalChoroplethMap })), { ssr: false });
 
 // Dynamic import for MapLibre-based layers
 const MarkersLayer = dynamic(() => import('./maps-v2/MarkersLayer'), { ssr: false });
@@ -562,6 +562,7 @@ export default function Atlas() {
     details: Record<string, any>;
   }>({ breakdowns: {}, details: {} });
   const [subnationalLoading, setSubnationalLoading] = useState(true);
+  const [subnationalViewLevel, setSubnationalViewLevel] = useState<'region' | 'township'>('region');
 
   // Global loading bar for top-of-screen progress indicator
   const { startLoading, stopLoading } = useLoadingBar();
@@ -611,18 +612,19 @@ export default function Atlas() {
     const fetchSubnationalData = async () => {
       try {
         setSubnationalLoading(true);
-        
+
         const params = new URLSearchParams();
         if (statusFilter.length > 0) statusFilter.forEach(s => params.append('status', s));
         if (orgFilter.length > 0) orgFilter.forEach(o => params.append('organization', o));
-        
+        params.append('view_level', subnationalViewLevel);
+
         const response = await apiFetch(`/api/subnational-breakdowns?${params}`);
         const data = await response.json();
-        
+
         if (!response.ok) {
           throw new Error(data.error || 'Failed to fetch subnational breakdown data');
         }
-        
+
         setSubnationalData(data);
       } catch (err) {
         console.error('[Atlas] Error fetching subnational breakdown data:', err);
@@ -632,7 +634,7 @@ export default function Atlas() {
     };
 
     fetchSubnationalData();
-  }, [statusFilter, orgFilter]);
+  }, [statusFilter, orgFilter, subnationalViewLevel]);
 
   // Filter valid locations
   const validLocations = useMemo(() => {
@@ -837,15 +839,18 @@ export default function Atlas() {
           <Tabs value={tabMode} onValueChange={(value) => setTabMode(value as TabMode)}>
             <TabsContent value="map" className="space-y-4">
               {/* Filters Bar - Above the map */}
-              <div className="flex items-center gap-2">
-                <Popover open={statusFilterOpen} onOpenChange={handleStatusFilterOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={statusFilterOpen}
-                      className="w-[150px] justify-between text-xs h-9 font-normal"
-                    >
+              <div className="flex items-end gap-4">
+                {/* Status Filter */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-muted-foreground">Status</label>
+                  <Popover open={statusFilterOpen} onOpenChange={handleStatusFilterOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={statusFilterOpen}
+                        className="w-[140px] justify-between text-xs h-9 font-normal"
+                      >
                       <span className="truncate">
                         {statusFilter.length === 0
                           ? 'All Statuses'
@@ -891,26 +896,27 @@ export default function Atlas() {
                       </CommandList>
                     </Command>
                   </PopoverContent>
-                </Popover>
+                  </Popover>
+                </div>
 
-                <Popover open={orgFilterOpen} onOpenChange={handleOrgFilterOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={orgFilterOpen}
-                      className="w-[200px] justify-between text-xs h-9 font-normal"
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <Building2 className="h-4 w-4 text-gray-500 shrink-0" />
+                {/* Organization Filter */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-muted-foreground">Organization</label>
+                  <Popover open={orgFilterOpen} onOpenChange={handleOrgFilterOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={orgFilterOpen}
+                        className="w-[180px] justify-between text-xs h-9 font-normal"
+                      >
                         <span className="truncate">
                           {orgFilter.length === 0
-                            ? 'All Organizations'
+                            ? 'All'
                             : orgFilter.length === 1
                               ? orgFilter[0]
-                              : `${orgFilter.length} organizations`}
+                              : `${orgFilter.length} selected`}
                         </span>
-                      </div>
                       <div className="flex items-center gap-1 shrink-0">
                         {orgFilter.length > 0 && (
                           <X
@@ -971,28 +977,26 @@ export default function Atlas() {
                         </CommandGroup>
                       </CommandList>
                     </Command>
-                  </PopoverContent>
-                </Popover>
+                    </PopoverContent>
+                  </Popover>
+                </div>
 
-                <SectorHierarchyFilter
-                  selected={sectorFilter}
-                  onChange={setSectorFilter}
-                  open={sectorFilterOpen}
-                  onOpenChange={handleSectorFilterOpen}
-                  activityCounts={sectorActivityCounts}
-                  showOnlyActiveSectors={showOnlyActiveSectors}
-                  onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
-                  className="w-[200px] h-9 text-xs"
-                />
+                {/* Sector Filter */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-muted-foreground">Sector</label>
+                  <SectorHierarchyFilter
+                    selected={sectorFilter}
+                    onChange={setSectorFilter}
+                    open={sectorFilterOpen}
+                    onOpenChange={handleSectorFilterOpen}
+                    activityCounts={sectorActivityCounts}
+                    showOnlyActiveSectors={showOnlyActiveSectors}
+                    onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
+                    className="w-[160px] h-9 text-xs"
+                  />
+                </div>
 
                 <div className="flex-1" />
-
-                <div className="text-sm text-muted-foreground">
-                  {filteredLocations.length} location{filteredLocations.length !== 1 ? 's' : ''}
-                  {(statusFilter.length > 0 || orgFilter.length > 0 || sectorFilter.sectorCategories.length > 0 || sectorFilter.sectors.length > 0 || sectorFilter.subSectors.length > 0) &&
-                    ` (filtered from ${validLocations.length})`
-                  }
-                </div>
               </div>
 
               {/* Map Container */}
@@ -1556,13 +1560,16 @@ export default function Atlas() {
                   </div>
                 ) : Object.keys(regionBreakdownsWithDetails || {}).length > 0 ? (
                   <>
-                    {/* Myanmar Admin Map */}
+                    {/* Myanmar Admin Map with Township Support */}
                     <div className="h-[85vh] min-h-[700px] w-full">
-                      <MyanmarRegionsMap 
+                      <SubnationalChoroplethMap
                         breakdowns={regionBreakdownsWithDetails}
-                        onRegionClick={(regionName) => {
-                          console.log('Region clicked:', regionName);
+                        viewLevel={subnationalViewLevel}
+                        onViewLevelChange={setSubnationalViewLevel}
+                        onFeatureClick={(pcode, name, level) => {
+                          console.log('Feature clicked:', { pcode, name, level });
                         }}
+                        isExpanded={true}
                       />
                     </div>
                     
