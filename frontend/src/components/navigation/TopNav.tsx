@@ -84,7 +84,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
   };
 
   return (
-    <nav className="border-b sticky top-0 z-30 bg-white">
+    <nav className="border-b sticky top-0 z-[9999] bg-white">
       <div className="flex h-16 items-center px-6">
         <div className="ml-auto flex items-center space-x-4">
           {/* Global Search Bar */}
@@ -103,20 +103,19 @@ export function TopNav({ user, onLogout }: TopNavProps) {
 
           {/* User Menu with Bloom Menu */}
           {user && (
-            <div className="relative" style={{ zIndex: isMenuOpen ? 9999 : 'auto' }}>
-              <Menu.Root
-                direction="bottom"
-                anchor="end"
-                open={isMenuOpen}
-                onOpenChange={setIsMenuOpen}
+            <Menu.Root
+              direction="bottom"
+              anchor="end"
+              open={isMenuOpen}
+              onOpenChange={setIsMenuOpen}
+            >
+              <Menu.Container
+                buttonSize={{ width: 190, height: 40 }}
+                menuWidth={280}
+                menuRadius={20}
+                buttonRadius={9999}
+                className="bg-white border border-neutral-200 shadow-none"
               >
-                <Menu.Container
-                  buttonSize={{ width: 190, height: 40 }}
-                  menuWidth={280}
-                  menuRadius={20}
-                  buttonRadius={9999}
-                  className="bg-white border border-neutral-200 shadow-none"
-                >
                 <Menu.Trigger>
                   <div className="flex items-center gap-2 px-2 h-10">
                     <UserAvatar
@@ -219,7 +218,6 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                 </Menu.Content>
               </Menu.Container>
             </Menu.Root>
-            </div>
           )}
 
           {/* Share Button - hidden on admin, profile, and settings pages */}
