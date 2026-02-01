@@ -28,14 +28,14 @@ interface HealthFacilitiesLayerProps {
   onFacilityCountChange?: (count: number) => void;
 }
 
-// Available facility types with labels and colors
+// Available facility types with labels and colors (brand palette)
 export const FACILITY_TYPES = [
-  { id: 'hospital', label: 'Hospitals', color: '#dc2626' },
-  { id: 'clinic', label: 'Clinics', color: '#ea580c' },
-  { id: 'doctors', label: 'Doctors', color: '#0891b2' },
-  { id: 'pharmacy', label: 'Pharmacies', color: '#16a34a' },
-  { id: 'dentist', label: 'Dentists', color: '#8b5cf6' },
-  { id: 'health_facility', label: 'Other Health Facilities', color: '#3b82f6' },
+  { id: 'hospital', label: 'Hospitals', color: '#dc2625' },        // Primary Scarlet
+  { id: 'clinic', label: 'Clinics', color: '#4c5568' },            // Blue Slate
+  { id: 'doctors', label: 'Doctors', color: '#7b95a7' },           // Cool Steel
+  { id: 'pharmacy', label: 'Pharmacies', color: '#3d6b5c' },       // Muted Teal (harmonizes with cool palette)
+  { id: 'dentist', label: 'Dentists', color: '#6b5b7a' },          // Muted Slate Purple (harmonizes)
+  { id: 'health_facility', label: 'Other Health Facilities', color: '#94a3af' }, // Medium Gray (visible variant of Pale Slate)
 ] as const;
 
 const SOURCE_ID = 'health-facilities-source';
@@ -174,15 +174,15 @@ async function backgroundRefreshFromAPI(
   }
 }
 
-// Facility type to color mapping
+// Facility type to color mapping (brand palette)
 const FACILITY_COLORS: Record<string, string> = {
-  hospital: '#dc2626', // red
-  clinic: '#ea580c', // orange
-  doctors: '#0891b2', // cyan
-  pharmacy: '#16a34a', // green
-  dentist: '#8b5cf6', // purple
-  health_facility: '#3b82f6', // blue
-  default: '#6b7280', // gray
+  hospital: '#dc2625',      // Primary Scarlet
+  clinic: '#4c5568',        // Blue Slate
+  doctors: '#7b95a7',       // Cool Steel
+  pharmacy: '#3d6b5c',      // Muted Teal
+  dentist: '#6b5b7a',       // Muted Slate Purple
+  health_facility: '#94a3af', // Medium Gray
+  default: '#cfd0d5',       // Pale Slate
 };
 
 export default function HealthFacilitiesLayer({
