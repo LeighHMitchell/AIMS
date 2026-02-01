@@ -1,0 +1,155 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "source": "Sample data - Replace with actual OCHA HDX flood risk data",
+    "country": "MM",
+    "lastUpdated": "2026-02-01",
+    "note": "These are representative flood-prone zones. For production, download actual flood risk data from OCHA Humanitarian Data Exchange (HDX)"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "ayeyarwady-delta-1",
+      "properties": {
+        "id": "ayeyarwady-delta-1",
+        "name": "Ayeyarwady Delta - Western Zone",
+        "riskLevel": "very_high",
+        "description": "Major flood-prone area in the Ayeyarwady Delta region",
+        "source": "Sample Data",
+        "region": "Ayeyarwady"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[94.5, 16.0], [95.0, 16.0], [95.2, 16.3], [95.5, 16.5], [95.5, 17.0], [95.0, 17.2], [94.5, 17.0], [94.3, 16.5], [94.5, 16.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ayeyarwady-delta-2",
+      "properties": {
+        "id": "ayeyarwady-delta-2",
+        "name": "Ayeyarwady Delta - Eastern Zone",
+        "riskLevel": "very_high",
+        "description": "Eastern delta flood zone near Yangon",
+        "source": "Sample Data",
+        "region": "Ayeyarwady"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[95.5, 16.2], [96.0, 16.0], [96.3, 16.3], [96.5, 16.8], [96.3, 17.0], [95.8, 17.2], [95.5, 17.0], [95.5, 16.2]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "bago-flood-zone",
+      "properties": {
+        "id": "bago-flood-zone",
+        "name": "Bago River Basin",
+        "riskLevel": "high",
+        "description": "Flood-prone area along the Bago River",
+        "source": "Sample Data",
+        "region": "Bago"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[96.0, 17.2], [96.5, 17.0], [96.8, 17.3], [96.8, 17.8], [96.5, 18.2], [96.0, 18.0], [95.8, 17.6], [96.0, 17.2]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "rakhine-coastal",
+      "properties": {
+        "id": "rakhine-coastal",
+        "name": "Rakhine Coastal Zone",
+        "riskLevel": "high",
+        "description": "Coastal flooding and cyclone surge risk area",
+        "source": "Sample Data",
+        "region": "Rakhine"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[92.5, 19.0], [93.0, 18.8], [93.5, 19.2], [93.8, 20.0], [93.5, 20.5], [93.0, 20.8], [92.5, 20.5], [92.3, 19.8], [92.5, 19.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sagaing-flood-zone",
+      "properties": {
+        "id": "sagaing-flood-zone",
+        "name": "Chindwin River Valley",
+        "riskLevel": "medium",
+        "description": "Seasonal flooding along the Chindwin River",
+        "source": "Sample Data",
+        "region": "Sagaing"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[94.5, 22.0], [95.0, 21.8], [95.5, 22.2], [95.5, 23.0], [95.2, 23.5], [94.8, 23.5], [94.5, 23.0], [94.3, 22.5], [94.5, 22.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "mandalay-irrawaddy",
+      "properties": {
+        "id": "mandalay-irrawaddy",
+        "name": "Irrawaddy River - Mandalay Section",
+        "riskLevel": "medium",
+        "description": "River flooding risk near Mandalay",
+        "source": "Sample Data",
+        "region": "Mandalay"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[95.8, 21.5], [96.2, 21.3], [96.5, 21.6], [96.5, 22.2], [96.2, 22.5], [95.8, 22.3], [95.6, 21.9], [95.8, 21.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "mon-coastal",
+      "properties": {
+        "id": "mon-coastal",
+        "name": "Mon State Coastal Plain",
+        "riskLevel": "medium",
+        "description": "Coastal and river flooding in Mon State",
+        "source": "Sample Data",
+        "region": "Mon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[97.0, 15.5], [97.5, 15.3], [97.8, 15.6], [97.8, 16.2], [97.5, 16.5], [97.0, 16.3], [96.8, 15.9], [97.0, 15.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kachin-rivers",
+      "properties": {
+        "id": "kachin-rivers",
+        "name": "Kachin River Valleys",
+        "riskLevel": "low",
+        "description": "Flash flood risk in mountainous river valleys",
+        "source": "Sample Data",
+        "region": "Kachin"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[96.5, 25.0], [97.0, 24.8], [97.5, 25.2], [97.8, 26.0], [97.5, 26.5], [97.0, 26.5], [96.5, 26.0], [96.3, 25.5], [96.5, 25.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "shan-plateau",
+      "properties": {
+        "id": "shan-plateau",
+        "name": "Shan Plateau Lowlands",
+        "riskLevel": "low",
+        "description": "Localized flooding in low-lying areas of Shan State",
+        "source": "Sample Data",
+        "region": "Shan"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[97.5, 20.5], [98.0, 20.3], [98.5, 20.6], [98.5, 21.2], [98.0, 21.5], [97.5, 21.3], [97.3, 20.9], [97.5, 20.5]]]
+      }
+    }
+  ]
+}

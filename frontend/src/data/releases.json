@@ -1,6 +1,18 @@
 {
-  "currentVersion": "1.11.0",
+  "currentVersion": "1.12.0",
   "releases": [
+    {
+      "version": "1.12.0",
+      "date": "2026-02-01",
+      "changes": [
+        "OSM Power Grid layer - transmission lines, substations, and power plants from OpenStreetMap",
+        "Power lines colored by voltage level: red (>220kV), dark (110-220kV), light (distribution)",
+        "Flood Risk Zones layer - visualize flood-prone areas with risk level filtering",
+        "Flood zones shown as semi-transparent polygons with Very High/High/Medium/Low risk levels",
+        "Sub-filters for both layers - toggle specific infrastructure types or risk levels",
+        "Layers popover now shows count of active layers in badge"
+      ]
+    },
     {
       "version": "1.11.0",
       "date": "2026-02-01",

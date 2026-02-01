@@ -24,7 +24,9 @@ import {
   Mountain,
   X,
   Cross,
-  Layers
+  Layers,
+  Zap,
+  Waves
 } from 'lucide-react';
 import {
   Table,
@@ -57,9 +59,13 @@ const MarkersLayer = dynamic(() => import('./maps-v2/MarkersLayer'), { ssr: fals
 const HeatmapLayer = dynamic(() => import('./maps-v2/HeatmapLayer'), { ssr: false });
 const MapFlyTo = dynamic(() => import('./maps-v2/MapFlyTo'), { ssr: false });
 const HealthFacilitiesLayer = dynamic(() => import('./maps-v2/HealthFacilitiesLayer'), { ssr: false });
+const PowerGridLayer = dynamic(() => import('./maps-v2/PowerGridLayer'), { ssr: false });
+const FloodRiskLayer = dynamic(() => import('./maps-v2/FloodRiskLayer'), { ssr: false });
 
-// Import facility types for filter UI (not a component, regular import)
+// Import types for filter UI (not components, regular imports)
 import { FACILITY_TYPES } from './maps-v2/HealthFacilitiesLayer';
+import { POWER_GRID_TYPES } from './maps-v2/PowerGridLayer';
+import { FLOOD_RISK_LEVELS } from './maps-v2/FloodRiskLayer';
 
 // HOT (Humanitarian OpenStreetMap Team) raster tile style
 // Using local proxy to bypass CORS restrictions from the French OSM server
@@ -387,6 +393,10 @@ export default function Atlas() {
   // Data layers visibility
   const [showHealthFacilities, setShowHealthFacilities] = useState(false);
   const [healthFacilityTypes, setHealthFacilityTypes] = useState<string[]>([]); // Empty = show all
+  const [showPowerGrid, setShowPowerGrid] = useState(false);
+  const [powerGridTypes, setPowerGridTypes] = useState<string[]>([]); // Empty = show all
+  const [showFloodRisk, setShowFloodRisk] = useState(false);
+  const [floodRiskLevels, setFloodRiskLevels] = useState<string[]>([]); // Empty = show all
   const [homeCountryCode, setHomeCountryCode] = useState<string>('MM'); // Default to Myanmar
   const [layersPopoverOpen, setLayersPopoverOpen] = useState(false);
 
@@ -401,6 +411,14 @@ export default function Atlas() {
   // Health facilities loading state
   const [healthFacilitiesLoading, setHealthFacilitiesLoading] = useState(false);
   const [healthFacilitiesCount, setHealthFacilitiesCount] = useState<number | null>(null);
+
+  // Power grid loading state
+  const [powerGridLoading, setPowerGridLoading] = useState(false);
+  const [powerGridCount, setPowerGridCount] = useState<number | null>(null);
+
+  // Flood risk loading state
+  const [floodRiskLoading, setFloodRiskLoading] = useState(false);
+  const [floodRiskCount, setFloodRiskCount] = useState<number | null>(null);
 
   // Selected health facility for popup
   const [selectedFacility, setSelectedFacility] = useState<{
@@ -1031,11 +1049,15 @@ export default function Atlas() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className={`bg-white shadow-md border-gray-300 h-9 px-3 gap-2 ${showHealthFacilities ? 'bg-blue-50 border-blue-300 text-blue-700' : ''}`}
+                            className={`bg-white shadow-md border-gray-300 h-9 px-3 gap-2 ${(showHealthFacilities || showPowerGrid || showFloodRisk) ? 'bg-blue-50 border-blue-300 text-blue-700' : ''}`}
                           >
                             <Layers className="h-4 w-4" />
                             <span className="text-xs">Layers</span>
-                            {showHealthFacilities && <span className="bg-blue-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">1</span>}
+                            {(showHealthFacilities || showPowerGrid || showFloodRisk) && (
+                              <span className="bg-blue-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                                {[showHealthFacilities, showPowerGrid, showFloodRisk].filter(Boolean).length}
+                              </span>
+                            )}
                             <ChevronsUpDown className="h-3 w-3 opacity-50" />
                           </Button>
                         </PopoverTrigger>
@@ -1144,9 +1166,174 @@ export default function Atlas() {
                               )}
                             </div>
 
-                            {/* Placeholder for future layers */}
-                            <div className="mt-2 p-2 border border-dashed border-gray-200 rounded-md">
-                              <p className="text-xs text-muted-foreground text-center">More layers coming soon</p>
+                            {/* Power Grid Layer */}
+                            <div className={`rounded-md mt-1 ${showPowerGrid ? 'bg-amber-50' : ''}`}>
+                              <div
+                                className="flex items-center gap-3 p-2 cursor-pointer hover:bg-muted/50 rounded-md"
+                                onClick={() => {
+                                  setShowPowerGrid(!showPowerGrid);
+                                  if (showPowerGrid) {
+                                    setPowerGridCount(null);
+                                    setPowerGridTypes([]);
+                                  }
+                                }}
+                              >
+                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showPowerGrid ? 'bg-amber-500 border-amber-500' : 'border-gray-300'}`}>
+                                  {showPowerGrid && <Check className="h-3 w-3 text-white" />}
+                                </div>
+                                <Zap className="h-4 w-4 text-amber-600" />
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium">OSM Power Grid</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {powerGridLoading ? 'Loading...' :
+                                     powerGridCount !== null ? `${powerGridCount.toLocaleString()} features` :
+                                     'Lines, substations, plants'}
+                                  </div>
+                                </div>
+                                {powerGridLoading && (
+                                  <div className="h-4 w-4 border-2 border-amber-300 border-t-amber-600 rounded-full animate-spin" />
+                                )}
+                              </div>
+
+                              {/* Power Grid Type Sub-filters */}
+                              {showPowerGrid && (
+                                <div className="ml-6 pb-2 space-y-1">
+                                  <div className="flex items-center justify-between px-2 py-1">
+                                    <span className="text-xs text-muted-foreground">Filter by type:</span>
+                                    {powerGridTypes.length > 0 && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPowerGridTypes([]);
+                                        }}
+                                        className="text-xs text-amber-600 hover:text-amber-800"
+                                      >
+                                        Show all
+                                      </button>
+                                    )}
+                                  </div>
+                                  {POWER_GRID_TYPES.map((type) => (
+                                    <div
+                                      key={type.id}
+                                      className="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-white/50 rounded"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPowerGridTypes(prev => {
+                                          if (prev.length === 0) return [type.id];
+                                          else if (prev.includes(type.id)) return prev.filter(t => t !== type.id);
+                                          else return [...prev, type.id];
+                                        });
+                                      }}
+                                    >
+                                      <div
+                                        className={`h-3 w-3 rounded-sm border flex items-center justify-center ${
+                                          powerGridTypes.length === 0 || powerGridTypes.includes(type.id) ? 'border-amber-500' : 'border-gray-300'
+                                        }`}
+                                        style={{
+                                          backgroundColor: powerGridTypes.length === 0 || powerGridTypes.includes(type.id) ? type.color : 'transparent'
+                                        }}
+                                      >
+                                        {(powerGridTypes.length === 0 || powerGridTypes.includes(type.id)) && (
+                                          <Check className="h-2 w-2 text-white" />
+                                        )}
+                                      </div>
+                                      <span
+                                        className="text-xs"
+                                        style={{
+                                          color: powerGridTypes.length === 0 || powerGridTypes.includes(type.id) ? type.color : '#9ca3af'
+                                        }}
+                                      >
+                                        {type.label}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Flood Risk Layer */}
+                            <div className={`rounded-md mt-1 ${showFloodRisk ? 'bg-cyan-50' : ''}`}>
+                              <div
+                                className="flex items-center gap-3 p-2 cursor-pointer hover:bg-muted/50 rounded-md"
+                                onClick={() => {
+                                  setShowFloodRisk(!showFloodRisk);
+                                  if (showFloodRisk) {
+                                    setFloodRiskCount(null);
+                                    setFloodRiskLevels([]);
+                                  }
+                                }}
+                              >
+                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showFloodRisk ? 'bg-cyan-500 border-cyan-500' : 'border-gray-300'}`}>
+                                  {showFloodRisk && <Check className="h-3 w-3 text-white" />}
+                                </div>
+                                <Waves className="h-4 w-4 text-cyan-600" />
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium">Flood Risk Zones</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {floodRiskLoading ? 'Loading...' :
+                                     floodRiskCount !== null ? `${floodRiskCount.toLocaleString()} zones` :
+                                     'Flood hazard areas'}
+                                  </div>
+                                </div>
+                                {floodRiskLoading && (
+                                  <div className="h-4 w-4 border-2 border-cyan-300 border-t-cyan-600 rounded-full animate-spin" />
+                                )}
+                              </div>
+
+                              {/* Flood Risk Level Sub-filters */}
+                              {showFloodRisk && (
+                                <div className="ml-6 pb-2 space-y-1">
+                                  <div className="flex items-center justify-between px-2 py-1">
+                                    <span className="text-xs text-muted-foreground">Filter by risk:</span>
+                                    {floodRiskLevels.length > 0 && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setFloodRiskLevels([]);
+                                        }}
+                                        className="text-xs text-cyan-600 hover:text-cyan-800"
+                                      >
+                                        Show all
+                                      </button>
+                                    )}
+                                  </div>
+                                  {FLOOD_RISK_LEVELS.map((level) => (
+                                    <div
+                                      key={level.id}
+                                      className="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-white/50 rounded"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setFloodRiskLevels(prev => {
+                                          if (prev.length === 0) return [level.id];
+                                          else if (prev.includes(level.id)) return prev.filter(l => l !== level.id);
+                                          else return [...prev, level.id];
+                                        });
+                                      }}
+                                    >
+                                      <div
+                                        className={`h-3 w-3 rounded-sm border flex items-center justify-center ${
+                                          floodRiskLevels.length === 0 || floodRiskLevels.includes(level.id) ? 'border-cyan-500' : 'border-gray-300'
+                                        }`}
+                                        style={{
+                                          backgroundColor: floodRiskLevels.length === 0 || floodRiskLevels.includes(level.id) ? level.color : 'transparent'
+                                        }}
+                                      >
+                                        {(floodRiskLevels.length === 0 || floodRiskLevels.includes(level.id)) && (
+                                          <Check className="h-2 w-2 text-white" />
+                                        )}
+                                      </div>
+                                      <span
+                                        className="text-xs"
+                                        style={{
+                                          color: floodRiskLevels.length === 0 || floodRiskLevels.includes(level.id) ? level.color : '#9ca3af'
+                                        }}
+                                      >
+                                        {level.label}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </PopoverContent>
@@ -1306,6 +1493,24 @@ export default function Atlas() {
                       </div>
                     </MapPopup>
                   )}
+
+                  {/* Power Grid Layer */}
+                  <PowerGridLayer
+                    country={homeCountryCode}
+                    visible={showPowerGrid}
+                    infrastructureTypes={powerGridTypes}
+                    onLoadingChange={setPowerGridLoading}
+                    onFeatureCountChange={setPowerGridCount}
+                  />
+
+                  {/* Flood Risk Layer */}
+                  <FloodRiskLayer
+                    country={homeCountryCode}
+                    visible={showFloodRisk}
+                    riskLevels={floodRiskLevels}
+                    onLoadingChange={setFloodRiskLoading}
+                    onZoneCountChange={setFloodRiskCount}
+                  />
 
                   {/* Position Tracker - saves position for style changes */}
                   <MapPositionTracker
