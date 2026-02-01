@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
-import path from 'path';
 
 /**
  * API endpoint for flood risk zone data
@@ -40,31 +38,28 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Try to load from static file
-    const filePath = path.join(process.cwd(), 'public', 'data', 'flood-risk', `${country.toLowerCase()}.json`);
+    // Get the base URL from the request
+    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+    const host = request.headers.get('host') || 'localhost:3000';
+    const baseUrl = `${protocol}://${host}`;
 
-    try {
-      const fileContent = await readFile(filePath, 'utf-8');
-      const geoJson = JSON.parse(fileContent);
+    // Fetch from public static file
+    const staticUrl = `${baseUrl}/data/flood-risk/${country.toLowerCase()}.json`;
+    console.log(`[FloodRisk] Fetching from: ${staticUrl}`);
 
-      console.log(`[FloodRisk] Loaded ${geoJson.features?.length || 0} zones for ${country}`);
+    const response = await fetch(staticUrl, {
+      next: { revalidate: 86400 }, // Cache for 24 hours
+    });
 
-      return NextResponse.json(geoJson, {
-        headers: {
-          'Cache-Control': 'public, max-age=86400, s-maxage=604800', // Cache for 1 day / 7 days
-        },
-      });
-    } catch (fileError) {
-      // File doesn't exist - return empty but valid GeoJSON
-      console.log(`[FloodRisk] No data file found for ${country}, returning empty collection`);
-
+    if (!response.ok) {
+      console.log(`[FloodRisk] Static file not found for ${country}`);
       return NextResponse.json({
         type: 'FeatureCollection',
         features: [],
         metadata: {
           country,
           source: 'No data available',
-          note: 'Flood risk data file not found. Please add data to /public/data/flood-risk/{country}.json',
+          note: 'Flood risk data file not found.',
         },
       }, {
         headers: {
@@ -72,6 +67,15 @@ export async function GET(request: NextRequest) {
         },
       });
     }
+
+    const geoJson = await response.json();
+    console.log(`[FloodRisk] Loaded ${geoJson.features?.length || 0} zones for ${country}`);
+
+    return NextResponse.json(geoJson, {
+      headers: {
+        'Cache-Control': 'public, max-age=86400, s-maxage=604800',
+      },
+    });
   } catch (error) {
     console.error('[FloodRisk] Error:', error);
     return NextResponse.json(
