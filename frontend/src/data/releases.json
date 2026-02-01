@@ -7,6 +7,7 @@
       "changes": [
         "New Layers popover in Atlas map - extensible panel for toggling data layers",
         "OSM Health Facilities layer renamed from 'Health' to indicate OpenStreetMap data source",
+        "Facility type sub-filters - toggle visibility of hospitals, clinics, pharmacies, dentists, doctors individually",
         "Layers button shows active layer count badge when layers are enabled",
         "Rolodex filter panel redesigned with organization type categories and improved UX",
         "Fixed QuickAddActivityModal closing when clicking on dropdown popovers",

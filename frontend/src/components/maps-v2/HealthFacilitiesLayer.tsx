@@ -22,10 +22,21 @@ interface HealthFacility {
 interface HealthFacilitiesLayerProps {
   country: string; // ISO country code
   visible?: boolean;
+  facilityTypes?: string[]; // Filter to only show these facility types (empty = show all)
   onFacilityClick?: (facility: HealthFacility, coordinates: [number, number]) => void;
   onLoadingChange?: (loading: boolean) => void;
   onFacilityCountChange?: (count: number) => void;
 }
+
+// Available facility types with labels and colors
+export const FACILITY_TYPES = [
+  { id: 'hospital', label: 'Hospitals', color: '#dc2626' },
+  { id: 'clinic', label: 'Clinics', color: '#ea580c' },
+  { id: 'doctors', label: 'Doctors', color: '#0891b2' },
+  { id: 'pharmacy', label: 'Pharmacies', color: '#16a34a' },
+  { id: 'dentist', label: 'Dentists', color: '#8b5cf6' },
+  { id: 'health_facility', label: 'Other Health Facilities', color: '#3b82f6' },
+] as const;
 
 const SOURCE_ID = 'health-facilities-source';
 const LAYER_ID = 'health-facilities-layer';
@@ -177,6 +188,7 @@ const FACILITY_COLORS: Record<string, string> = {
 export default function HealthFacilitiesLayer({
   country,
   visible = true,
+  facilityTypes = [],
   onFacilityClick,
   onLoadingChange,
   onFacilityCountChange,
@@ -186,6 +198,14 @@ export default function HealthFacilitiesLayer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Filter facilities by type
+  const filteredFacilities = facilities ? {
+    ...facilities,
+    features: facilityTypes.length === 0
+      ? facilities.features
+      : facilities.features.filter(f => facilityTypes.includes(f.properties?.type || ''))
+  } : null;
+
   // Track if we've already loaded for this country
   const loadedCountryRef = useRef<string | null>(null);
 
@@ -193,6 +213,13 @@ export default function HealthFacilitiesLayer({
   useEffect(() => {
     onLoadingChange?.(loading);
   }, [loading, onLoadingChange]);
+
+  // Update count when filter changes
+  useEffect(() => {
+    if (filteredFacilities) {
+      onFacilityCountChange?.(filteredFacilities.features.length);
+    }
+  }, [filteredFacilities?.features.length, onFacilityCountChange]);
 
   // Fetch facilities when country changes or visibility turns on
   useEffect(() => {
@@ -288,10 +315,10 @@ export default function HealthFacilitiesLayer({
 
   // Add/update map layers
   useEffect(() => {
-    if (!map || !isLoaded || !facilities) return;
+    if (!map || !isLoaded || !filteredFacilities) return;
 
-    // Create a data signature to detect if data actually changed
-    const dataSignature = `${facilities.features.length}-${loadedCountryRef.current}`;
+    // Create a data signature to detect if data actually changed (including filter)
+    const dataSignature = `${filteredFacilities.features.length}-${loadedCountryRef.current}-${facilityTypes.sort().join(',')}`;
 
     // If layers already exist with same data, just return (visibility handled separately)
     if (layersAddedRef.current && currentDataRef.current === dataSignature) {
@@ -304,7 +331,7 @@ export default function HealthFacilitiesLayer({
     if (map.getLayer(LAYER_ID)) map.removeLayer(LAYER_ID);
     if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
 
-    if (facilities.features.length === 0) {
+    if (filteredFacilities.features.length === 0) {
       layersAddedRef.current = false;
       currentDataRef.current = null;
       return;
@@ -313,7 +340,7 @@ export default function HealthFacilitiesLayer({
     // Add source with clustering
     map.addSource(SOURCE_ID, {
       type: 'geojson',
-      data: facilities,
+      data: filteredFacilities,
       cluster: true,
       clusterMaxZoom: 12,
       clusterRadius: 50,
@@ -480,7 +507,7 @@ export default function HealthFacilitiesLayer({
         // Map might be destroyed
       }
     };
-  }, [map, isLoaded, facilities, onFacilityClick, visible]);
+  }, [map, isLoaded, filteredFacilities, facilityTypes, onFacilityClick, visible]);
 
   // Update visibility when prop changes
   useEffect(() => {

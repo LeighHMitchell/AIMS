@@ -58,6 +58,9 @@ const HeatmapLayer = dynamic(() => import('./maps-v2/HeatmapLayer'), { ssr: fals
 const MapFlyTo = dynamic(() => import('./maps-v2/MapFlyTo'), { ssr: false });
 const HealthFacilitiesLayer = dynamic(() => import('./maps-v2/HealthFacilitiesLayer'), { ssr: false });
 
+// Import facility types for filter UI (not a component, regular import)
+import { FACILITY_TYPES } from './maps-v2/HealthFacilitiesLayer';
+
 // HOT (Humanitarian OpenStreetMap Team) raster tile style
 // Using local proxy to bypass CORS restrictions from the French OSM server
 const HOT_STYLE = {
@@ -383,6 +386,7 @@ export default function Atlas() {
 
   // Data layers visibility
   const [showHealthFacilities, setShowHealthFacilities] = useState(false);
+  const [healthFacilityTypes, setHealthFacilityTypes] = useState<string[]>([]); // Empty = show all
   const [homeCountryCode, setHomeCountryCode] = useState<string>('MM'); // Default to Myanmar
   const [layersPopoverOpen, setLayersPopoverOpen] = useState(false);
 
@@ -1035,36 +1039,108 @@ export default function Atlas() {
                             <ChevronsUpDown className="h-3 w-3 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[280px] p-0" align="end">
+                        <PopoverContent className="w-[300px] p-0" align="end">
                           <div className="p-3 border-b">
                             <h4 className="font-medium text-sm">Data Layers</h4>
                             <p className="text-xs text-muted-foreground">Toggle additional map layers</p>
                           </div>
                           <div className="p-2">
                             {/* OSM Health Facilities Layer */}
-                            <div
-                              className={`flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-muted/50 ${showHealthFacilities ? 'bg-blue-50' : ''}`}
-                              onClick={() => {
-                                setShowHealthFacilities(!showHealthFacilities);
-                                if (showHealthFacilities) {
-                                  setHealthFacilitiesCount(null);
-                                }
-                              }}
-                            >
-                              <div className={`h-4 w-4 rounded border flex items-center justify-center ${showHealthFacilities ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                                {showHealthFacilities && <Check className="h-3 w-3 text-white" />}
-                              </div>
-                              <Cross className="h-4 w-4 text-red-500" />
-                              <div className="flex-1">
-                                <div className="text-sm font-medium">OSM Health Facilities</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {healthFacilitiesLoading ? 'Loading...' :
-                                   healthFacilitiesCount ? `${healthFacilitiesCount.toLocaleString()} facilities` :
-                                   'Hospitals, clinics, pharmacies'}
+                            <div className={`rounded-md ${showHealthFacilities ? 'bg-blue-50' : ''}`}>
+                              <div
+                                className="flex items-center gap-3 p-2 cursor-pointer hover:bg-muted/50 rounded-md"
+                                onClick={() => {
+                                  setShowHealthFacilities(!showHealthFacilities);
+                                  if (showHealthFacilities) {
+                                    setHealthFacilitiesCount(null);
+                                    setHealthFacilityTypes([]);
+                                  }
+                                }}
+                              >
+                                <div className={`h-4 w-4 rounded border flex items-center justify-center ${showHealthFacilities ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+                                  {showHealthFacilities && <Check className="h-3 w-3 text-white" />}
                                 </div>
+                                <Cross className="h-4 w-4 text-red-500" />
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium">OSM Health Facilities</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {healthFacilitiesLoading ? 'Loading...' :
+                                     healthFacilitiesCount !== null ? `${healthFacilitiesCount.toLocaleString()} facilities` :
+                                     'Hospitals, clinics, pharmacies'}
+                                  </div>
+                                </div>
+                                {healthFacilitiesLoading && (
+                                  <div className="h-4 w-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                                )}
                               </div>
-                              {healthFacilitiesLoading && (
-                                <div className="h-4 w-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+
+                              {/* Facility Type Sub-filters */}
+                              {showHealthFacilities && (
+                                <div className="ml-6 pb-2 space-y-1">
+                                  <div className="flex items-center justify-between px-2 py-1">
+                                    <span className="text-xs text-muted-foreground">Filter by type:</span>
+                                    {healthFacilityTypes.length > 0 && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setHealthFacilityTypes([]);
+                                        }}
+                                        className="text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        Show all
+                                      </button>
+                                    )}
+                                  </div>
+                                  {FACILITY_TYPES.map((type) => (
+                                    <div
+                                      key={type.id}
+                                      className="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-white/50 rounded"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setHealthFacilityTypes(prev => {
+                                          if (prev.length === 0) {
+                                            // Currently showing all, switch to showing only this type
+                                            return [type.id];
+                                          } else if (prev.includes(type.id)) {
+                                            // Remove this type
+                                            const newTypes = prev.filter(t => t !== type.id);
+                                            return newTypes; // Empty array means show all
+                                          } else {
+                                            // Add this type
+                                            return [...prev, type.id];
+                                          }
+                                        });
+                                      }}
+                                    >
+                                      <div
+                                        className={`h-3 w-3 rounded-sm border flex items-center justify-center ${
+                                          healthFacilityTypes.length === 0 || healthFacilityTypes.includes(type.id)
+                                            ? 'border-blue-500'
+                                            : 'border-gray-300'
+                                        }`}
+                                        style={{
+                                          backgroundColor: healthFacilityTypes.length === 0 || healthFacilityTypes.includes(type.id)
+                                            ? type.color
+                                            : 'transparent'
+                                        }}
+                                      >
+                                        {(healthFacilityTypes.length === 0 || healthFacilityTypes.includes(type.id)) && (
+                                          <Check className="h-2 w-2 text-white" />
+                                        )}
+                                      </div>
+                                      <span
+                                        className="text-xs"
+                                        style={{
+                                          color: healthFacilityTypes.length === 0 || healthFacilityTypes.includes(type.id)
+                                            ? type.color
+                                            : '#9ca3af'
+                                        }}
+                                      >
+                                        {type.label}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
                               )}
                             </div>
 
@@ -1122,6 +1198,7 @@ export default function Atlas() {
                   <HealthFacilitiesLayer
                     country={homeCountryCode}
                     visible={showHealthFacilities}
+                    facilityTypes={healthFacilityTypes}
                     onFacilityClick={(facility, coordinates) => {
                       setSelectedFacility({ facility, coordinates });
                     }}
