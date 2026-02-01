@@ -52,7 +52,7 @@ import { useLoadingBar } from '@/hooks/useLoadingBar';
 import { Map, MapControls, useMap, MapPopup } from '@/components/ui/map';
 
 // Dynamic import for SubnationalChoroplethMap (MapLibre-based with township support)
-const SubnationalChoroplethMap = dynamic(() => import('@/components/maps/SubnationalChoroplethMap').then(mod => ({ default: mod.SubnationalChoroplethMap })), { ssr: false });
+const SubnationalChoroplethMap = dynamic(() => import('@/components/maps/SubnationalChoroplethMap'), { ssr: false });
 
 // Dynamic import for MapLibre-based layers
 const MarkersLayer = dynamic(() => import('./maps-v2/MarkersLayer'), { ssr: false });
@@ -908,14 +908,14 @@ export default function Atlas() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={orgFilterOpen}
-                        className="w-[180px] justify-between text-xs h-9 font-normal"
+                        className="w-[360px] justify-between text-xs h-9 font-normal"
                       >
                         <span className="truncate">
                           {orgFilter.length === 0
-                            ? 'All'
+                            ? 'All Organizations'
                             : orgFilter.length === 1
                               ? orgFilter[0]
-                              : `${orgFilter.length} selected`}
+                              : `${orgFilter.length} organizations`}
                         </span>
                       <div className="flex items-center gap-1 shrink-0">
                         {orgFilter.length > 0 && (
@@ -992,7 +992,7 @@ export default function Atlas() {
                     activityCounts={sectorActivityCounts}
                     showOnlyActiveSectors={showOnlyActiveSectors}
                     onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
-                    className="w-[160px] h-9 text-xs"
+                    className="w-[320px] h-9 text-xs"
                   />
                 </div>
 
