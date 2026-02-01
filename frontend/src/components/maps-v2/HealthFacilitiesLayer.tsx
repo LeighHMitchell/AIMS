@@ -346,7 +346,7 @@ export default function HealthFacilitiesLayer({
       clusterRadius: 50,
     });
 
-    // Add cluster circles
+    // Add cluster circles (brand palette)
     map.addLayer({
       id: CLUSTER_LAYER_ID,
       type: 'circle',
@@ -356,11 +356,11 @@ export default function HealthFacilitiesLayer({
         'circle-color': [
           'step',
           ['get', 'point_count'],
-          '#51bbd6', // < 10
+          '#7b95a7', // < 10: Cool Steel
           10,
-          '#f1f075', // 10-50
+          '#4c5568', // 10-50: Blue Slate
           50,
-          '#f28cb1', // > 50
+          '#dc2625', // > 50: Primary Scarlet
         ],
         'circle-radius': [
           'step',
@@ -372,7 +372,7 @@ export default function HealthFacilitiesLayer({
           25, // > 50
         ],
         'circle-stroke-width': 2,
-        'circle-stroke-color': '#fff',
+        'circle-stroke-color': '#f1f4f8', // Platinum
       },
     });
 
@@ -388,7 +388,7 @@ export default function HealthFacilitiesLayer({
         'text-size': 12,
       },
       paint: {
-        'text-color': '#333',
+        'text-color': '#f1f4f8', // Platinum (white) for contrast on dark backgrounds
       },
     });
 
