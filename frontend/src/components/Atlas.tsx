@@ -1035,7 +1035,7 @@ export default function Atlas() {
                     {/* Map Style & Controls */}
                     <div className="flex items-center gap-2 shrink-0">
                       <Select value={mapStyle} onValueChange={(value) => setMapStyle(value as MapStyleKey)}>
-                        <SelectTrigger className="w-[160px] bg-white shadow-md border-gray-300 text-xs h-9">
+                        <SelectTrigger className="w-[320px] bg-white shadow-md border-gray-300 text-xs h-9">
                           <SelectValue placeholder="Map style" />
                         </SelectTrigger>
                         <SelectContent className="z-[9999]">
