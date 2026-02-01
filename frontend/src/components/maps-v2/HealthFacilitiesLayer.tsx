@@ -80,6 +80,29 @@ function cacheFacilities(country: string, data: GeoJSON.FeatureCollection): void
   }
 }
 
+// Countries with pre-generated static files (served from CDN, instant load)
+const STATIC_FILE_COUNTRIES = ['MM']; // Add more as needed
+
+// Try to load from static file first (much faster than API)
+async function loadFromStaticFile(country: string): Promise<GeoJSON.FeatureCollection | null> {
+  if (!STATIC_FILE_COUNTRIES.includes(country.toUpperCase())) {
+    return null;
+  }
+
+  try {
+    console.log(`[HealthFacilitiesLayer] Loading from static file for ${country}...`);
+    const response = await fetch(`/data/health-facilities/${country.toLowerCase()}.json`);
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`[HealthFacilitiesLayer] Loaded ${data.features?.length || 0} facilities from static file`);
+      return data;
+    }
+  } catch (e) {
+    console.warn(`[HealthFacilitiesLayer] Could not load static file for ${country}`);
+  }
+  return null;
+}
+
 // Facility type to color mapping
 const FACILITY_COLORS: Record<string, string> = {
   hospital: '#dc2626', // red
@@ -140,7 +163,19 @@ export default function HealthFacilitiesLayer({
       setError(null);
 
       try {
-        console.log(`[HealthFacilitiesLayer] Fetching facilities for ${country}...`);
+        // Try static file first (instant from CDN)
+        const staticData = await loadFromStaticFile(country);
+        if (staticData && staticData.features) {
+          cacheFacilities(country, staticData);
+          setFacilities(staticData);
+          loadedCountryRef.current = country;
+          onFacilityCountChange?.(staticData.features.length);
+          setLoading(false);
+          return;
+        }
+
+        // Fall back to API
+        console.log(`[HealthFacilitiesLayer] Fetching from API for ${country}...`);
         const response = await fetch(`/api/layers/health-facilities?country=${country}`);
 
         if (!response.ok) {
