@@ -83,6 +83,27 @@ function cacheFacilities(country: string, data: GeoJSON.FeatureCollection): void
 // Countries with pre-generated static files (served from CDN, instant load)
 const STATIC_FILE_COUNTRIES = ['MM']; // Add more as needed
 
+// How often to refresh data from API (7 days in milliseconds)
+const REFRESH_INTERVAL = 7 * 24 * 60 * 60 * 1000;
+
+// Track when we last refreshed from API
+function getLastRefreshTime(country: string): number {
+  try {
+    const stored = localStorage.getItem(`health-facilities-refresh-${country}`);
+    return stored ? parseInt(stored, 10) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function setLastRefreshTime(country: string): void {
+  try {
+    localStorage.setItem(`health-facilities-refresh-${country}`, Date.now().toString());
+  } catch {
+    // localStorage might not be available
+  }
+}
+
 // Try to load from static file first (much faster than API)
 async function loadFromStaticFile(country: string): Promise<GeoJSON.FeatureCollection | null> {
   if (!STATIC_FILE_COUNTRIES.includes(country.toUpperCase())) {
@@ -101,6 +122,45 @@ async function loadFromStaticFile(country: string): Promise<GeoJSON.FeatureColle
     console.warn(`[HealthFacilitiesLayer] Could not load static file for ${country}`);
   }
   return null;
+}
+
+// Background refresh from API (doesn't block UI)
+async function backgroundRefreshFromAPI(
+  country: string,
+  onUpdate: (data: GeoJSON.FeatureCollection) => void
+): Promise<void> {
+  const lastRefresh = getLastRefreshTime(country);
+  const timeSinceRefresh = Date.now() - lastRefresh;
+
+  // Only refresh if it's been more than REFRESH_INTERVAL since last refresh
+  if (lastRefresh > 0 && timeSinceRefresh < REFRESH_INTERVAL) {
+    console.log(`[HealthFacilitiesLayer] Skipping background refresh - last refreshed ${Math.round(timeSinceRefresh / 1000 / 60 / 60)} hours ago`);
+    return;
+  }
+
+  try {
+    console.log(`[HealthFacilitiesLayer] Background refresh from API for ${country}...`);
+    const response = await fetch(`/api/layers/health-facilities?country=${country}`);
+
+    if (!response.ok) {
+      console.warn(`[HealthFacilitiesLayer] Background refresh failed: ${response.status}`);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (data.features && data.features.length > 0) {
+      // Update cache
+      cacheFacilities(country, data);
+      setLastRefreshTime(country);
+
+      // Notify component of new data
+      onUpdate(data);
+      console.log(`[HealthFacilitiesLayer] Background refresh complete: ${data.features.length} facilities`);
+    }
+  } catch (err) {
+    console.warn(`[HealthFacilitiesLayer] Background refresh error:`, err);
+  }
 }
 
 // Facility type to color mapping
@@ -171,10 +231,21 @@ export default function HealthFacilitiesLayer({
           loadedCountryRef.current = country;
           onFacilityCountChange?.(staticData.features.length);
           setLoading(false);
+
+          // Trigger background refresh to get fresh data (won't block UI)
+          backgroundRefreshFromAPI(country, (freshData) => {
+            // Only update if we got more/different data
+            if (freshData.features.length !== staticData.features.length) {
+              setFacilities(freshData);
+              onFacilityCountChange?.(freshData.features.length);
+              console.log(`[HealthFacilitiesLayer] Updated with fresh data: ${freshData.features.length} facilities (was ${staticData.features.length})`);
+            }
+          });
+
           return;
         }
 
-        // Fall back to API
+        // Fall back to API (no static file available)
         console.log(`[HealthFacilitiesLayer] Fetching from API for ${country}...`);
         const response = await fetch(`/api/layers/health-facilities?country=${country}`);
 
