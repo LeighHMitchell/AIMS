@@ -24,10 +24,10 @@ interface FloodRiskLayerProps {
 
 // Risk levels with labels and colors (brand palette with opacity)
 export const FLOOD_RISK_LEVELS = [
-  { id: 'very_high', label: 'Very High Risk', color: '#dc2625', opacity: 0.6 },  // Primary Scarlet
-  { id: 'high', label: 'High Risk', color: '#4c5568', opacity: 0.5 },            // Blue Slate
-  { id: 'medium', label: 'Medium Risk', color: '#7b95a7', opacity: 0.4 },        // Cool Steel
-  { id: 'low', label: 'Low Risk', color: '#cfd0d5', opacity: 0.3 },              // Pale Slate
+  { id: 'very_high', label: 'Very High Risk', color: '#dc2625', opacity: 0.4 },  // Primary Scarlet
+  { id: 'high', label: 'High Risk', color: '#4c5568', opacity: 0.35 },           // Blue Slate
+  { id: 'medium', label: 'Medium Risk', color: '#7b95a7', opacity: 0.3 },        // Cool Steel
+  { id: 'low', label: 'Low Risk', color: '#cfd0d5', opacity: 0.25 },             // Pale Slate
 ] as const;
 
 const SOURCE_ID = 'flood-risk-source';
@@ -204,11 +204,11 @@ export default function FloodRiskLayer({
         'fill-opacity': [
           'match',
           ['get', 'riskLevel'],
-          'very_high', 0.6,
-          'high', 0.5,
-          'medium', 0.4,
-          'low', 0.3,
-          0.3,
+          'very_high', 0.4,
+          'high', 0.35,
+          'medium', 0.3,
+          'low', 0.25,
+          0.25,
         ],
       },
     }, 'health-facilities-layer'); // Insert below other layers if they exist
