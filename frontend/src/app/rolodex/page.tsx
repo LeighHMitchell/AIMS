@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -24,13 +23,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { 
-  Grid3X3, 
+import {
+  Grid3X3,
   Table,
-  RefreshCw, 
-  Download, 
-  Users, 
-  ChevronLeft, 
+  RefreshCw,
+  Download,
+  Users,
+  ChevronLeft,
   ChevronRight,
   AlertCircle,
   ArrowUpDown,
@@ -41,12 +40,11 @@ import {
   Building2,
   FileText,
   ExternalLink,
-  Trash2,
-  Search,
-  X
+  Trash2
 } from 'lucide-react';
 
 import { PersonCard } from '@/components/rolodex/PersonCard';
+import { FilterPanel } from '@/components/rolodex/FilterPanel';
 import { useRolodexData } from '@/components/rolodex/useRolodexData';
 import { LoadingText } from '@/components/ui/loading-text';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -60,7 +58,6 @@ export default function RolodexPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [deleteContact, setDeleteContact] = useState<RolodexPerson | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   
   const {
     people,
@@ -138,22 +135,6 @@ export default function RolodexPage() {
       sortBy, 
       sortOrder: newSortOrder,
       page: 1 // Reset to first page when sorting changes
-    });
-  };
-
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    setFilters({ 
-      search: value || undefined,
-      page: 1 // Reset to first page when search changes
-    });
-  };
-
-  const clearSearch = () => {
-    setSearchTerm('');
-    setFilters({ 
-      search: undefined,
-      page: 1
     });
   };
 
@@ -351,28 +332,29 @@ export default function RolodexPage() {
           </div>
         </div>
 
-        {/* Search Bar with Export */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search by name, email, or organization..."
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10 pr-10"
+        {/* Filter Panel */}
+        <div className="flex items-start gap-4">
+          <div className="flex-1">
+            <FilterPanel
+              filters={filters}
+              onFiltersChange={setFilters}
+              onClearFilters={() => {
+                setFilters({
+                  page: 1,
+                  limit: 24,
+                  search: undefined,
+                  source: undefined,
+                  role: undefined,
+                  organization: undefined,
+                  orgType: undefined,
+                  activity: undefined,
+                  country: undefined,
+                });
+              }}
+              loading={loading}
+              totalCount={pagination.total}
             />
-            {searchTerm && (
-              <button
-                onClick={clearSearch}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                aria-label="Clear search"
-                title="Clear search"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
           </div>
-
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -382,6 +364,7 @@ export default function RolodexPage() {
                   onClick={handleExport}
                   disabled={loading || people.length === 0}
                   aria-label="Export to CSV"
+                  className="mt-1"
                 >
                   <Download className="h-4 w-4" />
                 </Button>
@@ -392,13 +375,6 @@ export default function RolodexPage() {
             </Tooltip>
           </TooltipProvider>
         </div>
-
-        {/* Results count */}
-        {searchTerm && !loading && (
-          <div className="text-sm text-muted-foreground">
-            Found {pagination.total} {pagination.total === 1 ? 'person' : 'people'} matching "{searchTerm}"
-          </div>
-        )}
 
         <div className="space-y-6">
         {error ? (
@@ -419,16 +395,11 @@ export default function RolodexPage() {
               <Users className="h-12 w-12 text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-900 mb-2">No people found</h3>
               <p className="text-slate-600 mb-4">
-                {searchTerm 
-                  ? `No people match your search "${searchTerm}". Try adjusting your search terms.`
+                {filters.search || filters.organization || filters.activity || filters.orgType || filters.role
+                  ? 'No people match your current filters. Try adjusting your filter criteria.'
                   : 'No people are currently in the system.'
                 }
               </p>
-              {searchTerm && (
-                <Button variant="outline" onClick={clearSearch}>
-                  Clear search
-                </Button>
-              )}
             </CardContent>
           </Card>
         ) : (

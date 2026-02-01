@@ -495,7 +495,23 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] overflow-hidden p-0"
+        onPointerDownOutside={(e) => {
+          // Prevent closing when clicking on popover content (portaled outside dialog)
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-popover-content]') || target.closest('[role="listbox"]') || target.closest('[role="option"]')) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          // Prevent closing when interacting with popover content
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-popover-content]') || target.closest('[role="listbox"]') || target.closest('[role="option"]')) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DropdownProvider>
           <motion.div
             variants={containerVariants}
@@ -620,7 +636,6 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             disabled={isCreating}
                             dropdownId="quick-add-status"
                             error={validationErrors.activityStatus}
-                            side="top"
                           />
                           <p className="text-xs text-muted-foreground">
                             Current stage of the activity lifecycle
@@ -699,7 +714,6 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             placeholder="Select currency"
                             disabled={isCreating}
                             dropdownId="quick-add-currency"
-                            side="top"
                           />
                           <p className="text-xs text-muted-foreground">
                             Default currency for financial transactions
@@ -715,7 +729,6 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             placeholder="Select aid modality (optional)"
                             disabled={isCreating}
                             dropdownId="quick-add-aid-type"
-                            side="top"
                           />
                           <p className="text-xs text-muted-foreground">
                             Type of aid being provided
@@ -731,7 +744,6 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             placeholder="Select finance type (optional)"
                             disabled={isCreating}
                             dropdownId="quick-add-finance-type"
-                            side="top"
                           />
                           <p className="text-xs text-muted-foreground">
                             Classification of financing mechanism (e.g., grant, loan)

@@ -35,6 +35,7 @@ interface SelectIATIProps {
   copyValue?: string; // Optional value to copy to clipboard
   onCopySuccess?: () => void;
   hideGroupLabels?: boolean; // Hide group category labels
+  usePortal?: boolean; // Whether to use portal for dropdown (set to false when inside modals)
 }
 
 export function SelectIATI({
@@ -54,6 +55,7 @@ export function SelectIATI({
   copyValue,
   onCopySuccess,
   hideGroupLabels = false,
+  usePortal = true,
 }: SelectIATIProps) {
   // Use shared dropdown state if dropdownId is provided
   const { isOpen, setOpen } = useDropdownState(dropdownId);
@@ -170,10 +172,11 @@ export function SelectIATI({
         </PopoverTrigger>
 
         <PopoverContent
-          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border"
+          className="min-w-[320px] p-0 shadow-lg border"
           align={align}
-          side={side}
+          forcePosition={side === 'top' ? 'top' : side === 'bottom' ? 'bottom' : undefined}
           sideOffset={4}
+          usePortal={usePortal}
         >
           <Command>
             <div className="flex items-center border-b px-3 py-2">

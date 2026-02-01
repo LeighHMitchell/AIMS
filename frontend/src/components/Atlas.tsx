@@ -1021,31 +1021,60 @@ export default function Atlas() {
                         </SelectContent>
                       </Select>
 
-                      {/* Health Facilities Toggle */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setShowHealthFacilities(!showHealthFacilities);
-                          if (showHealthFacilities) {
-                            setHealthFacilitiesCount(null);
-                          }
-                        }}
-                        title={showHealthFacilities && healthFacilitiesCount ? `${healthFacilitiesCount.toLocaleString()} health facilities` : "Toggle Health Facilities layer"}
-                        className={`bg-white shadow-md border-gray-300 h-9 px-3 gap-2 ${showHealthFacilities ? 'bg-red-50 border-red-300 text-red-700' : ''}`}
-                      >
-                        {healthFacilitiesLoading ? (
-                          <div className="h-4 w-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
-                        ) : (
-                          <Cross className="h-4 w-4" />
-                        )}
-                        <span className="text-xs">
-                          {healthFacilitiesLoading ? 'Loading...' :
-                           showHealthFacilities && healthFacilitiesCount ? `Health (${healthFacilitiesCount.toLocaleString()})` :
-                           'Health'}
-                        </span>
-                        {showHealthFacilities && !healthFacilitiesLoading && <Check className="h-3 w-3" />}
-                      </Button>
+                      {/* Layers Popover */}
+                      <Popover open={layersPopoverOpen} onOpenChange={handleLayersPopoverOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`bg-white shadow-md border-gray-300 h-9 px-3 gap-2 ${showHealthFacilities ? 'bg-blue-50 border-blue-300 text-blue-700' : ''}`}
+                          >
+                            <Layers className="h-4 w-4" />
+                            <span className="text-xs">Layers</span>
+                            {showHealthFacilities && <span className="bg-blue-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">1</span>}
+                            <ChevronsUpDown className="h-3 w-3 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[280px] p-0" align="end">
+                          <div className="p-3 border-b">
+                            <h4 className="font-medium text-sm">Data Layers</h4>
+                            <p className="text-xs text-muted-foreground">Toggle additional map layers</p>
+                          </div>
+                          <div className="p-2">
+                            {/* OSM Health Facilities Layer */}
+                            <div
+                              className={`flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-muted/50 ${showHealthFacilities ? 'bg-blue-50' : ''}`}
+                              onClick={() => {
+                                setShowHealthFacilities(!showHealthFacilities);
+                                if (showHealthFacilities) {
+                                  setHealthFacilitiesCount(null);
+                                }
+                              }}
+                            >
+                              <div className={`h-4 w-4 rounded border flex items-center justify-center ${showHealthFacilities ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+                                {showHealthFacilities && <Check className="h-3 w-3 text-white" />}
+                              </div>
+                              <Cross className="h-4 w-4 text-red-500" />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium">OSM Health Facilities</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {healthFacilitiesLoading ? 'Loading...' :
+                                   healthFacilitiesCount ? `${healthFacilitiesCount.toLocaleString()} facilities` :
+                                   'Hospitals, clinics, pharmacies'}
+                                </div>
+                              </div>
+                              {healthFacilitiesLoading && (
+                                <div className="h-4 w-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                              )}
+                            </div>
+
+                            {/* Placeholder for future layers */}
+                            <div className="mt-2 p-2 border border-dashed border-gray-200 rounded-md">
+                              <p className="text-xs text-muted-foreground text-center">More layers coming soon</p>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
 
                       {/* View Mode Toggle */}
                       <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">

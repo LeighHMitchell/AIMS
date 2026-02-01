@@ -14,15 +14,28 @@ const PopoverContext = React.createContext<PopoverContextValue | undefined>(unde
 
 interface PopoverProps {
   open?: boolean
+  defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
   children: React.ReactNode
 }
 
-const Popover = ({ open = false, onOpenChange = () => {}, children }: PopoverProps) => {
+const Popover = ({ open: controlledOpen, defaultOpen = false, onOpenChange, children }: PopoverProps) => {
+  const [internalOpen, setInternalOpen] = React.useState(defaultOpen)
   const triggerRef = React.useRef<HTMLElement | null>(null)
-  
+
+  // Use controlled state if provided, otherwise use internal state
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+
+  const handleOpenChange = React.useCallback((newOpen: boolean) => {
+    if (!isControlled) {
+      setInternalOpen(newOpen)
+    }
+    onOpenChange?.(newOpen)
+  }, [isControlled, onOpenChange])
+
   return (
-    <PopoverContext.Provider value={{ open, onOpenChange, triggerRef }}>
+    <PopoverContext.Provider value={{ open, onOpenChange: handleOpenChange, triggerRef }}>
       <div className="relative w-full">
         {children}
       </div>
@@ -231,6 +244,7 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
       const content = (
         <div
           ref={combinedRef}
+          data-popover-content
           className={cn(
             "fixed z-[9999] min-w-[200px] rounded-md border bg-white p-4 text-gray-900 shadow-lg outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
             className

@@ -20,6 +20,7 @@ export interface RolodexPerson {
   organization_id?: string;
   organization_name?: string;
   organization_acronym?: string;
+  org_type?: string;
   activity_id?: string;
   activity_title?: string;
   country_code?: string;
@@ -41,6 +42,7 @@ export interface RolodexFilters {
   role?: string;
   organization?: string;
   activity?: string;
+  orgType?: string;
   country?: string;
   page?: number;
   limit?: number;
@@ -80,6 +82,7 @@ export async function GET(request: NextRequest) {
       role: searchParams.get('role') || undefined,
       organization: searchParams.get('organization') || undefined,
       activity: searchParams.get('activity') || undefined,
+      orgType: searchParams.get('orgType') || undefined,
       country: searchParams.get('country') || undefined,
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '24'),
@@ -123,7 +126,8 @@ export async function GET(request: NextRequest) {
               organizations!users_organization_id_fkey (
                 id,
                 name,
-                acronym
+                acronym,
+                type
               )
       `)
       .not('email', 'is', null)
@@ -204,7 +208,8 @@ export async function GET(request: NextRequest) {
         organizations (
           id,
           name,
-          acronym
+          acronym,
+          type
         )
       `)
 ;
@@ -223,6 +228,9 @@ export async function GET(request: NextRequest) {
     }
     if (filters.organization) {
       contactsQuery = contactsQuery.eq('organisation_id', filters.organization);
+    }
+    if (filters.activity) {
+      contactsQuery = contactsQuery.eq('activity_id', filters.activity);
     }
     if (filters.source && filters.source !== 'activity_contact') {
       // If filtering for non-contact sources, return empty contacts
@@ -254,8 +262,8 @@ export async function GET(request: NextRequest) {
         transformedPeople.push({
           id: user.id,
           source: 'user' as const,
-          name: (user.first_name && user.last_name ? 
-                 `${user.first_name} ${user.last_name}`.trim() : 
+          name: (user.first_name && user.last_name ?
+                 `${user.first_name} ${user.last_name}`.trim() :
                  user.first_name || user.last_name || user.email || 'Unknown'),
           first_name: user.first_name,
           last_name: user.last_name,
@@ -266,6 +274,7 @@ export async function GET(request: NextRequest) {
           organization_id: user.organization_id,
           organization_name: user.organizations?.name,
           organization_acronym: user.organizations?.acronym,
+          org_type: user.organizations?.type,
           activity_id: undefined,
           position: user.job_title,
           phone: user.telephone,
@@ -287,7 +296,7 @@ export async function GET(request: NextRequest) {
           .filter(Boolean)
           .join(' ')
           .trim();
-        
+
         transformedPeople.push({
           id: contact.id,
           source: 'activity_contact' as const,
@@ -302,6 +311,7 @@ export async function GET(request: NextRequest) {
           organization_id: contact.organisation_id,
           organization_name: contact.organizations?.name || contact.organisation, // Use joined data first, fallback to text field
           organization_acronym: contact.organizations?.acronym,
+          org_type: contact.organizations?.type,
           activity_id: contact.activity_id,
           position: contact.position,
           phone: contact.phone,
@@ -351,12 +361,23 @@ export async function GET(request: NextRequest) {
       return sortOrder === 'desc' ? -comparison : comparison;
     });
 
-    // Additional client-side filter for organization name (since it's from a joined table)
-    // This ensures organization name search works even though it's not in the database query
+    // Additional client-side filters for joined table fields
     let filteredPeople = transformedPeople;
+
+    // Filter by org type (from joined organizations table)
+    if (filters.orgType) {
+      filteredPeople = filteredPeople.filter(person => person.org_type === filters.orgType);
+    }
+
+    // Filter by activity - users don't have activities, so exclude them when filtering by activity
+    if (filters.activity) {
+      filteredPeople = filteredPeople.filter(person => person.activity_id === filters.activity);
+    }
+
+    // Search filter - check organization name from joined table
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      filteredPeople = transformedPeople.filter(person => 
+      filteredPeople = filteredPeople.filter(person =>
         // Keep if any field matches (some already matched from DB query, but include org name here)
         (person.organization_name && person.organization_name.toLowerCase().includes(searchLower)) ||
         (person.organization_acronym && person.organization_acronym.toLowerCase().includes(searchLower)) ||

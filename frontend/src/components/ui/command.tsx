@@ -108,17 +108,28 @@ CommandSeparator.displayName = "CommandSeparator"
 const CommandItem = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & { onSelect?: () => void }
->(({ className, onSelect, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 hover:bg-accent hover:text-accent-foreground cursor-pointer",
-      className
-    )}
-    onClick={() => onSelect?.()}
-    {...props}
-  />
-))
+>(({ className, onSelect, onClick, ...props }, ref) => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick?.(e);
+    onSelect?.();
+  };
+
+  return (
+    <div
+      ref={ref}
+      role="option"
+      className={cn(
+        "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 hover:bg-accent hover:text-accent-foreground",
+        className
+      )}
+      onClick={handleClick}
+      onMouseDown={(e) => e.preventDefault()}
+      {...props}
+    />
+  );
+})
 CommandItem.displayName = "CommandItem"
 
 export {

@@ -3,29 +3,21 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { 
-  Search, 
-  Filter, 
-  X, 
-  Users, 
-  Building2, 
+import {
+  Search,
+  X,
+  Building2,
   FileText,
-  MapPin,
-  ChevronDown
+  ChevronDown,
+  Briefcase,
+  Layers
 } from 'lucide-react';
 import { RolodexFilters } from '@/app/api/rolodex/route';
-import { COUNTRY_NAMES, getAllRoles, SOURCE_LABELS, getContactTypeCategories, CONTACT_TYPE_CATEGORIES, ROLE_CATEGORIES, getRolesByCategory } from './utils/roleLabels';
+import { ROLE_CATEGORIES, getRolesByCategory, getOrgTypeCategories, ORG_TYPE_LABELS } from './utils/roleLabels';
 import { LoadingText } from '@/components/ui/loading-text';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -45,8 +37,9 @@ export function FilterPanel({
   totalCount = 0
 }: FilterPanelProps) {
   const [localSearch, setLocalSearch] = useState(filters.search || '');
-  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym?: string; logo?: string }>>([]);
   const [activities, setActivities] = useState<Array<{ id: string; title: string }>>([]);
+  const [openPopover, setOpenPopover] = useState<string | null>(null);
 
   // Debounce search input
   useEffect(() => {
@@ -84,360 +77,292 @@ export function FilterPanel({
     fetchOptions();
   }, []);
 
-  const activeFilterCount = Object.values(filters).filter(value => 
+  const activeFilterCount = Object.values(filters).filter(value =>
     value !== undefined && value !== null && value !== ''
   ).length - 2; // Subtract page and limit
 
-  const roles = getAllRoles();
-  const countries = Object.entries(COUNTRY_NAMES).map(([code, name]) => ({ code, name }));
-
-  const clearFilter = (key: keyof RolodexFilters) => {
-    onFiltersChange({ [key]: undefined });
-  };
-
   return (
-    <div className="bg-white p-4 rounded-md shadow-sm border border-slate-200 space-y-4">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <Input
-          placeholder="Search by name or email..."
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          className="pl-10 pr-4"
-          disabled={loading}
-        />
-        {localSearch && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-            onClick={() => setLocalSearch('')}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-
-      {/* Filter Row */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-          <Filter className="h-4 w-4" />
-          <span>Filters:</span>
+    <div className="bg-white p-4 rounded-md shadow-sm border border-slate-200 space-y-3">
+      {/* Filter Row with Labels */}
+      <div className="flex items-end gap-3">
+        {/* Search */}
+        <div className="flex-1 min-w-[200px]">
+          <label className="block text-xs font-medium text-slate-500 mb-1">Search</label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Name or email..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="pl-9 pr-8 h-9"
+              disabled={loading}
+            />
+            {localSearch && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-5 w-5 p-0"
+                onClick={() => setLocalSearch('')}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Contact Type Filter */}
-        <Popover>
-          <PopoverTrigger className="min-w-[180px] justify-between border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2">
-            <span className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              {filters.source ? SOURCE_LABELS[filters.source]?.label || 'Contact Type' : 'All Contact Types'}
-            </span>
-            <ChevronDown className="h-4 w-4" />
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-3" align="start">
-            <div className="space-y-3">
-              <div className="font-medium text-sm">Filter by Contact Type</div>
-              <div className="space-y-2">
+        <div className="flex-1 min-w-[160px]">
+          <label className="block text-xs font-medium text-slate-500 mb-1">Contact Type</label>
+          <Popover open={openPopover === 'type'} onOpenChange={(open) => setOpenPopover(open ? 'type' : null)}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
+                <span className="flex items-center gap-2">
+                  {filters.source ? (
+                    <Badge
+                      variant="secondary"
+                      className={`text-xs ${
+                        filters.source === 'user'
+                          ? 'bg-slate-100 text-slate-600'
+                          : 'bg-purple-100 text-purple-700'
+                      }`}
+                    >
+                      {filters.source === 'user' ? 'User' : 'Activity'}
+                    </Badge>
+                  ) : (
+                    <span className="text-slate-500">Select...</span>
+                  )}
+                </span>
+                <ChevronDown className="h-4 w-4 flex-shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="start">
+              <div className="space-y-1">
                 <Button
-                  variant={!filters.source ? "secondary" : "ghost"}
+                  variant={filters.source === 'user' ? "secondary" : "ghost"}
                   size="sm"
                   className="w-full justify-start"
-                  onClick={() => {
-                    console.log('[FilterPanel] All Contact Types clicked');
-                    onFiltersChange({ source: undefined });
-                  }}
+                  onClick={() => { onFiltersChange({ source: 'user' }); setOpenPopover(null); }}
                 >
-                  <span className="flex items-center gap-2">
-                    <span>🌐</span>
-                    <div className="text-left">
-                      <div className="font-medium">All Contact Types</div>
-                      <div className="text-xs text-slate-500">Show all users and contacts</div>
-                    </div>
-                  </span>
+                  <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600">
+                    User
+                  </Badge>
+                  <span className="ml-2 text-slate-600">System users</span>
                 </Button>
-                
-                {getContactTypeCategories().map((category) => {
-                  const sourceKey = category.key === 'system_users' ? 'user' : 
-                                   category.key === 'activity_contacts' ? 'activity_contact' :
-                                   'organization_contact';
-                  const isSelected = filters.source === sourceKey;
-                  
-                  return (
-                    <Button
-                      key={category.key}
-                      variant={isSelected ? "secondary" : "ghost"}
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        console.log('[FilterPanel] Contact type clicked:', sourceKey);
-                        onFiltersChange({ source: sourceKey });
-                      }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <span>{category.icon}</span>
-                        <div className="text-left">
-                          <div className="font-medium">{category.label}</div>
-                          <div className="text-xs text-slate-500">{category.description}</div>
-                        </div>
-                      </span>
-                    </Button>
-                  );
-                })}
+                <Button
+                  variant={filters.source === 'activity_contact' ? "secondary" : "ghost"}
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => { onFiltersChange({ source: 'activity_contact' }); setOpenPopover(null); }}
+                >
+                  <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
+                    Activity
+                  </Badge>
+                  <span className="ml-2 text-slate-600">Activity contacts</span>
+                </Button>
               </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         {/* Role Filter */}
-        <Popover>
-          <PopoverTrigger className="min-w-[140px] justify-between border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2">
-            <span className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              {filters.role ? `Role: ${filters.role}` : 'Any Role'}
-            </span>
-            <ChevronDown className="h-4 w-4" />
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-3" align="start">
-            <div className="space-y-3">
-              <div className="font-medium text-sm">Filter by Role</div>
-              <Input
-                placeholder="Search roles..."
-                value={filters.role || ''}
-                onChange={(e) => onFiltersChange({ role: e.target.value || undefined })}
-              />
-              <div className="max-h-64 overflow-y-auto space-y-3">
-                <Button
-                  variant={!filters.role ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start"
-                  onClick={() => {
-                    console.log('[FilterPanel] All Roles clicked');
-                    onFiltersChange({ role: undefined });
-                  }}
-                >
-                  All Roles
-                </Button>
-                
+        <div className="flex-1 min-w-[140px]">
+          <label className="block text-xs font-medium text-slate-500 mb-1">Role</label>
+          <Popover open={openPopover === 'role'} onOpenChange={(open) => setOpenPopover(open ? 'role' : null)}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
+                <span className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span className="truncate">{filters.role || 'Select...'}</span>
+                </span>
+                <ChevronDown className="h-4 w-4 flex-shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-2" align="start">
+              <div className="max-h-64 overflow-y-auto space-y-2">
                 {/* System Roles */}
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-1">SYSTEM ROLES</div>
-                  <div className="space-y-1">
-                    {getRolesByCategory(ROLE_CATEGORIES.SYSTEM).map((role) => (
-                      <Button
-                        key={role.key}
-                        variant={filters.role === role.label ? "secondary" : "ghost"}
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => onFiltersChange({ role: role.label })}
-                      >
-                        <Badge variant="secondary" className="mr-2 text-xs">
-                          {role.label}
-                        </Badge>
-                      </Button>
-                    ))}
-                  </div>
+                  <div className="text-xs font-medium text-slate-500 mb-1 px-2">SYSTEM ROLES</div>
+                  {getRolesByCategory(ROLE_CATEGORIES.SYSTEM).map((role) => (
+                    <Button
+                      key={role.key}
+                      variant={filters.role === role.label ? "secondary" : "ghost"}
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => { onFiltersChange({ role: role.label }); setOpenPopover(null); }}
+                    >
+                      {role.label}
+                    </Button>
+                  ))}
                 </div>
-                
                 {/* Organization Roles */}
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-1">ORGANIZATION ROLES</div>
-                  <div className="space-y-1">
-                    {getRolesByCategory(ROLE_CATEGORIES.ORGANIZATION).map((role) => (
-                      <Button
-                        key={role.key}
-                        variant={filters.role === role.label ? "secondary" : "ghost"}
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => onFiltersChange({ role: role.label })}
-                      >
-                        <Badge variant="secondary" className="mr-2 text-xs">
-                          {role.label}
-                        </Badge>
-                      </Button>
-                    ))}
-                  </div>
+                  <div className="text-xs font-medium text-slate-500 mb-1 px-2">ORGANIZATION ROLES</div>
+                  {getRolesByCategory(ROLE_CATEGORIES.ORGANIZATION).map((role) => (
+                    <Button
+                      key={role.key}
+                      variant={filters.role === role.label ? "secondary" : "ghost"}
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => { onFiltersChange({ role: role.label }); setOpenPopover(null); }}
+                    >
+                      {role.label}
+                    </Button>
+                  ))}
                 </div>
-                
                 {/* Activity Roles */}
                 <div>
-                  <div className="text-xs font-medium text-slate-500 mb-1">ACTIVITY ROLES</div>
-                  <div className="space-y-1">
-                    {getRolesByCategory(ROLE_CATEGORIES.ACTIVITY).map((role) => (
-                      <Button
-                        key={role.key}
-                        variant={filters.role === role.label ? "secondary" : "ghost"}
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => onFiltersChange({ role: role.label })}
-                      >
-                        <Badge variant="secondary" className="mr-2 text-xs">
-                          {role.label}
-                        </Badge>
-                      </Button>
-                    ))}
-                  </div>
+                  <div className="text-xs font-medium text-slate-500 mb-1 px-2">ACTIVITY ROLES</div>
+                  {getRolesByCategory(ROLE_CATEGORIES.ACTIVITY).map((role) => (
+                    <Button
+                      key={role.key}
+                      variant={filters.role === role.label ? "secondary" : "ghost"}
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => { onFiltersChange({ role: role.label }); setOpenPopover(null); }}
+                    >
+                      {role.label}
+                    </Button>
+                  ))}
                 </div>
               </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         {/* Organization Filter */}
-        <Popover>
-          <PopoverTrigger className="min-w-[160px] justify-between border border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2">
-            <span className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              {filters.organization ? 'Organization Set' : 'Any Organization'}
-            </span>
-            <ChevronDown className="h-4 w-4" />
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-3" align="start">
-            <div className="space-y-2">
-              <div className="font-medium text-sm">Filter by Organization</div>
-              <Input
-                placeholder="Search organizations..."
-                value={filters.organization || ''}
-                onChange={(e) => onFiltersChange({ organization: e.target.value || undefined })}
-              />
-              <div className="max-h-40 overflow-y-auto space-y-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start"
-                  onClick={() => {
-                    console.log('[FilterPanel] All Organizations clicked');
-                    onFiltersChange({ organization: undefined });
-                  }}
-                >
-                  All Organizations
-                </Button>
+        <div className="flex-1 min-w-[180px]">
+          <label className="block text-xs font-medium text-slate-500 mb-1">Organization</label>
+          <Popover open={openPopover === 'org'} onOpenChange={(open) => setOpenPopover(open ? 'org' : null)}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
+                <span className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  <span className="truncate">
+                    {filters.organization
+                      ? organizations.find(o => o.id === filters.organization)?.acronym ||
+                        organizations.find(o => o.id === filters.organization)?.name?.substring(0, 20) ||
+                        'Selected'
+                      : 'Select...'}
+                  </span>
+                </span>
+                <ChevronDown className="h-4 w-4 flex-shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-96 p-2" align="start">
+              <div className="max-h-64 overflow-y-auto space-y-1">
                 {organizations.map((org) => (
                   <Button
                     key={org.id}
-                    variant="ghost"
+                    variant={filters.organization === org.id ? "secondary" : "ghost"}
                     size="sm"
-                    className="w-full justify-start"
-                    onClick={() => onFiltersChange({ organization: org.name })}
+                    className="w-full justify-start h-auto py-2"
+                    onClick={() => { onFiltersChange({ organization: org.id }); setOpenPopover(null); }}
                   >
-                    <span className="truncate">{org.name}</span>
+                    <span className="flex items-center gap-3 w-full">
+                      {org.logo ? (
+                        <img src={org.logo} alt="" className="h-6 w-6 rounded object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="h-6 w-6 rounded bg-slate-200 flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-3 w-3 text-slate-500" />
+                        </div>
+                      )}
+                      <span className="truncate flex-1 text-left">{org.name}</span>
+                      {org.acronym && (
+                        <span className="text-xs text-slate-500 flex-shrink-0">({org.acronym})</span>
+                      )}
+                    </span>
                   </Button>
                 ))}
               </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+            </PopoverContent>
+          </Popover>
+        </div>
 
-        {/* Country Filter */}
-        <Select
-          value={filters.country || 'all'}
-          onValueChange={(value) => onFiltersChange({ country: value === 'all' ? undefined : value })}
-        >
-          <SelectTrigger className="w-[140px]">
-            <MapPin className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Country" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Countries</SelectItem>
-            {countries.slice(0, 20).map(({ code, name }) => (
-              <SelectItem key={code} value={code}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Org Type Filter */}
+        <div className="flex-1 min-w-[160px]">
+          <label className="block text-xs font-medium text-slate-500 mb-1">Org Type</label>
+          <Popover open={openPopover === 'orgType'} onOpenChange={(open) => setOpenPopover(open ? 'orgType' : null)}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
+                <span className="flex items-center gap-2">
+                  <Layers className="h-4 w-4" />
+                  <span className="truncate">{filters.orgType ? ORG_TYPE_LABELS[filters.orgType]?.label : 'Select...'}</span>
+                </span>
+                <ChevronDown className="h-4 w-4 flex-shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-2" align="start">
+              <div className="space-y-1">
+                {getOrgTypeCategories().map((orgType) => (
+                  <Button
+                    key={orgType.key}
+                    variant={filters.orgType === orgType.key ? "secondary" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => { onFiltersChange({ orgType: orgType.key }); setOpenPopover(null); }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded font-mono text-slate-600">{orgType.key}</code>
+                      <span>{orgType.label}</span>
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Activity Filter */}
+        <div className="flex-1 min-w-[200px]">
+          <label className="block text-xs font-medium text-slate-500 mb-1">Activity</label>
+          <Popover open={openPopover === 'activity'} onOpenChange={(open) => setOpenPopover(open ? 'activity' : null)}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
+                <span className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  <span className="truncate">
+                    {filters.activity
+                      ? activities.find(a => a.id === filters.activity)?.title?.substring(0, 25) || 'Selected'
+                      : 'Select...'}
+                  </span>
+                </span>
+                <ChevronDown className="h-4 w-4 flex-shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[500px] p-2" align="start">
+              <div className="max-h-64 overflow-y-auto space-y-1">
+                {activities.map((activity) => (
+                  <Button
+                    key={activity.id}
+                    variant={filters.activity === activity.id ? "secondary" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start h-auto py-2 text-left"
+                    onClick={() => { onFiltersChange({ activity: activity.id }); setOpenPopover(null); }}
+                  >
+                    {activity.title}
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         {/* Clear Filters */}
         {activeFilterCount > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClearFilters}
-            className="text-slate-600 hover:text-slate-800"
-          >
-            <X className="h-4 w-4 mr-1" />
-            Clear ({activeFilterCount})
-          </Button>
+          <div className="flex-shrink-0">
+            <label className="block text-xs font-medium text-transparent mb-1">Clear</label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClearFilters}
+              className="text-slate-500 hover:text-slate-800 h-9 px-3"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear filters
+            </Button>
+          </div>
         )}
       </div>
-
-      {/* Active Filters Display */}
-      {activeFilterCount > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {filters.search && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Search: "{filters.search}"
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 ml-1"
-                onClick={() => {
-                  setLocalSearch('');
-                  clearFilter('search');
-                }}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-          
-          {filters.source && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Source: {SOURCE_LABELS[filters.source]?.label || filters.source}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 ml-1"
-                onClick={() => clearFilter('source')}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-
-          {filters.role && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Role: {filters.role}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 ml-1"
-                onClick={() => clearFilter('role')}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-
-          {filters.organization && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Org: {filters.organization}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 ml-1"
-                onClick={() => clearFilter('organization')}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-
-          {filters.country && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              Country: {COUNTRY_NAMES[filters.country] || filters.country}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 ml-1"
-                onClick={() => clearFilter('country')}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-        </div>
-      )}
 
       {/* Results Count */}
       <div className="text-sm text-slate-500">
@@ -447,6 +372,8 @@ export function FilterPanel({
           `Showing ${totalCount} ${totalCount === 1 ? 'person' : 'people'}`
         )}
       </div>
+
+      {/* Active Filters Display - compact badges */}
     </div>
   );
 }

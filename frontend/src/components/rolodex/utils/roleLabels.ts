@@ -93,6 +93,22 @@ export function getAllRoles(): Array<{ key: string; label: string; color: string
   }));
 }
 
+// Organization type labels for filtering
+export const ORG_TYPE_LABELS: Record<string, { label: string; description: string }> = {
+  'development_partner': { label: 'Development Partner', description: 'International development organizations' },
+  'partner_government': { label: 'Partner Government', description: 'Government agencies and ministries' },
+  'bilateral': { label: 'Bilateral Donor', description: 'Bilateral aid organizations' },
+  'other': { label: 'Other', description: 'Other organization types' },
+};
+
+export function getOrgTypeCategories(): Array<{ key: string; label: string; description: string }> {
+  return Object.entries(ORG_TYPE_LABELS).map(([key, config]) => ({
+    key,
+    label: config.label,
+    description: config.description,
+  }));
+}
+
 // Country code to name mapping (common countries in aid/development context)
 export const COUNTRY_NAMES: Record<string, string> = {
   'MM': 'Myanmar',
