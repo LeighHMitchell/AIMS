@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useMap } from '@/components/ui/map';
 import type { GeoJSON } from 'geojson';
 
@@ -32,6 +32,54 @@ const LAYER_ID = 'health-facilities-layer';
 const CLUSTER_LAYER_ID = 'health-facilities-clusters';
 const CLUSTER_COUNT_LAYER_ID = 'health-facilities-cluster-count';
 
+// In-memory cache for health facilities (persists across component remounts)
+const facilitiesCache: Record<string, { data: GeoJSON.FeatureCollection; timestamp: number }> = {};
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+// Get cached data from memory or sessionStorage
+function getCachedFacilities(country: string): GeoJSON.FeatureCollection | null {
+  // Check in-memory cache first (fastest)
+  const memCache = facilitiesCache[country];
+  if (memCache && Date.now() - memCache.timestamp < CACHE_DURATION) {
+    console.log(`[HealthFacilitiesLayer] Using in-memory cache for ${country}`);
+    return memCache.data;
+  }
+
+  // Check sessionStorage (persists across page navigations)
+  try {
+    const stored = sessionStorage.getItem(`health-facilities-${country}`);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Date.now() - parsed.timestamp < CACHE_DURATION) {
+        console.log(`[HealthFacilitiesLayer] Using sessionStorage cache for ${country}`);
+        // Also populate in-memory cache
+        facilitiesCache[country] = parsed;
+        return parsed.data;
+      }
+    }
+  } catch (e) {
+    // sessionStorage might not be available
+  }
+
+  return null;
+}
+
+// Save data to both memory and sessionStorage
+function cacheFacilities(country: string, data: GeoJSON.FeatureCollection): void {
+  const cacheEntry = { data, timestamp: Date.now() };
+
+  // Save to in-memory cache
+  facilitiesCache[country] = cacheEntry;
+
+  // Save to sessionStorage
+  try {
+    sessionStorage.setItem(`health-facilities-${country}`, JSON.stringify(cacheEntry));
+  } catch (e) {
+    // sessionStorage might be full or unavailable
+    console.warn('[HealthFacilitiesLayer] Could not cache to sessionStorage');
+  }
+}
+
 // Facility type to color mapping
 const FACILITY_COLORS: Record<string, string> = {
   hospital: '#dc2626', // red
@@ -55,15 +103,38 @@ export default function HealthFacilitiesLayer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Track if we've already loaded for this country
+  const loadedCountryRef = useRef<string | null>(null);
+
   // Notify parent of loading state changes
   useEffect(() => {
     onLoadingChange?.(loading);
   }, [loading, onLoadingChange]);
 
-  // Fetch facilities when country changes
+  // Fetch facilities when country changes or visibility turns on
   useEffect(() => {
-    if (!country || !visible) return;
+    if (!country) return;
 
+    // If not visible, don't fetch but keep cached data
+    if (!visible) return;
+
+    // Check if we already have data for this country
+    if (facilities && loadedCountryRef.current === country) {
+      // Data already loaded, just notify parent of count
+      onFacilityCountChange?.(facilities.features.length);
+      return;
+    }
+
+    // Check cache first
+    const cachedData = getCachedFacilities(country);
+    if (cachedData) {
+      setFacilities(cachedData);
+      loadedCountryRef.current = country;
+      onFacilityCountChange?.(cachedData.features.length);
+      return;
+    }
+
+    // No cache, need to fetch
     const fetchFacilities = async () => {
       setLoading(true);
       setError(null);
@@ -80,12 +151,18 @@ export default function HealthFacilitiesLayer({
         const data = await response.json();
 
         if (data.features && data.features.length > 0) {
+          // Cache the data
+          cacheFacilities(country, data);
           setFacilities(data);
+          loadedCountryRef.current = country;
           onFacilityCountChange?.(data.features.length);
           console.log(`[HealthFacilitiesLayer] Loaded ${data.features.length} facilities for ${country}`);
         } else {
           console.log(`[HealthFacilitiesLayer] No facilities found for ${country}`);
-          setFacilities({ type: 'FeatureCollection', features: [] });
+          const emptyData = { type: 'FeatureCollection' as const, features: [] };
+          cacheFacilities(country, emptyData);
+          setFacilities(emptyData);
+          loadedCountryRef.current = country;
           onFacilityCountChange?.(0);
         }
       } catch (err) {
@@ -97,19 +174,35 @@ export default function HealthFacilitiesLayer({
     };
 
     fetchFacilities();
-  }, [country, visible]);
+  }, [country, visible, facilities, onFacilityCountChange]);
+
+  // Track if layers are already added
+  const layersAddedRef = useRef(false);
+  const currentDataRef = useRef<string | null>(null);
 
   // Add/update map layers
   useEffect(() => {
     if (!map || !isLoaded || !facilities) return;
 
-    // Remove existing layers and source
+    // Create a data signature to detect if data actually changed
+    const dataSignature = `${facilities.features.length}-${loadedCountryRef.current}`;
+
+    // If layers already exist with same data, just return (visibility handled separately)
+    if (layersAddedRef.current && currentDataRef.current === dataSignature) {
+      return;
+    }
+
+    // Remove existing layers and source if they exist
     if (map.getLayer(CLUSTER_COUNT_LAYER_ID)) map.removeLayer(CLUSTER_COUNT_LAYER_ID);
     if (map.getLayer(CLUSTER_LAYER_ID)) map.removeLayer(CLUSTER_LAYER_ID);
     if (map.getLayer(LAYER_ID)) map.removeLayer(LAYER_ID);
     if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
 
-    if (!visible || facilities.features.length === 0) return;
+    if (facilities.features.length === 0) {
+      layersAddedRef.current = false;
+      currentDataRef.current = null;
+      return;
+    }
 
     // Add source with clustering
     map.addSource(SOURCE_ID, {
@@ -258,6 +351,16 @@ export default function HealthFacilitiesLayer({
       map.getCanvas().style.cursor = '';
     });
 
+    // Mark layers as added
+    layersAddedRef.current = true;
+    currentDataRef.current = dataSignature;
+
+    // Set initial visibility
+    const visibility = visible ? 'visible' : 'none';
+    map.setLayoutProperty(LAYER_ID, 'visibility', visibility);
+    map.setLayoutProperty(CLUSTER_LAYER_ID, 'visibility', visibility);
+    map.setLayoutProperty(CLUSTER_COUNT_LAYER_ID, 'visibility', visibility);
+
     // Cleanup
     return () => {
       try {
@@ -265,11 +368,13 @@ export default function HealthFacilitiesLayer({
         if (map.getLayer(CLUSTER_LAYER_ID)) map.removeLayer(CLUSTER_LAYER_ID);
         if (map.getLayer(LAYER_ID)) map.removeLayer(LAYER_ID);
         if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+        layersAddedRef.current = false;
+        currentDataRef.current = null;
       } catch {
         // Map might be destroyed
       }
     };
-  }, [map, isLoaded, facilities, visible, onFacilityClick]);
+  }, [map, isLoaded, facilities, onFacilityClick, visible]);
 
   // Update visibility when prop changes
   useEffect(() => {
