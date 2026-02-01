@@ -1177,11 +1177,12 @@ export default function Atlas() {
                   </div>
 
                   <MapControls
-                    position="bottom-right"
+                    position="top-left"
                     showZoom={true}
                     showCompass={true}
                     showLocate={true}
                     showFullscreen={true}
+                    className="!top-14"
                   />
 
                   {/* Markers Mode */}
