@@ -9,6 +9,8 @@ import {
   FileSpreadsheet,
   Trash2,
   ChevronRight,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 
 interface OrganizationCardActionMenuProps {
@@ -18,6 +20,8 @@ interface OrganizationCardActionMenuProps {
   onExportPDF?: () => void;
   onExportExcel?: () => void;
   onDelete?: () => void;
+  isBookmarked?: boolean;
+  onToggleBookmark?: () => void;
 }
 
 const itemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors";
@@ -30,6 +34,8 @@ export function OrganizationCardActionMenu({
   onExportPDF,
   onExportExcel,
   onDelete,
+  isBookmarked,
+  onToggleBookmark,
 }: OrganizationCardActionMenuProps) {
   const hasExport = onExportPDF || onExportExcel;
 
@@ -57,6 +63,22 @@ export function OrganizationCardActionMenu({
           </div>
         </Menu.Trigger>
         <Menu.Content className="p-1.5">
+          {onToggleBookmark && (
+            <Menu.Item className={itemClass} onSelect={onToggleBookmark}>
+              {isBookmarked ? (
+                <>
+                  <BookmarkCheck className="h-4 w-4 text-slate-600" />
+                  Remove Bookmark
+                </>
+              ) : (
+                <>
+                  <Bookmark className="h-4 w-4" />
+                  Add Bookmark
+                </>
+              )}
+            </Menu.Item>
+          )}
+
           {onView && (
             <Menu.Item className={itemClass} onSelect={onView}>
               <Eye className="h-4 w-4" />

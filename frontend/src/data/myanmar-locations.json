@@ -11,23 +11,118 @@
       "name": "Kachin State",
       "type": "state",
       "townships": [
-        { "id": "01-001", "name": "Bhamo", "code": "MM-01-001" },
-        { "id": "01-002", "name": "Chipwi", "code": "MM-01-002" },
-        { "id": "01-003", "name": "Hsawlaw", "code": "MM-01-003" },
-        { "id": "01-004", "name": "Injangyang", "code": "MM-01-004" },
-        { "id": "01-005", "name": "Machanbaw", "code": "MM-01-005" },
-        { "id": "01-006", "name": "Mansi", "code": "MM-01-006" },
-        { "id": "01-007", "name": "Mogaung", "code": "MM-01-007" },
-        { "id": "01-008", "name": "Mohnyin", "code": "MM-01-008" },
-        { "id": "01-009", "name": "Momauk", "code": "MM-01-009" },
-        { "id": "01-010", "name": "Myitkyina", "code": "MM-01-010" },
-        { "id": "01-011", "name": "Puta-O", "code": "MM-01-011" },
-        { "id": "01-012", "name": "Shwegu", "code": "MM-01-012" },
-        { "id": "01-013", "name": "Sumprabum", "code": "MM-01-013" },
-        { "id": "01-014", "name": "Tanai", "code": "MM-01-014" },
-        { "id": "01-015", "name": "Tsawlaw", "code": "MM-01-015" },
-        { "id": "01-016", "name": "Waingmaw", "code": "MM-01-016" }
-      ]
+        {
+          "id": "01-001",
+          "name": "Bhamo",
+          "code": "MM-01-001",
+          "ts_pcode": "MMR001010",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-002",
+          "name": "Chipwi",
+          "code": "MM-01-002",
+          "ts_pcode": "MMR001005",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-003",
+          "name": "Hsawlaw",
+          "code": "MM-01-003"
+        },
+        {
+          "id": "01-004",
+          "name": "Injangyang",
+          "code": "MM-01-004",
+          "ts_pcode": "MMR001003",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-005",
+          "name": "Machanbaw",
+          "code": "MM-01-005",
+          "ts_pcode": "MMR001016",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-006",
+          "name": "Mansi",
+          "code": "MM-01-006",
+          "ts_pcode": "MMR001013",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-007",
+          "name": "Mogaung",
+          "code": "MM-01-007",
+          "ts_pcode": "MMR001008",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-008",
+          "name": "Mohnyin",
+          "code": "MM-01-008",
+          "ts_pcode": "MMR001007",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-009",
+          "name": "Momauk",
+          "code": "MM-01-009",
+          "ts_pcode": "MMR001012",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-010",
+          "name": "Myitkyina",
+          "code": "MM-01-010",
+          "ts_pcode": "MMR001001",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-011",
+          "name": "Puta-O",
+          "code": "MM-01-011",
+          "ts_pcode": "MMR001014",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-012",
+          "name": "Shwegu",
+          "code": "MM-01-012",
+          "ts_pcode": "MMR001011",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-013",
+          "name": "Sumprabum",
+          "code": "MM-01-013",
+          "ts_pcode": "MMR001015",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-014",
+          "name": "Tanai",
+          "code": "MM-01-014",
+          "ts_pcode": "MMR001004",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-015",
+          "name": "Tsawlaw",
+          "code": "MM-01-015",
+          "ts_pcode": "MMR001006",
+          "st_pcode": "MMR001"
+        },
+        {
+          "id": "01-016",
+          "name": "Waingmaw",
+          "code": "MM-01-016",
+          "ts_pcode": "MMR001002",
+          "st_pcode": "MMR001"
+        }
+      ],
+      "st_pcode": "MMR001"
     },
     {
       "id": "02",
@@ -35,14 +130,57 @@
       "name": "Kayah State",
       "type": "state",
       "townships": [
-        { "id": "02-001", "name": "Bawlakhe", "code": "MM-02-001" },
-        { "id": "02-002", "name": "Demoso", "code": "MM-02-002" },
-        { "id": "02-003", "name": "Hpasawng", "code": "MM-02-003" },
-        { "id": "02-004", "name": "Hpruso", "code": "MM-02-004" },
-        { "id": "02-005", "name": "Loikaw", "code": "MM-02-005" },
-        { "id": "02-006", "name": "Mese", "code": "MM-02-006" },
-        { "id": "02-007", "name": "Shadaw", "code": "MM-02-007" }
-      ]
+        {
+          "id": "02-001",
+          "name": "Bawlakhe",
+          "code": "MM-02-001",
+          "ts_pcode": "MMR002005",
+          "st_pcode": "MMR002"
+        },
+        {
+          "id": "02-002",
+          "name": "Demoso",
+          "code": "MM-02-002",
+          "ts_pcode": "MMR002002",
+          "st_pcode": "MMR002"
+        },
+        {
+          "id": "02-003",
+          "name": "Hpasawng",
+          "code": "MM-02-003",
+          "ts_pcode": "MMR002006",
+          "st_pcode": "MMR002"
+        },
+        {
+          "id": "02-004",
+          "name": "Hpruso",
+          "code": "MM-02-004",
+          "ts_pcode": "MMR002003",
+          "st_pcode": "MMR002"
+        },
+        {
+          "id": "02-005",
+          "name": "Loikaw",
+          "code": "MM-02-005",
+          "ts_pcode": "MMR002001",
+          "st_pcode": "MMR002"
+        },
+        {
+          "id": "02-006",
+          "name": "Mese",
+          "code": "MM-02-006",
+          "ts_pcode": "MMR002007",
+          "st_pcode": "MMR002"
+        },
+        {
+          "id": "02-007",
+          "name": "Shadaw",
+          "code": "MM-02-007",
+          "ts_pcode": "MMR002004",
+          "st_pcode": "MMR002"
+        }
+      ],
+      "st_pcode": "MMR002"
     },
     {
       "id": "03",
@@ -50,14 +188,57 @@
       "name": "Kayin State",
       "type": "state",
       "townships": [
-        { "id": "03-001", "name": "Hlaingbwe", "code": "MM-03-001" },
-        { "id": "03-002", "name": "Hpa-an", "code": "MM-03-002" },
-        { "id": "03-003", "name": "Hpapun", "code": "MM-03-003" },
-        { "id": "03-004", "name": "Kawkareik", "code": "MM-03-004" },
-        { "id": "03-005", "name": "Kyainseikgyi", "code": "MM-03-005" },
-        { "id": "03-006", "name": "Myawaddy", "code": "MM-03-006" },
-        { "id": "03-007", "name": "Thandaunggyi", "code": "MM-03-007" }
-      ]
+        {
+          "id": "03-001",
+          "name": "Hlaingbwe",
+          "code": "MM-03-001",
+          "ts_pcode": "MMR003002",
+          "st_pcode": "MMR003"
+        },
+        {
+          "id": "03-002",
+          "name": "Hpa-an",
+          "code": "MM-03-002",
+          "ts_pcode": "MMR003001",
+          "st_pcode": "MMR003"
+        },
+        {
+          "id": "03-003",
+          "name": "Hpapun",
+          "code": "MM-03-003",
+          "ts_pcode": "MMR003003",
+          "st_pcode": "MMR003"
+        },
+        {
+          "id": "03-004",
+          "name": "Kawkareik",
+          "code": "MM-03-004",
+          "ts_pcode": "MMR003006",
+          "st_pcode": "MMR003"
+        },
+        {
+          "id": "03-005",
+          "name": "Kyainseikgyi",
+          "code": "MM-03-005",
+          "ts_pcode": "MMR003007",
+          "st_pcode": "MMR003"
+        },
+        {
+          "id": "03-006",
+          "name": "Myawaddy",
+          "code": "MM-03-006",
+          "ts_pcode": "MMR003005",
+          "st_pcode": "MMR003"
+        },
+        {
+          "id": "03-007",
+          "name": "Thandaunggyi",
+          "code": "MM-03-007",
+          "ts_pcode": "MMR003004",
+          "st_pcode": "MMR003"
+        }
+      ],
+      "st_pcode": "MMR003"
     },
     {
       "id": "04",
@@ -65,18 +246,81 @@
       "name": "Chin State",
       "type": "state",
       "townships": [
-        { "id": "04-001", "name": "Cikha", "code": "MM-04-001" },
-        { "id": "04-002", "name": "Falam", "code": "MM-04-002" },
-        { "id": "04-003", "name": "Hakha", "code": "MM-04-003" },
-        { "id": "04-004", "name": "Kanpetlet", "code": "MM-04-004" },
-        { "id": "04-005", "name": "Matupi", "code": "MM-04-005" },
-        { "id": "04-006", "name": "Mindat", "code": "MM-04-006" },
-        { "id": "04-007", "name": "Paletwa", "code": "MM-04-007" },
-        { "id": "04-008", "name": "Rezua", "code": "MM-04-008" },
-        { "id": "04-009", "name": "Tedim", "code": "MM-04-009" },
-        { "id": "04-010", "name": "Thantlang", "code": "MM-04-010" },
-        { "id": "04-011", "name": "Tonzang", "code": "MM-04-011" }
-      ]
+        {
+          "id": "04-001",
+          "name": "Cikha",
+          "code": "MM-04-001"
+        },
+        {
+          "id": "04-002",
+          "name": "Falam",
+          "code": "MM-04-002",
+          "ts_pcode": "MMR004001",
+          "st_pcode": "MMR004"
+        },
+        {
+          "id": "04-003",
+          "name": "Hakha",
+          "code": "MM-04-003",
+          "ts_pcode": "MMR004002",
+          "st_pcode": "MMR004"
+        },
+        {
+          "id": "04-004",
+          "name": "Kanpetlet",
+          "code": "MM-04-004",
+          "ts_pcode": "MMR004008",
+          "st_pcode": "MMR004"
+        },
+        {
+          "id": "04-005",
+          "name": "Matupi",
+          "code": "MM-04-005",
+          "ts_pcode": "MMR004007",
+          "st_pcode": "MMR004"
+        },
+        {
+          "id": "04-006",
+          "name": "Mindat",
+          "code": "MM-04-006",
+          "ts_pcode": "MMR004006",
+          "st_pcode": "MMR004"
+        },
+        {
+          "id": "04-007",
+          "name": "Paletwa",
+          "code": "MM-04-007",
+          "ts_pcode": "MMR004009",
+          "st_pcode": "MMR004"
+        },
+        {
+          "id": "04-008",
+          "name": "Rezua",
+          "code": "MM-04-008"
+        },
+        {
+          "id": "04-009",
+          "name": "Tedim",
+          "code": "MM-04-009",
+          "ts_pcode": "MMR004004",
+          "st_pcode": "MMR004"
+        },
+        {
+          "id": "04-010",
+          "name": "Thantlang",
+          "code": "MM-04-010",
+          "ts_pcode": "MMR004003",
+          "st_pcode": "MMR004"
+        },
+        {
+          "id": "04-011",
+          "name": "Tonzang",
+          "code": "MM-04-011",
+          "ts_pcode": "MMR004005",
+          "st_pcode": "MMR004"
+        }
+      ],
+      "st_pcode": "MMR004"
     },
     {
       "id": "05",
@@ -84,45 +328,272 @@
       "name": "Sagaing Region",
       "type": "region",
       "townships": [
-        { "id": "05-001", "name": "Ayadaw", "code": "MM-05-001" },
-        { "id": "05-002", "name": "Banmauk", "code": "MM-05-002" },
-        { "id": "05-003", "name": "Budalin", "code": "MM-05-003" },
-        { "id": "05-004", "name": "Chaung-U", "code": "MM-05-004" },
-        { "id": "05-005", "name": "Hkamti", "code": "MM-05-005" },
-        { "id": "05-006", "name": "Homalin", "code": "MM-05-006" },
-        { "id": "05-007", "name": "Indaw", "code": "MM-05-007" },
-        { "id": "05-008", "name": "Kale", "code": "MM-05-008" },
-        { "id": "05-009", "name": "Kalewa", "code": "MM-05-009" },
-        { "id": "05-010", "name": "Kanbalu", "code": "MM-05-010" },
-        { "id": "05-011", "name": "Kani", "code": "MM-05-011" },
-        { "id": "05-012", "name": "Katha", "code": "MM-05-012" },
-        { "id": "05-013", "name": "Kawlin", "code": "MM-05-013" },
-        { "id": "05-014", "name": "Khin-U", "code": "MM-05-014" },
-        { "id": "05-015", "name": "Kyunhla", "code": "MM-05-015" },
-        { "id": "05-016", "name": "Lahe", "code": "MM-05-016" },
-        { "id": "05-017", "name": "Leshi", "code": "MM-05-017" },
-        { "id": "05-018", "name": "Mawlaik", "code": "MM-05-018" },
-        { "id": "05-019", "name": "Mingin", "code": "MM-05-019" },
-        { "id": "05-020", "name": "Monywa", "code": "MM-05-020" },
-        { "id": "05-021", "name": "Myaung", "code": "MM-05-021" },
-        { "id": "05-022", "name": "Myinmu", "code": "MM-05-022" },
-        { "id": "05-023", "name": "Nanyun", "code": "MM-05-023" },
-        { "id": "05-024", "name": "Ngazun", "code": "MM-05-024" },
-        { "id": "05-025", "name": "Pale", "code": "MM-05-025" },
-        { "id": "05-026", "name": "Paungbyin", "code": "MM-05-026" },
-        { "id": "05-027", "name": "Pinlebu", "code": "MM-05-027" },
-        { "id": "05-028", "name": "Sagaing", "code": "MM-05-028" },
-        { "id": "05-029", "name": "Salingyi", "code": "MM-05-029" },
-        { "id": "05-030", "name": "Shwebo", "code": "MM-05-030" },
-        { "id": "05-031", "name": "Tabayin", "code": "MM-05-031" },
-        { "id": "05-032", "name": "Tamu", "code": "MM-05-032" },
-        { "id": "05-033", "name": "Taze", "code": "MM-05-033" },
-        { "id": "05-034", "name": "Tigyaing", "code": "MM-05-034" },
-        { "id": "05-035", "name": "Wetlet", "code": "MM-05-035" },
-        { "id": "05-036", "name": "Wuntho", "code": "MM-05-036" },
-        { "id": "05-037", "name": "Ye-U", "code": "MM-05-037" },
-        { "id": "05-038", "name": "Yinmabin", "code": "MM-05-038" }
-      ]
+        {
+          "id": "05-001",
+          "name": "Ayadaw",
+          "code": "MM-05-001",
+          "ts_pcode": "MMR005014",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-002",
+          "name": "Banmauk",
+          "code": "MM-05-002",
+          "ts_pcode": "MMR005023",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-003",
+          "name": "Budalin",
+          "code": "MM-05-003",
+          "ts_pcode": "MMR005013",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-004",
+          "name": "Chaung-U",
+          "code": "MM-05-004",
+          "ts_pcode": "MMR005015",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-005",
+          "name": "Hkamti",
+          "code": "MM-05-005",
+          "ts_pcode": "MMR005033",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-006",
+          "name": "Homalin",
+          "code": "MM-05-006",
+          "ts_pcode": "MMR005034",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-007",
+          "name": "Indaw",
+          "code": "MM-05-007",
+          "ts_pcode": "MMR005021",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-008",
+          "name": "Kale",
+          "code": "MM-05-008",
+          "ts_pcode": "MMR005027",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-009",
+          "name": "Kalewa",
+          "code": "MM-05-009",
+          "ts_pcode": "MMR005028",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-010",
+          "name": "Kanbalu",
+          "code": "MM-05-010",
+          "ts_pcode": "MMR005007",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-011",
+          "name": "Kani",
+          "code": "MM-05-011",
+          "ts_pcode": "MMR005017",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-012",
+          "name": "Katha",
+          "code": "MM-05-012",
+          "ts_pcode": "MMR005020",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-013",
+          "name": "Kawlin",
+          "code": "MM-05-013",
+          "ts_pcode": "MMR005024",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-014",
+          "name": "Khin-U",
+          "code": "MM-05-014",
+          "ts_pcode": "MMR005005",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-015",
+          "name": "Kyunhla",
+          "code": "MM-05-015",
+          "ts_pcode": "MMR005008",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-016",
+          "name": "Lahe",
+          "code": "MM-05-016",
+          "ts_pcode": "MMR005036",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-017",
+          "name": "Leshi",
+          "code": "MM-05-017",
+          "ts_pcode": "MMR005035",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-018",
+          "name": "Mawlaik",
+          "code": "MM-05-018",
+          "ts_pcode": "MMR005031",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-019",
+          "name": "Mingin",
+          "code": "MM-05-019",
+          "ts_pcode": "MMR005029",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-020",
+          "name": "Monywa",
+          "code": "MM-05-020",
+          "ts_pcode": "MMR005012",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-021",
+          "name": "Myaung",
+          "code": "MM-05-021",
+          "ts_pcode": "MMR005003",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-022",
+          "name": "Myinmu",
+          "code": "MM-05-022",
+          "ts_pcode": "MMR005002",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-023",
+          "name": "Nanyun",
+          "code": "MM-05-023",
+          "ts_pcode": "MMR005037",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-024",
+          "name": "Ngazun",
+          "code": "MM-05-024"
+        },
+        {
+          "id": "05-025",
+          "name": "Pale",
+          "code": "MM-05-025",
+          "ts_pcode": "MMR005019",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-026",
+          "name": "Paungbyin",
+          "code": "MM-05-026",
+          "ts_pcode": "MMR005032",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-027",
+          "name": "Pinlebu",
+          "code": "MM-05-027",
+          "ts_pcode": "MMR005026",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-028",
+          "name": "Sagaing",
+          "code": "MM-05-028",
+          "ts_pcode": "MMR005001",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-029",
+          "name": "Salingyi",
+          "code": "MM-05-029",
+          "ts_pcode": "MMR005018",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-030",
+          "name": "Shwebo",
+          "code": "MM-05-030",
+          "ts_pcode": "MMR005004",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-031",
+          "name": "Tabayin",
+          "code": "MM-05-031",
+          "ts_pcode": "MMR005010",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-032",
+          "name": "Tamu",
+          "code": "MM-05-032",
+          "ts_pcode": "MMR005030",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-033",
+          "name": "Taze",
+          "code": "MM-05-033",
+          "ts_pcode": "MMR005011",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-034",
+          "name": "Tigyaing",
+          "code": "MM-05-034",
+          "ts_pcode": "MMR005022",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-035",
+          "name": "Wetlet",
+          "code": "MM-05-035",
+          "ts_pcode": "MMR005006",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-036",
+          "name": "Wuntho",
+          "code": "MM-05-036",
+          "ts_pcode": "MMR005025",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-037",
+          "name": "Ye-U",
+          "code": "MM-05-037",
+          "ts_pcode": "MMR005009",
+          "st_pcode": "MMR005"
+        },
+        {
+          "id": "05-038",
+          "name": "Yinmabin",
+          "code": "MM-05-038",
+          "ts_pcode": "MMR005016",
+          "st_pcode": "MMR005"
+        }
+      ],
+      "st_pcode": "MMR005"
     },
     {
       "id": "06",
@@ -130,17 +601,78 @@
       "name": "Tanintharyi Region",
       "type": "region",
       "townships": [
-        { "id": "06-001", "name": "Bokpyin", "code": "MM-06-001" },
-        { "id": "06-002", "name": "Dawei", "code": "MM-06-002" },
-        { "id": "06-003", "name": "Kawthoung", "code": "MM-06-003" },
-        { "id": "06-004", "name": "Kyunsu", "code": "MM-06-004" },
-        { "id": "06-005", "name": "Launglon", "code": "MM-06-005" },
-        { "id": "06-006", "name": "Myeik", "code": "MM-06-006" },
-        { "id": "06-007", "name": "Palaw", "code": "MM-06-007" },
-        { "id": "06-008", "name": "Tanintharyi", "code": "MM-06-008" },
-        { "id": "06-009", "name": "Thayetchaung", "code": "MM-06-009" },
-        { "id": "06-010", "name": "Yebyu", "code": "MM-06-010" }
-      ]
+        {
+          "id": "06-001",
+          "name": "Bokpyin",
+          "code": "MM-06-001",
+          "ts_pcode": "MMR006010",
+          "st_pcode": "MMR006"
+        },
+        {
+          "id": "06-002",
+          "name": "Dawei",
+          "code": "MM-06-002",
+          "ts_pcode": "MMR006001",
+          "st_pcode": "MMR006"
+        },
+        {
+          "id": "06-003",
+          "name": "Kawthoung",
+          "code": "MM-06-003",
+          "ts_pcode": "MMR006009",
+          "st_pcode": "MMR006"
+        },
+        {
+          "id": "06-004",
+          "name": "Kyunsu",
+          "code": "MM-06-004",
+          "ts_pcode": "MMR006006",
+          "st_pcode": "MMR006"
+        },
+        {
+          "id": "06-005",
+          "name": "Launglon",
+          "code": "MM-06-005",
+          "ts_pcode": "MMR006002",
+          "st_pcode": "MMR006"
+        },
+        {
+          "id": "06-006",
+          "name": "Myeik",
+          "code": "MM-06-006",
+          "ts_pcode": "MMR006005",
+          "st_pcode": "MMR006"
+        },
+        {
+          "id": "06-007",
+          "name": "Palaw",
+          "code": "MM-06-007",
+          "ts_pcode": "MMR006007",
+          "st_pcode": "MMR006"
+        },
+        {
+          "id": "06-008",
+          "name": "Tanintharyi",
+          "code": "MM-06-008",
+          "ts_pcode": "MMR006008",
+          "st_pcode": "MMR006"
+        },
+        {
+          "id": "06-009",
+          "name": "Thayetchaung",
+          "code": "MM-06-009",
+          "ts_pcode": "MMR006003",
+          "st_pcode": "MMR006"
+        },
+        {
+          "id": "06-010",
+          "name": "Yebyu",
+          "code": "MM-06-010",
+          "ts_pcode": "MMR006004",
+          "st_pcode": "MMR006"
+        }
+      ],
+      "st_pcode": "MMR006"
     },
     {
       "id": "07",
@@ -148,37 +680,210 @@
       "name": "Bago Region",
       "type": "region",
       "townships": [
-        { "id": "07-001", "name": "Bago", "code": "MM-07-001" },
-        { "id": "07-002", "name": "Daik-U", "code": "MM-07-002" },
-        { "id": "07-003", "name": "Gyobingauk", "code": "MM-07-003" },
-        { "id": "07-004", "name": "Kawa", "code": "MM-07-004" },
-        { "id": "07-005", "name": "Kyaukkyi", "code": "MM-07-005" },
-        { "id": "07-006", "name": "Kyauktaga", "code": "MM-07-006" },
-        { "id": "07-007", "name": "Letpadan", "code": "MM-07-007" },
-        { "id": "07-008", "name": "Madauk", "code": "MM-07-008" },
-        { "id": "07-009", "name": "Minhla", "code": "MM-07-009" },
-        { "id": "07-010", "name": "Monyo", "code": "MM-07-010" },
-        { "id": "07-011", "name": "Nattalin", "code": "MM-07-011" },
-        { "id": "07-012", "name": "Nyaunglebin", "code": "MM-07-012" },
-        { "id": "07-013", "name": "Okpho", "code": "MM-07-013" },
-        { "id": "07-014", "name": "Oktwin", "code": "MM-07-014" },
-        { "id": "07-015", "name": "Padaung", "code": "MM-07-015" },
-        { "id": "07-016", "name": "Pauk Kaung", "code": "MM-07-016" },
-        { "id": "07-017", "name": "Phyu", "code": "MM-07-017" },
-        { "id": "07-018", "name": "Pyay", "code": "MM-07-018" },
-        { "id": "07-019", "name": "Pyontaza", "code": "MM-07-019" },
-        { "id": "07-020", "name": "Shwedaung", "code": "MM-07-020" },
-        { "id": "07-021", "name": "Shwegyin", "code": "MM-07-021" },
-        { "id": "07-022", "name": "Shwekyin", "code": "MM-07-022" },
-        { "id": "07-023", "name": "Tantabin", "code": "MM-07-023" },
-        { "id": "07-024", "name": "Taungoo", "code": "MM-07-024" },
-        { "id": "07-025", "name": "Thanatpin", "code": "MM-07-025" },
-        { "id": "07-026", "name": "Thargaya", "code": "MM-07-026" },
-        { "id": "07-027", "name": "Theegone", "code": "MM-07-027" },
-        { "id": "07-028", "name": "Waw", "code": "MM-07-028" },
-        { "id": "07-029", "name": "Yedashe", "code": "MM-07-029" },
-        { "id": "07-030", "name": "Zigon", "code": "MM-07-030" }
-      ]
+        {
+          "id": "07-001",
+          "name": "Bago",
+          "code": "MM-07-001",
+          "ts_pcode": "MMR007001",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-002",
+          "name": "Daik-U",
+          "code": "MM-07-002",
+          "ts_pcode": "MMR007007",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-003",
+          "name": "Gyobingauk",
+          "code": "MM-07-003",
+          "ts_pcode": "MMR008014",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-004",
+          "name": "Kawa",
+          "code": "MM-07-004",
+          "ts_pcode": "MMR007003",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-005",
+          "name": "Kyaukkyi",
+          "code": "MM-07-005",
+          "ts_pcode": "MMR007011",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-006",
+          "name": "Kyauktaga",
+          "code": "MM-07-006",
+          "ts_pcode": "MMR007006",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-007",
+          "name": "Letpadan",
+          "code": "MM-07-007",
+          "ts_pcode": "MMR008008",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-008",
+          "name": "Madauk",
+          "code": "MM-07-008"
+        },
+        {
+          "id": "07-009",
+          "name": "Minhla",
+          "code": "MM-07-009",
+          "ts_pcode": "MMR008009",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-010",
+          "name": "Monyo",
+          "code": "MM-07-010",
+          "ts_pcode": "MMR008013",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-011",
+          "name": "Nattalin",
+          "code": "MM-07-011",
+          "ts_pcode": "MMR008012",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-012",
+          "name": "Nyaunglebin",
+          "code": "MM-07-012",
+          "ts_pcode": "MMR007005",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-013",
+          "name": "Okpho",
+          "code": "MM-07-013",
+          "ts_pcode": "MMR008010",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-014",
+          "name": "Oktwin",
+          "code": "MM-07-014",
+          "ts_pcode": "MMR007013",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-015",
+          "name": "Padaung",
+          "code": "MM-07-015",
+          "ts_pcode": "MMR008003",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-016",
+          "name": "Pauk Kaung",
+          "code": "MM-07-016",
+          "ts_pcode": "MMR008002",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-017",
+          "name": "Phyu",
+          "code": "MM-07-017",
+          "ts_pcode": "MMR007012",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-018",
+          "name": "Pyay",
+          "code": "MM-07-018",
+          "ts_pcode": "MMR008001",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-019",
+          "name": "Pyontaza",
+          "code": "MM-07-019"
+        },
+        {
+          "id": "07-020",
+          "name": "Shwedaung",
+          "code": "MM-07-020",
+          "ts_pcode": "MMR008006",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-021",
+          "name": "Shwegyin",
+          "code": "MM-07-021",
+          "ts_pcode": "MMR007008",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-022",
+          "name": "Shwekyin",
+          "code": "MM-07-022"
+        },
+        {
+          "id": "07-023",
+          "name": "Tantabin",
+          "code": "MM-07-023",
+          "ts_pcode": "MMR007014",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-024",
+          "name": "Taungoo",
+          "code": "MM-07-024",
+          "ts_pcode": "MMR007009",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-025",
+          "name": "Thanatpin",
+          "code": "MM-07-025",
+          "ts_pcode": "MMR007002",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-026",
+          "name": "Thargaya",
+          "code": "MM-07-026"
+        },
+        {
+          "id": "07-027",
+          "name": "Theegone",
+          "code": "MM-07-027",
+          "ts_pcode": "MMR008005",
+          "st_pcode": "MMR008"
+        },
+        {
+          "id": "07-028",
+          "name": "Waw",
+          "code": "MM-07-028",
+          "ts_pcode": "MMR007004",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-029",
+          "name": "Yedashe",
+          "code": "MM-07-029",
+          "ts_pcode": "MMR007010",
+          "st_pcode": "MMR007"
+        },
+        {
+          "id": "07-030",
+          "name": "Zigon",
+          "code": "MM-07-030",
+          "ts_pcode": "MMR008011",
+          "st_pcode": "MMR008"
+        }
+      ],
+      "st_pcode": "MMR007"
     },
     {
       "id": "08",
@@ -186,32 +891,183 @@
       "name": "Magway Region",
       "type": "region",
       "townships": [
-        { "id": "08-001", "name": "Aunglan", "code": "MM-08-001" },
-        { "id": "08-002", "name": "Chauk", "code": "MM-08-002" },
-        { "id": "08-003", "name": "Gangaw", "code": "MM-08-003" },
-        { "id": "08-004", "name": "Kamma", "code": "MM-08-004" },
-        { "id": "08-005", "name": "Magway", "code": "MM-08-005" },
-        { "id": "08-006", "name": "Minbu", "code": "MM-08-006" },
-        { "id": "08-007", "name": "Mindon", "code": "MM-08-007" },
-        { "id": "08-008", "name": "Minhla", "code": "MM-08-008" },
-        { "id": "08-009", "name": "Myaing", "code": "MM-08-009" },
-        { "id": "08-010", "name": "Myothit", "code": "MM-08-010" },
-        { "id": "08-011", "name": "Natmauk", "code": "MM-08-011" },
-        { "id": "08-012", "name": "Ngape", "code": "MM-08-012" },
-        { "id": "08-013", "name": "Pakokku", "code": "MM-08-013" },
-        { "id": "08-014", "name": "Pauk", "code": "MM-08-014" },
-        { "id": "08-015", "name": "Pwintbyu", "code": "MM-08-015" },
-        { "id": "08-016", "name": "Salin", "code": "MM-08-016" },
-        { "id": "08-017", "name": "Saw", "code": "MM-08-017" },
-        { "id": "08-018", "name": "Seikphyu", "code": "MM-08-018" },
-        { "id": "08-019", "name": "Sidoktaya", "code": "MM-08-019" },
-        { "id": "08-020", "name": "Sinbaungwe", "code": "MM-08-020" },
-        { "id": "08-021", "name": "Taungdwingyi", "code": "MM-08-021" },
-        { "id": "08-022", "name": "Thayet", "code": "MM-08-022" },
-        { "id": "08-023", "name": "Tilin", "code": "MM-08-023" },
-        { "id": "08-024", "name": "Yenangyaung", "code": "MM-08-024" },
-        { "id": "08-025", "name": "Yesagyo", "code": "MM-08-025" }
-      ]
+        {
+          "id": "08-001",
+          "name": "Aunglan",
+          "code": "MM-08-001",
+          "ts_pcode": "MMR009016",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-002",
+          "name": "Chauk",
+          "code": "MM-08-002",
+          "ts_pcode": "MMR009003",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-003",
+          "name": "Gangaw",
+          "code": "MM-08-003",
+          "ts_pcode": "MMR009023",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-004",
+          "name": "Kamma",
+          "code": "MM-08-004",
+          "ts_pcode": "MMR009015",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-005",
+          "name": "Magway",
+          "code": "MM-08-005",
+          "ts_pcode": "MMR009001",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-006",
+          "name": "Minbu",
+          "code": "MM-08-006",
+          "ts_pcode": "MMR009007",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-007",
+          "name": "Mindon",
+          "code": "MM-08-007",
+          "ts_pcode": "MMR009014",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-008",
+          "name": "Minhla",
+          "code": "MM-08-008",
+          "ts_pcode": "MMR009013",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-009",
+          "name": "Myaing",
+          "code": "MM-08-009",
+          "ts_pcode": "MMR009020",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-010",
+          "name": "Myothit",
+          "code": "MM-08-010",
+          "ts_pcode": "MMR009005",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-011",
+          "name": "Natmauk",
+          "code": "MM-08-011",
+          "ts_pcode": "MMR009006",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-012",
+          "name": "Ngape",
+          "code": "MM-08-012",
+          "ts_pcode": "MMR009009",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-013",
+          "name": "Pakokku",
+          "code": "MM-08-013",
+          "ts_pcode": "MMR009018",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-014",
+          "name": "Pauk",
+          "code": "MM-08-014",
+          "ts_pcode": "MMR009021",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-015",
+          "name": "Pwintbyu",
+          "code": "MM-08-015",
+          "ts_pcode": "MMR009008",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-016",
+          "name": "Salin",
+          "code": "MM-08-016",
+          "ts_pcode": "MMR009010",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-017",
+          "name": "Saw",
+          "code": "MM-08-017",
+          "ts_pcode": "MMR009025",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-018",
+          "name": "Seikphyu",
+          "code": "MM-08-018",
+          "ts_pcode": "MMR009022",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-019",
+          "name": "Sidoktaya",
+          "code": "MM-08-019",
+          "ts_pcode": "MMR009011",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-020",
+          "name": "Sinbaungwe",
+          "code": "MM-08-020",
+          "ts_pcode": "MMR009017",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-021",
+          "name": "Taungdwingyi",
+          "code": "MM-08-021",
+          "ts_pcode": "MMR009004",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-022",
+          "name": "Thayet",
+          "code": "MM-08-022",
+          "ts_pcode": "MMR009012",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-023",
+          "name": "Tilin",
+          "code": "MM-08-023",
+          "ts_pcode": "MMR009024",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-024",
+          "name": "Yenangyaung",
+          "code": "MM-08-024",
+          "ts_pcode": "MMR009002",
+          "st_pcode": "MMR009"
+        },
+        {
+          "id": "08-025",
+          "name": "Yesagyo",
+          "code": "MM-08-025",
+          "ts_pcode": "MMR009019",
+          "st_pcode": "MMR009"
+        }
+      ],
+      "st_pcode": "MMR009"
     },
     {
       "id": "09",
@@ -219,35 +1075,204 @@
       "name": "Mandalay Region",
       "type": "region",
       "townships": [
-        { "id": "09-001", "name": "Amarapura", "code": "MM-09-001" },
-        { "id": "09-002", "name": "Aungmyethazan", "code": "MM-09-002" },
-        { "id": "09-003", "name": "Chanayethazan", "code": "MM-09-003" },
-        { "id": "09-004", "name": "Chanmyathazi", "code": "MM-09-004" },
-        { "id": "09-005", "name": "Kyaukpadaung", "code": "MM-09-005" },
-        { "id": "09-006", "name": "Kyaukse", "code": "MM-09-006" },
-        { "id": "09-007", "name": "Madaya", "code": "MM-09-007" },
-        { "id": "09-008", "name": "Mahaaungmye", "code": "MM-09-008" },
-        { "id": "09-009", "name": "Mahlaing", "code": "MM-09-009" },
-        { "id": "09-010", "name": "Meiktila", "code": "MM-09-010" },
-        { "id": "09-011", "name": "Mogoke", "code": "MM-09-011" },
-        { "id": "09-012", "name": "Myingyan", "code": "MM-09-012" },
-        { "id": "09-013", "name": "Myittha", "code": "MM-09-013" },
-        { "id": "09-014", "name": "Natogyi", "code": "MM-09-014" },
-        { "id": "09-015", "name": "Ngazun", "code": "MM-09-015" },
-        { "id": "09-016", "name": "Nyaung-U", "code": "MM-09-016" },
-        { "id": "09-017", "name": "Patheingyi", "code": "MM-09-017" },
-        { "id": "09-018", "name": "Pyawbwe", "code": "MM-09-018" },
-        { "id": "09-019", "name": "Pyigyidagun", "code": "MM-09-019" },
-        { "id": "09-020", "name": "Pyinoolwin", "code": "MM-09-020" },
-        { "id": "09-021", "name": "Singu", "code": "MM-09-021" },
-        { "id": "09-022", "name": "Sintgaing", "code": "MM-09-022" },
-        { "id": "09-023", "name": "Tada-U", "code": "MM-09-023" },
-        { "id": "09-024", "name": "Taungtha", "code": "MM-09-024" },
-        { "id": "09-025", "name": "Thabeikkyin", "code": "MM-09-025" },
-        { "id": "09-026", "name": "Thazi", "code": "MM-09-026" },
-        { "id": "09-027", "name": "Wundwin", "code": "MM-09-027" },
-        { "id": "09-028", "name": "Yamethin", "code": "MM-09-028" }
-      ]
+        {
+          "id": "09-001",
+          "name": "Amarapura",
+          "code": "MM-09-001",
+          "ts_pcode": "MMR010006",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-002",
+          "name": "Aungmyethazan",
+          "code": "MM-09-002",
+          "ts_pcode": "MMR010001",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-003",
+          "name": "Chanayethazan",
+          "code": "MM-09-003",
+          "ts_pcode": "MMR010002",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-004",
+          "name": "Chanmyathazi",
+          "code": "MM-09-004",
+          "ts_pcode": "MMR010004",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-005",
+          "name": "Kyaukpadaung",
+          "code": "MM-09-005",
+          "ts_pcode": "MMR010020",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-006",
+          "name": "Kyaukse",
+          "code": "MM-09-006",
+          "ts_pcode": "MMR010013",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-007",
+          "name": "Madaya",
+          "code": "MM-09-007",
+          "ts_pcode": "MMR010009",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-008",
+          "name": "Mahaaungmye",
+          "code": "MM-09-008",
+          "ts_pcode": "MMR010003",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-009",
+          "name": "Mahlaing",
+          "code": "MM-09-009",
+          "ts_pcode": "MMR010029",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-010",
+          "name": "Meiktila",
+          "code": "MM-09-010",
+          "ts_pcode": "MMR010028",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-011",
+          "name": "Mogoke",
+          "code": "MM-09-011",
+          "ts_pcode": "MMR010011",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-012",
+          "name": "Myingyan",
+          "code": "MM-09-012",
+          "ts_pcode": "MMR010017",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-013",
+          "name": "Myittha",
+          "code": "MM-09-013",
+          "ts_pcode": "MMR010015",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-014",
+          "name": "Natogyi",
+          "code": "MM-09-014",
+          "ts_pcode": "MMR010019",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-015",
+          "name": "Ngazun",
+          "code": "MM-09-015",
+          "ts_pcode": "MMR010021",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-016",
+          "name": "Nyaung-U",
+          "code": "MM-09-016",
+          "ts_pcode": "MMR010022",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-017",
+          "name": "Patheingyi",
+          "code": "MM-09-017",
+          "ts_pcode": "MMR010007",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-018",
+          "name": "Pyawbwe",
+          "code": "MM-09-018",
+          "ts_pcode": "MMR010024",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-019",
+          "name": "Pyigyidagun",
+          "code": "MM-09-019",
+          "ts_pcode": "MMR010005",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-020",
+          "name": "Pyinoolwin",
+          "code": "MM-09-020",
+          "ts_pcode": "MMR010008",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-021",
+          "name": "Singu",
+          "code": "MM-09-021",
+          "ts_pcode": "MMR010010",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-022",
+          "name": "Sintgaing",
+          "code": "MM-09-022",
+          "ts_pcode": "MMR010014",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-023",
+          "name": "Tada-U",
+          "code": "MM-09-023",
+          "ts_pcode": "MMR010016",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-024",
+          "name": "Taungtha",
+          "code": "MM-09-024",
+          "ts_pcode": "MMR010018",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-025",
+          "name": "Thabeikkyin",
+          "code": "MM-09-025",
+          "ts_pcode": "MMR010012",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-026",
+          "name": "Thazi",
+          "code": "MM-09-026",
+          "ts_pcode": "MMR010030",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-027",
+          "name": "Wundwin",
+          "code": "MM-09-027",
+          "ts_pcode": "MMR010031",
+          "st_pcode": "MMR010"
+        },
+        {
+          "id": "09-028",
+          "name": "Yamethin",
+          "code": "MM-09-028",
+          "ts_pcode": "MMR010023",
+          "st_pcode": "MMR010"
+        }
+      ],
+      "st_pcode": "MMR010"
     },
     {
       "id": "10",
@@ -255,17 +1280,78 @@
       "name": "Mon State",
       "type": "state",
       "townships": [
-        { "id": "10-001", "name": "Bilin", "code": "MM-10-001" },
-        { "id": "10-002", "name": "Chaungzon", "code": "MM-10-002" },
-        { "id": "10-003", "name": "Kyaikmaraw", "code": "MM-10-003" },
-        { "id": "10-004", "name": "Kyaikto", "code": "MM-10-004" },
-        { "id": "10-005", "name": "Mawlamyine", "code": "MM-10-005" },
-        { "id": "10-006", "name": "Mudon", "code": "MM-10-006" },
-        { "id": "10-007", "name": "Paung", "code": "MM-10-007" },
-        { "id": "10-008", "name": "Thanbyuzayat", "code": "MM-10-008" },
-        { "id": "10-009", "name": "Thaton", "code": "MM-10-009" },
-        { "id": "10-010", "name": "Ye", "code": "MM-10-010" }
-      ]
+        {
+          "id": "10-001",
+          "name": "Bilin",
+          "code": "MM-10-001",
+          "ts_pcode": "MMR011010",
+          "st_pcode": "MMR011"
+        },
+        {
+          "id": "10-002",
+          "name": "Chaungzon",
+          "code": "MM-10-002",
+          "ts_pcode": "MMR011003",
+          "st_pcode": "MMR011"
+        },
+        {
+          "id": "10-003",
+          "name": "Kyaikmaraw",
+          "code": "MM-10-003",
+          "ts_pcode": "MMR011002",
+          "st_pcode": "MMR011"
+        },
+        {
+          "id": "10-004",
+          "name": "Kyaikto",
+          "code": "MM-10-004",
+          "ts_pcode": "MMR011009",
+          "st_pcode": "MMR011"
+        },
+        {
+          "id": "10-005",
+          "name": "Mawlamyine",
+          "code": "MM-10-005",
+          "ts_pcode": "MMR011001",
+          "st_pcode": "MMR011"
+        },
+        {
+          "id": "10-006",
+          "name": "Mudon",
+          "code": "MM-10-006",
+          "ts_pcode": "MMR011005",
+          "st_pcode": "MMR011"
+        },
+        {
+          "id": "10-007",
+          "name": "Paung",
+          "code": "MM-10-007",
+          "ts_pcode": "MMR011008",
+          "st_pcode": "MMR011"
+        },
+        {
+          "id": "10-008",
+          "name": "Thanbyuzayat",
+          "code": "MM-10-008",
+          "ts_pcode": "MMR011004",
+          "st_pcode": "MMR011"
+        },
+        {
+          "id": "10-009",
+          "name": "Thaton",
+          "code": "MM-10-009",
+          "ts_pcode": "MMR011007",
+          "st_pcode": "MMR011"
+        },
+        {
+          "id": "10-010",
+          "name": "Ye",
+          "code": "MM-10-010",
+          "ts_pcode": "MMR011006",
+          "st_pcode": "MMR011"
+        }
+      ],
+      "st_pcode": "MMR011"
     },
     {
       "id": "11",
@@ -273,24 +1359,125 @@
       "name": "Rakhine State",
       "type": "state",
       "townships": [
-        { "id": "11-001", "name": "Ann", "code": "MM-11-001" },
-        { "id": "11-002", "name": "Buthidaung", "code": "MM-11-002" },
-        { "id": "11-003", "name": "Gwa", "code": "MM-11-003" },
-        { "id": "11-004", "name": "Kyaukpyu", "code": "MM-11-004" },
-        { "id": "11-005", "name": "Kyauktaw", "code": "MM-11-005" },
-        { "id": "11-006", "name": "Maungdaw", "code": "MM-11-006" },
-        { "id": "11-007", "name": "Minbya", "code": "MM-11-007" },
-        { "id": "11-008", "name": "Mrauk-U", "code": "MM-11-008" },
-        { "id": "11-009", "name": "Myebon", "code": "MM-11-009" },
-        { "id": "11-010", "name": "Pauktaw", "code": "MM-11-010" },
-        { "id": "11-011", "name": "Ponnagyun", "code": "MM-11-011" },
-        { "id": "11-012", "name": "Ramree", "code": "MM-11-012" },
-        { "id": "11-013", "name": "Rathedaung", "code": "MM-11-013" },
-        { "id": "11-014", "name": "Sittwe", "code": "MM-11-014" },
-        { "id": "11-015", "name": "Thandwe", "code": "MM-11-015" },
-        { "id": "11-016", "name": "Toungup", "code": "MM-11-016" },
-        { "id": "11-017", "name": "Yanbye", "code": "MM-11-017" }
-      ]
+        {
+          "id": "11-001",
+          "name": "Ann",
+          "code": "MM-11-001",
+          "ts_pcode": "MMR012014",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-002",
+          "name": "Buthidaung",
+          "code": "MM-11-002",
+          "ts_pcode": "MMR012010",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-003",
+          "name": "Gwa",
+          "code": "MM-11-003",
+          "ts_pcode": "MMR012017",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-004",
+          "name": "Kyaukpyu",
+          "code": "MM-11-004",
+          "ts_pcode": "MMR012011",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-005",
+          "name": "Kyauktaw",
+          "code": "MM-11-005",
+          "ts_pcode": "MMR012004",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-006",
+          "name": "Maungdaw",
+          "code": "MM-11-006",
+          "ts_pcode": "MMR012009",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-007",
+          "name": "Minbya",
+          "code": "MM-11-007",
+          "ts_pcode": "MMR012005",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-008",
+          "name": "Mrauk-U",
+          "code": "MM-11-008",
+          "ts_pcode": "MMR012003",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-009",
+          "name": "Myebon",
+          "code": "MM-11-009",
+          "ts_pcode": "MMR012006",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-010",
+          "name": "Pauktaw",
+          "code": "MM-11-010",
+          "ts_pcode": "MMR012007",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-011",
+          "name": "Ponnagyun",
+          "code": "MM-11-011",
+          "ts_pcode": "MMR012002",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-012",
+          "name": "Ramree",
+          "code": "MM-11-012",
+          "ts_pcode": "MMR012013",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-013",
+          "name": "Rathedaung",
+          "code": "MM-11-013",
+          "ts_pcode": "MMR012008",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-014",
+          "name": "Sittwe",
+          "code": "MM-11-014",
+          "ts_pcode": "MMR012001",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-015",
+          "name": "Thandwe",
+          "code": "MM-11-015",
+          "ts_pcode": "MMR012015",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-016",
+          "name": "Toungup",
+          "code": "MM-11-016",
+          "ts_pcode": "MMR012016",
+          "st_pcode": "MMR012"
+        },
+        {
+          "id": "11-017",
+          "name": "Yanbye",
+          "code": "MM-11-017"
+        }
+      ],
+      "st_pcode": "MMR012"
     },
     {
       "id": "12",
@@ -298,49 +1485,302 @@
       "name": "Yangon Region",
       "type": "region",
       "townships": [
-        { "id": "12-001", "name": "Botahtaung", "code": "MM-12-001" },
-        { "id": "12-002", "name": "Cocokyun", "code": "MM-12-002" },
-        { "id": "12-003", "name": "Dagon", "code": "MM-12-003" },
-        { "id": "12-004", "name": "Dagon Seikkan", "code": "MM-12-004" },
-        { "id": "12-005", "name": "Dala", "code": "MM-12-005" },
-        { "id": "12-006", "name": "Dawbon", "code": "MM-12-006" },
-        { "id": "12-007", "name": "East Dagon", "code": "MM-12-007" },
-        { "id": "12-008", "name": "Hlaing", "code": "MM-12-008" },
-        { "id": "12-009", "name": "Hlaingthaya", "code": "MM-12-009" },
-        { "id": "12-010", "name": "Hlegu", "code": "MM-12-010" },
-        { "id": "12-011", "name": "Hmawbi", "code": "MM-12-011" },
-        { "id": "12-012", "name": "Htantabin", "code": "MM-12-012" },
-        { "id": "12-013", "name": "Insein", "code": "MM-12-013" },
-        { "id": "12-014", "name": "Kamayut", "code": "MM-12-014" },
-        { "id": "12-015", "name": "Kawhmu", "code": "MM-12-015" },
-        { "id": "12-016", "name": "Kayan", "code": "MM-12-016" },
-        { "id": "12-017", "name": "Kungyangon", "code": "MM-12-017" },
-        { "id": "12-018", "name": "Kyauktan", "code": "MM-12-018" },
-        { "id": "12-019", "name": "Kyimyindaing", "code": "MM-12-019" },
-        { "id": "12-020", "name": "Lanmadaw", "code": "MM-12-020" },
-        { "id": "12-021", "name": "Latha", "code": "MM-12-021" },
-        { "id": "12-022", "name": "Mayangon", "code": "MM-12-022" },
-        { "id": "12-023", "name": "Mingaladon", "code": "MM-12-023" },
-        { "id": "12-024", "name": "Mingalartaungnyunt", "code": "MM-12-024" },
-        { "id": "12-025", "name": "North Dagon", "code": "MM-12-025" },
-        { "id": "12-026", "name": "North Okkalapa", "code": "MM-12-026" },
-        { "id": "12-027", "name": "Pabedan", "code": "MM-12-027" },
-        { "id": "12-028", "name": "Pazundaung", "code": "MM-12-028" },
-        { "id": "12-029", "name": "Sanchaung", "code": "MM-12-029" },
-        { "id": "12-030", "name": "Seikgyikanaungto", "code": "MM-12-030" },
-        { "id": "12-031", "name": "Seikkyi", "code": "MM-12-031" },
-        { "id": "12-032", "name": "Shwepyithar", "code": "MM-12-032" },
-        { "id": "12-033", "name": "South Dagon", "code": "MM-12-033" },
-        { "id": "12-034", "name": "South Okkalapa", "code": "MM-12-034" },
-        { "id": "12-035", "name": "Taikkyi", "code": "MM-12-035" },
-        { "id": "12-036", "name": "Tamwe", "code": "MM-12-036" },
-        { "id": "12-037", "name": "Thaketa", "code": "MM-12-037" },
-        { "id": "12-038", "name": "Thanlyin", "code": "MM-12-038" },
-        { "id": "12-039", "name": "Thingangyun", "code": "MM-12-039" },
-        { "id": "12-040", "name": "Thongwa", "code": "MM-12-040" },
-        { "id": "12-041", "name": "Twantay", "code": "MM-12-041" },
-        { "id": "12-042", "name": "Yankin", "code": "MM-12-042" }
-      ]
+        {
+          "id": "12-001",
+          "name": "Botahtaung",
+          "code": "MM-12-001",
+          "ts_pcode": "MMR013017",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-002",
+          "name": "Cocokyun",
+          "code": "MM-12-002",
+          "ts_pcode": "MMR013032",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-003",
+          "name": "Dagon",
+          "code": "MM-12-003",
+          "ts_pcode": "MMR013043",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-004",
+          "name": "Dagon Seikkan",
+          "code": "MM-12-004",
+          "ts_pcode": "MMR013021",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-005",
+          "name": "Dala",
+          "code": "MM-12-005",
+          "ts_pcode": "MMR013030",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-006",
+          "name": "Dawbon",
+          "code": "MM-12-006",
+          "ts_pcode": "MMR013014",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-007",
+          "name": "East Dagon",
+          "code": "MM-12-007",
+          "ts_pcode": "MMR013020",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-008",
+          "name": "Hlaing",
+          "code": "MM-12-008",
+          "ts_pcode": "MMR013040",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-009",
+          "name": "Hlaingthaya",
+          "code": "MM-12-009",
+          "ts_pcode": "MMR013046",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-010",
+          "name": "Hlegu",
+          "code": "MM-12-010",
+          "ts_pcode": "MMR013004",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-011",
+          "name": "Hmawbi",
+          "code": "MM-12-011",
+          "ts_pcode": "MMR013003",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-012",
+          "name": "Htantabin",
+          "code": "MM-12-012",
+          "ts_pcode": "MMR013006",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-013",
+          "name": "Insein",
+          "code": "MM-12-013",
+          "ts_pcode": "MMR013001",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-014",
+          "name": "Kamayut",
+          "code": "MM-12-014",
+          "ts_pcode": "MMR013041",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-015",
+          "name": "Kawhmu",
+          "code": "MM-12-015",
+          "ts_pcode": "MMR013028",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-016",
+          "name": "Kayan",
+          "code": "MM-12-016",
+          "ts_pcode": "MMR013026",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-017",
+          "name": "Kungyangon",
+          "code": "MM-12-017",
+          "ts_pcode": "MMR013029",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-018",
+          "name": "Kyauktan",
+          "code": "MM-12-018",
+          "ts_pcode": "MMR013024",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-019",
+          "name": "Kyimyindaing",
+          "code": "MM-12-019",
+          "ts_pcode": "MMR013038",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-020",
+          "name": "Lanmadaw",
+          "code": "MM-12-020",
+          "ts_pcode": "MMR013035",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-021",
+          "name": "Latha",
+          "code": "MM-12-021",
+          "ts_pcode": "MMR013036",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-022",
+          "name": "Mayangon",
+          "code": "MM-12-022",
+          "ts_pcode": "MMR013042",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-023",
+          "name": "Mingaladon",
+          "code": "MM-12-023",
+          "ts_pcode": "MMR013002",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-024",
+          "name": "Mingalartaungnyunt",
+          "code": "MM-12-024",
+          "ts_pcode": "MMR013022",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-025",
+          "name": "North Dagon",
+          "code": "MM-12-025",
+          "ts_pcode": "MMR013019",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-026",
+          "name": "North Okkalapa",
+          "code": "MM-12-026",
+          "ts_pcode": "MMR013012",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-027",
+          "name": "Pabedan",
+          "code": "MM-12-027",
+          "ts_pcode": "MMR013034",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-028",
+          "name": "Pazundaung",
+          "code": "MM-12-028",
+          "ts_pcode": "MMR013016",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-029",
+          "name": "Sanchaung",
+          "code": "MM-12-029",
+          "ts_pcode": "MMR013039",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-030",
+          "name": "Seikgyikanaungto",
+          "code": "MM-12-030",
+          "ts_pcode": "MMR013031",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-031",
+          "name": "Seikkyi",
+          "code": "MM-12-031",
+          "ts_pcode": "MMR013031",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-032",
+          "name": "Shwepyithar",
+          "code": "MM-12-032",
+          "ts_pcode": "MMR013007",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-033",
+          "name": "South Dagon",
+          "code": "MM-12-033",
+          "ts_pcode": "MMR013018",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-034",
+          "name": "South Okkalapa",
+          "code": "MM-12-034",
+          "ts_pcode": "MMR013011",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-035",
+          "name": "Taikkyi",
+          "code": "MM-12-035",
+          "ts_pcode": "MMR013005",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-036",
+          "name": "Tamwe",
+          "code": "MM-12-036",
+          "ts_pcode": "MMR013015",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-037",
+          "name": "Thaketa",
+          "code": "MM-12-037",
+          "ts_pcode": "MMR013013",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-038",
+          "name": "Thanlyin",
+          "code": "MM-12-038",
+          "ts_pcode": "MMR013023",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-039",
+          "name": "Thingangyun",
+          "code": "MM-12-039",
+          "ts_pcode": "MMR013009",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-040",
+          "name": "Thongwa",
+          "code": "MM-12-040",
+          "ts_pcode": "MMR013025",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-041",
+          "name": "Twantay",
+          "code": "MM-12-041",
+          "ts_pcode": "MMR013027",
+          "st_pcode": "MMR013"
+        },
+        {
+          "id": "12-042",
+          "name": "Yankin",
+          "code": "MM-12-042",
+          "ts_pcode": "MMR013010",
+          "st_pcode": "MMR013"
+        }
+      ],
+      "st_pcode": "MMR013"
     },
     {
       "id": "13",
@@ -348,71 +1788,440 @@
       "name": "Shan State",
       "type": "state",
       "townships": [
-        { "id": "13-001", "name": "Bokpyin", "code": "MM-13-001" },
-        { "id": "13-002", "name": "Hopang", "code": "MM-13-002" },
-        { "id": "13-003", "name": "Hopong", "code": "MM-13-003" },
-        { "id": "13-004", "name": "Hseni", "code": "MM-13-004" },
-        { "id": "13-005", "name": "Hsihseng", "code": "MM-13-005" },
-        { "id": "13-006", "name": "Hsipaw", "code": "MM-13-006" },
-        { "id": "13-007", "name": "Kalaw", "code": "MM-13-007" },
-        { "id": "13-008", "name": "Kengtung", "code": "MM-13-008" },
-        { "id": "13-009", "name": "Konkyan", "code": "MM-13-009" },
-        { "id": "13-010", "name": "Kunhing", "code": "MM-13-010" },
-        { "id": "13-011", "name": "Kunlong", "code": "MM-13-011" },
-        { "id": "13-012", "name": "Kutkai", "code": "MM-13-012" },
-        { "id": "13-013", "name": "Kyaukkyi", "code": "MM-13-013" },
-        { "id": "13-014", "name": "Kyaukme", "code": "MM-13-014" },
-        { "id": "13-015", "name": "Kyethi", "code": "MM-13-015" },
-        { "id": "13-016", "name": "Laihka", "code": "MM-13-016" },
-        { "id": "13-017", "name": "Langkho", "code": "MM-13-017" },
-        { "id": "13-018", "name": "Lashio", "code": "MM-13-018" },
-        { "id": "13-019", "name": "Laukkaing", "code": "MM-13-019" },
-        { "id": "13-020", "name": "Lawksawk", "code": "MM-13-020" },
-        { "id": "13-021", "name": "Loilen", "code": "MM-13-021" },
-        { "id": "13-022", "name": "Mabein", "code": "MM-13-022" },
-        { "id": "13-023", "name": "Mantong", "code": "MM-13-023" },
-        { "id": "13-024", "name": "Matman", "code": "MM-13-024" },
-        { "id": "13-025", "name": "Maukmai", "code": "MM-13-025" },
-        { "id": "13-026", "name": "Mawkmai", "code": "MM-13-026" },
-        { "id": "13-027", "name": "Mese", "code": "MM-13-027" },
-        { "id": "13-028", "name": "Mongkaung", "code": "MM-13-028" },
-        { "id": "13-029", "name": "Monghpyak", "code": "MM-13-029" },
-        { "id": "13-030", "name": "Monghsat", "code": "MM-13-030" },
-        { "id": "13-031", "name": "Mongkhet", "code": "MM-13-031" },
-        { "id": "13-032", "name": "Mongla", "code": "MM-13-032" },
-        { "id": "13-033", "name": "Mongmao", "code": "MM-13-033" },
-        { "id": "13-034", "name": "Mongmit", "code": "MM-13-034" },
-        { "id": "13-035", "name": "Mongnai", "code": "MM-13-035" },
-        { "id": "13-036", "name": "Mongpan", "code": "MM-13-036" },
-        { "id": "13-037", "name": "Mongping", "code": "MM-13-037" },
-        { "id": "13-038", "name": "Mongton", "code": "MM-13-038" },
-        { "id": "13-039", "name": "Mongyai", "code": "MM-13-039" },
-        { "id": "13-040", "name": "Mongyang", "code": "MM-13-040" },
-        { "id": "13-041", "name": "Mongyawng", "code": "MM-13-041" },
-        { "id": "13-042", "name": "Mongyu", "code": "MM-13-042" },
-        { "id": "13-043", "name": "Muse", "code": "MM-13-043" },
-        { "id": "13-044", "name": "Namhkan", "code": "MM-13-044" },
-        { "id": "13-045", "name": "Namhsan", "code": "MM-13-045" },
-        { "id": "13-046", "name": "Namtu", "code": "MM-13-046" },
-        { "id": "13-047", "name": "Nanhkan", "code": "MM-13-047" },
-        { "id": "13-048", "name": "Nansang", "code": "MM-13-048" },
-        { "id": "13-049", "name": "Narphan", "code": "MM-13-049" },
-        { "id": "13-050", "name": "Nawnghkio", "code": "MM-13-050" },
-        { "id": "13-051", "name": "Nyaungshwe", "code": "MM-13-051" },
-        { "id": "13-052", "name": "Pakan", "code": "MM-13-052" },
-        { "id": "13-053", "name": "Pangwaun", "code": "MM-13-053" },
-        { "id": "13-054", "name": "Pangsang", "code": "MM-13-054" },
-        { "id": "13-055", "name": "Pekon", "code": "MM-13-055" },
-        { "id": "13-056", "name": "Phalan", "code": "MM-13-056" },
-        { "id": "13-057", "name": "Pindaya", "code": "MM-13-057" },
-        { "id": "13-058", "name": "Pinlaung", "code": "MM-13-058" },
-        { "id": "13-059", "name": "Tachileik", "code": "MM-13-059" },
-        { "id": "13-060", "name": "Tangyan", "code": "MM-13-060" },
-        { "id": "13-061", "name": "Taunggyi", "code": "MM-13-061" },
-        { "id": "13-062", "name": "Theinni", "code": "MM-13-062" },
-        { "id": "13-063", "name": "Thibaw", "code": "MM-13-063" },
-        { "id": "13-064", "name": "Ywangan", "code": "MM-13-064" }
-      ]
+        {
+          "id": "13-001",
+          "name": "Bokpyin",
+          "code": "MM-13-001"
+        },
+        {
+          "id": "13-002",
+          "name": "Hopang",
+          "code": "MM-13-002",
+          "ts_pcode": "MMR015021",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-003",
+          "name": "Hopong",
+          "code": "MM-13-003",
+          "ts_pcode": "MMR014003",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-004",
+          "name": "Hseni",
+          "code": "MM-13-004",
+          "ts_pcode": "MMR015002",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-005",
+          "name": "Hsihseng",
+          "code": "MM-13-005",
+          "ts_pcode": "MMR014004",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-006",
+          "name": "Hsipaw",
+          "code": "MM-13-006",
+          "ts_pcode": "MMR015014",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-007",
+          "name": "Kalaw",
+          "code": "MM-13-007",
+          "ts_pcode": "MMR014005",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-008",
+          "name": "Kengtung",
+          "code": "MM-13-008",
+          "ts_pcode": "MMR016001",
+          "st_pcode": "MMR016"
+        },
+        {
+          "id": "13-009",
+          "name": "Konkyan",
+          "code": "MM-13-009",
+          "ts_pcode": "MMR015023",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-010",
+          "name": "Kunhing",
+          "code": "MM-13-010",
+          "ts_pcode": "MMR014014",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-011",
+          "name": "Kunlong",
+          "code": "MM-13-011",
+          "ts_pcode": "MMR015020",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-012",
+          "name": "Kutkai",
+          "code": "MM-13-012",
+          "ts_pcode": "MMR015011",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-013",
+          "name": "Kyaukkyi",
+          "code": "MM-13-013"
+        },
+        {
+          "id": "13-014",
+          "name": "Kyaukme",
+          "code": "MM-13-014",
+          "ts_pcode": "MMR015012",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-015",
+          "name": "Kyethi",
+          "code": "MM-13-015",
+          "ts_pcode": "MMR014015",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-016",
+          "name": "Laihka",
+          "code": "MM-13-016",
+          "ts_pcode": "MMR014012",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-017",
+          "name": "Langkho",
+          "code": "MM-13-017",
+          "ts_pcode": "MMR014018",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-018",
+          "name": "Lashio",
+          "code": "MM-13-018",
+          "ts_pcode": "MMR015001",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-019",
+          "name": "Laukkaing",
+          "code": "MM-13-019",
+          "ts_pcode": "MMR015022",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-020",
+          "name": "Lawksawk",
+          "code": "MM-13-020",
+          "ts_pcode": "MMR014008",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-021",
+          "name": "Loilen",
+          "code": "MM-13-021",
+          "ts_pcode": "MMR014011",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-022",
+          "name": "Mabein",
+          "code": "MM-13-022",
+          "ts_pcode": "MMR015018",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-023",
+          "name": "Mantong",
+          "code": "MM-13-023",
+          "ts_pcode": "MMR015019",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-024",
+          "name": "Matman",
+          "code": "MM-13-024",
+          "ts_pcode": "MMR015024",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-025",
+          "name": "Maukmai",
+          "code": "MM-13-025",
+          "ts_pcode": "MMR014020",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-026",
+          "name": "Mawkmai",
+          "code": "MM-13-026",
+          "ts_pcode": "MMR014020",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-027",
+          "name": "Mese",
+          "code": "MM-13-027"
+        },
+        {
+          "id": "13-028",
+          "name": "Mongkaung",
+          "code": "MM-13-028",
+          "ts_pcode": "MMR014016",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-029",
+          "name": "Monghpyak",
+          "code": "MM-13-029",
+          "ts_pcode": "MMR016010",
+          "st_pcode": "MMR016"
+        },
+        {
+          "id": "13-030",
+          "name": "Monghsat",
+          "code": "MM-13-030",
+          "ts_pcode": "MMR016006",
+          "st_pcode": "MMR016"
+        },
+        {
+          "id": "13-031",
+          "name": "Mongkhet",
+          "code": "MM-13-031",
+          "ts_pcode": "MMR016002",
+          "st_pcode": "MMR016"
+        },
+        {
+          "id": "13-032",
+          "name": "Mongla",
+          "code": "MM-13-032",
+          "ts_pcode": "MMR016005",
+          "st_pcode": "MMR016"
+        },
+        {
+          "id": "13-033",
+          "name": "Mongmao",
+          "code": "MM-13-033",
+          "ts_pcode": "MMR015008",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-034",
+          "name": "Mongmit",
+          "code": "MM-13-034",
+          "ts_pcode": "MMR015017",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-035",
+          "name": "Mongnai",
+          "code": "MM-13-035",
+          "ts_pcode": "MMR014019",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-036",
+          "name": "Mongpan",
+          "code": "MM-13-036",
+          "ts_pcode": "MMR014021",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-037",
+          "name": "Mongping",
+          "code": "MM-13-037",
+          "ts_pcode": "MMR016007",
+          "st_pcode": "MMR016"
+        },
+        {
+          "id": "13-038",
+          "name": "Mongton",
+          "code": "MM-13-038",
+          "ts_pcode": "MMR016008",
+          "st_pcode": "MMR016"
+        },
+        {
+          "id": "13-039",
+          "name": "Mongyai",
+          "code": "MM-13-039",
+          "ts_pcode": "MMR015003",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-040",
+          "name": "Mongyang",
+          "code": "MM-13-040",
+          "ts_pcode": "MMR016003",
+          "st_pcode": "MMR016"
+        },
+        {
+          "id": "13-041",
+          "name": "Mongyawng",
+          "code": "MM-13-041",
+          "ts_pcode": "MMR016011",
+          "st_pcode": "MMR016"
+        },
+        {
+          "id": "13-042",
+          "name": "Mongyu",
+          "code": "MM-13-042"
+        },
+        {
+          "id": "13-043",
+          "name": "Muse",
+          "code": "MM-13-043",
+          "ts_pcode": "MMR015009",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-044",
+          "name": "Namhkan",
+          "code": "MM-13-044",
+          "ts_pcode": "MMR015010",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-045",
+          "name": "Namhsan",
+          "code": "MM-13-045",
+          "ts_pcode": "MMR015016",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-046",
+          "name": "Namtu",
+          "code": "MM-13-046",
+          "ts_pcode": "MMR015015",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-047",
+          "name": "Nanhkan",
+          "code": "MM-13-047",
+          "ts_pcode": "MMR015010",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-048",
+          "name": "Nansang",
+          "code": "MM-13-048",
+          "ts_pcode": "MMR014013",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-049",
+          "name": "Narphan",
+          "code": "MM-13-049",
+          "ts_pcode": "MMR015006",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-050",
+          "name": "Nawnghkio",
+          "code": "MM-13-050",
+          "ts_pcode": "MMR015013",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-051",
+          "name": "Nyaungshwe",
+          "code": "MM-13-051",
+          "ts_pcode": "MMR014002",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-052",
+          "name": "Pakan",
+          "code": "MM-13-052"
+        },
+        {
+          "id": "13-053",
+          "name": "Pangwaun",
+          "code": "MM-13-053",
+          "ts_pcode": "MMR015007",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-054",
+          "name": "Pangsang",
+          "code": "MM-13-054",
+          "ts_pcode": "MMR015005",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-055",
+          "name": "Pekon",
+          "code": "MM-13-055",
+          "ts_pcode": "MMR014010",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-056",
+          "name": "Phalan",
+          "code": "MM-13-056"
+        },
+        {
+          "id": "13-057",
+          "name": "Pindaya",
+          "code": "MM-13-057",
+          "ts_pcode": "MMR014006",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-058",
+          "name": "Pinlaung",
+          "code": "MM-13-058",
+          "ts_pcode": "MMR014009",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-059",
+          "name": "Tachileik",
+          "code": "MM-13-059",
+          "ts_pcode": "MMR016009",
+          "st_pcode": "MMR016"
+        },
+        {
+          "id": "13-060",
+          "name": "Tangyan",
+          "code": "MM-13-060",
+          "ts_pcode": "MMR015004",
+          "st_pcode": "MMR015"
+        },
+        {
+          "id": "13-061",
+          "name": "Taunggyi",
+          "code": "MM-13-061",
+          "ts_pcode": "MMR014001",
+          "st_pcode": "MMR014"
+        },
+        {
+          "id": "13-062",
+          "name": "Theinni",
+          "code": "MM-13-062"
+        },
+        {
+          "id": "13-063",
+          "name": "Thibaw",
+          "code": "MM-13-063"
+        },
+        {
+          "id": "13-064",
+          "name": "Ywangan",
+          "code": "MM-13-064",
+          "ts_pcode": "MMR014007",
+          "st_pcode": "MMR014"
+        }
+      ],
+      "st_pcode": "MMR014"
     },
     {
       "id": "14",
@@ -420,36 +2229,205 @@
       "name": "Ayeyarwady Region",
       "type": "region",
       "townships": [
-        { "id": "14-001", "name": "Bogale", "code": "MM-14-001" },
-        { "id": "14-002", "name": "Danubyu", "code": "MM-14-002" },
-        { "id": "14-003", "name": "Dedaye", "code": "MM-14-003" },
-        { "id": "14-004", "name": "Einme", "code": "MM-14-004" },
-        { "id": "14-005", "name": "Hinthada", "code": "MM-14-005" },
-        { "id": "14-006", "name": "Ingapu", "code": "MM-14-006" },
-        { "id": "14-007", "name": "Kyangin", "code": "MM-14-007" },
-        { "id": "14-008", "name": "Kyaiklat", "code": "MM-14-008" },
-        { "id": "14-009", "name": "Kyaunggon", "code": "MM-14-009" },
-        { "id": "14-010", "name": "Kyonpyaw", "code": "MM-14-010" },
-        { "id": "14-011", "name": "Labutta", "code": "MM-14-011" },
-        { "id": "14-012", "name": "Lemyethna", "code": "MM-14-012" },
-        { "id": "14-013", "name": "Maubin", "code": "MM-14-013" },
-        { "id": "14-014", "name": "Mawlamyinegyun", "code": "MM-14-014" },
-        { "id": "14-015", "name": "Myanaung", "code": "MM-14-015" },
-        { "id": "14-016", "name": "Myaungmya", "code": "MM-14-016" },
-        { "id": "14-017", "name": "Ngapudaw", "code": "MM-14-017" },
-        { "id": "14-018", "name": "Ngathainggyaung", "code": "MM-14-018" },
-        { "id": "14-019", "name": "Ngaputaw", "code": "MM-14-019" },
-        { "id": "14-020", "name": "Ngayokaung", "code": "MM-14-020" },
-        { "id": "14-021", "name": "Nyaungdon", "code": "MM-14-021" },
-        { "id": "14-022", "name": "Pantanaw", "code": "MM-14-022" },
-        { "id": "14-023", "name": "Pathein", "code": "MM-14-023" },
-        { "id": "14-024", "name": "Pyapon", "code": "MM-14-024" },
-        { "id": "14-025", "name": "Pyinsalu", "code": "MM-14-025" },
-        { "id": "14-026", "name": "Thabaung", "code": "MM-14-026" },
-        { "id": "14-027", "name": "Wakema", "code": "MM-14-027" },
-        { "id": "14-028", "name": "Yegyi", "code": "MM-14-028" },
-        { "id": "14-029", "name": "Zalun", "code": "MM-14-029" }
-      ]
+        {
+          "id": "14-001",
+          "name": "Bogale",
+          "code": "MM-14-001",
+          "ts_pcode": "MMR017024",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-002",
+          "name": "Danubyu",
+          "code": "MM-14-002",
+          "ts_pcode": "MMR017022",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-003",
+          "name": "Dedaye",
+          "code": "MM-14-003",
+          "ts_pcode": "MMR017026",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-004",
+          "name": "Einme",
+          "code": "MM-14-004",
+          "ts_pcode": "MMR017015",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-005",
+          "name": "Hinthada",
+          "code": "MM-14-005",
+          "ts_pcode": "MMR017008",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-006",
+          "name": "Ingapu",
+          "code": "MM-14-006",
+          "ts_pcode": "MMR017013",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-007",
+          "name": "Kyangin",
+          "code": "MM-14-007",
+          "ts_pcode": "MMR017012",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-008",
+          "name": "Kyaiklat",
+          "code": "MM-14-008",
+          "ts_pcode": "MMR017025",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-009",
+          "name": "Kyaunggon",
+          "code": "MM-14-009",
+          "ts_pcode": "MMR017007",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-010",
+          "name": "Kyonpyaw",
+          "code": "MM-14-010",
+          "ts_pcode": "MMR017005",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-011",
+          "name": "Labutta",
+          "code": "MM-14-011",
+          "ts_pcode": "MMR017016",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-012",
+          "name": "Lemyethna",
+          "code": "MM-14-012",
+          "ts_pcode": "MMR017010",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-013",
+          "name": "Maubin",
+          "code": "MM-14-013",
+          "ts_pcode": "MMR017019",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-014",
+          "name": "Mawlamyinegyun",
+          "code": "MM-14-014",
+          "ts_pcode": "MMR017018",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-015",
+          "name": "Myanaung",
+          "code": "MM-14-015",
+          "ts_pcode": "MMR017011",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-016",
+          "name": "Myaungmya",
+          "code": "MM-14-016",
+          "ts_pcode": "MMR017014",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-017",
+          "name": "Ngapudaw",
+          "code": "MM-14-017",
+          "ts_pcode": "MMR017004",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-018",
+          "name": "Ngathainggyaung",
+          "code": "MM-14-018"
+        },
+        {
+          "id": "14-019",
+          "name": "Ngaputaw",
+          "code": "MM-14-019",
+          "ts_pcode": "MMR017004",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-020",
+          "name": "Ngayokaung",
+          "code": "MM-14-020"
+        },
+        {
+          "id": "14-021",
+          "name": "Nyaungdon",
+          "code": "MM-14-021",
+          "ts_pcode": "MMR017021",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-022",
+          "name": "Pantanaw",
+          "code": "MM-14-022",
+          "ts_pcode": "MMR017020",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-023",
+          "name": "Pathein",
+          "code": "MM-14-023",
+          "ts_pcode": "MMR017001",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-024",
+          "name": "Pyapon",
+          "code": "MM-14-024",
+          "ts_pcode": "MMR017023",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-025",
+          "name": "Pyinsalu",
+          "code": "MM-14-025"
+        },
+        {
+          "id": "14-026",
+          "name": "Thabaung",
+          "code": "MM-14-026",
+          "ts_pcode": "MMR017003",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-027",
+          "name": "Wakema",
+          "code": "MM-14-027",
+          "ts_pcode": "MMR017017",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-028",
+          "name": "Yegyi",
+          "code": "MM-14-028",
+          "ts_pcode": "MMR017006",
+          "st_pcode": "MMR017"
+        },
+        {
+          "id": "14-029",
+          "name": "Zalun",
+          "code": "MM-14-029",
+          "ts_pcode": "MMR017009",
+          "st_pcode": "MMR017"
+        }
+      ],
+      "st_pcode": "MMR017"
     },
     {
       "id": "15",
@@ -457,27 +2435,106 @@
       "name": "Naypyidaw Union Territory",
       "type": "union_territory",
       "townships": [
-        { "id": "15-001", "name": "Dekkhinathiri", "code": "MM-15-001" },
-        { "id": "15-002", "name": "Lewe", "code": "MM-15-002" },
-        { "id": "15-003", "name": "Ottarathiri", "code": "MM-15-003" },
-        { "id": "15-004", "name": "Pobbathiri", "code": "MM-15-004" },
-        { "id": "15-005", "name": "Pyinmana", "code": "MM-15-005" },
-        { "id": "15-006", "name": "Tatkon", "code": "MM-15-006" },
-        { "id": "15-007", "name": "Zabuthiri", "code": "MM-15-007" },
-        { "id": "15-008", "name": "Zeyathiri", "code": "MM-15-008" }
-      ]
+        {
+          "id": "15-001",
+          "name": "Dekkhinathiri",
+          "code": "MM-15-001",
+          "ts_pcode": "MMR018004",
+          "st_pcode": "MMR018"
+        },
+        {
+          "id": "15-002",
+          "name": "Lewe",
+          "code": "MM-15-002",
+          "ts_pcode": "MMR018007",
+          "st_pcode": "MMR018"
+        },
+        {
+          "id": "15-003",
+          "name": "Ottarathiri",
+          "code": "MM-15-003",
+          "ts_pcode": "MMR018008",
+          "st_pcode": "MMR018"
+        },
+        {
+          "id": "15-004",
+          "name": "Pobbathiri",
+          "code": "MM-15-004",
+          "ts_pcode": "MMR018005",
+          "st_pcode": "MMR018"
+        },
+        {
+          "id": "15-005",
+          "name": "Pyinmana",
+          "code": "MM-15-005",
+          "ts_pcode": "MMR018006",
+          "st_pcode": "MMR018"
+        },
+        {
+          "id": "15-006",
+          "name": "Tatkon",
+          "code": "MM-15-006",
+          "ts_pcode": "MMR018003",
+          "st_pcode": "MMR018"
+        },
+        {
+          "id": "15-007",
+          "name": "Zabuthiri",
+          "code": "MM-15-007",
+          "ts_pcode": "MMR018002",
+          "st_pcode": "MMR018"
+        },
+        {
+          "id": "15-008",
+          "name": "Zeyathiri",
+          "code": "MM-15-008",
+          "ts_pcode": "MMR018001",
+          "st_pcode": "MMR018"
+        }
+      ],
+      "st_pcode": "MMR018"
     }
   ],
   "locationCategories": [
-    { "code": "HF", "name": "Health Facility" },
-    { "code": "FO", "name": "Field Office" },
-    { "code": "TV", "name": "Training Venue" },
-    { "code": "SC", "name": "School" },
-    { "code": "CC", "name": "Community Center" },
-    { "code": "WP", "name": "Water Point" },
-    { "code": "WH", "name": "Warehouse" },
-    { "code": "MK", "name": "Market" },
-    { "code": "RS", "name": "Religious Site" },
-    { "code": "OT", "name": "Other" }
+    {
+      "code": "HF",
+      "name": "Health Facility"
+    },
+    {
+      "code": "FO",
+      "name": "Field Office"
+    },
+    {
+      "code": "TV",
+      "name": "Training Venue"
+    },
+    {
+      "code": "SC",
+      "name": "School"
+    },
+    {
+      "code": "CC",
+      "name": "Community Center"
+    },
+    {
+      "code": "WP",
+      "name": "Water Point"
+    },
+    {
+      "code": "WH",
+      "name": "Warehouse"
+    },
+    {
+      "code": "MK",
+      "name": "Market"
+    },
+    {
+      "code": "RS",
+      "name": "Religious Site"
+    },
+    {
+      "code": "OT",
+      "name": "Other"
+    }
   ]
 }

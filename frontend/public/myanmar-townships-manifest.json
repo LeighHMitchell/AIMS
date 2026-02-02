@@ -1,0 +1,9 @@
+{
+  "generated": "2026-02-01",
+  "levels": [
+    { "name": "low", "file": "myanmar-townships-low.geojson", "minZoom": 0, "maxZoom": 7 },
+    { "name": "medium", "file": "myanmar-townships-medium.geojson", "minZoom": 7, "maxZoom": 9 },
+    { "name": "high", "file": "myanmar-townships-high.geojson", "minZoom": 9, "maxZoom": 11 },
+    { "name": "full", "file": "myanmar-townships-full.geojson", "minZoom": 11, "maxZoom": 22 }
+  ]
+}

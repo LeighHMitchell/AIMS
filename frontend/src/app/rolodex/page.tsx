@@ -329,52 +329,47 @@ export default function RolodexPage() {
                 <Table className="h-4 w-4" />
               </Button>
             </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleExport}
+                    disabled={loading || people.length === 0}
+                    aria-label="Export to CSV"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Export to CSV</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
         {/* Filter Panel */}
-        <div className="flex items-start gap-4">
-          <div className="flex-1">
-            <FilterPanel
-              filters={filters}
-              onFiltersChange={setFilters}
-              onClearFilters={() => {
-                setFilters({
-                  page: 1,
-                  limit: 24,
-                  search: undefined,
-                  source: undefined,
-                  role: undefined,
-                  organization: undefined,
-                  orgType: undefined,
-                  activity: undefined,
-                  country: undefined,
-                });
-              }}
-              loading={loading}
-              totalCount={pagination.total}
-            />
-          </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleExport}
-                  disabled={loading || people.length === 0}
-                  aria-label="Export to CSV"
-                  className="mt-1"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Export to CSV</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+        <FilterPanel
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClearFilters={() => {
+            setFilters({
+              page: 1,
+              limit: 24,
+              search: undefined,
+              source: undefined,
+              role: undefined,
+              organization: undefined,
+              orgType: undefined,
+              activity: undefined,
+              country: undefined,
+            });
+          }}
+          loading={loading}
+          totalCount={pagination.total}
+        />
 
         <div className="space-y-6">
         {error ? (

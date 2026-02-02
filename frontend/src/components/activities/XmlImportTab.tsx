@@ -44,6 +44,7 @@ import { ImportResultsDisplay } from './ImportResultsDisplay';
 import { extractIatiMeta } from '@/lib/iati/parseMeta';
 import { useUser } from '@/hooks/useUser';
 import { IatiImportFieldsTable } from './IatiImportFieldsTable';
+import { ImportProgressRoller } from '@/components/ui/import-progress-roller';
 import { setFieldSaved } from '@/utils/persistentSave';
 import {
   Upload,
@@ -223,6 +224,38 @@ interface ImportStatus {
 }
 
 // Helper functions for converting codes to labels
+const getTransactionTypeName = (code: string): string => {
+  const typeMap: Record<string, string> = {
+    '1': 'Incoming Funds',
+    '2': 'Outgoing Commitment',
+    '3': 'Disbursement',
+    '4': 'Expenditure',
+    '5': 'Interest Payment',
+    '6': 'Loan Repayment',
+    '7': 'Reimbursement',
+    '8': 'Purchase of Equity',
+    '9': 'Sale of Equity',
+    '10': 'Credit Guarantee',
+    '11': 'Incoming Commitment',
+    '12': 'Outgoing Pledge',
+    '13': 'Incoming Pledge'
+  };
+  return typeMap[code] || `Type ${code}`;
+};
+
+const getBudgetTypeName = (code: string): string => {
+  const typeMap: Record<string, string> = {
+    '1': 'Original',
+    '2': 'Revised'
+  };
+  return typeMap[code] || `Type ${code}`;
+};
+
+const formatCurrencyValue = (value: number | undefined, currency: string): string => {
+  if (value === undefined || value === null) return 'N/A';
+  return `${currency} ${value.toLocaleString()}`;
+};
+
 const getActivityStatusLabel = (code: string): { code: string, name: string } | null => {
   if (!code) return null;
   const statusMap: Record<string, string> = {
@@ -5419,10 +5452,12 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         }
       });
 
-      setImportStatus({ 
-        stage: 'importing', 
+      // Count the basic fields being saved (exclude internal flags starting with _)
+      const basicFieldCount = Object.keys(updateData).filter(k => !k.startsWith('_') && !k.startsWith('imported')).length;
+      setImportStatus({
+        stage: 'importing',
         progress: 75,
-        message: 'Saving to database...'
+        message: `Saving ${basicFieldCount} basic field${basicFieldCount !== 1 ? 's' : ''} to database...`
       });
 
       // Make API call to update the activity
@@ -5480,10 +5515,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle other identifiers import if any
       if (updateData.importedOtherIdentifiers && updateData.importedOtherIdentifiers.length > 0) {
         console.log('[XML Import] Processing other identifiers import...');
-        setImportStatus({ 
-          stage: 'importing', 
+        const totalIdentifiers = updateData.importedOtherIdentifiers.length;
+        setImportStatus({
+          stage: 'importing',
           progress: 80,
-          message: 'Importing other identifiers...'
+          message: `Importing ${totalIdentifiers} other identifier${totalIdentifiers !== 1 ? 's' : ''}...`
         });
 
         try {
@@ -5533,10 +5569,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle sector imports if any
       if (updateData._importSectors) {
         console.log('[XML Import] Processing sector imports...');
-        setImportStatus({ 
-          stage: 'importing', 
+        // Initial message - will be updated once we know the count
+        setImportStatus({
+          stage: 'importing',
           progress: 85,
-          message: 'Importing sectors...'
+          message: 'Preparing sectors for import...'
         });
 
         const sectorField = selectedFieldsList.find(f => f.fieldName === 'Sectors');
@@ -5579,7 +5616,16 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
           if (sectorsToImport.length > 0) {
             console.log('[XML Import] Importing sectors to database:', sectorsToImport);
-            
+
+            // Update progress with sector count and details
+            const sectorNames = sectorsToImport.slice(0, 2).map((s: any) => s.sector_name || s.sector_code).join(', ');
+            const sectorSuffix = sectorsToImport.length > 2 ? ` +${sectorsToImport.length - 2} more` : '';
+            setImportStatus({
+              stage: 'importing',
+              progress: 86,
+              message: `Importing ${sectorsToImport.length} sector${sectorsToImport.length !== 1 ? 's' : ''}: ${sectorNames}${sectorSuffix}`
+            });
+
             // Track sectors in summary
             importSummary.sectors.attempted = sectorsToImport.length;
             importSummary.sectors.totalPercentage = sectorsToImport.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0);
@@ -5726,14 +5772,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle locations import if any
       if (updateData.importedLocations && updateData.importedLocations.length > 0) {
         console.log('[XML Import] Processing locations import...');
-        
+
         // Track locations in summary
-        importSummary.locations.attempted = updateData.importedLocations.length;
-        
-        setImportStatus({ 
-          stage: 'importing', 
+        const totalLocations = updateData.importedLocations.length;
+        importSummary.locations.attempted = totalLocations;
+
+        setImportStatus({
+          stage: 'importing',
           progress: 87,
-          message: 'Geocoding coordinates and importing locations...'
+          message: `Geocoding and importing ${totalLocations} location${totalLocations !== 1 ? 's' : ''}...`
         });
 
         try {
@@ -5872,10 +5919,14 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle FSS import if any
       if (updateData.importedFss) {
         console.log('[XML Import] Processing FSS import...');
-        setImportStatus({ 
-          stage: 'importing', 
+        const forecastCount = updateData.importedFss.forecasts?.length || 0;
+        const fssDesc = forecastCount > 0
+          ? `${forecastCount} FSS forecast${forecastCount !== 1 ? 's' : ''}`
+          : 'Forward Spending Survey data';
+        setImportStatus({
+          stage: 'importing',
           progress: 85,
-          message: 'Importing Forward Spending Survey...'
+          message: `Importing ${fssDesc}...`
         });
 
         try {
@@ -5911,10 +5962,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle document links import if any
       if (updateData.importedDocuments && updateData.importedDocuments.length > 0) {
         console.log('[XML Import] Processing document links import...');
-        setImportStatus({ 
-          stage: 'importing', 
+        const totalDocuments = updateData.importedDocuments.length;
+        setImportStatus({
+          stage: 'importing',
           progress: 87,
-          message: 'Importing document links...'
+          message: `Importing ${totalDocuments} document link${totalDocuments !== 1 ? 's' : ''}...`
         });
 
         try {
@@ -5950,10 +6002,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle contacts import if any
       if (updateData.importedContacts && updateData.importedContacts.length > 0) {
         console.log('[XML Import] Processing contacts import...');
-        setImportStatus({ 
-          stage: 'importing', 
+        const totalContacts = updateData.importedContacts.length;
+        setImportStatus({
+          stage: 'importing',
           progress: 88,
-          message: 'Importing contacts...'
+          message: `Importing ${totalContacts} contact${totalContacts !== 1 ? 's' : ''}...`
         });
 
         try {
@@ -6025,10 +6078,17 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle humanitarian data import if any
       if (updateData.importedHumanitarian) {
         console.log('[XML Import] Processing humanitarian data import...');
-        setImportStatus({ 
-          stage: 'importing', 
+
+        // Build descriptive message
+        const scopeCount = updateData.importedHumanitarian.humanitarian_scopes?.length || 0;
+        const humanitarianDesc = scopeCount > 0
+          ? `humanitarian flag + ${scopeCount} scope${scopeCount !== 1 ? 's' : ''}`
+          : 'humanitarian flag';
+
+        setImportStatus({
+          stage: 'importing',
           progress: 89,
-          message: 'Importing humanitarian data...'
+          message: `Importing ${humanitarianDesc}...`
         });
 
         try {
@@ -6067,14 +6127,15 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle budgets import if any
       if (updateData.importedBudgets && updateData.importedBudgets.length > 0) {
         console.log('[XML Import] Processing budgets import...');
-        
+
         // Track budgets in summary
         importSummary.budgets.attempted = updateData.importedBudgets.length;
-        
-        setImportStatus({ 
-          stage: 'importing', 
+        const totalBudgets = updateData.importedBudgets.length;
+
+        setImportStatus({
+          stage: 'importing',
           progress: 89,
-          message: 'Importing budgets...'
+          message: `Importing ${totalBudgets} budget${totalBudgets !== 1 ? 's' : ''}...`
         });
 
         try {
@@ -6082,7 +6143,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           const clearResponse = await apiFetch(`/api/activities/${activityId}/budgets`, {
             method: 'DELETE'
           });
-          
+
           if (!clearResponse.ok) {
             console.warn('[XML Import] Could not clear existing budgets');
           }
@@ -6090,7 +6151,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           let successCount = 0;
           let errorCount = 0;
 
-          for (const budget of updateData.importedBudgets) {
+          for (let budgetIndex = 0; budgetIndex < updateData.importedBudgets.length; budgetIndex++) {
+            const budget = updateData.importedBudgets[budgetIndex];
+            const budgetCurrency = budget.currency || freshActivityData?.default_currency || 'USD';
+            const budgetTypeName = getBudgetTypeName(budget.type || '1');
+
+            // Update progress with detailed budget info
+            setImportStatus({
+              stage: 'importing',
+              progress: 89 + Math.round((budgetIndex / totalBudgets) * 2),
+              message: `Importing budget ${budgetIndex + 1} of ${totalBudgets}: ${formatCurrencyValue(budget.value, budgetCurrency)} (${budgetTypeName})`
+            });
+
             try {
               const budgetData = {
                 type: budget.type || '1',
@@ -6195,10 +6267,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle planned disbursements import if any
       if (updateData.importedPlannedDisbursements && updateData.importedPlannedDisbursements.length > 0) {
         console.log('[XML Import] Processing planned disbursements import...');
-        setImportStatus({ 
-          stage: 'importing', 
+        const totalPlannedDisbursements = updateData.importedPlannedDisbursements.length;
+        setImportStatus({
+          stage: 'importing',
           progress: 90,
-          message: 'Importing planned disbursements...'
+          message: `Importing ${totalPlannedDisbursements} planned disbursement${totalPlannedDisbursements !== 1 ? 's' : ''}...`
         });
 
         try {
@@ -6418,19 +6491,24 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle policy markers import if any
       if (updateData._importPolicyMarkers) {
         captureConsoleLog('[XML Import] Processing policy markers import...');
-        setImportStatus({ 
-          stage: 'importing', 
+
+        // Track policy markers count
+        let policyMarkerCount = 0;
+        if (Array.isArray(updateData._importPolicyMarkers)) {
+          policyMarkerCount = updateData._importPolicyMarkers.length;
+          importSummary.policyMarkers.attempted = policyMarkerCount;
+        } else if (parsedActivity.policyMarkers) {
+          policyMarkerCount = parsedActivity.policyMarkers.length;
+          importSummary.policyMarkers.attempted = policyMarkerCount;
+        }
+
+        setImportStatus({
+          stage: 'importing',
           progress: 90,
-          message: 'Importing policy markers...'
+          message: `Importing ${policyMarkerCount} policy marker${policyMarkerCount !== 1 ? 's' : ''}...`
         });
 
         try {
-          // Track policy markers count
-          if (Array.isArray(updateData._importPolicyMarkers)) {
-            importSummary.policyMarkers.attempted = updateData._importPolicyMarkers.length;
-          } else if (parsedActivity.policyMarkers) {
-            importSummary.policyMarkers.attempted = parsedActivity.policyMarkers.length;
-          }
           
           // First, fetch available policy markers from database to match IATI codes
           captureConsoleLog(`[XML Import] Fetching policy markers for activity: ${activityId}`);
@@ -6696,18 +6774,19 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle tags import if any
       if (updateData._importTags) {
         console.log('[XML Import] Processing tags import...');
-        setImportStatus({ 
-          stage: 'importing', 
-          progress: 91,
-          message: 'Importing tags...'
-        });
 
         try {
           // Get the tag field data
           const tagField = parsedFields.find(f => f.fieldName === 'Tags' && f.selected);
-          
+
           if (tagField && tagField.tagData) {
             const tagsToImport = tagField.tagData;
+            const totalTags = tagsToImport.length;
+            setImportStatus({
+              stage: 'importing',
+              progress: 91,
+              message: `Importing ${totalTags} tag${totalTags !== 1 ? 's' : ''}...`
+            });
             const existingTags = tagField.existingTags || [];
             
             console.log('[XML Import] Tags to import:', tagsToImport);
@@ -6824,15 +6903,17 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle results import
       if (updateData._importResults) {
         console.log('[XML Import] Processing results import...');
-        setImportStatus({ 
-          stage: 'importing', 
-          progress: 89,
-          message: 'Importing results framework...'
-        });
 
         try {
           if (parsedActivity.results && parsedActivity.results.length > 0) {
-            console.log(`[XML Import] Importing ${parsedActivity.results.length} result(s)...`);
+            const totalResults = parsedActivity.results.length;
+            console.log(`[XML Import] Importing ${totalResults} result(s)...`);
+
+            setImportStatus({
+              stage: 'importing',
+              progress: 89,
+              message: `Importing ${totalResults} result${totalResults !== 1 ? 's' : ''} with indicators...`
+            });
             
             const importResponse = await apiFetch(`/api/activities/${activityId}/results/import`, {
               method: 'POST',
@@ -6913,15 +6994,16 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       if (updateData._importConditions && updateData.conditionsData) {
         console.log('[XML Import] Processing conditions import...');
         console.log('[XML Import] Conditions data:', updateData.conditionsData);
-        setImportStatus({ 
-          stage: 'importing', 
-          progress: 87,
-          message: 'Importing conditions...'
-        });
 
         try {
           const conditionsData = updateData.conditionsData;
           const totalConditions = conditionsData.conditions.length;
+
+          setImportStatus({
+            stage: 'importing',
+            progress: 87,
+            message: `Importing ${totalConditions} condition${totalConditions !== 1 ? 's' : ''}...`
+          });
           console.log('[XML Import] Total conditions to process:', totalConditions);
           
           // Delete existing conditions for this activity
@@ -7020,10 +7102,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         // Track transactions in summary
         importSummary.transactions.attempted = updateData.importedTransactions.length;
         
-        setImportStatus({ 
-          stage: 'importing', 
+        const totalTransactions = updateData.importedTransactions.length;
+        setImportStatus({
+          stage: 'importing',
           progress: 88,
-          message: 'Importing transactions...'
+          message: `Importing ${totalTransactions} transaction${totalTransactions !== 1 ? 's' : ''}...`
         });
 
         try {
@@ -7115,7 +7198,18 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
 
           console.log('[XML Import] Starting transaction loop...');
 
-          for (const transaction of updateData.importedTransactions) {
+          for (let txIndex = 0; txIndex < updateData.importedTransactions.length; txIndex++) {
+            const transaction = updateData.importedTransactions[txIndex];
+            const txCurrency = transaction.currency || freshActivityData?.default_currency || 'USD';
+            const txTypeName = getTransactionTypeName(transaction.type);
+
+            // Update progress with detailed transaction info
+            setImportStatus({
+              stage: 'importing',
+              progress: 88 + Math.round((txIndex / totalTransactions) * 4),
+              message: `Importing transaction ${txIndex + 1} of ${totalTransactions}: ${formatCurrencyValue(transaction.value, txCurrency)} (${txTypeName})`
+            });
+
             console.log('[XML Import] Processing transaction:', transaction);
             
             try {
@@ -7313,14 +7407,23 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       
       if (updateData._importFinancingTerms && updateData.financingTermsData) {
         console.log('[XML Import] Processing financing terms import...');
-        setImportStatus({ 
-          stage: 'importing', 
-          progress: 89,
-          message: 'Importing financing terms...'
-        });
 
         try {
           const ftData = updateData.financingTermsData;
+
+          // Build descriptive message about what's being imported
+          const ftParts: string[] = [];
+          if (ftData.loanTerms) ftParts.push('loan terms');
+          if (ftData.channelCode) ftParts.push('channel code');
+          if (ftData.otherFlags?.length) ftParts.push(`${ftData.otherFlags.length} CRS flags`);
+          if (ftData.loanStatus) ftParts.push('loan status');
+          const ftDescription = ftParts.length > 0 ? ftParts.join(', ') : 'financing data';
+
+          setImportStatus({
+            stage: 'importing',
+            progress: 89,
+            message: `Importing financing terms: ${ftDescription}...`
+          });
           
           // Use Supabase directly to save to correct table: activity_financing_terms
           console.log('[XML Import] Preparing financing terms data for activity_financing_terms table');
@@ -7459,10 +7562,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Process participating organizations import
       if (updateData.importedParticipatingOrgs && Array.isArray(updateData.importedParticipatingOrgs) && updateData.importedParticipatingOrgs.length > 0) {
         console.log('[XML Import] Processing participating organizations import...');
-        setImportStatus({ 
-          stage: 'importing', 
+        const totalOrgs = updateData.importedParticipatingOrgs.length;
+        setImportStatus({
+          stage: 'importing',
           progress: 92,
-          message: 'Importing participating organizations...'
+          message: `Importing ${totalOrgs} participating organization${totalOrgs !== 1 ? 's' : ''}...`
         });
 
         try {
@@ -7609,10 +7713,11 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
       // Handle related activities import if any
       if (updateData.importedRelatedActivities && updateData.importedRelatedActivities.length > 0) {
         console.log('[XML Import] Processing related activities import...');
-        setImportStatus({ 
-          stage: 'importing', 
+        const totalRelatedActivities = updateData.importedRelatedActivities.length;
+        setImportStatus({
+          stage: 'importing',
           progress: 95,
-          message: 'Importing related activities...'
+          message: `Importing ${totalRelatedActivities} related activit${totalRelatedActivities !== 1 ? 'ies' : 'y'}...`
         });
 
         try {
@@ -9075,19 +9180,23 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="font-medium">
-                    {importStatus.stage === 'uploading' && 'Uploading XML file...'}
-                    {importStatus.stage === 'parsing' && 'Parsing XML content...'}
-                    {importStatus.stage === 'importing' && (importStatus.message || 'Importing data...')}
-                  </span>
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <ImportProgressRoller
+                    message={
+                      importStatus.stage === 'uploading'
+                        ? 'Uploading XML file...'
+                        : importStatus.stage === 'parsing'
+                          ? 'Parsing XML content...'
+                          : (importStatus.message || 'Importing data...')
+                    }
+                  />
                 </div>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   {importStatus.progress || 0}%
                 </span>
               </div>
-              <Progress 
-                value={importStatus.progress || 0} 
+              <Progress
+                value={importStatus.progress || 0}
                 className="h-2"
               />
             </div>

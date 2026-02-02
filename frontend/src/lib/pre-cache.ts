@@ -111,6 +111,52 @@ class PreCacheManager {
   }
 
   /**
+   * Pre-cache GeoJSON files for maps
+   * Uses a longer TTL since these are static files
+   */
+  async preCacheGeoJSON(): Promise<void> {
+    // Only run on client-side
+    if (typeof window === 'undefined') return
+
+    const geoJSONFiles = [
+      '/myanmar-states-simplified.geojson',
+      '/myanmar-townships-simplified.geojson'
+    ]
+
+    // Pre-load GeoJSON files with low priority (background) and long TTL
+    for (const url of geoJSONFiles) {
+      const cacheKey = this.getCacheKey(url)
+
+      // Skip if already cached
+      if (resourceCache.has(cacheKey)) {
+        continue
+      }
+
+      try {
+        const response = await fetch(url)
+        if (response.ok) {
+          const data = await response.json()
+          // Cache with 24-hour TTL
+          resourceCache.set(cacheKey, data, { ttl: 1000 * 60 * 60 * 24 })
+        }
+      } catch (error) {
+        // Silently ignore - GeoJSON pre-cache is not critical
+        if (process.env.NODE_ENV === 'development') {
+          console.debug(`[PreCache] Failed to pre-cache GeoJSON ${url}:`, error)
+        }
+      }
+    }
+  }
+
+  /**
+   * Get cached GeoJSON data
+   */
+  getCachedGeoJSON(url: string): any {
+    const cacheKey = this.getCacheKey(url)
+    return resourceCache.get(cacheKey)
+  }
+
+  /**
    * Pre-cache organization pages
    */
   async preCacheOrganizations(): Promise<void> {
@@ -297,6 +343,8 @@ export function usePreCache() {
     preCacheActivityEditor: preCacheManager.preCacheActivityEditor.bind(preCacheManager),
     preCacheOrganizations: preCacheManager.preCacheOrganizations.bind(preCacheManager),
     preCacheActivityList: preCacheManager.preCacheActivityList.bind(preCacheManager),
+    preCacheGeoJSON: preCacheManager.preCacheGeoJSON.bind(preCacheManager),
+    getCachedGeoJSON: preCacheManager.getCachedGeoJSON.bind(preCacheManager),
     smartPreCache: preCacheManager.smartPreCache.bind(preCacheManager),
     clearCache: preCacheManager.clearCache.bind(preCacheManager),
     getCacheStats: preCacheManager.getCacheStats.bind(preCacheManager),

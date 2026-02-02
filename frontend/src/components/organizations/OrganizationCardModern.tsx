@@ -6,6 +6,7 @@ import { Building2, MapPin, Activity, DollarSign, ExternalLink, Copy } from 'luc
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { OrganizationCardActionMenu } from './OrganizationCardActionMenu';
+import { useOrganizationBookmarks } from '@/hooks/use-organization-bookmarks';
 
 // Color palette
 const colors = {
@@ -71,6 +72,7 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
   className = ''
 }) => {
   const orgUrl = `/organizations/${organization.id}`;
+  const { isBookmarked, toggleBookmark } = useOrganizationBookmarks();
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -123,6 +125,8 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
             onExportPDF={onExportPDF ? () => onExportPDF(organization.id) : undefined}
             onExportExcel={onExportExcel ? () => onExportExcel(organization.id) : undefined}
             onDelete={onDelete ? () => onDelete(organization) : undefined}
+            isBookmarked={isBookmarked(organization.id)}
+            onToggleBookmark={() => toggleBookmark(organization.id)}
           />
         </div>
 

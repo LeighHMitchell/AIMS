@@ -1023,14 +1023,14 @@ export default function Atlas() {
                       placeholder="Search location..."
                     />
 
-                    {/* 3D Controls */}
+                    {/* Spacer */}
+                    <div className="flex-1" />
+
+                    {/* 3D Controls - on the right */}
                     <Map3DController
                       homeCountryCenter={homeCountryCenter}
                       homeCountryZoom={homeCountryZoom}
                     />
-
-                    {/* Spacer */}
-                    <div className="flex-1" />
 
                     {/* Map Style & Controls */}
                     <div className="flex items-center gap-2 shrink-0">
@@ -1569,7 +1569,6 @@ export default function Atlas() {
                         onFeatureClick={(pcode, name, level) => {
                           console.log('Feature clicked:', { pcode, name, level });
                         }}
-                        isExpanded={true}
                       />
                     </div>
                     

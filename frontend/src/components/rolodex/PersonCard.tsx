@@ -217,13 +217,13 @@ export function PersonCard({
                   </Badge>
                 )}
                 
-                <Badge 
-                  variant="secondary" 
-                  className={`text-xs flex-shrink-0 ${
-                    person.source === 'user' 
-                      ? 'bg-slate-100 text-slate-600' 
-                      : 'bg-purple-100 text-purple-700'
-                  }`}
+                <Badge
+                  variant="secondary"
+                  className="text-xs flex-shrink-0"
+                  style={{
+                    backgroundColor: person.source === 'user' ? '#4C5568' : '#DC2625',
+                    color: 'white'
+                  }}
                 >
                   {person.source === 'user' ? 'User' : 'Activity'}
                 </Badge>
@@ -355,13 +355,13 @@ export function PersonCard({
                 </Badge>
               )}
               
-              <Badge 
-                variant="secondary" 
-                className={`text-xs flex-shrink-0 ${
-                  person.source === 'user' 
-                    ? 'bg-slate-100 text-slate-600' 
-                    : 'bg-purple-100 text-purple-700'
-                }`}
+              <Badge
+                variant="secondary"
+                className="text-xs flex-shrink-0"
+                style={{
+                  backgroundColor: person.source === 'user' ? '#4C5568' : '#DC2625',
+                  color: 'white'
+                }}
               >
                 {person.source === 'user' ? 'User Contact' : 'Activity Contact'}
               </Badge>

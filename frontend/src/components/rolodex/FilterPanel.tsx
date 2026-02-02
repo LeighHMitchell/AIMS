@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,6 @@ import {
   Search,
   X,
   Building2,
-  FileText,
   ChevronDown,
   Briefcase,
   Layers
@@ -40,6 +39,9 @@ export function FilterPanel({
   const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym?: string; logo?: string }>>([]);
   const [activities, setActivities] = useState<Array<{ id: string; title: string }>>([]);
   const [openPopover, setOpenPopover] = useState<string | null>(null);
+  const [orgSearch, setOrgSearch] = useState('');
+  const [orgSearchLoading, setOrgSearchLoading] = useState(false);
+  const orgSearchRef = useRef<HTMLInputElement>(null);
 
   // Debounce search input
   useEffect(() => {
@@ -52,34 +54,44 @@ export function FilterPanel({
     return () => clearTimeout(timer);
   }, [localSearch, filters.search, onFiltersChange]);
 
-  // Fetch organizations and activities for dropdowns
+  // Fetch activities on mount
   useEffect(() => {
-    const fetchOptions = async () => {
+    const fetchActivities = async () => {
       try {
-        // Fetch organizations
-        const orgResponse = await apiFetch('/api/organizations');
-        if (orgResponse.ok) {
-          const orgs = await orgResponse.json();
-          setOrganizations(orgs.slice(0, 100)); // Limit for performance
-        }
-
-        // Fetch activities
         const actResponse = await apiFetch('/api/activities');
         if (actResponse.ok) {
           const acts = await actResponse.json();
           setActivities(acts.slice(0, 100)); // Limit for performance
         }
       } catch (error) {
-        console.error('Error fetching filter options:', error);
+        console.error('Error fetching activities:', error);
       }
     };
 
-    fetchOptions();
+    fetchActivities();
   }, []);
 
-  const activeFilterCount = Object.values(filters).filter(value =>
-    value !== undefined && value !== null && value !== ''
-  ).length - 2; // Subtract page and limit
+  // Fetch organizations with debounced search
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        setOrgSearchLoading(true);
+        const searchParam = orgSearch ? `?search=${encodeURIComponent(orgSearch)}` : '';
+        const orgResponse = await apiFetch(`/api/organizations${searchParam}`);
+        if (orgResponse.ok) {
+          const orgs = await orgResponse.json();
+          setOrganizations(orgs.slice(0, 50)); // Limit display for performance
+        }
+      } catch (error) {
+        console.error('Error fetching organizations:', error);
+      } finally {
+        setOrgSearchLoading(false);
+      }
+    };
+
+    const timer = setTimeout(fetchOrganizations, 300);
+    return () => clearTimeout(timer);
+  }, [orgSearch]);
 
   return (
     <div className="bg-white p-4 rounded-md shadow-sm border border-slate-200 space-y-3">
@@ -120,22 +132,30 @@ export function FilterPanel({
                   {filters.source ? (
                     <Badge
                       variant="secondary"
-                      className={`text-xs ${
-                        filters.source === 'user'
-                          ? 'bg-slate-100 text-slate-600'
-                          : 'bg-purple-100 text-purple-700'
-                      }`}
+                      className="text-xs"
+                      style={{
+                        backgroundColor: filters.source === 'user' ? '#4C5568' : '#DC2625',
+                        color: 'white'
+                      }}
                     >
-                      {filters.source === 'user' ? 'User' : 'Activity'}
+                      {filters.source === 'user' ? 'User Contact' : 'Activity Contact'}
                     </Badge>
                   ) : (
                     <span className="text-slate-500">Select...</span>
                   )}
                 </span>
-                <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                <span className="flex items-center gap-1">
+                  {filters.source && (
+                    <X
+                      className="h-3 w-3 text-slate-400 hover:text-slate-600"
+                      onClick={(e) => { e.stopPropagation(); onFiltersChange({ source: undefined }); }}
+                    />
+                  )}
+                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                </span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-56 p-2" align="start">
+            <PopoverContent className="w-48 p-2" align="start">
               <div className="space-y-1">
                 <Button
                   variant={filters.source === 'user' ? "secondary" : "ghost"}
@@ -143,10 +163,9 @@ export function FilterPanel({
                   className="w-full justify-start"
                   onClick={() => { onFiltersChange({ source: 'user' }); setOpenPopover(null); }}
                 >
-                  <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600">
-                    User
+                  <Badge variant="secondary" className="text-xs" style={{ backgroundColor: '#4C5568', color: 'white' }}>
+                    User Contact
                   </Badge>
-                  <span className="ml-2 text-slate-600">System users</span>
                 </Button>
                 <Button
                   variant={filters.source === 'activity_contact' ? "secondary" : "ghost"}
@@ -154,10 +173,9 @@ export function FilterPanel({
                   className="w-full justify-start"
                   onClick={() => { onFiltersChange({ source: 'activity_contact' }); setOpenPopover(null); }}
                 >
-                  <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
-                    Activity
+                  <Badge variant="secondary" className="text-xs" style={{ backgroundColor: '#DC2625', color: 'white' }}>
+                    Activity Contact
                   </Badge>
-                  <span className="ml-2 text-slate-600">Activity contacts</span>
                 </Button>
               </div>
             </PopoverContent>
@@ -171,59 +189,40 @@ export function FilterPanel({
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
                 <span className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  <span className="truncate">{filters.role || 'Select...'}</span>
+                  {filters.role ? (
+                    <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-700">
+                      {filters.role}
+                    </Badge>
+                  ) : (
+                    <span className="text-slate-500">Select...</span>
+                  )}
                 </span>
-                <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                <span className="flex items-center gap-1">
+                  {filters.role && (
+                    <X
+                      className="h-3 w-3 text-slate-400 hover:text-slate-600"
+                      onClick={(e) => { e.stopPropagation(); onFiltersChange({ role: undefined }); }}
+                    />
+                  )}
+                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72 p-2" align="start">
-              <div className="max-h-64 overflow-y-auto space-y-2">
-                {/* System Roles */}
-                <div>
-                  <div className="text-xs font-medium text-slate-500 mb-1 px-2">SYSTEM ROLES</div>
-                  {getRolesByCategory(ROLE_CATEGORIES.SYSTEM).map((role) => (
-                    <Button
-                      key={role.key}
-                      variant={filters.role === role.label ? "secondary" : "ghost"}
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => { onFiltersChange({ role: role.label }); setOpenPopover(null); }}
-                    >
+              <div className="max-h-64 overflow-y-auto space-y-1">
+                {getRolesByCategory(ROLE_CATEGORIES.SYSTEM).map((role) => (
+                  <Button
+                    key={role.key}
+                    variant={filters.role === role.label ? "secondary" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => { onFiltersChange({ role: role.label }); setOpenPopover(null); }}
+                  >
+                    <Badge variant="secondary" className={`text-xs ${role.color}`}>
                       {role.label}
-                    </Button>
-                  ))}
-                </div>
-                {/* Organization Roles */}
-                <div>
-                  <div className="text-xs font-medium text-slate-500 mb-1 px-2">ORGANIZATION ROLES</div>
-                  {getRolesByCategory(ROLE_CATEGORIES.ORGANIZATION).map((role) => (
-                    <Button
-                      key={role.key}
-                      variant={filters.role === role.label ? "secondary" : "ghost"}
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => { onFiltersChange({ role: role.label }); setOpenPopover(null); }}
-                    >
-                      {role.label}
-                    </Button>
-                  ))}
-                </div>
-                {/* Activity Roles */}
-                <div>
-                  <div className="text-xs font-medium text-slate-500 mb-1 px-2">ACTIVITY ROLES</div>
-                  {getRolesByCategory(ROLE_CATEGORIES.ACTIVITY).map((role) => (
-                    <Button
-                      key={role.key}
-                      variant={filters.role === role.label ? "secondary" : "ghost"}
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => { onFiltersChange({ role: role.label }); setOpenPopover(null); }}
-                    >
-                      {role.label}
-                    </Button>
-                  ))}
-                </div>
+                    </Badge>
+                  </Button>
+                ))}
               </div>
             </PopoverContent>
           </Popover>
@@ -232,25 +231,54 @@ export function FilterPanel({
         {/* Organization Filter */}
         <div className="flex-1 min-w-[180px]">
           <label className="block text-xs font-medium text-slate-500 mb-1">Organization</label>
-          <Popover open={openPopover === 'org'} onOpenChange={(open) => setOpenPopover(open ? 'org' : null)}>
+          <Popover open={openPopover === 'org'} onOpenChange={(open) => {
+            setOpenPopover(open ? 'org' : null);
+            if (open) {
+              setTimeout(() => orgSearchRef.current?.focus(), 0);
+            } else {
+              setOrgSearch('');
+            }
+          }}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
                 <span className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
                   <span className="truncate">
                     {filters.organization
-                      ? organizations.find(o => o.id === filters.organization)?.acronym ||
-                        organizations.find(o => o.id === filters.organization)?.name?.substring(0, 20) ||
-                        'Selected'
+                      ? (() => {
+                          const org = organizations.find(o => o.id === filters.organization);
+                          return org ? `${org.name}${org.acronym ? ` ${org.acronym}` : ''}`.substring(0, 25) : 'Selected';
+                        })()
                       : 'Select...'}
                   </span>
                 </span>
-                <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                <span className="flex items-center gap-1">
+                  {filters.organization && (
+                    <X
+                      className="h-3 w-3 text-slate-400 hover:text-slate-600"
+                      onClick={(e) => { e.stopPropagation(); onFiltersChange({ organization: undefined }); }}
+                    />
+                  )}
+                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-96 p-2" align="start">
+              <div className="pb-2">
+                <Input
+                  ref={orgSearchRef}
+                  placeholder="Search organisations..."
+                  value={orgSearch}
+                  onChange={(e) => setOrgSearch(e.target.value)}
+                  className="h-8"
+                />
+              </div>
               <div className="max-h-64 overflow-y-auto space-y-1">
-                {organizations.map((org) => (
+                {orgSearchLoading ? (
+                  <div className="text-sm text-slate-500 p-2">Searching...</div>
+                ) : organizations.length === 0 ? (
+                  <div className="text-sm text-slate-500 p-2">No organisations found</div>
+                ) : organizations.map((org) => (
                   <Button
                     key={org.id}
                     variant={filters.organization === org.id ? "secondary" : "ghost"}
@@ -266,10 +294,9 @@ export function FilterPanel({
                           <Building2 className="h-3 w-3 text-slate-500" />
                         </div>
                       )}
-                      <span className="truncate flex-1 text-left">{org.name}</span>
-                      {org.acronym && (
-                        <span className="text-xs text-slate-500 flex-shrink-0">({org.acronym})</span>
-                      )}
+                      <span className="flex-1 text-left whitespace-normal">
+                        {org.name}{org.acronym ? ` ${org.acronym}` : ''}
+                      </span>
                     </span>
                   </Button>
                 ))}
@@ -278,21 +305,36 @@ export function FilterPanel({
           </Popover>
         </div>
 
-        {/* Org Type Filter */}
+        {/* Organisation Type Filter */}
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-slate-500 mb-1">Org Type</label>
+          <label className="block text-xs font-medium text-slate-500 mb-1">Organisation Type</label>
           <Popover open={openPopover === 'orgType'} onOpenChange={(open) => setOpenPopover(open ? 'orgType' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
                 <span className="flex items-center gap-2">
                   <Layers className="h-4 w-4" />
-                  <span className="truncate">{filters.orgType ? ORG_TYPE_LABELS[filters.orgType]?.label : 'Select...'}</span>
+                  {filters.orgType ? (
+                    <span className="flex items-center gap-1.5 truncate">
+                      <code className="font-mono text-xs bg-slate-100 text-slate-600 px-1 py-0.5 rounded">{filters.orgType}</code>
+                      <span>{ORG_TYPE_LABELS[filters.orgType]?.label}</span>
+                    </span>
+                  ) : (
+                    <span className="text-slate-500">Select...</span>
+                  )}
                 </span>
-                <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                <span className="flex items-center gap-1">
+                  {filters.orgType && (
+                    <X
+                      className="h-3 w-3 text-slate-400 hover:text-slate-600"
+                      onClick={(e) => { e.stopPropagation(); onFiltersChange({ orgType: undefined }); }}
+                    />
+                  )}
+                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                </span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-72 p-2" align="start">
-              <div className="space-y-1">
+            <PopoverContent className="w-80 p-2" align="start">
+              <div className="max-h-64 overflow-y-auto space-y-1">
                 {getOrgTypeCategories().map((orgType) => (
                   <Button
                     key={orgType.key}
@@ -301,10 +343,8 @@ export function FilterPanel({
                     className="w-full justify-start"
                     onClick={() => { onFiltersChange({ orgType: orgType.key }); setOpenPopover(null); }}
                   >
-                    <span className="flex items-center gap-2">
-                      <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded font-mono text-slate-600">{orgType.key}</code>
-                      <span>{orgType.label}</span>
-                    </span>
+                    <code className="font-mono text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mr-2">{orgType.key}</code>
+                    {orgType.label}
                   </Button>
                 ))}
               </div>
@@ -326,7 +366,15 @@ export function FilterPanel({
                       : 'Select...'}
                   </span>
                 </span>
-                <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                <span className="flex items-center gap-1">
+                  {filters.activity && (
+                    <X
+                      className="h-3 w-3 text-slate-400 hover:text-slate-600"
+                      onClick={(e) => { e.stopPropagation(); onFiltersChange({ activity: undefined }); }}
+                    />
+                  )}
+                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[500px] p-2" align="start">
@@ -347,21 +395,6 @@ export function FilterPanel({
           </Popover>
         </div>
 
-        {/* Clear Filters */}
-        {activeFilterCount > 0 && (
-          <div className="flex-shrink-0">
-            <label className="block text-xs font-medium text-transparent mb-1">Clear</label>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClearFilters}
-              className="text-slate-500 hover:text-slate-800 h-9 px-3"
-            >
-              <X className="h-4 w-4 mr-1" />
-              Clear filters
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Results Count */}

@@ -1,6 +1,22 @@
 {
-  "currentVersion": "1.12.0",
+  "currentVersion": "1.13.0",
   "releases": [
+    {
+      "version": "1.13.0",
+      "date": "2026-02-02",
+      "changes": [
+        "Organization bookmarks - bookmark organizations and view them on your dashboard",
+        "Subnational choropleth map - visualize funding distribution across states/regions and townships",
+        "Township-level geographic data with detailed boundaries for all of Myanmar",
+        "Enhanced subnational breakdown with improved data allocation to administrative levels",
+        "Bookmarked Organizations table on dashboard showing your saved organizations",
+        "Improved Rolodex filter panel with better organization type filtering",
+        "Fixed flood risk zones not rendering on the map",
+        "Doubled width of Organization and Sector filter dropdowns for better readability",
+        "Added labels above Atlas filter dropdowns for clearer UI hierarchy",
+        "Import progress roller showing detailed status during IATI XML imports"
+      ]
+    },
     {
       "version": "1.12.0",
       "date": "2026-02-01",

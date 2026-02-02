@@ -7,23 +7,11 @@ import type { LocationSchema } from '@/lib/schemas/location';
 
 type MapLayerKey = 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri';
 
-interface MapLayerConfig {
-  name: string;
-  url: string;
-  attribution: string;
-  category: string;
-  fallbacks?: string[];
-}
-
 interface LocationMapProps {
   mapCenter: [number, number]; // [lat, lng] - will convert to [lng, lat] for MapLibre
   mapZoom: number;
   mapRef: React.RefObject<MapLibreGL.Map | null>;
-  mapLayers: Record<MapLayerKey, MapLayerConfig>;
   currentLayer: MapLayerKey;
-  getLayerUrl: () => string;
-  onLayerChange: (layer: MapLayerKey) => void;
-  onMapError: () => void;
   existingLocations: LocationSchema[];
   currentLocationId?: string;
   markerPosition: [number, number] | null; // [lat, lng]
@@ -132,11 +120,7 @@ function LocationMapComponent({
   mapCenter,
   mapZoom,
   mapRef,
-  mapLayers,
   currentLayer,
-  getLayerUrl,
-  onLayerChange,
-  onMapError,
   existingLocations,
   currentLocationId,
   markerPosition,

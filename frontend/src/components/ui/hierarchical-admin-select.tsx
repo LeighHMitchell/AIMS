@@ -1,14 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, ChevronDown, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Command,
   CommandList,
 } from "@/components/ui/command"
-import myanmarData from "@/data/myanmar-locations.json"
+import { Badge } from "@/components/ui/badge"
 
 export interface AdminUnit {
   id: string
@@ -17,6 +17,8 @@ export interface AdminUnit {
   parentName?: string
   parentId?: string
   fullName: string
+  st_pcode?: string
+  ts_pcode?: string
 }
 
 interface AdminCategory {
@@ -44,47 +46,106 @@ export function HierarchicalAdminSelect({
 }: HierarchicalAdminSelectProps) {
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [expandedGroups, setExpandedGroups] = React.useState<Set<string>>(new Set())
   const containerRef = React.useRef<HTMLDivElement | null>(null)
-  // No longer need expanded categories since we have a flat list
 
-  // Put all admin units in a single category
-  const adminCategories = React.useMemo((): AdminCategory[] => {
-    // Sort all units alphabetically
-    const sortedUnits = [...allAdminUnits].sort((a, b) => a.name.localeCompare(b.name))
-    
-    return [{
-      name: 'All Administrative Units',
-      type: 'states-regions',
-      units: sortedUnits
-    }]
+  // Check if we have townships in the list
+  const hasTownships = React.useMemo(() => {
+    return allAdminUnits.some(u => u.type === 'township')
   }, [allAdminUnits])
 
-  // No need to manage expanded categories anymore
+  // Group units by parent state/region (only when townships are present)
+  const groupedUnits = React.useMemo(() => {
+    if (!hasTownships) {
+      // No townships - return flat list
+      return [{
+        name: 'All Administrative Units',
+        parentUnit: null,
+        children: [...allAdminUnits].sort((a, b) => a.name.localeCompare(b.name))
+      }]
+    }
 
-  // Filter categories based on search
-  const filteredCategories = React.useMemo(() => {
-    if (!searchQuery.trim()) return adminCategories
+    // Group by parent
+    const groups: Map<string, { parentUnit: AdminUnit | null; children: AdminUnit[] }> = new Map()
+
+    // First add states/regions as group headers
+    allAdminUnits
+      .filter(u => u.type !== 'township')
+      .forEach(unit => {
+        groups.set(unit.name, {
+          parentUnit: unit,
+          children: []
+        })
+      })
+
+    // Then add townships under their parents
+    allAdminUnits
+      .filter(u => u.type === 'township')
+      .forEach(unit => {
+        const parentName = unit.parentName
+        if (parentName && groups.has(parentName)) {
+          groups.get(parentName)!.children.push(unit)
+        }
+      })
+
+    // Sort children within each group
+    groups.forEach(group => {
+      group.children.sort((a, b) => a.name.localeCompare(b.name))
+    })
+
+    // Convert to array and sort by parent name
+    return Array.from(groups.entries())
+      .map(([name, data]) => ({
+        name,
+        ...data
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [allAdminUnits, hasTownships])
+
+  // Filter based on search
+  const filteredGroups = React.useMemo(() => {
+    if (!searchQuery.trim()) return groupedUnits
 
     const query = searchQuery.toLowerCase().trim()
 
-    return adminCategories.map(category => ({
-      ...category,
-      units: category.units.filter(unit => {
-        // Search in unit name
-        if (unit.name.toLowerCase().includes(query)) return true
-        
-        // Search in full name
-        if (unit.fullName.toLowerCase().includes(query)) return true
-        
-        // Search in type
-        if (unit.type.toLowerCase().includes(query)) return true
-        
-        return false
-      })
-    })).filter(category => category.units.length > 0)
-  }, [adminCategories, searchQuery])
+    return groupedUnits
+      .map(group => {
+        // Check if parent matches
+        const parentMatches = group.parentUnit?.name.toLowerCase().includes(query) ||
+                            group.parentUnit?.fullName.toLowerCase().includes(query)
 
-  // No need for toggle category function anymore
+        // Filter children that match
+        const matchingChildren = group.children.filter(child =>
+          child.name.toLowerCase().includes(query) ||
+          child.fullName.toLowerCase().includes(query)
+        )
+
+        // Include group if parent matches or any children match
+        if (parentMatches || matchingChildren.length > 0) {
+          return {
+            ...group,
+            // If searching, show all matching children
+            children: parentMatches ? group.children : matchingChildren,
+            // Auto-expand when searching
+            expanded: true
+          }
+        }
+        return null
+      })
+      .filter((group): group is NonNullable<typeof group> => group !== null)
+  }, [groupedUnits, searchQuery])
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(groupName)) {
+        next.delete(groupName)
+      } else {
+        next.add(groupName)
+      }
+      return next
+    })
+  }
 
   const handleSelect = (unitId: string) => {
     if (selected.includes(unitId)) {
@@ -92,8 +153,6 @@ export function HierarchicalAdminSelect({
     } else {
       onChange([...selected, unitId])
     }
-    // Don't close the dropdown for multi-select - keep it open
-    // setOpen(false)
   }
 
   const handleUnselect = (unitId: string) => {
@@ -113,9 +172,20 @@ export function HierarchicalAdminSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [open])
 
-  const getSelectedUnits = () => {
-    return allAdminUnits.filter(unit => selected.includes(unit.id))
-  }
+  // Count selected by type
+  const selectedCounts = React.useMemo(() => {
+    let regions = 0
+    let townships = 0
+    selected.forEach(id => {
+      const unit = allAdminUnits.find(u => u.id === id)
+      if (unit?.type === 'township') {
+        townships++
+      } else if (unit) {
+        regions++
+      }
+    })
+    return { regions, townships }
+  }, [selected, allAdminUnits])
 
   const listboxId = React.useId()
 
@@ -148,9 +218,16 @@ export function HierarchicalAdminSelect({
           {selected.length === 0 ? (
             <span className="text-muted-foreground">{placeholder}</span>
           ) : (
-            <span className="text-sm font-medium">
-              {selected.length} unit{selected.length !== 1 ? "s" : ""} selected
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">
+                {selected.length} unit{selected.length !== 1 ? "s" : ""} selected
+              </span>
+              {selectedCounts.townships > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedCounts.townships} township{selectedCounts.townships !== 1 ? 's' : ''}
+                </Badge>
+              )}
+            </div>
           )}
         </div>
         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
@@ -162,7 +239,7 @@ export function HierarchicalAdminSelect({
           role="listbox"
           className="absolute z-50 mt-2 w-full rounded-md border bg-popover shadow-md"
         >
-          <Command shouldFilter={false}>
+          <Command>
             <div className="flex items-center border-b px-3">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -186,45 +263,156 @@ export function HierarchicalAdminSelect({
                 autoFocus
               />
             </div>
-            {filteredCategories.length === 0 ? (
+            {filteredGroups.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
                 No administrative units found.
               </div>
             ) : (
               <CommandList className="max-h-[400px] overflow-auto">
-                {filteredCategories[0].units.map((unit) => {
-                  const isSelected = selected.includes(unit.id)
-                  const displayName = unit.fullName
+                {hasTownships ? (
+                  // Grouped view with collapsible state/regions
+                  filteredGroups.map((group) => {
+                    const isExpanded = searchQuery.trim() || expandedGroups.has(group.name)
+                    const parentUnit = group.parentUnit
+                    const isParentSelected = parentUnit ? selected.includes(parentUnit.id) : false
+                    const hasSelectedChildren = group.children.some(c => selected.includes(c.id))
 
-                  return (
-                    <div
-                      key={unit.id}
-                      role="option"
-                      aria-selected={isSelected}
-                      tabIndex={0}
-                      className={cn(
-                        "flex cursor-pointer items-center px-6 py-3 transition-colors",
-                        "hover:bg-accent/50 focus:bg-accent/50",
-                        isSelected && "bg-accent"
-                      )}
-                      onClick={() => handleSelect(unit.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault()
-                          handleSelect(unit.id)
-                        }
-                      }}
-                    >
-                      <Check
-                        className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
-                        aria-hidden="true"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-foreground">{displayName}</div>
+                    return (
+                      <div key={group.name} className="border-b last:border-b-0">
+                        {/* Parent State/Region */}
+                        {parentUnit && (
+                          <div
+                            className={cn(
+                              "flex items-center px-3 py-2 cursor-pointer transition-colors",
+                              "hover:bg-accent/50",
+                              isParentSelected && "bg-accent"
+                            )}
+                          >
+                            {/* Expand/collapse button */}
+                            {group.children.length > 0 && (
+                              <button
+                                type="button"
+                                className="p-1 mr-1 hover:bg-accent rounded"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleGroup(group.name)
+                                }}
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </button>
+                            )}
+                            {group.children.length === 0 && <div className="w-6" />}
+
+                            {/* Checkbox for parent */}
+                            <div
+                              role="option"
+                              aria-selected={isParentSelected}
+                              className="flex-1 flex items-center py-1"
+                              onClick={() => handleSelect(parentUnit.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault()
+                                  handleSelect(parentUnit.id)
+                                }
+                              }}
+                              tabIndex={0}
+                            >
+                              <Check
+                                className={cn("mr-2 h-4 w-4", isParentSelected ? "opacity-100" : "opacity-0")}
+                                aria-hidden="true"
+                              />
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{parentUnit.name}</span>
+                                {hasSelectedChildren && !isParentSelected && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {group.children.filter(c => selected.includes(c.id)).length} townships
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Children (townships) */}
+                        {isExpanded && group.children.length > 0 && (
+                          <div className="bg-muted/30">
+                            {group.children.map((unit) => {
+                              const isSelected = selected.includes(unit.id)
+                              return (
+                                <div
+                                  key={unit.id}
+                                  role="option"
+                                  aria-selected={isSelected}
+                                  tabIndex={0}
+                                  className={cn(
+                                    "flex cursor-pointer items-center pl-10 pr-6 py-2 transition-colors",
+                                    "hover:bg-accent/50 focus:bg-accent/50",
+                                    isSelected && "bg-accent"
+                                  )}
+                                  onClick={() => handleSelect(unit.id)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Enter" || event.key === " ") {
+                                      event.preventDefault()
+                                      handleSelect(unit.id)
+                                    }
+                                  }}
+                                >
+                                  <Check
+                                    className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
+                                    aria-hidden="true"
+                                  />
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm">{unit.name}</span>
+                                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                                      Township
+                                    </Badge>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })
+                ) : (
+                  // Flat list view (no townships)
+                  filteredGroups[0]?.children.map((unit) => {
+                    const isSelected = selected.includes(unit.id)
+                    return (
+                      <div
+                        key={unit.id}
+                        role="option"
+                        aria-selected={isSelected}
+                        tabIndex={0}
+                        className={cn(
+                          "flex cursor-pointer items-center px-6 py-3 transition-colors",
+                          "hover:bg-accent/50 focus:bg-accent/50",
+                          isSelected && "bg-accent"
+                        )}
+                        onClick={() => handleSelect(unit.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault()
+                            handleSelect(unit.id)
+                          }
+                        }}
+                      >
+                        <Check
+                          className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
+                          aria-hidden="true"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-foreground">{unit.fullName}</div>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
               </CommandList>
             )}
           </Command>

@@ -17,6 +17,8 @@ import {
   FileText,
   FileSpreadsheet,
   Trash2,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 
 interface OrganizationActionMenuProps {
@@ -26,6 +28,8 @@ interface OrganizationActionMenuProps {
   onExportPDF?: () => void;
   onExportExcel?: () => void;
   onDelete?: () => void;
+  isBookmarked?: boolean;
+  onToggleBookmark?: () => void;
 }
 
 export function OrganizationActionMenu({
@@ -35,6 +39,8 @@ export function OrganizationActionMenu({
   onExportPDF,
   onExportExcel,
   onDelete,
+  isBookmarked,
+  onToggleBookmark,
 }: OrganizationActionMenuProps) {
   const hasExport = onExportPDF || onExportExcel;
 
@@ -51,6 +57,22 @@ export function OrganizationActionMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
+        {onToggleBookmark && (
+          <DropdownMenuItem onClick={onToggleBookmark} className="cursor-pointer">
+            {isBookmarked ? (
+              <>
+                <BookmarkCheck className="h-4 w-4 mr-2 text-slate-600" />
+                Remove Bookmark
+              </>
+            ) : (
+              <>
+                <Bookmark className="h-4 w-4 mr-2" />
+                Add Bookmark
+              </>
+            )}
+          </DropdownMenuItem>
+        )}
+
         {onView && (
           <DropdownMenuItem onClick={onView} className="cursor-pointer">
             <Eye className="h-4 w-4 mr-2" />

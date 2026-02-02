@@ -238,6 +238,12 @@ select:focus {
   .maplibregl-popup-tip {
     @apply hidden!;
   }
+  .mapboxgl-popup-content, .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  }
+  .mapboxgl-popup-tip, .maplibregl-popup-tip {
+    @apply hidden!;
+  }
 }
 
 @layer base {

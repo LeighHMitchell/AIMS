@@ -69,7 +69,7 @@ export async function POST(
 
     // Parse request body
     const body = await request.json()
-    
+
     if (!Array.isArray(body)) {
       return NextResponse.json({ error: 'Request body must be an array' }, { status: 400 })
     }
@@ -79,9 +79,14 @@ export async function POST(
       if (!item.region_name || typeof item.percentage !== 'number' || typeof item.is_nationwide !== 'boolean') {
         return NextResponse.json({ error: 'Invalid data format' }, { status: 400 })
       }
-      
+
       if (item.percentage < 0 || item.percentage > 100) {
         return NextResponse.json({ error: 'Percentage must be between 0 and 100' }, { status: 400 })
+      }
+
+      // Validate allocation_level if provided
+      if (item.allocation_level && !['region', 'township'].includes(item.allocation_level)) {
+        return NextResponse.json({ error: 'allocation_level must be "region" or "township"' }, { status: 400 })
       }
     }
 
@@ -115,13 +120,16 @@ export async function POST(
       payloadCount: body.length,
       payload: body
     });
-    
+
     if (body.length > 0) {
       const breakdownsToInsert = body.map(item => ({
         activity_id: activityId,
         region_name: item.region_name,
         percentage: item.percentage,
-        is_nationwide: item.is_nationwide
+        is_nationwide: item.is_nationwide,
+        allocation_level: item.allocation_level || 'region',
+        st_pcode: item.st_pcode || null,
+        ts_pcode: item.ts_pcode || null
       }))
 
       const { error: insertError } = await supabase

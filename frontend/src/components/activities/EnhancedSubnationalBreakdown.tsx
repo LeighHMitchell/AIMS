@@ -1,19 +1,38 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
-
+import { Badge } from "@/components/ui/badge"
 
 import { MapPin, Trash2, Sparkles, Loader2 } from 'lucide-react'
 import myanmarData from '@/data/myanmar-locations.json'
 import { toast } from "sonner"
-import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
+import dynamic from 'next/dynamic'
 import { HierarchicalAdminSelect } from "@/components/ui/hierarchical-admin-select"
 import { apiFetch } from '@/lib/api-fetch';
+import type { ViewLevel, AllocationLevel, AdminUnit as TypedAdminUnit } from '@/types/subnational'
+
+// Dynamically import the map to avoid SSR issues with MapLibre
+const SubnationalChoroplethMap = dynamic(
+  () => import('@/components/maps/SubnationalChoroplethMap'),
+  {
+    ssr: false,
+    loading: () => (
+      <Card className="w-full h-full">
+        <CardContent className="p-4 h-full flex items-center justify-center">
+          <div className="text-gray-500 flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading map...
+          </div>
+        </CardContent>
+      </Card>
+    ),
+  }
+)
 
 interface AdminUnit {
   id: string
@@ -22,12 +41,15 @@ interface AdminUnit {
   parentName?: string // For townships, this is the state/region name
   parentId?: string
   fullName: string // Display name with parent context
+  st_pcode: string      // MIMU State/Region PCode
+  ts_pcode?: string     // MIMU Township PCode (only for townships)
 }
 
 interface BreakdownEntry {
   id: string
   adminUnit: AdminUnit
   percentage: number
+  allocationLevel: AllocationLevel
 }
 
 interface EnhancedSubnationalBreakdownProps {
@@ -37,8 +59,8 @@ interface EnhancedSubnationalBreakdownProps {
   suggestedRegions?: string[]  // Regions from Activity Sites to auto-add
 }
 
-export function EnhancedSubnationalBreakdown({ 
-  activityId, 
+export function EnhancedSubnationalBreakdown({
+  activityId,
   canEdit = true,
   onDataChange,
   suggestedRegions = []
@@ -47,34 +69,56 @@ export function EnhancedSubnationalBreakdown({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
-  
+  const [viewLevel, setViewLevel] = useState<ViewLevel>('region')
+
   // Track if initial load is complete and if user has made changes
   const isInitialLoadRef = useRef(true)
   const hasUserChangedDataRef = useRef(false)
-  
+
   // Track which suggested regions have been processed to avoid re-adding
   const processedSuggestedRegionsRef = useRef<Set<string>>(new Set())
 
-  // Create flattened list of all administrative units (states/regions/union territories only)
+  // Create flattened list of all administrative units (states/regions/union territories AND townships)
   const allAdminUnits = useMemo(() => {
     const units: AdminUnit[] = []
-    
-    // Add states/regions/union territories ONLY (no townships)
+
+    // Add states/regions/union territories
     myanmarData.states.forEach((state) => {
-      units.push({
+      const stateUnit: AdminUnit = {
         id: state.id,
         name: state.name,
         type: state.type as 'state' | 'region' | 'union-territory',
-        fullName: state.name
+        fullName: state.name,
+        st_pcode: (state as any).st_pcode || ''
+      }
+      units.push(stateUnit)
+
+      // Add townships under this state/region
+      state.townships.forEach((township) => {
+        const townshipData = township as { id: string; name: string; code: string; ts_pcode?: string; st_pcode?: string }
+        units.push({
+          id: townshipData.id,
+          name: townshipData.name,
+          type: 'township',
+          parentName: state.name,
+          parentId: state.id,
+          fullName: `${townshipData.name}, ${state.name}`,
+          st_pcode: townshipData.st_pcode || stateUnit.st_pcode,
+          ts_pcode: townshipData.ts_pcode
+        })
       })
-      
-      // Skip townships - we don't want them in the dropdown
     })
-    
+
     return units
   }, [])
 
-  // No need for multiSelectOptions anymore - using hierarchical structure
+  // Filter admin units based on current view level
+  const filteredAdminUnits = useMemo(() => {
+    if (viewLevel === 'region') {
+      return allAdminUnits.filter(u => u.type !== 'township')
+    }
+    return allAdminUnits
+  }, [allAdminUnits, viewLevel])
 
   // Calculate totals
   const totalPercentage = entries.reduce((sum, entry) => sum + entry.percentage, 0)
@@ -118,7 +162,7 @@ export function EnhancedSubnationalBreakdown({
     stateEntries.forEach(stateEntry => {
       const childTownships = townshipsByParent.get(stateEntry.adminUnit.name) ?? []
       const hasChildren = childTownships.length > 0
-      
+
       result.push({
         entry: stateEntry,
         isParent: hasChildren,
@@ -159,20 +203,22 @@ export function EnhancedSubnationalBreakdown({
   // Show toast when total reaches 100% - but only after user makes changes
   useEffect(() => {
     if (isValidTotal && hasAnyValues && !loading && hasUserChangedDataRef.current) {
-      toast.success('Perfect! Total allocation is 100%', { 
+      toast.success('Perfect! Total allocation is 100%', {
         duration: 3000,
         description: 'Your subnational breakdown is complete.'
       })
     }
   }, [isValidTotal, hasAnyValues, loading])
 
-  // Convert entries to the format expected by the map and backend
+  // Convert entries to the format expected by the map
   const breakdownsForMap = useMemo(() => {
     const aggregated = new Map<string, number>()
 
     entries.forEach((entry) => {
+      // For region view, aggregate townships to their parent region
+      // For township view, keep townships separate
       const targetName =
-        entry.adminUnit.type === "township"
+        viewLevel === 'region' && entry.adminUnit.type === "township"
           ? entry.adminUnit.parentName ?? entry.adminUnit.name
           : entry.adminUnit.name
 
@@ -186,61 +232,84 @@ export function EnhancedSubnationalBreakdown({
 
     const result = Object.fromEntries(aggregated.entries())
 
-    console.log("[EnhancedSubnationalBreakdown] breakdownsForMap:", result)
-    console.log("[EnhancedSubnationalBreakdown] entries:", entries)
-
     return result
-  }, [entries])
+  }, [entries, viewLevel])
 
   // Load existing data
   const loadData = useCallback(async () => {
     console.log('[EnhancedSubnationalBreakdown] loadData called with activityId:', activityId)
-    
+
     if (!activityId || activityId === 'undefined' || activityId === 'null') {
       console.log('[EnhancedSubnationalBreakdown] No valid activityId, setting loading to false')
       setLoading(false)
       return
     }
-    
+
     try {
       console.log('[EnhancedSubnationalBreakdown] Fetching data from API...')
       const response = await apiFetch(`/api/activities/${activityId}/subnational-breakdown`)
-      
+
       if (response.ok) {
         const data = await response.json()
         console.log('[EnhancedSubnationalBreakdown] Received data:', data)
-        
+
         // Convert backend data to entries format
         const loadedEntries: BreakdownEntry[] = []
         const loadedSelectedUnits: string[] = []
-        
+
+        let hasTownshipData = false
+
         data.forEach((item: any, index: number) => {
+          // Determine if this is a township entry (has ts_pcode or uses "State - Township" format)
+          const isTownship = item.allocation_level === 'township' ||
+                            item.ts_pcode ||
+                            item.region_name.includes(' - ')
+
+          if (isTownship) hasTownshipData = true
+
           // Try to find matching admin unit
           const adminUnit = allAdminUnits.find(unit => {
-            // Handle township format: "State Name - Township Name"
+            // First try to match by pcode
+            if (item.ts_pcode && unit.ts_pcode === item.ts_pcode) {
+              return true
+            }
+            if (!isTownship && item.st_pcode && unit.st_pcode === item.st_pcode && unit.type !== 'township') {
+              return true
+            }
+
+            // Fall back to name matching
             if (item.region_name.includes(' - ')) {
-              const [stateName, townshipName] = item.region_name.split(' - ')
-              return unit.type === 'township' && 
-                     unit.name === townshipName && 
+              const parts = item.region_name.split(' - ')
+              const stateName = parts[0]
+              const townshipName = parts[1]
+              return unit.type === 'township' &&
+                     unit.name === townshipName &&
                      unit.parentName === stateName
             } else {
               // Handle state/region format
               return unit.type !== 'township' && unit.name === item.region_name
             }
           })
-          
+
           if (adminUnit) {
             loadedEntries.push({
               id: `entry-${index}`,
               adminUnit,
-              percentage: item.percentage
+              percentage: item.percentage,
+              allocationLevel: item.allocation_level || (adminUnit.type === 'township' ? 'township' : 'region')
             })
             loadedSelectedUnits.push(adminUnit.id)
           }
         })
-        
+
         setEntries(loadedEntries)
         setSelectedUnits(loadedSelectedUnits)
+
+        // Set view level based on loaded data
+        if (hasTownshipData) {
+          setViewLevel('township')
+        }
+
         console.log('[EnhancedSubnationalBreakdown] Data loaded successfully')
       } else {
         console.log('[EnhancedSubnationalBreakdown] No existing data found, response status:', response.status)
@@ -265,13 +334,13 @@ export function EnhancedSubnationalBreakdown({
   useEffect(() => {
     console.log('[EnhancedSubnationalBreakdown] Loading data for activityId:', activityId)
     loadData()
-    
+
     // Fallback timeout to prevent infinite loading
     const timeout = setTimeout(() => {
       console.log('[EnhancedSubnationalBreakdown] Timeout reached, forcing loading to false')
       setLoading(false)
     }, 10000) // 10 second timeout
-    
+
     return () => clearTimeout(timeout)
   }, [activityId, loadData])
 
@@ -279,26 +348,26 @@ export function EnhancedSubnationalBreakdown({
   // This adds states/regions to the breakdown when locations are added
   useEffect(() => {
     if (loading || !suggestedRegions?.length) return
-    
+
     // Find regions that need to be added (not already selected and not already processed)
     const regionsToAdd: string[] = []
-    
+
     suggestedRegions.forEach(regionName => {
       // Skip if we've already processed this region name
       if (processedSuggestedRegionsRef.current.has(regionName)) return
-      
-      const adminUnit = allAdminUnits.find(u => u.name === regionName)
+
+      const adminUnit = allAdminUnits.find(u => u.name === regionName && u.type !== 'township')
       if (adminUnit && !selectedUnits.includes(adminUnit.id)) {
         regionsToAdd.push(adminUnit.id)
         // Mark as processed
         processedSuggestedRegionsRef.current.add(regionName)
       }
     })
-    
+
     // Add all missing regions at once
     if (regionsToAdd.length > 0) {
       console.log('[EnhancedSubnationalBreakdown] Auto-adding regions from Activity Sites:', regionsToAdd)
-      
+
       setSelectedUnits(prev => [...prev, ...regionsToAdd])
       setEntries(prev => {
         const newEntries = [...prev]
@@ -308,7 +377,8 @@ export function EnhancedSubnationalBreakdown({
             newEntries.push({
               id: `entry-${Date.now()}-${unitId}`,
               adminUnit,
-              percentage: 0
+              percentage: 0,
+              allocationLevel: 'region'
             })
           }
         })
@@ -320,17 +390,19 @@ export function EnhancedSubnationalBreakdown({
   // Auto-save function
   const autoSave = useCallback(async () => {
     if (!canEdit || !activityId) return
-    
+
     setSaving(true)
     try {
-      // Convert entries back to backend format
-      // Include all entries, even those with 0% (just selections)
+      // Convert entries back to backend format with pcodes
       const payload = entries.map(entry => ({
-        region_name: entry.adminUnit.type === 'township' 
+        region_name: entry.adminUnit.type === 'township'
           ? `${entry.adminUnit.parentName} - ${entry.adminUnit.name}`
           : entry.adminUnit.name,
         percentage: entry.percentage || 0,
-        is_nationwide: false // We don't use nationwide with specific breakdowns
+        is_nationwide: false,
+        allocation_level: entry.allocationLevel,
+        st_pcode: entry.adminUnit.st_pcode,
+        ts_pcode: entry.adminUnit.ts_pcode
       }))
 
       console.log('[DEBUG] Subnational autoSave payload:', {
@@ -372,30 +444,47 @@ export function EnhancedSubnationalBreakdown({
   // Handle selection changes from MultiSelect
   const handleSelectionChange = (newSelectedUnits: string[]) => {
     setSelectedUnits(newSelectedUnits)
-    
+
     // Mark that user has made changes (only if not initial load)
     if (!isInitialLoadRef.current) {
       hasUserChangedDataRef.current = true
     }
-    
+
     // Update entries based on selection
     const newEntries: BreakdownEntry[] = []
-    
+
     newSelectedUnits.forEach(unitId => {
       const adminUnit = allAdminUnits.find(unit => unit.id === unitId)
       if (adminUnit) {
         // Check if we already have an entry for this unit
         const existingEntry = entries.find(entry => entry.adminUnit.id === unitId)
-        
+
         newEntries.push({
           id: existingEntry?.id || `entry-${Date.now()}-${unitId}`,
           adminUnit,
-          percentage: existingEntry?.percentage || 0
+          percentage: existingEntry?.percentage || 0,
+          allocationLevel: existingEntry?.allocationLevel || (adminUnit.type === 'township' ? 'township' : 'region')
         })
       }
     })
-    
+
     setEntries(newEntries)
+  }
+
+  // Handle feature click from map
+  const handleFeatureClick = (pcode: string, name: string, level: AllocationLevel) => {
+    // Find the admin unit for this feature
+    const adminUnit = allAdminUnits.find(unit => {
+      if (level === 'township') {
+        return unit.ts_pcode === pcode
+      } else {
+        return unit.st_pcode === pcode && unit.type !== 'township'
+      }
+    })
+
+    if (adminUnit && !selectedUnits.includes(adminUnit.id)) {
+      handleSelectionChange([...selectedUnits, adminUnit.id])
+    }
   }
 
   // Update percentage for a specific entry
@@ -404,8 +493,8 @@ export function EnhancedSubnationalBreakdown({
     if (!isInitialLoadRef.current) {
       hasUserChangedDataRef.current = true
     }
-    
-    setEntries(prev => prev.map(entry => 
+
+    setEntries(prev => prev.map(entry =>
       entry.id === entryId ? { ...entry, percentage } : entry
     ))
   }
@@ -416,7 +505,7 @@ export function EnhancedSubnationalBreakdown({
     if (!isInitialLoadRef.current) {
       hasUserChangedDataRef.current = true
     }
-    
+
     const entry = entries.find(e => e.id === entryId)
     if (entry) {
       setSelectedUnits(prev => prev.filter(id => id !== entry.adminUnit.id))
@@ -427,16 +516,16 @@ export function EnhancedSubnationalBreakdown({
   // Distribute 100% equally across all selected units
   const distributeEqually = () => {
     if (entries.length === 0) return
-    
+
     // Mark that user has made changes
     hasUserChangedDataRef.current = true
-    
+
     const equalPercentage = 100 / entries.length
     setEntries(prev => prev.map(entry => ({
       ...entry,
       percentage: equalPercentage
     })))
-    
+
     toast.success('Distributed equally', {
       description: `${equalPercentage.toFixed(1)}% allocated to each unit`
     })
@@ -446,18 +535,16 @@ export function EnhancedSubnationalBreakdown({
   const clearAllocations = () => {
     // Mark that user has made changes
     hasUserChangedDataRef.current = true
-    
+
     setEntries(prev => prev.map(entry => ({
       ...entry,
       percentage: 0
     })))
-    
+
     toast.info('Allocations cleared', {
       description: 'All percentages reset to 0%'
     })
   }
-
-
 
   // Notify parent when data changes
   useEffect(() => {
@@ -492,7 +579,7 @@ export function EnhancedSubnationalBreakdown({
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Form Skeleton */}
           <Card className="h-[800px] flex flex-col">
             <CardHeader>
@@ -509,7 +596,7 @@ export function EnhancedSubnationalBreakdown({
                   <Skeleton className="h-10 w-24" />
                 </div>
               </div>
-              
+
               {/* Entries Table Skeleton */}
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -528,7 +615,7 @@ export function EnhancedSubnationalBreakdown({
                   </div>
                 ))}
               </div>
-              
+
               {/* Total Skeleton */}
               <div className="mt-6 pt-4 border-t">
                 <div className="flex justify-between items-center">
@@ -536,7 +623,7 @@ export function EnhancedSubnationalBreakdown({
                   <Skeleton className="h-6 w-16" />
                 </div>
               </div>
-              
+
               {/* Loading message */}
               <div className="flex items-center justify-center mt-8 text-sm text-gray-500">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -555,38 +642,39 @@ export function EnhancedSubnationalBreakdown({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Map (much taller to fit all of Myanmar) */}
         <div className="h-[800px]">
-          <MyanmarRegionsMap
+          <SubnationalChoroplethMap
             breakdowns={breakdownsForMap}
-            onRegionClick={(regionName) => {
-              // Find the admin unit for this region
-              const adminUnit = allAdminUnits.find(unit => 
-                unit.type !== 'township' && unit.name === regionName
-              )
-              if (adminUnit && !selectedUnits.includes(adminUnit.id)) {
-                handleSelectionChange([...selectedUnits, adminUnit.id])
-              }
-            }}
+            viewLevel={viewLevel}
+            onViewLevelChange={setViewLevel}
+            onFeatureClick={handleFeatureClick}
           />
         </div>
-        
+
         {/* Right Column - Form */}
         <Card className="h-[800px] flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
               Subnational Breakdown
-              <HelpTextTooltip content="Select administrative units (states/regions/union territories) and provide percentage breakdowns. Click on the map to add regions quickly." />
+              <HelpTextTooltip content="Select administrative units (states/regions or townships) and provide percentage breakdowns. Click on the map to add areas quickly. Toggle between Region and Township views." />
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 flex-1 overflow-y-auto">
             {/* Hierarchical Admin Select Dropdown */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Select Administrative Units:</label>
+              <label className="text-sm font-medium">
+                Select Administrative Units:
+                {viewLevel === 'township' && (
+                  <span className="text-xs text-muted-foreground ml-2">(includes townships)</span>
+                )}
+              </label>
               <HierarchicalAdminSelect
-                allAdminUnits={allAdminUnits}
+                allAdminUnits={filteredAdminUnits}
                 selected={selectedUnits}
                 onChange={handleSelectionChange}
-                placeholder="Select states, regions, or union territories..."
+                placeholder={viewLevel === 'region'
+                  ? "Select states, regions, or union territories..."
+                  : "Select regions or townships..."}
                 disabled={!canEdit}
               />
             </div>
@@ -635,9 +723,14 @@ export function EnhancedSubnationalBreakdown({
                     {organizedEntries.map(({ entry, isParent, isChild }) => (
                       <tr key={entry.id} className="border-t">
                         <td className={`px-3 py-2 ${isChild ? 'pl-8' : ''}`}>
-                          <span className={`text-sm ${isParent ? 'font-semibold' : isChild ? 'font-normal text-gray-700' : 'font-medium'}`}>
-                            {isChild ? entry.adminUnit.name : entry.adminUnit.fullName}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm ${isParent ? 'font-semibold' : isChild ? 'font-normal text-gray-700' : 'font-medium'}`}>
+                              {isChild ? entry.adminUnit.name : entry.adminUnit.fullName}
+                            </span>
+                            {entry.adminUnit.type === 'township' && (
+                              <Badge variant="outline" className="text-xs">Township</Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="px-3 py-2 text-right">
                           <div className="flex items-center justify-end gap-2">

@@ -44,6 +44,7 @@ import { OrgTransactionsTable } from "@/components/dashboard/OrgTransactionsTabl
 import { OrgActivitiesMap } from "@/components/dashboard/OrgActivitiesMap"
 import { OrgSankeyFlow } from "@/components/dashboard/OrgSankeyFlow"
 import { BookmarkedActivitiesTable } from "@/components/dashboard/BookmarkedActivitiesTable"
+import { BookmarkedOrganizationsTable } from "@/components/dashboard/BookmarkedOrganizationsTable"
 import { MissingImagesCard } from "@/components/dashboard/MissingImagesCard"
 import { FocalPointCheckCard } from "@/components/dashboard/FocalPointCheckCard"
 import { DataClinicHeader } from "@/components/dashboard/DataClinicHeader"
@@ -427,7 +428,18 @@ export default function Dashboard() {
 
               {/* Bookmarks Tab Content */}
               <TabsContent value="bookmarks">
-                <BookmarkedActivitiesTable />
+                <Tabs defaultValue="activities" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="activities">Activities</TabsTrigger>
+                    <TabsTrigger value="organizations">Organizations</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="activities">
+                    <BookmarkedActivitiesTable />
+                  </TabsContent>
+                  <TabsContent value="organizations">
+                    <BookmarkedOrganizationsTable userId={user.id} />
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
 
               {/* My Portfolio Tab Content */}

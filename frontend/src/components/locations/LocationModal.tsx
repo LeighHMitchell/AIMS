@@ -23,8 +23,6 @@ import {
   Save,
   Trash2,
   Map,
-  Layers,
-  Satellite,
   RefreshCw,
   Copy,
   Check
@@ -34,7 +32,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
 
@@ -525,59 +523,34 @@ const COUNTRY_GROUPS: SelectIATIGroup[] = [
 // Note: DEFAULT_MAP_CENTER and DEFAULT_MAP_ZOOM are imported from country-coordinates
 // They will be overridden by the home country from system settings
 
-// Map layer configuration
+// Map layer configuration - names only, actual styles are in LocationMap
 type MapLayerKey = 'osm_standard' | 'osm_humanitarian' | 'cyclosm' | 'opentopo' | 'satellite_esri';
 
 interface MapLayerConfig {
   name: string;
-  url: string;
-  attribution: string;
   category: string;
-  fallbacks?: string[];
 }
 
 const MAP_LAYERS: Record<MapLayerKey, MapLayerConfig> = {
   osm_standard: {
-    name: 'OpenStreetMap Standard',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors',
+    name: 'Streets (Voyager)',
     category: 'Streets'
   },
   osm_humanitarian: {
     name: 'Humanitarian (HOT)',
-    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © HOT',
     category: 'Humanitarian'
   },
   cyclosm: {
-    name: 'CyclOSM Transport',
-    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © CyclOSM',
-    category: 'Transport'
+    name: 'Streets (Light)',
+    category: 'Streets'
   },
   opentopo: {
-    name: 'OpenTopo Terrain',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors, © OpenTopoMap',
-    category: 'Terrain'
+    name: 'Streets (Positron)',
+    category: 'Streets'
   },
   satellite_esri: {
     name: 'ESRI Satellite',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '© Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-    category: 'Satellite',
-    fallbacks: [
-      // Mapbox (if token available)
-      process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-        ? `https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
-        : '',
-      // Google (if token available)
-      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-        ? 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
-        : '',
-      // Back to OSM if all else fails
-      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-    ].filter(Boolean)
+    category: 'Satellite'
   }
 };
 
@@ -614,9 +587,6 @@ export default function LocationModal({
   const [selectedLocation, setSelectedLocation] = useState<Partial<LocationFormSchema>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [currentLayer, setCurrentLayer] = useState<MapLayerKey>('osm_standard');
-  const [mapError, setMapError] = useState<string | null>(null);
-  const [isRetrying, setIsRetrying] = useState(false);
-  const [satelliteFallbackIndex, setSatelliteFallbackIndex] = useState(0);
 
   // Home country coordinates from system settings
   const [homeCountryCenter, setHomeCountryCenter] = useState<[number, number]>(DEFAULT_MAP_CENTER);
@@ -668,70 +638,10 @@ export default function LocationModal({
     }
   }, []);
 
-  // Get current layer URL with fallbacks
-  const getLayerUrl = useCallback(() => {
-    const layer = MAP_LAYERS[currentLayer];
-
-    if (currentLayer === 'satellite') {
-      const fallbacks = (layer as any).fallbacks ?? [];
-      const urls = [layer.url, ...fallbacks];
-      const index = Math.min(satelliteFallbackIndex, urls.length - 1);
-      return urls[index] ?? layer.url;
-    }
-
-    return layer.url;
-  }, [currentLayer, satelliteFallbackIndex]);
-
   // Handle layer change
   const handleLayerChange = useCallback((layer: MapLayerKey) => {
-    setMapError(null);
-    if (!layer.includes('satellite')) {
-      setSatelliteFallbackIndex(0);
-    }
     saveLayerPreference(layer);
   }, [saveLayerPreference]);
-
-  // Handle map tile error
-  const handleMapError = useCallback(() => {
-    if (currentLayer === 'satellite_esri') {
-      const fallbacks = MAP_LAYERS.satellite_esri.fallbacks ?? [];
-      const urls = [MAP_LAYERS.satellite_esri.url, ...fallbacks];
-
-      setSatelliteFallbackIndex((prev) => {
-        const hasNext = prev < urls.length - 1;
-        if (hasNext) {
-          toast.warning('Satellite imagery unavailable from the current provider. Falling back to the next source.');
-          return prev + 1;
-        }
-        return prev;
-      });
-
-      if (satelliteFallbackIndex >= urls.length - 1) {
-        setMapError('Satellite tiles failed to load. Try switching layers or retry.');
-      }
-    } else {
-      setMapError('Map tiles failed to load. Try switching layers or retry.');
-    }
-  }, [currentLayer, satelliteFallbackIndex]);
-
-  // Handle retry
-  const handleRetry = useCallback(() => {
-    setIsRetrying(true);
-    setMapError(null);
-    if (currentLayer === 'satellite') {
-      setSatelliteFallbackIndex(0);
-    }
-
-    setTimeout(() => {
-      setIsRetrying(false);
-    }, 1000);
-  }, [currentLayer]);
-
-  useEffect(() => {
-    if (currentLayer !== 'satellite') {
-      setSatelliteFallbackIndex(0);
-    }
-  }, [currentLayer]);
 
   // Form setup
   const form = useForm<LocationFormSchema>({
@@ -1267,36 +1177,11 @@ const autoPopulateIatiFields = useCallback((params: {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="relative h-[480px] bg-gray-100 rounded-lg overflow-hidden">
-                  {mapError && (
-                    <div className="absolute top-0 left-0 right-0 z-50 bg-red-100 border-b border-red-200 p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-red-800">
-                          <AlertCircle className="h-4 w-4" />
-                          <span className="text-sm">{mapError}</span>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleRetry}
-                          disabled={isRetrying}
-                          className="text-red-800 border-red-300 hover:bg-red-50"
-                        >
-                          {isRetrying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                          Retry
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
                   <LocationMap
                     mapCenter={mapCenter}
                     mapZoom={mapZoom}
                     mapRef={mapRef}
-                    mapLayers={MAP_LAYERS}
                     currentLayer={currentLayer}
-                    getLayerUrl={getLayerUrl}
-                    onLayerChange={handleLayerChange}
-                    onMapError={handleMapError}
                     existingLocations={existingLocations}
                     currentLocationId={location?.id}
                     markerPosition={markerPosition}

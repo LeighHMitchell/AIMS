@@ -9,8 +9,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Check, AlertTriangle, MapPin, Trash2, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { MYANMAR_REGIONS, type MyanmarRegion } from "@/data/myanmar-regions"
 import { toast } from "sonner"
-import MyanmarRegionsMap from "@/components/MyanmarRegionsMap"
+import dynamic from 'next/dynamic'
 import { RegionSearchableSelect } from "@/components/ui/region-searchable-select"
+
+// Dynamic import for MapLibre-based map with zoom-dependent township detail
+const SubnationalChoroplethMap = dynamic(
+  () => import('@/components/maps/SubnationalChoroplethMap'),
+  { ssr: false, loading: () => <div className="h-[500px] bg-gray-100 rounded-lg flex items-center justify-center">Loading map...</div> }
+)
 import { apiFetch } from '@/lib/api-fetch';
 
 interface SubnationalBreakdown {
@@ -38,6 +44,7 @@ export function SubnationalBreakdownTab({
   const [saving, setSaving] = useState(false)
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [allocationStatus, setAllocationStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({})
+  const [mapViewLevel, setMapViewLevel] = useState<'region' | 'township'>('region')
   const prevBreakdownsRef = useRef(breakdowns)
 
   // Calculate total percentage
@@ -453,18 +460,22 @@ export function SubnationalBreakdownTab({
     <div className="space-y-6">
       {/* Two-column layout: Map on left, Form on right */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column - Map */}
-        <MyanmarRegionsMap 
-          breakdowns={breakdowns}
-          onRegionClick={(regionName) => {
-            // Focus on the region input when clicked
-            const input = document.querySelector(`input[data-region="${regionName}"]`) as HTMLInputElement;
-            if (input) {
-              input.focus();
-              input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          }}
-        />
+        {/* Left Column - Map with zoom-dependent township detail */}
+        <div className="h-[600px]">
+          <SubnationalChoroplethMap
+            breakdowns={breakdowns}
+            viewLevel={mapViewLevel}
+            onViewLevelChange={setMapViewLevel}
+            onFeatureClick={(pcode, name, level) => {
+              // Focus on the region input when clicked
+              const input = document.querySelector(`input[data-region="${name}"]`) as HTMLInputElement;
+              if (input) {
+                input.focus();
+                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }}
+          />
+        </div>
         
         {/* Right Column - Form */}
         <Card>

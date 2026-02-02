@@ -1,41 +1,30 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   MapPin,
   Edit,
   Trash2,
   Copy,
   MoreVertical,
-  AlertCircle,
-  CheckCircle,
-  Map,
-  Eye,
-  EyeOff,
-  Globe,
   Building,
   Home,
   Stethoscope,
   School,
   Car,
-  HelpCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   type LocationSchema,
-  LOCATION_REACH_CODES,
-  LOCATION_EXACTNESS_CODES,
-  LOCATION_CLASS_CODES,
-  SITE_TYPES,
 } from '@/lib/schemas/location';
 import { IATI_COUNTRIES } from '@/data/iati-countries';
+import { Map, MapMarker, MarkerContent } from '@/components/ui/map';
 
-// Map thumbnail component using static tiles with location marker
+// Map thumbnail component using MapCN with OpenStreetMap tiles
 function MapThumbnail({
   location,
   className = "w-32 h-24"
@@ -43,7 +32,8 @@ function MapThumbnail({
   location: LocationSchema;
   className?: string;
 }) {
-  if (!location.latitude || !location.longitude) {
+  // Only site locations have coordinates
+  if (location.location_type !== 'site' || !location.latitude || !location.longitude) {
     return (
       <div className={`${className} bg-gray-100 rounded flex items-center justify-center border border-gray-200`}>
         <MapPin className="h-5 w-5 text-gray-400" />
@@ -51,31 +41,25 @@ function MapThumbnail({
     );
   }
 
-  // Use static tile service for thumbnail with higher zoom to show location detail
-  const zoom = 13;
-  const x = Math.floor((location.longitude + 180) / 360 * Math.pow(2, zoom));
-  const y = Math.floor((1 - Math.log(Math.tan(location.latitude * Math.PI / 180) + 1 / Math.cos(location.latitude * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
-
   return (
-    <div className={`${className} bg-gray-100 rounded overflow-hidden relative border border-gray-200`}>
-      <img
-        src={`https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`}
-        alt="Location map"
-        className="w-full h-full object-cover"
-        onError={(e) => {
-          // Fallback to icon if image fails to load
-          const target = e.target as HTMLImageElement;
-          target.style.display = 'none';
-          target.nextElementSibling?.classList.remove('hidden');
+    <div className={`${className} bg-gray-100 rounded overflow-hidden relative border border-gray-200 [&_.maplibregl-ctrl-attrib]:hidden [&_.mapboxgl-ctrl-attrib]:hidden`}>
+      <Map
+        center={[location.longitude, location.latitude]}
+        zoom={13}
+        styles={{
+          light: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+          dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
         }}
-      />
-      {/* Location marker overlay */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-3 h-3 bg-red-600 rounded-full border-2 border-white shadow-sm"></div>
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center bg-gray-100 hidden">
-        <MapPin className="h-5 w-5 text-gray-400" />
-      </div>
+      >
+        <MapMarker
+          longitude={location.longitude}
+          latitude={location.latitude}
+        >
+          <MarkerContent>
+            <div className="w-3 h-3 bg-red-600 rounded-full border-2 border-white shadow-sm" />
+          </MarkerContent>
+        </MapMarker>
+      </Map>
     </div>
   );
 }

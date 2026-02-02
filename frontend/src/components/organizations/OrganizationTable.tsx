@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { OrganizationActionMenu } from "@/components/organizations/OrganizationActionMenu";
+import { useOrganizationBookmarks } from "@/hooks/use-organization-bookmarks";
 import {
   Table,
   TableBody,
@@ -158,6 +159,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
   onExportExcel,
 }) => {
   const router = useRouter();
+  const { isBookmarked, toggleBookmark } = useOrganizationBookmarks();
 
 
   const handleRowClick = (orgId: string, e: React.MouseEvent) => {
@@ -429,6 +431,8 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                         onExportPDF={onExportPDF ? () => onExportPDF(org.id) : undefined}
                         onExportExcel={onExportExcel ? () => onExportExcel(org.id) : undefined}
                         onDelete={() => onDelete(org)}
+                        isBookmarked={isBookmarked(org.id)}
+                        onToggleBookmark={() => toggleBookmark(org.id)}
                       />
                     </div>
                   </TableCell>

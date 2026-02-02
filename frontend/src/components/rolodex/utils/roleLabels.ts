@@ -93,12 +93,24 @@ export function getAllRoles(): Array<{ key: string; label: string; color: string
   }));
 }
 
-// Organization type labels for filtering
+// Organization type labels for filtering (IATI Standard codes)
 export const ORG_TYPE_LABELS: Record<string, { label: string; description: string }> = {
-  'development_partner': { label: 'Development Partner', description: 'International development organizations' },
-  'partner_government': { label: 'Partner Government', description: 'Government agencies and ministries' },
-  'bilateral': { label: 'Bilateral Donor', description: 'Bilateral aid organizations' },
-  'other': { label: 'Other', description: 'Other organization types' },
+  '10': { label: 'Government', description: '' },
+  '11': { label: 'Local Government', description: 'Any local (sub national) government organisation in either donor or recipient country.' },
+  '15': { label: 'Other Public Sector', description: '' },
+  '21': { label: 'International NGO', description: '' },
+  '22': { label: 'National NGO', description: '' },
+  '23': { label: 'Regional NGO', description: '' },
+  '24': { label: 'Partner Country based NGO', description: 'Local and National NGO / CSO based in aid/assistance recipient country' },
+  '30': { label: 'Public Private Partnership', description: '' },
+  '40': { label: 'Multilateral', description: '' },
+  '60': { label: 'Foundation', description: '' },
+  '70': { label: 'Private Sector', description: '' },
+  '71': { label: 'Private Sector in Provider Country', description: 'Is in provider / donor country.' },
+  '72': { label: 'Private Sector in Aid Recipient Country', description: 'Is in aid recipient country.' },
+  '73': { label: 'Private Sector in Third Country', description: 'Is not in either a donor or aid recipient country.' },
+  '80': { label: 'Academic, Training and Research', description: '' },
+  '90': { label: 'Other', description: '' },
 };
 
 export function getOrgTypeCategories(): Array<{ key: string; label: string; description: string }> {

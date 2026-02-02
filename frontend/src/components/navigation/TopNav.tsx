@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Menu } from "bloom-menu"
 import { Badge } from "@/components/ui/badge"
 import { UserAvatar } from "@/components/ui/user-avatar"
-import { LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share, Info, Bell } from "lucide-react"
+import { LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share, Info, Bell, Bookmark } from "lucide-react"
 import { toast } from "sonner"
 import { USER_ROLES } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
@@ -172,6 +172,11 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                   <Link href="/notifications" className={itemClass} onClick={() => setIsMenuOpen(false)}>
                     <Bell className="h-4 w-4" />
                     <span>Notifications</span>
+                  </Link>
+
+                  <Link href="/dashboard?tab=bookmarks" className={itemClass} onClick={() => setIsMenuOpen(false)}>
+                    <Bookmark className="h-4 w-4" />
+                    <span>Bookmarks</span>
                   </Link>
 
                   <Menu.Item className={itemClass} onSelect={() => setIsAskQuestionModalOpen(true)}>

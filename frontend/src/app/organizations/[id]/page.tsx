@@ -54,7 +54,9 @@ import {
   Linkedin,
   Instagram,
   Youtube,
-  AreaChart as AreaChartIcon
+  AreaChart as AreaChartIcon,
+  Bookmark,
+  BookmarkCheck
 } from 'lucide-react'
 import Flag from 'react-world-flags'
 import { DocumentThumbnail } from '@/components/ui/document-thumbnail'
@@ -93,6 +95,7 @@ import { NativeLikesCounter } from '@/components/ui/native-likes-counter'
 import { useEntityLikes } from '@/hooks/use-entity-likes'
 import { useUser } from '@/hooks/useUser'
 import { useLoadingBar } from '@/hooks/useLoadingBar'
+import { useOrganizationBookmarks } from '@/hooks/use-organization-bookmarks'
 import {
   Table,
   TableBody,
@@ -236,6 +239,7 @@ export default function OrganizationProfilePage() {
     entityId: id,
     userId: user?.id,
   })
+  const { isBookmarked, toggleBookmark } = useOrganizationBookmarks()
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [activities, setActivities] = useState<Activity[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -1398,6 +1402,23 @@ export default function OrganizationProfilePage() {
                 <Download className="h-4 w-4 mr-2" />
                 Export Profile
               </Button>
+              <Button
+                variant="outline"
+                className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                onClick={() => toggleBookmark(id)}
+              >
+                {isBookmarked(id) ? (
+                  <>
+                    <BookmarkCheck className="h-4 w-4 mr-2 text-slate-600" />
+                    Bookmarked
+                  </>
+                ) : (
+                  <>
+                    <Bookmark className="h-4 w-4 mr-2" />
+                    Bookmark
+                  </>
+                )}
+              </Button>
               <NativeLikesCounter
                 count={likesCount}
                 users={likeUsers}
@@ -1435,14 +1456,38 @@ export default function OrganizationProfilePage() {
                 {/* Logo and Organization Info - Columns 1-3 */}
                 <div className="lg:col-span-3">
                   <div className="flex items-start justify-start gap-4">
-                    {/* Logo */}
-                    {organization.logo && (
-                      <div className="flex-shrink-0">
-                        <img
-                          src={organization.logo}
-                          alt={`${organization.name} logo`}
-                          className="w-20 h-20 rounded-lg object-cover"
-                        />
+                    {/* Logo and Aliases Column */}
+                    {(organization.logo || (organization.alias_refs && organization.alias_refs.length > 0) || (organization.name_aliases && organization.name_aliases.length > 0)) && (
+                      <div className="flex-shrink-0 w-32">
+                        {organization.logo && (
+                          <img
+                            src={organization.logo}
+                            alt={`${organization.name} logo`}
+                            className="w-20 h-20 rounded-lg object-cover"
+                          />
+                        )}
+
+                        {/* Legacy Codes and Alternate Names */}
+                        {((organization.alias_refs && organization.alias_refs.length > 0) ||
+                          (organization.name_aliases && organization.name_aliases.length > 0)) && (
+                          <div
+                            className={`space-y-2 ${organization.logo ? 'mt-3' : ''} cursor-help`}
+                            title={`Used for matching in IATI imports${organization.name_aliases && organization.name_aliases.length > 0 ? `\n\nAlternate Names:\n${organization.name_aliases.join('\n')}` : ''}`}
+                          >
+                            {organization.alias_refs && organization.alias_refs.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-slate-500 mb-1">Legacy Codes:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {organization.alias_refs.map((ref, idx) => (
+                                    <code key={idx} className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-mono border border-blue-200">
+                                      {ref}
+                                    </code>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1598,42 +1643,6 @@ export default function OrganizationProfilePage() {
                               )}
                             </button>
                           )}
-                        </div>
-                      )}
-                      
-                      {/* Aliases Section */}
-                      {((organization.alias_refs && organization.alias_refs.length > 0) || 
-                        (organization.name_aliases && organization.name_aliases.length > 0)) && (
-                        <div className="mt-4 pt-4 border-t border-slate-200">
-                          <div className="space-y-2">
-                            {organization.alias_refs && organization.alias_refs.length > 0 && (
-                              <div>
-                                <p className="text-xs font-medium text-slate-500 mb-1">Legacy Codes:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {organization.alias_refs.map((ref, idx) => (
-                                    <code key={idx} className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-mono border border-blue-200">
-                                      {ref}
-                                    </code>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {organization.name_aliases && organization.name_aliases.length > 0 && (
-                              <div>
-                                <p className="text-xs font-medium text-slate-500 mb-1">Alternate Names:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {organization.name_aliases.map((name, idx) => (
-                                    <Badge key={idx} variant="outline" className="text-xs border-slate-300 text-slate-700">
-                                      {name}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            <p className="text-xs text-slate-400 italic mt-2">
-                              Used for matching in IATI imports
-                            </p>
-                          </div>
                         </div>
                       )}
                     </div>
