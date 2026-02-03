@@ -58,6 +58,10 @@ interface StakeholdersGroupProps {
   initialSection?: string
   activityCreated: boolean
 
+  // Lazy loading control
+  // When false, aggressive preloading is disabled - sections only load via IntersectionObserver
+  enablePreloading?: boolean
+
   // OrganisationsSection props
   extendingPartners?: any[]
   implementingPartners?: any[]
@@ -86,6 +90,9 @@ export function StakeholdersGroup({
   onActiveSectionChange,
   initialSection,
   activityCreated,
+
+  // Lazy loading control (default false - no aggressive preloading)
+  enablePreloading = false,
 
   // OrganisationsSection props
   extendingPartners,
@@ -224,8 +231,9 @@ export function StakeholdersGroup({
   }, [activityCreated, activateSection])
 
   // Aggressive preloading - load all sections quickly for seamless scrolling
+  // Only enabled when enablePreloading prop is true (user has visited this group)
   useEffect(() => {
-    if (!activityCreated) return
+    if (!activityCreated || !enablePreloading) return
 
     // Preload all sections with minimal staggering
     const sectionsToPreload = ['organisations', 'contacts', 'focal_points', 'linked_activities']
@@ -237,7 +245,7 @@ export function StakeholdersGroup({
         }
       }, 200 + (50 * index)) // Start after 200ms, 50ms stagger between sections
     })
-  }, [activityCreated, activateSection, activeSections])
+  }, [activityCreated, enablePreloading, activateSection, activeSections])
 
   return (
     <div className="stakeholders-group space-y-0">

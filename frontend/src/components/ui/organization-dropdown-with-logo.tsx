@@ -4,21 +4,11 @@ import * as React from "react"
 import Image from "next/image"
 import { Check, ChevronsUpDown, Building2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 export interface OrganizationWithLogo {
   id: string
@@ -202,35 +192,50 @@ export function OrganizationDropdownWithLogo({
           width: triggerRef.current ? `${triggerRef.current.offsetWidth}px` : undefined,
         }}
       >
-        <Command>
-          <CommandInput
-            placeholder="Search organizations..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-0 focus:ring-0"
-            autoFocus
-          />
-          <CommandList>
-            {search && filteredOrgs.length === 0 && (
-              <CommandEmpty>No organization found.</CommandEmpty>
+        <div className="flex flex-col max-h-80">
+          {/* Search Input */}
+          <div className="p-3 border-b">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search organizations..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full h-9 px-3 text-sm rounded-md border border-input bg-background outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          {/* Organizations List */}
+          <div
+            className="overflow-y-auto max-h-60"
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
+            {filteredOrgs.length === 0 ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                No organization found.
+              </div>
+            ) : (
+              <div className="p-1">
+                {filteredOrgs.map(org => (
+                  <div
+                    key={org.id}
+                    onClick={() => handleSelect(org.id)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 cursor-pointer rounded-sm",
+                      "hover:bg-accent hover:text-accent-foreground",
+                      org.id === value && "bg-accent text-accent-foreground"
+                    )}
+                  >
+                    {renderOrganizationItem(org, org.id === value)}
+                  </div>
+                ))}
+              </div>
             )}
-            {filteredOrgs.length > 0 && (
-              <ScrollArea className="max-h-60 overflow-x-hidden overflow-y-auto">
-                <CommandGroup>
-                  {filteredOrgs.map(org => (
-                    <CommandItem
-                      key={org.id}
-                      onSelect={() => handleSelect(org.id)}
-                      className="py-3 cursor-pointer"
-                    >
-                      {renderOrganizationItem(org, org.id === value)}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </ScrollArea>
-            )}
-          </CommandList>
-        </Command>
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
   )

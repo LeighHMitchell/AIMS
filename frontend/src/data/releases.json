@@ -1,6 +1,20 @@
 {
-  "currentVersion": "1.13.0",
+  "currentVersion": "1.14.0",
   "releases": [
+    {
+      "version": "1.14.0",
+      "date": "2026-02-03",
+      "changes": [
+        "Activity Editor lazy loading - tab data loads on-demand instead of all at once",
+        "API request priority queue - saves now take priority over reads, preventing timeout issues",
+        "Save operations automatically cancel pending read requests for faster, more reliable saves",
+        "Request queue limits concurrent API calls to prevent server overload",
+        "Map markers show visual selection state with darker color when clicked",
+        "Organization dropdown rewritten with improved scroll behavior",
+        "Phone number field supports controlled dropdown state for better form management",
+        "Various popover, dialog, and select component fixes for better portal handling"
+      ]
+    },
     {
       "version": "1.13.0",
       "date": "2026-02-02",

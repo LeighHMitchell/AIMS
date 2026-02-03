@@ -451,15 +451,17 @@ export function CreateUserModal({ isOpen, onClose, onUserCreated, organizations 
                 <Label htmlFor="title">Title</Label>
                 <Select value={form.title} onValueChange={(value) => handleFormChange("title", value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Mr." />
+                    <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
                     <SelectItem value="Mr.">Mr.</SelectItem>
-                    <SelectItem value="Mrs.">Mrs.</SelectItem>
                     <SelectItem value="Ms.">Ms.</SelectItem>
+                    <SelectItem value="Mrs.">Mrs.</SelectItem>
                     <SelectItem value="Dr.">Dr.</SelectItem>
                     <SelectItem value="Prof.">Prof.</SelectItem>
-                    <SelectItem value="Hon.">Hon.</SelectItem>
+                    <SelectItem value="Daw">Daw</SelectItem>
+                    <SelectItem value="U">U</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

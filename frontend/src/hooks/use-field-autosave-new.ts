@@ -2,7 +2,7 @@ import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { setFieldSaved, isFieldSaved, clearFieldSaved } from '@/utils/persistentSave';
 import { toast } from 'sonner';
 import { invalidateActivityCache } from '@/lib/activity-cache';
-import { apiFetch } from '@/lib/api-fetch';
+import { apiFetch, cancelAllReads } from '@/lib/api-fetch';
 
 // Utility function to check if HTML content is effectively empty
 function isEmptyHtmlContent(content: any): boolean {
@@ -217,7 +217,12 @@ export function useFieldAutosave(
 
       console.log(`[FieldAutosave] Making request to ${endpoint}`);
       console.log('[FieldAutosave] Request body:', JSON.stringify(requestBody, null, 2));
-      
+
+      // Cancel ALL pending read requests before making save
+      // This ensures saves aren't blocked by competing API calls
+      cancelAllReads();
+      console.log(`[FieldAutosave] Cancelled all pending read requests before save`);
+
       // Create a timeout promise that rejects after 60 seconds for image uploads, 10s for new activities, 20s for updates
       const timeoutDuration = isImageField ? 60000 : (isNewActivity ? 10000 : 20000);
       const timeoutPromise = new Promise((_, reject) => {

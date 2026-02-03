@@ -86,6 +86,7 @@ import { saveGeneralTab } from '@/lib/general-tab-service';
 import { LabelSaveIndicator, SaveIndicator } from '@/components/ui/save-indicator';
 import { getTabCompletionStatus } from "@/utils/tab-completion";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
+import { useTabDataLoader, getTabGroup, TabGroupData } from "@/hooks/useTabDataLoader";
 
 // Remove test utilities import that's causing module not found error
 // if (process.env.NODE_ENV === 'development') {
@@ -2477,7 +2478,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   );
 }
 
-function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs, setHumanitarian, setHumanitarianScopes, setFocalPointsCount, onGeographyLevelChange, onSectorExportLevelChange, isNewActivity }: any) {
+function SectionContent({ section, general, setGeneral, sectors, setSectors, transactions, setTransactions, refreshTransactions, transactionId, extendingPartners, setExtendingPartners, implementingPartners, setImplementingPartners, governmentPartners, setGovernmentPartners, fundingPartners, setFundingPartners, contacts, setContacts, updateContacts, governmentInputs, setGovernmentInputs, sdgMappings, setSdgMappings, tags, setTags, workingGroups, setWorkingGroups, policyMarkers, setPolicyMarkers, specificLocations, setSpecificLocations, coverageAreas, setCoverageAreas, countries, setCountries, regions, setRegions, advancedLocations, setAdvancedLocations, permissions, setSectorValidation, setSectorsCompletionStatusWithLogging, activityScope, setActivityScope, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, tabCompletionStatus, budgets, setBudgets, budgetNotProvided, setBudgetNotProvided, plannedDisbursements, setPlannedDisbursements, handlePlannedDisbursementsChange, handleResultsChange, documents, setDocuments, documentsAutosave, setIatiSyncState, subnationalBreakdowns, setSubnationalBreakdowns, onSectionChange, getNextSection, getPreviousSection, setParticipatingOrgsCount, setLinkedActivitiesCount, setResultsCount, setCapitalSpendPercentage, setConditionsCount, setFinancingTermsCount, setCountryBudgetItemsCount, setForwardSpendCount, clearSavedFormData, loadedTabs, setHumanitarian, setHumanitarianScopes, setFocalPointsCount, onGeographyLevelChange, onSectorExportLevelChange, isNewActivity, visitedGroups }: any) {
 
   // Calculate total budget in USD for country budget mappings
   const totalBudgetUSD = useMemo(() => {
@@ -2587,6 +2588,9 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           initialSection={section}
           activityCreated={!!general.id}
 
+          // Lazy loading - only enable preloading when this group has been visited
+          enablePreloading={visitedGroups.has('stakeholders')}
+
           // OrganisationsSection props
           extendingPartners={extendingPartners}
           implementingPartners={implementingPartners}
@@ -2628,6 +2632,9 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           initialSection={section}
           activityCreated={!!general.id}
 
+          // Lazy loading - only enable preloading when this group has been visited
+          enablePreloading={visitedGroups.has('funding-delivery')}
+
           // Finances props
           transactions={transactions}
           setTransactions={setTransactions}
@@ -2656,6 +2663,9 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           onActiveSectionChange={onSectionChange}
           initialSection={section}
           activityCreated={!!general.id}
+
+          // Lazy loading - only enable preloading when this group has been visited
+          enablePreloading={visitedGroups.has('strategic-alignment')}
 
           // SDG props
           sdgMappings={sdgMappings}
@@ -2692,6 +2702,9 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           onActiveSectionChange={onSectionChange}
           initialSection={section}
           activityCreated={!!general.id}
+
+          // Lazy loading - only enable preloading when this group has been visited
+          enablePreloading={visitedGroups.has('supporting-info')}
 
           // Documents props
           documents={documents}
@@ -2826,6 +2839,15 @@ function NewActivityPageContent() {
   // OPTIMIZATION: Track which tabs have been loaded for lazy loading
   const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set(['general'])); // General is always loaded
 
+  // OPTIMIZATION: Track which tab groups have had their data loaded (for lazy loading)
+  // This is separate from loadedTabs which tracks UI loading state
+  const [dataLoadedGroups, setDataLoadedGroups] = useState<Set<string>>(new Set());
+
+  // OPTIMIZATION: Track which groups have been visited (for enabling preloading)
+  // A group is "visited" when the user navigates to any tab within it
+  // activity-overview is always visited since it's the default starting group
+  const [visitedGroups, setVisitedGroups] = useState<Set<string>>(new Set(['activity-overview']));
+
   // Handle initial tab from query parameter (for import flow)
   useEffect(() => {
     const tabParam = searchParams?.get("tab");
@@ -2833,7 +2855,12 @@ function NewActivityPageContent() {
       console.log('[ActivityEditor] Setting initial tab from query param:', tabParam);
       setActiveSection(tabParam);
       // Mark this tab as loaded
-      setLoadedTabs(prev => new Set([...prev, tabParam]));
+      setLoadedTabs(prev => new Set(Array.from(prev).concat([tabParam])));
+      // Mark the group as visited to enable preloading
+      const group = getTabGroup(tabParam);
+      if (group) {
+        setVisitedGroups(prev => new Set(Array.from(prev).concat([group])));
+      }
     }
   }, [searchParams]);
 
@@ -3012,6 +3039,94 @@ function NewActivityPageContent() {
 
   // Track sidebar collapse state to avoid covering the collapse button
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // LAZY LOADING: Callback to handle tab data loaded from useTabDataLoader
+  const handleTabDataLoaded = useCallback((group: string, data: TabGroupData) => {
+    console.log('[AIMS] Tab group data loaded:', group, Object.keys(data));
+
+    // Update state based on which group was loaded
+    if (group === 'stakeholders') {
+      if (data.participatingOrganizations !== undefined) {
+        setParticipatingOrgsCount(data.participatingOrganizations.length || 0);
+      }
+      if (data.contacts !== undefined) {
+        setContacts(data.contacts);
+      }
+      if (data.focalPoints !== undefined) {
+        const govFP = data.focalPoints.government_focal_points || [];
+        const dpFP = data.focalPoints.development_partner_focal_points || [];
+        setFocalPointsCount(govFP.length + dpFP.length);
+      }
+      if (data.linkedActivities !== undefined) {
+        setLinkedActivitiesCount(Array.isArray(data.linkedActivities) ? data.linkedActivities.length : 0);
+      }
+    }
+
+    if (group === 'funding-delivery') {
+      if (data.transactions !== undefined) {
+        setTransactions(data.transactions);
+        setTransactionsLoaded(true);
+      }
+      if (data.plannedDisbursements !== undefined) {
+        setPlannedDisbursements(data.plannedDisbursements);
+      }
+      if (data.budgets !== undefined) {
+        setBudgets(data.budgets);
+      }
+      if (data.fss !== undefined) {
+        const forecastCount = data.fss?.forecasts?.length || 0;
+        setForwardSpendCount(forecastCount > 0 ? 1 : 0);
+      }
+      if (data.results !== undefined) {
+        setResultsCount(Array.isArray(data.results?.results) ? data.results.results.length : 0);
+      }
+      if (data.financingTerms !== undefined || data.loanStatus !== undefined) {
+        const hasFinancingData =
+          (data.financingTerms && data.financingTerms.rate_1 !== null && data.financingTerms.commitment_date !== null) ||
+          (data.loanStatus && data.loanStatus.length > 0);
+        setFinancingTermsCount(hasFinancingData ? 1 : 0);
+      }
+      if (data.conditions !== undefined) {
+        setConditionsCount(data.conditions.length || 0);
+      }
+    }
+
+    if (group === 'activity-overview') {
+      if (data.humanitarian !== undefined) {
+        setHumanitarian(data.humanitarian.humanitarian || false);
+        setHumanitarianScopes(data.humanitarian.humanitarian_scopes || []);
+      }
+      if (data.subnationalBreakdown !== undefined && Array.isArray(data.subnationalBreakdown)) {
+        const breakdowns: Record<string, number> = {};
+        data.subnationalBreakdown.forEach((item: any) => {
+          breakdowns[item.region_name] = item.percentage;
+        });
+        setSubnationalBreakdowns(breakdowns);
+      }
+    }
+
+    if (group === 'strategic-alignment') {
+      if (data.countryBudgetItems !== undefined) {
+        const items = data.countryBudgetItems.country_budget_items || [];
+        setCountryBudgetItemsCount(items.length);
+      }
+    }
+
+    if (group === 'administration') {
+      if (data.metadata !== undefined) {
+        setMetadataData(data.metadata.metadata || null);
+      }
+    }
+
+    // Mark this group as loaded
+    setDataLoadedGroups(prev => new Set(Array.from(prev).concat([group])));
+  }, []);
+
+  // Initialize the tab data loader hook
+  const tabDataLoader = useTabDataLoader({
+    activityId: general.id || '',
+    onDataLoaded: handleTabDataLoaded
+  });
 
   // Track if any modal is open to blur footer buttons
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -3368,6 +3483,14 @@ function NewActivityPageContent() {
     const sectionParam = searchParams?.get('section');
     if (sectionParam) {
       setActiveSection(sectionParam);
+      // Mark the group as visited to enable preloading
+      const group = getTabGroup(sectionParam);
+      if (group) {
+        setVisitedGroups(prev => {
+          if (prev.has(group)) return prev;
+          return new Set(Array.from(prev).concat([group]));
+        });
+      }
     }
   }, [searchParams]);
 
@@ -3952,274 +4075,15 @@ function NewActivityPageContent() {
           
           // Activity scope is now handled in general state
 
-          // BATCH FETCH: Fetch all tab completion data in parallel to avoid sequential state updates
-          // This prevents green ticks from appearing one by one on page refresh
-          console.log('[AIMS] Starting parallel fetch for tab completion data...');
-          
-          const [
-            budgetsResult,
-            budgetExceptionsResult,
-            plannedDisbursementsResult,
-            fssResult,
-            humanitarianResult,
-            transactionsResult,
-            subnationalResult,
-            contactsResult,
-            conditionsResult,
-            financingTermsResult,
-            participatingOrgsResult,
-            linkedActivitiesResult,
-            resultsResult,
-            countryBudgetItemsResult,
-            metadataResult,
-            focalPointsResult
-          ] = await Promise.allSettled([
-            // 1. Budgets API
-            apiFetch(`/api/activities/${activityId}/budgets`).then(r => r.ok ? r.json() : null),
-            // 2. Budget exceptions (Supabase)
-            supabase.from('activity_budget_exceptions').select('*').eq('activity_id', activityId).single(),
-            // 3. Planned disbursements (Supabase) - using direct query due to API bug
-            supabase.from('planned_disbursements').select('*').eq('activity_id', activityId).order('period_start', { ascending: true }),
-            // 4. Forward Spend FSS API
-            apiFetch(`/api/activities/${activityId}/fss`).then(r => r.ok ? r.json() : null),
-            // 5. Humanitarian API
-            apiFetch(`/api/activities/${activityId}/humanitarian`).then(r => r.ok ? r.json() : null),
-            // 6. Transactions API
-            apiFetch(`/api/activities/${activityId}/transactions`).then(r => r.ok ? r.json() : null),
-            // 7. Subnational breakdown API
-            apiFetch(`/api/activities/${activityId}/subnational-breakdown`).then(r => r.ok ? r.json() : null),
-            // 8. Contacts API
-            apiFetch(`/api/activities/${activityId}/contacts`).then(r => r.ok ? r.json() : null),
-            // 9. Conditions (Supabase)
-            supabase.from('activity_conditions').select('id').eq('activity_id', activityId),
-            // 10. Financing terms (Supabase) - both tables
-            Promise.all([
-              supabase.from('activity_financing_terms').select('id, rate_1, commitment_date').eq('activity_id', activityId).maybeSingle(),
-              supabase.from('activity_loan_status').select('id').eq('activity_id', activityId)
-            ]),
-            // 11. Participating organizations API (for tab completion)
-            apiFetch(`/api/activities/${activityId}/participating-organizations`).then(r => r.ok ? r.json() : []),
-            // 12. Linked activities API (for tab completion)
-            apiFetch(`/api/activities/${activityId}/linked`).then(r => r.ok ? r.json() : []),
-            // 13. Results API (for tab completion)
-            apiFetch(`/api/activities/${activityId}/results`).then(r => r.ok ? r.json() : { results: [] }),
-            // 14. Country budget items API (for tab completion)
-            apiFetch(`/api/activities/${activityId}/country-budget-items`).then(r => r.ok ? r.json() : { country_budget_items: [] }),
-            // 15. Metadata API (for tab completion)
-            apiFetch(`/api/activities/${activityId}/metadata`).then(r => r.ok ? r.json() : { metadata: null }),
-            // 16. Focal Points API (for tab completion)
-            apiFetch(`/api/activities/${activityId}/focal-points`).then(r => r.ok ? r.json() : { government_focal_points: [], development_partner_focal_points: [] })
-          ]);
+          // LAZY LOADING: Tab data is now loaded on-demand when user navigates to each tab
+          // This prevents 16+ simultaneous API calls that overwhelm the server
+          // and cause field save requests to timeout
+          console.log('[AIMS] Basic activity data loaded - other tab data will load on-demand');
 
-          // Process all results and prepare values
-          let budgetsValue: any[] = [];
-          let budgetNotProvidedValue = false;
-          let plannedDisbursementsValue: any[] = [];
-          let forwardSpendCountValue = 0;
-          let humanitarianValue = false;
-          let humanitarianScopesValue: any[] = [];
-          let transactionsValue: any[] = [];
-          let transactionsLoadedValue = false;
-          let subnationalBreakdownsValue: Record<string, number> = {};
-          let contactsValue: any[] | undefined = undefined;
-          let conditionsCountValue = 0;
-          let financingTermsCountValue = 0;
-          let participatingOrgsCountValue = 0;
-          let linkedActivitiesCountValue = 0;
-          let resultsCountValue = 0;
-          let countryBudgetItemsCountValue = 0;
-          let metadataValue: any = null;
-          let focalPointsCountValue = 0;
+          // Mark only activity-overview group as loaded (basic data contains sectors, etc.)
+          setDataLoadedGroups(new Set(['activity-overview']));
 
-          // 1. Process budgets
-          if (budgetsResult.status === 'fulfilled' && budgetsResult.value) {
-            budgetsValue = budgetsResult.value || [];
-            console.log('[AIMS] Loaded budgets for tab completion:', budgetsValue.length);
-          } else if (budgetsResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load budgets for tab completion:', budgetsResult.reason);
-          }
-
-          // 2. Process budget exceptions
-          if (budgetExceptionsResult.status === 'fulfilled') {
-            const { data: budgetExceptions, error: budgetExceptionsError } = budgetExceptionsResult.value;
-            if (!budgetExceptionsError && budgetExceptions) {
-              budgetNotProvidedValue = true;
-              console.log('[AIMS] Found budget exception - budget not provided');
-            }
-          } else {
-            console.warn('[AIMS] Failed to load budget exceptions for tab completion:', budgetExceptionsResult.reason);
-          }
-
-          // 3. Process planned disbursements
-          if (plannedDisbursementsResult.status === 'fulfilled') {
-            const { data: disbursementsData, error: disbursementsError } = plannedDisbursementsResult.value;
-            if (disbursementsError) {
-              console.error('[AIMS] Error fetching planned disbursements:', disbursementsError);
-            } else {
-              plannedDisbursementsValue = disbursementsData || [];
-              console.log('[AIMS] Loaded planned disbursements for tab completion:', plannedDisbursementsValue.length);
-            }
-          } else {
-            console.warn('[AIMS] Failed to load planned disbursements for tab completion:', plannedDisbursementsResult.reason);
-          }
-
-          // 4. Process Forward Spend (FSS)
-          if (fssResult.status === 'fulfilled' && fssResult.value) {
-            const forecastCount = fssResult.value?.forecasts?.length || 0;
-            forwardSpendCountValue = forecastCount > 0 ? 1 : 0;
-            console.log('[AIMS] Loaded Forward Spend for tab completion:', forecastCount, 'forecasts');
-          } else if (fssResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load Forward Spend for tab completion:', fssResult.reason);
-          }
-
-          // 5. Process Humanitarian data
-          if (humanitarianResult.status === 'fulfilled' && humanitarianResult.value) {
-            humanitarianValue = humanitarianResult.value.humanitarian || false;
-            humanitarianScopesValue = humanitarianResult.value.humanitarian_scopes || [];
-            console.log('[AIMS] Loaded Humanitarian for tab completion:', {
-              humanitarian: humanitarianValue,
-              scopesCount: humanitarianScopesValue.length
-            });
-          } else if (humanitarianResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load Humanitarian for tab completion:', humanitarianResult.reason);
-          }
-
-          // 6. Process transactions
-          if (transactionsResult.status === 'fulfilled' && transactionsResult.value) {
-            const transactionsData = transactionsResult.value;
-            // Handle both response formats: { data: [...] } or direct array [...]
-            transactionsValue = Array.isArray(transactionsData) ? transactionsData : (transactionsData.data || []);
-            transactionsLoadedValue = true;
-            console.log('[AIMS] Loaded transactions for tab completion:', transactionsValue.length);
-          } else if (transactionsResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load transactions for tab completion:', transactionsResult.reason);
-          }
-
-          // 7. Process subnational breakdown
-          if (subnationalResult.status === 'fulfilled' && subnationalResult.value) {
-            const subnationalData = subnationalResult.value;
-            if (Array.isArray(subnationalData)) {
-              subnationalData.forEach((item: any) => {
-                subnationalBreakdownsValue[item.region_name] = item.percentage;
-              });
-              console.log('[AIMS] Loaded subnational breakdown for tab completion:', Object.keys(subnationalBreakdownsValue).length, 'regions');
-            }
-          } else if (subnationalResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load subnational breakdown for tab completion:', subnationalResult.reason);
-          }
-
-          // 8. Process contacts
-          if (contactsResult.status === 'fulfilled' && contactsResult.value) {
-            contactsValue = contactsResult.value;
-            console.log('[AIMS] Loaded contacts for tab completion:', contactsValue?.length || 0);
-          } else if (contactsResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load contacts for tab completion:', contactsResult.reason);
-          }
-
-          // 9. Process conditions
-          if (conditionsResult.status === 'fulfilled') {
-            const { data: conditionsData, error: conditionsError } = conditionsResult.value;
-            if (!conditionsError && conditionsData) {
-              conditionsCountValue = conditionsData.length;
-              console.log('[AIMS] Loaded conditions for tab completion:', conditionsCountValue);
-            }
-          } else {
-            console.warn('[AIMS] Failed to load conditions for tab completion:', conditionsResult.reason);
-          }
-
-          // 10. Process financing terms
-          if (financingTermsResult.status === 'fulfilled') {
-            const [financingTermsResponse, loanStatusResponse] = financingTermsResult.value;
-            const { data: financingTermsData, error: financingTermsError } = financingTermsResponse;
-            const { data: loanStatusData, error: loanStatusError } = loanStatusResponse;
-
-            // Has completed data if loan terms exist with key fields OR if any loan status exists
-            const hasFinancingData =
-              (financingTermsData && financingTermsData.rate_1 !== null && financingTermsData.commitment_date !== null) ||
-              (loanStatusData && loanStatusData.length > 0);
-
-            if (!financingTermsError && !loanStatusError) {
-              financingTermsCountValue = hasFinancingData ? 1 : 0;
-              console.log('[AIMS] Loaded financing terms for tab completion:', hasFinancingData);
-            }
-          } else {
-            console.warn('[AIMS] Failed to load financing terms for tab completion:', financingTermsResult.reason);
-          }
-
-          // 11. Process participating organizations
-          if (participatingOrgsResult.status === 'fulfilled' && participatingOrgsResult.value) {
-            participatingOrgsCountValue = participatingOrgsResult.value.length || 0;
-            console.log('[AIMS] Loaded participating orgs for tab completion:', participatingOrgsCountValue);
-          } else if (participatingOrgsResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load participating orgs for tab completion:', participatingOrgsResult.reason);
-          }
-
-          // 12. Process linked activities
-          if (linkedActivitiesResult.status === 'fulfilled' && linkedActivitiesResult.value) {
-            linkedActivitiesCountValue = Array.isArray(linkedActivitiesResult.value) ? linkedActivitiesResult.value.length : 0;
-            console.log('[AIMS] Loaded linked activities for tab completion:', linkedActivitiesCountValue);
-          } else if (linkedActivitiesResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load linked activities for tab completion:', linkedActivitiesResult.reason);
-          }
-
-          // 13. Process results
-          if (resultsResult.status === 'fulfilled' && resultsResult.value) {
-            resultsCountValue = Array.isArray(resultsResult.value?.results) ? resultsResult.value.results.length : 0;
-            console.log('[AIMS] Loaded results for tab completion:', resultsCountValue);
-          } else if (resultsResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load results for tab completion:', resultsResult.reason);
-          }
-
-          // 14. Process country budget items
-          if (countryBudgetItemsResult.status === 'fulfilled' && countryBudgetItemsResult.value) {
-            const items = countryBudgetItemsResult.value.country_budget_items || [];
-            countryBudgetItemsCountValue = items.length;
-            console.log('[AIMS] Loaded country budget items for tab completion:', countryBudgetItemsCountValue);
-          } else if (countryBudgetItemsResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load country budget items for tab completion:', countryBudgetItemsResult.reason);
-          }
-
-          // 15. Process metadata
-          if (metadataResult.status === 'fulfilled' && metadataResult.value) {
-            metadataValue = metadataResult.value.metadata || null;
-            console.log('[AIMS] Loaded metadata for tab completion:', metadataValue ? 'has data' : 'no data');
-          } else if (metadataResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load metadata for tab completion:', metadataResult.reason);
-          }
-
-          // 16. Process focal points
-          if (focalPointsResult.status === 'fulfilled' && focalPointsResult.value) {
-            const govFocalPoints = focalPointsResult.value.government_focal_points || [];
-            const dpFocalPoints = focalPointsResult.value.development_partner_focal_points || [];
-            focalPointsCountValue = govFocalPoints.length + dpFocalPoints.length;
-            console.log('[AIMS] Loaded focal points for tab completion:', focalPointsCountValue);
-          } else if (focalPointsResult.status === 'rejected') {
-            console.warn('[AIMS] Failed to load focal points for tab completion:', focalPointsResult.reason);
-          }
-
-          // BATCH STATE UPDATES: Update all state at once to trigger single re-render
-          console.log('[AIMS] Applying batched state updates for tab completion...');
-          setBudgets(budgetsValue);
-          setBudgetNotProvided(budgetNotProvidedValue);
-          setPlannedDisbursements(plannedDisbursementsValue);
-          setForwardSpendCount(forwardSpendCountValue);
-          setHumanitarian(humanitarianValue);
-          setHumanitarianScopes(humanitarianScopesValue);
-          setTransactions(transactionsValue);
-          setTransactionsLoaded(transactionsLoadedValue);
-          setSubnationalBreakdowns(subnationalBreakdownsValue);
-          if (contactsValue !== undefined) {
-            setContacts(contactsValue);
-          }
-          setConditionsCount(conditionsCountValue);
-          setFinancingTermsCount(financingTermsCountValue);
-          setParticipatingOrgsCount(participatingOrgsCountValue);
-          setLinkedActivitiesCount(linkedActivitiesCountValue);
-          setResultsCount(resultsCountValue);
-          setCountryBudgetItemsCount(countryBudgetItemsCountValue);
-          setFocalPointsCount(focalPointsCountValue);
-          setMetadataData(metadataValue);
-          console.log('[AIMS] Tab completion data loaded successfully')
+          console.log('[AIMS] Activity data loaded successfully - tab data will lazy load')
         } else {
           // New activity - just set some defaults
           console.log('[AIMS] Creating new activity - user:', user);
@@ -4390,6 +4254,65 @@ function NewActivityPageContent() {
 
   // Tab completion status calculation
   const tabCompletionStatus = React.useMemo(() => {
+    // Helper to check if a tab's data group has been loaded
+    // Returns true if data is available, false if still needs to be loaded
+    const isDataLoadedForTab = (tabId: string): boolean => {
+      // Map tabs to their data groups
+      const tabToGroup: Record<string, string> = {
+        // activity-overview group
+        'general': 'activity-overview',
+        'sectors': 'activity-overview',
+        'humanitarian': 'activity-overview',
+        'country-region': 'activity-overview',
+        'locations': 'activity-overview',
+        // stakeholders group
+        'organisations': 'stakeholders',
+        'contacts': 'stakeholders',
+        'focal_points': 'stakeholders',
+        'linked_activities': 'stakeholders',
+        // funding-delivery group
+        'finances': 'funding-delivery',
+        'planned-disbursements': 'funding-delivery',
+        'budgets': 'funding-delivery',
+        'forward-spending-survey': 'funding-delivery',
+        'results': 'funding-delivery',
+        'capital-spend': 'funding-delivery',
+        'financing-terms': 'funding-delivery',
+        'conditions': 'funding-delivery',
+        // strategic-alignment group
+        'sdg': 'strategic-alignment',
+        'country-budget': 'strategic-alignment',
+        'tags': 'strategic-alignment',
+        'working_groups': 'strategic-alignment',
+        'policy_markers': 'strategic-alignment',
+        // administration group
+        'metadata': 'administration',
+      };
+
+      const group = tabToGroup[tabId];
+      if (!group) return true; // Unknown tabs are always "loaded"
+
+      // Activity overview is loaded by default (from /basic endpoint)
+      if (group === 'activity-overview') return true;
+
+      // For other groups, check if data has been loaded
+      return dataLoadedGroups.has(group);
+    };
+
+    // Helper to return unknown/loading status for tabs whose data isn't loaded yet
+    const getStatusForTab = (
+      tabId: string,
+      computedStatus: { isComplete: boolean; isInProgress: boolean }
+    ): { isComplete: boolean; isInProgress: boolean } => {
+      // If data is loaded, return the computed status
+      if (isDataLoadedForTab(tabId)) {
+        return computedStatus;
+      }
+      // If data hasn't been loaded yet, show nothing (not complete, not in progress)
+      // This prevents false negatives while data is lazy loading
+      return { isComplete: false, isInProgress: false };
+    };
+
     const generalCompletion = getTabCompletionStatus('general', general, getDateFieldStatus)
     // Sectors tab: compute completion based on actual sectors data
     const hasSectorsWithPercentage = sectors.some(sector => sector.percentage && sector.percentage > 0);
@@ -4505,105 +4428,118 @@ function NewActivityPageContent() {
     const xmlImportCompletion = getTabCompletionStatus('xml-import', xmlImportStatus);
 
     return {
-      general: generalCompletion ? { 
+      // Activity Overview group (loaded from /basic)
+      general: generalCompletion ? {
         isComplete: generalCompletion.isComplete,
-        isInProgress: generalCompletion.isInProgress 
+        isInProgress: generalCompletion.isInProgress
       } : { isComplete: false, isInProgress: false },
-      iati: { 
-        isComplete: iatiSyncComplete, 
-        isInProgress: iatiSyncInProgress 
+      iati: {
+        isComplete: iatiSyncComplete,
+        isInProgress: iatiSyncInProgress
       },
-      sectors: { 
+      sectors: {
         isComplete: sectorsCompletion.isComplete,
-        isInProgress: sectorsCompletion.isInProgress 
+        isInProgress: sectorsCompletion.isInProgress
       },
-      locations: locationsCompletion ? { 
+      locations: locationsCompletion ? {
         isComplete: locationsCompletion.isComplete,
-        isInProgress: locationsCompletion.isInProgress 
+        isInProgress: locationsCompletion.isInProgress
       } : { isComplete: false, isInProgress: false },
-      tags: tagsCompletion ? { 
-        isComplete: tagsCompletion.isComplete,
-        isInProgress: tagsCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
-      working_groups: workingGroupsCompletion ? { 
-        isComplete: workingGroupsCompletion.isComplete,
-        isInProgress: workingGroupsCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
-      policy_markers: policyMarkersCompletion ? { 
-        isComplete: policyMarkersCompletion.isComplete,
-        isInProgress: policyMarkersCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
-      organisations: organizationsCompletion ? { 
-        isComplete: organizationsCompletion.isComplete,
-        isInProgress: organizationsCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
-      contacts: contactsCompletion ? {
-        isComplete: contactsCompletion.isComplete,
-        isInProgress: contactsCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
-      focal_points: { 
-        isComplete: focalPointsCount > 0, 
-        isInProgress: false 
-      },
-      linked_activities: linkedActivitiesCompletion ? { 
-        isComplete: linkedActivitiesCompletion.isComplete,
-        isInProgress: linkedActivitiesCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
-      finances: { isComplete: financesComplete, isInProgress: false },
-      finances_defaults: financesDefaultsCompletion ? { 
-        isComplete: financesDefaultsCompletion.isComplete,
-        isInProgress: financesDefaultsCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
-      budgets: { isComplete: budgetsComplete, isInProgress: false },
-      "planned-disbursements": { isComplete: plannedDisbursementsComplete, isInProgress: false },
-      "forward-spending-survey": { isComplete: forwardSpendComplete, isInProgress: false },
-      humanitarian: humanitarianCompletion ? { 
+      humanitarian: humanitarianCompletion ? {
         isComplete: humanitarianCompletion.isComplete,
-        isInProgress: humanitarianCompletion.isInProgress 
+        isInProgress: humanitarianCompletion.isInProgress
       } : { isComplete: false, isInProgress: false },
-      results: resultsCompletion ? { 
+
+      // Stakeholders group (lazy loaded)
+      organisations: getStatusForTab('organisations', organizationsCompletion ? {
+        isComplete: organizationsCompletion.isComplete,
+        isInProgress: organizationsCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false }),
+      contacts: getStatusForTab('contacts', contactsCompletion ? {
+        isComplete: contactsCompletion.isComplete,
+        isInProgress: contactsCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false }),
+      focal_points: getStatusForTab('focal_points', {
+        isComplete: focalPointsCount > 0,
+        isInProgress: false
+      }),
+      linked_activities: getStatusForTab('linked_activities', linkedActivitiesCompletion ? {
+        isComplete: linkedActivitiesCompletion.isComplete,
+        isInProgress: linkedActivitiesCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false }),
+
+      // Funding & Delivery group (lazy loaded)
+      finances: getStatusForTab('finances', { isComplete: financesComplete, isInProgress: false }),
+      finances_defaults: financesDefaultsCompletion ? {
+        isComplete: financesDefaultsCompletion.isComplete,
+        isInProgress: financesDefaultsCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false },
+      budgets: getStatusForTab('budgets', { isComplete: budgetsComplete, isInProgress: false }),
+      "planned-disbursements": getStatusForTab('planned-disbursements', { isComplete: plannedDisbursementsComplete, isInProgress: false }),
+      "forward-spending-survey": getStatusForTab('forward-spending-survey', { isComplete: forwardSpendComplete, isInProgress: false }),
+      results: getStatusForTab('results', resultsCompletion ? {
         isComplete: resultsCompletion.isComplete,
-        isInProgress: resultsCompletion.isInProgress 
-      } : { isComplete: false, isInProgress: false },
-      "capital-spend": { 
-        isComplete: capitalSpendComplete, 
-        isInProgress: false 
-      },
-      "financing-terms": {
+        isInProgress: resultsCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false }),
+      "capital-spend": getStatusForTab('capital-spend', {
+        isComplete: capitalSpendComplete,
+        isInProgress: false
+      }),
+      "financing-terms": getStatusForTab('financing-terms', {
         isComplete: financingTermsCount > 0,
         isInProgress: false
-      },
-      conditions: {
+      }),
+      conditions: getStatusForTab('conditions', {
         isComplete: conditionsCount > 0,
         isInProgress: false
-      },
-      documents: documentsCompletion ? { 
+      }),
+
+      // Strategic Alignment group (lazy loaded)
+      sdg: getStatusForTab('sdg', { isComplete: sdgComplete, isInProgress: false }),
+      "country-budget": getStatusForTab('country-budget', {
+        isComplete: countryBudgetComplete,
+        isInProgress: false
+      }),
+      tags: getStatusForTab('tags', tagsCompletion ? {
+        isComplete: tagsCompletion.isComplete,
+        isInProgress: tagsCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false }),
+      working_groups: getStatusForTab('working_groups', workingGroupsCompletion ? {
+        isComplete: workingGroupsCompletion.isComplete,
+        isInProgress: workingGroupsCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false }),
+      policy_markers: getStatusForTab('policy_markers', policyMarkersCompletion ? {
+        isComplete: policyMarkersCompletion.isComplete,
+        isInProgress: policyMarkersCompletion.isInProgress
+      } : { isComplete: false, isInProgress: false }),
+
+      // Supporting Info (not lazy loaded - small data)
+      documents: documentsCompletion ? {
         isComplete: documentsCompletion.isComplete,
-        isInProgress: documentsCompletion.isInProgress 
+        isInProgress: documentsCompletion.isInProgress
       } : { isComplete: false, isInProgress: false },
       government: governmentInputsCompletion ? {
         isComplete: governmentInputsCompletion.isComplete,
-        isInProgress: governmentInputsCompletion.isInProgress 
+        isInProgress: governmentInputsCompletion.isInProgress
       } : { isComplete: false, isInProgress: false },
-      sdg: { isComplete: sdgComplete, isInProgress: false },
-      "country-budget": { 
-        isComplete: countryBudgetComplete, 
-        isInProgress: false 
-      },
       aid_effectiveness: aidEffectivenessCompletion ? {
         isComplete: aidEffectivenessCompletion.isComplete,
         isInProgress: aidEffectivenessCompletion.isInProgress
       } : { isComplete: false, isInProgress: false },
-      metadata: metadataCompletion ? {
+
+      // Administration group (lazy loaded)
+      metadata: getStatusForTab('metadata', metadataCompletion ? {
         isComplete: metadataCompletion.isComplete,
         isInProgress: metadataCompletion.isInProgress
-      } : { isComplete: false, isInProgress: false },
+      } : { isComplete: false, isInProgress: false }),
+
+      // XML Import (not lazy loaded)
       "xml-import": xmlImportCompletion ? {
         isComplete: xmlImportCompletion.isComplete,
         isInProgress: xmlImportCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, countryBudgetItemsCount, focalPointsCount, metadataData, xmlImportStatus]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, countryBudgetItemsCount, focalPointsCount, metadataData, xmlImportStatus, dataLoadedGroups]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -4740,20 +4676,42 @@ function NewActivityPageContent() {
     }
     
     console.log('[AIMS Performance] Switching to tab:', value);
-    
+
     setTabLoading(true);
     setActiveSection(value);
-    
+
     // Check if tab was already loaded BEFORE updating state
     const wasAlreadyLoaded = loadedTabs.has(value);
-    
+
     // OPTIMIZATION: Mark tab as loaded for lazy loading
     setLoadedTabs(prev => {
       const newSet = new Set(prev);
       newSet.add(value);
       return newSet;
     });
-    
+
+    // LAZY LOADING: Load tab data if not already loaded and we have an activity ID
+    const tabGroup = getTabGroup(value);
+
+    // Mark the group as visited to enable preloading for that group's sections
+    if (tabGroup) {
+      setVisitedGroups(prev => {
+        if (prev.has(tabGroup)) return prev;
+        console.log('[AIMS Performance] Marking group as visited:', tabGroup);
+        const newSet = new Set(prev);
+        newSet.add(tabGroup);
+        return newSet;
+      });
+    }
+
+    if (general.id && general.id !== 'NEW' && tabGroup && !tabDataLoader.isGroupLoaded(value)) {
+      console.log('[AIMS Performance] Lazy loading data for tab group:', tabGroup);
+      // Load data in parallel with UI transition
+      tabDataLoader.loadTabData(value).catch(err => {
+        console.error('[AIMS Performance] Failed to load tab data:', err);
+      });
+    }
+
     // Only add delay if tab hasn't been loaded before
     if (!wasAlreadyLoaded) {
       console.log('[AIMS Performance] First load of tab:', value, '- showing skeleton');
@@ -4764,7 +4722,7 @@ function NewActivityPageContent() {
       // Instant switch for previously loaded tabs
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    
+
     setTabLoading(false);
   };
 
@@ -5354,6 +5312,7 @@ function NewActivityPageContent() {
                     setFocalPointsCount={setFocalPointsCount}
                     onGeographyLevelChange={handleGeographyLevelChange}
                     isNewActivity={!isEditing}
+                    visitedGroups={visitedGroups}
                   />
                 </div>
               )}

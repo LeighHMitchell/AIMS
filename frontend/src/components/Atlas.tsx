@@ -1003,7 +1003,7 @@ export default function Atlas() {
               <div className="h-[85vh] min-h-[700px] w-full relative rounded-lg overflow-hidden border border-gray-200">
                 {/* MapLibre Map */}
                 <Map
-                  key={`atlas-map-${mapStyle}`}
+                  key="atlas-map"
                   styles={{
                     light: MAP_STYLES[mapStyle].light as string | object,
                     dark: MAP_STYLES[mapStyle].dark as string | object,

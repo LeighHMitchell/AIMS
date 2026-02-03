@@ -70,6 +70,10 @@ interface FundingDeliveryGroupProps {
   initialSection?: string
   activityCreated: boolean
 
+  // Lazy loading control
+  // When false, aggressive preloading is disabled - sections only load via IntersectionObserver
+  enablePreloading?: boolean
+
   // Finances props
   transactions: any[]
   setTransactions: (transactions: any[]) => void
@@ -115,6 +119,9 @@ export function FundingDeliveryGroup({
   onActiveSectionChange,
   initialSection,
   activityCreated,
+
+  // Lazy loading control (default false - no aggressive preloading)
+  enablePreloading = false,
 
   // Finances props
   transactions,
@@ -269,8 +276,9 @@ export function FundingDeliveryGroup({
   }, [activityCreated, activateSection])
 
   // Aggressive preloading - load all sections quickly for seamless scrolling
+  // Only enabled when enablePreloading prop is true (user has visited this group)
   useEffect(() => {
-    if (!activityCreated) return
+    if (!activityCreated || !enablePreloading) return
 
     // Preload all sections with minimal staggering
     const sectionsToPreload = FUNDING_DELIVERY_SECTIONS.slice()
@@ -282,7 +290,7 @@ export function FundingDeliveryGroup({
         }
       }, 400 + (50 * index)) // Start after 400ms, 50ms stagger between sections
     })
-  }, [activityCreated, activateSection, activeSections])
+  }, [activityCreated, enablePreloading, activateSection, activeSections])
 
   return (
     <div className="funding-delivery-group space-y-0">

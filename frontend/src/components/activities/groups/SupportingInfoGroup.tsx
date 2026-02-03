@@ -58,6 +58,10 @@ interface SupportingInfoGroupProps {
   initialSection?: string
   activityCreated: boolean
 
+  // Lazy loading control
+  // When false, aggressive preloading is disabled - sections only load via IntersectionObserver
+  enablePreloading?: boolean
+
   // Documents props
   documents: any[]
   onDocumentsChange: (documents: any[]) => void
@@ -79,6 +83,9 @@ export function SupportingInfoGroup({
   onActiveSectionChange,
   initialSection,
   activityCreated,
+
+  // Lazy loading control (default false - no aggressive preloading)
+  enablePreloading = false,
 
   // Documents props
   documents,
@@ -203,8 +210,9 @@ export function SupportingInfoGroup({
   }, [activityCreated, activateSection])
 
   // Aggressive preloading - load all sections quickly for seamless scrolling
+  // Only enabled when enablePreloading prop is true (user has visited this group)
   useEffect(() => {
-    if (!activityCreated) return
+    if (!activityCreated || !enablePreloading) return
 
     // Preload all sections with minimal staggering
     const sectionsToPreload = ['documents', 'aid_effectiveness']
@@ -216,7 +224,7 @@ export function SupportingInfoGroup({
         }
       }, 350 + (50 * index)) // Start after 350ms, 50ms stagger between sections
     })
-  }, [activityCreated, activateSection, activeSections])
+  }, [activityCreated, enablePreloading, activateSection, activeSections])
 
   return (
     <div className="supporting-info-group space-y-0">

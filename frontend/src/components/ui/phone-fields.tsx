@@ -17,6 +17,8 @@ interface PhoneFieldsProps {
   className?: string;
   phoneLabel?: string;
   phonePlaceholder?: string;
+  dropdownOpen?: boolean;
+  onDropdownOpenChange?: (open: boolean) => void;
 }
 
 export function PhoneFields({
@@ -28,8 +30,20 @@ export function PhoneFields({
   className,
   phoneLabel = "Phone Number",
   phonePlaceholder = "Enter your phone number",
+  dropdownOpen,
+  onDropdownOpenChange,
 }: PhoneFieldsProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  // Use controlled state if provided, otherwise use internal state
+  const open = dropdownOpen !== undefined ? dropdownOpen : internalOpen;
+  const setOpen = (newOpen: boolean) => {
+    if (onDropdownOpenChange) {
+      onDropdownOpenChange(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(() => {
     return countries.find(country => country.dialCode === countryCode) || countries[0];
@@ -42,21 +56,6 @@ export function PhoneFields({
     }
   }, [countryCode]);
 
-  // Lock body scroll when dropdown is open
-  useEffect(() => {
-    if (open) {
-      // Prevent body scroll
-      document.body.style.overflow = 'hidden';
-    } else {
-      // Restore body scroll
-      document.body.style.overflow = 'unset';
-    }
-
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [open]);
 
   // Memoized filtered countries to prevent re-computation
   const filteredCountries = useMemo(() => {
@@ -101,9 +100,6 @@ export function PhoneFields({
     <div className={cn("flex gap-3 items-end", className)}>
       {/* Country Code Field */}
       <div className="flex flex-col">
-        <label className="text-sm font-medium text-gray-700 mb-2">
-          Country Code
-        </label>
         <Popover open={open} onOpenChange={(newOpen) => {
           setOpen(newOpen);
           if (!newOpen) {
@@ -156,19 +152,11 @@ export function PhoneFields({
                 </div>
               </div>
               
-              {/* Countries List - No scrolling */}
-              <div 
-                className="overflow-hidden max-h-60"
-                onWheel={(e) => {
-                  // Completely prevent all scroll events
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onTouchMove={(e) => {
-                  // Prevent touch scrolling on mobile
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
+              {/* Countries List */}
+              <div
+                className="overflow-y-auto max-h-60"
+                onWheel={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
               >
                 {filteredCountries.length === 0 ? (
                   <div className="p-4 text-center text-sm text-muted-foreground">
@@ -216,9 +204,11 @@ export function PhoneFields({
 
       {/* Phone Number Field */}
       <div className="flex flex-col flex-1">
-        <label className="text-sm font-medium text-gray-700 mb-2">
-          {phoneLabel}
-        </label>
+        {phoneLabel && (
+          <label className="text-sm font-medium text-gray-700 mb-2">
+            {phoneLabel}
+          </label>
+        )}
         <Input
           type="tel"
           value={phoneNumber}

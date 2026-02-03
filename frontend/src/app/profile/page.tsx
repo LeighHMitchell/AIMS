@@ -23,6 +23,7 @@ import { AddressComponents } from "@/components/ui/address-search";
 import { EmailChangeConfirmDialog } from "@/components/EmailChangeConfirmDialog";
 import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
 import { DeleteAccountModal } from "@/components/DeleteAccountModal";
+import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { supabase } from "@/lib/supabase";
 import { CONTACT_TYPES } from "@/data/contact-types";
 import { LoadingText } from "@/components/ui/loading-text";
@@ -228,6 +229,19 @@ export default function ProfilePage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [phoneDropdownOpen, setPhoneDropdownOpen] = useState(false);
+  const [faxDropdownOpen, setFaxDropdownOpen] = useState(false);
+
+  // Handlers to ensure only one phone/fax dropdown is open at a time
+  const handlePhoneDropdownChange = (open: boolean) => {
+    setPhoneDropdownOpen(open);
+    if (open) setFaxDropdownOpen(false);
+  };
+
+  const handleFaxDropdownChange = (open: boolean) => {
+    setFaxDropdownOpen(open);
+    if (open) setPhoneDropdownOpen(false);
+  };
   
   // Function to enter edit mode and refresh data
   const handleEditClick = async () => {
@@ -724,7 +738,6 @@ export default function ProfilePage() {
                     {/* Editing Mode */}
                         {/* Name Section */}
                     <div className="space-y-4">
-                          <h4 className="text-sm font-medium text-muted-foreground">Name Details</h4>
                           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                         <div className="md:col-span-2">
                               <Label htmlFor="title" className="text-xs">Title</Label>
@@ -742,7 +755,6 @@ export default function ProfilePage() {
                               <SelectItem value="Mrs.">Mrs.</SelectItem>
                               <SelectItem value="Dr.">Dr.</SelectItem>
                               <SelectItem value="Prof.">Prof.</SelectItem>
-                              <SelectItem value="Eng.">Eng.</SelectItem>
                               <SelectItem value="Daw">Daw</SelectItem>
                               <SelectItem value="U">U</SelectItem>
                             </SelectContent>
@@ -813,7 +825,6 @@ export default function ProfilePage() {
 
                         {/* Position Section */}
                         <div className="space-y-4">
-                          <h4 className="text-sm font-medium text-muted-foreground">Position</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                               <Label htmlFor="jobTitle" className="text-xs">Position/Role</Label>
@@ -840,7 +851,6 @@ export default function ProfilePage() {
 
                         {/* Organization Section */}
                       <div className="space-y-4">
-                          <h4 className="text-sm font-medium text-muted-foreground">Organization</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     <div>
                               <Label htmlFor="userRole" className="text-xs">User Role</Label>
@@ -858,27 +868,21 @@ export default function ProfilePage() {
                               {user.role === 'super_user' ? (
                                 <>
                                   <Label htmlFor="organisation" className="text-xs">Organisation</Label>
-                                  <div className="relative">
-                                    <div className="h-9 px-3 py-2 pr-8 border rounded-md bg-muted flex items-center gap-2">
-                                      {user.organization?.logo && (
-                                        <img
-                                          src={user.organization.logo}
-                                          alt={`${user.organization.name} logo`}
-                                          className="w-5 h-5 object-contain rounded-sm flex-shrink-0"
-                                          onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
-                                            target.style.display = 'none';
-                                          }}
-                                        />
-                                      )}
-                                      <span className="text-sm">{user.organization?.name || formData.organisation || "Not assigned"}</span>
-                                    </div>
-                                    <Lock className="h-3 w-3 text-muted-foreground absolute right-3 top-1/2 transform -translate-y-1/2" />
-                                  </div>
-
+                                  <OrganizationCombobox
+                                    organizations={organizations.map(org => ({
+                                      id: org.id,
+                                      name: org.name,
+                                      acronym: org.acronym,
+                                      logo: org.logo,
+                                      iati_org_id: org.iati_org_id
+                                    }))}
+                                    value={selectedOrgId}
+                                    onValueChange={setSelectedOrgId}
+                                    placeholder="Select organisation..."
+                                  />
                                 </>
-                ) : (
-                  <>
+                              ) : (
+                                <>
                                   <Label className="text-xs">Organisation</Label>
                                   <div className="relative">
                                     <div className="h-9 px-3 py-2 pr-8 border rounded-md bg-muted flex items-center gap-2">
@@ -905,8 +909,6 @@ export default function ProfilePage() {
 
                         {/* Contact Details Section */}
                         <div className="space-y-4">
-                          <h4 className="text-sm font-medium text-muted-foreground">Contact Details</h4>
-                          
                           {/* Primary Email */}
                           <div className="space-y-3">
                         <div>
@@ -934,6 +936,8 @@ export default function ProfilePage() {
                                   onPhoneNumberChange={(number) => setFormData({ ...formData, phoneNumber: number })}
                                   phoneLabel=""
                                   phonePlaceholder="Phone number"
+                                  dropdownOpen={phoneDropdownOpen}
+                                  onDropdownOpenChange={handlePhoneDropdownChange}
                                 />
                               </div>
                               <div>
@@ -945,6 +949,8 @@ export default function ProfilePage() {
                                   onPhoneNumberChange={(number) => setFormData({ ...formData, faxPhoneNumber: number })}
                                   phoneLabel=""
                                   phonePlaceholder="Fax number"
+                                  dropdownOpen={faxDropdownOpen}
+                                  onDropdownOpenChange={handleFaxDropdownChange}
                                 />
                               </div>
                             </div>

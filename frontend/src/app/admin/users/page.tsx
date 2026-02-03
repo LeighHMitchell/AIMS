@@ -1100,7 +1100,6 @@ function UserEditor({
                   <SelectItem value="Mrs.">Mrs.</SelectItem>
                   <SelectItem value="Dr.">Dr.</SelectItem>
                   <SelectItem value="Prof.">Prof.</SelectItem>
-                  <SelectItem value="Eng.">Eng.</SelectItem>
                   <SelectItem value="Daw">Daw</SelectItem>
                   <SelectItem value="U">U</SelectItem>
                 </SelectContent>

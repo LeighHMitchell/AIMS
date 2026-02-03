@@ -323,17 +323,17 @@ export function OrganizationCombobox({
                         )}
                         
                         {/* Organization name with acronym, IATI ref, and location */}
-                        <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                          <span className="font-normal text-gray-900 text-sm whitespace-nowrap">
+                        <div className="min-w-0 flex-1">
+                          <span className="font-normal text-gray-900 text-sm">
                             {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
+                            {(org.iati_org_id || org.iati_identifier) && (
+                              <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded ml-2">
+                                {org.iati_org_id || org.iati_identifier}
+                              </span>
+                            )}
                           </span>
-                          {(org.iati_org_id || org.iati_identifier) && (
-                            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap">
-                              {org.iati_org_id || org.iati_identifier}
-                            </span>
-                          )}
                           {org.country && (
-                            <span className="text-xs text-gray-400 whitespace-nowrap">
+                            <span className="text-xs text-gray-400 ml-2">
                               {org.country}
                             </span>
                           )}

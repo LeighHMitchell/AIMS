@@ -291,15 +291,24 @@ function SectorBar({ sectors }: { sectors?: SectorData[] }) {
 }
 
 // Individual marker component
-function LocationMarker({ location }: { location: LocationData }) {
+function LocationMarker({
+  location,
+  isSelected,
+  onSelect
+}: {
+  location: LocationData;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+}) {
   const { map } = useMap();
   const lat = Number(location.latitude);
   const lng = Number(location.longitude);
   const statusInfo = getStatusInfo(location.activity?.status);
-  
+
   if (isNaN(lat) || isNaN(lng)) return null;
 
   const handleClick = () => {
+    onSelect(location.id);
     if (map) {
       // Position marker at the very top center of the map
       const container = map.getContainer();
@@ -314,6 +323,7 @@ function LocationMarker({ location }: { location: LocationData }) {
 
   const handleDoubleClick = (e: MouseEvent) => {
     e.stopPropagation();
+    onSelect(location.id);
     if (map) {
       map.flyTo({
         center: [lng, lat],
@@ -333,7 +343,7 @@ function LocationMarker({ location }: { location: LocationData }) {
       {/* Custom marker appearance */}
       <MarkerContent>
         <MapPin
-          className="fill-[#DC2625] stroke-white"
+          className={isSelected ? "fill-[#7f1d1d] stroke-white" : "fill-[#DC2625] stroke-white"}
           size={28}
         />
       </MarkerContent>
@@ -536,11 +546,17 @@ function LocationMarker({ location }: { location: LocationData }) {
 export default function MarkersLayer({ locations }: MarkersLayerProps) {
   // For performance with many markers, we could use MapClusterLayer instead
   // For now, render individual markers (good for up to ~500 points)
-  
+  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
+
   return (
     <>
       {locations.map(location => (
-        <LocationMarker key={location.id} location={location} />
+        <LocationMarker
+          key={location.id}
+          location={location}
+          isSelected={selectedMarkerId === location.id}
+          onSelect={setSelectedMarkerId}
+        />
       ))}
     </>
   );

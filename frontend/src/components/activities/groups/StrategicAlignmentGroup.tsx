@@ -63,6 +63,10 @@ interface StrategicAlignmentGroupProps {
   initialSection?: string
   activityCreated: boolean
 
+  // Lazy loading control
+  // When false, aggressive preloading is disabled - sections only load via IntersectionObserver
+  enablePreloading?: boolean
+
   // SDG props
   sdgMappings: any[]
   onSdgMappingsChange: (mappings: any[]) => void
@@ -101,6 +105,9 @@ export function StrategicAlignmentGroup({
   onActiveSectionChange,
   initialSection,
   activityCreated,
+
+  // Lazy loading control (default false - no aggressive preloading)
+  enablePreloading = false,
 
   // SDG props
   sdgMappings,
@@ -252,8 +259,9 @@ export function StrategicAlignmentGroup({
   }, [activityCreated, activateSection])
 
   // Aggressive preloading - load all sections quickly for seamless scrolling
+  // Only enabled when enablePreloading prop is true (user has visited this group)
   useEffect(() => {
-    if (!activityCreated) return
+    if (!activityCreated || !enablePreloading) return
 
     // Preload all sections with minimal staggering
     const sectionsToPreload = ['sdg', 'country-budget', 'tags', 'working_groups', 'policy_markers']
@@ -265,7 +273,7 @@ export function StrategicAlignmentGroup({
         }
       }, 300 + (50 * index)) // Start after 300ms, 50ms stagger between sections
     })
-  }, [activityCreated, activateSection, activeSections])
+  }, [activityCreated, enablePreloading, activateSection, activeSections])
 
   return (
     <div className="strategic-alignment-group space-y-0">

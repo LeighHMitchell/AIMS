@@ -75,7 +75,11 @@ interface ActivityOverviewGroupProps {
   onActiveSectionChange: (sectionId: string) => void
   initialSection?: string
   activityCreated: boolean
-  
+
+  // Lazy loading control
+  // When false, aggressive preloading is disabled - sections only load via IntersectionObserver
+  enablePreloading?: boolean
+
   // Render function for GeneralSection (since it's defined inline in page.tsx)
   renderGeneralSection: () => React.ReactNode
 }
@@ -144,12 +148,15 @@ export function ActivityOverviewGroup({
   
   // Permissions
   permissions,
-  
+
   // Scroll integration
   onActiveSectionChange,
   initialSection,
   activityCreated,
-  
+
+  // Lazy loading control (default true for ActivityOverview since it's the first group)
+  enablePreloading = true,
+
   // Render function for GeneralSection
   renderGeneralSection,
 }: ActivityOverviewGroupProps) {
@@ -273,8 +280,9 @@ export function ActivityOverviewGroup({
   }, [activityCreated, activateSection])
 
   // Aggressive preloading - load all sections quickly for seamless scrolling
+  // Only enabled when enablePreloading prop is true (user has visited this group)
   useEffect(() => {
-    if (!activityCreated) return
+    if (!activityCreated || !enablePreloading) return
 
     // Preload all sections immediately with minimal staggering
     const sectionsToPreload = ['sectors', 'humanitarian', 'country-region', 'locations']
@@ -286,7 +294,7 @@ export function ActivityOverviewGroup({
         }
       }, 50 * index) // 50ms stagger between sections
     })
-  }, [activityCreated, activateSection, activeSections])
+  }, [activityCreated, enablePreloading, activateSection, activeSections])
   
   return (
     <div className="activity-overview-group space-y-0">

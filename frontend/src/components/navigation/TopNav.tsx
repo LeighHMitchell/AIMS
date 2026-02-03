@@ -114,7 +114,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                 menuWidth={280}
                 menuRadius={20}
                 buttonRadius={9999}
-                className="bg-white border border-neutral-200 shadow-none"
+                className="bg-white border border-neutral-200 shadow-none relative z-[9999]"
               >
                 <Menu.Trigger>
                   <div className="flex items-center gap-2 px-2 h-10">
