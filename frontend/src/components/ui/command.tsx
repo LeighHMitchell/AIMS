@@ -116,6 +116,11 @@ const CommandItem = React.forwardRef<
     onSelect?.();
   };
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <div
       ref={ref}
@@ -125,6 +130,7 @@ const CommandItem = React.forwardRef<
         className
       )}
       onClick={handleClick}
+      onPointerDown={handlePointerDown}
       onMouseDown={(e) => e.preventDefault()}
       {...props}
     />

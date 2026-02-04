@@ -27,7 +27,7 @@ import {
   ChevronsUpDown,
   Info
 } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { GeographyLevelToggle } from '@/components/activities/GeographyLevelToggle';
 import { IATI_COUNTRIES, IATICountry, searchCountries } from '@/data/iati-countries';
 import { IATI_REGIONS, IATIRegion, searchRegions } from '@/data/iati-regions';
 import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-select';
@@ -829,50 +829,11 @@ export default function CountriesRegionsTab({
   return (
     <div ref={formRef as any} className="space-y-6">
       {/* Geography Level Setting */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            Geography Publishing Level
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Per IATI standard, geographic data must be published consistently - either at the activity level (here) or at the transaction level, not both.
-            </p>
-            <RadioGroup
-              value={geographyLevel}
-              onValueChange={(value) => onGeographyLevelChange?.(value as 'activity' | 'transaction')}
-              className="flex flex-col space-y-2"
-              disabled={!canEdit}
-            >
-              <div className="flex items-start space-x-3">
-                <RadioGroupItem value="activity" id="geo-activity" className="mt-1" />
-                <div className="space-y-1">
-                  <Label htmlFor="geo-activity" className="font-medium cursor-pointer">
-                    Activity Level
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Countries/regions are set once for the whole activity (below). Transactions will not have individual geographic targeting.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <RadioGroupItem value="transaction" id="geo-transaction" className="mt-1" />
-                <div className="space-y-1">
-                  <Label htmlFor="geo-transaction" className="font-medium cursor-pointer">
-                    Transaction Level
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Each transaction specifies its own country or region. The activity-level geography below will be disabled.
-                  </p>
-                </div>
-              </div>
-            </RadioGroup>
-          </div>
-        </CardContent>
-      </Card>
+      <GeographyLevelToggle
+        geographyLevel={geographyLevel}
+        onGeographyLevelChange={onGeographyLevelChange}
+        disabled={!canEdit}
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between">

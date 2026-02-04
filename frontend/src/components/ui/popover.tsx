@@ -239,6 +239,9 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
 
     if (!context.open) return null
 
+    // Check if w-auto is specified (don't force minWidth in that case)
+    const hasAutoWidth = className?.includes('w-auto')
+
     // For portal rendering
     if (usePortal && mounted) {
       const content = (
@@ -246,14 +249,15 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
           ref={combinedRef}
           data-popover-content
           className={cn(
-            "fixed z-[10001] min-w-[200px] rounded-md border bg-white p-4 text-gray-900 shadow-lg outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
+            "fixed z-[10005] rounded-md border bg-white p-4 text-gray-900 shadow-lg outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
+            !hasAutoWidth && "min-w-[200px]",
             className
           )}
           style={{
             top: coords.top,
             left: align === "center" ? coords.left : align === "end" ? coords.left - (contentRef.current?.offsetWidth || 0) + coords.width : coords.left,
             transform: align === "center" ? 'translateX(-50%)' : undefined,
-            minWidth: coords.width,
+            ...(!hasAutoWidth && { minWidth: coords.width }),
           }}
           {...props}
         />
@@ -269,7 +273,7 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
       <div
         ref={combinedRef}
         className={cn(
-          "absolute z-[10001] w-72 rounded-md border bg-white p-4 text-gray-900 shadow-md outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
+          "absolute z-[10005] w-72 rounded-md border bg-white p-4 text-gray-900 shadow-md outline-none dark:bg-gray-950 dark:text-gray-100 dark:border-gray-800",
           align === "start" && "left-0",
           align === "center" && "left-1/2 -translate-x-1/2",
           align === "end" && "right-0",

@@ -267,8 +267,8 @@ export function HierarchicalSectorSelect({
                     {category.sectors.map((sector) => (
                       <div key={sector.code} className="ml-2">
                         {/* 3-digit Sector Header - Non-selectable */}
-                        <div 
-                          className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 cursor-default"
+                        <div
+                          className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 cursor-default"
                           role="heading"
                           aria-level={4}
                         >

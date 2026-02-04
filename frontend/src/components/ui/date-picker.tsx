@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { useDropdownState } from "@/contexts/DropdownContext"
 
 interface DatePickerProps {
   value?: string
@@ -20,6 +21,7 @@ interface DatePickerProps {
   className?: string
   placeholder?: string
   id?: string
+  dropdownId?: string // Unique ID for exclusive open behavior
 }
 
 export function DatePicker({
@@ -30,8 +32,16 @@ export function DatePicker({
   className,
   placeholder = "Pick a date",
   id,
+  dropdownId,
 }: DatePickerProps) {
-  const [open, setOpen] = React.useState(false)
+  // Use shared dropdown state if dropdownId is provided
+  const sharedState = useDropdownState(dropdownId || 'date-picker-default')
+  const [localOpen, setLocalOpen] = React.useState(false)
+
+  // Use shared state when dropdownId is provided, otherwise use local state
+  const open = dropdownId ? sharedState.isOpen : localOpen
+  const setOpen = dropdownId ? sharedState.setOpen : setLocalOpen
+
   const [date, setDate] = React.useState<Date | undefined>(
     value ? new Date(value) : undefined
   )

@@ -560,7 +560,7 @@ export default function SectorSankeyVisualization({
     svg.selectAll('*').remove();
 
     const { width, height } = containerSize;
-    const margin = { top: 10, right: 200, bottom: 10, left: 200 };
+    const margin = { top: 10, right: 250, bottom: 10, left: 20 };
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
@@ -627,11 +627,11 @@ export default function SectorSankeyVisualization({
     // Create tooltip
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-slate-800 text-white px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-slate-800 border border-slate-200 px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = d3.format('.1f');
-    
+
     // Helper to format currency for tooltips
     const formatTooltipCurrency = (v: number) => {
       if (v === 0) return '$0';
@@ -725,13 +725,13 @@ export default function SectorSankeyVisualization({
             });
           }
           if (details.length > 0) {
-            financialHtml = `<div class="mt-2 pt-2 border-t border-slate-600 text-xs space-y-1">${details.map(d => `<div>${d}</div>`).join('')}</div>`;
+            financialHtml = `<div class="mt-2 pt-2 border-t border-slate-200 text-xs space-y-1">${details.map(d => `<div>${d}</div>`).join('')}</div>`;
           }
         }
         
         tooltip.html(`
           <div class="font-semibold">${code ? `<span class="font-mono">${code}</span> - ` : ''}${d.name}</div>
-          <div class="text-lg font-bold mt-1 text-gray-300">${format(d.value)}%</div>
+          <div class="text-lg font-bold mt-1 text-slate-600">${format(d.value)}%</div>
           ${financialHtml}
         `)
           .style('left', (event.pageX + 10) + 'px')
@@ -787,36 +787,106 @@ export default function SectorSankeyVisualization({
       }
 
       displayLines.forEach((line: string, i: number) => {
-        const text = nodeGroup.append('text')
-          .attr('x', x)
-          .attr('y', y - (displayLines.length - 1) * 6 + (i * 12))
-          .attr('text-anchor', anchor)
-          .attr('font-size', '12px')
-          .attr('font-weight', d.level === 'category' ? 'bold' : 'normal')
-          .attr('fill', '#1e293b')
-          .style('pointer-events', 'none');
+        const textY = y - (displayLines.length - 1) * 6 + (i * 12);
 
-        // First line should always start with the code
+        // First line should always start with the code with a background
         if (i === 0) {
-          // Add code with styled background
-          const codeTspan = text.append('tspan')
-            .attr('font-family', 'monospace')
-            .attr('font-size', '11px')
-            .attr('font-weight', 'bold')
-            .attr('fill', '#1e293b')
-            .text(code);
+          // Calculate code badge dimensions
+          const codeWidth = code.length * 7 + 8;
+          const codeHeight = 14;
 
-          // Add the rest of the text after the code
+          // Get the name text
           const nameText = line.substring(code.length).trim();
-          if (nameText) {
-            text.append('tspan')
-              .attr('dx', 4)
-              .attr('font-weight', d.level === 'category' ? 'bold' : 'normal')
-              .text(nameText);
+
+          // For left side: code badge first, then name
+          // For right side: name first (reading right to left), then code badge at the end (leftmost)
+          if (isLeftSide) {
+            const badgeX = x;
+
+            // Add background rect for code
+            nodeGroup.append('rect')
+              .attr('x', badgeX)
+              .attr('y', textY - codeHeight / 2 - 1)
+              .attr('width', codeWidth)
+              .attr('height', codeHeight)
+              .attr('rx', 3)
+              .attr('fill', '#e5e7eb') // gray-200
+              .style('pointer-events', 'none');
+
+            // Add code text
+            nodeGroup.append('text')
+              .attr('x', badgeX + codeWidth / 2)
+              .attr('y', textY)
+              .attr('text-anchor', 'middle')
+              .attr('font-family', 'ui-monospace, SFMono-Regular, monospace')
+              .attr('font-size', '10px')
+              .attr('font-weight', '600')
+              .attr('fill', '#374151') // gray-700
+              .style('pointer-events', 'none')
+              .text(code);
+
+            // Add name text after code
+            if (nameText) {
+              nodeGroup.append('text')
+                .attr('x', badgeX + codeWidth + 6)
+                .attr('y', textY)
+                .attr('text-anchor', 'start')
+                .attr('font-size', '12px')
+                .attr('font-weight', d.level === 'category' ? 'bold' : 'normal')
+                .attr('fill', '#1e293b')
+                .style('pointer-events', 'none')
+                .text(nameText);
+            }
+          } else {
+            // Right side: code badge at start (leftmost), then name
+            const badgeX = x - codeWidth;
+
+            // Add background rect for code (leftmost)
+            nodeGroup.append('rect')
+              .attr('x', badgeX)
+              .attr('y', textY - codeHeight / 2 - 1)
+              .attr('width', codeWidth)
+              .attr('height', codeHeight)
+              .attr('rx', 3)
+              .attr('fill', '#e5e7eb') // gray-200
+              .style('pointer-events', 'none');
+
+            // Add code text
+            nodeGroup.append('text')
+              .attr('x', badgeX + codeWidth / 2)
+              .attr('y', textY)
+              .attr('text-anchor', 'middle')
+              .attr('font-family', 'ui-monospace, SFMono-Regular, monospace')
+              .attr('font-size', '10px')
+              .attr('font-weight', '600')
+              .attr('fill', '#374151') // gray-700
+              .style('pointer-events', 'none')
+              .text(code);
+
+            // Add name text after code (to the right of the badge)
+            if (nameText) {
+              nodeGroup.append('text')
+                .attr('x', badgeX + codeWidth + 6)
+                .attr('y', textY)
+                .attr('text-anchor', 'start')
+                .attr('font-size', '12px')
+                .attr('font-weight', d.level === 'category' ? 'bold' : 'normal')
+                .attr('fill', '#1e293b')
+                .style('pointer-events', 'none')
+                .text(nameText);
+            }
           }
         } else {
           // Continuation lines
-          text.text(line);
+          const text = nodeGroup.append('text')
+            .attr('x', x)
+            .attr('y', textY)
+            .attr('text-anchor', anchor)
+            .attr('font-size', '12px')
+            .attr('font-weight', d.level === 'category' ? 'bold' : 'normal')
+            .attr('fill', '#1e293b')
+            .style('pointer-events', 'none')
+            .text(line);
         }
       });
     });
@@ -931,7 +1001,7 @@ export default function SectorSankeyVisualization({
     // Create tooltip
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-slate-800 text-white px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-slate-800 border border-slate-200 px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = metricMode === 'percentage' ? d3.format('.1f') : d3.format(',.0f');
@@ -1043,7 +1113,7 @@ export default function SectorSankeyVisualization({
 
     const tooltip = d3.select('body')
       .append('div')
-      .attr('class', 'absolute bg-slate-800 text-white px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-white text-slate-800 border border-slate-200 px-3 py-2 rounded shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0);
 
     const format = d3.format(',.0f');
@@ -1069,11 +1139,11 @@ export default function SectorSankeyVisualization({
         const percentage = (d.value / total * 100).toFixed(1);
         const sectors = 'sectors' in d ? (d.sectors as { code: string; name: string; value: number }[] | undefined) : undefined;
         const sectorsInfo = sectors && sectors.length > 0 ? 
-          `<div class="text-xs text-gray-300 mt-1">Includes ${sectors.length} sector${sectors.length > 1 ? 's' : ''}</div>` : '';
+          `<div class="text-xs text-slate-500 mt-1">Includes ${sectors.length} sector${sectors.length > 1 ? 's' : ''}</div>` : '';
         tooltip.html(`
           <div class="font-semibold">${d.code} - ${d.name}</div>
           <div class="text-lg font-bold mt-1">${isPercentage ? format(d.value) + '%' : '$' + format(d.value)}</div>
-          <div class="text-xs text-gray-300">${percentage}% of total</div>
+          <div class="text-xs text-slate-500">${percentage}% of total</div>
           ${sectorsInfo}
         `)
           .style('left', (event.pageX + 10) + 'px')

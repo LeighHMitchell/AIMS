@@ -5,7 +5,9 @@ import { ChevronsUpDown, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import Image from "next/image";
+import Flag from "react-world-flags";
 import { getOrganizationTypeName } from "@/data/iati-organization-types";
+import { getCountryCode } from "@/lib/country-utils";
 
 export interface Organization {
   id: string;
@@ -150,7 +152,13 @@ export function OrganizationSearchableSelect({
                 <span className="text-xs text-muted-foreground">•</span>
               )}
               {org.country && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  {getCountryCode(org.country) && (
+                    <Flag
+                      code={getCountryCode(org.country)!}
+                      className="h-3 w-4 rounded-sm object-cover"
+                    />
+                  )}
                   {org.country}
                 </span>
               )}

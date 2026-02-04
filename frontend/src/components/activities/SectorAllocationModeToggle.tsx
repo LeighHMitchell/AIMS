@@ -1,12 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Loader2, HelpCircle, AlertTriangle } from 'lucide-react'
-import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
+import { Loader2, AlertTriangle, Check } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +22,6 @@ import {
 } from '@/components/ui/table'
 import { useSectorAllocationMode, SectorAllocationMode } from '@/hooks/use-sector-allocation-mode'
 import { cn } from '@/lib/utils'
-import { LoadingText } from '@/components/ui/loading-text'
 
 interface SectorAllocationModeToggleProps {
   activityId: string
@@ -99,47 +93,81 @@ export function SectorAllocationModeToggle({
     setPendingMode(null)
   }
 
-  if (isLoading) {
-    return (
-      <div className={cn("flex items-center gap-2", className)}>
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        <LoadingText className="text-sm">Loading...</LoadingText>
-      </div>
-    )
+  const handleCardClick = (selectedMode: SectorAllocationMode) => {
+    if (selectedMode === mode || disabled || isSwitching) return
+    handleToggleChange(selectedMode === 'transaction')
   }
 
   return (
     <>
-      <div className={cn("flex items-center gap-3", className)}>
-        <div className="flex items-center gap-2">
-          <Switch
-            id="sector-allocation-mode"
-            checked={mode === 'transaction'}
-            onCheckedChange={handleToggleChange}
-            disabled={disabled || isSwitching || (mode === 'activity' && !canSwitchToTransaction)}
-          />
-          <Label 
-            htmlFor="sector-allocation-mode" 
-            className="text-sm font-medium cursor-pointer"
-          >
-            Report at Transaction Level
-          </Label>
-          <HelpTextTooltip 
-            content={
-              <div className="space-y-2">
-                <p><strong>Activity Level (Default):</strong> Define sector breakdown once for the activity. All transactions automatically inherit this breakdown.</p>
-                <p><strong>Transaction Level:</strong> Define different sector breakdowns for each transaction. The activity will show a weighted average of all transaction sectors.</p>
-              </div>
-            }
-          />
-        </div>
-
-        <Badge 
-          variant={mode === 'transaction' ? 'default' : 'secondary'}
-          className="text-xs"
+      <div className={cn("flex items-center gap-4", className)}>
+        {/* Activity Level Card */}
+        <button
+          type="button"
+          onClick={() => handleCardClick('activity')}
+          disabled={disabled || isSwitching}
+          className={cn(
+            "relative flex flex-col w-[180px] rounded-lg border p-3 text-left transition-all",
+            mode === 'activity'
+              ? "border-primary bg-primary/5"
+              : "border-gray-200 bg-background hover:border-gray-300 hover:bg-gray-50",
+            (disabled || isSwitching) && "opacity-50 cursor-not-allowed"
+          )}
         >
-          {mode === 'transaction' ? 'Transaction Level' : 'Activity Level'}
-        </Badge>
+          {/* Checkmark overlay */}
+          {mode === 'activity' && (
+            <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+              <Check className="h-3 w-3 text-primary-foreground" />
+            </div>
+          )}
+
+          {/* Image placeholder */}
+          <div className="mb-2 flex h-16 w-full items-center justify-center rounded bg-muted">
+            <span className="text-xs text-muted-foreground">Image placeholder</span>
+          </div>
+
+          {/* Title */}
+          <h4 className="text-sm font-semibold">Activity Level</h4>
+
+          {/* Description */}
+          <p className="mt-1 text-xs text-muted-foreground">
+            Single breakdown for all transactions
+          </p>
+        </button>
+
+        {/* Transaction Level Card */}
+        <button
+          type="button"
+          onClick={() => handleCardClick('transaction')}
+          disabled={disabled || isSwitching}
+          className={cn(
+            "relative flex flex-col w-[180px] rounded-lg border p-3 text-left transition-all",
+            mode === 'transaction'
+              ? "border-primary bg-primary/5"
+              : "border-gray-200 bg-background hover:border-gray-300 hover:bg-gray-50",
+            (disabled || isSwitching) && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          {/* Checkmark overlay */}
+          {mode === 'transaction' && (
+            <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+              <Check className="h-3 w-3 text-primary-foreground" />
+            </div>
+          )}
+
+          {/* Image placeholder */}
+          <div className="mb-2 flex h-16 w-full items-center justify-center rounded bg-muted">
+            <span className="text-xs text-muted-foreground">Image placeholder</span>
+          </div>
+
+          {/* Title */}
+          <h4 className="text-sm font-semibold">Transaction Level</h4>
+
+          {/* Description */}
+          <p className="mt-1 text-xs text-muted-foreground">
+            Custom breakdown per transaction
+          </p>
+        </button>
 
         {isSwitching && (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />

@@ -1,6 +1,27 @@
 {
-  "currentVersion": "1.14.0",
+  "currentVersion": "1.15.0",
   "releases": [
+    {
+      "version": "1.15.0",
+      "date": "2026-02-04",
+      "changes": [
+        "Other Identifiers redesigned with modal-based editing in a compact 3-column grid",
+        "Custom Activity Dates redesigned with modal-based editing in a 2-column grid",
+        "Sector allocation mode toggle redesigned as visual card-based selector with descriptions",
+        "Sector allocation table simplified - removed verbose hover tooltips for cleaner readability",
+        "Relaxed sector validation - allocations under 100% no longer trigger warnings",
+        "Organization search results now display country flags alongside country names",
+        "Sector Sankey chart labels now display as styled badges with improved light-theme tooltips",
+        "Humanitarian tab redesigned with fieldset-style bordered layout",
+        "Activity Title and Reporting Organisation fields now show saving/saved indicators",
+        "Dialog and popover z-index fixes prevent modals from being hidden behind overlays",
+        "Dialogs no longer close when interacting with popovers inside them (e.g. date pickers)",
+        "Fixed autosave race condition that could overwrite local edits after activity creation",
+        "Removed aggressive request cancellation that caused fetch abort errors",
+        "Sidebar 'Full Activity Editor' now uses proper link for right-click open-in-new-tab support",
+        "Hierarchical sector dropdown headers increased to improved font size for readability"
+      ]
+    },
     {
       "version": "1.14.0",
       "date": "2026-02-03",

@@ -218,47 +218,48 @@ export function HumanitarianTab({
   }
 
   return (
-    <div className={`p-6 space-y-6 ${className}`}>
-      {/* Humanitarian Flag Section - Red Card Styling */}
-      <Card className="border-red-200 bg-red-50/50">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Heart className="h-5 w-5 text-red-500 fill-red-500" />
-              <div>
-                <div className="flex items-center gap-2">
-                  <Label 
-                    htmlFor="humanitarian-toggle" 
-                    className="text-sm font-medium cursor-pointer text-red-900"
-                  >
-                    Humanitarian Activity
-                  </Label>
-                  <HelpTextTooltip content="Mark this activity as humanitarian if it relates entirely or partially to humanitarian aid. This follows IATI Standard guidance for humanitarian reporting." />
-                </div>
-                <p className="text-xs text-red-700 mt-1">
-                  Identify if this activity is for emergency response or disaster relief
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="humanitarian-toggle"
-              checked={humanitarian}
-              onCheckedChange={handleHumanitarianToggle}
-              disabled={readOnly || isSaving || activityId === 'NEW'}
-              className="data-[state=checked]:bg-red-600 data-[state=unchecked]:bg-red-200"
-            />
+    <div className={`space-y-6 ${className}`}>
+      {/* Humanitarian Flag Section - Fieldset Style with Label */}
+      <div className="relative border-2 border-red-300 rounded-lg p-6 bg-red-50/30">
+        {/* Label positioned on the border */}
+        <div className="absolute -top-3 left-4 px-2 bg-white">
+          <div className="flex items-center gap-2">
+            <Heart className="h-4 w-4 text-red-500 fill-red-500" />
+            <span className="text-sm font-semibold text-red-700">Humanitarian</span>
           </div>
-          
-          {activityId === 'NEW' && (
-            <Alert className="mt-4 border-red-300 bg-red-100/50">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                Please create the activity first by adding a title in the General tab.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="humanitarian-toggle"
+              className="text-sm font-medium cursor-pointer text-red-900"
+            >
+              Humanitarian Activity
+            </Label>
+            <HelpTextTooltip content="Mark this activity as humanitarian if it relates entirely or partially to humanitarian aid. This follows IATI Standard guidance for humanitarian reporting." />
+          </div>
+          <p className="text-xs text-red-700 mt-1">
+            Identify if this activity is for emergency response or disaster relief
+          </p>
+          <Switch
+            id="humanitarian-toggle"
+            checked={humanitarian}
+            onCheckedChange={handleHumanitarianToggle}
+            disabled={readOnly || isSaving || activityId === 'NEW'}
+            className="mt-3 data-[state=checked]:bg-red-600 data-[state=unchecked]:bg-red-200"
+          />
+        </div>
+
+        {activityId === 'NEW' && (
+          <Alert className="mt-4 border-red-300 bg-red-100/50">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              Please create the activity first by adding a title in the General tab.
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
 
       {/* Humanitarian Scope Section */}
       {humanitarian && activityId !== 'NEW' && (

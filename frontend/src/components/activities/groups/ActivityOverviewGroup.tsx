@@ -311,19 +311,19 @@ export function ActivityOverviewGroup({
       {activityCreated && (
         <div className={`transition-all duration-500 ${sectionsRevealed ? 'opacity-100' : 'opacity-0'}`}>
           {/* Sectors Section */}
-          <section 
-            id="sectors" 
+          <section
+            id="sectors"
             ref={sectorsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader 
-              id="sectors"
-              title={getSectionLabel('sectors')}
-              helpText={getSectionHelpText('sectors')}
-              showDivider={false}
-            />
             {isSectionActive('sectors') || activeSections.has('sectors') ? (
-              <div className="w-full">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="sectors"
+                  title={getSectionLabel('sectors')}
+                  helpText={getSectionHelpText('sectors')}
+                  showDivider={false}
+                />
                 <ImprovedSectorAllocationForm
                   allocations={sectors}
                   onChange={(newSectors) => {
@@ -345,54 +345,58 @@ export function ActivityOverviewGroup({
           </section>
           
           {/* Humanitarian Section */}
-          <section 
-            id="humanitarian" 
+          <section
+            id="humanitarian"
             ref={humanitarianRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader 
-              id="humanitarian"
-              title={getSectionLabel('humanitarian')}
-              helpText={getSectionHelpText('humanitarian')}
-              showDivider={false}
-            />
             {isSectionActive('humanitarian') || activeSections.has('humanitarian') ? (
-              <HumanitarianTab 
-                activityId={general.id || ''}
-                readOnly={!permissions?.canEditActivity}
-                onDataChange={(data) => {
-                  setHumanitarian(data.humanitarian)
-                  setHumanitarianScopes(data.humanitarianScopes)
-                }}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="humanitarian"
+                  title={getSectionLabel('humanitarian')}
+                  helpText={getSectionHelpText('humanitarian')}
+                  showDivider={false}
+                />
+                <HumanitarianTab
+                  activityId={general.id || ''}
+                  readOnly={!permissions?.canEditActivity}
+                  onDataChange={(data) => {
+                    setHumanitarian(data.humanitarian)
+                    setHumanitarianScopes(data.humanitarianScopes)
+                  }}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="humanitarian" />
             )}
           </section>
           
           {/* Country/Region Section */}
-          <section 
-            id="country-region" 
+          <section
+            id="country-region"
             ref={countryRegionRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader 
-              id="country-region"
-              title={getSectionLabel('country-region')}
-              helpText={getSectionHelpText('country-region')}
-              showDivider={false}
-            />
             {isSectionActive('country-region') || activeSections.has('country-region') ? (
-              <CountriesRegionsTab
-                activityId={general.id || ''}
-                countries={countries}
-                regions={regions}
-                onCountriesChange={setCountries}
-                onRegionsChange={setRegions}
-                canEdit={permissions?.canEditActivity ?? true}
-                geographyLevel={general.geographyLevel || 'activity'}
-                onGeographyLevelChange={onGeographyLevelChange}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="country-region"
+                  title={getSectionLabel('country-region')}
+                  helpText={getSectionHelpText('country-region')}
+                  showDivider={false}
+                />
+                <CountriesRegionsTab
+                  activityId={general.id || ''}
+                  countries={countries}
+                  regions={regions}
+                  onCountriesChange={setCountries}
+                  onRegionsChange={setRegions}
+                  canEdit={permissions?.canEditActivity ?? true}
+                  geographyLevel={general.geographyLevel || 'activity'}
+                  onGeographyLevelChange={onGeographyLevelChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="country-region" />
             )}

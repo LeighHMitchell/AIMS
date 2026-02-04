@@ -25,7 +25,7 @@ DialogOverlay.displayName = "DialogOverlay"
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, ...props }, ref) => (
+>(({ className, onPointerDownOutside, onInteractOutside, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -34,6 +34,22 @@ const DialogContent = React.forwardRef<
         "fixed left-1/2 top-1/2 z-[10000] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-xl duration-200 sm:rounded-lg",
         className
       )}
+      onPointerDownOutside={(e) => {
+        // Prevent dialog from closing when clicking on popover content
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-popover-content]')) {
+          e.preventDefault();
+        }
+        onPointerDownOutside?.(e);
+      }}
+      onInteractOutside={(e) => {
+        // Prevent dialog from closing when interacting with popover content
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-popover-content]')) {
+          e.preventDefault();
+        }
+        onInteractOutside?.(e);
+      }}
       {...props}
     />
   </DialogPortal>

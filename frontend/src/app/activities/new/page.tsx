@@ -20,6 +20,7 @@ import { CollaborationTypeSelect } from "@/components/forms/CollaborationTypeSel
 import { ActivityScopeSearchableSelect } from "@/components/forms/ActivityScopeSearchableSelect";
 import { HierarchySelect } from "@/components/forms/HierarchySelect";
 import { OtherIdentifierTypeSelect } from "@/components/forms/OtherIdentifierTypeSelect";
+import { OTHER_IDENTIFIER_TYPES } from "@/data/other-identifier-types";
 import { OrganizationSearchableSelect } from "@/components/ui/organization-searchable-select";
 import { DropdownProvider } from "@/contexts/DropdownContext";
 import { LinkedActivityTitle } from "@/components/ui/linked-activity-title";
@@ -35,7 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil } from "lucide-react";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator } from "@/components/ActivityFieldHelpers";
@@ -141,6 +142,7 @@ const formatDateToString = (date: Date | null): string => {
 function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, clearSavedFormData, isNewActivity }: any) {
   const [isCreatingActivity, setIsCreatingActivity] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingReportingOrg, setIsSavingReportingOrg] = useState(false);
   const hasShownInitialToast = useRef(false);
   const lastSavedDescriptionRef = useRef<string>('');
   const hasUserEditedDescriptionRef = useRef(false);
@@ -181,9 +183,22 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const [isActualStartDescriptionFocused, setIsActualStartDescriptionFocused] = useState(false);
   const [isActualEndDescriptionFocused, setIsActualEndDescriptionFocused] = useState(false);
   const [otherIdentifiersFocusStates, setOtherIdentifiersFocusStates] = useState<Record<string, boolean>>({});
+  const [showOtherIdentifierModal, setShowOtherIdentifierModal] = useState(false);
+  const [editingIdentifierIndex, setEditingIdentifierIndex] = useState<number | null>(null);
+  const [otherIdentifierForm, setOtherIdentifierForm] = useState({ label: '', code: '', type: '', ownerOrgNarrative: '', ownerOrgRef: '' });
+  const [showIdentifierTypeDropdown, setShowIdentifierTypeDropdown] = useState(false);
+  const [showActivityDateModal, setShowActivityDateModal] = useState(false);
+  const [editingDateIndex, setEditingDateIndex] = useState<number | null>(null);
+  const [activityDateForm, setActivityDateForm] = useState({ label: '', date: '', description: '' });
   const [customDateFocusStates, setCustomDateFocusStates] = useState<Record<string, boolean>>({});
   const [savingCustomDateIndex, setSavingCustomDateIndex] = useState<number | null>(null);
   const [newCustomDateIndex, setNewCustomDateIndex] = useState<number | null>(null);
+  const [savingIdentifierIndex, setSavingIdentifierIndex] = useState<number | null>(null);
+  const [savedIdentifiers, setSavedIdentifiers] = useState<Record<number, boolean>>({});
+
+  // Refs to track saving indices for use in callbacks (avoids stale closure issues)
+  const savingIdentifierIndexRef = useRef<number | null>(null);
+  const savingCustomDateIndexRef = useRef<number | null>(null);
 
   // Initialize savedCustomDates ONLY when activity is first loaded from database
   // This runs when the activity ID changes (new activity loaded)
@@ -298,6 +313,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     debounceMs: 1000,
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
+      // Mark the saved identifier as saved and clear saving state (use ref to avoid stale closure)
+      if (savingIdentifierIndexRef.current !== null) {
+        setSavedIdentifiers(prev => ({ ...prev, [savingIdentifierIndexRef.current!]: true }));
+      }
+      savingIdentifierIndexRef.current = null;
+      setSavingIdentifierIndex(null);
       if (data.id && !general.id) {
         setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
         setShowActivityCreatedAlert(true);
@@ -312,6 +333,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     debounceMs: 1000,
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
+      // Mark the saved custom date as saved and clear saving state (use ref to avoid stale closure)
+      if (savingCustomDateIndexRef.current !== null) {
+        setSavedCustomDates(prev => ({ ...prev, [savingCustomDateIndexRef.current!]: true }));
+      }
+      savingCustomDateIndexRef.current = null;
       setSavingCustomDateIndex(null);
       if (data.id && !general.id) {
         setGeneral((g: any) => ({ ...g, id: data.id, uuid: data.uuid || data.id }));
@@ -365,6 +391,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       return;
     }
 
+    setIsSavingReportingOrg(true);
     try {
       const response = await apiFetch(`/api/activities/${effectiveActivityId}/reporting-org`, {
         method: 'PUT',
@@ -377,7 +404,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       }
 
       const data = await response.json();
-      
+
       // Update local state with the response
       if (data.data) {
         setGeneral((g: any) => ({
@@ -395,6 +422,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     } catch (error) {
       console.error('Failed to save reporting organization:', error);
       toast.error('Failed to update reporting organization');
+    } finally {
+      setIsSavingReportingOrg(false);
     }
   }, [effectiveActivityId, general.id, setGeneral, setShowActivityCreatedAlert]);
 
@@ -784,6 +813,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-8 min-h-[800px]">
+      {/* Section Heading */}
+      <h2 className="text-2xl font-semibold text-gray-900">General</h2>
+
       {/* Banner and Icon Upload */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
         <div className="lg:col-span-3 flex flex-col">
@@ -945,7 +977,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         {/* Activity Title - takes up 2 columns */}
         <div className="lg:col-span-2 space-y-2">
           <LabelSaveIndicator
-            isSaving={false}
+            isSaving={isSaving}
             isSaved={!!general.id && !!general.title?.trim()}
             hasValue={!!general.title?.trim()}
             isFocused={isTitleFocused}
@@ -1206,10 +1238,304 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         </div>
       </div>
 
+      {/* Other Identifier Types - below Activity Identifier */}
+      <div className={`space-y-4 mb-6 ${!general.id ? 'opacity-50' : ''}`}>
+        <div className="flex items-center gap-2">
+          <h3 className={`text-sm font-semibold ${!general.id ? 'text-gray-400' : 'text-gray-900'}`}>Other Identifier Types</h3>
+          <HelpTextTooltip>
+            Additional identifiers for this activity, such as internal organization identifiers or previous activity identifiers.
+          </HelpTextTooltip>
+          {!general.id && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Lock className="h-3 w-3 ml-1 text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Available after activity is created</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+
+        {/* Display saved identifiers in 3-column grid */}
+        {(general.otherIdentifiers || []).length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {(general.otherIdentifiers || []).map((identifier: any, index: number) => (
+              <div key={index} className="space-y-1">
+                <LabelSaveIndicator
+                  isSaving={savingIdentifierIndex === index}
+                  isSaved={savingIdentifierIndex !== index && !!identifier.code}
+                  hasValue={!!identifier.code}
+                  className="text-sm font-medium text-gray-700"
+                >
+                  {identifier.label || `Other Identifier ${index + 1}`}
+                </LabelSaveIndicator>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    value={identifier.code || ''}
+                    readOnly
+                    className="bg-gray-50 cursor-pointer pr-14"
+                    onClick={() => {
+                      setEditingIdentifierIndex(index);
+                      setOtherIdentifierForm({
+                        label: identifier.label || '',
+                        code: identifier.code || '',
+                        type: identifier.type || '',
+                        ownerOrgNarrative: identifier.ownerOrg?.narrative || '',
+                        ownerOrgRef: identifier.ownerOrg?.ref || ''
+                      });
+                      setShowIdentifierTypeDropdown(false);
+                      setShowOtherIdentifierModal(true);
+                    }}
+                  />
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingIdentifierIndex(index);
+                        setOtherIdentifierForm({
+                          label: identifier.label || '',
+                          code: identifier.code || '',
+                          type: identifier.type || '',
+                          ownerOrgNarrative: identifier.ownerOrg?.narrative || '',
+                          ownerOrgRef: identifier.ownerOrg?.ref || ''
+                        });
+                        setShowIdentifierTypeDropdown(false);
+                        setShowOtherIdentifierModal(true);
+                      }}
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title="Edit identifier"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-gray-500 hover:text-gray-700" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const updatedIdentifiers = (general.otherIdentifiers || []).filter((_: any, i: number) => i !== index);
+                        setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
+                        otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
+                      }}
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title="Delete identifier"
+                    >
+                      <X className="w-3.5 h-3.5 text-gray-500 hover:text-red-600" />
+                    </button>
+                  </div>
+                </div>
+                {(identifier.type || identifier.ownerOrg?.narrative || identifier.ownerOrg?.ref) && (
+                  <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                    {identifier.type && (
+                      <>
+                        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{identifier.type}</span>
+                        <span className="text-xs text-gray-500">{OTHER_IDENTIFIER_TYPES.find(t => t.code === identifier.type)?.name}</span>
+                      </>
+                    )}
+                    {identifier.ownerOrg?.narrative && (
+                      <>
+                        <span className="text-xs text-gray-400">·</span>
+                        <span className="text-xs text-gray-500">{identifier.ownerOrg.narrative}</span>
+                      </>
+                    )}
+                    {identifier.ownerOrg?.ref && (
+                      <>
+                        <span className="text-xs text-gray-400">·</span>
+                        <span className="text-xs text-gray-500">{identifier.ownerOrg.ref}</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add Identifier Button */}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setEditingIdentifierIndex(null);
+            setOtherIdentifierForm({ label: '', code: '', type: '', ownerOrgNarrative: '', ownerOrgRef: '' });
+            setShowIdentifierTypeDropdown(false);
+            setShowOtherIdentifierModal(true);
+          }}
+          className="gap-2"
+          disabled={!general.id}
+        >
+          <Plus className="w-4 h-4" />
+          Add Other Identifier
+        </Button>
+      </div>
+
+      {/* Other Identifier Modal */}
+      <Dialog open={showOtherIdentifierModal} onOpenChange={(open) => {
+        setShowOtherIdentifierModal(open);
+        if (!open) setShowIdentifierTypeDropdown(false);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingIdentifierIndex !== null ? 'Edit Other Identifier' : 'Add Other Identifier'}</DialogTitle>
+            <DialogDescription>
+              Enter the details for this identifier.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Label/Name</label>
+              <Input
+                type="text"
+                value={otherIdentifierForm.label}
+                onChange={(e) => setOtherIdentifierForm(prev => ({ ...prev, label: e.target.value }))}
+                placeholder="e.g., CRS ID, Internal Reference"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Identifier Code</label>
+              <Input
+                type="text"
+                value={otherIdentifierForm.code}
+                onChange={(e) => setOtherIdentifierForm(prev => ({ ...prev, code: e.target.value }))}
+                placeholder="e.g., 2023000168"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Identifier Type</label>
+              <div
+                className="relative"
+                onBlur={(e) => {
+                  // Close dropdown if focus moves outside the container
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setShowIdentifierTypeDropdown(false);
+                  }
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowIdentifierTypeDropdown(!showIdentifierTypeDropdown)}
+                  className="relative flex h-10 w-full items-center rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-gray-50"
+                >
+                  {otherIdentifierForm.type ? (
+                    <span className="flex items-center gap-2 text-left">
+                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                        {otherIdentifierForm.type}
+                      </span>
+                      <span className="text-gray-900">
+                        {OTHER_IDENTIFIER_TYPES.find(t => t.code === otherIdentifierForm.type)?.name}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-gray-500">Select identifier type...</span>
+                  )}
+                  <ChevronDown className={`absolute right-3 h-4 w-4 text-gray-500 transition-transform ${showIdentifierTypeDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                {showIdentifierTypeDropdown && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowIdentifierTypeDropdown(false)}
+                    />
+                    <div
+                      className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg z-50 max-h-60 overflow-y-auto"
+                      style={{ border: '1px solid #d1d5db' }}
+                    >
+                      <div className="p-1">
+                        {OTHER_IDENTIFIER_TYPES.map((type) => (
+                          <button
+                            key={type.code}
+                            type="button"
+                            onClick={() => {
+                              setOtherIdentifierForm(prev => ({ ...prev, type: type.code }));
+                              setShowIdentifierTypeDropdown(false);
+                            }}
+                            className={`flex items-center gap-2 w-full px-3 py-2 text-left text-sm rounded-md hover:bg-gray-100 ${otherIdentifierForm.type === type.code ? 'bg-gray-100' : ''}`}
+                          >
+                            <span className="text-xs font-mono text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded">
+                              {type.code}
+                            </span>
+                            <span className="text-gray-900">{type.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Owner Organisation Name</label>
+              <Input
+                type="text"
+                value={otherIdentifierForm.ownerOrgNarrative}
+                onChange={(e) => setOtherIdentifierForm(prev => ({ ...prev, ownerOrgNarrative: e.target.value }))}
+                placeholder="e.g., OECD/DAC"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Owner Organisation Ref <span className="text-gray-400">(Optional)</span>
+              </label>
+              <Input
+                type="text"
+                value={otherIdentifierForm.ownerOrgRef}
+                onChange={(e) => setOtherIdentifierForm(prev => ({ ...prev, ownerOrgRef: e.target.value }))}
+                placeholder="e.g., XM-DAC-5-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowOtherIdentifierModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                const newIdentifier = {
+                  label: otherIdentifierForm.label,
+                  code: otherIdentifierForm.code,
+                  type: otherIdentifierForm.type,
+                  ownerOrg: {
+                    narrative: otherIdentifierForm.ownerOrgNarrative,
+                    ref: otherIdentifierForm.ownerOrgRef
+                  }
+                };
+                let updatedIdentifiers;
+                let saveIndex: number;
+                if (editingIdentifierIndex !== null) {
+                  updatedIdentifiers = [...(general.otherIdentifiers || [])];
+                  updatedIdentifiers[editingIdentifierIndex] = newIdentifier;
+                  saveIndex = editingIdentifierIndex;
+                } else {
+                  updatedIdentifiers = [...(general.otherIdentifiers || []), newIdentifier];
+                  saveIndex = updatedIdentifiers.length - 1;
+                }
+                savingIdentifierIndexRef.current = saveIndex;
+                setSavingIdentifierIndex(saveIndex);
+                setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
+                otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
+                setShowOtherIdentifierModal(false);
+              }}
+              disabled={!otherIdentifierForm.code.trim()}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Reporting Organisation */}
       <div className="space-y-2 mb-6">
         <LabelSaveIndicator
-          isSaving={false}
+          isSaving={isSavingReportingOrg}
           isSaved={!!general.reportingOrgId}
           hasValue={!!general.reportingOrgId}
           className={fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}
@@ -1749,6 +2075,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               placeholder="Select planned start date"
               disabled={fieldLockStatus.isLocked}
               className={fieldLockStatus.isLocked ? "opacity-50" : ""}
+              dropdownId="date-planned-start"
             />
             {plannedStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedStartDateAutosave.state.error.message}</p>}
             <div className="mt-2">
@@ -1836,6 +2163,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               placeholder="Select planned end date"
               disabled={fieldLockStatus.isLocked}
               className={fieldLockStatus.isLocked ? "opacity-50" : ""}
+              dropdownId="date-planned-end"
             />
             {plannedEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedEndDateAutosave.state.error.message}</p>}
             <div className="mt-2">
@@ -1923,6 +2251,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               placeholder="Select actual start date"
               disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
               className={(fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate) ? "opacity-50" : ""}
+              dropdownId="date-actual-start"
             />
             {actualStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualStartDateAutosave.state.error.message}</p>}
             <div className="mt-2">
@@ -1937,7 +2266,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </button>
               {showActualStartDescription && (
                 <div className="mt-2 space-y-1">
-                  <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                  <LabelSaveIndicator
+                    isSaving={actualStartDescriptionAutosave.state.isSaving}
+                    isSaved={actualStartDescriptionAutosave.state.isPersistentlySaved}
+                    hasValue={!!general.actualStartDescription?.trim()}
+                    isFocused={isActualStartDescriptionFocused}
+                    className="text-xs text-gray-600"
+                  >
+                    Description/Context (optional)
+                  </LabelSaveIndicator>
                   <Textarea
                     value={general.actualStartDescription || ''}
                     onChange={(e) => {
@@ -1946,12 +2283,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         actualStartDescriptionAutosave.triggerFieldSave(e.target.value);
                       }
                     }}
+                    onFocus={() => setIsActualStartDescriptionFocused(true)}
+                    onBlur={() => setIsActualStartDescriptionFocused(false)}
                     placeholder="Add context about this date"
                     disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
                     className={`min-h-[60px] text-sm ${(fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate) ? "opacity-50" : ""}`}
                   />
-                  {actualStartDescriptionAutosave.state.isSaving && <p className="text-xs text-gray-500 mt-1">Saving...</p>}
-                  {actualStartDescriptionAutosave.state.isPersistentlySaved && <p className="text-xs text-green-600 mt-1">✓ Saved</p>}
                 </div>
               )}
             </div>
@@ -1993,6 +2330,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               placeholder="Select actual end date"
               disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
               className={(fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate) ? "opacity-50" : ""}
+              dropdownId="date-actual-end"
             />
             {actualEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualEndDateAutosave.state.error.message}</p>}
             <div className="mt-2">
@@ -2054,231 +2392,78 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             </HelpTextTooltip>
           </div>
 
-          {/* Custom Activity Dates */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-          {(general.customDates || []).map((customDate: any, index: number) => {
-          // Check if user has clicked "Save Date Type" button (or loaded from database with label)
-          const isSaved = savedCustomDates[index] === true;
-
-          return (
-            <div key={index}>
-              {!isSaved ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+          {/* Custom Activity Dates - Display in 2-column grid */}
+          {(general.customDates || []).length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {(general.customDates || []).map((customDate: any, index: number) => (
+                <div key={index} className="space-y-2">
+                  <div>
                     <LabelSaveIndicator
                       isSaving={savingCustomDateIndex === index}
-                      isSaved={false}
-                      hasValue={!!customDate.label?.trim()}
-                      isFocused={customDateFocusStates[`${index}-label`] || false}
+                      isSaved={savingCustomDateIndex !== index && !!customDate.date}
+                      hasValue={!!customDate.date}
                       className="text-sm font-medium text-gray-700"
                     >
-                      Date Type/Label
+                      {customDate.label || `Activity Date ${index + 1}`}
                     </LabelSaveIndicator>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updatedDates = (general.customDates || []).filter((_: any, i: number) => i !== index);
-                        setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
-                        customDatesAutosave.triggerFieldSave(updatedDates);
-                        // Remove from saved state
-                        setSavedCustomDates(prev => {
-                          const newState = { ...prev };
-                          delete newState[index];
-                          return newState;
-                        });
-                      }}
-                      className="text-red-600 hover:text-red-700 transition-colors"
-                      disabled={fieldLockStatus.isLocked}
-                      title="Remove this date"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                    {customDate.description && (
+                      <p className="text-xs text-gray-500 mt-0.5">{customDate.description}</p>
+                    )}
                   </div>
-                  <Input
-                    type="text"
-                    value={customDate.label || ''}
-                    onChange={(e) => {
-                      if (!fieldLockStatus.isLocked) {
-                        const updatedDates = [...(general.customDates || [])];
-                        updatedDates[index] = { ...updatedDates[index], label: e.target.value };
-                        setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
-                      }
-                    }}
-                    autoFocus={newCustomDateIndex === index}
-                    onFocus={() => {
-                      setCustomDateFocusStates(prev => ({ ...prev, [`${index}-label`]: true }));
-                      if (newCustomDateIndex === index) {
-                        setNewCustomDateIndex(null); // Clear after focusing
-                      }
-                    }}
-                    onBlur={() => {
-                      setCustomDateFocusStates(prev => ({ ...prev, [`${index}-label`]: false }));
-                      if (!fieldLockStatus.isLocked) {
-                        if (customDate.label?.trim()) {
-                          // Mark as saved to show the date picker
-                          setSavedCustomDates(prev => ({ ...prev, [index]: true }));
-                        } else {
-                          // No label entered, silently remove the empty entry
-                          const updatedDates = (general.customDates || []).filter((_: any, i: number) => i !== index);
-                          setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
-                          setSavedCustomDates(prev => {
-                            const newState = { ...prev };
-                            delete newState[index];
-                            return newState;
-                          });
-                        }
-                      }
-                    }}
-                    placeholder="e.g., Government Approval Date"
-                    disabled={fieldLockStatus.isLocked}
-                    className={fieldLockStatus.isLocked ? "opacity-50" : ""}
-                  />
-                </div>
-              ) : (
-                <div
-                  className="space-y-3"
-                  tabIndex={-1}
-                  onBlur={(e) => {
-                    // Check if focus is moving outside this container
-                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                      // Use timeout to allow date selection to complete
-                      setTimeout(() => {
-                        setGeneral((g: any) => {
-                          const currentDate = g.customDates?.[index];
-                          if (!fieldLockStatus.isLocked && currentDate?.label?.trim() && !currentDate?.date) {
-                            // Label exists but no date selected, silently remove the entry
-                            const updatedDates = (g.customDates || []).filter((_: any, i: number) => i !== index);
-                            setSavedCustomDates(prev => {
-                              const newState = { ...prev };
-                              delete newState[index];
-                              return newState;
-                            });
-                            return { ...g, customDates: updatedDates };
-                          }
-                          return g; // No change
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      value={customDate.date ? new Date(customDate.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+                      readOnly
+                      className="bg-gray-50 cursor-pointer pr-14"
+                      placeholder="No date set"
+                      onClick={() => {
+                        setEditingDateIndex(index);
+                        setActivityDateForm({
+                          label: customDate.label || '',
+                          date: customDate.date || '',
+                          description: customDate.description || ''
                         });
-                      }, 300);
-                    }
-                  }}
-                >
-                    {/* Label with delete button */}
-                    <div className="flex items-center justify-between">
-                      <LabelSaveIndicator
-                        isSaving={savingCustomDateIndex === index}
-                        isSaved={customDatesAutosave.state.isPersistentlySaved}
-                        hasValue={!!customDate.label?.trim()}
-                        isFocused={customDateFocusStates[`${index}-label`] || false}
-                        className="text-gray-700"
-                      >
-                        {customDate.label}
-                      </LabelSaveIndicator>
+                        setShowActivityDateModal(true);
+                      }}
+                    />
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-0.5">
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingDateIndex(index);
+                          setActivityDateForm({
+                            label: customDate.label || '',
+                            date: customDate.date || '',
+                            description: customDate.description || ''
+                          });
+                          setShowActivityDateModal(true);
+                        }}
+                        className="p-1 hover:bg-gray-100 rounded"
+                        title="Edit date"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-gray-500 hover:text-gray-700" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
                           const updatedDates = (general.customDates || []).filter((_: any, i: number) => i !== index);
                           setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
                           customDatesAutosave.triggerFieldSave(updatedDates);
-                          // Remove from saved state
-                          setSavedCustomDates(prev => {
-                            const newState = { ...prev };
-                            delete newState[index];
-                            return newState;
-                          });
                         }}
-                        className="text-red-600 hover:text-red-700 transition-colors"
-                        disabled={fieldLockStatus.isLocked}
-                        title="Remove this date"
+                        className="p-1 hover:bg-gray-100 rounded"
+                        title="Delete date"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3.5 h-3.5 text-gray-500 hover:text-red-600" />
                       </button>
                     </div>
-
-                    {/* Date Input */}
-                    <div>
-                      <DatePicker
-                        value={customDate.date || ''}
-                        onChange={(value) => {
-                          if (!fieldLockStatus.isLocked) {
-                            const updatedDates = [...(general.customDates || [])];
-                            updatedDates[index] = { ...updatedDates[index], date: value };
-                            setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
-                            setSavingCustomDateIndex(index);
-                            customDatesAutosave.triggerFieldSave(updatedDates);
-                          }
-                        }}
-                        placeholder="Select date"
-                        disabled={fieldLockStatus.isLocked}
-                        className={fieldLockStatus.isLocked ? "opacity-50" : ""}
-                      />
-                    </div>
-
-                    {/* Collapsible Add Context Button */}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowCustomDateDescriptions(prev => ({
-                              ...prev,
-                              [index]: !prev[index]
-                            }));
-                          }}
-                          className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
-                          disabled={fieldLockStatus.isLocked}
-                        >
-                          <ChevronDown className={`h-3 w-3 transition-transform ${showCustomDateDescriptions[index] ? 'rotate-180' : ''}`} />
-                        </button>
-                        <LabelSaveIndicator
-                          isSaving={savingCustomDateIndex === index}
-                          isSaved={customDatesAutosave.state.isPersistentlySaved}
-                          hasValue={!!customDate.description?.trim()}
-                          isFocused={customDateFocusStates[`${index}-description`] || false}
-                          className="text-xs text-gray-600"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowCustomDateDescriptions(prev => ({
-                                ...prev,
-                                [index]: !prev[index]
-                              }));
-                            }}
-                            className="hover:text-gray-800 transition-colors"
-                            disabled={fieldLockStatus.isLocked}
-                          >
-                            {customDate.description ? 'Edit context' : 'Add context'}
-                          </button>
-                        </LabelSaveIndicator>
-                      </div>
-                      {showCustomDateDescriptions[index] && (
-                        <div className="mt-2 space-y-1">
-                          <label className="text-xs text-gray-600">Description/Context</label>
-                          <Textarea
-                            value={customDate.description || ''}
-                            onChange={(e) => {
-                              if (!fieldLockStatus.isLocked) {
-                                const updatedDates = [...(general.customDates || [])];
-                                updatedDates[index] = { ...updatedDates[index], description: e.target.value };
-                                setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
-                                setSavingCustomDateIndex(index);
-                                customDatesAutosave.triggerFieldSave(updatedDates);
-                              }
-                            }}
-                            onFocus={() => setCustomDateFocusStates(prev => ({ ...prev, [`${index}-description`]: true }))}
-                            onBlur={() => setCustomDateFocusStates(prev => ({ ...prev, [`${index}-description`]: false }))}
-                            placeholder="Add context about this date"
-                            disabled={fieldLockStatus.isLocked}
-                            className={`min-h-[60px] text-sm ${fieldLockStatus.isLocked ? "opacity-50" : ""}`}
-                          />
-                        </div>
-                      )}
-                    </div>
                   </div>
-              )}
+                </div>
+              ))}
             </div>
-          );
-        })}
-          </div>
+          )}
 
           {/* Add Another Activity Date Button */}
           <div className="mt-4">
@@ -2287,16 +2472,9 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               variant="outline"
               size="sm"
               onClick={() => {
-                const currentDates = general.customDates || [];
-                const newIndex = currentDates.length;
-                const newDates = [...currentDates, {
-                  label: '',
-                  date: '',
-                  description: ''
-                }];
-                setGeneral((g: any) => ({ ...g, customDates: newDates }));
-                setNewCustomDateIndex(newIndex); // Track for auto-focus
-                // Don't save yet - wait until label and date are filled
+                setEditingDateIndex(null);
+                setActivityDateForm({ label: '', date: '', description: '' });
+                setShowActivityDateModal(true);
               }}
               className="gap-2"
               disabled={fieldLockStatus.isLocked}
@@ -2308,172 +2486,86 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         </div>
       </div>
 
-      {/* Row 9: Other Identifier Types */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-gray-900">Other Identifier Types</h3>
-          <HelpTextTooltip>
-            Additional identifiers for this activity, such as internal organization identifiers or previous activity identifiers.
-          </HelpTextTooltip>
-        </div>
-        
-        {/* Existing Identifiers */}
-        {(general.otherIdentifiers || []).map((identifier: any, index: number) => (
-          <div key={index} className="mt-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-gray-700">Other Identifier {index + 1}</h4>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const updatedIdentifiers = (general.otherIdentifiers || []).filter((_: any, i: number) => i !== index);
-                  setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
-                  otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
-                }}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <X className="w-4 h-4" />
-              </Button>
+      {/* Activity Date Modal */}
+      <Dialog open={showActivityDateModal} onOpenChange={(open) => {
+        setShowActivityDateModal(open);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingDateIndex !== null ? 'Edit Activity Date' : 'Add Activity Date'}</DialogTitle>
+            <DialogDescription>
+              Enter the details for this custom activity date.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Date Type/Label</label>
+              <Input
+                type="text"
+                value={activityDateForm.label}
+                onChange={(e) => setActivityDateForm(prev => ({ ...prev, label: e.target.value }))}
+                placeholder="e.g., Date of Contract Signing"
+              />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-              {/* Identifier Code */}
-              <div className="space-y-2">
-                <LabelSaveIndicator
-                  isSaving={otherIdentifiersAutosave.state.isSaving}
-                  isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
-                  hasValue={!!identifier.code?.trim()}
-                  isFocused={otherIdentifiersFocusStates[`${index}-code`] || false}
-                  className="text-gray-700"
-                >
-                  Identifier Code
-                </LabelSaveIndicator>
-                <Input
-                  type="text"
-                  value={identifier.code || ''}
-                  onChange={(e) => {
-                    const updatedIdentifiers = [...(general.otherIdentifiers || [])];
-                    updatedIdentifiers[index] = { ...updatedIdentifiers[index], code: e.target.value };
-                    setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
-                    otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
-                  }}
-                  onFocus={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-code`]: true }))}
-                  onBlur={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-code`]: false }))}
-                  placeholder="e.g., 2023000168"
-                />
-              </div>
-
-              {/* Identifier Type */}
-              <div className="space-y-2">
-                <LabelSaveIndicator
-                  isSaving={otherIdentifiersAutosave.state.isSaving}
-                  isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
-                  hasValue={!!identifier.type?.trim()}
-                  isFocused={otherIdentifiersFocusStates[`${index}-type`] || false}
-                  className="text-gray-700"
-                >
-                  Identifier Type
-                </LabelSaveIndicator>
-                <OtherIdentifierTypeSelect
-                  value={identifier.type || ''}
-                  onValueChange={(value) => {
-                    const updatedIdentifiers = [...(general.otherIdentifiers || [])];
-                    updatedIdentifiers[index] = { ...updatedIdentifiers[index], type: value };
-                    setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
-                    otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
-                  }}
-                  placeholder="Select identifier type..."
-                />
-              </div>
-
-              {/* Owner Organisation Name */}
-              <div className="space-y-2">
-                <LabelSaveIndicator
-                  isSaving={otherIdentifiersAutosave.state.isSaving}
-                  isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
-                  hasValue={!!identifier.ownerOrg?.narrative?.trim()}
-                  isFocused={otherIdentifiersFocusStates[`${index}-ownerOrg-narrative`] || false}
-                  className="text-gray-700"
-                >
-                  Owner Organisation Name
-                </LabelSaveIndicator>
-                <Input
-                  type="text"
-                  value={identifier.ownerOrg?.narrative || ''}
-                  onChange={(e) => {
-                    const updatedIdentifiers = [...(general.otherIdentifiers || [])];
-                    updatedIdentifiers[index] = {
-                      ...updatedIdentifiers[index],
-                      ownerOrg: { ...updatedIdentifiers[index].ownerOrg, narrative: e.target.value }
-                    };
-                    setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
-                    otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
-                  }}
-                  onFocus={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-ownerOrg-narrative`]: true }))}
-                  onBlur={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-ownerOrg-narrative`]: false }))}
-                  placeholder="e.g., OECD/DAC"
-                />
-              </div>
-
-              {/* Owner Organisation Ref (Optional) */}
-              <div className="space-y-2">
-                <LabelSaveIndicator
-                  isSaving={otherIdentifiersAutosave.state.isSaving}
-                  isSaved={otherIdentifiersAutosave.state.isPersistentlySaved}
-                  hasValue={!!identifier.ownerOrg?.ref?.trim()}
-                  isFocused={otherIdentifiersFocusStates[`${index}-ownerOrg-ref`] || false}
-                  className="text-gray-700"
-                >
-                  Owner Organisation Ref <span className="text-gray-400">(Optional)</span>
-                </LabelSaveIndicator>
-                <Input
-                  type="text"
-                  value={identifier.ownerOrg?.ref || ''}
-                  onChange={(e) => {
-                    const updatedIdentifiers = [...(general.otherIdentifiers || [])];
-                    updatedIdentifiers[index] = {
-                      ...updatedIdentifiers[index],
-                      ownerOrg: {
-                        ...updatedIdentifiers[index].ownerOrg,
-                        ref: e.target.value
-                      }
-                    };
-                    setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
-                    otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
-                  }}
-                  onFocus={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-ownerOrg-ref`]: true }))}
-                  onBlur={() => setOtherIdentifiersFocusStates(prev => ({ ...prev, [`${index}-ownerOrg-ref`]: false }))}
-                  placeholder="e.g., XM-DAC-5-1"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Date</label>
+              <Input
+                type="date"
+                value={activityDateForm.date}
+                onChange={(e) => setActivityDateForm(prev => ({ ...prev, date: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Description/Context <span className="text-gray-400">(Optional)</span>
+              </label>
+              <Textarea
+                value={activityDateForm.description}
+                onChange={(e) => setActivityDateForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Add context about this date"
+                className="min-h-[80px]"
+              />
             </div>
           </div>
-        ))}
-
-        {/* Add Identifier Button */}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            const newIdentifiers = [...(general.otherIdentifiers || []), {
-              code: '',
-              type: '',
-              ownerOrg: {
-                narrative: '',
-                ref: ''
-              }
-            }];
-            setGeneral((g: any) => ({ ...g, otherIdentifiers: newIdentifiers }));
-            otherIdentifiersAutosave.triggerFieldSave(newIdentifiers);
-          }}
-          className="gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Other Identifier
-        </Button>
-      </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowActivityDateModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                const newDate = {
+                  label: activityDateForm.label,
+                  date: activityDateForm.date,
+                  description: activityDateForm.description
+                };
+                let updatedDates;
+                let saveIndex: number;
+                if (editingDateIndex !== null) {
+                  updatedDates = [...(general.customDates || [])];
+                  updatedDates[editingDateIndex] = newDate;
+                  saveIndex = editingDateIndex;
+                } else {
+                  updatedDates = [...(general.customDates || []), newDate];
+                  saveIndex = updatedDates.length - 1;
+                }
+                savingCustomDateIndexRef.current = saveIndex;
+                setSavingCustomDateIndex(saveIndex);
+                setGeneral((g: any) => ({ ...g, customDates: updatedDates }));
+                customDatesAutosave.triggerFieldSave(updatedDates);
+                setShowActivityDateModal(false);
+              }}
+              disabled={!activityDateForm.label.trim() || !activityDateForm.date}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -2848,6 +2940,10 @@ function NewActivityPageContent() {
   // activity-overview is always visited since it's the default starting group
   const [visitedGroups, setVisitedGroups] = useState<Set<string>>(new Set(['activity-overview']));
 
+  // Track current activity ID to prevent loadActivity from overwriting local edits
+  // This is used as a ref to avoid stale closure issues in useEffect
+  const currentActivityIdRef = useRef<string | null>(null);
+
   // Handle initial tab from query parameter (for import flow)
   useEffect(() => {
     const tabParam = searchParams?.get("tab");
@@ -2890,8 +2986,8 @@ function NewActivityPageContent() {
       created_by_org_acronym: "",
       collaborationType: "",
       activityStatus: "", // No default status
-      activityScope: "4", // Default to National
-      hierarchy: 1, // Default to top-level activity
+      activityScope: "", // No default scope
+      hierarchy: undefined, // No default hierarchy
       language: "en", // Default to English
       defaultAidType: "",
       defaultFinanceType: "",
@@ -3594,8 +3690,8 @@ function NewActivityPageContent() {
         lastSyncTime: "",
         syncStatus: "not_synced",
         autoSyncFields: [],
-        activityScope: "4",
-        hierarchy: 1,
+        activityScope: "",
+        hierarchy: undefined,
         language: "en"
       });
       setSectors([]);
@@ -3884,7 +3980,13 @@ function NewActivityPageContent() {
       setShowCreateModal(true);
     }
   }, [isEditing, userLoading]);
-  
+
+  // Keep currentActivityIdRef in sync with general.id
+  // This prevents loadActivity from overwriting local edits after activity creation
+  useEffect(() => {
+    currentActivityIdRef.current = general.id || null;
+  }, [general.id]);
+
   // Initialize activity editor pre-caching
   useEffect(() => {
     preCacheActivityEditor().catch(console.warn);
@@ -3900,8 +4002,17 @@ function NewActivityPageContent() {
     const loadActivity = async () => {
       try {
         const activityId = searchParams?.get("id");
-        
+
         if (activityId) {
+          // RACE CONDITION FIX: If we already have this activity loaded in state,
+          // skip the API fetch to avoid overwriting user's local edits
+          // This happens when an activity is just created and the URL changes to include the ID
+          if (currentActivityIdRef.current === activityId) {
+            console.log('[AIMS] Activity already loaded in state, skipping API fetch to preserve local edits');
+            setLoading(false);
+            return;
+          }
+
           // OPTIMIZATION: Use cached activity data if available
           console.log('[AIMS] Loading activity with cache:', activityId);
           
@@ -3999,9 +4110,9 @@ function NewActivityPageContent() {
             lastSyncTime: data.lastSyncTime || "",
             syncStatus: data.syncStatus || "not_synced",
             autoSyncFields: data.autoSyncFields || [],
-            activityScope: data.activityScope || "4",
+            activityScope: data.activityScope || "",
             language: data.language || "en",
-            hierarchy: data.hierarchy || "1",
+            hierarchy: data.hierarchy || undefined,
             // Budget status fields
             budgetStatus: data.budgetStatus || data.budget_status || "unknown",
             onBudgetPercentage: data.onBudgetPercentage ?? data.on_budget_percentage ?? null,
@@ -4747,7 +4858,7 @@ function NewActivityPageContent() {
         ...general,
         partnerId: general.otherIdentifier || "",
         iatiId: general.iatiIdentifier || null, // Map iatiIdentifier to iatiId for API
-        activityScope: general.activityScope || "4",
+        activityScope: general.activityScope || "",
         publicationStatus: publish ? "published" : (general.publicationStatus || "draft"),
         user: user ? { id: user.id } : undefined,
       };

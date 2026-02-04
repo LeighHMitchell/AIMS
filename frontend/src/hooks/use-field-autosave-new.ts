@@ -2,7 +2,7 @@ import { useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { setFieldSaved, isFieldSaved, clearFieldSaved } from '@/utils/persistentSave';
 import { toast } from 'sonner';
 import { invalidateActivityCache } from '@/lib/activity-cache';
-import { apiFetch, cancelAllReads } from '@/lib/api-fetch';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Utility function to check if HTML content is effectively empty
 function isEmptyHtmlContent(content: any): boolean {
@@ -96,13 +96,25 @@ export function useFieldAutosave(
   const retryCountRef = useRef(0);
   const isUserInitiatedRef = useRef(false);
 
+  // Re-check localStorage when activityId or userId become available after initial mount
+  // This fixes the race condition where the hook mounts before these values are ready
+  useEffect(() => {
+    if (activityId && activityId !== 'NEW' && userId) {
+      const saved = isFieldSaved(activityId, userId, fieldName);
+      if (saved && !isPersistentlySaved) {
+        console.log(`[FieldAutosave] Re-checked localStorage, found saved state for field: ${fieldName}`);
+        setIsPersistentlySaved(true);
+      }
+    }
+  }, [activityId, userId, fieldName, isPersistentlySaved]);
+
   // Reset persistent saved state when switching to NEW activity
   useEffect(() => {
     if (activityId === 'NEW' && isPersistentlySaved) {
       console.log(`[FieldAutosave] Resetting persistent saved state for NEW activity - field: ${fieldName}`);
       setIsPersistentlySaved(false);
     }
-    
+
     // Clear any stale localStorage entries for NEW activities
     if (activityId === 'NEW' && userId) {
       const savedKey = `saved_NEW_${userId}_${fieldName}`;
@@ -218,10 +230,9 @@ export function useFieldAutosave(
       console.log(`[FieldAutosave] Making request to ${endpoint}`);
       console.log('[FieldAutosave] Request body:', JSON.stringify(requestBody, null, 2));
 
-      // Cancel ALL pending read requests before making save
-      // This ensures saves aren't blocked by competing API calls
-      cancelAllReads();
-      console.log(`[FieldAutosave] Cancelled all pending read requests before save`);
+      // Note: We no longer cancel all read requests before saves.
+      // The lazy loading and request queue priority system should prevent overload.
+      // Aggressive cancellation was causing "Fetch is aborted" errors and data corruption.
 
       // Create a timeout promise that rejects after 60 seconds for image uploads, 10s for new activities, 20s for updates
       const timeoutDuration = isImageField ? 60000 : (isNewActivity ? 10000 : 20000);

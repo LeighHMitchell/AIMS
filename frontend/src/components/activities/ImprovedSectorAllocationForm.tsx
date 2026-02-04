@@ -644,23 +644,19 @@ export default function ImprovedSectorAllocationForm({
   const calculateValidation = (allocs: SectorAllocation[], showEmptyWarning: boolean = true): SectorValidation => {
     const errors: string[] = [];
     const totalPercentage = allocs.reduce((sum, a) => sum + (a.percentage || 0), 0);
-    
+
     if (showEmptyWarning && allocs.length === 0) {
       errors.push('At least one sector must be selected');
     }
-    
+
     if (allocs.length > 0 && totalPercentage === 0) {
       errors.push('At least one sector must have a percentage greater than 0');
     }
-    
+
     if (totalPercentage > 100) {
       errors.push(`Total percentage (${totalPercentage.toFixed(1)}%) exceeds 100%`);
     }
-    
-    if (totalPercentage < 100 && allocs.length > 0) {
-      errors.push(`Total percentage (${totalPercentage.toFixed(1)}%) is less than 100%`);
-    }
-    
+
     return {
       isValid: errors.length === 0,
       errors,
@@ -1018,6 +1014,7 @@ export default function ImprovedSectorAllocationForm({
                 currency=""
                 suffix="%"
                 subtitle="Total sector allocation"
+                variant={totalAllocated > 100 ? 'error' : 'default'}
               />
             </TooltipTrigger>
             <TooltipContent>
@@ -1148,7 +1145,7 @@ export default function ImprovedSectorAllocationForm({
                             variant="outline" 
                             size="sm"
                             onClick={clearAll}
-                            className="text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 active:text-red-600 focus-visible:text-red-600"
+                            className="text-xs text-[#DC2625] border-[#DC2625]/30 hover:bg-[#DC2625]/10 hover:text-[#DC2625] active:text-[#DC2625] focus-visible:text-[#DC2625]"
                             disabled={isLocked}
                           >
                             <Trash2 className="h-3 w-3 mr-1" />
@@ -1166,7 +1163,7 @@ export default function ImprovedSectorAllocationForm({
             </CardHeader>
             <CardContent className="p-0">
               <div className="rounded-lg border overflow-hidden">
-                <Table>
+                <Table className="table-fixed w-full">
                   <TableHeader>
                     <TableRow className="bg-gray-50">
                       <SortableHeader field="category">Sector Category</SortableHeader>
@@ -1195,191 +1192,44 @@ export default function ImprovedSectorAllocationForm({
                           key={allocation.id}
                           className={cn(
                             "hover:bg-gray-50 transition-colors duration-150",
-                            allocation.percentage === 0 && "bg-red-50 hover:bg-red-100"
+                            allocation.percentage === 0 && "bg-[#DC2625]/10 hover:bg-[#DC2625]/15"
                           )}
                         >
                           {/* Sector Category Code and Name */}
                           <TableCell className="py-2 text-sm">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="cursor-help flex items-center gap-2 whitespace-nowrap">
-                                    <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{categoryGroupCode}</span>
-                                    <span>{categoryGroupName}</span>
-                                    <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 transition-colors duration-150 flex-shrink-0" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent 
-                                  side="top" 
-                                  className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
-                                  sideOffset={8}
-                                >
-                                  <div className="space-y-3">
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</span>
-                                        <span className="text-sm font-semibold text-gray-900">{categoryGroupName}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Sector</span>
-                                        <span className="text-sm font-semibold text-gray-900">{sectorName.replace(/^\d{3}\s*-\s*/, '')}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Sub-sector</span>
-                                        <span className="text-sm font-semibold text-gray-900">{subSectorName}</span>
-                                      </div>
-                                    </div>
-                                    <div className="pt-2 border-t border-gray-100">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Allocation</span>
-                                        <span className="text-lg font-bold text-gray-900">{allocation.percentage}%</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{categoryGroupCode}</span>{' '}
+                            {categoryGroupName}
                           </TableCell>
-                          
+
                           {/* Sector Code and Name */}
                           <TableCell className="py-2 text-sm">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="cursor-help flex items-center gap-2 whitespace-nowrap">
-                                    <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{sectorCode}</span>
-                                    <span>{sectorName.replace(/^\d{3}\s*-\s*/, '')}</span>
-                                    <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 transition-colors duration-150 flex-shrink-0" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent 
-                                  side="top" 
-                                  className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
-                                  sideOffset={8}
-                                >
-                                  <div className="space-y-3">
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</span>
-                                        <span className="text-sm font-semibold text-gray-900">{categoryGroupName}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Sector</span>
-                                        <span className="text-sm font-semibold text-gray-900">{sectorName.replace(/^\d{3}\s*-\s*/, '')}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Sub-sector</span>
-                                        <span className="text-sm font-semibold text-gray-900">{subSectorName}</span>
-                                      </div>
-                                    </div>
-                                    <div className="pt-2 border-t border-gray-100">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Allocation</span>
-                                        <span className="text-lg font-bold text-gray-900">{allocation.percentage}%</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{sectorCode}</span>{' '}
+                            {sectorName.replace(/^\d{3}\s*-\s*/, '')}
                           </TableCell>
-                          
+
                           {/* Sub-sector Code and Name */}
                           <TableCell className="py-2 text-sm">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="cursor-help flex items-center gap-2 whitespace-nowrap">
-                                    <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{subSectorCode}</span>
-                                    <span>{subSectorName}</span>
-                                    <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 transition-colors duration-150 flex-shrink-0" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent 
-                                  side="top" 
-                                  className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
-                                  sideOffset={8}
-                                >
-                                  <div className="space-y-3">
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</span>
-                                        <span className="text-sm font-semibold text-gray-900">{categoryGroupName}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Sector</span>
-                                        <span className="text-sm font-semibold text-gray-900">{sectorName.replace(/^\d{3}\s*-\s*/, '')}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Sub-sector</span>
-                                        <span className="text-sm font-semibold text-gray-900">{subSectorName}</span>
-                                      </div>
-                                    </div>
-                                    <div className="pt-2 border-t border-gray-100">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Allocation</span>
-                                        <span className="text-lg font-bold text-gray-900">{allocation.percentage}%</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{subSectorCode}</span>{' '}
+                            {subSectorName}
                           </TableCell>
                           
                           {/* Percentage Input */}
                           <TableCell className="py-2">
                             <div className="flex items-center gap-5">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="cursor-help">
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        step="0.001"
-                                        value={formatPercentageDisplay(allocation.percentage || 0)}
-                                        onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
-                                        disabled={isLocked}
-                                        className={cn(
-                                          "w-24 h-8 text-sm text-center font-mono p-2",
-                                          allocation.percentage === 0 && "border-red-300",
-                                          isLocked && "bg-gray-100 cursor-not-allowed"
-                                        )}
-                                      />
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent 
-                                    side="top" 
-                                    className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg"
-                                    sideOffset={8}
-                                  >
-                                    <div className="space-y-3">
-                                      <div className="space-y-2">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</span>
-                                          <span className="text-sm font-semibold text-gray-900">{categoryGroupName}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Sector</span>
-                                          <span className="text-sm font-semibold text-gray-900">{sectorName.replace(/^\d{3}\s*-\s*/, '')}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Sub-sector</span>
-                                          <span className="text-sm font-semibold text-gray-900">{subSectorName}</span>
-                                        </div>
-                                      </div>
-                                      <div className="pt-2 border-t border-gray-100">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Allocation</span>
-                                          <span className="text-lg font-bold text-gray-900">{allocation.percentage}%</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.001"
+                                value={formatPercentageDisplay(allocation.percentage || 0)}
+                                onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
+                                disabled={isLocked}
+                                className={cn(
+                                  "w-24 h-8 text-sm text-center font-mono p-2",
+                                  allocation.percentage === 0 && "border-[#DC2625]/40",
+                                  isLocked && "bg-gray-100 cursor-not-allowed"
+                                )}
+                              />
                               {/* Save Status Icon */}
                               {allocationStatus[allocation.id] === 'saving' && (
                                 <Loader2 className="h-3 w-3 animate-spin text-orange-500" />
@@ -1388,7 +1238,7 @@ export default function ImprovedSectorAllocationForm({
                                 <CheckCircle className="h-3 w-3 text-green-600" />
                               )}
                               {allocationStatus[allocation.id] === 'error' && (
-                                <AlertCircle className="h-3 w-3 text-red-600" />
+                                <AlertCircle className="h-3 w-3 text-[#DC2625]" />
                               )}
                             </div>
                           </TableCell>
@@ -1400,7 +1250,7 @@ export default function ImprovedSectorAllocationForm({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeSector(allocation.id)}
-                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="h-6 w-6 p-0 text-[#DC2625] hover:text-[#DC2625] hover:bg-[#DC2625]/10"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -1412,7 +1262,7 @@ export default function ImprovedSectorAllocationForm({
                     
                     {/* Unallocated Row */}
                     {totalUnallocated > 0 && (
-                      <TableRow className="text-red-600 bg-red-50 border-red-200">
+                      <TableRow className="text-[#DC2625] bg-[#DC2625]/10 border-[#DC2625]/30">
                         <TableCell colSpan={3} className="py-2 px-4 font-medium">
                           Unallocated
                         </TableCell>

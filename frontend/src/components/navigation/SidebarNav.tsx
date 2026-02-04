@@ -203,12 +203,14 @@ export function SidebarNav({
                 <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuLabel>Create Activity</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push("/activities/new")}>
-                    <FolderPlus className="mr-2 h-4 w-4" />
-                    <div className="flex flex-col">
-                      <span className="font-medium">Full Activity Editor</span>
-                      <span className="text-xs text-muted-foreground">Complete data entry</span>
-                    </div>
+                  <DropdownMenuItem asChild>
+                    <Link href="/activities/new" className="flex items-center cursor-pointer">
+                      <FolderPlus className="mr-2 h-4 w-4" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">Full Activity Editor</span>
+                        <span className="text-xs text-muted-foreground">Complete data entry</span>
+                      </div>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowQuickAddModal(true)}>
                     <Zap className="mr-2 h-4 w-4" />
