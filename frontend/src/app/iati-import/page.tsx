@@ -39,6 +39,7 @@ import { IATIImportSkeleton } from '@/components/skeletons'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/api-fetch';
+import BulkImportWizard from '@/components/iati/bulk-import/BulkImportWizard'
 
 interface ImportSummary {
   activities: number
@@ -652,7 +653,7 @@ export default function IATIImportPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto p-6 max-w-6xl">
+      <div className="container mx-auto p-6 max-w-screen-xl">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">IATI Import Tool</h1>
           <p className="text-gray-600 mt-2">Sequential import process for IATI data</p>
@@ -663,6 +664,10 @@ export default function IATIImportPage() {
             <TabsTrigger value="import">
               <Upload className="h-4 w-4 mr-2" />
               Import
+            </TabsTrigger>
+            <TabsTrigger value="bulk-import">
+              <Database className="h-4 w-4 mr-2" />
+              Bulk Import
             </TabsTrigger>
             <TabsTrigger value="history">
               <History className="h-4 w-4 mr-2" />
@@ -1564,6 +1569,10 @@ export default function IATIImportPage() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="bulk-import" className="space-y-6">
+            <BulkImportWizard />
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">

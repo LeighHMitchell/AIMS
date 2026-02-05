@@ -1,6 +1,27 @@
 {
-  "currentVersion": "1.15.0",
+  "currentVersion": "1.16.0",
   "releases": [
+    {
+      "version": "1.16.0",
+      "date": "2026-02-05",
+      "changes": [
+        "Country Emergencies management — admin panel for creating and managing country-identified emergencies (Vocabulary 98)",
+        "Emergency searchable dropdown in Humanitarian Scopes for quick emergency selection with auto-populated narratives",
+        "IATI Bulk Import wizard for streamlined multi-activity imports from the IATI Datastore",
+        "Organization-scoping validation for IATI imports prevents cross-organization data import",
+        "New Country/Region tab added to activity editor workflow between Humanitarian and Locations",
+        "Next button added for section-to-section navigation without saving in the activity editor",
+        "Location table actions redesigned — dropdown menus replaced with inline edit/delete buttons and checkmark indicators",
+        "3D/2D view toggle, reset button, and satellite/HOT tile layer options added to location maps",
+        "Scroll zoom disabled by default on activity location heatmaps for smoother page scrolling",
+        "Participating organizations section redesigned with visual checkmarks for saved entries",
+        "Humanitarian scope form improved with 3-column layout, emergency details display, and save indicators",
+        "Countries & Regions tables updated with consistent edit icons and checkmark indicators for saved rows",
+        "Dialog focus trapping fixed to allow popover interactions (e.g. date pickers) inside modals",
+        "Popover components updated with pointer-events-auto for reliable click handling",
+        "Humanitarian flag and participating org count now persist correctly from the basic API endpoint"
+      ]
+    },
     {
       "version": "1.15.0",
       "date": "2026-02-04",

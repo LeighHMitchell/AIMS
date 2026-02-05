@@ -4,12 +4,13 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Users, Loader2, ChevronUp, ChevronDown, Building2 } from 'lucide-react';
+
+import { Plus, Edit, Trash2, Users, Loader2, ChevronUp, ChevronDown, Building2, HelpCircle, CheckCircle2 } from 'lucide-react';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ParticipatingOrgModal, ParticipatingOrgData } from '@/components/modals/ParticipatingOrgModal';
 import { useParticipatingOrganizations } from '@/hooks/use-participating-organizations';
+import { getSectionHelpText } from '@/components/activities/groups/SectionHeader';
 import { toast } from 'sonner';
 import { getOrganizationRoleName } from '@/data/iati-organization-roles';
 import { getOrganizationTypeName } from '@/data/iati-organization-types';
@@ -49,36 +50,19 @@ export default function OrganisationsSection({
     onError: (error) => toast.error(error)
   });
 
-  // Track organization count changes
-  const stableOrgsCount = useRef(participatingOrganizations.length);
-  const notifyTimeoutRef = useRef<NodeJS.Timeout>();
+  // Track organization count changes - notify parent immediately
+  const prevCountRef = useRef(participatingOrganizations.length);
 
   useEffect(() => {
-    // Clear any pending notification
-    if (notifyTimeoutRef.current) {
-      clearTimeout(notifyTimeoutRef.current);
-    }
-
-    // Only proceed if activityId exists and we have participating orgs data
     if (!activityId || !onParticipatingOrganizationsChange) return;
 
     const currentCount = participatingOrganizations.length;
-    
-    // Only notify if count has actually changed
-    if (stableOrgsCount.current !== currentCount) {
-      // Debounce the notification to prevent rapid updates
-      notifyTimeoutRef.current = setTimeout(() => {
-        console.log('[OrganisationsSection] Notifying parent of organization count change:', stableOrgsCount.current, '->', currentCount);
-        onParticipatingOrganizationsChange(currentCount);
-        stableOrgsCount.current = currentCount;
-      }, 300);
-    }
 
-    return () => {
-      if (notifyTimeoutRef.current) {
-        clearTimeout(notifyTimeoutRef.current);
-      }
-    };
+    if (prevCountRef.current !== currentCount) {
+      console.log('[OrganisationsSection] Notifying parent of organization count change:', prevCountRef.current, '->', currentCount);
+      prevCountRef.current = currentCount;
+      onParticipatingOrganizationsChange(currentCount);
+    }
   }, [participatingOrganizations.length, onParticipatingOrganizationsChange, activityId]);
 
   const handleAdd = () => {
@@ -190,16 +174,6 @@ export default function OrganisationsSection({
     }
   };
 
-  const getRoleBadgeColor = (roleCode: number) => {
-    const colors: Record<number, string> = {
-      1: 'bg-yellow-100 text-yellow-800 border-yellow-300',     // Funding
-      2: 'bg-purple-100 text-purple-800 border-purple-300',     // Accountable/Government
-      3: 'bg-blue-100 text-blue-800 border-blue-300',           // Extending
-      4: 'bg-green-100 text-green-800 border-green-300'         // Implementing
-    };
-    return colors[roleCode] || 'bg-gray-100 text-gray-800 border-gray-300';
-  };
-
   const handleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -250,7 +224,10 @@ export default function OrganisationsSection({
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-2xl font-semibold text-gray-900">Participating Organisations</CardTitle>
+            </div>
             <div className="h-9 w-40 bg-gray-200 animate-pulse rounded-md" />
           </div>
         </CardHeader>
@@ -311,7 +288,13 @@ export default function OrganisationsSection({
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-2xl font-semibold text-gray-900">Participating Organisations</CardTitle>
+              <HelpTextTooltip content={getSectionHelpText('organisations')}>
+                <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+              </HelpTextTooltip>
+            </div>
             <Button onClick={handleAdd} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Add Organization
@@ -320,16 +303,12 @@ export default function OrganisationsSection({
         </CardHeader>
         <CardContent>
           {participatingOrganizations.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-white">
               <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p className="text-gray-600 font-medium mb-2">No participating organizations added yet</p>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-500">
                 Add organizations to define who is funding, implementing, or managing this activity
               </p>
-              <Button onClick={handleAdd} variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Add First Organization
-              </Button>
             </div>
           ) : (
             <>
@@ -390,12 +369,11 @@ export default function OrganisationsSection({
                                 </div>
                               )}
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="font-medium text-gray-900 truncate">
+                            <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                                 {participatingOrg.organization_id ? (
                                   <Link
                                     href={`/organizations/${participatingOrg.organization_id}`}
-                                    className="hover:text-gray-700 transition-colors"
+                                    className="font-medium text-gray-900 hover:text-gray-700 transition-colors"
                                   >
                                     {participatingOrg.narrative ||
                                      participatingOrg.organization?.name ||
@@ -404,7 +382,7 @@ export default function OrganisationsSection({
                                      ` (${participatingOrg.organization.acronym})`}
                                   </Link>
                                 ) : (
-                                  <span>
+                                  <span className="font-medium text-gray-900">
                                     {participatingOrg.narrative ||
                                      participatingOrg.organization?.name ||
                                      'Unknown Organization'}
@@ -412,22 +390,21 @@ export default function OrganisationsSection({
                                      ` (${participatingOrg.organization.acronym})`}
                                   </span>
                                 )}
-                              </div>
                               {(participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id) && (
-                                <div className="text-xs text-gray-500 font-mono mt-1">
+                                <span className="text-xs text-gray-500 font-mono bg-gray-100 px-1.5 py-0.5 rounded">
                                   {participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id}
-                                </div>
+                                </span>
                               )}
-          </div>
+                              {participatingOrg.id && (
+                                <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={`${getRoleBadgeColor(participatingOrg.iati_role_code)} border`}
-                          >
+                          <span className="text-sm text-gray-700">
                             {getOrganizationRoleName(participatingOrg.iati_role_code)}
-                          </Badge>
+                          </span>
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-gray-600">

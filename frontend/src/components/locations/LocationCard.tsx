@@ -11,6 +11,7 @@ import {
   Trash2,
   Copy,
   MoreVertical,
+  CheckCircle2,
   Building,
   Home,
   Stethoscope,
@@ -231,8 +232,11 @@ export default function LocationCard({
 
               {/* 3. Activity Description */}
               {location.activity_location_description && (
-                <div className="text-sm text-gray-600">
-                  {location.activity_location_description}
+                <div className="text-sm text-gray-600 flex items-start gap-1.5">
+                  <span>{location.activity_location_description}</span>
+                  {location.id && (
+                    <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                  )}
                 </div>
               )}
 

@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar, Activity, Target } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar, Activity, Target, AlertTriangle } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
@@ -22,6 +22,7 @@ import { ProjectReferencesManagement } from "@/components/admin/ProjectReference
 import { EventManagement } from "@/components/calendar/EventManagement"
 import { UserActivityDashboard } from "@/components/admin/UserActivityDashboard"
 import { NationalPrioritiesManagement } from "@/components/admin/NationalPrioritiesManagement"
+import { CountryEmergenciesManagement } from "@/components/admin/CountryEmergenciesManagement"
 import { LoadingText } from "@/components/ui/loading-text"
 function AdminPageContent() {
   const { user, isLoading } = useUser()
@@ -31,7 +32,7 @@ function AdminPageContent() {
   const [activeSubTab, setActiveSubTab] = useState("classifications")
 
   // Valid tab values
-  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "calendar-events"]
+  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events"]
   const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget", "national-priorities"]
 
   useEffect(() => {
@@ -161,6 +162,10 @@ function AdminPageContent() {
               <FileCode2 className="h-4 w-4" />
               Project References
             </TabsTrigger>
+            <TabsTrigger value="emergencies" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <AlertTriangle className="h-4 w-4" />
+              Emergencies
+            </TabsTrigger>
             <TabsTrigger value="calendar-events" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Calendar className="h-4 w-4" />
               Calendar Events
@@ -244,6 +249,10 @@ function AdminPageContent() {
 
           <TabsContent value="project-references" className="space-y-6">
             <ProjectReferencesManagement />
+          </TabsContent>
+
+          <TabsContent value="emergencies" className="space-y-6">
+            <CountryEmergenciesManagement />
           </TabsContent>
 
           <TabsContent value="calendar-events" className="space-y-6">

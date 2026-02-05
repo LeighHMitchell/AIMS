@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-CRS-ADD-001</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>CRS-add Financing Terms Test Activity</narrative>
+    </title>
+    <description type="1">
+      <narrative>Activity with comprehensive CRS-add financing terms data</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date type="1" iso-date="2024-01-01"/>
+    <activity-date type="3" iso-date="2034-12-31"/>
+
+    <!-- CRS-add element with full financing terms -->
+    <crs-add>
+      <!-- Loan terms -->
+      <loan-terms rate-1="2.5" rate-2="1.5">
+        <repayment-type code="1"/>
+        <repayment-plan code="4"/>
+        <commitment-date iso-date="2024-01-15"/>
+        <repayment-first-date iso-date="2025-01-15"/>
+        <repayment-final-date iso-date="2034-01-15"/>
+      </loan-terms>
+
+      <!-- OECD CRS Flags -->
+      <other-flags code="1" significance="1"/>
+      <other-flags code="2" significance="0"/>
+      <other-flags code="3" significance="1"/>
+      <other-flags code="4" significance="0"/>
+
+      <!-- Loan status entries (yearly) -->
+      <loan-status year="2024" currency="USD" value-date="2024-12-31">
+        <interest-received>12500</interest-received>
+        <principal-outstanding>500000</principal-outstanding>
+        <principal-arrears>0</principal-arrears>
+        <interest-arrears>0</interest-arrears>
+      </loan-status>
+      <loan-status year="2025" currency="USD" value-date="2025-12-31">
+        <interest-received>11875</interest-received>
+        <principal-outstanding>475000</principal-outstanding>
+        <principal-arrears>0</principal-arrears>
+        <interest-arrears>0</interest-arrears>
+      </loan-status>
+
+      <!-- Channel code -->
+      <channel-code>11000</channel-code>
+    </crs-add>
+
+    <!-- Sample transaction -->
+    <transaction>
+      <transaction-type code="2"/>
+      <transaction-date iso-date="2024-01-15"/>
+      <value currency="USD" value-date="2024-01-15">500000</value>
+      <description><narrative>Loan commitment</narrative></description>
+      <finance-type code="410"/>
+    </transaction>
+  </iati-activity>
+</iati-activities>

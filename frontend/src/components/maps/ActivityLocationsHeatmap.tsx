@@ -56,10 +56,56 @@ interface ActivityLocationsHeatmapProps {
 
 type ViewMode = 'markers' | 'heatmap'
 
-type MapStyleKey = 'carto_light' | 'carto_voyager' | 'osm_liberty'
+type MapStyleKey = 'carto_light' | 'carto_voyager' | 'hot' | 'osm_liberty' | 'satellite_imagery'
+
+// HOT (Humanitarian OpenStreetMap Team) raster tile style
+const HOT_STYLE = {
+  version: 8 as const,
+  sources: {
+    'hot-osm': {
+      type: 'raster' as const,
+      tiles: [
+        '/api/tiles/hot/{z}/{x}/{y}.png'
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team',
+      maxzoom: 19
+    }
+  },
+  layers: [{
+    id: 'hot-osm-layer',
+    type: 'raster' as const,
+    source: 'hot-osm',
+    minzoom: 0,
+    maxzoom: 22
+  }]
+};
+
+// Satellite imagery raster tile style
+const SATELLITE_STYLE = {
+  version: 8 as const,
+  sources: {
+    'esri-satellite': {
+      type: 'raster' as const,
+      tiles: [
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+      ],
+      tileSize: 256,
+      attribution: '© Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+      maxzoom: 19
+    }
+  },
+  layers: [{
+    id: 'esri-satellite-layer',
+    type: 'raster' as const,
+    source: 'esri-satellite',
+    minzoom: 0,
+    maxzoom: 22
+  }]
+};
 
 // Map style configurations for MapLibre GL
-const MAP_STYLES: Record<MapStyleKey, { name: string; light: string; dark: string }> = {
+const MAP_STYLES: Record<MapStyleKey, { name: string; light: string | object; dark: string | object }> = {
   carto_light: {
     name: 'Streets (Light)',
     light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
@@ -70,10 +116,20 @@ const MAP_STYLES: Record<MapStyleKey, { name: string; light: string; dark: strin
     light: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
     dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   },
+  hot: {
+    name: 'Humanitarian (HOT)',
+    light: HOT_STYLE,
+    dark: HOT_STYLE,
+  },
   osm_liberty: {
     name: 'OpenStreetMap Liberty',
     light: 'https://tiles.openfreemap.org/styles/liberty',
     dark: 'https://tiles.openfreemap.org/styles/liberty',
+  },
+  satellite_imagery: {
+    name: 'Satellite Imagery',
+    light: SATELLITE_STYLE,
+    dark: SATELLITE_STYLE,
   },
 }
 
@@ -316,13 +372,14 @@ export default function ActivityLocationsHeatmap({
           {/* MapLibre Map */}
           <Map
             styles={{
-              light: MAP_STYLES[mapStyle].light,
-              dark: MAP_STYLES[mapStyle].dark,
+              light: MAP_STYLES[mapStyle].light as string | object,
+              dark: MAP_STYLES[mapStyle].dark as string | object,
             }}
             center={[homeCountryCenter[1], homeCountryCenter[0]]} // MapLibre uses [lng, lat]
             zoom={homeCountryZoom}
             minZoom={2}
             maxZoom={18}
+            scrollZoom={false}
           >
             {/* Controls Bar - positioned above map */}
             <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center gap-2">

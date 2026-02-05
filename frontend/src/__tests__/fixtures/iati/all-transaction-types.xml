@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-TX-TYPES-001</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Transaction Types Test Activity</narrative>
+    </title>
+    <activity-status code="2"/>
+
+    <!-- Type 1: Incoming Funds -->
+    <transaction>
+      <transaction-type code="1"/>
+      <transaction-date iso-date="2024-01-15"/>
+      <value currency="USD" value-date="2024-01-15">1000000</value>
+      <description><narrative>Incoming funds from donor</narrative></description>
+      <provider-org ref="DONOR-001"><narrative>Donor Organization</narrative></provider-org>
+      <receiver-org ref="TEST-ORG"><narrative>Test Organization</narrative></receiver-org>
+    </transaction>
+
+    <!-- Type 2: Outgoing Commitment -->
+    <transaction>
+      <transaction-type code="2"/>
+      <transaction-date iso-date="2024-02-15"/>
+      <value currency="USD" value-date="2024-02-15">500000</value>
+      <description><narrative>Commitment to implementing partner</narrative></description>
+    </transaction>
+
+    <!-- Type 3: Disbursement -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-03-15"/>
+      <value currency="USD" value-date="2024-03-15">250000</value>
+      <description><narrative>First disbursement</narrative></description>
+      <disbursement-channel code="1"/>
+    </transaction>
+
+    <!-- Type 4: Expenditure -->
+    <transaction>
+      <transaction-type code="4"/>
+      <transaction-date iso-date="2024-04-15"/>
+      <value currency="USD" value-date="2024-04-15">100000</value>
+      <description><narrative>Project expenditure</narrative></description>
+    </transaction>
+
+    <!-- Type 5: Interest Payment -->
+    <transaction>
+      <transaction-type code="5"/>
+      <transaction-date iso-date="2024-05-15"/>
+      <value currency="USD" value-date="2024-05-15">5000</value>
+      <description><narrative>Interest payment on loan</narrative></description>
+    </transaction>
+
+    <!-- Type 6: Loan Repayment -->
+    <transaction>
+      <transaction-type code="6"/>
+      <transaction-date iso-date="2024-06-15"/>
+      <value currency="USD" value-date="2024-06-15">50000</value>
+      <description><narrative>Principal repayment</narrative></description>
+    </transaction>
+
+    <!-- Type 7: Reimbursement -->
+    <transaction>
+      <transaction-type code="7"/>
+      <transaction-date iso-date="2024-07-15"/>
+      <value currency="USD" value-date="2024-07-15">25000</value>
+      <description><narrative>Reimbursement for costs</narrative></description>
+    </transaction>
+
+    <!-- Type 8: Purchase of Equity -->
+    <transaction>
+      <transaction-type code="8"/>
+      <transaction-date iso-date="2024-08-15"/>
+      <value currency="USD" value-date="2024-08-15">200000</value>
+      <description><narrative>Equity purchase</narrative></description>
+    </transaction>
+
+    <!-- Type 9: Sale of Equity -->
+    <transaction>
+      <transaction-type code="9"/>
+      <transaction-date iso-date="2024-09-15"/>
+      <value currency="USD" value-date="2024-09-15">150000</value>
+      <description><narrative>Equity sale</narrative></description>
+    </transaction>
+
+    <!-- Type 11: Incoming Commitment -->
+    <transaction>
+      <transaction-type code="11"/>
+      <transaction-date iso-date="2024-10-15"/>
+      <value currency="USD" value-date="2024-10-15">750000</value>
+      <description><narrative>Incoming commitment from donor</narrative></description>
+    </transaction>
+
+    <!-- Type 12: Outgoing Pledge -->
+    <transaction>
+      <transaction-type code="12"/>
+      <transaction-date iso-date="2024-11-15"/>
+      <value currency="USD" value-date="2024-11-15">300000</value>
+      <description><narrative>Pledge to partner</narrative></description>
+    </transaction>
+
+    <!-- Type 13: Incoming Pledge -->
+    <transaction>
+      <transaction-type code="13"/>
+      <transaction-date iso-date="2024-12-15"/>
+      <value currency="USD" value-date="2024-12-15">400000</value>
+      <description><narrative>Pledge received</narrative></description>
+    </transaction>
+  </iati-activity>
+</iati-activities>

@@ -25,7 +25,7 @@ DialogOverlay.displayName = "DialogOverlay"
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, onPointerDownOutside, onInteractOutside, ...props }, ref) => (
+>(({ className, onPointerDownOutside, onInteractOutside, onFocusOutside, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -49,6 +49,14 @@ const DialogContent = React.forwardRef<
           e.preventDefault();
         }
         onInteractOutside?.(e);
+      }}
+      onFocusOutside={(e) => {
+        // Prevent dialog focus trap from stealing focus from popover content
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-popover-content]')) {
+          e.preventDefault();
+        }
+        onFocusOutside?.(e);
       }}
       {...props}
     />

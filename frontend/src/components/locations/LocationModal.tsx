@@ -1193,11 +1193,7 @@ const autoPopulateIatiFields = useCallback((params: {
                   />
 
                   <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded shadow text-xs text-gray-600">
-                    💡 Click on the map to set coordinates
-                  </div>
-
-                  <div className="absolute top-4 left-4 bg-white/90 p-2 rounded shadow text-xs text-gray-600">
-                    Map: {MAP_LAYERS[currentLayer].name}
+                    Click on the map to set coordinates
                   </div>
                 </div>
               </CardContent>

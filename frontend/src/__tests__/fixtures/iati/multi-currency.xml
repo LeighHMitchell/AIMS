@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity default-currency="EUR">
+    <iati-identifier>TEST-MULTI-CURRENCY-001</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Multi-Currency Test Activity</narrative>
+    </title>
+    <description type="1">
+      <narrative>Activity with transactions in multiple currencies for testing currency conversion</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date type="1" iso-date="2024-01-01"/>
+    <activity-date type="3" iso-date="2025-12-31"/>
+
+    <!-- EUR Transaction (activity default) -->
+    <transaction>
+      <transaction-type code="2"/>
+      <transaction-date iso-date="2024-01-15"/>
+      <value currency="EUR" value-date="2024-01-15">100000</value>
+      <description><narrative>EUR commitment</narrative></description>
+    </transaction>
+
+    <!-- USD Transaction -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-02-15"/>
+      <value currency="USD" value-date="2024-02-15">50000</value>
+      <description><narrative>USD disbursement</narrative></description>
+    </transaction>
+
+    <!-- GBP Transaction -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-03-15"/>
+      <value currency="GBP" value-date="2024-03-15">40000</value>
+      <description><narrative>GBP disbursement</narrative></description>
+    </transaction>
+
+    <!-- JPY Transaction -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-04-15"/>
+      <value currency="JPY" value-date="2024-04-15">5000000</value>
+      <description><narrative>JPY disbursement</narrative></description>
+    </transaction>
+
+    <!-- Transaction missing currency (should default to activity default) -->
+    <transaction>
+      <transaction-type code="4"/>
+      <transaction-date iso-date="2024-05-15"/>
+      <value value-date="2024-05-15">25000</value>
+      <description><narrative>Expenditure without currency</narrative></description>
+    </transaction>
+
+    <!-- CHF Transaction -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-06-15"/>
+      <value currency="CHF" value-date="2024-06-15">45000</value>
+      <description><narrative>CHF disbursement</narrative></description>
+    </transaction>
+
+    <!-- AUD Transaction -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-07-15"/>
+      <value currency="AUD" value-date="2024-07-15">60000</value>
+      <description><narrative>AUD disbursement</narrative></description>
+    </transaction>
+
+    <!-- CAD Transaction -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-08-15"/>
+      <value currency="CAD" value-date="2024-08-15">55000</value>
+      <description><narrative>CAD disbursement</narrative></description>
+    </transaction>
+  </iati-activity>
+</iati-activities>

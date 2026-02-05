@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2024-01-15T10:00:00Z">
+  <iati-activity last-updated-datetime="2024-01-15T09:00:00Z" default-currency="USD" humanitarian="0">
+    <iati-identifier>TEST-AIMS-001</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Test Activity for AIMS Import</narrative>
+    </title>
+    <description type="1">
+      <narrative>This is a test activity description for validating IATI import functionality.</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date type="1" iso-date="2024-01-01"/>
+    <activity-date type="2" iso-date="2024-06-01"/>
+    <activity-date type="3" iso-date="2025-12-31"/>
+    <activity-date type="4" iso-date="2025-12-15"/>
+    <participating-org ref="TEST-FUNDING-ORG" role="1" type="10">
+      <narrative>Test Funding Organization</narrative>
+    </participating-org>
+    <participating-org ref="TEST-IMPL-ORG" role="4" type="21">
+      <narrative>Test Implementing Organization</narrative>
+    </participating-org>
+    <sector vocabulary="1" code="11110" percentage="60">
+      <narrative>Education policy and administrative management</narrative>
+    </sector>
+    <sector vocabulary="1" code="11120" percentage="40">
+      <narrative>Education facilities and training</narrative>
+    </sector>
+    <recipient-country code="MM" percentage="100">
+      <narrative>Myanmar</narrative>
+    </recipient-country>
+    <location ref="LOC-001">
+      <location-reach code="1"/>
+      <name>
+        <narrative>Test Location</narrative>
+      </name>
+      <description>
+        <narrative>A test location in Myanmar</narrative>
+      </description>
+      <point srsName="http://www.opengis.net/def/crs/EPSG/0/4326">
+        <pos>16.8661 96.1951</pos>
+      </point>
+      <exactness code="1"/>
+      <location-class code="2"/>
+    </location>
+    <default-flow-type code="10"/>
+    <default-finance-type code="110"/>
+    <default-aid-type code="C01"/>
+    <default-tied-status code="5"/>
+    <transaction>
+      <transaction-type code="2"/>
+      <transaction-date iso-date="2024-01-15"/>
+      <value currency="USD" value-date="2024-01-15">500000</value>
+      <description>
+        <narrative>Initial commitment</narrative>
+      </description>
+      <provider-org ref="TEST-FUNDING-ORG" type="10">
+        <narrative>Test Funding Organization</narrative>
+      </provider-org>
+      <receiver-org ref="TEST-ORG" type="10">
+        <narrative>Test Organization</narrative>
+      </receiver-org>
+      <flow-type code="10"/>
+      <finance-type code="110"/>
+      <aid-type code="C01"/>
+      <tied-status code="5"/>
+    </transaction>
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-06-15"/>
+      <value currency="USD" value-date="2024-06-15">100000</value>
+      <description>
+        <narrative>First disbursement</narrative>
+      </description>
+      <provider-org ref="TEST-FUNDING-ORG" type="10">
+        <narrative>Test Funding Organization</narrative>
+      </provider-org>
+      <receiver-org ref="TEST-IMPL-ORG" type="21">
+        <narrative>Test Implementing Organization</narrative>
+      </receiver-org>
+      <disbursement-channel code="1"/>
+    </transaction>
+  </iati-activity>
+</iati-activities>

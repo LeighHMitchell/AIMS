@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <!-- Activity missing iati-identifier -->
+  <iati-activity>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Activity Without IATI ID</narrative>
+    </title>
+  </iati-activity>
+</iati-activities>

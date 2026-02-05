@@ -52,6 +52,7 @@ export function ParticipatingOrgModal({
   const { organizations, loading: orgsLoading } = useOrganizations();
   const [saving, setSaving] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   
   // Form state
   const [formData, setFormData] = useState<Partial<ParticipatingOrgData>>({
@@ -240,6 +241,8 @@ export function ParticipatingOrgModal({
               organizations={organizations}
               placeholder="Search for an organization..."
               disabled={orgsLoading || !!editingOrg}
+              open={activeDropdown === 'organization'}
+              onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'organization' : null)}
             />
             {!editingOrg && (
               <p className="text-xs text-gray-500">
@@ -267,6 +270,8 @@ export function ParticipatingOrgModal({
               onValueChange={handleRoleChange}
               placeholder="Select role..."
               searchPlaceholder="Search roles..."
+              open={activeDropdown === 'role'}
+              onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'role' : null)}
             />
           </div>
 

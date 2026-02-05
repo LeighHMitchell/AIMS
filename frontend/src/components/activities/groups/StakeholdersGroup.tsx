@@ -265,12 +265,6 @@ export function StakeholdersGroup({
             ref={organisationsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pb-16"
           >
-            <SectionHeader
-              id="organisations"
-              title={getSectionLabel('organisations')}
-              helpText={getSectionHelpText('organisations')}
-              showDivider={false}
-            />
             {isSectionActive('organisations') || activeSections.has('organisations') ? (
               <OrganisationsSection
                 activityId={activityId}

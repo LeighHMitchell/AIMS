@@ -559,7 +559,7 @@ export function checkHumanitarianTabCompletion(data: {
   
   // Tab is complete if humanitarian flag is set OR if there are scopes
   // (scopes automatically set the flag to true)
-  const isComplete = data.humanitarian === true || (data.humanitarianScopes && data.humanitarianScopes.length > 0)
+  const isComplete = data.humanitarian === true || (Array.isArray(data.humanitarianScopes) && data.humanitarianScopes.length > 0)
   
   if (!isComplete) {
     missingFields.push('humanitarian_data')

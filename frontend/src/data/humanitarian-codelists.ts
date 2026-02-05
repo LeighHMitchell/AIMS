@@ -30,6 +30,13 @@ export const HUMANITARIAN_SCOPE_VOCABULARIES = [
     example: 'FNPL15 (Nepal Flash Appeal 2015)'
   },
   {
+    code: '98',
+    name: 'Country Identified',
+    description: 'Country-specific emergency defined by the host government',
+    url: '',
+    example: 'e.g., MMR-CYCLONE-2024'
+  },
+  {
     code: '99',
     name: 'Reporting Organisation',
     description: 'Custom vocabulary defined by reporting organisation',
@@ -52,7 +59,7 @@ export function getScopeTypeName(code: string): string {
 
 // Validate vocabulary code based on scope type
 export function isValidVocabulary(type: '1' | '2', vocabulary: string): boolean {
-  if (vocabulary === '99') return true; // Custom always valid
+  if (vocabulary === '98' || vocabulary === '99') return true; // Country identified and custom always valid
   if (type === '1') return vocabulary === '1-2'; // Emergency uses GLIDE
   if (type === '2') return vocabulary === '2-1' || vocabulary === '99'; // Appeal uses HRP or custom
   return false;

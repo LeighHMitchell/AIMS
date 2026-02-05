@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity>
+    <iati-identifier>TEST-MALFORMED-001</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization
+    <!-- Missing closing tags and malformed structure -->
+    <title>
+      <narrative>Malformed Activity
+  </iati-activity>
+</iati-activities>

@@ -151,6 +151,7 @@ export function SidebarNav({
       items: [
         { name: "Calendar", href: "/calendar", show: true, underDevelopment: true },
         { name: "Data Clinic", href: "/data-clinic", show: true, underDevelopment: true },
+        { name: "IATI Import", href: "/iati-import", show: !!canCreateActivities, isNew: true },
         { name: "Library", href: "/library", show: true, isNew: true },
         { name: "Build History", href: "/build-history", show: true, isNew: true },
       ]

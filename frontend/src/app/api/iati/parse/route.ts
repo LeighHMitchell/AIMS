@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 import { requireAuth } from '@/lib/auth';
+import { resolveUserOrgScope, matchesOrgScope } from '@/lib/iati/org-scope';
 
 // Force dynamic rendering - critical for production
 export const dynamic = 'force-dynamic';
@@ -219,12 +220,15 @@ function parseDate(raw: any): string | null {
 }
 
 export async function POST(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  if (!supabase || !user) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
+
+  // Resolve the user's organisation and IATI identifiers
+  const orgScope = await resolveUserOrgScope(supabase, user.id);
 
   try {
     const { xmlContent } = await request.json();
@@ -337,6 +341,33 @@ export async function POST(request: NextRequest) {
         actual_end_date: xmlActivity['activity-date']?.find((d: any) => d['@_type'] === '4')?.['@_iso-date'],
         transactions: []
       };
+
+      // Organisation scoping: extract reporting-org and check against user's org
+      const reportingOrg = xmlActivity['reporting-org'];
+      const activityReportingOrgRef = reportingOrg?.['@_ref']?.toString() || '';
+      (activity as any)._reportingOrgRef = activityReportingOrgRef;
+
+      if (orgScope && orgScope.allRefs.length > 0) {
+        if (!matchesOrgScope(orgScope, activityReportingOrgRef)) {
+          // Activity belongs to a different organisation — mark with blocking error
+          const orgMismatchMsg = `Activity reporting-org "${activityReportingOrgRef}" does not match your organisation (${orgScope.organizationName}). Only activities published by your organisation can be imported.`;
+          addIssue(issuesMap, {
+            type: 'missing_required',
+            severity: 'error',
+            message: orgMismatchMsg,
+            activityId: iatiIdentifier,
+            field: 'reporting-org'
+          });
+          (activity as any)._orgMismatch = true;
+          // Also attach directly to the activity for per-activity access
+          (activity as any)._perActivityIssues = (activity as any)._perActivityIssues || [];
+          (activity as any)._perActivityIssues.push({
+            field: 'reporting-org',
+            message: orgMismatchMsg,
+            severity: 'error',
+          });
+        }
+      }
 
       // Parse locations
       const xmlLocations = xmlActivity.location ? ensureArray(xmlActivity.location) : [];
@@ -691,7 +722,14 @@ export async function POST(request: NextRequest) {
       result.existingActivities = allActivities;
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      orgScope: orgScope ? {
+        organizationId: orgScope.organizationId,
+        organizationName: orgScope.organizationName,
+        allRefs: orgScope.allRefs,
+      } : null,
+    });
   } catch (error) {
     console.error('[IATI Parse] Error:', error);
     return NextResponse.json(

@@ -911,7 +911,7 @@ export default function ImprovedSectorAllocationForm({
     <div className="space-y-6">
       {/* Mode Toggle Header */}
       {activityId && (
-        <div className="flex items-center justify-between pb-2 border-b">
+        <div className="flex items-center justify-between pb-2">
           <div className="flex-1">
             <SectorAllocationModeToggle
               activityId={activityId}
@@ -1003,7 +1003,8 @@ export default function ImprovedSectorAllocationForm({
         </Alert>
       )}
 
-      {/* Hero Cards */}
+      {/* Allocation Summary */}
+      <div className="text-base font-semibold leading-none tracking-tight">Allocation Summary</div>
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <TooltipProvider>
           <Tooltip>

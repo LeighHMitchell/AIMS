@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-INVALID-CODES-001</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Activity with Invalid Transaction Codes</narrative>
+    </title>
+    <activity-status code="2"/>
+
+    <!-- Invalid transaction type (10 is not valid) -->
+    <transaction>
+      <transaction-type code="10"/>
+      <transaction-date iso-date="2024-01-15"/>
+      <value currency="USD" value-date="2024-01-15">100000</value>
+      <description><narrative>Invalid type 10</narrative></description>
+    </transaction>
+
+    <!-- Invalid transaction type (99 does not exist) -->
+    <transaction>
+      <transaction-type code="99"/>
+      <transaction-date iso-date="2024-02-15"/>
+      <value currency="USD" value-date="2024-02-15">50000</value>
+      <description><narrative>Invalid type 99</narrative></description>
+    </transaction>
+
+    <!-- Invalid flow type -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-03-15"/>
+      <value currency="USD" value-date="2024-03-15">75000</value>
+      <flow-type code="99"/>
+      <description><narrative>Invalid flow type</narrative></description>
+    </transaction>
+
+    <!-- Invalid finance type -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-04-15"/>
+      <value currency="USD" value-date="2024-04-15">60000</value>
+      <finance-type code="999"/>
+      <description><narrative>Invalid finance type</narrative></description>
+    </transaction>
+
+    <!-- Invalid aid type -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-05-15"/>
+      <value currency="USD" value-date="2024-05-15">40000</value>
+      <aid-type code="Z99"/>
+      <description><narrative>Invalid aid type</narrative></description>
+    </transaction>
+
+    <!-- Invalid tied status -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-06-15"/>
+      <value currency="USD" value-date="2024-06-15">30000</value>
+      <tied-status code="9"/>
+      <description><narrative>Invalid tied status</narrative></description>
+    </transaction>
+
+    <!-- Invalid sector code (not 5 digits) -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-07-15"/>
+      <value currency="USD" value-date="2024-07-15">20000</value>
+      <sector code="111"/>
+      <description><narrative>Invalid sector code</narrative></description>
+    </transaction>
+
+    <!-- Valid transaction for comparison -->
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2024-08-15"/>
+      <value currency="USD" value-date="2024-08-15">50000</value>
+      <flow-type code="10"/>
+      <finance-type code="110"/>
+      <aid-type code="C01"/>
+      <tied-status code="5"/>
+      <description><narrative>Valid transaction</narrative></description>
+    </transaction>
+  </iati-activity>
+</iati-activities>

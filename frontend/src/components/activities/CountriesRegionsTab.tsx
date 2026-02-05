@@ -14,13 +14,15 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useDropdownState } from '@/contexts/DropdownContext';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  Plus, 
-  Trash2, 
-  Globe, 
-  MapPin, 
-  AlertCircle, 
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  Globe,
+  MapPin,
+  AlertCircle,
   CheckCircle,
+  CheckCircle2,
   Search,
   X,
   Loader2,
@@ -1210,7 +1212,7 @@ export default function CountriesRegionsTab({
                         (selectedType !== 'custom' && !selectedItem) ||
                         (selectedType === 'custom' && (!customName.trim() || !customCode.trim()))
                       }
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      className="w-full bg-black hover:bg-gray-800 text-white"
                     variant="default"
                   >
                     <Plus className="h-4 w-4 mr-2" />
@@ -1300,7 +1302,7 @@ export default function CountriesRegionsTab({
                       <TableHead className="w-40">Vocabulary</TableHead>
                       <TableHead className="w-20">Percentage</TableHead>
                       <TableHead className="min-w-48">Narrative</TableHead>
-                      <TableHead className="w-16">Actions</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1321,6 +1323,9 @@ export default function CountriesRegionsTab({
                             {countryAllocation.country.code}
                           </Badge>
                             <span className="text-sm font-medium text-gray-900">{countryAllocation.country.name}</span>
+                            {countryAllocation.id && (
+                              <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-gray-500 text-sm">
@@ -1338,27 +1343,25 @@ export default function CountriesRegionsTab({
                           {countryAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
+                          <div className="flex gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="text-gray-600"
                               onClick={() => editCountry(countryAllocation)}
                               disabled={!canEdit}
-                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                             >
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
+                              <Edit2 className="h-4 w-4" />
                             </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeCountry(countryAllocation.id)}
-                            disabled={!canEdit}
-                              className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500"
+                              onClick={() => removeCountry(countryAllocation.id)}
+                              disabled={!canEdit}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1381,6 +1384,9 @@ export default function CountriesRegionsTab({
                             {regionAllocation.region.code}
                           </Badge>
                             <span className="text-sm font-medium text-gray-900">{regionAllocation.region.name}</span>
+                            {regionAllocation.id && (
+                              <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-gray-500 text-sm">
@@ -1398,27 +1404,25 @@ export default function CountriesRegionsTab({
                           {regionAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-gray-600"
                               onClick={() => editRegion(regionAllocation)}
                               disabled={!canEdit}
-                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                             >
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
+                              <Edit2 className="h-4 w-4" />
                             </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeRegion(regionAllocation.id)}
-                            disabled={!canEdit}
-                              className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500"
+                              onClick={() => removeRegion(regionAllocation.id)}
+                              disabled={!canEdit}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1472,27 +1476,25 @@ export default function CountriesRegionsTab({
                           {customAllocation.narrative || '-'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-gray-600"
                               onClick={() => editCustomGeography(customAllocation)}
-                            disabled={!canEdit}
-                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                              disabled={!canEdit}
                             >
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
+                              <Edit2 className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="text-red-500"
                               onClick={() => removeCustomGeography(customAllocation.id)}
                               disabled={!canEdit}
-                              className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

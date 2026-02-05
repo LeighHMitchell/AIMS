@@ -40,6 +40,7 @@ interface OrganizationComboboxProps {
   onValueChange: (value: string) => void
   placeholder?: string
   allowManualEntry?: boolean
+  disabled?: boolean
   className?: string
   fallbackRef?: string
   /** Callback when an organization with a legacy type code is selected */
@@ -55,6 +56,7 @@ export function OrganizationCombobox({
   value,
   onValueChange,
   placeholder = "Select organization...",
+  disabled = false,
   className,
   fallbackRef,
   onLegacyTypeDetected,
@@ -195,6 +197,7 @@ export function OrganizationCombobox({
             variant="outline"
             role="combobox"
             aria-expanded={open}
+            disabled={disabled}
             className={cn(
               "w-full justify-between font-normal px-4 py-2 text-base h-10 border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
               className

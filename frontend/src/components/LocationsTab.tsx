@@ -8,13 +8,13 @@ import {
   Plus,
   AlertCircle,
   CheckCircle,
+  CheckCircle2,
   Loader2,
   RefreshCw,
   Info,
   LayoutGrid,
   Table as TableIcon,
-  MoreVertical,
-  PencilLine,
+  Edit2,
   Trash2,
   Copy
 } from 'lucide-react';
@@ -40,7 +40,6 @@ import {
   type LocationSchema,
 } from '@/lib/schemas/location';
 import { countries } from '@/data/countries';
-import { Menu } from 'bloom-menu';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface SectorData {
@@ -350,8 +349,9 @@ export default function LocationsTab({
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold">Activity Locations</h3>
+        <h3 className="text-lg font-semibold">Activity Locations</h3>
+
+        <div className="flex items-center gap-2">
           {locations.length > 0 && (
             <div className="flex items-center">
               <Button
@@ -372,9 +372,6 @@ export default function LocationsTab({
               </Button>
             </div>
           )}
-        </div>
-
-        <div className="flex items-center gap-2">
           {canEdit && locations.length > 0 && (
             <Button onClick={handleAddLocation} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -435,7 +432,7 @@ export default function LocationsTab({
           ))}
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -443,7 +440,7 @@ export default function LocationsTab({
                 <TableHead>Coordinates</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Activity Description</TableHead>
-                {canEdit && <TableHead className="w-[60px]">Actions</TableHead>}
+                {canEdit && <TableHead className="w-[100px]">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -482,50 +479,33 @@ export default function LocationsTab({
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-[300px]">
-                      <div className="whitespace-normal break-words">
-                        {location.activity_location_description || location.description || '-'}
+                      <div className="whitespace-normal break-words flex items-start gap-1.5">
+                        <span>{location.activity_location_description || location.description || '-'}</span>
+                        {location.id && (
+                          <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                        )}
                       </div>
                     </TableCell>
                     {canEdit && (
                       <TableCell>
-                        <Menu.Root direction="bottom" anchor="end">
-                          <Menu.Container
-                            buttonSize={32}
-                            menuWidth={160}
-                            menuRadius={12}
-                            className="bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black/5 dark:ring-white/10 relative z-[9999]"
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleEditLocation(location)}
+                            className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                            title="Edit location"
                           >
-                            <Menu.Trigger>
-                              <div className="flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors">
-                                <MoreVertical className="h-4 w-4" />
-                              </div>
-                            </Menu.Trigger>
-                            <Menu.Content className="p-1.5">
-                              <Menu.Item
-                                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors"
-                                onSelect={() => handleEditLocation(location)}
-                              >
-                                <PencilLine className="h-4 w-4" />
-                                Edit
-                              </Menu.Item>
-                              <Menu.Item
-                                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors"
-                                onSelect={() => handleDuplicateLocation(location)}
-                              >
-                                <Copy className="h-4 w-4" />
-                                Duplicate
-                              </Menu.Item>
-                              <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-                              <Menu.Item
-                                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors"
-                                onSelect={() => location.id && handleDeleteLocation(location.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Delete
-                              </Menu.Item>
-                            </Menu.Content>
-                          </Menu.Container>
-                        </Menu.Root>
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+<button
+                            type="button"
+                            onClick={() => location.id && handleDeleteLocation(location.id)}
+                            className="p-1.5 rounded hover:bg-gray-100 text-red-500"
+                            title="Delete location"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>

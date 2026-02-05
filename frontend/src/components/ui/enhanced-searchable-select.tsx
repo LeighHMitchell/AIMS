@@ -31,6 +31,10 @@ interface EnhancedSearchableSelectProps {
   dropdownId?: string; // Unique identifier for this dropdown instance
   side?: "top" | "bottom" | "left" | "right";
   align?: "start" | "center" | "end";
+  /** Controlled open state */
+  open?: boolean;
+  /** Callback when open state changes */
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function EnhancedSearchableSelect({
@@ -46,14 +50,18 @@ export function EnhancedSearchableSelect({
   dropdownId = "enhanced-searchable-select",
   side,
   align = "start",
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: EnhancedSearchableSelectProps) {
   // Use shared dropdown state if dropdownId is provided
   const [localIsOpen, setLocalIsOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
-  // Use dropdown context if available, otherwise use local state
+  // Use controlled state if provided, then dropdown context, then local state
   const dropdownContext = React.useContext(DropdownContext);
-  const { isOpen, setOpen } = dropdownContext && dropdownId !== "enhanced-searchable-select" ? useDropdownState(dropdownId) : {
+  const { isOpen, setOpen } = controlledOpen !== undefined
+    ? { isOpen: controlledOpen, setOpen: (v: boolean) => controlledOnOpenChange?.(v) }
+    : dropdownContext && dropdownId !== "enhanced-searchable-select" ? useDropdownState(dropdownId) : {
     isOpen: localIsOpen,
     setOpen: setLocalIsOpen
   };

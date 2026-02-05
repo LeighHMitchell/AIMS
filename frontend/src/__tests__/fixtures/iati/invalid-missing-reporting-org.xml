@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03">
+  <!-- Activity missing reporting-org -->
+  <iati-activity>
+    <iati-identifier>TEST-MISSING-ORG-001</iati-identifier>
+    <title>
+      <narrative>Activity Without Reporting Org</narrative>
+    </title>
+  </iati-activity>
+</iati-activities>

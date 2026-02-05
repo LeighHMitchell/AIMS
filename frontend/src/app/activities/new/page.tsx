@@ -4162,7 +4162,17 @@ function NewActivityPageContent() {
           setTags(data.tags || []);
           setWorkingGroups(data.workingGroups || []);
           setPolicyMarkers(data.policyMarkers || []);
-          
+
+          // Set humanitarian flag from basic data for tab completion
+          if (data.humanitarian !== undefined) {
+            setHumanitarian(data.humanitarian || false);
+          }
+
+          // Set participating organisations count from basic data for tab completion
+          if (data.participatingOrgsCount !== undefined) {
+            setParticipatingOrgsCount(data.participatingOrgsCount);
+          }
+
           if (data.locations) {
             console.log('[Activity New] Locations data received:', data.locations);
             console.log('[Activity New] Specific locations:', data.locations.specificLocations);
@@ -4560,12 +4570,16 @@ function NewActivityPageContent() {
         isComplete: humanitarianCompletion.isComplete,
         isInProgress: humanitarianCompletion.isInProgress
       } : { isComplete: false, isInProgress: false },
+      "country-region": {
+        isComplete: (countries && countries.length > 0) || (regions && regions.length > 0),
+        isInProgress: false
+      },
 
       // Stakeholders group (lazy loaded)
-      organisations: getStatusForTab('organisations', organizationsCompletion ? {
+      organisations: organizationsCompletion ? {
         isComplete: organizationsCompletion.isComplete,
         isInProgress: organizationsCompletion.isInProgress
-      } : { isComplete: false, isInProgress: false }),
+      } : { isComplete: false, isInProgress: false },
       contacts: getStatusForTab('contacts', contactsCompletion ? {
         isComplete: contactsCompletion.isComplete,
         isInProgress: contactsCompletion.isInProgress
@@ -4655,8 +4669,8 @@ function NewActivityPageContent() {
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
     const sections = [
-      "iati", "xml-import", 
-      "general", "sectors", "humanitarian", "locations",
+      "iati", "xml-import",
+      "general", "sectors", "humanitarian", "country-region", "locations",
       "organisations", "contacts", "focal_points", "linked_activities",
       "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
       "sdg", "country-budget", "tags", "working_groups", "policy_markers",
@@ -4671,8 +4685,8 @@ function NewActivityPageContent() {
   // Helper to get previous section id
   const getPreviousSection = useCallback((currentId: string) => {
     const sections = [
-      "iati", "xml-import", 
-      "general", "sectors", "humanitarian", "locations",
+      "iati", "xml-import",
+      "general", "sectors", "humanitarian", "country-region", "locations",
       "organisations", "contacts", "focal_points", "linked_activities",
       "finances", "planned-disbursements", "budgets", "forward-spending-survey", "results", "capital-spend", "financing-terms", "conditions",
       "sdg", "country-budget", "tags", "working_groups", "policy_markers",
@@ -4983,6 +4997,7 @@ function NewActivityPageContent() {
         { id: "general", label: "General" },
         { id: "sectors", label: "Sectors" },
         { id: "humanitarian", label: "Humanitarian" },
+        { id: "country-region", label: "Country/Region" },
         { id: "locations", label: "Locations" }
       ]
     },
@@ -5528,6 +5543,18 @@ function NewActivityPageContent() {
                       Back
                     </>
                   )}
+                </Button>
+
+                {/* Next Button (no save) */}
+                <Button
+                  variant="outline"
+                  className="px-6 py-3 text-base font-semibold"
+                  onClick={() => nextSection && handleTabChange(nextSection.id)}
+                  disabled={!nextSection || isLastSection || tabLoading || isAnyAutosaveInProgress}
+                  title={isAnyAutosaveInProgress ? "Please wait while saving..." : undefined}
+                >
+                  Next
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
 
                 {/* Save Button - Only show for existing activities */}

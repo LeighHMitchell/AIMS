@@ -1,7 +1,8 @@
 'use client';
 
-import { memo, useEffect, useCallback, useRef } from 'react';
+import { memo, useState, useEffect, useCallback, useRef } from 'react';
 import { Map, MapControls, MapMarker, MarkerContent, MarkerPopup, useMap } from '@/components/ui/map';
+import { Mountain, Map as MapIcon, RotateCcw } from 'lucide-react';
 import type MapLibreGL from 'maplibre-gl';
 import type { LocationSchema } from '@/lib/schemas/location';
 
@@ -116,6 +117,81 @@ function MapRefHandler({ mapRef }: { mapRef: React.RefObject<MapLibreGL.Map | nu
   return null;
 }
 
+// 3D view controller
+function Map3DController({ mapCenter, mapZoom }: { mapCenter: [number, number]; mapZoom: number }) {
+  const { map, isLoaded } = useMap();
+  const [pitch, setPitch] = useState(0);
+  const [bearing, setBearing] = useState(0);
+
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+    const handleMove = () => {
+      setPitch(Math.round(map.getPitch()));
+      setBearing(Math.round(map.getBearing()));
+    };
+    map.on('move', handleMove);
+    return () => { map.off('move', handleMove); };
+  }, [map, isLoaded]);
+
+  const handle3DView = useCallback(() => {
+    map?.easeTo({ pitch: 60, bearing: -20, duration: 1000 });
+  }, [map]);
+
+  const handle2DView = useCallback(() => {
+    map?.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
+  }, [map]);
+
+  const handleReset = useCallback(() => {
+    if (map) {
+      map.flyTo({
+        center: mapCenter,
+        zoom: mapZoom,
+        pitch: 0,
+        bearing: 0,
+        duration: 1500,
+      });
+    }
+  }, [map, mapCenter, mapZoom]);
+
+  const is3DMode = pitch !== 0 || bearing !== 0;
+
+  if (!isLoaded) return null;
+
+  return (
+    <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5">
+      {is3DMode ? (
+        <button
+          type="button"
+          onClick={handle2DView}
+          title="2D View"
+          className="flex items-center gap-1.5 bg-white shadow-md border border-gray-300 rounded-md h-8 px-2.5 text-xs text-gray-700 hover:bg-gray-50"
+        >
+          <MapIcon className="h-3.5 w-3.5" />
+          2D
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handle3DView}
+          title="3D View"
+          className="flex items-center gap-1.5 bg-white shadow-md border border-gray-300 rounded-md h-8 px-2.5 text-xs text-gray-700 hover:bg-gray-50"
+        >
+          <Mountain className="h-3.5 w-3.5" />
+          3D
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={handleReset}
+        title="Reset view"
+        className="flex items-center justify-center bg-white shadow-md border border-gray-300 rounded-md h-8 w-8 text-gray-700 hover:bg-gray-50"
+      >
+        <RotateCcw className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 function LocationMapComponent({
   mapCenter,
   mapZoom,
@@ -151,6 +227,7 @@ function LocationMapComponent({
       <MapControls position="top-right" showZoom />
       <MapRefHandler mapRef={mapRef} />
       <MapClickHandler onMapClick={onMapClick} />
+      <Map3DController mapCenter={mapLibreCenter} mapZoom={mapZoom} />
       
       {/* Existing location markers */}
       {existingLocations

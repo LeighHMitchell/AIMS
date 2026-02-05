@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iati-activities version="2.03" generated-datetime="2024-01-15T10:00:00Z">
+  <!-- Activity 1: Education Project -->
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-MULTI-001</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Education Development Project</narrative>
+    </title>
+    <description type="1">
+      <narrative>Supporting education development in rural areas</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date type="1" iso-date="2024-01-01"/>
+    <activity-date type="3" iso-date="2026-12-31"/>
+    <sector vocabulary="1" code="11110" percentage="100"/>
+    <recipient-country code="MM" percentage="100"/>
+    <transaction>
+      <transaction-type code="2"/>
+      <transaction-date iso-date="2024-01-15"/>
+      <value currency="USD" value-date="2024-01-15">1000000</value>
+    </transaction>
+  </iati-activity>
+
+  <!-- Activity 2: Health Project -->
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-MULTI-002</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Health Infrastructure Project</narrative>
+    </title>
+    <description type="1">
+      <narrative>Building health clinics in underserved communities</narrative>
+    </description>
+    <activity-status code="2"/>
+    <activity-date type="1" iso-date="2024-03-01"/>
+    <activity-date type="3" iso-date="2027-02-28"/>
+    <sector vocabulary="1" code="12110" percentage="100"/>
+    <recipient-country code="MM" percentage="100"/>
+    <transaction>
+      <transaction-type code="2"/>
+      <transaction-date iso-date="2024-03-15"/>
+      <value currency="USD" value-date="2024-03-15">2500000</value>
+    </transaction>
+  </iati-activity>
+
+  <!-- Activity 3: Water & Sanitation -->
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-MULTI-003</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Water and Sanitation Programme</narrative>
+    </title>
+    <description type="1">
+      <narrative>Improving access to clean water and sanitation</narrative>
+    </description>
+    <activity-status code="1"/>
+    <activity-date type="1" iso-date="2025-01-01"/>
+    <activity-date type="3" iso-date="2028-12-31"/>
+    <sector vocabulary="1" code="14010" percentage="70"/>
+    <sector vocabulary="1" code="14020" percentage="30"/>
+    <recipient-country code="MM" percentage="100"/>
+    <transaction>
+      <transaction-type code="11"/>
+      <transaction-date iso-date="2024-06-15"/>
+      <value currency="USD" value-date="2024-06-15">5000000</value>
+    </transaction>
+  </iati-activity>
+
+  <!-- Activity 4: Agriculture -->
+  <iati-activity default-currency="USD">
+    <iati-identifier>TEST-MULTI-004</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Agricultural Development Initiative</narrative>
+    </title>
+    <description type="1">
+      <narrative>Supporting smallholder farmers with modern techniques</narrative>
+    </description>
+    <activity-status code="3"/>
+    <activity-date type="1" iso-date="2022-01-01"/>
+    <activity-date type="2" iso-date="2022-02-15"/>
+    <activity-date type="3" iso-date="2024-12-31"/>
+    <activity-date type="4" iso-date="2024-11-30"/>
+    <sector vocabulary="1" code="31110" percentage="100"/>
+    <recipient-country code="MM" percentage="100"/>
+    <transaction>
+      <transaction-type code="2"/>
+      <transaction-date iso-date="2022-02-15"/>
+      <value currency="USD" value-date="2022-02-15">800000</value>
+    </transaction>
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2022-06-15"/>
+      <value currency="USD" value-date="2022-06-15">400000</value>
+    </transaction>
+    <transaction>
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2023-06-15"/>
+      <value currency="USD" value-date="2023-06-15">400000</value>
+    </transaction>
+  </iati-activity>
+
+  <!-- Activity 5: Humanitarian Response -->
+  <iati-activity default-currency="USD" humanitarian="1">
+    <iati-identifier>TEST-MULTI-005</iati-identifier>
+    <reporting-org ref="TEST-ORG" type="10">
+      <narrative>Test Organization</narrative>
+    </reporting-org>
+    <title>
+      <narrative>Emergency Flood Response</narrative>
+    </title>
+    <description type="1">
+      <narrative>Emergency humanitarian assistance for flood-affected communities</narrative>
+    </description>
+    <activity-status code="4"/>
+    <activity-date type="1" iso-date="2023-07-01"/>
+    <activity-date type="2" iso-date="2023-07-05"/>
+    <activity-date type="3" iso-date="2023-12-31"/>
+    <activity-date type="4" iso-date="2023-12-15"/>
+    <sector vocabulary="1" code="72010" percentage="100"/>
+    <recipient-country code="MM" percentage="100"/>
+    <transaction humanitarian="1">
+      <transaction-type code="1"/>
+      <transaction-date iso-date="2023-07-10"/>
+      <value currency="USD" value-date="2023-07-10">500000</value>
+    </transaction>
+    <transaction humanitarian="1">
+      <transaction-type code="3"/>
+      <transaction-date iso-date="2023-07-15"/>
+      <value currency="USD" value-date="2023-07-15">500000</value>
+    </transaction>
+  </iati-activity>
+</iati-activities>

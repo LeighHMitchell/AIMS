@@ -161,6 +161,12 @@ export async function GET(
       console.log('[AIMS API] Acronym found in database:', activity.acronym);
     }
     
+    // Fetch participating organisations count for tab completion
+    const { count: participatingOrgsCount } = await supabase
+      .from('activity_participating_organizations')
+      .select('id', { count: 'exact', head: true })
+      .eq('activity_id', id);
+
     // Extract sectors
     const sectors = activity.activity_sectors || [];
     
@@ -301,7 +307,8 @@ export async function GET(
       recipient_regions: activity.recipient_regions || [],
       custom_geographies: activity.custom_geographies || [],
       customDates: activity.custom_dates || [],
-      custom_dates: activity.custom_dates || []
+      custom_dates: activity.custom_dates || [],
+      participatingOrgsCount: participatingOrgsCount || 0
     };
     
     console.log('[AIMS API] Basic activity transformed:', transformedActivity.title);

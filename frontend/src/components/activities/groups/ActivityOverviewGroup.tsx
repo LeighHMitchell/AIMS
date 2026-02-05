@@ -408,27 +408,29 @@ export function ActivityOverviewGroup({
             ref={locationsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader 
-              id="locations"
-              title={getSectionLabel('locations')}
-              helpText={getSectionHelpText('locations')}
-              showDivider={false}
-            />
             {isSectionActive('locations') || activeSections.has('locations') ? (
-              <CombinedLocationsTab 
-                specificLocations={specificLocations}
-                coverageAreas={coverageAreas}
-                onSpecificLocationsChange={setSpecificLocations}
-                onCoverageAreasChange={setCoverageAreas}
-                advancedLocations={advancedLocations}
-                onAdvancedLocationsChange={setAdvancedLocations}
-                activityId={general.id}
-                canEdit={permissions?.canEditActivity ?? true}
-                onSubnationalDataChange={setSubnationalBreakdowns}
-                subnationalBreakdowns={subnationalBreakdowns}
-                activityTitle={general.title}
-                activitySector={general.primarySector}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="locations"
+                  title={getSectionLabel('locations')}
+                  helpText={getSectionHelpText('locations')}
+                  showDivider={false}
+                />
+                <CombinedLocationsTab
+                  specificLocations={specificLocations}
+                  coverageAreas={coverageAreas}
+                  onSpecificLocationsChange={setSpecificLocations}
+                  onCoverageAreasChange={setCoverageAreas}
+                  advancedLocations={advancedLocations}
+                  onAdvancedLocationsChange={setAdvancedLocations}
+                  activityId={general.id}
+                  canEdit={permissions?.canEditActivity ?? true}
+                  onSubnationalDataChange={setSubnationalBreakdowns}
+                  subnationalBreakdowns={subnationalBreakdowns}
+                  activityTitle={general.title}
+                  activitySector={general.primarySector}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="locations" />
             )}
