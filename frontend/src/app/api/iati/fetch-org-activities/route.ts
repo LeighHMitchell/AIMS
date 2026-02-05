@@ -3,9 +3,14 @@ import { requireAuth } from '@/lib/auth'
 import { resolveUserOrgScope } from '@/lib/iati/org-scope'
 import { mapDatastoreDocToParsedActivity } from '@/lib/iati/datastore-mapper'
 import crypto from 'crypto'
+import type { ParsedActivity } from '@/components/iati/bulk-import/types'
+
+// IATI Datastore is the PRIMARY source (has everything except sector percentages)
+const IATI_DATASTORE_BASE = 'https://api.iatistandard.org/datastore/activity/select'
+// D-portal is used ONLY for sector percentages (not available in Datastore)
+const DPORTAL_BASE = 'https://d-portal.org/q.json'
 
 const IATI_API_KEY = process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_API_KEY
-const DATASTORE_BASE = 'https://api.iatistandard.org/datastore/activity/select'
 const CACHE_TTL_HOURS = 1
 
 export const dynamic = 'force-dynamic'
@@ -15,8 +20,8 @@ export const maxDuration = 120
  * GET /api/iati/fetch-org-activities
  *
  * Fetches the authenticated user's organisation's IATI activities from the
- * IATI Datastore API. The organisation is resolved from the auth session —
- * the client cannot specify which org to query.
+ * IATI Datastore API (primary source) and enriches with sector percentages
+ * from d-portal (only data not in Datastore).
  *
  * Query params:
  *   force_refresh=true   — bypass cache
@@ -52,15 +57,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    if (!IATI_API_KEY) {
+      return NextResponse.json(
+        { error: 'IATI API key not configured. Please contact your administrator.' },
+        { status: 500 }
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
     const forceRefresh = searchParams.get('force_refresh') === 'true'
 
-    // 2. Build Solr query from org's refs (escape quotes for Solr safety)
-    const refsQuery = orgScope.allRefs
-      .map((ref) => `"${ref.replace(/"/g, '\\"')}"`)
-      .join(' OR ')
-    const solrQuery = `reporting_org_ref:(${refsQuery})`
-    const queryHash = crypto.createHash('sha256').update(solrQuery).digest('hex').substring(0, 64)
+    // 2. Build query hash for caching
+    const queryKey = `datastore-v3:${orgScope.allRefs.sort().join(',')}`
+    const queryHash = crypto.createHash('sha256').update(queryKey).digest('hex').substring(0, 64)
 
     // 3. Check cache (unless force_refresh)
     if (!forceRefresh) {
@@ -75,12 +84,10 @@ export async function GET(request: NextRequest) {
         .single()
 
       if (cached) {
-        // Cache stores raw Solr docs — always re-map so mapper changes take effect
-        const cachedDocs: any[] = cached.response_data?.docs || []
-        const activities = cachedDocs.map(mapDatastoreDocToParsedActivity)
+        const cachedActivities: ParsedActivity[] = cached.response_data?.activities || []
         const activitiesWithMatches = await markExistingActivities(
           supabase,
-          activities
+          cachedActivities
         )
 
         return NextResponse.json({
@@ -98,100 +105,33 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 4. Fetch ALL pages from IATI Datastore
-    if (!IATI_API_KEY) {
-      return NextResponse.json(
-        { error: 'IATI API key is not configured. Please set IATI_API_KEY in environment variables.' },
-        { status: 500 }
-      )
+    console.log('[Fetch Org Activities] Fetching from IATI Datastore for refs:', orgScope.allRefs)
+
+    // 4. Fetch ALL data from IATI Datastore (primary source)
+    const activities = await fetchFromDatastore(orgScope.allRefs)
+
+    console.log(`[Fetch Org Activities] Fetched ${activities.length} activities from IATI Datastore`)
+
+    // 5. Enrich with sector percentages from d-portal (only data not in Datastore)
+    if (activities.length > 0) {
+      await enrichWithSectorPercentages(activities, orgScope.allRefs)
     }
 
-    console.log('[Fetch Org Activities] Query:', solrQuery)
-
-    const PAGE_SIZE = 1000
-    const DELAY_BETWEEN_PAGES_MS = 1500 // Stay under 5 calls/min rate limit
-    const MAX_RETRIES = 2
-    let allDocs: any[] = []
-    let total = 0
-    let start = 0
-
-    // Paginate through all results with rate-limit-safe delays
-    while (true) {
-      const datastoreUrl =
-        `${DATASTORE_BASE}?q=${encodeURIComponent(solrQuery)}` +
-        `&rows=${PAGE_SIZE}&start=${start}` +
-        `&wt=json&sort=iati_identifier%20asc`
-
-      let response: Response | null = null
-
-      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        const abortController = new AbortController()
-        const timeoutId = setTimeout(() => abortController.abort(), 30000)
-
-        response = await fetch(datastoreUrl, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            'Ocp-Apim-Subscription-Key': IATI_API_KEY,
-            'User-Agent': 'AIMS-IATI-Import/1.0',
-          },
-          signal: abortController.signal,
-        })
-
-        clearTimeout(timeoutId)
-
-        if (response.status === 429 && attempt < MAX_RETRIES) {
-          // Rate limited — wait and retry
-          const retryDelay = (attempt + 1) * 5000
-          console.log(`[Fetch Org Activities] Rate limited, retrying in ${retryDelay}ms...`)
-          await new Promise(resolve => setTimeout(resolve, retryDelay))
-          continue
-        }
-
-        break
-      }
-
-      if (!response) {
-        return NextResponse.json({ error: 'Failed to fetch from IATI Datastore' }, { status: 502 })
-      }
-
-      if (response.status === 401) {
-        return NextResponse.json(
-          { error: 'IATI API key is invalid or expired. Please check your IATI_API_KEY configuration.' },
-          { status: 502 }
-        )
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => '')
-        console.error('[Fetch Org Activities] Datastore error:', response.status, errorText)
-        return NextResponse.json(
-          { error: `IATI Datastore returned error: ${response.status} ${response.statusText}` },
-          { status: 502 }
-        )
-      }
-
-      const data = await response.json()
-      const docs = data.response?.docs || []
-      total = data.response?.numFound || 0
-
-      allDocs = allDocs.concat(docs)
-
-      console.log(`[Fetch Org Activities] Page at offset ${start}: ${docs.length} docs (${allDocs.length}/${total})`)
-
-      // Stop if we've fetched all docs or this page was empty
-      if (allDocs.length >= total || docs.length === 0) break
-      start += PAGE_SIZE
-
-      // Delay between pages to respect rate limits
-      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_PAGES_MS))
+    if (activities.length === 0) {
+      return NextResponse.json({
+        activities: [],
+        total: 0,
+        orgScope: {
+          organizationId: orgScope.organizationId,
+          organizationName: orgScope.organizationName,
+          reportingOrgRef: orgScope.reportingOrgRef,
+          allRefs: orgScope.allRefs,
+        },
+        fetchedAt: new Date().toISOString(),
+        cached: false,
+        note: 'No activities found in IATI Registry for this organisation',
+      })
     }
-
-    const docs = allDocs
-    console.log(`[Fetch Org Activities] Total: ${total} activities, fetched ${docs.length}`)
-
-    // 5. Map Datastore JSON to ParsedActivity[]
-    const activities = docs.map(mapDatastoreDocToParsedActivity)
 
     // 6. Check local DB for existing matches
     const activitiesWithMatches = await markExistingActivities(supabase, activities)
@@ -207,12 +147,12 @@ export async function GET(request: NextRequest) {
       .eq('organization_id', orgScope.organizationId)
       .eq('query_hash', queryHash)
 
-    // Cache raw Solr docs (not mapped activities) so mapper changes apply to cached data
+    // Cache the aggregated activities
     await supabase.from('iati_datastore_cache').insert({
       organization_id: orgScope.organizationId,
       query_hash: queryHash,
-      total_activities: total,
-      response_data: { docs },
+      total_activities: activities.length,
+      response_data: { activities },
       fetched_at: fetchedAt,
       expires_at: expiresAt,
     })
@@ -220,7 +160,7 @@ export async function GET(request: NextRequest) {
     // 8. Return
     return NextResponse.json({
       activities: activitiesWithMatches,
-      total,
+      total: activities.length,
       orgScope: {
         organizationId: orgScope.organizationId,
         organizationName: orgScope.organizationName,
@@ -246,16 +186,257 @@ export async function GET(request: NextRequest) {
 }
 
 /**
+ * Fetch all activities from IATI Datastore for the given org refs.
+ * Returns ParsedActivity[] with all data EXCEPT sector percentages.
+ */
+async function fetchFromDatastore(orgRefs: string[]): Promise<ParsedActivity[]> {
+  // IATI Datastore has a hard limit of 1000 rows per request
+  const PAGE_SIZE = 1000
+  const MAX_RETRIES = 10
+  const activities: ParsedActivity[] = []
+
+  // Build Solr query for all org refs
+  const refQuery = orgRefs.map(ref => `"${ref}"`).join(' OR ')
+
+  let start = 0
+  let total = Infinity
+  let retryCount = 0
+
+  while (start < total) {
+    // Request all fields we need (Datastore has everything except sector_percentage)
+    const fields = [
+      'iati_identifier',
+      'title_narrative',
+      'description_narrative',
+      'activity_status_code',
+      'hierarchy',
+      'default_currency',
+      // Dates
+      'activity_date_type',
+      'activity_date_iso_date',
+      // Countries (with percentages!)
+      'recipient_country_code',
+      'recipient_country_percentage',
+      // Sectors (no percentages in Datastore)
+      'sector_code',
+      'sector_vocabulary',
+      'sector_narrative',
+      // Transactions
+      'transaction_transaction_type_code',
+      'transaction_transaction_date_iso_date',
+      'transaction_value',
+      'transaction_value_currency',
+      'transaction_value_value_date',
+      'transaction_description_narrative',
+      'transaction_provider_org_narrative',
+      'transaction_provider_org_ref',
+      'transaction_receiver_org_narrative',
+      'transaction_receiver_org_ref',
+      // Participating orgs
+      'participating_org_ref',
+      'participating_org_narrative',
+      'participating_org_role',
+      'participating_org_type',
+      // Budgets
+      'budget_value',
+      'budget_value_currency',
+      'budget_period_start_iso_date',
+      'budget_period_end_iso_date',
+      'budget_type',
+      'budget_status',
+      'budget_value_value_date',
+      // Locations
+      'location_point_pos',
+      'location_name_narrative',
+      'location_description_narrative',
+      'location_reach_code',
+      'location_exactness_code',
+      'location_location_class_code',
+      'location_feature_designation_code',
+      // DAC/CRS classification
+      'collaboration_type_code',
+      'default_aid_type_code',
+      'default_finance_type_code',
+      'default_flow_type_code',
+      'default_tied_status_code',
+      // Note: capital_spend and planned_disbursement fields are NOT indexed in IATI Datastore
+      // They would need to be fetched from d-portal or raw XML if needed
+      // Reporting org
+      'reporting_org_ref',
+      'reporting_org_narrative',
+    ].join(',')
+
+    const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})&rows=${PAGE_SIZE}&start=${start}&wt=json&fl=${encodeURIComponent(fields)}`
+
+    if (start === 0) {
+      console.log('[Fetch Org Activities] Datastore query:', url.substring(0, 200) + '...')
+    }
+
+    const abortController = new AbortController()
+    const timeoutId = setTimeout(() => abortController.abort(), 60000)
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'AIMS-IATI-Import/1.0',
+          'Ocp-Apim-Subscription-Key': IATI_API_KEY!,
+        },
+        signal: abortController.signal,
+      })
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '')
+
+        // Handle rate limiting with retry
+        if (response.status === 429) {
+          retryCount++
+          if (retryCount > MAX_RETRIES) {
+            console.error('[Fetch Org Activities] Max retries exceeded for rate limiting')
+            throw new Error('IATI Datastore rate limit exceeded after multiple retries')
+          }
+          const waitTime = Math.min(2000 * retryCount, 15000) // Exponential backoff, max 15s
+          console.log(`[Fetch Org Activities] Rate limited, retry ${retryCount}/${MAX_RETRIES}, waiting ${waitTime/1000}s...`)
+          await new Promise(resolve => setTimeout(resolve, waitTime))
+          continue // Retry same page
+        }
+
+        console.error('[Fetch Org Activities] Datastore error:', response.status, errorText.substring(0, 200))
+        throw new Error(`IATI Datastore returned ${response.status}`)
+      }
+
+      // Reset retry count on success
+      retryCount = 0
+
+      const data = await response.json()
+      const docs = data.response?.docs || []
+      total = data.response?.numFound || 0
+
+      console.log(`[Fetch Org Activities] Datastore page ${start / PAGE_SIZE + 1}: ${docs.length} docs (total: ${total})`)
+
+      // Map each doc to ParsedActivity
+      for (const doc of docs) {
+        const activity = mapDatastoreDocToParsedActivity(doc)
+        activities.push(activity)
+      }
+
+      start += PAGE_SIZE
+
+      // Delay between pages to respect rate limits (5 calls/min = 12s between calls)
+      // With PAGE_SIZE=1000 (Datastore hard limit), we need proper pacing
+      if (start < total) {
+        console.log(`[Fetch Org Activities] Fetched ${Math.min(start, total)}/${total}, waiting 13s for rate limit...`)
+        await new Promise(resolve => setTimeout(resolve, 13000))
+      }
+    } catch (error) {
+      clearTimeout(timeoutId)
+      throw error
+    }
+  }
+
+  return activities
+}
+
+/**
+ * Enrich activities with sector percentages from d-portal.
+ * D-portal is the ONLY source for sector percentages (not in IATI Datastore).
+ */
+async function enrichWithSectorPercentages(
+  activities: ParsedActivity[],
+  orgRefs: string[]
+): Promise<void> {
+  console.log('[Fetch Org Activities] Enriching with sector percentages from d-portal')
+
+  const PAGE_SIZE = 1000
+  const sectorPercentageMap = new Map<string, Map<string, number>>() // aid -> (sector_code -> percentage)
+
+  // Fetch sector data from d-portal for each org ref
+  for (const ref of orgRefs) {
+    let offset = 0
+    let hasMore = true
+
+    while (hasMore) {
+      const dportalUrl = `${DPORTAL_BASE}?from=act,sector&reporting_ref=${encodeURIComponent(ref)}&limit=${PAGE_SIZE}&offset=${offset}`
+
+      try {
+        const abortController = new AbortController()
+        const timeoutId = setTimeout(() => abortController.abort(), 30000)
+
+        const response = await fetch(dportalUrl, {
+          method: 'GET',
+          headers: { Accept: 'application/json', 'User-Agent': 'AIMS-IATI-Import/1.0' },
+          signal: abortController.signal,
+        })
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          console.warn(`[Fetch Org Activities] d-portal sector error for ${ref}:`, response.status)
+          break
+        }
+
+        const data = await response.json()
+        const rows = data.rows || []
+
+        if (offset === 0) {
+          console.log(`[Fetch Org Activities] d-portal sectors for ${ref}: ${rows.length} rows`)
+        }
+
+        // Build map of sector percentages
+        for (const row of rows) {
+          if (row.aid && row.sector_code && row.sector_percent != null) {
+            if (!sectorPercentageMap.has(row.aid)) {
+              sectorPercentageMap.set(row.aid, new Map())
+            }
+            sectorPercentageMap.get(row.aid)!.set(row.sector_code.toString(), Number(row.sector_percent))
+          }
+        }
+
+        hasMore = rows.length >= PAGE_SIZE
+        offset += PAGE_SIZE
+
+        if (hasMore) {
+          await new Promise(resolve => setTimeout(resolve, 200))
+        }
+      } catch (error) {
+        console.warn(`[Fetch Org Activities] Error fetching sectors from d-portal for ${ref}:`, error)
+        break
+      }
+    }
+  }
+
+  console.log(`[Fetch Org Activities] Got sector percentages for ${sectorPercentageMap.size} activities from d-portal`)
+
+  // Apply sector percentages to activities
+  let enrichedCount = 0
+  for (const activity of activities) {
+    const sectorMap = sectorPercentageMap.get(activity.iatiIdentifier)
+    if (sectorMap && activity.sectors) {
+      for (const sector of activity.sectors) {
+        const pct = sectorMap.get(sector.code)
+        if (pct != null) {
+          sector.percentage = pct
+          enrichedCount++
+        }
+      }
+    }
+  }
+
+  console.log(`[Fetch Org Activities] Enriched ${enrichedCount} sector entries with percentages`)
+}
+
+/**
  * Mark which activities already exist in the local database.
  */
 async function markExistingActivities(
   supabase: any,
-  activities: any[]
-): Promise<any[]> {
+  activities: ParsedActivity[]
+): Promise<ParsedActivity[]> {
   if (activities.length === 0) return activities
 
   const iatiIds = activities
-    .map((a: any) => a.iatiIdentifier)
+    .map(a => a.iatiIdentifier)
     .filter(Boolean)
 
   if (iatiIds.length === 0) return activities
@@ -272,7 +453,7 @@ async function markExistingActivities(
     }
   }
 
-  return activities.map((a: any) => ({
+  return activities.map(a => ({
     ...a,
     matched: existingMap.has(a.iatiIdentifier),
     matchedActivityId: existingMap.get(a.iatiIdentifier) || undefined,

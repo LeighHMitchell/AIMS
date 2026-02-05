@@ -15,8 +15,14 @@ import {
   ChevronDown,
   ChevronRight,
   Database,
+  MapPin,
+  Globe,
+  Calendar,
+  Wallet,
 } from 'lucide-react'
 import type { ParsedActivity } from './types'
+import { IATI_COUNTRIES } from '@/data/iati-countries'
+import { useHomeCountry } from '@/contexts/SystemSettingsContext'
 
 interface BulkPreviewStepProps {
   activities: ParsedActivity[]
@@ -25,7 +31,7 @@ interface BulkPreviewStepProps {
 }
 
 type FilterStatus = 'all' | 'valid' | 'warnings' | 'errors'
-type SortField = 'id' | 'title' | 'transactions' | 'status'
+type SortField = 'id' | 'title' | 'transactions' | 'budget' | 'status'
 
 export default function BulkPreviewStep({
   activities,
@@ -37,6 +43,7 @@ export default function BulkPreviewStep({
   const [sortField, setSortField] = useState<SortField>('id')
   const [sortAsc, setSortAsc] = useState(true)
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
+  const homeCountry = useHomeCountry()
 
   const filteredActivities = useMemo(() => {
     let result = [...activities]
@@ -66,6 +73,11 @@ export default function BulkPreviewStep({
       if (sortField === 'id') cmp = (a.iatiIdentifier || '').localeCompare(b.iatiIdentifier || '')
       if (sortField === 'title') cmp = (a.title || '').localeCompare(b.title || '')
       if (sortField === 'transactions') cmp = (a.transactions?.length || 0) - (b.transactions?.length || 0)
+      if (sortField === 'budget') {
+        const aBudget = (a.transactions || []).reduce((sum, t) => sum + (t.value || 0), 0)
+        const bBudget = (b.transactions || []).reduce((sum, t) => sum + (t.value || 0), 0)
+        cmp = aBudget - bBudget
+      }
       if (sortField === 'status') {
         const aErr = a.validationIssues?.some(i => i.severity === 'error') ? 2 : a.validationIssues?.some(i => i.severity === 'warning') ? 1 : 0
         const bErr = b.validationIssues?.some(i => i.severity === 'error') ? 2 : b.validationIssues?.some(i => i.severity === 'warning') ? 1 : 0
@@ -147,7 +159,7 @@ export default function BulkPreviewStep({
           </Button>
         </div>
         <span className="text-gray-600">
-          <span className="font-semibold text-blue-600">{selectedIds.size}</span> of{' '}
+          <span className="font-semibold text-gray-900">{selectedIds.size}</span> of{' '}
           <span className="font-semibold">{activities.length}</span> activities selected for import
         </span>
       </div>
@@ -162,12 +174,14 @@ export default function BulkPreviewStep({
               IATI ID / Title {sortField === 'id' && (sortAsc ? '↑' : '↓')}
             </button>
             <button className="text-left hover:text-gray-700" onClick={() => toggleSort('title')}>
-              Dates
+              Planned Dates
             </button>
             <button className="text-right hover:text-gray-700" onClick={() => toggleSort('transactions')}>
               Transactions {sortField === 'transactions' && (sortAsc ? '↑' : '↓')}
             </button>
-            <div className="text-right">Budget</div>
+            <button className="text-right hover:text-gray-700 w-full" onClick={() => toggleSort('budget')}>
+              Budget {sortField === 'budget' && (sortAsc ? '↑' : '↓')}
+            </button>
             <button className="text-center hover:text-gray-700" onClick={() => toggleSort('status')}>
               Status {sortField === 'status' && (sortAsc ? '↑' : '↓')}
             </button>
@@ -201,24 +215,35 @@ export default function BulkPreviewStep({
                             <ChevronRight className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                           )}
                           <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{activity.title || 'Untitled'}</p>
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-xs text-gray-500 truncate">{activity.iatiIdentifier}</p>
+                            <p className="font-medium text-sm">
+                              {activity.title || 'Untitled'}
+                              {' '}
+                              <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-600 font-normal whitespace-nowrap">{activity.iatiIdentifier}</span>
                               {activity.matched && (
-                                <span title="Exists in database"><Database className="h-3 w-3 text-blue-500 shrink-0" /></span>
+                                <span title="Exists in database" className="inline-flex ml-1.5 align-middle"><Database className="h-3 w-3 text-blue-500" /></span>
                               )}
-                            </div>
+                            </p>
                           </div>
                         </div>
                       </div>
                       <div className="text-xs text-gray-500">
-                        {activity.planned_start_date && (
-                          <span>{activity.planned_start_date.substring(0, 10)}</span>
-                        )}
-                        {activity.planned_start_date && activity.planned_end_date && ' → '}
-                        {activity.planned_end_date && (
-                          <span>{activity.planned_end_date.substring(0, 10)}</span>
-                        )}
+                        {(() => {
+                          const formatDate = (dateStr: string) => {
+                            const d = new Date(dateStr)
+                            return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                          }
+                          return (
+                            <>
+                              {activity.planned_start_date && (
+                                <span>{formatDate(activity.planned_start_date)}</span>
+                              )}
+                              {activity.planned_start_date && activity.planned_end_date && ' → '}
+                              {activity.planned_end_date && (
+                                <span>{formatDate(activity.planned_end_date)}</span>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
                       <div className="text-right text-sm">
                         {(activity.transactions || []).length}
@@ -241,63 +266,462 @@ export default function BulkPreviewStep({
 
                     {/* Expanded Row Detail */}
                     {isExpanded && (
-                      <div className="px-12 py-4 bg-gray-50 border-t text-sm space-y-3">
+                      <div className="px-12 py-4 bg-gray-50 border-t text-sm">
+                        {/* Description - full width */}
                         {activity.description && (
-                          <div>
-                            <span className="font-medium text-gray-700">Description:</span>
+                          <div className="mb-4">
+                            <span className="font-medium text-gray-700">Description</span>
                             <p className="text-gray-600 mt-1">{activity.description}</p>
                           </div>
                         )}
 
-                        {activity.participatingOrgs && activity.participatingOrgs.length > 0 && (
-                          <div>
-                            <span className="font-medium text-gray-700">Organizations:</span>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {activity.participatingOrgs.map((org, i) => (
-                                <Badge key={i} variant="outline" className="text-xs">
-                                  {org.name} ({org.role})
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {activity.sectors && activity.sectors.length > 0 && (
-                          <div>
-                            <span className="font-medium text-gray-700">Sectors:</span>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {activity.sectors.map((s, i) => (
-                                <Badge key={i} variant="outline" className="text-xs">
-                                  {s.name || s.code} {s.percentage ? `(${s.percentage}%)` : ''}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {activity.transactions && activity.transactions.length > 0 && (
-                          <div>
-                            <span className="font-medium text-gray-700">Transactions ({activity.transactions.length}):</span>
-                            <div className="mt-1 space-y-1">
-                              {activity.transactions.slice(0, 5).map((tx, i) => (
-                                <div key={i} className="flex items-center justify-between text-xs bg-white p-2 rounded border">
-                                  <span>{tx.type}</span>
-                                  <span className="text-gray-500">{tx.date?.substring(0, 10)}</span>
-                                  <span className="font-medium">{tx.currency} {tx.value?.toLocaleString()}</span>
-                                </div>
-                              ))}
-                              {activity.transactions.length > 5 && (
-                                <p className="text-xs text-gray-500">
-                                  + {activity.transactions.length - 5} more transactions
+                        {/* 3 column grid */}
+                        <div className="grid grid-cols-3 gap-6">
+                          {/* Column 1: Dates, Status, Hierarchy */}
+                          <div className="space-y-3">
+                            {(activity.status || activity.activity_status) && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase">Status</span>
+                                <p className="text-gray-600 mt-0.5">
+                                  {(() => {
+                                    const statusCode = activity.status || activity.activity_status
+                                    const statusNames: Record<string, string> = {
+                                      '1': 'Pipeline/Identification',
+                                      '2': 'Implementation',
+                                      '3': 'Finalisation',
+                                      '4': 'Closed',
+                                      '5': 'Cancelled',
+                                      '6': 'Suspended',
+                                    }
+                                    return (
+                                      <>
+                                        <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{statusCode}</span>
+                                        {statusNames[statusCode || ''] || statusCode}
+                                      </>
+                                    )
+                                  })()}
                                 </p>
-                              )}
-                            </div>
-                          </div>
-                        )}
+                              </div>
+                            )}
 
+                            {activity.hierarchy != null && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase">Hierarchy Level</span>
+                                <p className="text-gray-600 mt-0.5">
+                                  {(() => {
+                                    const hierarchyNames: Record<number, string> = {
+                                      1: 'Parent',
+                                      2: 'Sub-Activity',
+                                    }
+                                    return (
+                                      <>
+                                        <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{activity.hierarchy}</span>
+                                        {hierarchyNames[activity.hierarchy] || `Level ${activity.hierarchy}`}
+                                      </>
+                                    )
+                                  })()}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* DAC/CRS Classification Fields */}
+                            {(activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus) && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase">Classification</span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Type</th>
+                                      <th className="font-medium py-1">Value</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.collaborationType && (
+                                      <tr className="border-t border-gray-100">
+                                        <td className="py-1 text-gray-500">Collaboration Type</td>
+                                        <td className="py-1 text-gray-600">
+                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.collaborationType}</span>
+                                          {' '}
+                                          {(() => {
+                                            const names: Record<string, string> = { '1': 'Bilateral', '2': 'Multilateral (inflows)', '3': 'Bilateral, core contributions', '4': 'Multilateral outflows', '6': 'Private sector outflows', '7': 'Bilateral, ex-post reporting', '8': 'Bilateral, triangular co-operation' }
+                                            return names[activity.collaborationType] || ''
+                                          })()}
+                                        </td>
+                                      </tr>
+                                    )}
+                                    {activity.defaultAidType && (
+                                      <tr className="border-t border-gray-100">
+                                        <td className="py-1 text-gray-500">Aid Type</td>
+                                        <td className="py-1 text-gray-600">
+                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.defaultAidType}</span>
+                                          {' '}
+                                          {(() => {
+                                            const names: Record<string, string> = { 'A01': 'General budget support', 'A02': 'Sector budget support', 'B01': 'Core support to NGOs', 'B02': 'Core contributions to multilaterals', 'B03': 'Contributions to specific programmes', 'B04': 'Basket funds', 'C01': 'Project-type interventions', 'D01': 'Donor country personnel', 'D02': 'Other technical assistance', 'E01': 'Scholarships in donor country', 'E02': 'Imputed student costs', 'F01': 'Debt relief', 'G01': 'Administrative costs', 'H01': 'Development awareness', 'H02': 'Refugees in donor countries' }
+                                            return names[activity.defaultAidType] || ''
+                                          })()}
+                                        </td>
+                                      </tr>
+                                    )}
+                                    {activity.defaultFinanceType && (
+                                      <tr className="border-t border-gray-100">
+                                        <td className="py-1 text-gray-500">Finance Type</td>
+                                        <td className="py-1 text-gray-600">
+                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.defaultFinanceType}</span>
+                                          {' '}
+                                          {(() => {
+                                            const names: Record<string, string> = { '110': 'Standard grant', '111': 'Subsidies to national private investors', '210': 'Interest subsidy', '211': 'Interest subsidy to national private exporters', '310': 'Capital subscription on deposit basis', '311': 'Capital subscription on encashment basis', '410': 'Aid loan excluding debt reorganisation', '411': 'Investment-related loan to developing country', '412': 'Loan in donor country currency', '413': 'Loan with concession for interest', '414': 'Loan with concession for principal', '421': 'Standard loan', '422': 'Reimbursable grant', '423': 'Bonds', '424': 'Asset-backed securities', '425': 'Other debt securities', '431': 'Subordinated loan', '432': 'Preferred equity', '433': 'Other hybrid instruments', '451': 'Non-banks guaranteed export credits', '452': 'Non-banks non-guaranteed portions', '453': 'Bank export credits', '510': 'Common equity', '511': 'Acquisition of equity not part of joint venture', '512': 'Other acquisition of equity', '520': 'Shares in collective investment vehicles', '530': 'Reinvested earnings', '610': 'Debt forgiveness', '611': 'Debt conversion', '612': 'Debt rescheduling', '613': 'Debt buyback', '614': 'Other debt reduction', '615': 'Debt payment', '616': 'HIPC debt relief', '617': 'Multilateral debt relief', '618': 'Forgiveness of arrears' }
+                                            return names[activity.defaultFinanceType] || ''
+                                          })()}
+                                        </td>
+                                      </tr>
+                                    )}
+                                    {activity.defaultFlowType && (
+                                      <tr className="border-t border-gray-100">
+                                        <td className="py-1 text-gray-500">Flow Type</td>
+                                        <td className="py-1 text-gray-600">
+                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.defaultFlowType}</span>
+                                          {' '}
+                                          {(() => {
+                                            const names: Record<string, string> = { '10': 'ODA', '20': 'OOF', '21': 'Non-export credit OOF', '22': 'Officially supported export credits', '30': 'Private grants', '35': 'Private market', '36': 'Private FDI', '37': 'Other private flows at market terms', '40': 'Non flow', '50': 'Other flows' }
+                                            return names[activity.defaultFlowType] || ''
+                                          })()}
+                                        </td>
+                                      </tr>
+                                    )}
+                                    {activity.defaultTiedStatus && (
+                                      <tr className="border-t border-gray-100">
+                                        <td className="py-1 text-gray-500">Tied Status</td>
+                                        <td className="py-1 text-gray-600">
+                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.defaultTiedStatus}</span>
+                                          {' '}
+                                          {(() => {
+                                            const names: Record<string, string> = { '3': 'Partially tied', '4': 'Tied', '5': 'Untied' }
+                                            return names[activity.defaultTiedStatus] || ''
+                                          })()}
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {activity.capitalSpend != null && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase">Capital Spend</span>
+                                <p className="text-gray-600 mt-0.5">
+                                  <span className="font-semibold">{activity.capitalSpend}%</span>
+                                </p>
+                              </div>
+                            )}
+
+                            {activity.actual_start_date && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" /> Actual Start
+                                </span>
+                                <p className="text-gray-600 mt-0.5">
+                                  {new Date(activity.actual_start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </p>
+                              </div>
+                            )}
+
+                            {activity.actual_end_date && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" /> Actual End
+                                </span>
+                                <p className="text-gray-600 mt-0.5">
+                                  {new Date(activity.actual_end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </p>
+                              </div>
+                            )}
+
+                            {activity.recipientCountries && activity.recipientCountries.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <Globe className="h-3 w-3" /> Recipient Countries
+                                </span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Country</th>
+                                      <th className="font-medium py-1 text-right">%</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {[...activity.recipientCountries]
+                                      .sort((a, b) => (b.percentage || 0) - (a.percentage || 0))
+                                      .map((c, i) => {
+                                        const countryName = IATI_COUNTRIES.find(ic => ic.code === c.code)?.name || c.code
+                                        const isHomeCountry = c.code === homeCountry
+                                        return (
+                                          <tr key={i} className={`border-t border-gray-100 ${isHomeCountry ? 'font-semibold' : ''}`}>
+                                            <td className={`py-1 ${isHomeCountry ? 'text-gray-900' : 'text-gray-600'}`}>
+                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{c.code}</span>
+                                              {countryName}
+                                            </td>
+                                            <td className={`py-1 text-right ${isHomeCountry ? 'text-gray-900' : ''}`}>{c.percentage != null ? `${c.percentage}%` : '-'}</td>
+                                          </tr>
+                                        )
+                                      })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {activity.locations && activity.locations.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" /> Locations
+                                </span>
+                                <div className="mt-1 space-y-1">
+                                  {activity.locations.slice(0, 3).map((loc, i) => (
+                                    <p key={i} className="text-xs text-gray-600">
+                                      {loc.name || 'Unnamed'}
+                                      {loc.coordinates && (
+                                        <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 ml-1.5">
+                                          {loc.coordinates.latitude.toFixed(2)}, {loc.coordinates.longitude.toFixed(2)}
+                                        </span>
+                                      )}
+                                    </p>
+                                  ))}
+                                  {activity.locations.length > 3 && (
+                                    <p className="text-xs text-gray-500">+ {activity.locations.length - 3} more</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Column 2: Organizations, Sectors */}
+                          <div className="space-y-3">
+                            {activity.participatingOrgs && activity.participatingOrgs.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase">Organizations</span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Role</th>
+                                      <th className="font-medium py-1">Type</th>
+                                      <th className="font-medium py-1">Name</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.participatingOrgs.map((org, i) => {
+                                      const roleNames: Record<string, string> = {
+                                        '1': 'Funding',
+                                        '2': 'Accountable',
+                                        '3': 'Extending',
+                                        '4': 'Implementing',
+                                      }
+                                      const orgTypeNames: Record<string, string> = {
+                                        '10': 'Government',
+                                        '15': 'Other Public Sector',
+                                        '21': 'International NGO',
+                                        '22': 'National NGO',
+                                        '23': 'Regional NGO',
+                                        '30': 'Public Private Partnership',
+                                        '40': 'Multilateral',
+                                        '60': 'Foundation',
+                                        '70': 'Private Sector',
+                                        '80': 'Academic/Training/Research',
+                                        '90': 'Other',
+                                      }
+                                      return (
+                                        <tr key={i} className="border-t border-gray-100">
+                                          <td className="py-1 text-gray-600">
+                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{org.role}</span>
+                                            {roleNames[org.role] || org.role}
+                                          </td>
+                                          <td className="py-1 text-gray-600">
+                                            {org.type ? (
+                                              <>
+                                                <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{org.type}</span>
+                                                {orgTypeNames[org.type] || ''}
+                                              </>
+                                            ) : (
+                                              <span className="text-gray-400">-</span>
+                                            )}
+                                          </td>
+                                          <td className="py-1 text-gray-600">{org.name}</td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {activity.sectors && activity.sectors.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase">Sectors</span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Sector</th>
+                                      <th className="font-medium py-1 text-right">%</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.sectors.map((s, i) => {
+                                      const vocabNames: Record<string, string> = {
+                                        '1': 'DAC 5',
+                                        '2': 'DAC 3',
+                                        '3': 'COFOG',
+                                        '7': 'SDG Goal',
+                                        '8': 'SDG Target',
+                                        '9': 'SDG Indicator',
+                                        '99': 'ORG',
+                                      }
+                                      const vocabLabel = s.vocabulary ? vocabNames[s.vocabulary] || `V${s.vocabulary}` : ''
+                                      return (
+                                        <tr key={i} className="border-t border-gray-100">
+                                          <td className="py-1 text-gray-600">
+                                            {vocabLabel && (
+                                              <>
+                                                <span className="bg-gray-100 text-gray-600 px-1 py-0.5 rounded font-mono text-[10px]">{vocabLabel}</span>
+                                                {' '}
+                                              </>
+                                            )}
+                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{s.code}</span>
+                                            {' '}
+                                            {s.name || s.code}
+                                          </td>
+                                          <td className="py-1 text-right">{s.percentage != null ? `${s.percentage}%` : '-'}</td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Column 3: Transactions, Budgets */}
+                          <div className="space-y-3">
+                            {activity.transactions && activity.transactions.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase">Transactions</span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Type</th>
+                                      <th className="font-medium py-1 text-right">Amount</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.transactions.slice(0, 5).map((tx, i) => {
+                                      const txTypeNames: Record<string, string> = {
+                                        '1': 'Incoming Funds',
+                                        '2': 'Outgoing Commitment',
+                                        '3': 'Disbursement',
+                                        '4': 'Expenditure',
+                                        '5': 'Interest Payment',
+                                        '6': 'Loan Repayment',
+                                        '7': 'Reimbursement',
+                                        '8': 'Purchase of Equity',
+                                        '9': 'Sale of Equity',
+                                        '10': 'Credit Guarantee',
+                                        '11': 'Incoming Commitment',
+                                        '12': 'Outgoing Pledge',
+                                        '13': 'Incoming Pledge',
+                                      }
+                                      return (
+                                        <tr key={i} className="border-t border-gray-100">
+                                          <td className="py-1 text-gray-600">
+                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{tx.type}</span>
+                                            {txTypeNames[tx.type] || tx.type}
+                                          </td>
+                                          <td className="py-1 text-right font-medium">{tx.currency} {tx.value?.toLocaleString()}</td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                                {activity.transactions.length > 5 && (
+                                  <p className="text-xs text-gray-500 mt-1">+ {activity.transactions.length - 5} more</p>
+                                )}
+                              </div>
+                            )}
+
+                            {activity.budgets && activity.budgets.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <Wallet className="h-3 w-3" /> Budgets
+                                </span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Period</th>
+                                      <th className="font-medium py-1 text-right">Amount</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.budgets.slice(0, 5).map((b, i) => (
+                                      <tr key={i} className="border-t border-gray-100">
+                                        <td className="py-1 text-gray-600">
+                                          {b.periodStart && new Date(b.periodStart).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                                          {b.periodStart && b.periodEnd && ' - '}
+                                          {b.periodEnd && new Date(b.periodEnd).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                                        </td>
+                                        <td className="py-1 text-right font-medium">{b.currency} {b.value?.toLocaleString()}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                                {activity.budgets.length > 5 && (
+                                  <p className="text-xs text-gray-500 mt-1">+ {activity.budgets.length - 5} more</p>
+                                )}
+                              </div>
+                            )}
+
+                            {activity.plannedDisbursements && activity.plannedDisbursements.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase">Planned Disbursements</span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Period</th>
+                                      <th className="font-medium py-1 text-right">Amount</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.plannedDisbursements.slice(0, 5).map((pd, i) => {
+                                      const pdTypeNames: Record<string, string> = {
+                                        '1': 'Original',
+                                        '2': 'Revised',
+                                      }
+                                      return (
+                                        <tr key={i} className="border-t border-gray-100">
+                                          <td className="py-1 text-gray-600">
+                                            {pd.type && (
+                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5" title={pdTypeNames[pd.type] || pd.type}>
+                                                {pdTypeNames[pd.type] || pd.type}
+                                              </span>
+                                            )}
+                                            {pd.periodStart && new Date(pd.periodStart).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                                            {pd.periodStart && pd.periodEnd && ' - '}
+                                            {pd.periodEnd && new Date(pd.periodEnd).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                                          </td>
+                                          <td className="py-1 text-right font-medium">{pd.currency} {pd.value?.toLocaleString()}</td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                                {activity.plannedDisbursements.length > 5 && (
+                                  <p className="text-xs text-gray-500 mt-1">+ {activity.plannedDisbursements.length - 5} more</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Validation Issues - full width below grid */}
                         {activity.validationIssues && activity.validationIssues.length > 0 && (
-                          <div>
-                            <span className="font-medium text-gray-700">Validation Issues:</span>
+                          <div className="mt-4 pt-4 border-t">
+                            <span className="font-medium text-gray-700 text-xs uppercase">Validation Issues</span>
                             <div className="mt-1 space-y-1">
                               {activity.validationIssues.map((issue, i) => (
                                 <div key={i} className="flex items-start gap-2 text-xs">

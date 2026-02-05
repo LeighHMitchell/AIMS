@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Map, MapControls, useMap } from '@/components/ui/map';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { CircleDot, Flame, MapPin, RotateCcw } from 'lucide-react';
+import { CircleDot, Flame, MapPin, RotateCcw, Building2 } from 'lucide-react';
 import MapLibreGL from 'maplibre-gl';
 import dynamic from 'next/dynamic';
-import { useCallback } from 'react';
+import { apiFetch } from '@/lib/api-fetch';
 
 // Dynamic imports for map layers
 const SimpleActivityMarkersLayer = dynamic(
@@ -16,6 +16,10 @@ const SimpleActivityMarkersLayer = dynamic(
 );
 const HeatmapLayer = dynamic(
   () => import('@/components/maps-v2/HeatmapLayer'),
+  { ssr: false }
+);
+const OtherOrgsMarkersLayer = dynamic(
+  () => import('@/components/maps-v2/OtherOrgsMarkersLayer'),
   { ssr: false }
 );
 
@@ -142,12 +146,28 @@ interface Location {
   [key: string]: unknown;
 }
 
+interface OtherOrgLocation {
+  id: string;
+  location_name?: string;
+  latitude: number;
+  longitude: number;
+  site_type?: string;
+  activity?: {
+    id: string;
+    title?: string;
+    organization_id?: string;
+    organization_name?: string;
+    organization_acronym?: string;
+  } | null;
+}
+
 interface ActivityLocationsMapViewV2Props {
   locations: Location[];
   mapCenter: [number, number]; // [lat, lng] - will convert internally to [lng, lat] for MapLibre
   mapZoom: number;
   viewMode?: 'markers' | 'heatmap';
   activityTitle?: string;
+  organizationId?: string; // Current activity's organization ID for filtering other orgs
 }
 
 // Helper function to fit bounds to locations
@@ -220,9 +240,41 @@ export default function ActivityLocationsMapViewV2({
   mapZoom,
   viewMode: initialViewMode = 'markers',
   activityTitle,
+  organizationId,
 }: ActivityLocationsMapViewV2Props) {
   const [mapStyle, setMapStyle] = useState<MapStyleKey>('carto_light');
   const [viewMode, setViewMode] = useState<'markers' | 'heatmap'>(initialViewMode);
+  const [showOtherOrgs, setShowOtherOrgs] = useState(false);
+  const [otherOrgsLocations, setOtherOrgsLocations] = useState<OtherOrgLocation[]>([]);
+  const [loadingOtherOrgs, setLoadingOtherOrgs] = useState(false);
+
+  // Fetch other organizations' locations when toggled on
+  useEffect(() => {
+    if (!showOtherOrgs || !organizationId) {
+      setOtherOrgsLocations([]);
+      return;
+    }
+
+    const fetchOtherOrgsLocations = async () => {
+      setLoadingOtherOrgs(true);
+      try {
+        const response = await apiFetch('/api/locations');
+        if (response.success && response.locations) {
+          // Filter out locations from the current organization
+          const filtered = response.locations.filter(
+            (loc: OtherOrgLocation) => loc.activity?.organization_id && loc.activity.organization_id !== organizationId
+          );
+          setOtherOrgsLocations(filtered);
+        }
+      } catch (error) {
+        console.error('Failed to fetch other organizations locations:', error);
+      } finally {
+        setLoadingOtherOrgs(false);
+      }
+    };
+
+    fetchOtherOrgsLocations();
+  }, [showOtherOrgs, organizationId]);
 
   // Filter valid locations
   const validLocations = useMemo(() => {
@@ -295,6 +347,20 @@ export default function ActivityLocationsMapViewV2({
             <Flame className="h-3.5 w-3.5" />
           </Button>
         </div>
+
+        {/* Other Organizations Toggle */}
+        {organizationId && (
+          <Button
+            onClick={() => setShowOtherOrgs(!showOtherOrgs)}
+            variant="outline"
+            size="sm"
+            title={showOtherOrgs ? "Hide other organizations' activities" : "Show other organizations' activities nearby"}
+            className={`bg-white shadow-md border-gray-300 h-8 w-8 p-0 ${showOtherOrgs ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}`}
+            disabled={loadingOtherOrgs}
+          >
+            <Building2 className={`h-3.5 w-3.5 ${loadingOtherOrgs ? 'animate-pulse' : ''}`} />
+          </Button>
+        )}
       </div>
 
       {/* MapLibre Map */}
@@ -335,7 +401,7 @@ export default function ActivityLocationsMapViewV2({
 
         {/* Heatmap Mode */}
         {viewMode === 'heatmap' && heatmapPoints.length > 0 && (
-          <HeatmapLayer 
+          <HeatmapLayer
             points={heatmapPoints}
             options={{
               radius: 30,
@@ -344,6 +410,11 @@ export default function ActivityLocationsMapViewV2({
               maxZoom: 12,
             }}
           />
+        )}
+
+        {/* Other Organizations' Locations */}
+        {showOtherOrgs && otherOrgsLocations.length > 0 && (
+          <OtherOrgsMarkersLayer locations={otherOrgsLocations} />
         )}
       </Map>
     </div>

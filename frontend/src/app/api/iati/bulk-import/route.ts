@@ -6,6 +6,21 @@ import { resolveUserOrgScope, matchesOrgScope } from '@/lib/iati/org-scope';
 
 export const maxDuration = 300;
 
+/**
+ * Map IATI organisation role code to database role_type.
+ * IATI codes: 1=Funding, 2=Accountable, 3=Extending, 4=Implementing
+ * Database allowed values: 'extending', 'implementing', 'government', 'funding'
+ */
+function mapIatiRoleToRoleType(iatiRoleCode: string | undefined): string {
+  switch (iatiRoleCode) {
+    case '1': return 'funding';
+    case '2': return 'government'; // Accountable → government (closest match)
+    case '3': return 'extending';
+    case '4': return 'implementing';
+    default: return 'implementing'; // Default to implementing for unknown roles
+  }
+}
+
 interface BulkImportRequest {
   activities: any[];
   selectedActivityIds: string[];
@@ -182,6 +197,8 @@ export async function POST(request: NextRequest) {
             if (activity.planned_end_date) updateData.planned_end_date = activity.planned_end_date;
             if (activity.actual_start_date) updateData.actual_start_date = activity.actual_start_date;
             if (activity.actual_end_date) updateData.actual_end_date = activity.actual_end_date;
+            if (activity.hierarchy != null) updateData.hierarchy = activity.hierarchy;
+            if (activity.recipientCountries) updateData.recipient_countries = activity.recipientCountries;
 
             const { error: updateError } = await supabase
               .from('activities')
@@ -207,6 +224,8 @@ export async function POST(request: NextRequest) {
             planned_end_date: activity.planned_end_date || null,
             actual_start_date: activity.actual_start_date || null,
             actual_end_date: activity.actual_end_date || null,
+            hierarchy: activity.hierarchy != null ? activity.hierarchy : null,
+            recipient_countries: activity.recipientCountries || [],
             created_via: 'import',
             created_by: user.id,
             created_at: new Date().toISOString(),
@@ -231,10 +250,26 @@ export async function POST(request: NextRequest) {
         // Import transactions if not skipping
         let transactionsImported = 0;
         if (activityDbId && importRules.transactionHandling !== 'skip' && activity.transactions?.length > 0) {
-          // If replacing all, delete existing transactions first
+          // If replacing all, delete existing transactions, budgets, participating orgs, sectors, and locations first
           if (importRules.transactionHandling === 'replace_all' && action === 'update') {
             await supabase
               .from('transactions')
+              .delete()
+              .eq('activity_id', activityDbId);
+            await supabase
+              .from('activity_budgets')
+              .delete()
+              .eq('activity_id', activityDbId);
+            await supabase
+              .from('activity_participating_organizations')
+              .delete()
+              .eq('activity_id', activityDbId);
+            await supabase
+              .from('activity_sectors')
+              .delete()
+              .eq('activity_id', activityDbId);
+            await supabase
+              .from('activity_locations')
               .delete()
               .eq('activity_id', activityDbId);
           }
@@ -303,7 +338,9 @@ export async function POST(request: NextRequest) {
                 .from('transactions')
                 .insert(transactionDataWithUSD);
 
-              if (!txError) {
+              if (txError) {
+                console.error(`[Bulk Import] Transaction insert error for ${iatiId}:`, txError.message, txError.details);
+              } else {
                 transactionsImported++;
               }
             } catch (txErr) {
@@ -311,6 +348,187 @@ export async function POST(request: NextRequest) {
             }
           }
         }
+
+        // Import budgets if available
+        let budgetsImported = 0;
+        if (activityDbId && activity.budgets?.length > 0) {
+          for (const budget of activity.budgets) {
+            try {
+              // Parse period dates (may include time component)
+              const periodStart = budget.periodStart?.includes('T')
+                ? budget.periodStart.split('T')[0]
+                : budget.periodStart || null;
+              const periodEnd = budget.periodEnd?.includes('T')
+                ? budget.periodEnd.split('T')[0]
+                : budget.periodEnd || null;
+
+              const budgetValue = parseFloat(budget.value);
+              if (isNaN(budgetValue)) continue;
+
+              // Parse value_date (may include time component)
+              const rawValueDate = budget.valueDate || budget.periodStart;
+              const valueDate = rawValueDate?.includes('T')
+                ? rawValueDate.split('T')[0]
+                : rawValueDate || periodStart;
+
+              const budgetData = {
+                activity_id: activityDbId,
+                type: Number(budget.type) || 1, // Default to 1='original' budget type
+                status: Number(budget.status) || 1, // Default to 1='indicative'
+                period_start: periodStart,
+                period_end: periodEnd,
+                value: budgetValue,
+                currency: budget.currency || 'USD',
+                value_date: valueDate,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+
+              const { error: budgetError } = await supabase
+                .from('activity_budgets')
+                .insert(budgetData);
+
+              if (budgetError) {
+                console.error(`[Bulk Import] Budget insert error for ${iatiId}:`, budgetError.message, budgetError.details);
+              } else {
+                budgetsImported++;
+              }
+            } catch (budgetErr) {
+              console.error(`[Bulk Import] Budget error for ${iatiId}:`, budgetErr);
+            }
+          }
+        }
+
+        // Import participating organisations if available
+        let participatingOrgsImported = 0;
+        if (activityDbId && activity.participatingOrgs?.length > 0) {
+          for (const org of activity.participatingOrgs) {
+            try {
+              // Try to match existing organization by ref
+              let organizationId: string | null = null;
+              if (importRules.autoMatchOrganizations && org.ref) {
+                const matchedOrgId = await getOrCreateOrganization(supabase, {
+                  ref: org.ref,
+                  name: org.name || 'Unknown',
+                  type: org.type,
+                });
+                organizationId = matchedOrgId;
+              }
+
+              const participatingOrgData = {
+                activity_id: activityDbId,
+                organization_id: organizationId,
+                role_type: mapIatiRoleToRoleType(org.role), // Map IATI role code to role_type
+                iati_role_code: org.role ? Number(org.role) : null,
+                iati_org_ref: org.ref || null,
+                org_type: org.type || null,
+                narrative: org.name || null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+
+              const { error: poError } = await supabase
+                .from('activity_participating_organizations')
+                .insert(participatingOrgData);
+
+              if (poError) {
+                console.error(`[Bulk Import] Participating org insert error for ${iatiId}:`, poError.message, poError.details);
+              } else {
+                participatingOrgsImported++;
+              }
+            } catch (poErr) {
+              console.error(`[Bulk Import] Participating org error for ${iatiId}:`, poErr);
+            }
+          }
+        }
+
+        // Import sectors if available
+        let sectorsImported = 0;
+        if (activityDbId && activity.sectors?.length > 0) {
+          // Only import DAC sectors (vocabulary 1 or 2, or unspecified)
+          const dacSectors = activity.sectors.filter((s: any) =>
+            !s.vocabulary || s.vocabulary === '1' || s.vocabulary === '2'
+          );
+
+          // Calculate percentages if not provided (equal distribution)
+          const totalPct = dacSectors.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0);
+          const needsDistribution = totalPct === 0 && dacSectors.length > 0;
+          const equalPct = needsDistribution ? Math.round(100 / dacSectors.length * 100) / 100 : 0;
+
+          for (const sector of dacSectors) {
+            try {
+              const sectorCode = String(sector.code);
+              const categoryCode = sectorCode.substring(0, 3);
+              const percentage = sector.percentage ?? equalPct;
+
+              const sectorData = {
+                activity_id: activityDbId,
+                sector_code: sectorCode,
+                sector_name: sector.name || `Sector ${sectorCode}`,
+                percentage: percentage,
+                level: sectorCode.length === 5 ? 'subsector' : 'category',
+                category_code: categoryCode,
+                category_name: sector.name ? sector.name.split(' - ')[0] : null, // Extract category from "Category - Subsector" format
+                type: 'secondary',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+
+              const { error: sectorError } = await supabase
+                .from('activity_sectors')
+                .insert(sectorData);
+
+              if (sectorError) {
+                console.error(`[Bulk Import] Sector insert error for ${iatiId}:`, sectorError.message, sectorError.details);
+              } else {
+                sectorsImported++;
+              }
+            } catch (sectorErr) {
+              console.error(`[Bulk Import] Sector error for ${iatiId}:`, sectorErr);
+            }
+          }
+        }
+
+        // Import locations if available
+        let locationsImported = 0;
+        if (activityDbId && activity.locations?.length > 0) {
+          for (const loc of activity.locations) {
+            try {
+              if (!loc.coordinates?.latitude || !loc.coordinates?.longitude) continue;
+
+              const locationData = {
+                activity_id: activityDbId,
+                location_type: 'site',
+                location_name: loc.name || 'Imported Location',
+                description: loc.description || null,
+                latitude: loc.coordinates.latitude,
+                longitude: loc.coordinates.longitude,
+                source: 'iati_import',
+                location_reach: loc.reach || null,
+                exactness: loc.exactness || null,
+                location_class: loc.locationClass || null,
+                feature_designation: loc.featureDesignation || null,
+                srs_name: 'http://www.opengis.net/def/crs/EPSG/0/4326',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+
+              const { error: locError } = await supabase
+                .from('activity_locations')
+                .insert(locationData);
+
+              if (locError) {
+                console.error(`[Bulk Import] Location insert error for ${iatiId}:`, locError.message, locError.details);
+              } else {
+                locationsImported++;
+              }
+            } catch (locErr) {
+              console.error(`[Bulk Import] Location error for ${iatiId}:`, locErr);
+            }
+          }
+        }
+
+        console.log(`[Bulk Import] ${iatiId}: ${transactionsImported} txns, ${budgetsImported} budgets, ${participatingOrgsImported} orgs, ${sectorsImported} sectors, ${locationsImported} locations`);
 
         // Update batch item to completed
         await supabase

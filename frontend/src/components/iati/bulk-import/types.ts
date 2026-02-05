@@ -64,6 +64,10 @@ export interface ParsedActivity {
     name?: string
     description?: string
     coordinates?: { latitude: number; longitude: number }
+    reach?: string
+    exactness?: string
+    locationClass?: string
+    featureDesignation?: string
   }>
   transactions?: Array<{
     type: string
@@ -78,10 +82,12 @@ export interface ParsedActivity {
   }>
   budgets?: Array<{
     type?: string
+    status?: string
     periodStart: string
     periodEnd: string
     value: number
     currency: string
+    valueDate?: string
   }>
   hierarchy?: number
   matched?: boolean
@@ -90,6 +96,23 @@ export interface ParsedActivity {
   financingTerms?: any
   activity_status?: string
   iati_id?: string
+  // DAC/CRS classification fields
+  collaborationType?: string
+  defaultAidType?: string
+  defaultFinanceType?: string
+  defaultFlowType?: string
+  defaultTiedStatus?: string
+  // Capital spend
+  capitalSpend?: number
+  // Planned disbursements
+  plannedDisbursements?: Array<{
+    type?: string
+    periodStart: string
+    periodEnd: string
+    value: number
+    currency: string
+    valueDate?: string
+  }>
 }
 
 export interface BatchStatus {

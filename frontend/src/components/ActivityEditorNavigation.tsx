@@ -215,16 +215,11 @@ export default function ActivityEditorNavigation({
             
             {/* Group Sections with Vertical Connector */}
             <div className="relative">
-              {/* Vertical Connector Line - blue for all linked scrollable groups */}
+              {/* Vertical Connector Line - gray for all groups */}
               <div
                 className={cn(
                   "absolute left-[12px] top-0 bottom-0 w-px",
-                  // All five groups are linked for continuous scrolling (blue)
-                  (group.title === "Activity Overview" || group.title === "Stakeholders" ||
-                   group.title === "Funding & Delivery" || group.title === "Strategic Alignment" ||
-                   group.title === "Supporting Info")
-                    ? "bg-blue-200"
-                    : "bg-gray-200"
+                  "bg-gray-200"
                 )}
                 style={{ height: '100%' }}
               />
@@ -235,7 +230,7 @@ export default function ActivityEditorNavigation({
                 // Add subtle visual indicator for linked scrollable groups
                 (group.title === "Activity Overview" || group.title === "Stakeholders" ||
                  group.title === "Funding & Delivery" || group.title === "Strategic Alignment" ||
-                 group.title === "Supporting Info") && "border-l border-blue-100 pl-1"
+                 group.title === "Supporting Info") && "border-l border-gray-100 pl-1"
               )}>
                 {group.sections.map((section) => {
                   const isLocked = !activityCreated && section.id !== "general" && section.id !== "xml-import"

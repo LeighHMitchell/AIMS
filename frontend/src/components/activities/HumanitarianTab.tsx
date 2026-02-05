@@ -336,7 +336,9 @@ export function HumanitarianTab({
                       <TableHead className="whitespace-nowrap">Type</TableHead>
                       <TableHead className="whitespace-nowrap">Vocabulary</TableHead>
                       <TableHead className="whitespace-nowrap">Code</TableHead>
-                      <TableHead>Description</TableHead>
+                      <TableHead className="whitespace-nowrap">Location</TableHead>
+                      <TableHead className="whitespace-nowrap">Date</TableHead>
+                      <TableHead>Response Description</TableHead>
                       {!readOnly && <TableHead className="w-[100px]">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -356,25 +358,12 @@ export function HumanitarianTab({
                         </TableCell>
                         <TableCell className="align-top">
                           {scope.vocabulary === '98' && emergencyMap[scope.code] ? (
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-2">
-                                <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono whitespace-nowrap">
-                                  {scope.code}
-                                </code>
-                                <span className="text-sm font-medium text-gray-900">
-                                  {emergencyMap[scope.code].name}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                {emergencyMap[scope.code].location && (
-                                  <span>{emergencyMap[scope.code].location}</span>
-                                )}
-                                {formatEmergencyDateRange(emergencyMap[scope.code]) && (
-                                  <span>
-                                    {emergencyMap[scope.code].location ? ' · ' : ''}
-                                    {formatEmergencyDateRange(emergencyMap[scope.code])}
-                                  </span>
-                                )}
+                            <div className="space-y-1">
+                              <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono whitespace-nowrap">
+                                {scope.code}
+                              </code>
+                              <div className="text-sm font-medium text-gray-900">
+                                {emergencyMap[scope.code].name}
                               </div>
                             </div>
                           ) : scope.vocabulary_uri ? (
@@ -392,6 +381,20 @@ export function HumanitarianTab({
                             <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono whitespace-nowrap">
                               {scope.code}
                             </code>
+                          )}
+                        </TableCell>
+                        <TableCell className="align-top text-sm text-gray-600">
+                          {scope.vocabulary === '98' && emergencyMap[scope.code]?.location ? (
+                            <span>{emergencyMap[scope.code].location}</span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="align-top text-sm text-gray-600 whitespace-nowrap">
+                          {scope.vocabulary === '98' && emergencyMap[scope.code] && formatEmergencyDateRange(emergencyMap[scope.code]) ? (
+                            <span>{formatEmergencyDateRange(emergencyMap[scope.code])}</span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
                           )}
                         </TableCell>
                         <TableCell className="align-top">
@@ -484,14 +487,8 @@ export function HumanitarianTab({
                     {editingScope.vocabulary === '98' ? (
                       <EmergencySearchableSelect
                         value={editingScope.code}
-                        onValueChange={(code, emergency) => {
-                          const updates: Partial<typeof editingScope> = { code };
-                          if (emergency && editingScope.narratives.length > 0) {
-                            const newNarratives = [...editingScope.narratives];
-                            newNarratives[0] = { ...newNarratives[0], narrative: emergency.name };
-                            updates.narratives = newNarratives;
-                          }
-                          setEditingScope({ ...editingScope, ...updates });
+                        onValueChange={(code) => {
+                          setEditingScope({ ...editingScope, code });
                         }}
                         placeholder="Select a country emergency..."
                       />
@@ -521,16 +518,17 @@ export function HumanitarianTab({
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>Narratives * (at least one required)</Label>
+                    <Label>Response Description * (at least one required)</Label>
                     <Button onClick={addNarrative} variant="outline" size="sm">
                       <Plus className="h-4 w-4 mr-2" />
                       Add Language
                     </Button>
                   </div>
-                  
+                  <p className="text-xs text-gray-500">Describe how this activity responds to or addresses the emergency</p>
+
                   {editingScope.narratives.map((narrative, index) => (
                     <div key={index} className="flex gap-2 items-start">
-                      <div className="w-40">
+                      <div className="w-52">
                         <LanguageSelect
                           value={narrative.language}
                           onValueChange={(value) => updateNarrative(index, 'language', value)}
@@ -541,7 +539,7 @@ export function HumanitarianTab({
                         <Textarea
                           value={narrative.narrative}
                           onChange={(e) => updateNarrative(index, 'narrative', e.target.value)}
-                          placeholder="Description of the emergency or appeal"
+                          placeholder="e.g., Providing emergency shelter materials and food assistance to affected communities"
                           rows={2}
                         />
                       </div>

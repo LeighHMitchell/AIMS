@@ -83,14 +83,19 @@ export function mapDatastoreDocToParsedActivity(
   }
 
   // --- Sectors ---
+  // Note: IATI Datastore Solr API does NOT return sector_percentage
+  // Use d-portal API (dportal-mapper.ts) for complete data with percentages
   const sectorCodes = ensureArray(doc.sector_code)
   const sectorVocabs = ensureArray(doc.sector_vocabulary)
   const sectorPcts = ensureArray(doc.sector_percentage)
+  const sectorNames = ensureArray(doc.sector_narrative)
+
   const sectors: ParsedActivity['sectors'] = sectorCodes.map(
     (code: string, i: number) => ({
       code: String(code),
       vocabulary: sectorVocabs[i] || undefined,
       percentage: sectorPcts[i] != null && !isNaN(parseFloat(sectorPcts[i])) ? parseFloat(sectorPcts[i]) : undefined,
+      name: sectorNames[i] || undefined,
     })
   )
 
@@ -117,16 +122,20 @@ export function mapDatastoreDocToParsedActivity(
   const budgetStarts = ensureArray(doc.budget_period_start_iso_date)
   const budgetEnds = ensureArray(doc.budget_period_end_iso_date)
   const budgetTypes = ensureArray(doc.budget_type)
+  const budgetStatuses = ensureArray(doc.budget_status)
+  const budgetValueDates = ensureArray(doc.budget_value_value_date)
   const budgets: ParsedActivity['budgets'] = budgetValues
     .map((val: any, i: number) => {
       const parsed = parseFloat(val)
       if (isNaN(parsed)) return null
       return {
         type: budgetTypes[i] || undefined,
+        status: budgetStatuses[i] || undefined,
         periodStart: budgetStarts[i] || '',
         periodEnd: budgetEnds[i] || '',
         value: parsed,
-        currency: budgetCurrencies[i] || 'USD',
+        currency: budgetCurrencies[i] || defaultCurrency,
+        valueDate: budgetValueDates[i] || undefined,
       }
     })
     .filter(Boolean) as NonNullable<ParsedActivity['budgets']>
@@ -138,6 +147,47 @@ export function mapDatastoreDocToParsedActivity(
     code: String(code),
     percentage: rcPcts[i] != null && !isNaN(parseFloat(rcPcts[i])) ? parseFloat(rcPcts[i]) : undefined,
   }))
+
+  // --- Locations ---
+  // IATI Datastore fields: location_point_pos (format: "lat lng"), location_name, location_description
+  const locationPositions = ensureArray(doc.location_point_pos)
+  const locationNames = ensureArray(doc.location_name_narrative)
+  const locationDescriptions = ensureArray(doc.location_description_narrative)
+  const locationReaches = ensureArray(doc.location_reach_code)
+  const locationExactnesses = ensureArray(doc.location_exactness_code)
+  const locationClasses = ensureArray(doc.location_location_class_code)
+  const locationFeatureDesignations = ensureArray(doc.location_feature_designation_code)
+
+  const locations: ParsedActivity['locations'] = locationPositions
+    .map((pos: string, i: number) => {
+      if (!pos) return null
+      // Parse "lat lng" format (e.g., "43.8562586 18.4130763")
+      const parts = pos.trim().split(/\s+/)
+      if (parts.length < 2) return null
+      const latitude = parseFloat(parts[0])
+      const longitude = parseFloat(parts[1])
+      if (isNaN(latitude) || isNaN(longitude)) return null
+      return {
+        name: locationNames[i] || undefined,
+        description: locationDescriptions[i] || undefined,
+        coordinates: { latitude, longitude },
+        reach: locationReaches[i] || undefined,
+        exactness: locationExactnesses[i] || undefined,
+        locationClass: locationClasses[i] || undefined,
+        featureDesignation: locationFeatureDesignations[i] || undefined,
+      }
+    })
+    .filter(Boolean) as NonNullable<ParsedActivity['locations']>
+
+  // --- DAC/CRS Classification Fields ---
+  const collaborationType = doc.collaboration_type_code || undefined
+  const defaultAidType = ensureArray(doc.default_aid_type_code)[0] || undefined
+  const defaultFinanceType = ensureArray(doc.default_finance_type_code)[0] || undefined
+  const defaultFlowType = ensureArray(doc.default_flow_type_code)[0] || undefined
+  const defaultTiedStatus = ensureArray(doc.default_tied_status_code)[0] || undefined
+
+  // Note: capital_spend and planned_disbursement are NOT indexed in IATI Datastore
+  // They're only available via XML upload (d-portal mapper handles them)
 
   // --- Build ParsedActivity ---
   const iatiIdentifier = doc.iati_identifier || ''
@@ -161,6 +211,15 @@ export function mapDatastoreDocToParsedActivity(
     sectors: sectors.length > 0 ? sectors : undefined,
     participatingOrgs: participatingOrgs.length > 0 ? participatingOrgs : undefined,
     budgets: budgets.length > 0 ? budgets : undefined,
+    locations: locations.length > 0 ? locations : undefined,
+    // DAC/CRS classification
+    collaborationType: collaborationType ? String(collaborationType) : undefined,
+    defaultAidType: defaultAidType ? String(defaultAidType) : undefined,
+    defaultFinanceType: defaultFinanceType ? String(defaultFinanceType) : undefined,
+    defaultFlowType: defaultFlowType ? String(defaultFlowType) : undefined,
+    defaultTiedStatus: defaultTiedStatus ? String(defaultTiedStatus) : undefined,
+    // Note: capitalSpend and plannedDisbursements are not available from IATI Datastore
+    // They're only available via XML upload (see dportal-mapper.ts)
   }
 
   // Attach reporting-org ref for org-scope verification

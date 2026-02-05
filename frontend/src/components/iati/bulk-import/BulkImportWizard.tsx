@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  RefreshCw,
 } from 'lucide-react'
 import BulkImportSourceStep from './BulkImportSourceStep'
 import BulkPreviewStep from './BulkPreviewStep'
@@ -37,7 +38,11 @@ const STEPS: { key: BulkImportStep; label: string; icon: React.ElementType }[] =
 
 const STEP_ORDER: BulkImportStep[] = ['source', 'preview', 'rules', 'import', 'results']
 
-function initialState(): BulkImportState {
+interface WizardState extends BulkImportState {
+  refreshKey: number
+}
+
+function initialState(): WizardState {
   return {
     step: 'source',
     sourceMode: 'datastore',
@@ -56,11 +61,12 @@ function initialState(): BulkImportState {
     validationSummary: null,
     fetchStatus: 'idle',
     fetchError: null,
+    refreshKey: 0,
   }
 }
 
 export default function BulkImportWizard() {
-  const [state, setState] = useState<BulkImportState>(initialState)
+  const [state, setState] = useState<WizardState>(initialState)
 
   const stepIndex = STEP_ORDER.indexOf(state.step)
 
@@ -91,6 +97,20 @@ export default function BulkImportWizard() {
     if (prevIdx >= 0 && state.step !== 'import' && state.step !== 'results') {
       setState(prev => ({ ...prev, step: STEP_ORDER[prevIdx] }))
     }
+  }
+
+  const handleRefresh = () => {
+    // Reset state and increment refreshKey to force component remount
+    setState(prev => ({
+      ...prev,
+      parsedActivities: [],
+      meta: null,
+      selectedActivityIds: new Set(),
+      validationSummary: null,
+      fetchStatus: 'idle',
+      fetchError: null,
+      refreshKey: prev.refreshKey + 1,
+    }))
   }
 
   const handleSourceModeChange = useCallback((mode: ImportSourceMode) => {
@@ -188,6 +208,7 @@ export default function BulkImportWizard() {
         <div className="flex-1">
           {state.step === 'source' && (
             <BulkImportSourceStep
+              key={state.refreshKey}
               sourceMode={state.sourceMode}
               onSourceModeChange={handleSourceModeChange}
               onActivitiesReady={handleActivitiesReady}
@@ -229,23 +250,63 @@ export default function BulkImportWizard() {
         </div>
 
         {/* Bottom Navigation Bar */}
-        {state.step !== 'import' && state.step !== 'results' && (
+        {state.step !== 'results' && (
           <div className="sticky bottom-0 bg-white border-t pt-4 mt-6 flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={goBack}
-              disabled={stepIndex === 0}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <Button
-              onClick={goNext}
-              disabled={!canGoNext()}
-            >
-              {state.step === 'rules' ? 'Start Import' : 'Next'}
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
+            {state.step === 'import' ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Go back to rules step and reset batch state
+                    setState(prev => ({
+                      ...prev,
+                      step: 'rules',
+                      batchId: null,
+                      batchStatus: null,
+                    }))
+                  }}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Cancel Import
+                </Button>
+                <div className="text-sm text-gray-500">
+                  {state.batchStatus?.status === 'completed' || state.batchStatus?.status === 'failed' ? (
+                    <Button onClick={goNext}>
+                      View Results
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  ) : (
+                    'Import in progress...'
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={stepIndex === 0 ? handleRefresh : goBack}
+                >
+                  {stepIndex === 0 ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh
+                    </>
+                  ) : (
+                    <>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={goNext}
+                  disabled={!canGoNext()}
+                >
+                  {state.step === 'rules' ? 'Start Import' : 'Next'}
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>

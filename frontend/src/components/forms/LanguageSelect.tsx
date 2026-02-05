@@ -42,14 +42,14 @@ export function LanguageSelect({
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
+            "flex min-h-10 w-full items-start justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors",
             !selectedLanguage && "text-muted-foreground"
           )}
           disabled={disabled}
         >
-          <span className="truncate">
+          <span className="flex-1">
             {selectedLanguage ? (
-              <span className="flex items-center gap-2">
+              <span className="flex flex-wrap items-center gap-1">
                 <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedLanguage.code.toUpperCase()}</span>
                 <span className="font-medium">{selectedLanguage.name}</span>
               </span>
@@ -74,12 +74,12 @@ export function LanguageSelect({
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>
         </PopoverTrigger>
-        <PopoverContent 
-          className="w-[var(--radix-popover-trigger-width)] min-w-[200px] p-0 shadow-lg border"
+        <PopoverContent
+          className="w-[var(--radix-popover-trigger-width)] min-w-[200px] p-0 shadow-lg border text-left"
           align="start"
           sideOffset={4}
         >
-          <Command>
+          <Command className="text-left">
             <div className="flex items-center border-b px-3 py-2">
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
               <input
@@ -116,7 +116,7 @@ export function LanguageSelect({
                       setIsOpen(false);
                       setSearchQuery("");
                     }}
-                    className="cursor-pointer py-2 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                    className="cursor-pointer py-2 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors justify-start text-left"
                   >
                     <Check
                       className={cn(

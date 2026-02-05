@@ -335,11 +335,14 @@ export function CountryEmergenciesManagement() {
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
                     <tr className="border-b-2">
-                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[150px]">
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[200px]">
                         Code
                       </th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">
                         Name
+                      </th>
+                      <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground">
+                        Description
                       </th>
                       <th className="h-12 px-4 py-3 text-left font-medium text-muted-foreground w-[110px]">
                         Start Date
@@ -368,6 +371,9 @@ export function CountryEmergenciesManagement() {
                         </td>
                         <td className="p-4 font-medium">
                           {emergency.name}
+                        </td>
+                        <td className="p-4 text-sm text-muted-foreground">
+                          {emergency.description || "—"}
                         </td>
                         <td className="p-4 text-sm text-muted-foreground">
                           {formatDate(emergency.startDate)}

@@ -113,7 +113,7 @@ export default function IATIImportPage() {
   })
   const [importing, setImporting] = useState(false)
   const [importHistory, setImportHistory] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState('import')
+  const [activeTab, setActiveTab] = useState('bulk-import')
   const [loadingHistory, setLoadingHistory] = useState(false)
   
   // Snippet import state
@@ -618,7 +618,7 @@ export default function IATIImportPage() {
   if (parsing && step === 'parse') {
     return (
       <MainLayout>
-        <div className="container mx-auto p-6 max-w-4xl">
+        <div className="max-w-screen-2xl mx-auto px-6 py-4">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900">IATI Import Tool</h1>
             <p className="text-gray-600 mt-2">Sequential import process for IATI data</p>
@@ -653,7 +653,7 @@ export default function IATIImportPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto p-6 max-w-screen-xl">
+      <div className="max-w-screen-2xl mx-auto px-6 py-4">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">IATI Import Tool</h1>
           <p className="text-gray-600 mt-2">Sequential import process for IATI data</p>
@@ -661,10 +661,6 @@ export default function IATIImportPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
-            <TabsTrigger value="import">
-              <Upload className="h-4 w-4 mr-2" />
-              Import
-            </TabsTrigger>
             <TabsTrigger value="bulk-import">
               <Database className="h-4 w-4 mr-2" />
               Bulk Import
@@ -1580,35 +1576,58 @@ export default function IATIImportPage() {
               <CardHeader>
                 <CardTitle>Import History</CardTitle>
                 <CardDescription>
-                  View past imports and their status
+                  View past bulk imports and their status
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {importHistory.length === 0 ? (
+                  {loadingHistory ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                      <span className="text-gray-500">Loading history...</span>
+                    </div>
+                  ) : importHistory.length === 0 ? (
                     <p className="text-center text-gray-500 py-8">No import history yet</p>
                   ) : (
                     importHistory.map((record) => (
                       <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div>
-                          <p className="font-medium">{record.fileName}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{record.reportingOrgName || record.fileName}</p>
+                            {record.sourceMode === 'datastore' && (
+                              <Badge variant="outline" className="text-xs">
+                                <Globe className="h-3 w-3 mr-1" />
+                                Registry
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-500">
                             By {record.userName} • {new Date(record.timestamp).toLocaleString()}
                           </p>
                           <div className="flex gap-4 mt-2">
-                            <span className="text-sm">
+                            <span className="text-sm text-green-600">
+                              <CheckCircle2 className="inline h-4 w-4 mr-1" />
+                              {record.createdCount} created
+                            </span>
+                            <span className="text-sm text-blue-600">
                               <Activity className="inline h-4 w-4 mr-1" />
-                              {record.activitiesCount} activities
+                              {record.updatedCount} updated
                             </span>
-                            <span className="text-sm">
-                              <Building2 className="inline h-4 w-4 mr-1" />
-                              {record.organizationsCount} organizations
-                            </span>
-                            <span className="text-sm">
-                              <CreditCard className="inline h-4 w-4 mr-1" />
-                              {record.transactionsCount} transactions
-                            </span>
+                            {record.skippedCount > 0 && (
+                              <span className="text-sm text-gray-500">
+                                {record.skippedCount} skipped
+                              </span>
+                            )}
+                            {record.failedCount > 0 && (
+                              <span className="text-sm text-red-600">
+                                <XCircle className="inline h-4 w-4 mr-1" />
+                                {record.failedCount} failed
+                              </span>
+                            )}
                           </div>
+                          {record.errorMessage && (
+                            <p className="text-sm text-red-600 mt-1">{record.errorMessage}</p>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           {record.status === 'completed' ? (
@@ -1621,17 +1640,16 @@ export default function IATIImportPage() {
                               <XCircle className="h-3 w-3 mr-1" />
                               Failed
                             </Badge>
+                          ) : record.status === 'importing' ? (
+                            <Badge variant="outline" className="bg-blue-50">
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              Importing
+                            </Badge>
                           ) : (
                             <Badge variant="outline" className="bg-yellow-50">
                               <Clock className="h-3 w-3 mr-1" />
-                              In Progress
+                              {record.status}
                             </Badge>
-                          )}
-                          {record.canRollback && (
-                            <Button size="sm" variant="outline">
-                              <Undo2 className="h-4 w-4 mr-1" />
-                              Rollback
-                            </Button>
                           )}
                         </div>
                       </div>

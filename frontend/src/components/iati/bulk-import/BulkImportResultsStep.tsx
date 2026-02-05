@@ -59,20 +59,20 @@ export default function BulkImportResultsStep({
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <Card className="border-green-200">
+        <Card className="border-gray-200">
           <CardContent className="pt-6">
             <div className="text-center">
-              <Plus className="h-6 w-6 mx-auto mb-1 text-green-600" />
-              <p className="text-3xl font-bold text-green-600">{batchStatus.createdCount}</p>
+              <Plus className="h-6 w-6 mx-auto mb-1 text-gray-700" />
+              <p className="text-3xl font-bold text-gray-900">{batchStatus.createdCount}</p>
               <p className="text-sm text-gray-600">Created</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-blue-200">
+        <Card className="border-gray-200">
           <CardContent className="pt-6">
             <div className="text-center">
-              <RefreshCw className="h-6 w-6 mx-auto mb-1 text-blue-600" />
-              <p className="text-3xl font-bold text-blue-600">{batchStatus.updatedCount}</p>
+              <RefreshCw className="h-6 w-6 mx-auto mb-1 text-gray-700" />
+              <p className="text-3xl font-bold text-gray-900">{batchStatus.updatedCount}</p>
               <p className="text-sm text-gray-600">Updated</p>
             </div>
           </CardContent>
@@ -86,11 +86,11 @@ export default function BulkImportResultsStep({
             </div>
           </CardContent>
         </Card>
-        <Card className="border-red-200">
+        <Card className="border-gray-200">
           <CardContent className="pt-6">
             <div className="text-center">
-              <XCircle className="h-6 w-6 mx-auto mb-1 text-red-600" />
-              <p className="text-3xl font-bold text-red-600">{batchStatus.failedCount}</p>
+              <XCircle className="h-6 w-6 mx-auto mb-1 text-gray-700" />
+              <p className="text-3xl font-bold text-gray-900">{batchStatus.failedCount}</p>
               <p className="text-sm text-gray-600">Failed</p>
             </div>
           </CardContent>
@@ -99,17 +99,17 @@ export default function BulkImportResultsStep({
 
       {/* Status Alert */}
       {batchStatus.status === 'completed' && batchStatus.failedCount === 0 && (
-        <Alert className="bg-green-50 border-green-200">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
+        <Alert className="bg-gray-50 border-gray-300">
+          <CheckCircle2 className="h-4 w-4 text-gray-700" />
+          <AlertDescription className="text-gray-800">
             All activities were imported successfully!
           </AlertDescription>
         </Alert>
       )}
       {batchStatus.failedCount > 0 && (
-        <Alert className="bg-yellow-50 border-yellow-200">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          <AlertDescription className="text-yellow-800">
+        <Alert className="bg-gray-50 border-gray-300">
+          <AlertTriangle className="h-4 w-4 text-gray-700" />
+          <AlertDescription className="text-gray-800">
             {batchStatus.failedCount} activit{batchStatus.failedCount === 1 ? 'y' : 'ies'} failed to import. See details below.
           </AlertDescription>
         </Alert>
@@ -117,20 +117,20 @@ export default function BulkImportResultsStep({
 
       {/* Failed Items Detail */}
       {failedItems.length > 0 && (
-        <Card className="border-red-200">
+        <Card className="border-gray-300">
           <CardHeader>
-            <CardTitle className="text-base text-red-800">Failed Activities</CardTitle>
+            <CardTitle className="text-base text-gray-900">Failed Activities</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {failedItems.map((item) => (
-                <div key={item.id} className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
-                  <XCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                <div key={item.id} className="flex items-start gap-3 p-3 bg-gray-100 rounded-lg">
+                  <XCircle className="h-4 w-4 text-gray-600 mt-0.5 shrink-0" />
                   <div>
                     <p className="font-medium text-sm">{item.activityTitle || item.iatiIdentifier}</p>
                     <p className="text-xs text-gray-500">{item.iatiIdentifier}</p>
                     {item.errorMessage && (
-                      <p className="text-xs text-red-600 mt-1">{item.errorMessage}</p>
+                      <p className="text-xs text-gray-600 mt-1">{item.errorMessage}</p>
                     )}
                   </div>
                 </div>
@@ -170,16 +170,16 @@ export default function BulkImportResultsStep({
                 <p className="text-xs text-gray-500 truncate">{item.iatiIdentifier}</p>
                 <div>
                   {item.action === 'create' && (
-                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700">Created</Badge>
+                    <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700">Created</Badge>
                   )}
                   {item.action === 'update' && (
-                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">Updated</Badge>
+                    <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700">Updated</Badge>
                   )}
                   {item.action === 'skip' && (
                     <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500">Skipped</Badge>
                   )}
                   {item.action === 'fail' && (
-                    <Badge variant="outline" className="text-xs bg-red-50 text-red-700">Failed</Badge>
+                    <Badge variant="outline" className="text-xs bg-gray-200 text-gray-700">Failed</Badge>
                   )}
                 </div>
                 <p className="text-sm text-right text-gray-600">{item.transactionsImported || 0}</p>

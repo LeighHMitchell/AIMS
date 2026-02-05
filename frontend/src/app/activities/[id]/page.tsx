@@ -4398,6 +4398,7 @@ export default function ActivityDetailPage() {
                             mapCenter={[19.0, 96.5]}
                             mapZoom={6}
                             activityTitle={activity?.title}
+                            organizationId={activity?.reporting_org_id}
                           />
                         </div>
                       </CardContent>

@@ -1,6 +1,18 @@
 {
-  "currentVersion": "1.16.0",
+  "currentVersion": "1.17.0",
   "releases": [
+    {
+      "version": "1.17.0",
+      "date": "2026-02-06",
+      "changes": [
+        "IATI Bulk Import country filter matches activities by recipient-country code OR location coordinates within country bounds",
+        "IATI Bulk Import hierarchy filter for Level 1 (Parent) and Level 2 (Sub-Activity) activities",
+        "IATI Bulk Import country scope filter (All/100%/Regional) for filtering by allocation percentage",
+        "IATI Bulk Import progress indicator with 4-phase display during data fetch",
+        "IATI Bulk Import Results tab redesigned with monochrome color scheme",
+        "Cancel Import button allows returning from import step to rules configuration"
+      ]
+    },
     {
       "version": "1.16.0",
       "date": "2026-02-05",

@@ -22,6 +22,7 @@ import {
   X,
 } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
+import { useHomeCountry } from '@/contexts/SystemSettingsContext'
 import { apiFetch } from '@/lib/api-fetch'
 import { toast } from 'sonner'
 import {
@@ -41,39 +42,111 @@ import type {
   ParsedActivity,
 } from './types'
 
+/**
+ * Approximate bounding boxes for countries (for location-based country inference).
+ * Used when activities don't have recipient-country but do have location coordinates.
+ * These are approximate and meant for filtering, not precise boundary detection.
+ * Format: { minLat, maxLat, minLng, maxLng }
+ */
+const COUNTRY_BOUNDING_BOXES: Record<string, { minLat: number; maxLat: number; minLng: number; maxLng: number }> = {
+  // Southeast Asia
+  MM: { minLat: 9.5, maxLat: 28.5, minLng: 92.0, maxLng: 101.5 },   // Myanmar
+  TH: { minLat: 5.5, maxLat: 20.5, minLng: 97.3, maxLng: 105.7 },   // Thailand
+  VN: { minLat: 8.2, maxLat: 23.4, minLng: 102.1, maxLng: 109.5 },  // Vietnam
+  KH: { minLat: 10.0, maxLat: 14.7, minLng: 102.3, maxLng: 107.7 }, // Cambodia
+  LA: { minLat: 13.9, maxLat: 22.5, minLng: 100.0, maxLng: 107.7 }, // Laos
+  PH: { minLat: 4.5, maxLat: 21.2, minLng: 116.9, maxLng: 126.6 },  // Philippines
+  ID: { minLat: -11.0, maxLat: 6.1, minLng: 95.0, maxLng: 141.0 },  // Indonesia
+
+  // South Asia
+  BD: { minLat: 20.6, maxLat: 26.6, minLng: 88.0, maxLng: 92.7 },   // Bangladesh
+  IN: { minLat: 6.7, maxLat: 35.5, minLng: 68.1, maxLng: 97.4 },    // India
+  NP: { minLat: 26.3, maxLat: 30.5, minLng: 80.0, maxLng: 88.2 },   // Nepal
+  PK: { minLat: 23.6, maxLat: 37.1, minLng: 60.8, maxLng: 77.8 },   // Pakistan
+  LK: { minLat: 5.9, maxLat: 9.9, minLng: 79.5, maxLng: 82.0 },     // Sri Lanka
+  AF: { minLat: 29.4, maxLat: 38.5, minLng: 60.5, maxLng: 75.0 },   // Afghanistan
+
+  // East Africa
+  ET: { minLat: 3.4, maxLat: 15.0, minLng: 32.9, maxLng: 48.0 },    // Ethiopia
+  KE: { minLat: -4.7, maxLat: 5.0, minLng: 33.9, maxLng: 41.9 },    // Kenya
+  UG: { minLat: -1.5, maxLat: 4.2, minLng: 29.5, maxLng: 35.0 },    // Uganda
+  TZ: { minLat: -11.7, maxLat: -1.0, minLng: 29.3, maxLng: 40.5 },  // Tanzania
+  RW: { minLat: -2.8, maxLat: -1.0, minLng: 28.8, maxLng: 30.9 },   // Rwanda
+
+  // West Africa
+  NG: { minLat: 4.2, maxLat: 13.9, minLng: 2.7, maxLng: 14.7 },     // Nigeria
+  GH: { minLat: 4.7, maxLat: 11.2, minLng: -3.3, maxLng: 1.2 },     // Ghana
+  SN: { minLat: 12.3, maxLat: 16.7, minLng: -17.5, maxLng: -11.4 }, // Senegal
+  ML: { minLat: 10.1, maxLat: 25.0, minLng: -12.2, maxLng: 4.3 },   // Mali
+  BF: { minLat: 9.4, maxLat: 15.1, minLng: -5.5, maxLng: 2.4 },     // Burkina Faso
+  NE: { minLat: 11.7, maxLat: 23.5, minLng: 0.1, maxLng: 16.0 },    // Niger
+
+  // Central/Southern Africa
+  CD: { minLat: -13.5, maxLat: 5.4, minLng: 12.2, maxLng: 31.3 },   // DR Congo
+  ZA: { minLat: -34.8, maxLat: -22.1, minLng: 16.5, maxLng: 32.9 }, // South Africa
+  MZ: { minLat: -26.9, maxLat: -10.5, minLng: 30.2, maxLng: 41.0 }, // Mozambique
+  MW: { minLat: -17.1, maxLat: -9.4, minLng: 32.7, maxLng: 35.9 },  // Malawi
+  ZM: { minLat: -18.1, maxLat: -8.2, minLng: 22.0, maxLng: 33.7 },  // Zambia
+  ZW: { minLat: -22.4, maxLat: -15.6, minLng: 25.2, maxLng: 33.1 }, // Zimbabwe
+
+  // Middle East
+  YE: { minLat: 12.1, maxLat: 19.0, minLng: 42.5, maxLng: 54.5 },   // Yemen
+  JO: { minLat: 29.2, maxLat: 33.4, minLng: 34.9, maxLng: 39.3 },   // Jordan
+  LB: { minLat: 33.1, maxLat: 34.7, minLng: 35.1, maxLng: 36.6 },   // Lebanon
+  SY: { minLat: 32.3, maxLat: 37.3, minLng: 35.7, maxLng: 42.4 },   // Syria
+  IQ: { minLat: 29.1, maxLat: 37.4, minLng: 38.8, maxLng: 48.6 },   // Iraq
+
+  // Latin America
+  CO: { minLat: -4.2, maxLat: 13.4, minLng: -81.7, maxLng: -66.9 }, // Colombia
+  PE: { minLat: -18.4, maxLat: -0.0, minLng: -81.3, maxLng: -68.7 }, // Peru
+  BR: { minLat: -33.8, maxLat: 5.3, minLng: -73.9, maxLng: -28.8 }, // Brazil
+  MX: { minLat: 14.5, maxLat: 32.7, minLng: -117.1, maxLng: -86.7 }, // Mexico
+  GT: { minLat: 13.7, maxLat: 17.8, minLng: -92.2, maxLng: -88.2 }, // Guatemala
+  HN: { minLat: 12.9, maxLat: 16.5, minLng: -89.4, maxLng: -83.1 }, // Honduras
+  HT: { minLat: 18.0, maxLat: 20.1, minLng: -74.5, maxLng: -71.6 }, // Haiti
+}
+
 function LoadingTextRoller({ orgName }: { orgName: string }) {
-  const [index, setIndex] = useState(0)
-  const messages = [
+  const messages = useMemo(() => [
     'Connecting to IATI Registry...',
-    `Querying activities for ${orgName}...`,
-    'Downloading activity data...',
-    'Mapping fields and metadata...',
+    `Searching for ${orgName}...`,
+    'Querying the IATI Datastore...',
+    'Parsing activity identifiers...',
+    'Reading transaction data...',
+    'Extracting sector codes...',
     'Processing recipient countries...',
-  ]
+    'Mapping participating organisations...',
+    'Checking for budget information...',
+    'Validating IATI format...',
+    'Resolving organisation references...',
+    'Fetching activity metadata...',
+    'Parsing location data...',
+    'Processing date fields...',
+    'Preparing activity preview...',
+    'Analysing transaction types...',
+    'Checking activity hierarchies...',
+    'Reading document links...',
+    'Processing result indicators...',
+    'Finalising data extraction...',
+  ], [orgName])
+
+  const [currentMessage, setCurrentMessage] = useState(messages[0])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % messages.length)
-    }, 2500)
+      setCurrentMessage(prev => {
+        // Pick a random message that's different from the current one
+        const otherMessages = messages.filter(m => m !== prev)
+        return otherMessages[Math.floor(Math.random() * otherMessages.length)]
+      })
+    }, 2000)
     return () => clearInterval(interval)
-  }, [messages.length])
+  }, [messages])
 
   return (
-    <div className="overflow-hidden h-6">
-      <div
-        className="transition-transform duration-700 ease-in-out"
-        style={{ transform: `translateY(-${index * 1.5}rem)` }}
-      >
-        {messages.map((msg, i) => (
-          <p
-            key={i}
-            className="h-6 flex items-center justify-center text-sm text-gray-500"
-          >
-            {msg}
-          </p>
-        ))}
-      </div>
-    </div>
+    <p className="h-6 flex items-center justify-center text-sm text-gray-500 animate-pulse">
+      {currentMessage}
+    </p>
   )
 }
 
@@ -92,6 +165,7 @@ export default function BulkImportSourceStep({
   activitiesLoaded,
 }: BulkImportSourceStepProps) {
   const { user } = useUser()
+  const homeCountry = useHomeCountry()
 
   // --- Datastore mode state ---
   const [fetchStatus, setFetchStatus] = useState<'idle' | 'fetching' | 'success' | 'error'>('idle')
@@ -102,9 +176,16 @@ export default function BulkImportSourceStep({
   const [wasCached, setWasCached] = useState(false)
   const fetchedRef = useRef(false)
 
+  // --- Progress tracking state ---
+  const [fetchProgress, setFetchProgress] = useState(0)
+  const [fetchPhase, setFetchPhase] = useState<'connecting' | 'fetching' | 'enriching' | 'processing'>('connecting')
+  const fetchStartTimeRef = useRef<number>(0)
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
   // --- Country filter state ---
   const [selectedCountry, setSelectedCountry] = useState<string>('')
   const [selectedHierarchy, setSelectedHierarchy] = useState<number | null>(null)
+  const [countryScope, setCountryScope] = useState<'all' | '100' | 'regional'>('all') // 100% vs regional allocation
   const [orgScopeData, setOrgScopeData] = useState<{ reportingOrgRef: string; organizationName: string } | null>(null)
   const [countryOpen, setCountryOpen] = useState(false)
   const [countrySearch, setCountrySearch] = useState('')
@@ -116,6 +197,8 @@ export default function BulkImportSourceStep({
   const [xmlValidated, setXmlValidated] = useState(false)
 
   const orgName = user?.organization?.name || user?.organisation || 'Your Organisation'
+  const orgAcronym = user?.organization?.acronym
+  const orgDisplayName = orgAcronym ? `${orgName} (${orgAcronym})` : orgName
   const orgIatiId = user?.organization?.iati_org_id
 
   // --- Country filter computed values ---
@@ -133,18 +216,205 @@ export default function BulkImportSourceStep({
     return Array.from(levels).sort((a, b) => a - b)
   }, [datastoreActivities])
 
+  // Count transactions per hierarchy level (respecting country filter with IATI geography rules)
+  const transactionCountsByLevel = useMemo(() => {
+    const counts: Record<number | 'all', number> = { all: 0 }
+
+    // Filter by country first if selected (using IATI geography rules)
+    let activities = datastoreActivities
+    if (selectedCountry) {
+      const countryBounds = COUNTRY_BOUNDING_BOXES[selectedCountry]
+      const alpha3Code = ALPHA2_TO_ALPHA3[selectedCountry] || selectedCountry
+
+      // Helper: check if a country code matches (handles alpha-2 and alpha-3)
+      const countryCodeMatches = (code: string | undefined): boolean => {
+        if (!code) return false
+        const upperCode = code.toUpperCase()
+        return upperCode === selectedCountry.toUpperCase() || upperCode === alpha3Code.toUpperCase()
+      }
+
+      // Helper: check if coordinates fall within country bounds
+      const coordsInCountry = (lat: number, lng: number): boolean => {
+        if (!countryBounds) return false
+        return lat >= countryBounds.minLat && lat <= countryBounds.maxLat &&
+               lng >= countryBounds.minLng && lng <= countryBounds.maxLng
+      }
+
+      // Helper: check if activity is in country via locations
+      const activityInCountryViaLocations = (a: ParsedActivity): boolean => {
+        if (a.recipientCountries && a.recipientCountries.length > 0) return false
+        if (!a.locations || a.locations.length === 0) return false
+        const locationsWithCoords = a.locations.filter(l => l.coordinates)
+        if (locationsWithCoords.length === 0) return false
+        return locationsWithCoords.every(l =>
+          l.coordinates && coordsInCountry(l.coordinates.latitude, l.coordinates.longitude)
+        )
+      }
+
+      activities = activities.filter(a =>
+        a.recipientCountries?.some(rc => countryCodeMatches(rc.code)) ||
+        activityInCountryViaLocations(a)
+      )
+    }
+
+    for (const a of activities) {
+      const txCount = a.transactions?.length || 0
+      counts.all += txCount
+      if (a.hierarchy != null) {
+        counts[a.hierarchy] = (counts[a.hierarchy] || 0) + txCount
+      }
+    }
+    return counts
+  }, [datastoreActivities, selectedCountry])
+
   const filteredActivities = useMemo(() => {
     let result = datastoreActivities
     if (selectedCountry) {
-      result = result.filter(a =>
-        a.recipientCountries?.some(rc => rc.code === selectedCountry)
-      )
+      // IATI Geography Rules Implementation:
+      // An activity is considered to be in a country if EITHER:
+      // Condition A: recipient-country includes the country code
+      // Condition B: recipient-country is empty AND all locations resolve to that country
+      //
+      // For location-based inference, we use country bounding boxes.
+      // Note: This is approximate - a more precise approach would use GeoJSON boundaries.
+      const countryBounds = COUNTRY_BOUNDING_BOXES[selectedCountry]
+      const alpha3Code = ALPHA2_TO_ALPHA3[selectedCountry] || selectedCountry
+
+      // Helper: check if a country code matches (handles alpha-2 and alpha-3)
+      const countryCodeMatches = (code: string | undefined): boolean => {
+        if (!code) return false
+        const upperCode = code.toUpperCase()
+        return upperCode === selectedCountry.toUpperCase() || upperCode === alpha3Code.toUpperCase()
+      }
+
+      // Helper: check if coordinates fall within country bounds
+      const coordsInCountry = (lat: number, lng: number): boolean => {
+        if (!countryBounds) return false
+        return lat >= countryBounds.minLat && lat <= countryBounds.maxLat &&
+               lng >= countryBounds.minLng && lng <= countryBounds.maxLng
+      }
+
+      // Helper: check if activity is in country via locations (Condition B)
+      const activityInCountryViaLocations = (a: ParsedActivity): boolean => {
+        // Must have no recipient-country data
+        if (a.recipientCountries && a.recipientCountries.length > 0) return false
+        // Must have at least one location with coordinates
+        if (!a.locations || a.locations.length === 0) return false
+        const locationsWithCoords = a.locations.filter(l => l.coordinates)
+        if (locationsWithCoords.length === 0) return false
+        // ALL locations must be in the selected country
+        return locationsWithCoords.every(l =>
+          l.coordinates && coordsInCountry(l.coordinates.latitude, l.coordinates.longitude)
+        )
+      }
+
+      // Debug: count what's being filtered
+      const beforeFilter = result.length
+      const withRecipientCountry = result.filter(a => a.recipientCountries?.some(rc => countryCodeMatches(rc.code))).length
+      const withLocationInference = result.filter(a => activityInCountryViaLocations(a)).length
+      console.log('[Filter Debug] Country filter:', {
+        selectedCountry,
+        alpha3Code,
+        beforeFilter,
+        withRecipientCountry,
+        withLocationInference,
+      })
+
+      result = result.filter(a => {
+        // Condition A: Has recipient-country with selected code (check both alpha-2 and alpha-3)
+        const hasRecipientCountry = a.recipientCountries?.some(rc => countryCodeMatches(rc.code))
+        if (hasRecipientCountry) return true
+
+        // Condition B: No recipient-country, but all locations in selected country
+        return activityInCountryViaLocations(a)
+      })
+
+      console.log('[Filter Debug] After country filter:', result.length, 'activities')
+
+      // Apply country scope filter (100% vs regional)
+      if (countryScope === '100') {
+        // Debug: show what percentages exist
+        const percentages = result.map(a => a.recipientCountries?.find(rc => countryCodeMatches(rc.code))?.percentage)
+        console.log('[Filter Debug] Percentages for selected country:', [...new Set(percentages)])
+
+        // Only activities where selected country is 100% (or only country listed, or inferred from locations)
+        result = result.filter(a => {
+          const countryAlloc = a.recipientCountries?.find(rc => countryCodeMatches(rc.code))
+
+          // If activity was matched via locations (no recipient-country), treat as 100%
+          if (!a.recipientCountries || a.recipientCountries.length === 0) {
+            return activityInCountryViaLocations(a)
+          }
+
+          // 100% if: explicit 100% (handle string/number), or it's the only country
+          const pct = countryAlloc?.percentage
+          const is100 = pct !== undefined && pct !== null && Number(pct) >= 99.9
+          const isSingleCountry = a.recipientCountries?.length === 1
+          return countryAlloc && (is100 || (isSingleCountry && (pct == null || Number(pct) >= 99.9)))
+        })
+        console.log('[Filter Debug] After 100% filter:', result.length, 'activities')
+      } else if (countryScope === 'regional') {
+        // Only activities where selected country has partial allocation (<100%)
+        // Activities matched via locations are NOT regional (they're 100% by inference)
+        result = result.filter(a => {
+          // Skip activities matched via locations (they're 100%, not regional)
+          if (!a.recipientCountries || a.recipientCountries.length === 0) return false
+
+          const countryAlloc = a.recipientCountries?.find(rc => countryCodeMatches(rc.code))
+          const hasMultipleCountries = (a.recipientCountries?.length || 0) > 1
+          // Regional if: explicit <100%, or multiple countries listed
+          return countryAlloc && (
+            (countryAlloc.percentage != null && countryAlloc.percentage < 100) ||
+            hasMultipleCountries
+          )
+        })
+      }
     }
     if (selectedHierarchy != null) {
+      const beforeHierarchyFilter = result.length
       result = result.filter(a => a.hierarchy === selectedHierarchy)
+      console.log(`[Filter Debug] Hierarchy filter (level ${selectedHierarchy}): ${beforeHierarchyFilter} → ${result.length} activities`)
     }
     return result
-  }, [datastoreActivities, selectedCountry, selectedHierarchy])
+  }, [datastoreActivities, selectedCountry, selectedHierarchy, countryScope])
+
+  // Diagnostic: count Level 2 activities without recipient-country data
+  const level2DiagnosticInfo = useMemo(() => {
+    if (selectedHierarchy !== 2 || !selectedCountry) return null
+
+    const allLevel2 = datastoreActivities.filter(a => a.hierarchy === 2)
+    const level2WithCountryData = allLevel2.filter(a => a.recipientCountries && a.recipientCountries.length > 0)
+
+    // Check for both alpha-2 (MM) and alpha-3 (MMR) codes
+    const alpha3Code = ALPHA2_TO_ALPHA3[selectedCountry] || selectedCountry
+
+    const level2WithSelectedCountry = allLevel2.filter(a =>
+      a.recipientCountries?.some(rc =>
+        rc.code === selectedCountry ||
+        rc.code === alpha3Code ||
+        rc.code?.toUpperCase() === selectedCountry.toUpperCase() ||
+        rc.code?.toUpperCase() === alpha3Code.toUpperCase()
+      )
+    )
+
+    return {
+      totalLevel2: allLevel2.length,
+      withCountryData: level2WithCountryData.length,
+      withSelectedCountry: level2WithSelectedCountry.length,
+      percentWithCountryData: allLevel2.length > 0
+        ? Math.round((level2WithCountryData.length / allLevel2.length) * 100)
+        : 0,
+    }
+  }, [datastoreActivities, selectedHierarchy, selectedCountry])
+
+  // Calculate totals for filtered activities
+  const filteredTotals = useMemo(() => {
+    let totalTransactions = 0
+    for (const a of filteredActivities) {
+      totalTransactions += a.transactions?.length || 0
+    }
+    return { totalTransactions }
+  }, [filteredActivities])
 
   const searchedCountries = useMemo(() => {
     if (!countrySearch) return availableCountries
@@ -156,10 +426,77 @@ export default function BulkImportSourceStep({
     )
   }, [availableCountries, countrySearch])
 
+  // --- Progress simulation helpers ---
+  // Since the API call is a single long request without streaming progress,
+  // we simulate progress based on expected duration (~65s for large orgs)
+  const startProgressSimulation = useCallback(() => {
+    setFetchProgress(0)
+    setFetchPhase('connecting')
+    fetchStartTimeRef.current = Date.now()
+
+    // Clear any existing interval
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current)
+    }
+
+    // Progress phases and their time ranges (in seconds):
+    // - connecting: 0-3s (0-5%)
+    // - fetching: 3-55s (5-80%) - this is where most time is spent
+    // - enriching: 55-62s (80-95%)
+    // - processing: 62-65s (95-99%)
+    progressIntervalRef.current = setInterval(() => {
+      const elapsed = (Date.now() - fetchStartTimeRef.current) / 1000
+
+      if (elapsed < 3) {
+        // Connecting phase
+        setFetchPhase('connecting')
+        setFetchProgress(Math.min(5, (elapsed / 3) * 5))
+      } else if (elapsed < 55) {
+        // Fetching phase (main duration)
+        setFetchPhase('fetching')
+        // Progress from 5 to 80 over 52 seconds
+        const fetchProgress = 5 + ((elapsed - 3) / 52) * 75
+        setFetchProgress(Math.min(80, fetchProgress))
+      } else if (elapsed < 62) {
+        // Enriching phase
+        setFetchPhase('enriching')
+        const enrichProgress = 80 + ((elapsed - 55) / 7) * 15
+        setFetchProgress(Math.min(95, enrichProgress))
+      } else {
+        // Processing phase
+        setFetchPhase('processing')
+        // Slow down near the end, cap at 99 until actual completion
+        const processProgress = 95 + Math.min(4, (elapsed - 62) / 3 * 4)
+        setFetchProgress(Math.min(99, processProgress))
+      }
+    }, 200)
+  }, [])
+
+  const stopProgressSimulation = useCallback((success: boolean) => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current)
+      progressIntervalRef.current = null
+    }
+    if (success) {
+      setFetchProgress(100)
+      setFetchPhase('processing')
+    }
+  }, [])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+      }
+    }
+  }, [])
+
   // --- Datastore fetch ---
   const fetchFromDatastore = useCallback(async (forceRefresh = false) => {
     setFetchStatus('fetching')
     setFetchError(null)
+    startProgressSimulation()
 
     try {
       const url = forceRefresh
@@ -170,10 +507,13 @@ export default function BulkImportSourceStep({
       const data = await response.json()
 
       if (!response.ok) {
+        stopProgressSimulation(false)
         setFetchStatus('error')
         setFetchError(data.error || 'Failed to fetch activities')
         return
       }
+
+      stopProgressSimulation(true)
 
       const activities: ParsedActivity[] = data.activities || []
       setDatastoreActivities(activities)
@@ -186,24 +526,34 @@ export default function BulkImportSourceStep({
         organizationName: data.orgScope?.organizationName || '',
       })
 
-      // Reset filters on fresh fetch
-      setSelectedCountry('')
+      // Set default country filter to home country if it exists in activities
+      const defaultCountry = homeCountry && activities.some((a: ParsedActivity) =>
+        a.recipientCountries?.some(rc => rc.code === homeCountry)
+      ) ? homeCountry : ''
+
+      setSelectedCountry(defaultCountry)
       setSelectedHierarchy(null)
 
-      // Notify parent with all activities (no filter on initial load)
+      // Filter activities by home country if applicable
+      const filteredByCountry = defaultCountry
+        ? activities.filter((a: ParsedActivity) => a.recipientCountries?.some(rc => rc.code === defaultCountry))
+        : activities
+
+      // Notify parent with filtered activities
       const meta: BulkImportMeta = {
         sourceMode: 'datastore',
         reportingOrgRef: data.orgScope?.reportingOrgRef || orgIatiId || '',
         reportingOrgName: data.orgScope?.organizationName || orgName,
-        activityCount: activities.length,
+        activityCount: filteredByCountry.length,
         fetchedAt: data.fetchedAt,
       }
-      onActivitiesReady(activities, meta)
+      onActivitiesReady(filteredByCountry, meta)
     } catch (err) {
+      stopProgressSimulation(false)
       setFetchStatus('error')
       setFetchError(err instanceof Error ? err.message : 'Failed to fetch activities')
     }
-  }, [orgIatiId, orgName, onActivitiesReady])
+  }, [homeCountry, orgIatiId, orgName, onActivitiesReady, startProgressSimulation, stopProgressSimulation])
 
   // Auto-fetch on mount for datastore mode (only once)
   useEffect(() => {
@@ -214,11 +564,72 @@ export default function BulkImportSourceStep({
   }, [sourceMode, activitiesLoaded, fetchStatus, fetchFromDatastore])
 
   // --- Shared filter helper ---
-  const applyFiltersAndNotify = useCallback((country: string, hierarchy: number | null) => {
+  const applyFiltersAndNotify = useCallback((country: string, hierarchy: number | null, scope: 'all' | '100' | 'regional') => {
     let filtered = datastoreActivities
+
     if (country) {
-      filtered = filtered.filter(a => a.recipientCountries?.some(rc => rc.code === country))
+      // IATI Geography Rules: match by recipient-country OR location coordinates
+      const countryBounds = COUNTRY_BOUNDING_BOXES[country]
+      const alpha3Code = ALPHA2_TO_ALPHA3[country] || country
+
+      // Helper: check if a country code matches (handles alpha-2 and alpha-3)
+      const countryCodeMatches = (code: string | undefined): boolean => {
+        if (!code) return false
+        const upperCode = code.toUpperCase()
+        return upperCode === country.toUpperCase() || upperCode === alpha3Code.toUpperCase()
+      }
+
+      const coordsInCountry = (lat: number, lng: number): boolean => {
+        if (!countryBounds) return false
+        return lat >= countryBounds.minLat && lat <= countryBounds.maxLat &&
+               lng >= countryBounds.minLng && lng <= countryBounds.maxLng
+      }
+
+      const activityInCountryViaLocations = (a: ParsedActivity): boolean => {
+        if (a.recipientCountries && a.recipientCountries.length > 0) return false
+        if (!a.locations || a.locations.length === 0) return false
+        const locationsWithCoords = a.locations.filter(l => l.coordinates)
+        if (locationsWithCoords.length === 0) return false
+        return locationsWithCoords.every(l =>
+          l.coordinates && coordsInCountry(l.coordinates.latitude, l.coordinates.longitude)
+        )
+      }
+
+      // Filter by country (recipient-country OR location inference)
+      filtered = filtered.filter(a => {
+        // Condition A: Has recipient-country with selected code
+        if (a.recipientCountries?.some(rc => countryCodeMatches(rc.code))) return true
+
+        // Condition B: No recipient-country, but all locations in selected country
+        return activityInCountryViaLocations(a)
+      })
+
+      // Apply country scope filter (100% vs regional)
+      if (scope === '100') {
+        filtered = filtered.filter(a => {
+          const countryAlloc = a.recipientCountries?.find(rc => countryCodeMatches(rc.code))
+          // Activities without recipient-country data were matched via locations - treat as 100%
+          if (!a.recipientCountries || a.recipientCountries.length === 0) {
+            return activityInCountryViaLocations(a)
+          }
+          const pct = countryAlloc?.percentage
+          const is100 = pct !== undefined && pct !== null && Number(pct) >= 99.9
+          const isSingleCountry = a.recipientCountries?.length === 1
+          return countryAlloc && (is100 || (isSingleCountry && (pct == null || Number(pct) >= 99.9)))
+        })
+      } else if (scope === 'regional') {
+        filtered = filtered.filter(a => {
+          if (!a.recipientCountries || a.recipientCountries.length === 0) return false
+          const countryAlloc = a.recipientCountries?.find(rc => countryCodeMatches(rc.code))
+          const hasMultipleCountries = (a.recipientCountries?.length || 0) > 1
+          return countryAlloc && (
+            (countryAlloc.percentage != null && countryAlloc.percentage < 100) ||
+            hasMultipleCountries
+          )
+        })
+      }
     }
+
     if (hierarchy != null) {
       filtered = filtered.filter(a => a.hierarchy === hierarchy)
     }
@@ -238,14 +649,25 @@ export default function BulkImportSourceStep({
   // --- Country filter handler ---
   const handleCountryChange = useCallback((country: string) => {
     setSelectedCountry(country)
-    applyFiltersAndNotify(country, selectedHierarchy)
-  }, [selectedHierarchy, applyFiltersAndNotify])
+    // Reset country scope when clearing country filter
+    const newScope = country ? countryScope : 'all'
+    if (!country) {
+      setCountryScope('all')
+    }
+    applyFiltersAndNotify(country, selectedHierarchy, newScope)
+  }, [selectedHierarchy, countryScope, applyFiltersAndNotify])
 
   // --- Hierarchy filter handler ---
   const handleHierarchyChange = useCallback((hierarchy: number | null) => {
     setSelectedHierarchy(hierarchy)
-    applyFiltersAndNotify(selectedCountry, hierarchy)
-  }, [selectedCountry, applyFiltersAndNotify])
+    applyFiltersAndNotify(selectedCountry, hierarchy, countryScope)
+  }, [selectedCountry, countryScope, applyFiltersAndNotify])
+
+  // --- Country scope filter handler ---
+  const handleCountryScopeChange = useCallback((scope: 'all' | '100' | 'regional') => {
+    setCountryScope(scope)
+    applyFiltersAndNotify(selectedCountry, selectedHierarchy, scope)
+  }, [selectedCountry, selectedHierarchy, applyFiltersAndNotify])
 
   // --- XML mode handlers ---
   const handleXmlFileReady = useCallback((file: File, meta: BulkImportMeta) => {
@@ -291,18 +713,29 @@ export default function BulkImportSourceStep({
       <Card className="bg-gray-50 border-gray-200">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gray-900 rounded-lg">
-              <Building2 className="h-5 w-5 text-white" />
-            </div>
+            {user?.organization?.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.organization.logo}
+                alt={orgName}
+                className="h-10 w-10 rounded-lg object-contain bg-white border border-gray-200"
+              />
+            ) : (
+              <div className="p-2 bg-gray-900 rounded-lg">
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+            )}
             <div className="flex-1">
-              <p className="font-semibold text-gray-900">{orgName}</p>
+              <p className="font-semibold text-gray-900">{orgDisplayName}</p>
               {orgIatiId ? (
-                <p className="text-sm text-gray-500">IATI Identifier: {orgIatiId}</p>
+                <p className="text-sm text-gray-500">
+                  IATI Identifier <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 ml-1">{orgIatiId}</span>
+                </p>
               ) : (
                 <p className="text-sm text-amber-600">No IATI identifier configured</p>
               )}
             </div>
-            <Badge variant="outline" className="bg-white text-gray-700 border-gray-300">
+            <Badge variant="outline" className="text-white border-0" style={{ backgroundColor: '#4C5568' }}>
               Logged in
             </Badge>
           </div>
@@ -330,14 +763,63 @@ export default function BulkImportSourceStep({
           {fetchStatus === 'fetching' && (
             <Card>
               <CardContent className="p-8">
-                <div className="flex flex-col items-center gap-4">
-                  <Loader2 className="h-10 w-10 animate-spin text-gray-900" />
+                <div className="flex flex-col items-center gap-6">
                   <div className="text-center">
-                    <p className="font-medium text-lg">
+                    <p className="font-medium text-lg mb-1">
                       Fetching activities published by {orgName}
                     </p>
-                    <LoadingTextRoller orgName={orgName} />
+                    <p className="text-sm text-gray-500">
+                      {fetchPhase === 'connecting' && 'Connecting to IATI Registry...'}
+                      {fetchPhase === 'fetching' && 'Downloading activity data from IATI Datastore...'}
+                      {fetchPhase === 'enriching' && 'Enriching with sector percentages...'}
+                      {fetchPhase === 'processing' && 'Processing and validating data...'}
+                    </p>
                   </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full max-w-md">
+                    <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="absolute top-0 left-0 h-full bg-gray-800 rounded-full transition-all duration-300 ease-out"
+                        style={{ width: `${fetchProgress}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs text-gray-500">
+                      <span>{Math.round(fetchProgress)}%</span>
+                      <span className="flex items-center gap-1.5">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        {fetchPhase === 'connecting' && 'Step 1 of 4'}
+                        {fetchPhase === 'fetching' && 'Step 2 of 4'}
+                        {fetchPhase === 'enriching' && 'Step 3 of 4'}
+                        {fetchPhase === 'processing' && 'Step 4 of 4'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Phase indicators */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className={`flex items-center gap-1 ${fetchPhase === 'connecting' ? 'text-gray-900 font-medium' : fetchProgress >= 5 ? 'text-green-600' : 'text-gray-400'}`}>
+                      {fetchProgress >= 5 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
+                      Connect
+                    </div>
+                    <div className="w-4 h-px bg-gray-300" />
+                    <div className={`flex items-center gap-1 ${fetchPhase === 'fetching' ? 'text-gray-900 font-medium' : fetchProgress >= 80 ? 'text-green-600' : 'text-gray-400'}`}>
+                      {fetchProgress >= 80 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
+                      Fetch
+                    </div>
+                    <div className="w-4 h-px bg-gray-300" />
+                    <div className={`flex items-center gap-1 ${fetchPhase === 'enriching' ? 'text-gray-900 font-medium' : fetchProgress >= 95 ? 'text-green-600' : 'text-gray-400'}`}>
+                      {fetchProgress >= 95 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
+                      Enrich
+                    </div>
+                    <div className="w-4 h-px bg-gray-300" />
+                    <div className={`flex items-center gap-1 ${fetchPhase === 'processing' ? 'text-gray-900 font-medium' : fetchProgress >= 100 ? 'text-green-600' : 'text-gray-400'}`}>
+                      {fetchProgress >= 100 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
+                      Process
+                    </div>
+                  </div>
+
+                  <LoadingTextRoller orgName={orgName} />
                 </div>
               </CardContent>
             </Card>
@@ -345,21 +827,17 @@ export default function BulkImportSourceStep({
 
           {fetchStatus === 'success' && (
             <>
-              <Card className="border-green-200">
+              <Card className="border-gray-200">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-green-50 rounded-lg">
-                      <CheckCircle2 className="h-8 w-8 text-green-600" />
+                    <div className="p-3 bg-gray-100 rounded-lg">
+                      <CheckCircle2 className="h-8 w-8 text-gray-700" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-green-800">
-                        Found {datastoreTotal} activit{datastoreTotal === 1 ? 'y' : 'ies'} published by {orgName}
+                      <h3 className="font-semibold text-lg text-gray-900">
+                        Found {datastoreTotal.toLocaleString()} activit{datastoreTotal === 1 ? 'y' : 'ies'} published by {orgDisplayName}
                       </h3>
                       <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <FileText className="h-4 w-4" />
-                          {datastoreActivities.length} loaded for review
-                        </div>
                         <div className="flex items-center gap-1">
                           <Database className="h-4 w-4" />
                           {datastoreActivities.filter((a) => a.matched).length} already in database
@@ -389,18 +867,19 @@ export default function BulkImportSourceStep({
               {datastoreActivities.length > 0 && (
                 <Card>
                   <CardContent className="p-4 space-y-3">
-                    {/* Country filter row */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700 shrink-0 w-36">
-                        <Filter className="h-4 w-4" />
-                        Recipient country:
-                      </div>
-                      <div className="flex items-center gap-2">
+                    {/* Filters row */}
+                    <div className="flex items-start gap-8">
+                      {/* Country filter */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                          <Filter className="h-4 w-4" />
+                          Recipient Country
+                        </div>
                         <Popover open={countryOpen} onOpenChange={(open) => { setCountryOpen(open); if (!open) setCountrySearch('') }}>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-80 justify-between font-normal h-10">
+                            <Button variant="outline" className="w-72 justify-between font-normal h-10 pr-2">
                               {selectedCountry ? (
-                                <span className="flex items-center gap-2">
+                                <span className="flex items-center gap-2 flex-1">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={`https://flagcdn.com/w40/${selectedCountry.toLowerCase()}.png`}
@@ -413,12 +892,26 @@ export default function BulkImportSourceStep({
                                   <span>{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span>
                                 </span>
                               ) : (
-                                <span className="text-gray-500">All countries</span>
+                                <span className="text-gray-500 flex-1 text-left">All countries</span>
                               )}
-                              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                              <div className="flex items-center gap-1 shrink-0">
+                                {selectedCountry && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleCountryChange('')
+                                    }}
+                                    className="p-1 hover:bg-gray-100 rounded"
+                                    title="Clear country filter"
+                                  >
+                                    <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                                  </button>
+                                )}
+                                <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                              </div>
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-80 p-0" align="start">
+                          <PopoverContent className="w-72 p-0" align="start">
                             <div className="p-2 border-b">
                               <Input
                                 placeholder="Search countries..."
@@ -461,74 +954,112 @@ export default function BulkImportSourceStep({
                             </ScrollArea>
                           </PopoverContent>
                         </Popover>
-                        {selectedCountry && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleCountryChange('')}
-                            title="Clear country filter"
-                            className="shrink-0 h-10 w-10"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )}
                       </div>
-                    </div>
 
-                    {/* Hierarchy filter row */}
-                    {availableHierarchies.length > 1 && (
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-gray-700 shrink-0 w-36">
-                          Activity level:
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant={selectedHierarchy == null ? 'default' : 'outline'}
-                            size="sm"
-                            className={selectedHierarchy == null ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
-                            onClick={() => handleHierarchyChange(null)}
-                          >
-                            All levels
-                          </Button>
-                          {availableHierarchies.map((level) => (
+                      {/* Country scope filter - only show when country is selected */}
+                      {selectedCountry && (
+                        <div className="space-y-1.5">
+                          <div className="text-sm font-medium text-gray-700">
+                            Country Scope
+                          </div>
+                          <div className="flex items-center gap-1">
                             <Button
-                              key={level}
-                              variant={selectedHierarchy === level ? 'default' : 'outline'}
+                              variant={countryScope === 'all' ? 'default' : 'outline'}
                               size="sm"
-                              className={selectedHierarchy === level ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
-                              onClick={() => handleHierarchyChange(level)}
+                              className={countryScope === 'all' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                              onClick={() => handleCountryScopeChange('all')}
                             >
-                              {level === 1 ? 'Level 1 (Parent)' : level === 2 ? 'Level 2 (Sub-activity)' : `Level ${level}`}
+                              All
                             </Button>
-                          ))}
+                            <Button
+                              variant={countryScope === '100' ? 'default' : 'outline'}
+                              size="sm"
+                              className={countryScope === '100' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                              onClick={() => handleCountryScopeChange('100')}
+                            >
+                              100% {COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}
+                            </Button>
+                            <Button
+                              variant={countryScope === 'regional' ? 'default' : 'outline'}
+                              size="sm"
+                              className={countryScope === 'regional' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                              onClick={() => handleCountryScopeChange('regional')}
+                            >
+                              Regional
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+
+                      {/* Hierarchy filter */}
+                      {availableHierarchies.length > 1 && (
+                        <div className="space-y-1.5">
+                          <div className="text-sm font-medium text-gray-700">
+                            Activity Level
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant={selectedHierarchy == null ? 'default' : 'outline'}
+                              size="sm"
+                              className={selectedHierarchy == null ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                              onClick={() => handleHierarchyChange(null)}
+                            >
+                              All Levels
+                            </Button>
+                            {availableHierarchies.map((level) => (
+                              <Button
+                                key={level}
+                                variant={selectedHierarchy === level ? 'default' : 'outline'}
+                                size="sm"
+                                className={selectedHierarchy === level ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                                onClick={() => handleHierarchyChange(level)}
+                              >
+                                {level === 1 ? 'Level 1 (Parent)' : level === 2 ? 'Level 2 (Sub-Activity)' : `Level ${level}`}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Filter summary */}
                     {(selectedCountry || selectedHierarchy != null) && (
                       <div className="flex items-center justify-between pt-1 border-t border-gray-100">
                         <div className="text-sm text-gray-500">
-                          Showing <span className="font-semibold text-gray-700">{filteredActivities.length}</span> of {datastoreActivities.length} activities
+                          Showing <span className="font-semibold text-gray-700">{filteredActivities.length}</span> of {datastoreActivities.length.toLocaleString()} activities
                           {selectedCountry && (
-                            <span> in <span className="font-medium">{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span></span>
+                            <span>
+                              {countryScope === '100' ? ' (100%)' : countryScope === 'regional' ? ' (regional)' : ''} in <span className="font-medium">{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span>
+                            </span>
                           )}
                           {selectedHierarchy != null && (
-                            <span> at level {selectedHierarchy}</span>
+                            <span> at Level {selectedHierarchy}</span>
                           )}
+                          <span> with <span className="font-semibold text-gray-700">{filteredTotals.totalTransactions.toLocaleString()}</span> transactions</span>
                         </div>
                         {(selectedCountry || selectedHierarchy != null) && (
                           <button
                             onClick={() => {
                               setSelectedCountry('')
                               setSelectedHierarchy(null)
-                              applyFiltersAndNotify('', null)
+                              setCountryScope('all')
+                              applyFiltersAndNotify('', null, 'all')
                             }}
                             className="text-xs text-gray-400 hover:text-gray-600 underline"
                           >
                             Clear all filters
                           </button>
                         )}
+                      </div>
+                    )}
+
+                    {/* Level 2 + Country warning */}
+                    {selectedHierarchy === 2 && selectedCountry && level2DiagnosticInfo && level2DiagnosticInfo.percentWithCountryData < 50 && filteredActivities.length > 0 && (
+                      <div className="pt-2 border-t border-gray-100">
+                        <p className="text-xs text-amber-600 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3 shrink-0" />
+                          Note: Only {level2DiagnosticInfo.percentWithCountryData}% of Level 2 sub-activities have explicit country data. Others inherit from their parent.
+                        </p>
                       </div>
                     )}
                   </CardContent>
@@ -551,8 +1082,8 @@ export default function BulkImportSourceStep({
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     No activities found
-                    {selectedCountry && ` with spend in ${COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}`}
-                    {selectedHierarchy != null && ` at hierarchy level ${selectedHierarchy}`}
+                    {selectedCountry && ` in ${COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}`}
+                    {selectedHierarchy != null && ` at Level ${selectedHierarchy}`}
                     . Try adjusting the filters or clear them to see all activities.
                   </AlertDescription>
                 </Alert>
@@ -604,7 +1135,6 @@ export default function BulkImportSourceStep({
             <AlertDescription>
               The system automatically fetches your organisation&apos;s IATI activities from the
               IATI Registry. Only activities published by <strong>{orgName}</strong> are shown.
-              You cannot browse or import data from other organisations.
             </AlertDescription>
           </Alert>
         </TabsContent>

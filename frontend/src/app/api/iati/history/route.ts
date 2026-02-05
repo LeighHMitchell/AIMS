@@ -12,22 +12,28 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Fetch import history with user details
-    const { data: history, error } = await supabase
-      .from('iati_import_history')
+    // Fetch import history from iati_import_batches with user details
+    const { data: batches, error } = await supabase
+      .from('iati_import_batches')
       .select(`
         id,
         user_id,
-        timestamp,
-        activities_count,
-        organizations_count,
-        transactions_count,
-        errors_count,
+        created_at,
+        started_at,
+        completed_at,
+        total_activities,
+        created_count,
+        updated_count,
+        skipped_count,
+        failed_count,
         status,
         file_name,
+        source_mode,
+        reporting_org_name,
+        error_message,
         users!inner(id, first_name, last_name, name)
       `)
-      .order('timestamp', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(50);
 
     if (error) {
@@ -36,23 +42,34 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the data for the frontend
-    const transformedHistory = (history || []).map((record: any) => {
-      // Check if rollback is allowed (within 1 hour)
-      const importTime = new Date(record.timestamp);
+    const transformedHistory = (batches || []).map((record: any) => {
+      // Check if rollback is allowed (within 1 hour and completed)
+      const importTime = new Date(record.completed_at || record.created_at);
       const now = new Date();
       const hoursSinceImport = (now.getTime() - importTime.getTime()) / (1000 * 60 * 60);
       const canRollback = hoursSinceImport <= 1 && record.status === 'completed';
 
+      // Calculate total imported (created + updated)
+      const activitiesCount = (record.created_count || 0) + (record.updated_count || 0);
+
       return {
         id: record.id,
-        fileName: record.file_name || 'Unknown file',
+        fileName: record.file_name || (record.source_mode === 'datastore' ? 'IATI Registry' : 'Unknown file'),
         userName: record.users ? `${record.users.first_name || ''} ${record.users.last_name || ''}`.trim() || record.users.name || 'Unknown user' : 'Unknown user',
-        timestamp: record.timestamp,
-        activitiesCount: record.activities_count,
-        organizationsCount: record.organizations_count,
-        transactionsCount: record.transactions_count,
-        errorsCount: record.errors_count,
+        timestamp: record.completed_at || record.created_at,
+        activitiesCount,
+        createdCount: record.created_count || 0,
+        updatedCount: record.updated_count || 0,
+        skippedCount: record.skipped_count || 0,
+        failedCount: record.failed_count || 0,
+        totalActivities: record.total_activities || 0,
+        organizationsCount: 0, // Bulk import doesn't track orgs separately
+        transactionsCount: 0, // Would need to query activity_transactions
+        errorsCount: record.failed_count || 0,
         status: record.status,
+        sourceMode: record.source_mode,
+        reportingOrgName: record.reporting_org_name,
+        errorMessage: record.error_message,
         canRollback
       };
     });
@@ -65,4 +82,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
