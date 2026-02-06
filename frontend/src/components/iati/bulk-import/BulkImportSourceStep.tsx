@@ -1075,33 +1075,32 @@ export default function BulkImportSourceStep({
 
                       {/* Date range filter */}
                       <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            id="dateFilterEnabledPrefetch"
-                            checked={dateFilterEnabled}
-                            onChange={(e) => setDateFilterEnabled(e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                          <label htmlFor="dateFilterEnabledPrefetch" className="text-sm font-medium text-gray-700">
-                            Date Range
-                          </label>
+                        <div className="text-sm font-medium text-gray-700">
+                          Date Range
                         </div>
                         <div className="flex items-center gap-2">
+                          <Button
+                            variant={!dateFilterEnabled ? 'default' : 'outline'}
+                            size="sm"
+                            className={!dateFilterEnabled ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                            onClick={() => setDateFilterEnabled(false)}
+                          >
+                            All
+                          </Button>
                           <DatePicker
                             value={dateRangeStart}
-                            onChange={(value) => setDateRangeStart(value)}
+                            onChange={(value) => { setDateRangeStart(value); setDateFilterEnabled(true) }}
                             disabled={!dateFilterEnabled}
-                            placeholder="Start date"
-                            className="h-10 w-36 text-sm"
+                            placeholder="Start"
+                            className={`h-10 w-32 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
                           />
-                          <span className="text-gray-400">to</span>
+                          <span className={`text-gray-400 ${!dateFilterEnabled ? 'opacity-50' : ''}`}>to</span>
                           <DatePicker
                             value={dateRangeEnd}
-                            onChange={(value) => setDateRangeEnd(value)}
+                            onChange={(value) => { setDateRangeEnd(value); setDateFilterEnabled(true) }}
                             disabled={!dateFilterEnabled}
-                            placeholder="End date"
-                            className="h-10 w-36 text-sm"
+                            placeholder="End"
+                            className={`h-10 w-32 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
                           />
                         </div>
                       </div>
