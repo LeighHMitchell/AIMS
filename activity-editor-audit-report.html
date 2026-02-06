@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Editor Audit Report</title>
+  <style>
+    :root {
+      --critical: #dc2626;
+      --high: #ea580c;
+      --medium: #ca8a04;
+      --low: #2563eb;
+      --info: #6b7280;
+      --bg-gray: #f9fafb;
+      --border: #e5e7eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1f2937;
+      background: #fff;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      border-bottom: 3px solid #111827;
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 0.5rem;
+    }
+
+    .metadata {
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #111827;
+      margin: 2rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #374151;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #4b5563;
+      margin: 1rem 0 0.5rem;
+    }
+
+    #toc {
+      background: var(--bg-gray);
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+
+    #toc ul {
+      list-style: none;
+      columns: 2;
+    }
+
+    #toc li {
+      margin: 0.5rem 0;
+    }
+
+    #toc a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    #toc a:hover {
+      text-decoration: underline;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .stat-card {
+      background: var(--bg-gray);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .stat-card.critical { border-left: 4px solid var(--critical); }
+    .stat-card.high { border-left: 4px solid var(--high); }
+    .stat-card.medium { border-left: 4px solid var(--medium); }
+    .stat-card.low { border-left: 4px solid var(--low); }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.875rem;
+    }
+
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+
+    th {
+      background: #f3f4f6;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    .severity {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .severity.critical { background: #fef2f2; color: var(--critical); }
+    .severity.high { background: #fff7ed; color: var(--high); }
+    .severity.medium { background: #fefce8; color: var(--medium); }
+    .severity.low { background: #eff6ff; color: var(--low); }
+
+    code {
+      background: #f3f4f6;
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 0.8125rem;
+      color: #1f2937;
+    }
+
+    pre {
+      background: #1f2937;
+      color: #f3f4f6;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      margin: 1rem 0;
+    }
+
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    .file-path {
+      color: #6b7280;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 0.8125rem;
+    }
+
+    .line-ref {
+      color: #2563eb;
+      font-weight: 500;
+    }
+
+    .issue-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1rem 0;
+    }
+
+    .issue-card.critical { border-left: 4px solid var(--critical); }
+    .issue-card.high { border-left: 4px solid var(--high); }
+    .issue-card.medium { border-left: 4px solid var(--medium); }
+    .issue-card.low { border-left: 4px solid var(--low); }
+
+    .issue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+
+    .issue-title {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .recommendation {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 0.75rem;
+    }
+
+    .recommendation-title {
+      font-weight: 600;
+      color: #065f46;
+      margin-bottom: 0.5rem;
+    }
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    .comparison-table {
+      font-size: 0.8125rem;
+    }
+
+    .comparison-table td:first-child {
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fef2f2; color: #dc2626; }
+    .badge-yellow { background: #fef9c3; color: #854d0e; }
+    .badge-gray { background: #f3f4f6; color: #4b5563; }
+
+    @media print {
+      body { max-width: 100%; padding: 1rem; }
+      .issue-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Activity Editor Comprehensive Audit Report</h1>
+    <div class="metadata">
+      Generated: February 2, 2026 | Target: <code>/frontend/src/app/activities/new/page.tsx</code> | Method: Static Code Analysis
+    </div>
+  </header>
+
+  <nav id="toc">
+    <h2 style="margin-top: 0; border: none;">Table of Contents</h2>
+    <ul>
+      <li><a href="#summary">1. Executive Summary</a></li>
+      <li><a href="#autosave">2. Auto-Save Patterns</a></li>
+      <li><a href="#dropdowns">3. Dropdown Implementations</a></li>
+      <li><a href="#ui">4. UI Consistency</a></li>
+      <li><a href="#accessibility">5. Accessibility</a></li>
+      <li><a href="#tabs">6. Tab-by-Tab Findings</a></li>
+      <li><a href="#recommendations">7. Prioritized Recommendations</a></li>
+    </ul>
+  </nav>
+
+  <section id="summary">
+    <h2>1. Executive Summary</h2>
+
+    <p>The Activity Editor (<code>/frontend/src/app/activities/new/page.tsx</code>) is a 5,644-line component managing 31 tabs across 8 navigation groups. This audit identified <strong>47 issues</strong> across four categories.</p>
+
+    <div class="stats-grid">
+      <div class="stat-card critical">
+        <div class="stat-number" style="color: var(--critical)">8</div>
+        <div class="stat-label">Critical</div>
+      </div>
+      <div class="stat-card high">
+        <div class="stat-number" style="color: var(--high)">14</div>
+        <div class="stat-label">High</div>
+      </div>
+      <div class="stat-card medium">
+        <div class="stat-number" style="color: var(--medium)">16</div>
+        <div class="stat-label">Medium</div>
+      </div>
+      <div class="stat-card low">
+        <div class="stat-number" style="color: var(--low)">9</div>
+        <div class="stat-label">Low</div>
+      </div>
+    </div>
+
+    <h3>Issues by Category</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Critical</th>
+          <th>High</th>
+          <th>Medium</th>
+          <th>Low</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Auto-Save Patterns</td>
+          <td>3</td>
+          <td>5</td>
+          <td>4</td>
+          <td>2</td>
+          <td><strong>14</strong></td>
+        </tr>
+        <tr>
+          <td>Dropdown Implementations</td>
+          <td>2</td>
+          <td>4</td>
+          <td>5</td>
+          <td>2</td>
+          <td><strong>13</strong></td>
+        </tr>
+        <tr>
+          <td>UI Consistency</td>
+          <td>1</td>
+          <td>3</td>
+          <td>4</td>
+          <td>3</td>
+          <td><strong>11</strong></td>
+        </tr>
+        <tr>
+          <td>Accessibility</td>
+          <td>2</td>
+          <td>2</td>
+          <td>3</td>
+          <td>2</td>
+          <td><strong>9</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Key Findings Summary</h3>
+    <ul>
+      <li><strong>Auto-Save:</strong> 6 different save patterns across tabs; debounce times range from 0ms to 3000ms with no clear logic</li>
+      <li><strong>Dropdowns:</strong> <code>EnhancedMultiSelect</code> doesn't use <code>DropdownContext</code>, allowing multiple simultaneous open dropdowns</li>
+      <li><strong>UI:</strong> Inconsistent save indicators - some tabs use <code>LabelSaveIndicator</code>, others have no feedback</li>
+      <li><strong>Accessibility:</strong> Missing <code>htmlFor</code>/<code>id</code> associations; icon-only buttons lack <code>aria-label</code></li>
+    </ul>
+  </section>
+
+  <section id="autosave">
+    <h2>2. Auto-Save Patterns</h2>
+
+    <h3>2.1 Debounce Time Inconsistencies</h3>
+    <p>The codebase uses wildly different debounce times for similar field types with no apparent rationale:</p>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Field/Hook</th>
+          <th>Debounce (ms)</th>
+          <th>Immediate</th>
+          <th>File:Line</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>description</td>
+          <td><code>0</code></td>
+          <td>false</td>
+          <td class="file-path">page.tsx:<span class="line-ref">237</span></td>
+        </tr>
+        <tr>
+          <td>descriptionObjectives</td>
+          <td><code>0</code></td>
+          <td>false</td>
+          <td class="file-path">page.tsx:<span class="line-ref">252</span></td>
+        </tr>
+        <tr>
+          <td>otherIdentifiers</td>
+          <td><code>1000</code></td>
+          <td>false</td>
+          <td class="file-path">page.tsx:<span class="line-ref">297</span></td>
+        </tr>
+        <tr>
+          <td>customDates</td>
+          <td><code>1000</code></td>
+          <td>false</td>
+          <td class="file-path">page.tsx:<span class="line-ref">311</span></td>
+        </tr>
+        <tr>
+          <td>plannedStartDescription</td>
+          <td><code>500</code></td>
+          <td>false</td>
+          <td class="file-path">page.tsx:<span class="line-ref">475</span></td>
+        </tr>
+        <tr>
+          <td>useTitleAutosave</td>
+          <td><code>500</code></td>
+          <td>true</td>
+          <td class="file-path">use-field-autosave-new.ts:<span class="line-ref">646</span></td>
+        </tr>
+        <tr>
+          <td>useDescriptionAutosave</td>
+          <td><code>3000</code></td>
+          <td>false</td>
+          <td class="file-path">use-field-autosave-new.ts:<span class="line-ref">654</span></td>
+        </tr>
+        <tr>
+          <td>useSectorsAutosave</td>
+          <td><code>2000</code></td>
+          <td>false</td>
+          <td class="file-path">use-field-autosave-new.ts:<span class="line-ref">734</span></td>
+        </tr>
+        <tr>
+          <td>useExtendingPartnersAutosave</td>
+          <td><code>1500</code></td>
+          <td>false</td>
+          <td class="file-path">use-field-autosave-new.ts:<span class="line-ref">753</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="issue-card critical">
+      <div class="issue-header">
+        <span class="issue-title">AS-001: Inconsistent debounce times create unpredictable UX</span>
+        <span class="severity critical">Critical</span>
+      </div>
+      <p>Users cannot predict when their changes will be saved. A 0ms debounce on description vs 3000ms on the exported hook creates confusion.</p>
+      <div class="recommendation">
+        <div class="recommendation-title">Recommendation</div>
+        <p>Standardize debounce times: <strong>500ms</strong> for text inputs, <strong>0ms</strong> for selects/toggles, <strong>1500ms</strong> for rich text/complex fields.</p>
+      </div>
+    </div>
+
+    <h3>2.2 Save Trigger Patterns (Blur vs Change)</h3>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Trigger</th>
+          <th>Example Code</th>
+          <th>File:Line</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Title</td>
+          <td><span class="badge badge-yellow">onBlur</span></td>
+          <td><code>onBlur={() =&gt; saveActivity({})}</code></td>
+          <td class="file-path">page.tsx:<span class="line-ref">969-974</span></td>
+        </tr>
+        <tr>
+          <td>Acronym</td>
+          <td><span class="badge badge-yellow">onBlur</span></td>
+          <td><code>onBlur={() =&gt; acronymAutosave.triggerFieldSave()}</code></td>
+          <td class="file-path">page.tsx:<span class="line-ref">1024-1027</span></td>
+        </tr>
+        <tr>
+          <td>Description (General)</td>
+          <td><span class="badge badge-green">onChange</span></td>
+          <td><code>onChange={(content) =&gt; descriptionAutosave.triggerFieldSave(content)}</code></td>
+          <td class="file-path">page.tsx:<span class="line-ref">1285-1292</span></td>
+        </tr>
+        <tr>
+          <td>Description (Objectives)</td>
+          <td><span class="badge badge-yellow">onBlur</span></td>
+          <td><code>onBlur={() =&gt; descriptionObjectivesAutosave.triggerFieldSave()}</code></td>
+          <td class="file-path">page.tsx:<span class="line-ref">1360-1364</span></td>
+        </tr>
+        <tr>
+          <td>Collaboration Type</td>
+          <td><span class="badge badge-green">onChange</span></td>
+          <td><code>onValueChange={() =&gt; collaborationTypeAutosave.triggerFieldSave()}</code></td>
+          <td class="file-path">page.tsx:<span class="line-ref">1557-1561</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="issue-card high">
+      <div class="issue-header">
+        <span class="issue-title">AS-002: Mixed blur/change triggers for similar field types</span>
+        <span class="severity high">High</span>
+      </div>
+      <p>Description (General) saves on every keystroke via <code>onChange</code>, but Description (Objectives) only saves on blur. Both are textareas with the same purpose.</p>
+      <pre><code>// Description General - saves on every change (line 1291)
+descriptionAutosave.triggerFieldSave(content);
+
+// Description Objectives - only saves on blur (line 1363)
+onBlur={(e) =&gt; {
+  if (!fieldLockStatus.isLocked && e.target.value.trim()) {
+    descriptionObjectivesAutosave.triggerFieldSave(e.target.value);
+  }
+}}</code></pre>
+    </div>
+
+    <h3>2.3 Tabs Not Using useFieldAutosave</h3>
+
+    <div class="issue-card critical">
+      <div class="issue-header">
+        <span class="issue-title">AS-003: HumanitarianTab bypasses autosave system entirely</span>
+        <span class="severity critical">Critical</span>
+      </div>
+      <p class="file-path">File: /components/activities/HumanitarianTab.tsx</p>
+      <p>Uses direct <code>fetch()</code> calls with manual <code>isSaving</code> state instead of the established <code>useFieldAutosave</code> pattern:</p>
+      <pre><code>// Lines 82-120: Direct fetch, no debouncing, no queue handling
+const saveHumanitarianData = async (newHumanitarian?: boolean, newScopes?: HumanitarianScope[]) =&gt; {
+  setIsSaving(true);
+  try {
+    const response = await fetch(`/api/activities/${activityId}/humanitarian`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({...})
+    });
+    // No retry logic, no queue handling, no debouncing
+  }
+}</code></pre>
+    </div>
+
+    <div class="issue-card critical">
+      <div class="issue-header">
+        <span class="issue-title">AS-004: ActivityBudgetsTab uses Supabase directly</span>
+        <span class="severity critical">Critical</span>
+      </div>
+      <p class="file-path">File: /components/activities/ActivityBudgetsTab.tsx</p>
+      <p>Imports Supabase client directly and manages save state locally, bypassing the activity-level autosave infrastructure:</p>
+      <pre><code>// Line 7: Direct Supabase import
+import { supabase } from '@/lib/supabase';
+
+// Lines 267-268: Local save status tracking
+const [saveStatus, setSaveStatus] = useState&lt;Record&lt;string, 'saving' | 'saved' | 'error' | 'idle'&gt;&gt;({});</code></pre>
+    </div>
+
+    <div class="issue-card high">
+      <div class="issue-header">
+        <span class="issue-title">AS-005: CountriesRegionsTab uses custom debounce</span>
+        <span class="severity high">High</span>
+      </div>
+      <p class="file-path">File: /components/activities/CountriesRegionsTab.tsx</p>
+      <p>Implements its own autosave debounce via <code>setTimeout</code> instead of using <code>useFieldAutosave</code>:</p>
+      <pre><code>// Lines 242-250: Custom setTimeout debounce
+useEffect(() =&gt; {
+  if (activityId && activityId !== 'new') {
+    const timeoutId = setTimeout(() =&gt; {
+      saveData();
+    }, 1000); // 1 second debounce - different from other tabs
+    return () =&gt; clearTimeout(timeoutId);
+  }
+}, [countries, regions, customGeographies, activityId]);</code></pre>
+    </div>
+
+    <h3>2.4 Save Pattern Summary by Tab</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Tab/Section</th>
+          <th>Save Method</th>
+          <th>Debounce</th>
+          <th>Save Indicator</th>
+          <th>Consistent?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>GeneralSection</td>
+          <td>useFieldAutosave</td>
+          <td>0-1000ms</td>
+          <td>LabelSaveIndicator</td>
+          <td><span class="badge badge-green">Yes</span></td>
+        </tr>
+        <tr>
+          <td>HumanitarianTab</td>
+          <td>Direct fetch()</td>
+          <td>None</td>
+          <td>None</td>
+          <td><span class="badge badge-red">No</span></td>
+        </tr>
+        <tr>
+          <td>CountriesRegionsTab</td>
+          <td>Custom saveData()</td>
+          <td>1000ms</td>
+          <td>Custom status</td>
+          <td><span class="badge badge-yellow">Partial</span></td>
+        </tr>
+        <tr>
+          <td>ActivityBudgetsTab</td>
+          <td>Direct Supabase</td>
+          <td>None</td>
+          <td>Local state</td>
+          <td><span class="badge badge-red">No</span></td>
+        </tr>
+        <tr>
+          <td>ResultsTab</td>
+          <td>useResults hook</td>
+          <td>N/A</td>
+          <td>None visible</td>
+          <td><span class="badge badge-yellow">Partial</span></td>
+        </tr>
+        <tr>
+          <td>DocumentsAndImagesTabInline</td>
+          <td>apiFetch()</td>
+          <td>None</td>
+          <td>None</td>
+          <td><span class="badge badge-red">No</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="dropdowns">
+    <h2>3. Dropdown Implementations</h2>
+
+    <h3>3.1 DropdownContext Usage</h3>
+    <p>The <code>DropdownContext</code> provides exclusive-open behavior (only one dropdown open at a time), but not all components use it:</p>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Uses DropdownContext?</th>
+          <th>State Management</th>
+          <th>File</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>EnhancedSearchableSelect</td>
+          <td><span class="badge badge-green">Yes (conditional)</span></td>
+          <td>useDropdownState when dropdownId provided</td>
+          <td class="file-path">enhanced-searchable-select.tsx:<span class="line-ref">56</span></td>
+        </tr>
+        <tr>
+          <td>EnhancedMultiSelect</td>
+          <td><span class="badge badge-red">No</span></td>
+          <td>Local useState only</td>
+          <td class="file-path">enhanced-multi-select.tsx:<span class="line-ref">38</span></td>
+        </tr>
+        <tr>
+          <td>DocumentTypeFilter</td>
+          <td><span class="badge badge-red">No</span></td>
+          <td>Local useState</td>
+          <td class="file-path">DocumentsAndImagesTabInline.tsx:<span class="line-ref">82</span></td>
+        </tr>
+        <tr>
+          <td>DocumentCategoryFilter</td>
+          <td><span class="badge badge-red">No</span></td>
+          <td>Local useState</td>
+          <td class="file-path">DocumentsAndImagesTabInline.tsx:<span class="line-ref">135</span></td>
+        </tr>
+        <tr>
+          <td>CountriesRegionsTab dropdowns</td>
+          <td><span class="badge badge-green">Yes</span></td>
+          <td>useDropdownState</td>
+          <td class="file-path">CountriesRegionsTab.tsx:<span class="line-ref">102-104</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="issue-card critical">
+      <div class="issue-header">
+        <span class="issue-title">DD-001: EnhancedMultiSelect doesn't use DropdownContext</span>
+        <span class="severity critical">Critical</span>
+      </div>
+      <p class="file-path">File: /components/ui/enhanced-multi-select.tsx:38</p>
+      <p>Uses local <code>useState</code> for open state, allowing multiple dropdowns to be open simultaneously which breaks UX consistency:</p>
+      <pre><code>// Line 38: Local state instead of DropdownContext
+const [open, setOpen] = React.useState(false);
+const [search, setSearch] = React.useState("");
+
+// Compare to EnhancedSearchableSelect (lines 51-59):
+const dropdownContext = React.useContext(DropdownContext);
+const { isOpen, setOpen } = dropdownContext && dropdownId !== "enhanced-searchable-select"
+  ? useDropdownState(dropdownId)
+  : { isOpen: localIsOpen, setOpen: setLocalIsOpen };</code></pre>
+      <div class="recommendation">
+        <div class="recommendation-title">Recommendation</div>
+        <p>Add <code>dropdownId</code> prop to <code>EnhancedMultiSelect</code> and integrate with <code>DropdownContext</code> following the same pattern as <code>EnhancedSearchableSelect</code>.</p>
+      </div>
+    </div>
+
+    <div class="issue-card high">
+      <div class="issue-header">
+        <span class="issue-title">DD-002: Filter dropdowns in DocumentsAndImagesTabInline use local state</span>
+        <span class="severity high">High</span>
+      </div>
+      <p class="file-path">File: /components/activities/DocumentsAndImagesTabInline.tsx</p>
+      <p>Both <code>DocumentTypeFilter</code> and <code>DocumentCategoryFilter</code> implement custom Popover-based dropdowns with local state:</p>
+      <pre><code>// Lines 82, 135: Local useState for each filter
+function DocumentTypeFilter({ value, onValueChange }: DocumentTypeFilterProps) {
+  const [isOpen, setIsOpen] = React.useState(false);  // No context integration
+  ...
+}
+
+function DocumentCategoryFilter({ value, onValueChange }: DocumentCategoryFilterProps) {
+  const [isOpen, setIsOpen] = React.useState(false);  // No context integration
+  ...
+}</code></pre>
+    </div>
+
+    <h3>3.2 Props API Consistency</h3>
+
+    <div class="issue-card medium">
+      <div class="issue-header">
+        <span class="issue-title">DD-003: Inconsistent callback prop naming</span>
+        <span class="severity medium">Medium</span>
+      </div>
+      <p>Most select components use <code>onValueChange</code>, but some patterns differ:</p>
+      <table>
+        <thead>
+          <tr><th>Component</th><th>Callback Prop</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>EnhancedSearchableSelect</td><td><code>onValueChange</code></td></tr>
+          <tr><td>EnhancedMultiSelect</td><td><code>onValueChange</code></td></tr>
+          <tr><td>Radix Select</td><td><code>onValueChange</code></td></tr>
+          <tr><td>RichTextEditor</td><td><code>onChange</code></td></tr>
+          <tr><td>Input/Textarea</td><td><code>onChange</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>3.3 Missing dropdownId Props</h3>
+
+    <div class="issue-card medium">
+      <div class="issue-header">
+        <span class="issue-title">DD-004: Some selects missing dropdownId for exclusive open</span>
+        <span class="severity medium">Medium</span>
+      </div>
+      <p>While GeneralSection correctly passes <code>dropdownId</code>, some select components don't receive it, falling back to local state:</p>
+      <pre><code>// Good example (page.tsx:1565):
+&lt;CollaborationTypeSelect
+  dropdownId="general-collaboration-type"  // Correctly provided
+  ...
+/&gt;
+
+// Missing in EnhancedMultiSelect usage - component doesn't support it at all</code></pre>
+    </div>
+  </section>
+
+  <section id="ui">
+    <h2>4. UI Consistency</h2>
+
+    <h3>4.1 Save Indicator Patterns</h3>
+
+    <div class="issue-card high">
+      <div class="issue-header">
+        <span class="issue-title">UI-001: Inconsistent save feedback across tabs</span>
+        <span class="severity high">High</span>
+      </div>
+      <p>GeneralSection uses <code>LabelSaveIndicator</code> consistently, but other tabs have no or different feedback:</p>
+      <table>
+        <thead>
+          <tr><th>Tab</th><th>Save Indicator</th><th>Component Used</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GeneralSection</td>
+            <td><span class="badge badge-green">Consistent</span></td>
+            <td><code>LabelSaveIndicator</code></td>
+          </tr>
+          <tr>
+            <td>HumanitarianTab</td>
+            <td><span class="badge badge-red">None</span></td>
+            <td>Plain <code>Label</code></td>
+          </tr>
+          <tr>
+            <td>CountriesRegionsTab</td>
+            <td><span class="badge badge-yellow">Custom</span></td>
+            <td>Local <code>allocationStatus</code> state</td>
+          </tr>
+          <tr>
+            <td>ActivityBudgetsTab</td>
+            <td><span class="badge badge-yellow">Custom</span></td>
+            <td>Local <code>saveStatus</code> state</td>
+          </tr>
+          <tr>
+            <td>ResultsTab</td>
+            <td><span class="badge badge-red">None</span></td>
+            <td>No indicators</td>
+          </tr>
+          <tr>
+            <td>DocumentsAndImagesTabInline</td>
+            <td><span class="badge badge-red">None</span></td>
+            <td>No indicators</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>4.2 Field Lock Patterns</h3>
+
+    <div class="issue-card medium">
+      <div class="issue-header">
+        <span class="issue-title">UI-002: Multiple lock indication patterns</span>
+        <span class="severity medium">Medium</span>
+      </div>
+      <p>Three different patterns for showing locked fields:</p>
+      <pre><code>// Pattern 1: Lock icon + opacity + tooltip (page.tsx multiple locations)
+{fieldLockStatus.isLocked && (
+  &lt;TooltipProvider&gt;
+    &lt;Tooltip&gt;
+      &lt;TooltipTrigger asChild&gt;
+        &lt;Lock className="h-3 w-3 ml-2 text-gray-400" /&gt;
+      &lt;/TooltipTrigger&gt;
+    &lt;/Tooltip&gt;
+  &lt;/TooltipProvider&gt;
+)}
+&lt;div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}&gt;
+
+// Pattern 2: Lock icon only, no opacity (page.tsx:1178)
+&lt;Lock className="h-3 w-3 text-gray-400" /&gt;
+
+// Pattern 3: disabled prop only (HumanitarianTab.tsx:247)
+disabled={readOnly || isSaving || activityId === 'NEW'}</code></pre>
+    </div>
+
+    <h3>4.3 Grid Layout Inconsistencies</h3>
+
+    <div class="issue-card low">
+      <div class="issue-header">
+        <span class="issue-title">UI-003: Varying grid column patterns</span>
+        <span class="severity low">Low</span>
+      </div>
+      <p>Different grid patterns used across the same form:</p>
+      <table>
+        <thead>
+          <tr><th>Section</th><th>Grid Class</th><th>Line</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Title/Acronym</td><td><code>grid-cols-1 lg:grid-cols-3</code></td><td>943</td></tr>
+          <tr><td>Identifiers</td><td><code>grid-cols-1 md:grid-cols-3</code></td><td>1040</td></tr>
+          <tr><td>Type Selectors</td><td><code>grid-cols-1 md:grid-cols-2</code></td><td>1527, 1615</td></tr>
+          <tr><td>Dates</td><td><code>grid-cols-1 md:grid-cols-2</code></td><td>Various</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>4.4 Error Display Patterns</h3>
+
+    <div class="issue-card medium">
+      <div class="issue-header">
+        <span class="issue-title">UI-004: Inconsistent error message styling</span>
+        <span class="severity medium">Medium</span>
+      </div>
+      <p>Error messages are displayed differently across the form:</p>
+      <pre><code>// Pattern 1: Direct inline (page.tsx:1102)
+{activityIdAutosave.state.error && &lt;p className="text-xs text-red-600"&gt;Failed to save: {activityIdAutosave.state.error.message}&lt;/p&gt;}
+
+// Pattern 2: With margin top (page.tsx:1372)
+{descriptionObjectivesAutosave.state.error && &lt;p className="text-xs text-red-600 mt-2"&gt;Failed to save: ...&lt;/p&gt;}
+
+// Pattern 3: Alert component (HumanitarianTab.tsx:253)
+&lt;Alert className="mt-4 border-red-300 bg-red-100/50"&gt;
+  &lt;AlertCircle className="h-4 w-4 text-red-600" /&gt;
+  &lt;AlertDescription&gt;...&lt;/AlertDescription&gt;
+&lt;/Alert&gt;</code></pre>
+    </div>
+  </section>
+
+  <section id="accessibility">
+    <h2>5. Accessibility</h2>
+
+    <h3>5.1 Label Associations</h3>
+
+    <div class="issue-card critical">
+      <div class="issue-header">
+        <span class="issue-title">A11Y-001: Missing htmlFor/id associations</span>
+        <span class="severity critical">Critical</span>
+      </div>
+      <p>Many form fields lack proper label-input associations. The <code>LabelSaveIndicator</code> component wraps content in a <code>&lt;label&gt;</code> but doesn't use <code>htmlFor</code>:</p>
+      <pre><code>// save-indicator.tsx:100-104
+return (
+  &lt;label className={`text-sm font-medium flex items-center ${className}`}&gt;
+    {children}
+    {showIndicator()}
+  &lt;/label&gt;  // Missing htmlFor attribute
+);</code></pre>
+      <div class="recommendation">
+        <div class="recommendation-title">Recommendation</div>
+        <p>Add <code>htmlFor</code> prop to <code>LabelSaveIndicator</code> and ensure all inputs have matching <code>id</code> attributes.</p>
+      </div>
+    </div>
+
+    <h3>5.2 ARIA Attributes</h3>
+
+    <div class="issue-card high">
+      <div class="issue-header">
+        <span class="issue-title">A11Y-002: Icon-only buttons missing aria-label</span>
+        <span class="severity high">High</span>
+      </div>
+      <p>Copy buttons use <code>title</code> but not <code>aria-label</code>:</p>
+      <pre><code>// page.tsx:1093-1099
+&lt;button
+  onClick={() =&gt; handleCopy(general.otherIdentifier, 'Activity Identifier')}
+  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+  title="Copy Activity Identifier"  // title is not read by screen readers
+&gt;
+  &lt;Copy className="w-4 h-4 text-gray-500 hover:text-gray-700" /&gt;
+&lt;/button&gt;</code></pre>
+      <div class="recommendation">
+        <div class="recommendation-title">Recommendation</div>
+        <p>Add <code>aria-label="Copy Activity Identifier"</code> to all icon-only buttons.</p>
+      </div>
+    </div>
+
+    <div class="issue-card medium">
+      <div class="issue-header">
+        <span class="issue-title">A11Y-003: Clear buttons in selects have aria-label (good)</span>
+        <span class="severity medium">Medium</span>
+      </div>
+      <p>The enhanced select components correctly include <code>aria-label</code> on clear buttons:</p>
+      <pre><code>// enhanced-searchable-select.tsx:139
+aria-label="Clear selection"
+
+// enhanced-multi-select.tsx:132
+aria-label="Clear all selections"</code></pre>
+      <p>This pattern should be applied consistently to all interactive elements.</p>
+    </div>
+
+    <h3>5.3 Keyboard Navigation</h3>
+
+    <div class="issue-card medium">
+      <div class="issue-header">
+        <span class="issue-title">A11Y-004: Conditional tabIndex may cause tab order issues</span>
+        <span class="severity medium">Medium</span>
+      </div>
+      <p>Several inputs use conditional <code>tabIndex</code> based on activity creation state:</p>
+      <pre><code>// page.tsx:1032
+tabIndex={general.id ? 2 : -1}
+
+// page.tsx:1090
+tabIndex={general.id ? 3 : -1}
+
+// page.tsx:1153
+tabIndex={general.id ? 4 : -1}</code></pre>
+      <p>While this prevents interaction before activity creation, it may confuse users relying on keyboard navigation.</p>
+    </div>
+
+    <h3>5.4 Focus Management</h3>
+
+    <div class="issue-card low">
+      <div class="issue-header">
+        <span class="issue-title">A11Y-005: Auto-focus on title field for new activities</span>
+        <span class="severity low">Low</span>
+      </div>
+      <p>Good practice: The title input correctly receives focus for new activities:</p>
+      <pre><code>// page.tsx:978
+autoFocus={!general.id}</code></pre>
+    </div>
+  </section>
+
+  <section id="tabs">
+    <h2>6. Tab-by-Tab Findings</h2>
+
+    <h3>6.1 GeneralSection</h3>
+    <p class="file-path">File: page.tsx (inline, lines 140-2500+)</p>
+    <table>
+      <thead><tr><th>Issue</th><th>Severity</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>Mixed blur/change triggers</td><td><span class="severity high">High</span></td><td>Description saves on change, Objectives saves on blur</td></tr>
+        <tr><td>0ms debounce on descriptions</td><td><span class="severity medium">Medium</span></td><td>debounceMs: 0 causes immediate API calls</td></tr>
+        <tr><td>Good: Consistent LabelSaveIndicator</td><td><span class="severity low">Low</span></td><td>All fields use the same indicator pattern</td></tr>
+      </tbody>
+    </table>
+
+    <h3>6.2 HumanitarianTab</h3>
+    <p class="file-path">File: /components/activities/HumanitarianTab.tsx</p>
+    <table>
+      <thead><tr><th>Issue</th><th>Severity</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>No useFieldAutosave</td><td><span class="severity critical">Critical</span></td><td>Direct fetch() calls, no debouncing or queue</td></tr>
+        <tr><td>No save indicators</td><td><span class="severity high">High</span></td><td>Uses plain Label, no feedback on save</td></tr>
+        <tr><td>Custom styling (red theme)</td><td><span class="severity low">Low</span></td><td>Unique visual style differs from other tabs</td></tr>
+      </tbody>
+    </table>
+
+    <h3>6.3 CountriesRegionsTab</h3>
+    <p class="file-path">File: /components/activities/CountriesRegionsTab.tsx</p>
+    <table>
+      <thead><tr><th>Issue</th><th>Severity</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>Custom setTimeout autosave</td><td><span class="severity high">High</span></td><td>1000ms debounce via useEffect, not useFieldAutosave</td></tr>
+        <tr><td>Good: Uses DropdownContext</td><td><span class="severity low">Low</span></td><td>All dropdowns use useDropdownState correctly</td></tr>
+        <tr><td>Custom save status tracking</td><td><span class="severity medium">Medium</span></td><td>Local allocationStatus state instead of hook state</td></tr>
+      </tbody>
+    </table>
+
+    <h3>6.4 ActivityBudgetsTab</h3>
+    <p class="file-path">File: /components/activities/ActivityBudgetsTab.tsx</p>
+    <table>
+      <thead><tr><th>Issue</th><th>Severity</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>Direct Supabase access</td><td><span class="severity critical">Critical</span></td><td>Imports supabase client directly, bypasses API layer</td></tr>
+        <tr><td>No field-level autosave</td><td><span class="severity high">High</span></td><td>Modal-based editing with manual save buttons</td></tr>
+        <tr><td>Local save status state</td><td><span class="severity medium">Medium</span></td><td>saveStatus managed locally, not via hooks</td></tr>
+      </tbody>
+    </table>
+
+    <h3>6.5 DocumentsAndImagesTabInline</h3>
+    <p class="file-path">File: /components/activities/DocumentsAndImagesTabInline.tsx</p>
+    <table>
+      <thead><tr><th>Issue</th><th>Severity</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>Filter dropdowns use local state</td><td><span class="severity high">High</span></td><td>DocumentTypeFilter, DocumentCategoryFilter don't use DropdownContext</td></tr>
+        <tr><td>Custom Popover implementations</td><td><span class="severity medium">Medium</span></td><td>Duplicates logic from EnhancedSearchableSelect</td></tr>
+        <tr><td>No save indicators on filters</td><td><span class="severity low">Low</span></td><td>Filters don't persist, so indicators not needed</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="recommendations">
+    <h2>7. Prioritized Recommendations</h2>
+
+    <h3>7.1 Critical Fixes (Immediate)</h3>
+    <ol>
+      <li>
+        <strong>Standardize auto-save across all tabs</strong>
+        <p>Refactor HumanitarianTab, CountriesRegionsTab, and ActivityBudgetsTab to use <code>useFieldAutosave</code> hook</p>
+        <p class="file-path">Files: HumanitarianTab.tsx, CountriesRegionsTab.tsx, ActivityBudgetsTab.tsx</p>
+      </li>
+      <li>
+        <strong>Add DropdownContext support to EnhancedMultiSelect</strong>
+        <p>Add <code>dropdownId</code> prop and integrate with context for exclusive-open behavior</p>
+        <p class="file-path">File: enhanced-multi-select.tsx</p>
+      </li>
+      <li>
+        <strong>Fix label-input associations</strong>
+        <p>Add <code>htmlFor</code> prop to <code>LabelSaveIndicator</code> and pass <code>id</code> to all inputs</p>
+        <p class="file-path">File: save-indicator.tsx</p>
+      </li>
+    </ol>
+
+    <h3>7.2 High Priority (Next Sprint)</h3>
+    <ol>
+      <li>
+        <strong>Standardize debounce times</strong>
+        <p>Document and enforce: 500ms for text, 0ms for selects, 1500ms for rich text</p>
+      </li>
+      <li>
+        <strong>Add aria-label to all icon-only buttons</strong>
+        <p>Audit all <code>&lt;button&gt;</code> elements with only icon children</p>
+      </li>
+      <li>
+        <strong>Unify save indicator usage</strong>
+        <p>Add <code>LabelSaveIndicator</code> to all tabs that perform saves</p>
+      </li>
+      <li>
+        <strong>Remove direct Supabase access</strong>
+        <p>Route ActivityBudgetsTab through API endpoints</p>
+      </li>
+    </ol>
+
+    <h3>7.3 Medium Priority (Backlog)</h3>
+    <ol>
+      <li>Standardize blur vs change trigger patterns</li>
+      <li>Unify lock indication pattern (icon + opacity + tooltip)</li>
+      <li>Consolidate error message styling</li>
+      <li>Refactor filter dropdowns in DocumentsAndImagesTabInline to use shared components</li>
+    </ol>
+
+    <h3>7.4 Low Priority (Nice-to-have)</h3>
+    <ol>
+      <li>Standardize grid column patterns across sections</li>
+      <li>Review conditional tabIndex usage for keyboard navigation</li>
+      <li>Consider removing HumanitarianTab's unique red styling for consistency</li>
+    </ol>
+  </section>
+
+  <footer style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: #6b7280; font-size: 0.875rem;">
+    <p>Generated by Claude Code | Activity Editor Audit | February 2026</p>
+    <p>Target: <code>/frontend/src/app/activities/new/page.tsx</code> (5,644 lines)</p>
+  </footer>
+</body>
+</html>

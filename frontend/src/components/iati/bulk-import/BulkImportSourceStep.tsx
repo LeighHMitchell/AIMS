@@ -13,7 +13,6 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  FileText,
   Database,
   Building2,
   ExternalLink,
@@ -37,6 +36,7 @@ import { COUNTRY_COORDINATES } from '@/data/country-coordinates'
 import { ALPHA2_TO_ALPHA3 } from '@/data/country-alpha3'
 import BulkUploadStep from './BulkUploadStep'
 import BulkValidationStep from './BulkValidationStep'
+import { OrganizationCombobox, type Organization } from '@/components/ui/organization-combobox'
 import type {
   ImportSourceMode,
   BulkImportMeta,
@@ -170,10 +170,8 @@ export default function BulkImportSourceStep({
 
   // --- Super user state ---
   const isSuperUser = user?.role === USER_ROLES.SUPER_USER || user?.role === 'admin'
-  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym?: string; logo?: string; iati_org_id?: string }>>([])
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null)
-  const [orgSelectorOpen, setOrgSelectorOpen] = useState(false)
-  const [orgSearchTerm, setOrgSearchTerm] = useState('')
+  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('')
   const [loadingOrgs, setLoadingOrgs] = useState(false)
 
   // --- Datastore mode state ---
@@ -216,17 +214,6 @@ export default function BulkImportSourceStep({
   const orgIatiId = selectedOrg?.iati_org_id || user?.organization?.iati_org_id
   const orgLogo = selectedOrg?.logo || user?.organization?.logo
   const currentOrgId = selectedOrgId || user?.organizationId
-
-  // Filter organizations for search
-  const filteredOrganizations = useMemo(() => {
-    if (!orgSearchTerm) return organizations
-    const term = orgSearchTerm.toLowerCase()
-    return organizations.filter(o =>
-      o.name.toLowerCase().includes(term) ||
-      (o.acronym?.toLowerCase().includes(term)) ||
-      (o.iati_org_id?.toLowerCase().includes(term))
-    )
-  }, [organizations, orgSearchTerm])
 
   // --- Country filter computed values ---
   const availableCountries = useMemo(() => {
@@ -618,6 +605,26 @@ export default function BulkImportSourceStep({
     }
   }, [sourceMode, activitiesLoaded, fetchStatus, fetchFromDatastore, selectedOrgId])
 
+  // --- Handle organization selection change (for super users) ---
+  const handleOrgChange = useCallback((newOrgId: string) => {
+    // If selecting own org (empty string), clear selectedOrgId
+    const effectiveOrgId = newOrgId === user?.organizationId ? '' : newOrgId
+    setSelectedOrgId(effectiveOrgId)
+
+    // Clear current data and immediately fetch for the new org
+    setDatastoreActivities([])
+    setFetchStatus('idle')
+    fetchedRef.current = false
+
+    // Immediately trigger fetch for the new org
+    if (sourceMode === 'datastore') {
+      // Small delay to ensure state updates have propagated
+      setTimeout(() => {
+        fetchFromDatastore(false, effectiveOrgId || undefined)
+      }, 0)
+    }
+  }, [user?.organizationId, sourceMode, fetchFromDatastore])
+
   // --- Shared filter helper ---
   const applyFiltersAndNotify = useCallback((country: string, hierarchy: number | null, scope: 'all' | '100' | 'regional') => {
     let filtered = datastoreActivities
@@ -790,140 +797,20 @@ export default function BulkImportSourceStep({
                       Super User
                     </Badge>
                   </div>
-                  <Popover open={orgSelectorOpen} onOpenChange={(open) => { setOrgSelectorOpen(open); if (!open) setOrgSearchTerm('') }}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-80 justify-between font-normal h-10 pr-2 bg-white">
-                        {selectedOrgId || user?.organizationId ? (
-                          <span className="flex items-center gap-2 flex-1 text-left">
-                            <span className="font-semibold text-gray-900 truncate">{orgDisplayName}</span>
-                            {orgIatiId && (
-                              <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs font-mono text-gray-600 shrink-0">
-                                {orgIatiId}
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">Select an organization...</span>
-                        )}
-                        <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-96 p-0" align="start">
-                      <div className="p-2 border-b">
-                        <Input
-                          placeholder="Search organizations..."
-                          value={orgSearchTerm}
-                          onChange={(e) => setOrgSearchTerm(e.target.value)}
-                          className="h-8"
-                          autoFocus
-                        />
-                      </div>
-                      <ScrollArea className="h-72">
-                        {loadingOrgs ? (
-                          <div className="p-4 text-center text-gray-500">
-                            <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
-                            Loading organizations...
-                          </div>
-                        ) : filteredOrganizations.length === 0 ? (
-                          <div className="p-4 text-center text-gray-500">
-                            {orgSearchTerm ? 'No organizations found' : 'No organizations with IATI identifiers'}
-                          </div>
-                        ) : (
-                          <div className="p-1">
-                            {/* Option to use own org */}
-                            {user?.organizationId && (
-                              <button
-                                onClick={() => {
-                                  setSelectedOrgId(null)
-                                  setOrgSelectorOpen(false)
-                                  setOrgSearchTerm('')
-                                  // Reset fetch state to re-fetch for user's org
-                                  fetchedRef.current = false
-                                  setFetchStatus('idle')
-                                  setDatastoreActivities([])
-                                }}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm hover:bg-gray-100 transition-colors ${
-                                  !selectedOrgId ? 'bg-gray-100' : ''
-                                }`}
-                              >
-                                {user?.organization?.logo ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={user.organization.logo}
-                                    alt=""
-                                    className="h-8 w-8 rounded object-contain bg-white border border-gray-200 shrink-0"
-                                  />
-                                ) : (
-                                  <div className="h-8 w-8 bg-gray-200 rounded flex items-center justify-center shrink-0">
-                                    <Building2 className="h-4 w-4 text-gray-500" />
-                                  </div>
-                                )}
-                                <div className="flex-1 text-left">
-                                  <div className="font-medium text-gray-900">
-                                    {user?.organization?.name}
-                                    {user?.organization?.acronym && ` (${user.organization.acronym})`}
-                                  </div>
-                                  <div className="text-xs text-gray-500">Your organization</div>
-                                </div>
-                                {!selectedOrgId && (
-                                  <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-                                )}
-                              </button>
-                            )}
-                            {/* Divider */}
-                            {user?.organizationId && filteredOrganizations.length > 0 && (
-                              <div className="border-t my-1" />
-                            )}
-                            {/* Other organizations */}
-                            {filteredOrganizations
-                              .filter(o => o.id !== user?.organizationId)
-                              .map((org) => (
-                              <button
-                                key={org.id}
-                                onClick={() => {
-                                  setSelectedOrgId(org.id)
-                                  setOrgSelectorOpen(false)
-                                  setOrgSearchTerm('')
-                                  // Reset fetch state to re-fetch for selected org
-                                  fetchedRef.current = false
-                                  setFetchStatus('idle')
-                                  setDatastoreActivities([])
-                                }}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm hover:bg-gray-100 transition-colors ${
-                                  selectedOrgId === org.id ? 'bg-gray-100' : ''
-                                }`}
-                              >
-                                {org.logo ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={org.logo}
-                                    alt=""
-                                    className="h-8 w-8 rounded object-contain bg-white border border-gray-200 shrink-0"
-                                  />
-                                ) : (
-                                  <div className="h-8 w-8 bg-gray-200 rounded flex items-center justify-center shrink-0">
-                                    <Building2 className="h-4 w-4 text-gray-500" />
-                                  </div>
-                                )}
-                                <div className="flex-1 text-left">
-                                  <div className="font-medium text-gray-900 truncate">
-                                    {org.name}
-                                    {org.acronym && ` (${org.acronym})`}
-                                  </div>
-                                  {org.iati_org_id && (
-                                    <div className="text-xs text-gray-500 font-mono">{org.iati_org_id}</div>
-                                  )}
-                                </div>
-                                {selectedOrgId === org.id && (
-                                  <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </ScrollArea>
-                    </PopoverContent>
-                  </Popover>
+                  {loadingOrgs ? (
+                    <div className="flex items-center gap-2 h-10 px-3 text-sm text-gray-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading organizations...
+                    </div>
+                  ) : (
+                    <OrganizationCombobox
+                      organizations={organizations}
+                      value={selectedOrgId || user?.organizationId || ''}
+                      onValueChange={handleOrgChange}
+                      placeholder="Select organization to import..."
+                      className="w-[400px]"
+                    />
+                  )}
                 </div>
               ) : (
                 // Regular user: show fixed organization info
