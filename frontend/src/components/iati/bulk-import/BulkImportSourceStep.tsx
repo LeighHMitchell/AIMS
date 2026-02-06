@@ -192,8 +192,10 @@ export default function BulkImportSourceStep({
   const [fetchProgressMessage, setFetchProgressMessage] = useState<string | null>(null)
   const [longFetchWarning, setLongFetchWarning] = useState(false)
   const [estimatedTime, setEstimatedTime] = useState<{ count: number; seconds: number } | null>(null)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const fetchStartTimeRef = useRef<number>(0)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const elapsedIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const estimatedSecondsRef = useRef<number>(65) // Default estimate, updated by count query
 
   // --- Country filter state ---
@@ -456,16 +458,26 @@ export default function BulkImportSourceStep({
     setFetchPhase('connecting')
     setFetchProgressMessage(null)
     setLongFetchWarning(false)
+    setElapsedSeconds(0)
     fetchStartTimeRef.current = Date.now()
 
     // Use estimated seconds from count query, or default to 65s
     const totalEstimate = estimatedSeconds || estimatedSecondsRef.current || 65
     estimatedSecondsRef.current = totalEstimate
 
-    // Clear any existing interval
+    // Clear any existing intervals
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current)
     }
+    if (elapsedIntervalRef.current) {
+      clearInterval(elapsedIntervalRef.current)
+    }
+
+    // Start elapsed time counter
+    elapsedIntervalRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - fetchStartTimeRef.current) / 1000)
+      setElapsedSeconds(elapsed)
+    }, 1000)
 
     // Dynamic progress phases based on estimated duration:
     // - connecting: 0-3s (0-5%)
@@ -519,9 +531,14 @@ export default function BulkImportSourceStep({
       clearInterval(progressIntervalRef.current)
       progressIntervalRef.current = null
     }
+    if (elapsedIntervalRef.current) {
+      clearInterval(elapsedIntervalRef.current)
+      elapsedIntervalRef.current = null
+    }
     setLongFetchWarning(false)
     setFetchProgressMessage(null)
     setEstimatedTime(null)
+    setElapsedSeconds(0)
     if (success) {
       setFetchProgress(100)
       setFetchPhase('processing')
@@ -533,6 +550,9 @@ export default function BulkImportSourceStep({
     return () => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current)
+      }
+      if (elapsedIntervalRef.current) {
+        clearInterval(elapsedIntervalRef.current)
       }
     }
   }, [])
@@ -576,25 +596,28 @@ export default function BulkImportSourceStep({
           sample: data?.slice(0, 3).map((o: { id: string; name: string }) => ({ id: o.id, name: o.name }))
         })
 
-        let orgList: Organization[] = (data || []).map((org: {
-          id: string;
-          name: string;
-          acronym: string | null;
-          iati_org_id: string | null;
-          logo: string | null;
-          country: string | null;
-          Organisation_Type_Code: string | null;
-          Organisation_Type_Name: string | null;
-        }) => ({
-          id: org.id,
-          name: org.name,
-          acronym: org.acronym || undefined,
-          iati_org_id: org.iati_org_id || undefined,
-          logo: org.logo || undefined,
-          country: org.country || undefined,
-          Organisation_Type_Code: org.Organisation_Type_Code || undefined,
-          Organisation_Type_Name: org.Organisation_Type_Name || undefined,
-        }))
+        // Filter to only organizations with IATI identifiers
+        let orgList: Organization[] = (data || [])
+          .filter((org: { iati_org_id: string | null }) => org.iati_org_id && org.iati_org_id.trim() !== '')
+          .map((org: {
+            id: string;
+            name: string;
+            acronym: string | null;
+            iati_org_id: string | null;
+            logo: string | null;
+            country: string | null;
+            Organisation_Type_Code: string | null;
+            Organisation_Type_Name: string | null;
+          }) => ({
+            id: org.id,
+            name: org.name,
+            acronym: org.acronym || undefined,
+            iati_org_id: org.iati_org_id || undefined,
+            logo: org.logo || undefined,
+            country: org.country || undefined,
+            Organisation_Type_Code: org.Organisation_Type_Code || undefined,
+            Organisation_Type_Name: org.Organisation_Type_Name || undefined,
+          }))
 
         // Ensure user's own organization is in the list
         if (user?.organizationId && user?.organization) {
@@ -759,15 +782,7 @@ export default function BulkImportSourceStep({
     }
   }, [homeCountry, orgIatiId, orgName, onActivitiesReady, startProgressSimulation, stopProgressSimulation, selectedOrgId, isSuperUser, user?.organizationId])
 
-  // Auto-fetch on mount for datastore mode (only once per organization selection)
-  // Wait for system settings to load so we have the correct homeCountry
-  useEffect(() => {
-    if (sourceMode === 'datastore' && !activitiesLoaded && !fetchedRef.current && fetchStatus === 'idle' && !settingsLoading) {
-      console.log('[IATI Import] Auto-fetch starting with homeCountry:', homeCountry)
-      fetchedRef.current = true
-      fetchFromDatastore(false, selectedOrgId || undefined)
-    }
-  }, [sourceMode, activitiesLoaded, fetchStatus, fetchFromDatastore, selectedOrgId, settingsLoading, homeCountry])
+  // Note: Auto-fetch removed - user must click "Fetch Activities" button to start
 
   // --- Handle organization selection change (for super users) ---
   const handleOrgChange = useCallback((newOrgId: string) => {
@@ -775,19 +790,11 @@ export default function BulkImportSourceStep({
     const effectiveOrgId = newOrgId === user?.organizationId ? '' : newOrgId
     setSelectedOrgId(effectiveOrgId)
 
-    // Clear current data and immediately fetch for the new org
+    // Clear current data - user must click Fetch button to load new org's activities
     setDatastoreActivities([])
     setFetchStatus('idle')
     fetchedRef.current = false
-
-    // Immediately trigger fetch for the new org
-    if (sourceMode === 'datastore') {
-      // Small delay to ensure state updates have propagated
-      setTimeout(() => {
-        fetchFromDatastore(false, effectiveOrgId || undefined)
-      }, 0)
-    }
-  }, [user?.organizationId, sourceMode, fetchFromDatastore])
+  }, [user?.organizationId])
 
   // --- Shared filter helper ---
   const applyFiltersAndNotify = useCallback((country: string, hierarchy: number | null, scope: 'all' | '100' | 'regional') => {
@@ -1043,6 +1050,36 @@ export default function BulkImportSourceStep({
 
         {/* --- DATASTORE MODE --- */}
         <TabsContent value="datastore" className="space-y-4 mt-4">
+          {/* Idle state - show Fetch button */}
+          {fetchStatus === 'idle' && (
+            <Card>
+              <CardContent className="p-8">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="p-4 bg-gray-100 rounded-full">
+                    <Globe className="h-10 w-10 text-gray-600" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-semibold text-lg text-gray-900">
+                      Fetch IATI Activities
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1 max-w-md">
+                      Click the button below to search the IATI Registry for activities published by{' '}
+                      <strong>{orgDisplayName}</strong>
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => fetchFromDatastore(false, selectedOrgId || undefined)}
+                    className="bg-gray-900 hover:bg-gray-800 text-white px-6"
+                    size="lg"
+                  >
+                    <Database className="h-4 w-4 mr-2" />
+                    Fetch Activities from IATI Registry
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {fetchStatus === 'fetching' && (
             <Card>
               <CardContent className="p-8">
@@ -1068,6 +1105,10 @@ export default function BulkImportSourceStep({
                         }
                       </p>
                     )}
+                    {/* Elapsed timer */}
+                    <p className="text-sm font-mono text-gray-500 mt-2 bg-gray-100 px-3 py-1 rounded-full inline-block">
+                      {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')} elapsed
+                    </p>
                   </div>
 
                   {/* Progress bar */}
@@ -1432,8 +1473,17 @@ export default function BulkImportSourceStep({
           <Alert>
             <Globe className="h-4 w-4" />
             <AlertDescription>
-              The system automatically fetches your organisation&apos;s IATI activities from the
-              IATI Registry. Only activities published by <strong>{orgName}</strong> are shown.
+              {isSuperUser ? (
+                <>
+                  As a super user, you can fetch IATI activities for any organisation with an IATI identifier.
+                  Select an organisation above and click <strong>Fetch Activities</strong> to search the IATI Registry.
+                </>
+              ) : (
+                <>
+                  Click <strong>Fetch Activities</strong> to search the IATI Registry for activities published by your organisation.
+                  Only activities published by <strong>{orgName}</strong> will be shown.
+                </>
+              )}
             </AlertDescription>
           </Alert>
         </TabsContent>

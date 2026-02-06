@@ -1,6 +1,18 @@
 {
-  "currentVersion": "1.18.0",
+  "currentVersion": "1.19.0",
   "releases": [
+    {
+      "version": "1.19.0",
+      "date": "2026-02-06",
+      "changes": [
+        "IATI Bulk Import no longer auto-fetches on page load — users must click 'Fetch Activities' button to start",
+        "New idle state UI with prominent 'Fetch Activities from IATI Registry' button for explicit action",
+        "Elapsed timer displays during fetch operations showing minutes:seconds elapsed",
+        "Organization selector now shows country flags by converting country names to ISO codes",
+        "Info text in IATI Import now varies based on user type (super user vs regular user)",
+        "Organization selector filtered to only show organizations with IATI identifiers configured"
+      ]
+    },
     {
       "version": "1.18.0",
       "date": "2026-02-06",

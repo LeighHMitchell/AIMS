@@ -19,6 +19,41 @@ import {
 } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isLegacyOrgType } from "@/lib/org-type-mappings";
+import { IATI_COUNTRIES } from "@/data/iati-countries";
+
+/**
+ * Get the 2-letter ISO country code for flag display.
+ * The country field may contain either a 2-letter code (like "FR")
+ * or a full name (like "France"). This normalizes to the code.
+ */
+function getCountryCode(country: string | undefined): string | null {
+  if (!country) return null;
+
+  // If it's already a 2-letter code, use it directly
+  if (country.length === 2) {
+    return country.toLowerCase();
+  }
+
+  // Try to find the country by name in the IATI countries list
+  const found = IATI_COUNTRIES.find(
+    c => c.name.toLowerCase() === country.toLowerCase()
+  );
+  if (found) {
+    return found.code.toLowerCase();
+  }
+
+  // Fallback: try partial matching for country names with variations
+  // e.g., "Bahamas (the)" vs "Bahamas"
+  const partialMatch = IATI_COUNTRIES.find(
+    c => c.name.toLowerCase().includes(country.toLowerCase()) ||
+         country.toLowerCase().includes(c.name.toLowerCase().split(' (')[0])
+  );
+  if (partialMatch) {
+    return partialMatch.code.toLowerCase();
+  }
+
+  return null;
+}
 
 export interface Organization {
   id: string
@@ -262,12 +297,14 @@ export function OrganizationCombobox({
                           <span className="text-gray-300">·</span>
                           <span className="flex items-center gap-1 shrink-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={`https://flagcdn.com/w20/${selected.country.toLowerCase()}.png`}
-                              alt=""
-                              className="w-3.5 h-auto rounded-sm"
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                            />
+                            {getCountryCode(selected.country) && (
+                              <img
+                                src={`https://flagcdn.com/w20/${getCountryCode(selected.country)}.png`}
+                                alt=""
+                                className="w-3.5 h-auto rounded-sm"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
+                            )}
                             {selected.country}
                           </span>
                         </>
@@ -404,12 +441,14 @@ export function OrganizationCombobox({
                                   <span className="text-gray-300">·</span>
                                   <span className="flex items-center gap-1 text-xs text-gray-500">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={`https://flagcdn.com/w20/${org.country.toLowerCase()}.png`}
-                                      alt=""
-                                      className="w-4 h-auto rounded-sm"
-                                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                                    />
+                                    {getCountryCode(org.country) && (
+                                      <img
+                                        src={`https://flagcdn.com/w20/${getCountryCode(org.country)}.png`}
+                                        alt=""
+                                        className="w-4 h-auto rounded-sm"
+                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                                      />
+                                    )}
                                     {org.country}
                                   </span>
                                 </>
