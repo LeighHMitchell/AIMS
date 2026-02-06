@@ -45,6 +45,14 @@ export async function GET(request: NextRequest) {
 
     // If a specific organization is requested and user is super user, use that org
     if (requestedOrgId && isSuperUser) {
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(requestedOrgId)) {
+        return NextResponse.json(
+          { error: 'Invalid organization ID format.' },
+          { status: 400 }
+        )
+      }
       orgScope = await resolveOrgScopeById(supabase, requestedOrgId)
       if (!orgScope) {
         return NextResponse.json(

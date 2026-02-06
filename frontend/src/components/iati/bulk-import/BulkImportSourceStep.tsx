@@ -172,7 +172,8 @@ export default function BulkImportSourceStep({
   const isSuperUser = user?.role === USER_ROLES.SUPER_USER || user?.role === 'admin'
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [selectedOrgId, setSelectedOrgId] = useState<string>('')
-  const [loadingOrgs, setLoadingOrgs] = useState(false)
+  const [loadingOrgs, setLoadingOrgs] = useState(true) // Start true, set false after fetch
+  const [orgsFetched, setOrgsFetched] = useState(false)
 
   // --- Datastore mode state ---
   const [fetchStatus, setFetchStatus] = useState<'idle' | 'fetching' | 'success' | 'error'>('idle')
@@ -508,7 +509,15 @@ export default function BulkImportSourceStep({
 
   // Fetch organizations list for super users
   useEffect(() => {
-    if (!isSuperUser) return
+    // If not super user, just set loading to false
+    if (!isSuperUser) {
+      setLoadingOrgs(false)
+      setOrgsFetched(true)
+      return
+    }
+
+    // Don't fetch again if already fetched
+    if (orgsFetched) return
 
     const fetchOrganizations = async () => {
       setLoadingOrgs(true)
@@ -534,17 +543,21 @@ export default function BulkImportSourceStep({
             }
           }
 
+          console.log('[IATI Import] Loaded', orgList.length, 'organizations for super user selection')
           setOrganizations(orgList)
+        } else {
+          console.error('[IATI Import] Failed to fetch organizations:', response.status)
         }
       } catch (err) {
-        console.error('Failed to fetch organizations:', err)
+        console.error('[IATI Import] Failed to fetch organizations:', err)
       } finally {
         setLoadingOrgs(false)
+        setOrgsFetched(true)
       }
     }
 
     fetchOrganizations()
-  }, [isSuperUser, user?.organizationId, user?.organization])
+  }, [isSuperUser, orgsFetched, user?.organizationId, user?.organization])
 
   // --- Datastore fetch ---
   const fetchFromDatastore = useCallback(async (forceRefresh = false, orgId?: string) => {
@@ -818,6 +831,10 @@ export default function BulkImportSourceStep({
                     <div className="flex items-center gap-2 h-10 px-3 text-sm text-gray-500">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading organizations...
+                    </div>
+                  ) : organizations.length === 0 ? (
+                    <div className="flex items-center gap-2 h-10 px-3 text-sm text-gray-500">
+                      No organizations available
                     </div>
                   ) : (
                     <OrganizationCombobox
