@@ -11,7 +11,9 @@
         "Activity Level toggle buttons replace dropdown for better UX",
         "Date Range filter inline with other filters using calendar picker",
         "Applied filters shown as read-only badges after fetch completes",
-        "Human-readable date format in filter summaries (e.g., '1 January 2021')"
+        "Human-readable date format in filter summaries (e.g., '1 January 2021')",
+        "Rules step redesigned with horizontal hero cards and monochrome theme",
+        "Import Impact Preview with clean card-based layout"
       ]
     },
     {
