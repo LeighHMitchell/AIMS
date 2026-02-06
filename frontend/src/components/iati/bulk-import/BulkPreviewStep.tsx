@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,9 +23,14 @@ import {
   User,
   FileText,
   ExternalLink,
-  Filter,
   X,
   SlidersHorizontal,
+  Activity,
+  Banknote,
+  CreditCard,
+  Receipt,
+  PiggyBank,
+  CalendarClock,
 } from 'lucide-react'
 import type { ParsedActivity } from './types'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
@@ -299,171 +305,206 @@ export default function BulkPreviewStep({
 
       {/* Advanced Filters Panel */}
       {showFilters && (
-        <Card className="border-gray-200 bg-gray-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                Advanced Filters
-              </span>
-              {activeFilterCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-gray-500 h-7">
-                  <X className="h-3 w-3 mr-1" />
-                  Clear all
-                </Button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <Card className="overflow-visible">
+          <CardContent className="p-4 overflow-visible">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
               {/* Activity Status */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-600">Activity Status</label>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Activity className="h-4 w-4" />
+                  Activity Status
+                </Label>
+                <div className="flex flex-col gap-2">
                   {availableOptions.statuses.map(status => (
-                    <label key={status} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-white p-1 rounded">
-                      <input
-                        type="checkbox"
+                    <div key={status} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`status-${status}`}
                         checked={activityStatusFilter.includes(status)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
+                        onCheckedChange={(checked) => {
+                          if (checked) {
                             setActivityStatusFilter([...activityStatusFilter, status])
                           } else {
                             setActivityStatusFilter(activityStatusFilter.filter(s => s !== status))
                           }
                         }}
-                        className="h-3 w-3 rounded border-gray-300"
                       />
-                      <span className="bg-gray-200 px-1 py-0.5 rounded font-mono text-gray-600">{status}</span>
-                      <span className="text-gray-700 truncate">{ACTIVITY_STATUS_OPTIONS[status] || status}</span>
-                    </label>
+                      <Label
+                        htmlFor={`status-${status}`}
+                        className="flex items-center gap-2 text-sm cursor-pointer font-normal"
+                      >
+                        <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-600">{status}</span>
+                        <span className="truncate">{ACTIVITY_STATUS_OPTIONS[status] || status}</span>
+                      </Label>
+                    </div>
                   ))}
                   {availableOptions.statuses.length === 0 && (
-                    <span className="text-xs text-gray-400">No statuses</span>
+                    <span className="text-sm text-gray-400">No statuses available</span>
                   )}
                 </div>
               </div>
 
               {/* Aid Type */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-600">Aid Type</label>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Banknote className="h-4 w-4" />
+                  Aid Type
+                </Label>
+                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
                   {availableOptions.aidTypes.map(type => (
-                    <label key={type} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-white p-1 rounded">
-                      <input
-                        type="checkbox"
+                    <div key={type} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`aid-${type}`}
                         checked={aidTypeFilter.includes(type)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
+                        onCheckedChange={(checked) => {
+                          if (checked) {
                             setAidTypeFilter([...aidTypeFilter, type])
                           } else {
                             setAidTypeFilter(aidTypeFilter.filter(t => t !== type))
                           }
                         }}
-                        className="h-3 w-3 rounded border-gray-300"
                       />
-                      <span className="bg-gray-200 px-1 py-0.5 rounded font-mono text-gray-600">{type}</span>
-                      <span className="text-gray-700 truncate" title={AID_TYPE_OPTIONS[type] || type}>
-                        {AID_TYPE_OPTIONS[type]?.substring(0, 20) || type}
-                      </span>
-                    </label>
+                      <Label
+                        htmlFor={`aid-${type}`}
+                        className="flex items-center gap-2 text-sm cursor-pointer font-normal"
+                        title={AID_TYPE_OPTIONS[type] || type}
+                      >
+                        <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-600">{type}</span>
+                        <span className="truncate max-w-[120px]">{AID_TYPE_OPTIONS[type] || type}</span>
+                      </Label>
+                    </div>
                   ))}
                   {availableOptions.aidTypes.length === 0 && (
-                    <span className="text-xs text-gray-400">No aid types</span>
+                    <span className="text-sm text-gray-400">No aid types available</span>
                   )}
                 </div>
               </div>
 
               {/* Finance Type */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-600">Finance Type</label>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Finance Type
+                </Label>
+                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
                   {availableOptions.financeTypes.map(type => (
-                    <label key={type} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-white p-1 rounded">
-                      <input
-                        type="checkbox"
+                    <div key={type} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`finance-${type}`}
                         checked={financeTypeFilter.includes(type)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
+                        onCheckedChange={(checked) => {
+                          if (checked) {
                             setFinanceTypeFilter([...financeTypeFilter, type])
                           } else {
                             setFinanceTypeFilter(financeTypeFilter.filter(t => t !== type))
                           }
                         }}
-                        className="h-3 w-3 rounded border-gray-300"
                       />
-                      <span className="bg-gray-200 px-1 py-0.5 rounded font-mono text-gray-600">{type}</span>
-                      <span className="text-gray-700 truncate" title={FINANCE_TYPE_OPTIONS[type] || type}>
-                        {FINANCE_TYPE_OPTIONS[type]?.substring(0, 15) || type}
-                      </span>
-                    </label>
+                      <Label
+                        htmlFor={`finance-${type}`}
+                        className="flex items-center gap-2 text-sm cursor-pointer font-normal"
+                        title={FINANCE_TYPE_OPTIONS[type] || type}
+                      >
+                        <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-600">{type}</span>
+                        <span className="truncate max-w-[100px]">{FINANCE_TYPE_OPTIONS[type] || type}</span>
+                      </Label>
+                    </div>
                   ))}
                   {availableOptions.financeTypes.length === 0 && (
-                    <span className="text-xs text-gray-400">No finance types</span>
+                    <span className="text-sm text-gray-400">No finance types available</span>
                   )}
                 </div>
               </div>
 
               {/* Transactions */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-600">Transactions</label>
-                <div className="flex gap-1">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  Transactions
+                </Label>
+                <div className="flex flex-col gap-2">
                   {(['all', 'has', 'none'] as const).map(opt => (
-                    <Button
-                      key={opt}
-                      variant={transactionFilter === opt ? 'default' : 'outline'}
-                      size="sm"
-                      className="h-7 text-xs px-2"
-                      onClick={() => setTransactionFilter(opt)}
-                    >
-                      {opt === 'all' ? 'All' : opt === 'has' ? 'Has' : 'None'}
-                    </Button>
+                    <div key={opt} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`tx-${opt}`}
+                        checked={transactionFilter === opt}
+                        onCheckedChange={() => setTransactionFilter(opt)}
+                      />
+                      <Label
+                        htmlFor={`tx-${opt}`}
+                        className="text-sm cursor-pointer font-normal"
+                      >
+                        {opt === 'all' ? 'All Activities' : opt === 'has' ? 'Has Transactions' : 'No Transactions'}
+                      </Label>
+                    </div>
                   ))}
                 </div>
               </div>
 
               {/* Budgets */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-600">Budgets</label>
-                <div className="flex gap-1">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <PiggyBank className="h-4 w-4" />
+                  Budgets
+                </Label>
+                <div className="flex flex-col gap-2">
                   {(['all', 'has', 'none'] as const).map(opt => (
-                    <Button
-                      key={opt}
-                      variant={budgetFilter === opt ? 'default' : 'outline'}
-                      size="sm"
-                      className="h-7 text-xs px-2"
-                      onClick={() => setBudgetFilter(opt)}
-                    >
-                      {opt === 'all' ? 'All' : opt === 'has' ? 'Has' : 'None'}
-                    </Button>
+                    <div key={opt} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`budget-${opt}`}
+                        checked={budgetFilter === opt}
+                        onCheckedChange={() => setBudgetFilter(opt)}
+                      />
+                      <Label
+                        htmlFor={`budget-${opt}`}
+                        className="text-sm cursor-pointer font-normal"
+                      >
+                        {opt === 'all' ? 'All Activities' : opt === 'has' ? 'Has Budgets' : 'No Budgets'}
+                      </Label>
+                    </div>
                   ))}
                 </div>
               </div>
 
               {/* Planned Disbursements */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-600">Planned Disbursements</label>
-                <div className="flex gap-1">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4" />
+                  Planned Disbursements
+                </Label>
+                <div className="flex flex-col gap-2">
                   {(['all', 'has', 'none'] as const).map(opt => (
-                    <Button
-                      key={opt}
-                      variant={plannedDisbursementFilter === opt ? 'default' : 'outline'}
-                      size="sm"
-                      className="h-7 text-xs px-2"
-                      onClick={() => setPlannedDisbursementFilter(opt)}
-                    >
-                      {opt === 'all' ? 'All' : opt === 'has' ? 'Has' : 'None'}
-                    </Button>
+                    <div key={opt} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`pd-${opt}`}
+                        checked={plannedDisbursementFilter === opt}
+                        onCheckedChange={() => setPlannedDisbursementFilter(opt)}
+                      />
+                      <Label
+                        htmlFor={`pd-${opt}`}
+                        className="text-sm cursor-pointer font-normal"
+                      >
+                        {opt === 'all' ? 'All Activities' : opt === 'has' ? 'Has Planned' : 'No Planned'}
+                      </Label>
+                    </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Filter summary */}
-            {activeFilterCount > 0 && (
-              <div className="mt-3 pt-3 border-t text-xs text-gray-600">
-                Showing <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{filteredActivities.length}</span> of <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{activities.length}</span> activities
-              </div>
-            )}
+            {/* Clear Button */}
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              {activeFilterCount > 0 ? (
+                <span className="text-sm text-gray-600">
+                  Showing <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">{filteredActivities.length}</span> of <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">{activities.length}</span> activities
+                </span>
+              ) : (
+                <span />
+              )}
+              <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                <X className="h-4 w-4 mr-1" />
+                Clear All Filters
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
