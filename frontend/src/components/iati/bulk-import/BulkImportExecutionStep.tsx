@@ -64,6 +64,8 @@ export default function BulkImportExecutionStep({
             reportingOrgRef: meta.reportingOrgRef,
             reportingOrgName: meta.reportingOrgName,
           },
+          // For super users: pass the organization ID to import on behalf of
+          organizationId: meta.organizationId,
         }),
       })
 

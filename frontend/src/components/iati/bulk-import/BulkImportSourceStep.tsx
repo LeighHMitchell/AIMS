@@ -203,6 +203,13 @@ export default function BulkImportSourceStep({
   const [selectedHierarchy, setSelectedHierarchy] = useState<number | null>(null)
   const [countryScope, setCountryScope] = useState<'all' | '100' | 'regional'>('all') // 100% vs regional allocation
   const [orgScopeData, setOrgScopeData] = useState<{ reportingOrgRef: string; organizationName: string } | null>(null)
+
+  // --- Date filter state ---
+  // Default: last 5 years to present + 2 years future (for planned dates)
+  const currentYear = new Date().getFullYear()
+  const [dateRangeStart, setDateRangeStart] = useState<string>(`${currentYear - 5}-01-01`)
+  const [dateRangeEnd, setDateRangeEnd] = useState<string>(`${currentYear + 2}-12-31`)
+  const [dateFilterEnabled, setDateFilterEnabled] = useState<boolean>(true)
   const [countryOpen, setCountryOpen] = useState(false)
   const [countrySearch, setCountrySearch] = useState('')
 
@@ -399,8 +406,48 @@ export default function BulkImportSourceStep({
       result = result.filter(a => a.hierarchy === selectedHierarchy)
       console.log(`[Filter Debug] Hierarchy filter (level ${selectedHierarchy}): ${beforeHierarchyFilter} → ${result.length} activities`)
     }
+
+    // Date range filter - include activities that overlap with the date range
+    // An activity overlaps if ANY of its dates fall within the range
+    if (dateFilterEnabled && dateRangeStart && dateRangeEnd) {
+      const startDate = new Date(dateRangeStart)
+      const endDate = new Date(dateRangeEnd)
+      const beforeDateFilter = result.length
+
+      result = result.filter(a => {
+        // Get all relevant dates from the activity
+        const dates: Date[] = []
+
+        if (a.planned_start_date) dates.push(new Date(a.planned_start_date))
+        if (a.planned_end_date) dates.push(new Date(a.planned_end_date))
+        if (a.actual_start_date) dates.push(new Date(a.actual_start_date))
+        if (a.actual_end_date) dates.push(new Date(a.actual_end_date))
+
+        // If no dates at all, include the activity (can't filter without data)
+        if (dates.length === 0) return true
+
+        // Activity overlaps if:
+        // - Any date falls within the range, OR
+        // - Activity spans across the range (start before range, end after range)
+        const hasDateInRange = dates.some(d => d >= startDate && d <= endDate)
+
+        // Check if activity spans the range (started before, ends after)
+        const activityStart = a.actual_start_date ? new Date(a.actual_start_date)
+          : a.planned_start_date ? new Date(a.planned_start_date) : null
+        const activityEnd = a.actual_end_date ? new Date(a.actual_end_date)
+          : a.planned_end_date ? new Date(a.planned_end_date) : null
+
+        const spansRange = activityStart && activityEnd &&
+          activityStart <= endDate && activityEnd >= startDate
+
+        return hasDateInRange || spansRange
+      })
+
+      console.log(`[Filter Debug] Date filter (${dateRangeStart} to ${dateRangeEnd}): ${beforeDateFilter} → ${result.length} activities`)
+    }
+
     return result
-  }, [datastoreActivities, selectedCountry, selectedHierarchy, countryScope])
+  }, [datastoreActivities, selectedCountry, selectedHierarchy, countryScope, dateFilterEnabled, dateRangeStart, dateRangeEnd])
 
   // Diagnostic: count Level 2 activities without recipient-country data
   const level2DiagnosticInfo = useMemo(() => {
@@ -767,12 +814,15 @@ export default function BulkImportSourceStep({
       }
 
       // Notify parent with filtered activities
+      // For super users importing for another org, include the organizationId
+      const targetOrgId = selectedOrgId || data.orgScope?.organizationId
       const meta: BulkImportMeta = {
         sourceMode: 'datastore',
         reportingOrgRef: data.orgScope?.reportingOrgRef || orgIatiId || '',
         reportingOrgName: data.orgScope?.organizationName || orgName,
         activityCount: filteredByCountry.length,
         fetchedAt: data.fetchedAt,
+        organizationId: targetOrgId,
       }
       onActivitiesReady(filteredByCountry, meta)
     } catch (err) {
@@ -1360,10 +1410,43 @@ export default function BulkImportSourceStep({
                           </div>
                         </div>
                       )}
+
+                      {/* Date range filter */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="dateFilterEnabled"
+                            checked={dateFilterEnabled}
+                            onChange={(e) => setDateFilterEnabled(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          <label htmlFor="dateFilterEnabled" className="text-sm font-medium text-gray-700">
+                            Date Range
+                          </label>
+                        </div>
+                        {dateFilterEnabled && (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="date"
+                              value={dateRangeStart}
+                              onChange={(e) => setDateRangeStart(e.target.value)}
+                              className="h-9 w-36 text-sm"
+                            />
+                            <span className="text-gray-400">to</span>
+                            <Input
+                              type="date"
+                              value={dateRangeEnd}
+                              onChange={(e) => setDateRangeEnd(e.target.value)}
+                              className="h-9 w-36 text-sm"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Filter summary */}
-                    {(selectedCountry || selectedHierarchy != null) && (
+                    {(selectedCountry || selectedHierarchy != null || dateFilterEnabled) && (
                       <div className="flex items-center justify-between pt-1 border-t border-gray-100">
                         <div className="text-sm text-gray-500">
                           Showing <span className="font-semibold text-gray-700">{filteredActivities.length}</span> of {datastoreActivities.length.toLocaleString()} activities
@@ -1374,6 +1457,9 @@ export default function BulkImportSourceStep({
                           )}
                           {selectedHierarchy != null && (
                             <span> at Level {selectedHierarchy}</span>
+                          )}
+                          {dateFilterEnabled && (
+                            <span> from {dateRangeStart} to {dateRangeEnd}</span>
                           )}
                           <span> with <span className="font-semibold text-gray-700">{filteredTotals.totalTransactions.toLocaleString()}</span> transactions</span>
                         </div>

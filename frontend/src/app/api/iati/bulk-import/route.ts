@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { getOrCreateOrganization } from '@/lib/organization-helpers';
-import { resolveUserOrgScope, matchesOrgScope } from '@/lib/iati/org-scope';
+import { resolveUserOrgScope, resolveOrgScopeById, matchesOrgScope } from '@/lib/iati/org-scope';
+import { USER_ROLES } from '@/types/user';
 
 export const maxDuration = 300;
 
@@ -37,6 +38,8 @@ interface BulkImportRequest {
     reportingOrgRef: string;
     reportingOrgName: string;
   };
+  /** For super users: import on behalf of this organization */
+  organizationId?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -48,11 +51,40 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Resolve the user's organisation and IATI identifiers
-    const orgScope = await resolveUserOrgScope(supabase, user.id);
-
     const data: BulkImportRequest = await request.json();
-    const { activities, selectedActivityIds, importRules, meta } = data;
+    const { activities, selectedActivityIds, importRules, meta, organizationId } = data;
+
+    // Fetch user's role from the users table
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const userRole = userData?.role || null;
+    const isSuperUser = userRole === USER_ROLES.SUPER_USER ||
+                        userRole === 'admin' ||
+                        userRole === 'super_user';
+
+    // Resolve organisation scope - use specified org for super users, otherwise user's own org
+    let orgScope;
+    if (organizationId && isSuperUser) {
+      orgScope = await resolveOrgScopeById(supabase, organizationId);
+      if (!orgScope) {
+        return NextResponse.json(
+          { error: 'Specified organization not found.' },
+          { status: 404 }
+        );
+      }
+      console.log('[Bulk Import] Super user importing for org:', orgScope.organizationName, orgScope.allRefs);
+    } else if (organizationId && !isSuperUser) {
+      return NextResponse.json(
+        { error: 'You do not have permission to import for other organisations.' },
+        { status: 403 }
+      );
+    } else {
+      orgScope = await resolveUserOrgScope(supabase, user.id);
+    }
 
     const selectedSet = new Set(selectedActivityIds);
     const selectedActivities = activities.filter(

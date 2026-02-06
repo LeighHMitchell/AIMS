@@ -15,6 +15,8 @@ export interface BulkImportMeta {
   activityCount: number
   // Datastore-specific
   fetchedAt?: string
+  /** For super users: import on behalf of this organization */
+  organizationId?: string
 }
 
 export interface ImportRules {

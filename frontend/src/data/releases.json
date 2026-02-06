@@ -1,6 +1,16 @@
 {
-  "currentVersion": "1.19.0",
+  "currentVersion": "1.20.0",
   "releases": [
+    {
+      "version": "1.20.0",
+      "date": "2026-02-06",
+      "changes": [
+        "Super users can now import IATI activities for other organisations (fixed org scope bug)",
+        "Date range filter to exclude old projects — defaults to last 5 years through 2 years future",
+        "Date filter includes activities that overlap with the date range (any start/end date within range)",
+        "Improved network error messages with specific guidance for timeout, DNS, and connectivity issues"
+      ]
+    },
     {
       "version": "1.19.0",
       "date": "2026-02-06",
