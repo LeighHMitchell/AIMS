@@ -5,15 +5,14 @@
       "version": "1.22.0",
       "date": "2026-02-06",
       "changes": [
+        "IATI Import now parses and imports contacts (contact-info) from the IATI Datastore",
+        "IATI Import now parses and imports documents (document-link) from the IATI Datastore",
+        "Contacts include: organisation, person name, job title, email, phone, website, mailing address",
+        "Documents include: URL, format, title, description, category, language, date",
+        "Import progress now updates incrementally during batch processing",
         "IATI Import filters consolidated to single pre-fetch panel with improved UI",
         "Recipient Country defaults to system home country from admin settings",
-        "Country selector with flags, alpha-3 codes, and clear button",
-        "Activity Level toggle buttons replace dropdown for better UX",
-        "Date Range filter inline with other filters using calendar picker",
-        "Applied filters shown as read-only badges after fetch completes",
-        "Human-readable date format in filter summaries (e.g., '1 January 2021')",
-        "Rules step redesigned with horizontal hero cards and monochrome theme",
-        "Import Impact Preview with clean card-based layout"
+        "Rules step redesigned with horizontal hero cards and monochrome theme"
       ]
     },
     {

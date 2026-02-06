@@ -292,7 +292,7 @@ export async function POST(request: NextRequest) {
         // Import transactions if not skipping
         let transactionsImported = 0;
         if (activityDbId && importRules.transactionHandling !== 'skip' && activity.transactions?.length > 0) {
-          // If replacing all, delete existing transactions, budgets, participating orgs, sectors, and locations first
+          // If replacing all, delete existing transactions, budgets, participating orgs, sectors, locations, contacts, and documents first
           if (importRules.transactionHandling === 'replace_all' && action === 'update') {
             await supabase
               .from('transactions')
@@ -314,6 +314,18 @@ export async function POST(request: NextRequest) {
               .from('activity_locations')
               .delete()
               .eq('activity_id', activityDbId);
+            // Only delete IATI-imported contacts (preserve manually added)
+            await supabase
+              .from('activity_contacts')
+              .delete()
+              .eq('activity_id', activityDbId)
+              .eq('imported_from_iati', true);
+            // Only delete external documents (preserve uploaded files)
+            await supabase
+              .from('activity_documents')
+              .delete()
+              .eq('activity_id', activityDbId)
+              .eq('is_external', true);
           }
 
           for (const tx of activity.transactions) {
@@ -570,7 +582,120 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        console.log(`[Bulk Import] ${iatiId}: ${transactionsImported} txns, ${budgetsImported} budgets, ${participatingOrgsImported} orgs, ${sectorsImported} sectors, ${locationsImported} locations`);
+        // Import contacts if available
+        let contactsImported = 0;
+        if (activityDbId && activity.contacts?.length > 0) {
+          // Delete existing imported contacts if replacing (update mode)
+          if (importRules.transactionHandling === 'replace_all' && action === 'update') {
+            await supabase
+              .from('activity_contacts')
+              .delete()
+              .eq('activity_id', activityDbId)
+              .eq('imported_from_iati', true);
+          }
+
+          for (const contact of activity.contacts) {
+            try {
+              // Parse person name into first/last name if available
+              let firstName: string | null = null;
+              let lastName: string | null = null;
+              if (contact.personName) {
+                const nameParts = contact.personName.trim().split(/\s+/);
+                if (nameParts.length >= 2) {
+                  firstName = nameParts[0];
+                  lastName = nameParts.slice(1).join(' ');
+                } else {
+                  lastName = contact.personName;
+                }
+              }
+
+              const contactData = {
+                activity_id: activityDbId,
+                type: contact.type || '1', // Default to General Enquiries
+                organisation_name: contact.organisationName || null,
+                department: contact.departmentName || null,
+                first_name: firstName,
+                last_name: lastName,
+                job_title: contact.jobTitle || null,
+                phone_number: contact.telephone || null,
+                primary_email: contact.email || null,
+                website: contact.website || null,
+                mailing_address: contact.mailingAddress || null,
+                imported_from_iati: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+
+              const { error: contactError } = await supabase
+                .from('activity_contacts')
+                .insert(contactData);
+
+              if (contactError) {
+                console.error(`[Bulk Import] Contact insert error for ${iatiId}:`, contactError.message, contactError.details);
+              } else {
+                contactsImported++;
+              }
+            } catch (contactErr) {
+              console.error(`[Bulk Import] Contact error for ${iatiId}:`, contactErr);
+            }
+          }
+        }
+
+        // Import documents if available
+        let documentsImported = 0;
+        if (activityDbId && activity.documents?.length > 0) {
+          // Delete existing imported documents if replacing (update mode)
+          if (importRules.transactionHandling === 'replace_all' && action === 'update') {
+            await supabase
+              .from('activity_documents')
+              .delete()
+              .eq('activity_id', activityDbId)
+              .eq('is_external', true); // Only delete external/linked documents, not uploaded files
+          }
+
+          for (const doc of activity.documents) {
+            try {
+              if (!doc.url) continue;
+
+              // Prepare title as JSONB array of narratives (IATI format)
+              const titleNarrative = doc.title
+                ? [{ text: doc.title, lang: doc.languageCode || 'en' }]
+                : [{ text: 'Untitled Document', lang: 'en' }];
+
+              const descriptionNarrative = doc.description
+                ? [{ text: doc.description, lang: doc.languageCode || 'en' }]
+                : [{ text: '', lang: 'en' }];
+
+              const documentData = {
+                activity_id: activityDbId,
+                url: doc.url,
+                format: doc.format || 'application/octet-stream',
+                title: titleNarrative,
+                description: descriptionNarrative,
+                category_code: doc.categoryCode || 'A01', // Default to Pre- and post-project impact appraisal
+                language_codes: doc.languageCode ? [doc.languageCode] : ['en'],
+                document_date: doc.documentDate || null,
+                is_external: true, // These are external links from IATI, not uploaded files
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+
+              const { error: docError } = await supabase
+                .from('activity_documents')
+                .insert(documentData);
+
+              if (docError) {
+                console.error(`[Bulk Import] Document insert error for ${iatiId}:`, docError.message, docError.details);
+              } else {
+                documentsImported++;
+              }
+            } catch (docErr) {
+              console.error(`[Bulk Import] Document error for ${iatiId}:`, docErr);
+            }
+          }
+        }
+
+        console.log(`[Bulk Import] ${iatiId}: ${transactionsImported} txns, ${budgetsImported} budgets, ${participatingOrgsImported} orgs, ${sectorsImported} sectors, ${locationsImported} locations, ${contactsImported} contacts, ${documentsImported} documents`);
 
         // Update batch item to completed
         await supabase

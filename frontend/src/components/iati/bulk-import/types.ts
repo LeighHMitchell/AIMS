@@ -115,6 +115,28 @@ export interface ParsedActivity {
     currency: string
     valueDate?: string
   }>
+  // Contacts (IATI contact-info)
+  contacts?: Array<{
+    type?: string // IATI contact type code (1=General, 2=Project Manager, etc.)
+    organisationName?: string
+    departmentName?: string
+    personName?: string
+    jobTitle?: string
+    telephone?: string
+    email?: string
+    website?: string
+    mailingAddress?: string
+  }>
+  // Documents (IATI document-link)
+  documents?: Array<{
+    url: string
+    format?: string // MIME type
+    title?: string
+    description?: string
+    categoryCode?: string // IATI document category code
+    languageCode?: string
+    documentDate?: string
+  }>
 }
 
 export interface BatchStatus {

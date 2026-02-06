@@ -189,6 +189,71 @@ export function mapDatastoreDocToParsedActivity(
   // Note: capital_spend and planned_disbursement are NOT indexed in IATI Datastore
   // They're only available via XML upload (d-portal mapper handles them)
 
+  // --- Contacts (contact-info) ---
+  // IATI Datastore fields: contact_info_type, contact_info_organisation_narrative,
+  // contact_info_department_narrative, contact_info_person_name_narrative,
+  // contact_info_job_title_narrative, contact_info_telephone, contact_info_email,
+  // contact_info_website, contact_info_mailing_address_narrative
+  const contactTypes = ensureArray(doc.contact_info_type)
+  const contactOrgs = ensureArray(doc.contact_info_organisation_narrative)
+  const contactDepts = ensureArray(doc.contact_info_department_narrative)
+  const contactPersons = ensureArray(doc.contact_info_person_name_narrative)
+  const contactJobTitles = ensureArray(doc.contact_info_job_title_narrative)
+  const contactPhones = ensureArray(doc.contact_info_telephone)
+  const contactEmails = ensureArray(doc.contact_info_email)
+  const contactWebsites = ensureArray(doc.contact_info_website)
+  const contactAddresses = ensureArray(doc.contact_info_mailing_address_narrative)
+
+  // Use the longest array as the anchor (contacts may have sparse data)
+  const contactCount = Math.max(
+    contactTypes.length, contactOrgs.length, contactPersons.length,
+    contactEmails.length, contactPhones.length
+  )
+  const contacts: ParsedActivity['contacts'] = []
+  for (let i = 0; i < contactCount; i++) {
+    // Only add if we have at least some useful data
+    if (contactOrgs[i] || contactPersons[i] || contactEmails[i] || contactPhones[i]) {
+      contacts.push({
+        type: contactTypes[i] || undefined,
+        organisationName: contactOrgs[i] || undefined,
+        departmentName: contactDepts[i] || undefined,
+        personName: contactPersons[i] || undefined,
+        jobTitle: contactJobTitles[i] || undefined,
+        telephone: contactPhones[i] || undefined,
+        email: contactEmails[i] || undefined,
+        website: contactWebsites[i] || undefined,
+        mailingAddress: contactAddresses[i] || undefined,
+      })
+    }
+  }
+
+  // --- Documents (document-link) ---
+  // IATI Datastore fields: document_link_url, document_link_format,
+  // document_link_title_narrative, document_link_description_narrative,
+  // document_link_category_code, document_link_language_code, document_link_document_date_iso_date
+  const docUrls = ensureArray(doc.document_link_url)
+  const docFormats = ensureArray(doc.document_link_format)
+  const docTitles = ensureArray(doc.document_link_title_narrative)
+  const docDescriptions = ensureArray(doc.document_link_description_narrative)
+  const docCategories = ensureArray(doc.document_link_category_code)
+  const docLanguages = ensureArray(doc.document_link_language_code)
+  const docDates = ensureArray(doc.document_link_document_date_iso_date)
+
+  const documents: ParsedActivity['documents'] = docUrls
+    .map((url: string, i: number) => {
+      if (!url) return null
+      return {
+        url,
+        format: docFormats[i] || undefined,
+        title: docTitles[i] || undefined,
+        description: docDescriptions[i] || undefined,
+        categoryCode: docCategories[i] || undefined,
+        languageCode: docLanguages[i] || undefined,
+        documentDate: docDates[i] || undefined,
+      }
+    })
+    .filter(Boolean) as NonNullable<ParsedActivity['documents']>
+
   // --- Build ParsedActivity ---
   const iatiIdentifier = doc.iati_identifier || ''
   const title = ensureArray(doc.title_narrative)[0] || `Activity ${iatiIdentifier}`
@@ -218,6 +283,9 @@ export function mapDatastoreDocToParsedActivity(
     defaultFinanceType: defaultFinanceType ? String(defaultFinanceType) : undefined,
     defaultFlowType: defaultFlowType ? String(defaultFlowType) : undefined,
     defaultTiedStatus: defaultTiedStatus ? String(defaultTiedStatus) : undefined,
+    // Contacts and documents
+    contacts: contacts.length > 0 ? contacts : undefined,
+    documents: documents.length > 0 ? documents : undefined,
     // Note: capitalSpend and plannedDisbursements are not available from IATI Datastore
     // They're only available via XML upload (see dportal-mapper.ts)
   }
