@@ -1230,7 +1230,7 @@ export default function BulkImportSourceStep({
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg text-gray-900">
-                        Found {datastoreTotal.toLocaleString()} activit{datastoreTotal === 1 ? 'y' : 'ies'} published by {orgDisplayName}
+                        Found {filteredActivities.length.toLocaleString()} activit{filteredActivities.length === 1 ? 'y' : 'ies'} with {filteredTotals.totalTransactions.toLocaleString()} transactions published by {orgDisplayName}
                       </h3>
                       <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
@@ -1258,37 +1258,6 @@ export default function BulkImportSourceStep({
                 </CardContent>
               </Card>
 
-              {/* Applied filters summary (read-only) */}
-              {(selectedCountry || selectedHierarchy != null || dateFilterEnabled) && (
-                <div className="flex items-center gap-2 flex-wrap text-sm">
-                  <span className="text-gray-500">Filters applied:</span>
-                  {selectedCountry && (
-                    <Badge variant="secondary" className="gap-1.5">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`https://flagcdn.com/w20/${selectedCountry.toLowerCase()}.png`}
-                        alt=""
-                        className="w-4 h-auto rounded-sm"
-                      />
-                      {COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}
-                    </Badge>
-                  )}
-                  {selectedHierarchy != null && (
-                    <Badge variant="secondary">
-                      Level {selectedHierarchy}
-                    </Badge>
-                  )}
-                  {dateFilterEnabled && dateRangeStart && dateRangeEnd && (
-                    <Badge variant="secondary">
-                      {format(parseISO(dateRangeStart), 'd MMM yyyy')} to {format(parseISO(dateRangeEnd), 'd MMM yyyy')}
-                    </Badge>
-                  )}
-                  <span className="text-gray-400">|</span>
-                  <span className="text-gray-600">
-                    <span className="font-medium">{filteredActivities.length}</span> activities with <span className="font-medium">{filteredTotals.totalTransactions.toLocaleString()}</span> transactions
-                  </span>
-                </div>
-              )}
 
               {datastoreActivities.length === 0 && (
                 <Alert>
