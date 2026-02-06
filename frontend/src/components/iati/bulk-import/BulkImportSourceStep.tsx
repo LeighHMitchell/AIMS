@@ -1178,6 +1178,7 @@ export default function BulkImportSourceStep({
                             <Database className="h-3.5 w-3.5 text-gray-400" />
                             <span>
                               Expected: <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{previewCount.activities.toLocaleString()}</span> activities
+                              <span className="text-gray-400 ml-1">(transaction count available after fetch)</span>
                             </span>
                           </>
                         )}
