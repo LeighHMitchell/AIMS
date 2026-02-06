@@ -38,6 +38,7 @@ import { ALPHA2_TO_ALPHA3 } from '@/data/country-alpha3'
 import BulkUploadStep from './BulkUploadStep'
 import BulkValidationStep from './BulkValidationStep'
 import { OrganizationCombobox, type Organization } from '@/components/ui/organization-combobox'
+import { DatePicker } from '@/components/ui/date-picker'
 import type {
   ImportSourceMode,
   BulkImportMeta,
@@ -1223,11 +1224,11 @@ export default function BulkImportSourceStep({
                           />
                           Date From
                         </label>
-                        <Input
-                          type="date"
+                        <DatePicker
                           value={dateRangeStart}
-                          onChange={(e) => setDateRangeStart(e.target.value)}
+                          onChange={(value) => setDateRangeStart(value)}
                           disabled={!dateFilterEnabled}
+                          placeholder="Start date"
                           className="h-9 text-sm"
                         />
                       </div>
@@ -1235,11 +1236,11 @@ export default function BulkImportSourceStep({
                       {/* Date range end */}
                       <div className="space-y-1.5">
                         <label className="text-xs font-medium text-gray-600">Date To</label>
-                        <Input
-                          type="date"
+                        <DatePicker
                           value={dateRangeEnd}
-                          onChange={(e) => setDateRangeEnd(e.target.value)}
+                          onChange={(value) => setDateRangeEnd(value)}
                           disabled={!dateFilterEnabled}
+                          placeholder="End date"
                           className="h-9 text-sm"
                         />
                       </div>
@@ -1573,18 +1574,18 @@ export default function BulkImportSourceStep({
                         </div>
                         {dateFilterEnabled && (
                           <div className="flex items-center gap-2">
-                            <Input
-                              type="date"
+                            <DatePicker
                               value={dateRangeStart}
-                              onChange={(e) => setDateRangeStart(e.target.value)}
-                              className="h-9 w-36 text-sm"
+                              onChange={(value) => setDateRangeStart(value)}
+                              placeholder="Start date"
+                              className="h-9 w-40 text-sm"
                             />
                             <span className="text-gray-400">to</span>
-                            <Input
-                              type="date"
+                            <DatePicker
                               value={dateRangeEnd}
-                              onChange={(e) => setDateRangeEnd(e.target.value)}
-                              className="h-9 w-36 text-sm"
+                              onChange={(value) => setDateRangeEnd(value)}
+                              placeholder="End date"
+                              className="h-9 w-40 text-sm"
                             />
                           </div>
                         )}
