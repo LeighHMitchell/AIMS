@@ -1233,9 +1233,9 @@ export default function BulkImportSourceStep({
                         Found <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{filteredActivities.length.toLocaleString()}</span> activit{filteredActivities.length === 1 ? 'y' : 'ies'} with <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{filteredTotals.totalTransactions.toLocaleString()}</span> transactions published by {orgDisplayName}
                       </h3>
                       <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <Database className="h-4 w-4" />
-                          {datastoreActivities.filter((a) => a.matched).length} already in database
+                          <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{datastoreActivities.filter((a) => a.matched).length}</span> already in database
                         </div>
                         {fetchedAt && (
                           <div className="text-gray-400">
