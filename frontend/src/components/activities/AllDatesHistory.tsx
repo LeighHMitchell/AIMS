@@ -234,10 +234,10 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} className="w-fit">
       <PopoverTrigger
         data-popover-trigger
-        className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
+        className="inline-flex items-center flex-shrink-0 flex-grow-0 w-fit p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
         title="View all dates and revision history"
         onMouseEnter={handleMouseEnter}
       >

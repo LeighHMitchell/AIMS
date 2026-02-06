@@ -209,9 +209,10 @@ export function PersonCard({
               <div className="flex items-center space-x-1 ml-2">
                 {/* Super User Badge - only for super users */}
                 {isPersonSuperUser && (
-                  <Badge 
-                    variant="secondary" 
-                    className="text-xs flex-shrink-0 bg-red-100 text-red-700"
+                  <Badge
+                    variant="secondary"
+                    className="text-xs flex-shrink-0 text-white border-0"
+                    style={{ backgroundColor: '#DC2625' }}
                   >
                     Super User
                   </Badge>
@@ -347,9 +348,10 @@ export function PersonCard({
             <div className="flex items-center space-x-2">
               {/* Super User Badge - only for super users */}
               {isPersonSuperUser && (
-                <Badge 
-                  variant="secondary" 
-                  className="text-xs flex-shrink-0 bg-red-100 text-red-700"
+                <Badge
+                  variant="secondary"
+                  className="text-xs flex-shrink-0 text-white border-0"
+                  style={{ backgroundColor: '#DC2625' }}
                 >
                   Super User
                 </Badge>

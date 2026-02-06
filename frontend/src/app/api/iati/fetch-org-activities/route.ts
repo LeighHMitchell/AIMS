@@ -15,7 +15,10 @@ const IATI_API_KEY = process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_AP
 const CACHE_TTL_HOURS = 1
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 120
+// Large organizations (USAID has 56,000+ activities) can take 10-15 minutes
+// Each page (1000 activities) requires 13s delay for IATI Datastore rate limiting
+// USAID: ~56 pages × 13s = ~12 minutes download + enrichment time
+export const maxDuration = 900 // 15 minutes (maximum for Vercel Pro/Enterprise)
 
 /**
  * GET /api/iati/fetch-org-activities
@@ -38,8 +41,27 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const requestedOrgId = searchParams.get('organization_id')
 
+    // Fetch user's role from the users table (not from Supabase Auth user)
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const userRole = userData?.role || null
+
     // Check if user is a super user
-    const isSuperUser = user.role === USER_ROLES.SUPER_USER || user.role === 'admin'
+    const isSuperUser = userRole === USER_ROLES.SUPER_USER ||
+                        userRole === 'admin' ||
+                        userRole === 'super_user'
+
+    console.log('[Fetch Org Activities] Auth check:', {
+      userId: user.id,
+      userRole,
+      expectedSuperUserRole: USER_ROLES.SUPER_USER,
+      isSuperUser,
+      requestedOrgId
+    })
 
     let orgScope
 
@@ -99,6 +121,23 @@ export async function GET(request: NextRequest) {
     }
 
     const forceRefresh = searchParams.get('force_refresh') === 'true'
+    const countOnly = searchParams.get('count_only') === 'true'
+
+    // Quick count query - just return total activities without fetching data
+    if (countOnly) {
+      const count = await getActivityCount(orgScope.allRefs)
+      const estimatedSeconds = Math.ceil((count / 1000) * 13) + 15 // 13s per page + 15s overhead
+      return NextResponse.json({
+        count,
+        estimatedSeconds,
+        orgScope: {
+          organizationId: orgScope.organizationId,
+          organizationName: orgScope.organizationName,
+          reportingOrgRef: orgScope.reportingOrgRef,
+          allRefs: orgScope.allRefs,
+        },
+      })
+    }
 
     // 2. Build query hash for caching
     const queryKey = `datastore-v3:${orgScope.allRefs.sort().join(',')}`
@@ -216,6 +255,31 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+/**
+ * Quick count query - returns just the total number of activities (no data).
+ * Uses rows=0 which is very fast.
+ */
+async function getActivityCount(orgRefs: string[]): Promise<number> {
+  const refQuery = orgRefs.map(ref => `"${ref}"`).join(' OR ')
+  const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})&rows=0&wt=json`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': 'AIMS-IATI-Import/1.0',
+      'Ocp-Apim-Subscription-Key': IATI_API_KEY!,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`IATI Datastore returned ${response.status}`)
+  }
+
+  const data = await response.json()
+  return data.response?.numFound || 0
 }
 
 /**

@@ -506,7 +506,7 @@ export default function ActivityDetailPage() {
   const [locationsView, setLocationsView] = useState<'cards' | 'table'>('cards')
   const [sectorViewMode, setSectorViewMode] = useState<'sankey' | 'pie' | 'bar' | 'table'>('bar')
   const [sectorMetricMode, setSectorMetricMode] = useState<'percentage' | 'budget' | 'planned' | 'actual'>('percentage')
-  const [sectorBarGroupingMode, setSectorBarGroupingMode] = useState<'sector' | 'category' | 'group'>('category')
+  const [sectorBarGroupingMode, setSectorBarGroupingMode] = useState<'sector' | 'category' | 'group'>('sector')
 
   const [partners, setPartners] = useState<Partner[]>([])
   const [allPartners, setAllPartners] = useState<Partner[]>([])
@@ -1710,7 +1710,7 @@ export default function ActivityDetailPage() {
                             <div className="flex flex-col gap-y-2 text-xs">
                               {activity.hierarchy && (
                                 <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Hierarchy:</div>
+                                  <div className="text-slate-500 mb-1">Hierarchy</div>
                                   <div className="font-medium text-slate-900 break-words">
                                     {getHierarchyLabel(activity.hierarchy) || `Level ${activity.hierarchy}`}
                                   </div>
@@ -1726,7 +1726,7 @@ export default function ActivityDetailPage() {
                               )}
                               {activity.defaultFlowType && (
                                 <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Default Flow Type:</div>
+                                  <div className="text-slate-500 mb-1">Default Flow Type</div>
                                   <div className="font-medium text-slate-900 break-words">
                                     {activity.defaultFlowType === '0' || activity.defaultFlowType === 0 ? (
                                       <span className="text-slate-400 italic text-sm font-normal">Blank</span>
@@ -1742,7 +1742,7 @@ export default function ActivityDetailPage() {
                               )}
                               {activity.defaultFinanceType && (
                                 <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Default Finance Type:</div>
+                                  <div className="text-slate-500 mb-1">Default Finance Type</div>
                                   <div className="font-medium text-slate-900 break-words">
                                     {activity.defaultFinanceType === '0' || activity.defaultFinanceType === 0 ? (
                                       <span className="text-slate-400 italic text-sm font-normal">Blank</span>
@@ -1758,7 +1758,7 @@ export default function ActivityDetailPage() {
                               )}
                               {activity.defaultAidType && (
                                 <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Default Aid Type:</div>
+                                  <div className="text-slate-500 mb-1">Default Aid Type</div>
                                   <div className="font-medium text-slate-900 break-words">
                                     {activity.defaultAidType === '0' || activity.defaultAidType === 0 ? (
                                       <span className="text-slate-400 italic text-sm font-normal">Blank</span>
@@ -1774,7 +1774,7 @@ export default function ActivityDetailPage() {
                               )}
                               {activity.defaultTiedStatus && (
                                 <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Default Tied Status:</div>
+                                  <div className="text-slate-500 mb-1">Default Tied Status</div>
                                   <div className="font-medium text-slate-900 break-words">
                                     {activity.defaultTiedStatus === '0' || activity.defaultTiedStatus === 0 ? (
                                       <span className="text-slate-400 italic text-sm font-normal">Blank</span>
@@ -1790,7 +1790,7 @@ export default function ActivityDetailPage() {
                               )}
                               {activity.activityScope && (
                                 <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Scope:</div>
+                                  <div className="text-slate-500 mb-1">Scope</div>
                                   <div className="font-medium text-slate-900 break-words">
                                     {activity.activityScope === '0' || activity.activityScope === 0 ? (
                                       <span className="text-slate-400 italic text-sm font-normal">Blank</span>
@@ -2001,7 +2001,7 @@ export default function ActivityDetailPage() {
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
                               <span className="text-slate-500 flex-shrink-0">Updated:</span>
-                              <span className="font-medium text-slate-900 truncate">{formatDate(activity.updatedAt)}</span>
+                              <span className="font-medium text-slate-900 whitespace-nowrap">{formatDate(activity.updatedAt)}</span>
                               <AllDatesHistory
                                 activityId={activity.id}
                                 dates={{
@@ -3693,12 +3693,9 @@ export default function ActivityDetailPage() {
                                   </div>
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
-                                  <Badge
-                                    variant="outline"
-                                    className="bg-blue-100 text-blue-800 border-blue-300 border"
-                                  >
+                                  <span className="text-sm text-slate-600">
                                     Reporting
-                                  </Badge>
+                                  </span>
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
                                   <span className="text-sm text-slate-600">
@@ -3828,12 +3825,9 @@ export default function ActivityDetailPage() {
                                     </div>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
-                                    <Badge
-                                      variant="outline"
-                                      className={`${getRoleBadgeColor(org.iati_role_code || getRoleCodeFromType(org.role_type))} border`}
-                                    >
+                                    <span className="text-sm text-slate-600">
                                       {getOrganizationRoleName(org.iati_role_code || getRoleCodeFromType(org.role_type))}
-                                        </Badge>
+                                    </span>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
                                     <span className="text-sm text-slate-600">

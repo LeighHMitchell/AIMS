@@ -199,23 +199,27 @@ export function OrganizationCombobox({
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              "w-full justify-between font-normal px-4 py-2 text-base h-10 border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
+              "w-full justify-between font-normal px-3 py-2 text-base h-auto min-h-[52px] border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900",
               className
             )}
           >
           {(() => {
             const selected = organizations.find((o) => o.id === value);
             if (selected) {
+              const iatiRef = selected.iati_org_id || selected.iati_identifier
+              const orgTypeCode = selected.Organisation_Type_Code
+              const orgTypeName = selected.Organisation_Type_Name || selected.type
+
               return (
-                <div className="flex items-center gap-3 text-left w-full min-w-0">
+                <div className="flex items-start gap-3 text-left w-full min-w-0 py-0.5">
                   {/* Organization logo */}
                   {selected.logo ? (
-                    <div className="w-6 h-6 flex-shrink-0">
+                    <div className="w-8 h-8 flex-shrink-0">
                       <Image
                         src={selected.logo}
                         alt={`${selected.name} logo`}
-                        width={24}
-                        height={24}
+                        width={32}
+                        height={32}
                         className="rounded-sm object-contain"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none'
@@ -223,15 +227,53 @@ export function OrganizationCombobox({
                       />
                     </div>
                   ) : (
-                    <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-sm">
-                      <Building2 className="h-4 w-4 text-gray-400" />
+                    <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-sm">
+                      <Building2 className="h-5 w-5 text-gray-400" />
                     </div>
                   )}
-                  
-                  {/* Organization name with acronym */}
-                  <span className="truncate font-normal text-sm text-gray-900 flex-1">
-                    {selected.name}{selected.acronym && selected.acronym !== selected.name ? ` (${selected.acronym})` : ''}
-                  </span>
+
+                  {/* Organization details - two line layout */}
+                  <div className="min-w-0 flex-1">
+                    {/* Line 1: Name and acronym */}
+                    <div className="truncate font-medium text-sm text-gray-900">
+                      {selected.name}{selected.acronym && selected.acronym !== selected.name ? ` (${selected.acronym})` : ''}
+                    </div>
+
+                    {/* Line 2: ID, Type, Country with flag */}
+                    <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500">
+                      {/* IATI ID or internal ID */}
+                      <span className="font-mono bg-gray-100 px-1 py-0.5 rounded text-[10px]">
+                        {iatiRef || `ID: ${selected.id.substring(0, 8)}`}
+                      </span>
+
+                      {/* Organization Type */}
+                      {(orgTypeCode || orgTypeName) && (
+                        <>
+                          <span className="text-gray-300">·</span>
+                          <span className="truncate">
+                            {orgTypeCode}{orgTypeCode && orgTypeName ? ' ' : ''}{orgTypeName}
+                          </span>
+                        </>
+                      )}
+
+                      {/* Country with flag */}
+                      {selected.country && (
+                        <>
+                          <span className="text-gray-300">·</span>
+                          <span className="flex items-center gap-1 shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={`https://flagcdn.com/w20/${selected.country.toLowerCase()}.png`}
+                              alt=""
+                              className="w-3.5 h-auto rounded-sm"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            />
+                            {selected.country}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             }
@@ -298,52 +340,86 @@ export function OrganizationCombobox({
             {filteredOrgs.length > 0 && (
               <ScrollArea className="max-h-60 overflow-y-auto">
                 <CommandGroup>
-                  {filteredOrgs.map(org => (
-                    <CommandItem
-                      key={org.id}
-                      onSelect={() => handleSelect(org.id)}
-                      className="py-2"
-                    >
-                      <div className="flex items-center gap-3 w-full">
-                        {/* Organization logo */}
-                        {org.logo ? (
-                          <div className="w-6 h-6 flex-shrink-0">
-                            <Image
-                              src={org.logo}
-                              alt={`${org.name} logo`}
-                              width={24}
-                              height={24}
-                              className="rounded-sm object-contain"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none'
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-sm">
-                            <Building2 className="h-4 w-4 text-gray-400" />
-                          </div>
-                        )}
-                        
-                        {/* Organization name with acronym, IATI ref, and location */}
-                        <div className="min-w-0 flex-1">
-                          <span className="font-normal text-gray-900 text-sm">
-                            {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
-                            {(org.iati_org_id || org.iati_identifier) && (
-                              <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded ml-2">
-                                {org.iati_org_id || org.iati_identifier}
-                              </span>
-                            )}
-                          </span>
-                          {org.country && (
-                            <span className="text-xs text-gray-400 ml-2">
-                              {org.country}
-                            </span>
+                  {filteredOrgs.map(org => {
+                    const iatiRef = org.iati_org_id || org.iati_identifier
+                    const orgTypeCode = org.Organisation_Type_Code
+                    const orgTypeName = org.Organisation_Type_Name || org.type
+
+                    return (
+                      <CommandItem
+                        key={org.id}
+                        onSelect={() => handleSelect(org.id)}
+                        className="py-2.5"
+                      >
+                        <div className="flex items-start gap-3 w-full">
+                          {/* Organization logo */}
+                          {org.logo ? (
+                            <div className="w-8 h-8 flex-shrink-0 mt-0.5">
+                              <Image
+                                src={org.logo}
+                                alt={`${org.name} logo`}
+                                width={32}
+                                height={32}
+                                className="rounded-sm object-contain"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none'
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-sm mt-0.5">
+                              <Building2 className="h-5 w-5 text-gray-400" />
+                            </div>
                           )}
+
+                          {/* Organization details - two line layout */}
+                          <div className="min-w-0 flex-1">
+                            {/* Line 1: Name and acronym */}
+                            <div className="font-medium text-gray-900 text-sm">
+                              {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
+                            </div>
+
+                            {/* Line 2: ID, Type, Country with flag */}
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              {/* IATI ID or internal ID */}
+                              <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                {iatiRef || `ID: ${org.id.substring(0, 8)}...`}
+                              </span>
+
+                              {/* Organization Type */}
+                              {(orgTypeCode || orgTypeName) && (
+                                <>
+                                  <span className="text-gray-300">·</span>
+                                  <span className="text-xs text-gray-500">
+                                    {orgTypeCode && <span className="font-mono">{orgTypeCode}</span>}
+                                    {orgTypeCode && orgTypeName && ' '}
+                                    {orgTypeName}
+                                  </span>
+                                </>
+                              )}
+
+                              {/* Country with flag */}
+                              {org.country && (
+                                <>
+                                  <span className="text-gray-300">·</span>
+                                  <span className="flex items-center gap-1 text-xs text-gray-500">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={`https://flagcdn.com/w20/${org.country.toLowerCase()}.png`}
+                                      alt=""
+                                      className="w-4 h-auto rounded-sm"
+                                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                                    />
+                                    {org.country}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </CommandItem>
-                  ))}
+                      </CommandItem>
+                    )
+                  })}
                 </CommandGroup>
               </ScrollArea>
             )}

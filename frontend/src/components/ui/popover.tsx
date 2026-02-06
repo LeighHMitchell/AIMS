@@ -17,9 +17,10 @@ interface PopoverProps {
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
   children: React.ReactNode
+  className?: string
 }
 
-const Popover = ({ open: controlledOpen, defaultOpen = false, onOpenChange, children }: PopoverProps) => {
+const Popover = ({ open: controlledOpen, defaultOpen = false, onOpenChange, children, className }: PopoverProps) => {
   const [internalOpen, setInternalOpen] = React.useState(defaultOpen)
   const triggerRef = React.useRef<HTMLElement | null>(null)
 
@@ -36,7 +37,7 @@ const Popover = ({ open: controlledOpen, defaultOpen = false, onOpenChange, chil
 
   return (
     <PopoverContext.Provider value={{ open, onOpenChange: handleOpenChange, triggerRef }}>
-      <div className="relative w-full">
+      <div className={cn("relative w-full", className)}>
         {children}
       </div>
     </PopoverContext.Provider>

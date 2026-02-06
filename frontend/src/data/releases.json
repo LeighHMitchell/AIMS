@@ -1,11 +1,22 @@
 {
-  "currentVersion": "1.17.0",
+  "currentVersion": "1.18.0",
   "releases": [
+    {
+      "version": "1.18.0",
+      "date": "2026-02-06",
+      "changes": [
+        "IATI Bulk Import now shows estimated import time based on activity count (e.g., '56,000 activities — ~12 minutes')",
+        "Progress bar adapts dynamically to actual fetch duration for large organizations",
+        "Extended API timeout to 15 minutes for organizations with 50,000+ activities (e.g., USAID)",
+        "Quick count query provides instant activity count before full data fetch begins"
+      ]
+    },
     {
       "version": "1.17.0",
       "date": "2026-02-06",
       "changes": [
         "Super users can now select any organization to import IATI data on their behalf",
+        "Organization selector enhanced with two-line layout showing logo, name, IATI ID, type code, and country with flag",
         "IATI Bulk Import country filter matches activities by recipient-country code OR location coordinates within country bounds",
         "IATI Bulk Import hierarchy filter for Level 1 (Parent) and Level 2 (Sub-Activity) activities",
         "IATI Bulk Import country scope filter (All/100%/Regional) for filtering by allocation percentage",

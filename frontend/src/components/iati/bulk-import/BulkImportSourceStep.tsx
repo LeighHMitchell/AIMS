@@ -21,8 +21,9 @@ import {
   X,
 } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
-import { useHomeCountry } from '@/contexts/SystemSettingsContext'
+import { useHomeCountry, useSystemSettings } from '@/contexts/SystemSettingsContext'
 import { apiFetch } from '@/lib/api-fetch'
+import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { USER_ROLES } from '@/types/user'
 import {
@@ -166,7 +167,8 @@ export default function BulkImportSourceStep({
   activitiesLoaded,
 }: BulkImportSourceStepProps) {
   const { user } = useUser()
-  const homeCountry = useHomeCountry()
+  const { settings: systemSettings, loading: settingsLoading } = useSystemSettings()
+  const homeCountry = systemSettings?.homeCountry || ''
 
   // --- Super user state ---
   const isSuperUser = user?.role === USER_ROLES.SUPER_USER || user?.role === 'admin'
@@ -187,8 +189,12 @@ export default function BulkImportSourceStep({
   // --- Progress tracking state ---
   const [fetchProgress, setFetchProgress] = useState(0)
   const [fetchPhase, setFetchPhase] = useState<'connecting' | 'fetching' | 'enriching' | 'processing'>('connecting')
+  const [fetchProgressMessage, setFetchProgressMessage] = useState<string | null>(null)
+  const [longFetchWarning, setLongFetchWarning] = useState(false)
+  const [estimatedTime, setEstimatedTime] = useState<{ count: number; seconds: number } | null>(null)
   const fetchStartTimeRef = useRef<number>(0)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const estimatedSecondsRef = useRef<number>(65) // Default estimate, updated by count query
 
   // --- Country filter state ---
   const [selectedCountry, setSelectedCountry] = useState<string>('')
@@ -214,6 +220,7 @@ export default function BulkImportSourceStep({
   const orgDisplayName = orgAcronym ? `${orgName} (${orgAcronym})` : orgName
   const orgIatiId = selectedOrg?.iati_org_id || user?.organization?.iati_org_id
   const orgLogo = selectedOrg?.logo || user?.organization?.logo
+  const orgCountry = selectedOrg?.country || user?.organization?.country
   const currentOrgId = selectedOrgId || user?.organizationId
 
   // --- Country filter computed values ---
@@ -350,7 +357,7 @@ export default function BulkImportSourceStep({
       if (countryScope === '100') {
         // Debug: show what percentages exist
         const percentages = result.map(a => a.recipientCountries?.find(rc => countryCodeMatches(rc.code))?.percentage)
-        console.log('[Filter Debug] Percentages for selected country:', [...new Set(percentages)])
+        console.log('[Filter Debug] Percentages for selected country:', Array.from(new Set(percentages)))
 
         // Only activities where selected country is 100% (or only country listed, or inferred from locations)
         result = result.filter(a => {
@@ -443,22 +450,32 @@ export default function BulkImportSourceStep({
 
   // --- Progress simulation helpers ---
   // Since the API call is a single long request without streaming progress,
-  // we simulate progress based on expected duration (~65s for large orgs)
-  const startProgressSimulation = useCallback(() => {
+  // we simulate progress based on expected duration from the count query
+  const startProgressSimulation = useCallback((estimatedSeconds?: number) => {
     setFetchProgress(0)
     setFetchPhase('connecting')
+    setFetchProgressMessage(null)
+    setLongFetchWarning(false)
     fetchStartTimeRef.current = Date.now()
+
+    // Use estimated seconds from count query, or default to 65s
+    const totalEstimate = estimatedSeconds || estimatedSecondsRef.current || 65
+    estimatedSecondsRef.current = totalEstimate
 
     // Clear any existing interval
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current)
     }
 
-    // Progress phases and their time ranges (in seconds):
+    // Dynamic progress phases based on estimated duration:
     // - connecting: 0-3s (0-5%)
-    // - fetching: 3-55s (5-80%) - this is where most time is spent
-    // - enriching: 55-62s (80-95%)
-    // - processing: 62-65s (95-99%)
+    // - fetching: 3s to (estimate * 0.85) (5-80%)
+    // - enriching: (estimate * 0.85) to (estimate * 0.95) (80-95%)
+    // - processing: (estimate * 0.95) to estimate (95-99%)
+    const fetchEnd = Math.max(10, totalEstimate * 0.85)
+    const enrichEnd = Math.max(15, totalEstimate * 0.95)
+    const processEnd = totalEstimate
+
     progressIntervalRef.current = setInterval(() => {
       const elapsed = (Date.now() - fetchStartTimeRef.current) / 1000
 
@@ -466,23 +483,33 @@ export default function BulkImportSourceStep({
         // Connecting phase
         setFetchPhase('connecting')
         setFetchProgress(Math.min(5, (elapsed / 3) * 5))
-      } else if (elapsed < 55) {
+      } else if (elapsed < fetchEnd) {
         // Fetching phase (main duration)
         setFetchPhase('fetching')
-        // Progress from 5 to 80 over 52 seconds
-        const fetchProgress = 5 + ((elapsed - 3) / 52) * 75
+        // Progress from 5 to 80 over the fetch duration
+        const fetchProgress = 5 + ((elapsed - 3) / (fetchEnd - 3)) * 75
         setFetchProgress(Math.min(80, fetchProgress))
-      } else if (elapsed < 62) {
+      } else if (elapsed < enrichEnd) {
         // Enriching phase
         setFetchPhase('enriching')
-        const enrichProgress = 80 + ((elapsed - 55) / 7) * 15
+        const enrichProgress = 80 + ((elapsed - fetchEnd) / (enrichEnd - fetchEnd)) * 15
         setFetchProgress(Math.min(95, enrichProgress))
-      } else {
-        // Processing phase
+      } else if (elapsed < processEnd * 1.2) {
+        // Processing phase (allow 20% buffer)
         setFetchPhase('processing')
-        // Slow down near the end, cap at 99 until actual completion
-        const processProgress = 95 + Math.min(4, (elapsed - 62) / 3 * 4)
+        const processProgress = 95 + ((elapsed - enrichEnd) / (processEnd * 0.2)) * 4
         setFetchProgress(Math.min(99, processProgress))
+      } else {
+        // Extended fetch - taking longer than estimated
+        setFetchPhase('processing')
+        setFetchProgress(99)
+        setLongFetchWarning(true)
+
+        // Calculate elapsed time in minutes
+        const minutes = Math.floor(elapsed / 60)
+        const seconds = Math.floor(elapsed % 60)
+        const estimatedMinutes = Math.ceil(totalEstimate / 60)
+        setFetchProgressMessage(`${minutes}:${seconds.toString().padStart(2, '0')} elapsed (estimated ~${estimatedMinutes} min)`)
       }
     }, 200)
   }, [])
@@ -492,6 +519,9 @@ export default function BulkImportSourceStep({
       clearInterval(progressIntervalRef.current)
       progressIntervalRef.current = null
     }
+    setLongFetchWarning(false)
+    setFetchProgressMessage(null)
+    setEstimatedTime(null)
     if (success) {
       setFetchProgress(100)
       setFetchPhase('processing')
@@ -509,6 +539,12 @@ export default function BulkImportSourceStep({
 
   // Fetch organizations list for super users
   useEffect(() => {
+    // Wait for user data to be loaded
+    if (!user) {
+      console.log('[IATI Import] Waiting for user data...')
+      return
+    }
+
     // If not super user, just set loading to false
     if (!isSuperUser) {
       setLoadingOrgs(false)
@@ -521,35 +557,80 @@ export default function BulkImportSourceStep({
 
     const fetchOrganizations = async () => {
       setLoadingOrgs(true)
+      console.log('[IATI Import] Starting organization fetch for super user...', { user: user?.id, role: user?.role })
+
       try {
-        // Fetch all organizations - super users can select any org
-        const response = await apiFetch('/api/organizations-list?limit=500')
-        if (response.ok) {
-          const result = await response.json()
-          let orgList: Organization[] = result.data || []
+        // Fetch all organizations directly from Supabase (same pattern as profile page)
+        const { data, error } = await supabase
+          .from('organizations')
+          .select('id, name, acronym, iati_org_id, reporting_org_ref, logo, country, Organisation_Type_Code, Organisation_Type_Name')
+          .order('name')
 
-          // Ensure user's own organization is in the list
-          if (user?.organizationId && user?.organization) {
-            const userOrgExists = orgList.some(o => o.id === user.organizationId)
-            if (!userOrgExists) {
-              // Add user's org at the beginning
-              orgList = [{
-                id: user.organizationId,
-                name: user.organization.name || '',
-                acronym: user.organization.acronym,
-                logo: user.organization.logo,
-                iati_org_id: user.organization.iati_org_id,
-              }, ...orgList]
-            }
-          }
-
-          console.log('[IATI Import] Loaded', orgList.length, 'organizations for super user selection')
-          setOrganizations(orgList)
-        } else {
-          console.error('[IATI Import] Failed to fetch organizations:', response.status)
+        if (error) {
+          console.error('[IATI Import] Supabase error fetching organizations:', error)
+          throw error
         }
+
+        console.log('[IATI Import] Fetched organizations from Supabase:', {
+          count: data?.length,
+          sample: data?.slice(0, 3).map((o: { id: string; name: string }) => ({ id: o.id, name: o.name }))
+        })
+
+        let orgList: Organization[] = (data || []).map((org: {
+          id: string;
+          name: string;
+          acronym: string | null;
+          iati_org_id: string | null;
+          logo: string | null;
+          country: string | null;
+          Organisation_Type_Code: string | null;
+          Organisation_Type_Name: string | null;
+        }) => ({
+          id: org.id,
+          name: org.name,
+          acronym: org.acronym || undefined,
+          iati_org_id: org.iati_org_id || undefined,
+          logo: org.logo || undefined,
+          country: org.country || undefined,
+          Organisation_Type_Code: org.Organisation_Type_Code || undefined,
+          Organisation_Type_Name: org.Organisation_Type_Name || undefined,
+        }))
+
+        // Ensure user's own organization is in the list
+        if (user?.organizationId && user?.organization) {
+          const userOrgExists = orgList.some(o => o.id === user.organizationId)
+          if (!userOrgExists) {
+            // Add user's org at the beginning
+            orgList = [{
+              id: user.organizationId,
+              name: user.organization.name || '',
+              acronym: user.organization.acronym,
+              logo: user.organization.logo,
+              iati_org_id: user.organization.iati_org_id,
+            }, ...orgList]
+            console.log('[IATI Import] Added user org to list (was missing)')
+          }
+        }
+
+        console.log('[IATI Import] Loaded', orgList.length, 'organizations for super user selection')
+        setOrganizations(orgList)
+        // Note: Don't set selectedOrgId here - empty means "use your own org"
+        // We only set selectedOrgId when user explicitly selects a DIFFERENT org
       } catch (err) {
         console.error('[IATI Import] Failed to fetch organizations:', err)
+
+        // Fallback: at least show user's own org
+        if (user?.organizationId && user?.organization) {
+          console.log('[IATI Import] Using fallback after error - user org only')
+          setOrganizations([{
+            id: user.organizationId,
+            name: user.organization.name || '',
+            acronym: user.organization.acronym,
+            logo: user.organization.logo,
+            iati_org_id: user.organization.iati_org_id,
+          }])
+          setSelectedOrgId(user.organizationId)
+        }
       } finally {
         setLoadingOrgs(false)
         setOrgsFetched(true)
@@ -557,22 +638,46 @@ export default function BulkImportSourceStep({
     }
 
     fetchOrganizations()
-  }, [isSuperUser, orgsFetched, user?.organizationId, user?.organization])
+  }, [isSuperUser, orgsFetched, user, user?.organizationId, user?.organization, selectedOrgId])
 
   // --- Datastore fetch ---
   const fetchFromDatastore = useCallback(async (forceRefresh = false, orgId?: string) => {
     setFetchStatus('fetching')
     setFetchError(null)
-    startProgressSimulation()
+    setEstimatedTime(null)
 
     try {
       const params = new URLSearchParams()
       if (forceRefresh) params.set('force_refresh', 'true')
-      // Include organization_id for super users who selected a different org
+      // Only include organization_id for super users who selected a DIFFERENT org
+      // Empty selectedOrgId means "use your own org" (no parameter needed)
       const targetOrgId = orgId ?? selectedOrgId
-      if (targetOrgId && isSuperUser) {
+      if (targetOrgId && isSuperUser && targetOrgId !== user?.organizationId) {
         params.set('organization_id', targetOrgId)
       }
+
+      // Step 1: Quick count query to get estimated time
+      const countParams = new URLSearchParams(params)
+      countParams.set('count_only', 'true')
+      const countUrl = `/api/iati/fetch-org-activities?${countParams.toString()}`
+
+      try {
+        const countResponse = await apiFetch(countUrl)
+        if (countResponse.ok) {
+          const countData = await countResponse.json()
+          setEstimatedTime({ count: countData.count, seconds: countData.estimatedSeconds })
+          // Start progress simulation with the actual estimated time
+          startProgressSimulation(countData.estimatedSeconds)
+        } else {
+          // Count failed, start with default estimate
+          startProgressSimulation()
+        }
+      } catch {
+        // Count failed, start with default estimate
+        startProgressSimulation()
+      }
+
+      // Step 2: Full fetch
       const url = `/api/iati/fetch-org-activities${params.toString() ? '?' + params.toString() : ''}`
 
       const response = await apiFetch(url)
@@ -598,18 +703,45 @@ export default function BulkImportSourceStep({
         organizationName: data.orgScope?.organizationName || '',
       })
 
-      // Set default country filter to home country if it exists in activities
-      const defaultCountry = homeCountry && activities.some((a: ParsedActivity) =>
-        a.recipientCountries?.some(rc => rc.code === homeCountry)
-      ) ? homeCountry : ''
+      // Set default country filter to home country from system settings
+      const defaultCountry = homeCountry || ''
 
       setSelectedCountry(defaultCountry)
       setSelectedHierarchy(null)
 
-      // Filter activities by home country if applicable
-      const filteredByCountry = defaultCountry
-        ? activities.filter((a: ParsedActivity) => a.recipientCountries?.some(rc => rc.code === defaultCountry))
-        : activities
+      // Filter activities by home country if applicable (using IATI geography rules)
+      let filteredByCountry = activities
+      if (defaultCountry) {
+        const countryBounds = COUNTRY_BOUNDING_BOXES[defaultCountry]
+        const alpha3Code = ALPHA2_TO_ALPHA3[defaultCountry] || defaultCountry
+
+        const countryCodeMatches = (code: string | undefined): boolean => {
+          if (!code) return false
+          const upperCode = code.toUpperCase()
+          return upperCode === defaultCountry.toUpperCase() || upperCode === alpha3Code.toUpperCase()
+        }
+
+        const coordsInCountry = (lat: number, lng: number): boolean => {
+          if (!countryBounds) return false
+          return lat >= countryBounds.minLat && lat <= countryBounds.maxLat &&
+                 lng >= countryBounds.minLng && lng <= countryBounds.maxLng
+        }
+
+        const activityInCountryViaLocations = (a: ParsedActivity): boolean => {
+          if (a.recipientCountries && a.recipientCountries.length > 0) return false
+          if (!a.locations || a.locations.length === 0) return false
+          const locationsWithCoords = a.locations.filter(l => l.coordinates)
+          if (locationsWithCoords.length === 0) return false
+          return locationsWithCoords.every(l =>
+            l.coordinates && coordsInCountry(l.coordinates.latitude, l.coordinates.longitude)
+          )
+        }
+
+        filteredByCountry = activities.filter((a: ParsedActivity) =>
+          a.recipientCountries?.some(rc => countryCodeMatches(rc.code)) ||
+          activityInCountryViaLocations(a)
+        )
+      }
 
       // Notify parent with filtered activities
       const meta: BulkImportMeta = {
@@ -625,15 +757,17 @@ export default function BulkImportSourceStep({
       setFetchStatus('error')
       setFetchError(err instanceof Error ? err.message : 'Failed to fetch activities')
     }
-  }, [homeCountry, orgIatiId, orgName, onActivitiesReady, startProgressSimulation, stopProgressSimulation, selectedOrgId, isSuperUser])
+  }, [homeCountry, orgIatiId, orgName, onActivitiesReady, startProgressSimulation, stopProgressSimulation, selectedOrgId, isSuperUser, user?.organizationId])
 
   // Auto-fetch on mount for datastore mode (only once per organization selection)
+  // Wait for system settings to load so we have the correct homeCountry
   useEffect(() => {
-    if (sourceMode === 'datastore' && !activitiesLoaded && !fetchedRef.current && fetchStatus === 'idle') {
+    if (sourceMode === 'datastore' && !activitiesLoaded && !fetchedRef.current && fetchStatus === 'idle' && !settingsLoading) {
+      console.log('[IATI Import] Auto-fetch starting with homeCountry:', homeCountry)
       fetchedRef.current = true
       fetchFromDatastore(false, selectedOrgId || undefined)
     }
-  }, [sourceMode, activitiesLoaded, fetchStatus, fetchFromDatastore, selectedOrgId])
+  }, [sourceMode, activitiesLoaded, fetchStatus, fetchFromDatastore, selectedOrgId, settingsLoading, homeCountry])
 
   // --- Handle organization selection change (for super users) ---
   const handleOrgChange = useCallback((newOrgId: string) => {
@@ -805,58 +939,82 @@ export default function BulkImportSourceStep({
       <Card className="bg-gray-50 border-gray-200">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            {orgLogo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={orgLogo}
-                alt={orgName}
-                className="h-10 w-10 rounded-lg object-contain bg-white border border-gray-200"
-              />
-            ) : (
-              <div className="p-2 bg-gray-900 rounded-lg">
-                <Building2 className="h-5 w-5 text-white" />
-              </div>
-            )}
             <div className="flex-1">
               {isSuperUser ? (
                 // Super user: show organization selector
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500">Importing for:</span>
-                    <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
+                    <Badge variant="outline" className="text-xs text-white border-0" style={{ backgroundColor: '#DC2625' }}>
                       Super User
                     </Badge>
                   </div>
                   {loadingOrgs ? (
-                    <div className="flex items-center gap-2 h-10 px-3 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 h-10 px-3 text-sm text-gray-500 border border-gray-200 rounded-md bg-gray-50">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading organizations...
                     </div>
                   ) : organizations.length === 0 ? (
-                    <div className="flex items-center gap-2 h-10 px-3 text-sm text-gray-500">
-                      No organizations available
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 h-10 px-3 text-sm text-amber-600 border border-amber-200 rounded-md bg-amber-50">
+                        <AlertCircle className="h-4 w-4" />
+                        Could not load organizations. Check console for details.
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setOrgsFetched(false)
+                          setLoadingOrgs(true)
+                        }}
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Retry
+                      </Button>
                     </div>
                   ) : (
-                    <OrganizationCombobox
-                      organizations={organizations}
-                      value={selectedOrgId || user?.organizationId || ''}
-                      onValueChange={handleOrgChange}
-                      placeholder="Select organization to import..."
-                      className="w-[400px]"
-                    />
+                    <div className="w-full max-w-lg">
+                      <OrganizationCombobox
+                        organizations={organizations}
+                        value={selectedOrgId || user?.organizationId || ''}
+                        onValueChange={handleOrgChange}
+                        placeholder="Select organization to import..."
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        {organizations.length} organization{organizations.length !== 1 ? 's' : ''} available
+                      </p>
+                    </div>
                   )}
                 </div>
               ) : (
                 // Regular user: show fixed organization info
                 <>
                   <p className="font-semibold text-gray-900">{orgDisplayName}</p>
-                  {orgIatiId ? (
-                    <p className="text-sm text-gray-500">
-                      IATI Identifier <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700 ml-1">{orgIatiId}</span>
-                    </p>
-                  ) : (
-                    <p className="text-sm text-amber-600">No IATI identifier configured</p>
-                  )}
+                  <div className="flex items-center gap-2 mt-0.5 text-sm text-gray-500">
+                    {orgIatiId && (
+                      <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700">
+                        {orgIatiId}
+                      </span>
+                    )}
+                    {orgCountry && (
+                      <>
+                        {orgIatiId && <span className="text-gray-300">·</span>}
+                        <span className="flex items-center gap-1">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`https://flagcdn.com/w20/${orgCountry.toLowerCase()}.png`}
+                            alt=""
+                            className="w-4 h-auto rounded-sm"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
+                          {COUNTRY_COORDINATES[orgCountry]?.name || orgCountry}
+                        </span>
+                      </>
+                    )}
+                    {!orgIatiId && !orgCountry && (
+                      <span className="text-amber-600">No IATI identifier configured</span>
+                    )}
+                  </div>
                 </>
               )}
             </div>
@@ -899,13 +1057,24 @@ export default function BulkImportSourceStep({
                       {fetchPhase === 'enriching' && 'Enriching with sector percentages...'}
                       {fetchPhase === 'processing' && 'Processing and validating data...'}
                     </p>
+                    {estimatedTime && (
+                      <p className="text-sm text-gray-400 mt-2">
+                        {estimatedTime.count.toLocaleString()} activities found — estimated time: ~{
+                          estimatedTime.seconds < 60
+                            ? `${estimatedTime.seconds} seconds`
+                            : estimatedTime.seconds < 120
+                              ? '1-2 minutes'
+                              : `${Math.ceil(estimatedTime.seconds / 60)} minutes`
+                        }
+                      </p>
+                    )}
                   </div>
 
                   {/* Progress bar */}
                   <div className="w-full max-w-md">
                     <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div
-                        className="absolute top-0 left-0 h-full bg-gray-800 rounded-full transition-all duration-300 ease-out"
+                        className={`absolute top-0 left-0 h-full rounded-full transition-all duration-300 ease-out ${longFetchWarning ? 'bg-amber-500' : 'bg-gray-800'}`}
                         style={{ width: `${fetchProgress}%` }}
                       />
                     </div>
@@ -919,28 +1088,33 @@ export default function BulkImportSourceStep({
                         {fetchPhase === 'processing' && 'Step 4 of 4'}
                       </span>
                     </div>
+                    {fetchProgressMessage && (
+                      <p className="mt-2 text-xs text-amber-600 text-center">
+                        {fetchProgressMessage}
+                      </p>
+                    )}
                   </div>
 
                   {/* Phase indicators */}
                   <div className="flex items-center gap-2 text-xs">
                     <div className={`flex items-center gap-1 ${fetchPhase === 'connecting' ? 'text-gray-900 font-medium' : fetchProgress >= 5 ? 'text-green-600' : 'text-gray-400'}`}>
                       {fetchProgress >= 5 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
-                      Connect
+                      Connecting
                     </div>
                     <div className="w-4 h-px bg-gray-300" />
                     <div className={`flex items-center gap-1 ${fetchPhase === 'fetching' ? 'text-gray-900 font-medium' : fetchProgress >= 80 ? 'text-green-600' : 'text-gray-400'}`}>
                       {fetchProgress >= 80 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
-                      Fetch
+                      Fetching
                     </div>
                     <div className="w-4 h-px bg-gray-300" />
                     <div className={`flex items-center gap-1 ${fetchPhase === 'enriching' ? 'text-gray-900 font-medium' : fetchProgress >= 95 ? 'text-green-600' : 'text-gray-400'}`}>
                       {fetchProgress >= 95 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
-                      Enrich
+                      Enriching
                     </div>
                     <div className="w-4 h-px bg-gray-300" />
                     <div className={`flex items-center gap-1 ${fetchPhase === 'processing' ? 'text-gray-900 font-medium' : fetchProgress >= 100 ? 'text-green-600' : 'text-gray-400'}`}>
                       {fetchProgress >= 100 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
-                      Process
+                      Processing
                     </div>
                   </div>
 
