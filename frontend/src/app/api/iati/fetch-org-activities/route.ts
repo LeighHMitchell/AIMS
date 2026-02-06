@@ -15,10 +15,10 @@ const IATI_API_KEY = process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_AP
 const CACHE_TTL_HOURS = 1
 
 export const dynamic = 'force-dynamic'
-// Large organizations (USAID has 56,000+ activities) can take 10-15 minutes
-// Each page (1000 activities) requires 13s delay for IATI Datastore rate limiting
-// USAID: ~56 pages × 13s = ~12 minutes download + enrichment time
-export const maxDuration = 900 // 15 minutes (maximum for Vercel Pro/Enterprise)
+// Large organizations can take several minutes due to IATI Datastore rate limiting
+// Each page (1000 activities) requires 13s delay
+// Vercel Hobby plan max is 300s (5 min) - orgs with >20,000 activities may timeout
+export const maxDuration = 300 // 5 minutes (Vercel Hobby plan maximum)
 
 /**
  * GET /api/iati/fetch-org-activities
