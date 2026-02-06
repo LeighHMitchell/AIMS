@@ -1227,7 +1227,7 @@ export default function BulkImportSourceStep({
                       </p>
                     )}
                     {/* Elapsed timer */}
-                    <p className="text-sm font-mono text-gray-500 mt-2 bg-gray-100 px-3 py-1 rounded-full inline-block">
+                    <p className="text-sm text-gray-500 mt-2">
                       {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')} elapsed
                     </p>
                   </div>
