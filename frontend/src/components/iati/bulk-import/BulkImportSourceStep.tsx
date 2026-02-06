@@ -213,7 +213,7 @@ export default function BulkImportSourceStep({
   const currentYear = new Date().getFullYear()
   const [dateRangeStart, setDateRangeStart] = useState<string>(`${currentYear - 5}-01-01`)
   const [dateRangeEnd, setDateRangeEnd] = useState<string>(`${currentYear + 2}-12-31`)
-  const [dateFilterEnabled, setDateFilterEnabled] = useState<boolean>(true)
+  const [dateFilterEnabled, setDateFilterEnabled] = useState<boolean>(false)
   const [countryOpen, setCountryOpen] = useState(false)
   const [countrySearch, setCountrySearch] = useState('')
 
@@ -440,11 +440,11 @@ export default function BulkImportSourceStep({
       clearInterval(elapsedIntervalRef.current)
     }
 
-    // Start elapsed time counter
+    // Start elapsed time counter (update every 100ms for smooth milliseconds display)
     elapsedIntervalRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - fetchStartTimeRef.current) / 1000)
+      const elapsed = Math.floor((Date.now() - fetchStartTimeRef.current) / 100) / 10
       setElapsedSeconds(elapsed)
-    }, 1000)
+    }, 100)
 
     // Dynamic progress phases based on estimated duration:
     // - connecting: 0-3s (0-5%)
@@ -1223,7 +1223,7 @@ export default function BulkImportSourceStep({
                     )}
                     {/* Elapsed timer */}
                     <p className="text-sm text-gray-500 mt-2">
-                      {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')} elapsed
+                      {Math.floor(elapsedSeconds / 60)}:{Math.floor(elapsedSeconds % 60).toString().padStart(2, '0')}.{Math.floor((elapsedSeconds % 1) * 10)} elapsed
                     </p>
                   </div>
 
