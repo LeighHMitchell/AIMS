@@ -25,7 +25,7 @@ import { useHomeCountry, useSystemSettings } from '@/contexts/SystemSettingsCont
 import { apiFetch } from '@/lib/api-fetch'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { USER_ROLES } from '@/types/user'
+import { USER_ROLES, ROLE_LABELS } from '@/types/user'
 import {
   Popover,
   PopoverContent,
@@ -889,11 +889,6 @@ export default function BulkImportSourceStep({
               {isSuperUser ? (
                 // Super user: show organization selector
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs text-white border-0" style={{ backgroundColor: '#DC2625' }}>
-                      Super User
-                    </Badge>
-                  </div>
                   {loadingOrgs ? (
                     <div className="flex items-center gap-2 h-10 px-3 text-sm text-gray-500 border border-gray-200 rounded-md bg-gray-50">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1393,15 +1388,29 @@ export default function BulkImportSourceStep({
             <Globe className="h-4 w-4" />
             <AlertDescription>
               {isSuperUser ? (
-                <>
-                  As a super user, you can fetch IATI activities for any organisation with an IATI identifier.
+                <span className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs text-white border-0" style={{ backgroundColor: '#DC2625' }}>
+                    {ROLE_LABELS[user?.role as keyof typeof ROLE_LABELS] || 'Super User'}
+                  </Badge>
+                  You can fetch IATI activities for any organisation with an IATI identifier.
                   Select an organisation above and click <strong>Fetch Activities</strong> to search the IATI Registry.
-                </>
+                </span>
               ) : (
-                <>
+                <span className="flex items-center gap-2 flex-wrap">
+                  <Badge
+                    variant="outline"
+                    className="text-xs text-white border-0"
+                    style={{
+                      backgroundColor: user?.role?.includes('gov_') ? '#059669' :
+                                       user?.role?.includes('dev_') ? '#2563EB' :
+                                       user?.role === 'public_user' ? '#6B7280' : '#4B5563'
+                    }}
+                  >
+                    {ROLE_LABELS[user?.role as keyof typeof ROLE_LABELS] || user?.role || 'User'}
+                  </Badge>
                   Click <strong>Fetch Activities</strong> to search the IATI Registry for activities published by your organisation.
                   Only activities published by <strong>{orgName}</strong> will be shown.
-                </>
+                </span>
               )}
             </AlertDescription>
           </Alert>
