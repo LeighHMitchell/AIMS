@@ -19,6 +19,9 @@ import {
   Globe,
   Calendar,
   Wallet,
+  User,
+  FileText,
+  ExternalLink,
 } from 'lucide-react'
 import type { ParsedActivity } from './types'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
@@ -717,6 +720,149 @@ export default function BulkPreviewStep({
                             )}
                           </div>
                         </div>
+
+                        {/* Contacts and Documents - 2 column grid below main grid */}
+                        {((activity.contacts && activity.contacts.length > 0) || (activity.documents && activity.documents.length > 0)) && (
+                          <div className="grid grid-cols-2 gap-6 mt-4 pt-4 border-t">
+                            {/* Contacts */}
+                            {activity.contacts && activity.contacts.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <User className="h-3 w-3" /> Contacts
+                                </span>
+                                <div className="mt-1 space-y-2">
+                                  {activity.contacts.slice(0, 3).map((contact, i) => {
+                                    const contactTypeNames: Record<string, string> = {
+                                      '1': 'General Enquiries',
+                                      '2': 'Project Management',
+                                      '3': 'Financial Management',
+                                      '4': 'Communications',
+                                    }
+                                    return (
+                                      <div key={i} className="text-xs bg-white border border-gray-100 rounded p-2">
+                                        <div className="flex items-start justify-between">
+                                          <div>
+                                            {contact.personName && (
+                                              <p className="font-medium text-gray-900">{contact.personName}</p>
+                                            )}
+                                            {contact.jobTitle && (
+                                              <p className="text-gray-500">{contact.jobTitle}</p>
+                                            )}
+                                            {contact.organisationName && (
+                                              <p className="text-gray-600">{contact.organisationName}</p>
+                                            )}
+                                          </div>
+                                          {contact.type && (
+                                            <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] text-gray-500">
+                                              {contactTypeNames[contact.type] || `Type ${contact.type}`}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="mt-1 space-y-0.5 text-gray-600">
+                                          {contact.email && (
+                                            <p className="flex items-center gap-1">
+                                              <span className="text-gray-400">Email:</span> {contact.email}
+                                            </p>
+                                          )}
+                                          {contact.telephone && (
+                                            <p className="flex items-center gap-1">
+                                              <span className="text-gray-400">Tel:</span> {contact.telephone}
+                                            </p>
+                                          )}
+                                          {contact.website && (
+                                            <p className="flex items-center gap-1">
+                                              <span className="text-gray-400">Web:</span>
+                                              <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate max-w-[200px]">
+                                                {contact.website.replace(/^https?:\/\//, '')}
+                                              </a>
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                  {activity.contacts.length > 3 && (
+                                    <p className="text-xs text-gray-500">+ {activity.contacts.length - 3} more</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Documents */}
+                            {activity.documents && activity.documents.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <FileText className="h-3 w-3" /> Documents
+                                </span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Title</th>
+                                      <th className="font-medium py-1">Format</th>
+                                      <th className="font-medium py-1 w-8"></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.documents.slice(0, 5).map((doc, i) => {
+                                      const docCategoryNames: Record<string, string> = {
+                                        'A01': 'Pre/Post-Project Assessment',
+                                        'A02': 'Objectives/Purposes',
+                                        'A03': 'Intended Beneficiaries',
+                                        'A04': 'Conditions',
+                                        'A05': 'Budget',
+                                        'A06': 'Summary Information',
+                                        'A07': 'Review of Project Performance',
+                                        'A08': 'Results/Outcomes',
+                                        'A09': 'Memorandum of Understanding',
+                                        'A10': 'Tender',
+                                        'A11': 'Contract',
+                                        'A12': 'Activity Web Page',
+                                        'B01': 'Annual Report',
+                                        'B02': 'Strategy Paper',
+                                        'B03': 'Country Strategy Paper',
+                                      }
+                                      return (
+                                        <tr key={i} className="border-t border-gray-100">
+                                          <td className="py-1.5 text-gray-600">
+                                            <div className="max-w-[200px]">
+                                              <p className="truncate font-medium">{doc.title || 'Untitled'}</p>
+                                              {doc.categoryCode && (
+                                                <span className="text-[10px] text-gray-400">
+                                                  {docCategoryNames[doc.categoryCode] || doc.categoryCode}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </td>
+                                          <td className="py-1.5 text-gray-500">
+                                            {doc.format && (
+                                              <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-[10px]">
+                                                {doc.format.replace('application/', '').replace('text/', '').toUpperCase()}
+                                              </span>
+                                            )}
+                                          </td>
+                                          <td className="py-1.5">
+                                            <a
+                                              href={doc.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-blue-600 hover:text-blue-800"
+                                              title="Open document"
+                                            >
+                                              <ExternalLink className="h-3.5 w-3.5" />
+                                            </a>
+                                          </td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                                {activity.documents.length > 5 && (
+                                  <p className="text-xs text-gray-500 mt-1">+ {activity.documents.length - 5} more</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {/* Validation Issues - full width below grid */}
                         {activity.validationIssues && activity.validationIssues.length > 0 && (
