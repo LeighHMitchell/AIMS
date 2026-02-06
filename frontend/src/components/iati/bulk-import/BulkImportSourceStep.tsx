@@ -815,14 +815,14 @@ export default function BulkImportSourceStep({
 
       // Notify parent with filtered activities
       // For super users importing for another org, include the organizationId
-      const targetOrgId = selectedOrgId || data.orgScope?.organizationId
+      // targetOrgId is already defined above for the API request
       const meta: BulkImportMeta = {
         sourceMode: 'datastore',
         reportingOrgRef: data.orgScope?.reportingOrgRef || orgIatiId || '',
         reportingOrgName: data.orgScope?.organizationName || orgName,
         activityCount: filteredByCountry.length,
         fetchedAt: data.fetchedAt,
-        organizationId: targetOrgId,
+        organizationId: targetOrgId || data.orgScope?.organizationId,
       }
       onActivitiesReady(filteredByCountry, meta)
     } catch (err) {
