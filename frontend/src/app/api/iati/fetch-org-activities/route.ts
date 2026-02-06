@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
-import { resolveUserOrgScope } from '@/lib/iati/org-scope'
+import { resolveUserOrgScope, resolveOrgScopeById } from '@/lib/iati/org-scope'
 import { mapDatastoreDocToParsedActivity } from '@/lib/iati/datastore-mapper'
 import crypto from 'crypto'
 import type { ParsedActivity } from '@/components/iati/bulk-import/types'
+import { USER_ROLES } from '@/types/user'
 
 // IATI Datastore is the PRIMARY source (has everything except sector percentages)
 const IATI_DATASTORE_BASE = 'https://api.iatistandard.org/datastore/activity/select'
@@ -19,12 +20,12 @@ export const maxDuration = 120
 /**
  * GET /api/iati/fetch-org-activities
  *
- * Fetches the authenticated user's organisation's IATI activities from the
- * IATI Datastore API (primary source) and enriches with sector percentages
- * from d-portal (only data not in Datastore).
+ * Fetches an organisation's IATI activities from the IATI Datastore API
+ * (primary source) and enriches with sector percentages from d-portal.
  *
  * Query params:
  *   force_refresh=true   — bypass cache
+ *   organization_id=xxx  — (Super users only) fetch for a specific organization
  */
 export async function GET(request: NextRequest) {
   const { supabase, user, response: authResponse } = await requireAuth()
@@ -34,8 +35,33 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 1. Resolve org from auth session — never from client
-    const orgScope = await resolveUserOrgScope(supabase, user.id)
+    const searchParams = request.nextUrl.searchParams
+    const requestedOrgId = searchParams.get('organization_id')
+
+    // Check if user is a super user
+    const isSuperUser = user.role === USER_ROLES.SUPER_USER || user.role === 'admin'
+
+    let orgScope
+
+    // If a specific organization is requested and user is super user, use that org
+    if (requestedOrgId && isSuperUser) {
+      orgScope = await resolveOrgScopeById(supabase, requestedOrgId)
+      if (!orgScope) {
+        return NextResponse.json(
+          { error: 'Organization not found.' },
+          { status: 404 }
+        )
+      }
+    } else if (requestedOrgId && !isSuperUser) {
+      // Non-super users cannot specify an organization
+      return NextResponse.json(
+        { error: 'You do not have permission to import for other organisations.' },
+        { status: 403 }
+      )
+    } else {
+      // Default: resolve org from auth session
+      orgScope = await resolveUserOrgScope(supabase, user.id)
+    }
 
     if (!orgScope) {
       return NextResponse.json(
@@ -47,7 +73,7 @@ export async function GET(request: NextRequest) {
     if (orgScope.allRefs.length === 0) {
       return NextResponse.json(
         {
-          error: 'Your organisation has no IATI identifiers configured. Ask your administrator to set up IATI identifiers in organisation settings.',
+          error: `${orgScope.organizationName} has no IATI identifiers configured. Ask an administrator to set up IATI identifiers in organisation settings.`,
           orgScope: {
             organizationId: orgScope.organizationId,
             organizationName: orgScope.organizationName,
@@ -64,7 +90,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const searchParams = request.nextUrl.searchParams
     const forceRefresh = searchParams.get('force_refresh') === 'true'
 
     // 2. Build query hash for caching

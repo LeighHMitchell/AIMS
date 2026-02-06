@@ -5,6 +5,7 @@
       "version": "1.17.0",
       "date": "2026-02-06",
       "changes": [
+        "Super users can now select any organization to import IATI data on their behalf",
         "IATI Bulk Import country filter matches activities by recipient-country code OR location coordinates within country bounds",
         "IATI Bulk Import hierarchy filter for Level 1 (Parent) and Level 2 (Sub-Activity) activities",
         "IATI Bulk Import country scope filter (All/100%/Regional) for filtering by allocation percentage",

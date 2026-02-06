@@ -83,3 +83,54 @@ export function matchesOrgScope(scope: OrgScope, reportingOrgRef: string): boole
   const lower = reportingOrgRef.toLowerCase();
   return scope.allRefs.some(ref => ref.toLowerCase() === lower);
 }
+
+/**
+ * Resolve an organisation's IATI scope by organization ID.
+ * Used by super users who can import for any organization.
+ *
+ * Returns null if the organization doesn't exist.
+ */
+export async function resolveOrgScopeById(
+  supabase: SupabaseClient,
+  organizationId: string
+): Promise<OrgScope | null> {
+  const { data: org, error: orgError } = await supabase
+    .from('organizations')
+    .select('id, name, iati_org_id, reporting_org_ref, alias_refs')
+    .eq('id', organizationId)
+    .single();
+
+  if (orgError || !org) {
+    return null;
+  }
+
+  // Build the set of all valid refs (deduplicated, non-empty)
+  const allRefs: string[] = [];
+  if (org.iati_org_id) allRefs.push(org.iati_org_id);
+  if (org.reporting_org_ref) allRefs.push(org.reporting_org_ref);
+  if (Array.isArray(org.alias_refs)) {
+    for (const ref of org.alias_refs) {
+      if (ref) allRefs.push(ref);
+    }
+  }
+
+  // Deduplicate (case-insensitive)
+  const seen = new Set<string>();
+  const deduplicated: string[] = [];
+  for (const ref of allRefs) {
+    const lower = ref.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      deduplicated.push(ref);
+    }
+  }
+
+  return {
+    organizationId: org.id,
+    organizationName: org.name || '',
+    iatiOrgId: org.iati_org_id || null,
+    reportingOrgRef: org.reporting_org_ref || null,
+    aliasRefs: Array.isArray(org.alias_refs) ? org.alias_refs.filter(Boolean) : [],
+    allRefs: deduplicated,
+  };
+}

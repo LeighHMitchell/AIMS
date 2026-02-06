@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
     // Filters
     const search = searchParams.get('search') || '';
     const typeFilter = searchParams.get('type') || '';
+    const hasIati = searchParams.get('has_iati') === 'true';
 
     // Essential fields for list view including logo/banner for card display
     let query = supabase
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
         country,
         country_represented,
         iati_org_id,
+        reporting_org_ref,
         website,
         name_aliases,
         logo,
@@ -68,6 +70,11 @@ export async function GET(request: NextRequest) {
     // Apply type filter
     if (typeFilter) {
       query = query.eq('Organisation_Type_Code', typeFilter);
+    }
+
+    // Apply IATI identifier filter (organizations that have IATI identifiers configured)
+    if (hasIati) {
+      query = query.or('iati_org_id.not.is.null,reporting_org_ref.not.is.null');
     }
 
     // Apply sorting
@@ -246,6 +253,7 @@ export async function GET(request: NextRequest) {
       country: string | null;
       country_represented: string | null;
       iati_org_id: string | null;
+      reporting_org_ref: string | null;
       website: string | null;
       name_aliases: string[] | null;
       logo: string | null;
@@ -266,6 +274,7 @@ export async function GET(request: NextRequest) {
         country: org.country,
         country_represented: org.country_represented,
         iati_org_id: org.iati_org_id,
+        reporting_org_ref: org.reporting_org_ref,
         website: org.website,
         name_aliases: org.name_aliases,
         logo: org.logo,
