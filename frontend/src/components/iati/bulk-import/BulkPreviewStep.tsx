@@ -22,6 +22,9 @@ import {
   User,
   FileText,
   ExternalLink,
+  Filter,
+  X,
+  SlidersHorizontal,
 } from 'lucide-react'
 import type { ParsedActivity } from './types'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
@@ -36,6 +39,47 @@ interface BulkPreviewStepProps {
 type FilterStatus = 'all' | 'valid' | 'warnings' | 'errors'
 type SortField = 'id' | 'title' | 'transactions' | 'budget' | 'status'
 
+// Activity status codes and labels
+const ACTIVITY_STATUS_OPTIONS: Record<string, string> = {
+  '1': 'Pipeline/Identification',
+  '2': 'Implementation',
+  '3': 'Finalisation',
+  '4': 'Closed',
+  '5': 'Cancelled',
+  '6': 'Suspended',
+}
+
+// Common aid type codes
+const AID_TYPE_OPTIONS: Record<string, string> = {
+  'A01': 'General budget support',
+  'A02': 'Sector budget support',
+  'B01': 'Core support to NGOs',
+  'B02': 'Core contributions to multilaterals',
+  'B03': 'Contributions to specific programmes',
+  'B04': 'Basket funds',
+  'C01': 'Project-type interventions',
+  'D01': 'Donor country personnel',
+  'D02': 'Other technical assistance',
+  'E01': 'Scholarships in donor country',
+  'F01': 'Debt relief',
+  'G01': 'Administrative costs',
+  'H01': 'Development awareness',
+  'H02': 'Refugees in donor countries',
+}
+
+// Common finance type codes
+const FINANCE_TYPE_OPTIONS: Record<string, string> = {
+  '110': 'Standard grant',
+  '210': 'Interest subsidy',
+  '310': 'Capital subscription (deposit)',
+  '410': 'Aid loan (excl. debt reorg.)',
+  '421': 'Standard loan',
+  '422': 'Reimbursable grant',
+  '510': 'Common equity',
+  '610': 'Debt forgiveness',
+  '621': 'Debt rescheduling',
+}
+
 export default function BulkPreviewStep({
   activities,
   selectedIds,
@@ -46,7 +90,56 @@ export default function BulkPreviewStep({
   const [sortField, setSortField] = useState<SortField>('id')
   const [sortAsc, setSortAsc] = useState(true)
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
   const homeCountry = useHomeCountry()
+
+  // Advanced filters
+  const [activityStatusFilter, setActivityStatusFilter] = useState<string[]>([])
+  const [aidTypeFilter, setAidTypeFilter] = useState<string[]>([])
+  const [financeTypeFilter, setFinanceTypeFilter] = useState<string[]>([])
+  const [transactionFilter, setTransactionFilter] = useState<'all' | 'has' | 'none'>('all')
+  const [budgetFilter, setBudgetFilter] = useState<'all' | 'has' | 'none'>('all')
+  const [plannedDisbursementFilter, setPlannedDisbursementFilter] = useState<'all' | 'has' | 'none'>('all')
+
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (activityStatusFilter.length > 0) count++
+    if (aidTypeFilter.length > 0) count++
+    if (financeTypeFilter.length > 0) count++
+    if (transactionFilter !== 'all') count++
+    if (budgetFilter !== 'all') count++
+    if (plannedDisbursementFilter !== 'all') count++
+    return count
+  }, [activityStatusFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter])
+
+  // Get unique values from activities for filter options
+  const availableOptions = useMemo(() => {
+    const statuses = new Set<string>()
+    const aidTypes = new Set<string>()
+    const financeTypes = new Set<string>()
+
+    for (const a of activities) {
+      if (a.status || a.activity_status) statuses.add(a.status || a.activity_status || '')
+      if (a.defaultAidType) aidTypes.add(a.defaultAidType)
+      if (a.defaultFinanceType) financeTypes.add(a.defaultFinanceType)
+    }
+
+    return {
+      statuses: Array.from(statuses).filter(Boolean).sort(),
+      aidTypes: Array.from(aidTypes).filter(Boolean).sort(),
+      financeTypes: Array.from(financeTypes).filter(Boolean).sort(),
+    }
+  }, [activities])
+
+  const clearAllFilters = () => {
+    setActivityStatusFilter([])
+    setAidTypeFilter([])
+    setFinanceTypeFilter([])
+    setTransactionFilter('all')
+    setBudgetFilter('all')
+    setPlannedDisbursementFilter('all')
+  }
 
   const filteredActivities = useMemo(() => {
     let result = [...activities]
@@ -61,13 +154,52 @@ export default function BulkPreviewStep({
       )
     }
 
-    // Status filter
+    // Validation status filter
     if (filterStatus === 'valid') {
       result = result.filter(a => !a.validationIssues?.some(i => i.severity === 'error' || i.severity === 'warning'))
     } else if (filterStatus === 'warnings') {
       result = result.filter(a => a.validationIssues?.some(i => i.severity === 'warning'))
     } else if (filterStatus === 'errors') {
       result = result.filter(a => a.validationIssues?.some(i => i.severity === 'error'))
+    }
+
+    // Activity status filter
+    if (activityStatusFilter.length > 0) {
+      result = result.filter(a => {
+        const status = a.status || a.activity_status
+        return status && activityStatusFilter.includes(status)
+      })
+    }
+
+    // Aid type filter
+    if (aidTypeFilter.length > 0) {
+      result = result.filter(a => a.defaultAidType && aidTypeFilter.includes(a.defaultAidType))
+    }
+
+    // Finance type filter
+    if (financeTypeFilter.length > 0) {
+      result = result.filter(a => a.defaultFinanceType && financeTypeFilter.includes(a.defaultFinanceType))
+    }
+
+    // Transaction filter
+    if (transactionFilter === 'has') {
+      result = result.filter(a => a.transactions && a.transactions.length > 0)
+    } else if (transactionFilter === 'none') {
+      result = result.filter(a => !a.transactions || a.transactions.length === 0)
+    }
+
+    // Budget filter
+    if (budgetFilter === 'has') {
+      result = result.filter(a => a.budgets && a.budgets.length > 0)
+    } else if (budgetFilter === 'none') {
+      result = result.filter(a => !a.budgets || a.budgets.length === 0)
+    }
+
+    // Planned disbursement filter
+    if (plannedDisbursementFilter === 'has') {
+      result = result.filter(a => a.plannedDisbursements && a.plannedDisbursements.length > 0)
+    } else if (plannedDisbursementFilter === 'none') {
+      result = result.filter(a => !a.plannedDisbursements || a.plannedDisbursements.length === 0)
     }
 
     // Sort
@@ -90,7 +222,7 @@ export default function BulkPreviewStep({
     })
 
     return result
-  }, [activities, searchQuery, filterStatus, sortField, sortAsc])
+  }, [activities, searchQuery, filterStatus, activityStatusFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter, sortField, sortAsc])
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -137,6 +269,20 @@ export default function BulkPreviewStep({
             className="pl-10"
           />
         </div>
+        <Button
+          variant={showFilters ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setShowFilters(!showFilters)}
+          className="gap-1.5"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          Filters
+          {activeFilterCount > 0 && (
+            <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 justify-center text-xs">
+              {activeFilterCount}
+            </Badge>
+          )}
+        </Button>
         <div className="flex gap-1">
           {(['all', 'valid', 'warnings', 'errors'] as FilterStatus[]).map(status => (
             <Button
@@ -150,6 +296,177 @@ export default function BulkPreviewStep({
           ))}
         </div>
       </div>
+
+      {/* Advanced Filters Panel */}
+      {showFilters && (
+        <Card className="border-gray-200 bg-gray-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Advanced Filters
+              </span>
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-gray-500 h-7">
+                  <X className="h-3 w-3 mr-1" />
+                  Clear all
+                </Button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {/* Activity Status */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-600">Activity Status</label>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {availableOptions.statuses.map(status => (
+                    <label key={status} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-white p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={activityStatusFilter.includes(status)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setActivityStatusFilter([...activityStatusFilter, status])
+                          } else {
+                            setActivityStatusFilter(activityStatusFilter.filter(s => s !== status))
+                          }
+                        }}
+                        className="h-3 w-3 rounded border-gray-300"
+                      />
+                      <span className="bg-gray-200 px-1 py-0.5 rounded font-mono text-gray-600">{status}</span>
+                      <span className="text-gray-700 truncate">{ACTIVITY_STATUS_OPTIONS[status] || status}</span>
+                    </label>
+                  ))}
+                  {availableOptions.statuses.length === 0 && (
+                    <span className="text-xs text-gray-400">No statuses</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Aid Type */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-600">Aid Type</label>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {availableOptions.aidTypes.map(type => (
+                    <label key={type} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-white p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={aidTypeFilter.includes(type)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setAidTypeFilter([...aidTypeFilter, type])
+                          } else {
+                            setAidTypeFilter(aidTypeFilter.filter(t => t !== type))
+                          }
+                        }}
+                        className="h-3 w-3 rounded border-gray-300"
+                      />
+                      <span className="bg-gray-200 px-1 py-0.5 rounded font-mono text-gray-600">{type}</span>
+                      <span className="text-gray-700 truncate" title={AID_TYPE_OPTIONS[type] || type}>
+                        {AID_TYPE_OPTIONS[type]?.substring(0, 20) || type}
+                      </span>
+                    </label>
+                  ))}
+                  {availableOptions.aidTypes.length === 0 && (
+                    <span className="text-xs text-gray-400">No aid types</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Finance Type */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-600">Finance Type</label>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {availableOptions.financeTypes.map(type => (
+                    <label key={type} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-white p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={financeTypeFilter.includes(type)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFinanceTypeFilter([...financeTypeFilter, type])
+                          } else {
+                            setFinanceTypeFilter(financeTypeFilter.filter(t => t !== type))
+                          }
+                        }}
+                        className="h-3 w-3 rounded border-gray-300"
+                      />
+                      <span className="bg-gray-200 px-1 py-0.5 rounded font-mono text-gray-600">{type}</span>
+                      <span className="text-gray-700 truncate" title={FINANCE_TYPE_OPTIONS[type] || type}>
+                        {FINANCE_TYPE_OPTIONS[type]?.substring(0, 15) || type}
+                      </span>
+                    </label>
+                  ))}
+                  {availableOptions.financeTypes.length === 0 && (
+                    <span className="text-xs text-gray-400">No finance types</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Transactions */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-600">Transactions</label>
+                <div className="flex gap-1">
+                  {(['all', 'has', 'none'] as const).map(opt => (
+                    <Button
+                      key={opt}
+                      variant={transactionFilter === opt ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-7 text-xs px-2"
+                      onClick={() => setTransactionFilter(opt)}
+                    >
+                      {opt === 'all' ? 'All' : opt === 'has' ? 'Has' : 'None'}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Budgets */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-600">Budgets</label>
+                <div className="flex gap-1">
+                  {(['all', 'has', 'none'] as const).map(opt => (
+                    <Button
+                      key={opt}
+                      variant={budgetFilter === opt ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-7 text-xs px-2"
+                      onClick={() => setBudgetFilter(opt)}
+                    >
+                      {opt === 'all' ? 'All' : opt === 'has' ? 'Has' : 'None'}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Planned Disbursements */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-600">Planned Disbursements</label>
+                <div className="flex gap-1">
+                  {(['all', 'has', 'none'] as const).map(opt => (
+                    <Button
+                      key={opt}
+                      variant={plannedDisbursementFilter === opt ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-7 text-xs px-2"
+                      onClick={() => setPlannedDisbursementFilter(opt)}
+                    >
+                      {opt === 'all' ? 'All' : opt === 'has' ? 'Has' : 'None'}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Filter summary */}
+            {activeFilterCount > 0 && (
+              <div className="mt-3 pt-3 border-t text-xs text-gray-600">
+                Showing <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{filteredActivities.length}</span> of <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{activities.length}</span> activities
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Selection Controls */}
       <div className="flex items-center justify-between text-sm">
