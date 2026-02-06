@@ -14,6 +14,18 @@ const DPORTAL_BASE = 'https://d-portal.org/q.json'
 const IATI_API_KEY = process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_API_KEY
 const CACHE_TTL_HOURS = 1
 
+/** Filters applied at the IATI Datastore level for performance */
+interface DatastoreFilters {
+  /** ISO country code (e.g., "MM" for Myanmar) */
+  country?: string
+  /** Start of date range (ISO date string, e.g., "2021-01-01") */
+  dateStart?: string
+  /** End of date range (ISO date string, e.g., "2028-12-31") */
+  dateEnd?: string
+  /** Activity hierarchy level (1 = parent, 2 = sub-activity) */
+  hierarchy?: number
+}
+
 export const dynamic = 'force-dynamic'
 // Large organizations can take several minutes due to IATI Datastore rate limiting
 // Each page (1000 activities) requires 13s delay
@@ -123,13 +135,22 @@ export async function GET(request: NextRequest) {
     const forceRefresh = searchParams.get('force_refresh') === 'true'
     const countOnly = searchParams.get('count_only') === 'true'
 
+    // Pre-fetch filters (applied at Datastore level for performance)
+    const filterOptions: DatastoreFilters = {
+      country: searchParams.get('country') || undefined,
+      dateStart: searchParams.get('date_start') || undefined,
+      dateEnd: searchParams.get('date_end') || undefined,
+      hierarchy: searchParams.get('hierarchy') ? parseInt(searchParams.get('hierarchy')!, 10) : undefined,
+    }
+
     // Quick count query - just return total activities without fetching data
     if (countOnly) {
-      const count = await getActivityCount(orgScope.allRefs)
+      const count = await getActivityCount(orgScope.allRefs, filterOptions)
       const estimatedSeconds = Math.ceil((count / 1000) * 13) + 15 // 13s per page + 15s overhead
       return NextResponse.json({
         count,
         estimatedSeconds,
+        filters: filterOptions,
         orgScope: {
           organizationId: orgScope.organizationId,
           organizationName: orgScope.organizationName,
@@ -139,12 +160,15 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 2. Build query hash for caching
+    // Check if filters are applied (skip cache for filtered queries)
+    const hasFilters = filterOptions.country || filterOptions.dateStart || filterOptions.dateEnd || filterOptions.hierarchy != null
+
+    // 2. Build query hash for caching (only for unfiltered queries)
     const queryKey = `datastore-v3:${orgScope.allRefs.sort().join(',')}`
     const queryHash = crypto.createHash('sha256').update(queryKey).digest('hex').substring(0, 64)
 
-    // 3. Check cache (unless force_refresh)
-    if (!forceRefresh) {
+    // 3. Check cache (unless force_refresh or filters applied)
+    if (!forceRefresh && !hasFilters) {
       const { data: cached } = await supabase
         .from('iati_datastore_cache')
         .select('response_data, total_activities, fetched_at')
@@ -177,10 +201,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('[Fetch Org Activities] Fetching from IATI Datastore for refs:', orgScope.allRefs)
+    console.log('[Fetch Org Activities] Fetching from IATI Datastore for refs:', orgScope.allRefs, 'filters:', filterOptions)
 
-    // 4. Fetch ALL data from IATI Datastore (primary source)
-    const activities = await fetchFromDatastore(orgScope.allRefs)
+    // 4. Fetch data from IATI Datastore with filters (primary source)
+    const activities = await fetchFromDatastore(orgScope.allRefs, filterOptions)
 
     console.log(`[Fetch Org Activities] Fetched ${activities.length} activities from IATI Datastore`)
 
@@ -299,12 +323,46 @@ export async function GET(request: NextRequest) {
 }
 
 /**
+ * Build Solr filter query (fq) parameters for IATI Datastore filters.
+ */
+function buildSolrFilterQuery(filters: DatastoreFilters): string[] {
+  const fq: string[] = []
+
+  // Country filter: recipient_country_code contains the country code
+  if (filters.country) {
+    fq.push(`recipient_country_code:${filters.country}`)
+  }
+
+  // Hierarchy filter
+  if (filters.hierarchy != null) {
+    fq.push(`hierarchy:${filters.hierarchy}`)
+  }
+
+  // Date range filter: activity has at least one date within the range
+  // IATI date types: 1=planned start, 2=actual start, 3=planned end, 4=actual end
+  // We check if ANY activity date falls within the range
+  if (filters.dateStart || filters.dateEnd) {
+    const start = filters.dateStart ? `${filters.dateStart}T00:00:00Z` : '*'
+    const end = filters.dateEnd ? `${filters.dateEnd}T23:59:59Z` : '*'
+    // Filter activities where any activity_date is within range
+    fq.push(`activity_date_iso_date:[${start} TO ${end}]`)
+  }
+
+  return fq
+}
+
+/**
  * Quick count query - returns just the total number of activities (no data).
  * Uses rows=0 which is very fast.
  */
-async function getActivityCount(orgRefs: string[]): Promise<number> {
+async function getActivityCount(orgRefs: string[], filters: DatastoreFilters = {}): Promise<number> {
   const refQuery = orgRefs.map(ref => `"${ref}"`).join(' OR ')
-  const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})&rows=0&wt=json`
+  const fqParams = buildSolrFilterQuery(filters)
+  const fqString = fqParams.length > 0 ? `&${fqParams.map(f => `fq=${encodeURIComponent(f)}`).join('&')}` : ''
+
+  const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})${fqString}&rows=0&wt=json`
+
+  console.log('[Fetch Org Activities] Count query:', url.substring(0, 250) + (url.length > 250 ? '...' : ''))
 
   const response = await fetch(url, {
     method: 'GET',
@@ -324,10 +382,10 @@ async function getActivityCount(orgRefs: string[]): Promise<number> {
 }
 
 /**
- * Fetch all activities from IATI Datastore for the given org refs.
+ * Fetch activities from IATI Datastore for the given org refs with optional filters.
  * Returns ParsedActivity[] with all data EXCEPT sector percentages.
  */
-async function fetchFromDatastore(orgRefs: string[]): Promise<ParsedActivity[]> {
+async function fetchFromDatastore(orgRefs: string[], filters: DatastoreFilters = {}): Promise<ParsedActivity[]> {
   // IATI Datastore has a hard limit of 1000 rows per request
   const PAGE_SIZE = 1000
   const MAX_RETRIES = 10
@@ -404,10 +462,14 @@ async function fetchFromDatastore(orgRefs: string[]): Promise<ParsedActivity[]> 
       'reporting_org_narrative',
     ].join(',')
 
-    const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})&rows=${PAGE_SIZE}&start=${start}&wt=json&fl=${encodeURIComponent(fields)}`
+    // Build filter query parameters
+    const fqParams = buildSolrFilterQuery(filters)
+    const fqString = fqParams.length > 0 ? `&${fqParams.map(f => `fq=${encodeURIComponent(f)}`).join('&')}` : ''
+
+    const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})${fqString}&rows=${PAGE_SIZE}&start=${start}&wt=json&fl=${encodeURIComponent(fields)}`
 
     if (start === 0) {
-      console.log('[Fetch Org Activities] Datastore query:', url.substring(0, 200) + '...')
+      console.log('[Fetch Org Activities] Datastore query:', url.substring(0, 300) + '...')
     }
 
     const abortController = new AbortController()

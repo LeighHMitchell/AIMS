@@ -564,11 +564,9 @@ export default function BulkImportSourceStep({
         setFetchProgress(99)
         setLongFetchWarning(true)
 
-        // Calculate elapsed time in minutes
-        const minutes = Math.floor(elapsed / 60)
-        const seconds = Math.floor(elapsed % 60)
-        const estimatedMinutes = Math.ceil(totalEstimate / 60)
-        setFetchProgressMessage(`${minutes}:${seconds.toString().padStart(2, '0')} elapsed (estimated ~${estimatedMinutes} min)`)
+        // When elapsed exceeds estimated, don't show the estimate anymore
+        // Just show elapsed time
+        setFetchProgressMessage(null)
       }
     }, 200)
   }, [])
@@ -726,6 +724,20 @@ export default function BulkImportSourceStep({
         params.set('organization_id', targetOrgId)
       }
 
+      // Add pre-fetch filters (applied at IATI Datastore level for performance)
+      if (selectedCountry) {
+        params.set('country', selectedCountry)
+      }
+      if (dateFilterEnabled && dateRangeStart) {
+        params.set('date_start', dateRangeStart)
+      }
+      if (dateFilterEnabled && dateRangeEnd) {
+        params.set('date_end', dateRangeEnd)
+      }
+      if (selectedHierarchy != null) {
+        params.set('hierarchy', selectedHierarchy.toString())
+      }
+
       // Step 1: Quick count query to get estimated time
       const countParams = new URLSearchParams(params)
       countParams.set('count_only', 'true')
@@ -830,7 +842,7 @@ export default function BulkImportSourceStep({
       setFetchStatus('error')
       setFetchError(err instanceof Error ? err.message : 'Failed to fetch activities')
     }
-  }, [homeCountry, orgIatiId, orgName, onActivitiesReady, startProgressSimulation, stopProgressSimulation, selectedOrgId, isSuperUser, user?.organizationId])
+  }, [homeCountry, orgIatiId, orgName, onActivitiesReady, startProgressSimulation, stopProgressSimulation, selectedOrgId, isSuperUser, user?.organizationId, selectedCountry, selectedHierarchy, dateFilterEnabled, dateRangeStart, dateRangeEnd])
 
   // Note: Auto-fetch removed - user must click "Fetch Activities" button to start
 
@@ -1100,31 +1112,165 @@ export default function BulkImportSourceStep({
 
         {/* --- DATASTORE MODE --- */}
         <TabsContent value="datastore" className="space-y-4 mt-4">
-          {/* Idle state - show Fetch button */}
+          {/* Idle state - show pre-fetch filters and Fetch button */}
           {fetchStatus === 'idle' && (
             <Card>
-              <CardContent className="p-8">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="p-4 bg-gray-100 rounded-full">
-                    <Globe className="h-10 w-10 text-gray-600" />
+              <CardContent className="p-6">
+                <div className="space-y-6">
+                  {/* Header */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-gray-100 rounded-full">
+                      <Globe className="h-6 w-6 text-gray-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg text-gray-900">
+                        Fetch IATI Activities
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Configure filters below, then fetch from the IATI Registry
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <h3 className="font-semibold text-lg text-gray-900">
-                      Fetch IATI Activities
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1 max-w-md">
-                      Click the button below to search the IATI Registry for activities published by{' '}
-                      <strong>{orgDisplayName}</strong>
-                    </p>
+
+                  {/* Pre-fetch filters */}
+                  <div className="border rounded-lg p-4 bg-gray-50 space-y-4">
+                    <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      Pre-Fetch Filters
+                      <span className="text-xs text-gray-400 font-normal">(applied at IATI Datastore for faster results)</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Country filter */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-600">Recipient Country</label>
+                        <Popover open={countryOpen} onOpenChange={(open) => { setCountryOpen(open); if (!open) setCountrySearch('') }}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-between font-normal h-9 text-sm">
+                              {selectedCountry ? (
+                                <span className="flex items-center gap-2">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={`https://flagcdn.com/w40/${selectedCountry.toLowerCase()}.png`}
+                                    alt=""
+                                    className="w-4 h-auto rounded-sm"
+                                  />
+                                  <span>{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span>
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">All countries</span>
+                              )}
+                              <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-0" align="start">
+                            <div className="p-2 border-b">
+                              <Input
+                                placeholder="Search..."
+                                value={countrySearch}
+                                onChange={(e) => setCountrySearch(e.target.value)}
+                                className="h-8"
+                                autoFocus
+                              />
+                            </div>
+                            <ScrollArea className="h-48">
+                              <div className="p-1">
+                                <button
+                                  onClick={() => { setSelectedCountry(''); setCountryOpen(false) }}
+                                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-gray-100"
+                                >
+                                  <span className="text-gray-400">All countries</span>
+                                </button>
+                                {searchedCountries.map((country) => (
+                                  <button
+                                    key={country.code}
+                                    onClick={() => { setSelectedCountry(country.code); setCountryOpen(false); setCountrySearch('') }}
+                                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-gray-100 ${selectedCountry === country.code ? 'bg-gray-100' : ''}`}
+                                  >
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={`https://flagcdn.com/w40/${country.code.toLowerCase()}.png`} alt="" className="w-4 h-auto rounded-sm" />
+                                    <span>{country.name}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </ScrollArea>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      {/* Hierarchy filter */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-600">Activity Level</label>
+                        <select
+                          value={selectedHierarchy ?? ''}
+                          onChange={(e) => setSelectedHierarchy(e.target.value ? parseInt(e.target.value, 10) : null)}
+                          className="w-full h-9 px-3 text-sm border rounded-md bg-white"
+                        >
+                          <option value="">All levels</option>
+                          <option value="1">Level 1 (Parent)</option>
+                          <option value="2">Level 2 (Sub-Activity)</option>
+                        </select>
+                      </div>
+
+                      {/* Date range start */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-600 flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={dateFilterEnabled}
+                            onChange={(e) => setDateFilterEnabled(e.target.checked)}
+                            className="h-3 w-3 rounded"
+                          />
+                          Date From
+                        </label>
+                        <Input
+                          type="date"
+                          value={dateRangeStart}
+                          onChange={(e) => setDateRangeStart(e.target.value)}
+                          disabled={!dateFilterEnabled}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+
+                      {/* Date range end */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-600">Date To</label>
+                        <Input
+                          type="date"
+                          value={dateRangeEnd}
+                          onChange={(e) => setDateRangeEnd(e.target.value)}
+                          disabled={!dateFilterEnabled}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Active filters summary */}
+                    {(selectedCountry || selectedHierarchy != null || dateFilterEnabled) && (
+                      <div className="text-xs text-gray-500 pt-2 border-t">
+                        Fetching activities
+                        {selectedCountry && <> in <strong>{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</strong></>}
+                        {selectedHierarchy != null && <> at <strong>Level {selectedHierarchy}</strong></>}
+                        {dateFilterEnabled && <> from <strong>{dateRangeStart}</strong> to <strong>{dateRangeEnd}</strong></>}
+                      </div>
+                    )}
                   </div>
-                  <Button
-                    onClick={() => fetchFromDatastore(false, selectedOrgId || undefined)}
-                    className="bg-gray-900 hover:bg-gray-800 text-white px-6"
-                    size="lg"
-                  >
-                    <Database className="h-4 w-4 mr-2" />
-                    Fetch Activities from IATI Registry
-                  </Button>
+
+                  {/* Fetch button */}
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={() => fetchFromDatastore(false, selectedOrgId || undefined)}
+                      className="bg-gray-900 hover:bg-gray-800 text-white px-8"
+                      size="lg"
+                    >
+                      <Database className="h-4 w-4 mr-2" />
+                      Fetch Activities from IATI Registry
+                    </Button>
+                  </div>
+
+                  <p className="text-xs text-center text-gray-400">
+                    Searching for activities published by <strong>{orgDisplayName}</strong>
+                  </p>
                 </div>
               </CardContent>
             </Card>

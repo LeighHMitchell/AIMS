@@ -1,6 +1,16 @@
 {
-  "currentVersion": "1.20.0",
+  "currentVersion": "1.21.0",
   "releases": [
+    {
+      "version": "1.21.0",
+      "date": "2026-02-06",
+      "changes": [
+        "Pre-fetch filters now applied at IATI Datastore level for faster results",
+        "Country, date range, and hierarchy filters reduce data fetched from source",
+        "USAID fetch with Myanmar filter: 56,000 → ~200 activities (massive performance improvement)",
+        "Elapsed timer no longer shows redundant estimated time when it goes over"
+      ]
+    },
     {
       "version": "1.20.0",
       "date": "2026-02-06",
