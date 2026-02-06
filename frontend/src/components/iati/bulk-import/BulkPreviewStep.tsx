@@ -119,22 +119,35 @@ export default function BulkPreviewStep({
     return count
   }, [activityStatusFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter])
 
-  // Get unique values from activities for filter options
+  // Get unique values from activities for filter options with counts
   const availableOptions = useMemo(() => {
-    const statuses = new Set<string>()
-    const aidTypes = new Set<string>()
-    const financeTypes = new Set<string>()
+    const statusCounts = new Map<string, number>()
+    const aidTypeCounts = new Map<string, number>()
+    const financeTypeCounts = new Map<string, number>()
 
     for (const a of activities) {
-      if (a.status || a.activity_status) statuses.add(a.status || a.activity_status || '')
-      if (a.defaultAidType) aidTypes.add(a.defaultAidType)
-      if (a.defaultFinanceType) financeTypes.add(a.defaultFinanceType)
+      const status = a.status || a.activity_status
+      if (status) {
+        statusCounts.set(status, (statusCounts.get(status) || 0) + 1)
+      }
+      if (a.defaultAidType) {
+        aidTypeCounts.set(a.defaultAidType, (aidTypeCounts.get(a.defaultAidType) || 0) + 1)
+      }
+      if (a.defaultFinanceType) {
+        financeTypeCounts.set(a.defaultFinanceType, (financeTypeCounts.get(a.defaultFinanceType) || 0) + 1)
+      }
     }
 
     return {
-      statuses: Array.from(statuses).filter(Boolean).sort(),
-      aidTypes: Array.from(aidTypes).filter(Boolean).sort(),
-      financeTypes: Array.from(financeTypes).filter(Boolean).sort(),
+      statuses: Array.from(statusCounts.entries())
+        .map(([code, count]) => ({ code, count }))
+        .sort((a, b) => a.code.localeCompare(b.code)),
+      aidTypes: Array.from(aidTypeCounts.entries())
+        .map(([code, count]) => ({ code, count }))
+        .sort((a, b) => a.code.localeCompare(b.code)),
+      financeTypes: Array.from(financeTypeCounts.entries())
+        .map(([code, count]) => ({ code, count }))
+        .sort((a, b) => a.code.localeCompare(b.code)),
     }
   }, [activities])
 
@@ -315,25 +328,25 @@ export default function BulkPreviewStep({
                   Activity Status
                 </Label>
                 <div className="flex flex-col gap-2">
-                  {availableOptions.statuses.map(status => (
-                    <div key={status} className="flex items-center gap-2">
+                  {availableOptions.statuses.map(({ code, count }) => (
+                    <div key={code} className="flex items-center gap-2">
                       <Checkbox
-                        id={`status-${status}`}
-                        checked={activityStatusFilter.includes(status)}
+                        id={`status-${code}`}
+                        checked={activityStatusFilter.includes(code)}
                         onCheckedChange={(checked) => {
                           if (checked) {
-                            setActivityStatusFilter([...activityStatusFilter, status])
+                            setActivityStatusFilter([...activityStatusFilter, code])
                           } else {
-                            setActivityStatusFilter(activityStatusFilter.filter(s => s !== status))
+                            setActivityStatusFilter(activityStatusFilter.filter(s => s !== code))
                           }
                         }}
                       />
                       <Label
-                        htmlFor={`status-${status}`}
+                        htmlFor={`status-${code}`}
                         className="flex items-center gap-2 text-sm cursor-pointer font-normal"
                       >
-                        <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-600">{status}</span>
-                        <span className="truncate">{ACTIVITY_STATUS_OPTIONS[status] || status}</span>
+                        <span className="truncate">{ACTIVITY_STATUS_OPTIONS[code] || code}</span>
+                        <span className="text-gray-400">({count})</span>
                       </Label>
                     </div>
                   ))}
@@ -350,26 +363,26 @@ export default function BulkPreviewStep({
                   Aid Type
                 </Label>
                 <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
-                  {availableOptions.aidTypes.map(type => (
-                    <div key={type} className="flex items-center gap-2">
+                  {availableOptions.aidTypes.map(({ code, count }) => (
+                    <div key={code} className="flex items-center gap-2">
                       <Checkbox
-                        id={`aid-${type}`}
-                        checked={aidTypeFilter.includes(type)}
+                        id={`aid-${code}`}
+                        checked={aidTypeFilter.includes(code)}
                         onCheckedChange={(checked) => {
                           if (checked) {
-                            setAidTypeFilter([...aidTypeFilter, type])
+                            setAidTypeFilter([...aidTypeFilter, code])
                           } else {
-                            setAidTypeFilter(aidTypeFilter.filter(t => t !== type))
+                            setAidTypeFilter(aidTypeFilter.filter(t => t !== code))
                           }
                         }}
                       />
                       <Label
-                        htmlFor={`aid-${type}`}
+                        htmlFor={`aid-${code}`}
                         className="flex items-center gap-2 text-sm cursor-pointer font-normal"
-                        title={AID_TYPE_OPTIONS[type] || type}
+                        title={AID_TYPE_OPTIONS[code] || code}
                       >
-                        <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-600">{type}</span>
-                        <span className="truncate max-w-[120px]">{AID_TYPE_OPTIONS[type] || type}</span>
+                        <span className="truncate max-w-[140px]">{AID_TYPE_OPTIONS[code] || code}</span>
+                        <span className="text-gray-400">({count})</span>
                       </Label>
                     </div>
                   ))}
@@ -386,26 +399,26 @@ export default function BulkPreviewStep({
                   Finance Type
                 </Label>
                 <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
-                  {availableOptions.financeTypes.map(type => (
-                    <div key={type} className="flex items-center gap-2">
+                  {availableOptions.financeTypes.map(({ code, count }) => (
+                    <div key={code} className="flex items-center gap-2">
                       <Checkbox
-                        id={`finance-${type}`}
-                        checked={financeTypeFilter.includes(type)}
+                        id={`finance-${code}`}
+                        checked={financeTypeFilter.includes(code)}
                         onCheckedChange={(checked) => {
                           if (checked) {
-                            setFinanceTypeFilter([...financeTypeFilter, type])
+                            setFinanceTypeFilter([...financeTypeFilter, code])
                           } else {
-                            setFinanceTypeFilter(financeTypeFilter.filter(t => t !== type))
+                            setFinanceTypeFilter(financeTypeFilter.filter(t => t !== code))
                           }
                         }}
                       />
                       <Label
-                        htmlFor={`finance-${type}`}
+                        htmlFor={`finance-${code}`}
                         className="flex items-center gap-2 text-sm cursor-pointer font-normal"
-                        title={FINANCE_TYPE_OPTIONS[type] || type}
+                        title={FINANCE_TYPE_OPTIONS[code] || code}
                       >
-                        <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-600">{type}</span>
-                        <span className="truncate max-w-[100px]">{FINANCE_TYPE_OPTIONS[type] || type}</span>
+                        <span className="truncate max-w-[120px]">{FINANCE_TYPE_OPTIONS[code] || code}</span>
+                        <span className="text-gray-400">({count})</span>
                       </Label>
                     </div>
                   ))}
