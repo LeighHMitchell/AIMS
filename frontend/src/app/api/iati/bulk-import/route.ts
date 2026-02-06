@@ -213,6 +213,16 @@ export async function POST(request: NextRequest) {
               .update({ action: 'skip', status: 'skipped', activity_id: existingActivity.id })
               .eq('batch_id', batchId)
               .eq('iati_identifier', iatiId);
+            // Update batch counts incrementally
+            await supabase
+              .from('iati_import_batches')
+              .update({
+                created_count: createdCount,
+                updated_count: updatedCount,
+                skipped_count: skippedCount,
+                failed_count: failedCount,
+              })
+              .eq('id', batchId);
             continue;
           } else if (importRules.activityMatching === 'update_existing') {
             // Update existing
@@ -573,6 +583,17 @@ export async function POST(request: NextRequest) {
           })
           .eq('batch_id', batchId)
           .eq('iati_identifier', iatiId);
+
+        // Update batch counts incrementally so polling shows progress
+        await supabase
+          .from('iati_import_batches')
+          .update({
+            created_count: createdCount,
+            updated_count: updatedCount,
+            skipped_count: skippedCount,
+            failed_count: failedCount,
+          })
+          .eq('id', batchId);
       } catch (error) {
         console.error(`[Bulk Import] Failed to import activity ${iatiId}:`, error);
         failedCount++;
@@ -586,6 +607,17 @@ export async function POST(request: NextRequest) {
           })
           .eq('batch_id', batchId)
           .eq('iati_identifier', iatiId);
+
+        // Update batch counts incrementally on failure too
+        await supabase
+          .from('iati_import_batches')
+          .update({
+            created_count: createdCount,
+            updated_count: updatedCount,
+            skipped_count: skippedCount,
+            failed_count: failedCount,
+          })
+          .eq('id', batchId);
       }
     }
 
