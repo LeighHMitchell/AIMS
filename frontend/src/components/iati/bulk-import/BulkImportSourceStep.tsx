@@ -1230,7 +1230,7 @@ export default function BulkImportSourceStep({
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg text-gray-900">
-                        Found {filteredActivities.length.toLocaleString()} activit{filteredActivities.length === 1 ? 'y' : 'ies'} with {filteredTotals.totalTransactions.toLocaleString()} transactions published by {orgDisplayName}
+                        Found <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{filteredActivities.length.toLocaleString()}</span> activit{filteredActivities.length === 1 ? 'y' : 'ies'} with <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{filteredTotals.totalTransactions.toLocaleString()}</span> transactions published by {orgDisplayName}
                       </h3>
                       <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
