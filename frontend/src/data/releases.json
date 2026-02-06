@@ -1,6 +1,17 @@
 {
-  "currentVersion": "1.21.0",
+  "currentVersion": "1.22.0",
   "releases": [
+    {
+      "version": "1.22.0",
+      "date": "2026-02-06",
+      "changes": [
+        "IATI Import filters consolidated to single pre-fetch panel with improved UI",
+        "Country selector with flags, alpha-3 codes, and clear button",
+        "Activity Level toggle buttons replace dropdown for better UX",
+        "Date Range filter with calendar picker and checkbox toggle",
+        "Applied filters shown as read-only badges after fetch completes"
+      ]
+    },
     {
       "version": "1.21.0",
       "date": "2026-02-06",

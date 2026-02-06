@@ -240,65 +240,6 @@ export default function BulkImportSourceStep({
       .sort((a, b) => a.name.localeCompare(b.name))
   }, [])
 
-  const availableHierarchies = useMemo(() => {
-    const levels = new Set<number>()
-    for (const a of datastoreActivities) {
-      if (a.hierarchy != null) levels.add(a.hierarchy)
-    }
-    return Array.from(levels).sort((a, b) => a - b)
-  }, [datastoreActivities])
-
-  // Count transactions per hierarchy level (respecting country filter with IATI geography rules)
-  const transactionCountsByLevel = useMemo(() => {
-    const counts: Record<number | 'all', number> = { all: 0 }
-
-    // Filter by country first if selected (using IATI geography rules)
-    let activities = datastoreActivities
-    if (selectedCountry) {
-      const countryBounds = COUNTRY_BOUNDING_BOXES[selectedCountry]
-      const alpha3Code = ALPHA2_TO_ALPHA3[selectedCountry] || selectedCountry
-
-      // Helper: check if a country code matches (handles alpha-2 and alpha-3)
-      const countryCodeMatches = (code: string | undefined): boolean => {
-        if (!code) return false
-        const upperCode = code.toUpperCase()
-        return upperCode === selectedCountry.toUpperCase() || upperCode === alpha3Code.toUpperCase()
-      }
-
-      // Helper: check if coordinates fall within country bounds
-      const coordsInCountry = (lat: number, lng: number): boolean => {
-        if (!countryBounds) return false
-        return lat >= countryBounds.minLat && lat <= countryBounds.maxLat &&
-               lng >= countryBounds.minLng && lng <= countryBounds.maxLng
-      }
-
-      // Helper: check if activity is in country via locations
-      const activityInCountryViaLocations = (a: ParsedActivity): boolean => {
-        if (a.recipientCountries && a.recipientCountries.length > 0) return false
-        if (!a.locations || a.locations.length === 0) return false
-        const locationsWithCoords = a.locations.filter(l => l.coordinates)
-        if (locationsWithCoords.length === 0) return false
-        return locationsWithCoords.every(l =>
-          l.coordinates && coordsInCountry(l.coordinates.latitude, l.coordinates.longitude)
-        )
-      }
-
-      activities = activities.filter(a =>
-        a.recipientCountries?.some(rc => countryCodeMatches(rc.code)) ||
-        activityInCountryViaLocations(a)
-      )
-    }
-
-    for (const a of activities) {
-      const txCount = a.transactions?.length || 0
-      counts.all += txCount
-      if (a.hierarchy != null) {
-        counts[a.hierarchy] = (counts[a.hierarchy] || 0) + txCount
-      }
-    }
-    return counts
-  }, [datastoreActivities, selectedCountry])
-
   const filteredActivities = useMemo(() => {
     let result = datastoreActivities
     if (selectedCountry) {
@@ -449,35 +390,6 @@ export default function BulkImportSourceStep({
 
     return result
   }, [datastoreActivities, selectedCountry, selectedHierarchy, countryScope, dateFilterEnabled, dateRangeStart, dateRangeEnd])
-
-  // Diagnostic: count Level 2 activities without recipient-country data
-  const level2DiagnosticInfo = useMemo(() => {
-    if (selectedHierarchy !== 2 || !selectedCountry) return null
-
-    const allLevel2 = datastoreActivities.filter(a => a.hierarchy === 2)
-    const level2WithCountryData = allLevel2.filter(a => a.recipientCountries && a.recipientCountries.length > 0)
-
-    // Check for both alpha-2 (MM) and alpha-3 (MMR) codes
-    const alpha3Code = ALPHA2_TO_ALPHA3[selectedCountry] || selectedCountry
-
-    const level2WithSelectedCountry = allLevel2.filter(a =>
-      a.recipientCountries?.some(rc =>
-        rc.code === selectedCountry ||
-        rc.code === alpha3Code ||
-        rc.code?.toUpperCase() === selectedCountry.toUpperCase() ||
-        rc.code?.toUpperCase() === alpha3Code.toUpperCase()
-      )
-    )
-
-    return {
-      totalLevel2: allLevel2.length,
-      withCountryData: level2WithCountryData.length,
-      withSelectedCountry: level2WithSelectedCountry.length,
-      percentWithCountryData: allLevel2.length > 0
-        ? Math.round((level2WithCountryData.length / allLevel2.length) * 100)
-        : 0,
-    }
-  }, [datastoreActivities, selectedHierarchy, selectedCountry])
 
   // Calculate totals for filtered activities
   const filteredTotals = useMemo(() => {
@@ -859,112 +771,6 @@ export default function BulkImportSourceStep({
     fetchedRef.current = false
   }, [user?.organizationId])
 
-  // --- Shared filter helper ---
-  const applyFiltersAndNotify = useCallback((country: string, hierarchy: number | null, scope: 'all' | '100' | 'regional') => {
-    let filtered = datastoreActivities
-
-    if (country) {
-      // IATI Geography Rules: match by recipient-country OR location coordinates
-      const countryBounds = COUNTRY_BOUNDING_BOXES[country]
-      const alpha3Code = ALPHA2_TO_ALPHA3[country] || country
-
-      // Helper: check if a country code matches (handles alpha-2 and alpha-3)
-      const countryCodeMatches = (code: string | undefined): boolean => {
-        if (!code) return false
-        const upperCode = code.toUpperCase()
-        return upperCode === country.toUpperCase() || upperCode === alpha3Code.toUpperCase()
-      }
-
-      const coordsInCountry = (lat: number, lng: number): boolean => {
-        if (!countryBounds) return false
-        return lat >= countryBounds.minLat && lat <= countryBounds.maxLat &&
-               lng >= countryBounds.minLng && lng <= countryBounds.maxLng
-      }
-
-      const activityInCountryViaLocations = (a: ParsedActivity): boolean => {
-        if (a.recipientCountries && a.recipientCountries.length > 0) return false
-        if (!a.locations || a.locations.length === 0) return false
-        const locationsWithCoords = a.locations.filter(l => l.coordinates)
-        if (locationsWithCoords.length === 0) return false
-        return locationsWithCoords.every(l =>
-          l.coordinates && coordsInCountry(l.coordinates.latitude, l.coordinates.longitude)
-        )
-      }
-
-      // Filter by country (recipient-country OR location inference)
-      filtered = filtered.filter(a => {
-        // Condition A: Has recipient-country with selected code
-        if (a.recipientCountries?.some(rc => countryCodeMatches(rc.code))) return true
-
-        // Condition B: No recipient-country, but all locations in selected country
-        return activityInCountryViaLocations(a)
-      })
-
-      // Apply country scope filter (100% vs regional)
-      if (scope === '100') {
-        filtered = filtered.filter(a => {
-          const countryAlloc = a.recipientCountries?.find(rc => countryCodeMatches(rc.code))
-          // Activities without recipient-country data were matched via locations - treat as 100%
-          if (!a.recipientCountries || a.recipientCountries.length === 0) {
-            return activityInCountryViaLocations(a)
-          }
-          const pct = countryAlloc?.percentage
-          const is100 = pct !== undefined && pct !== null && Number(pct) >= 99.9
-          const isSingleCountry = a.recipientCountries?.length === 1
-          return countryAlloc && (is100 || (isSingleCountry && (pct == null || Number(pct) >= 99.9)))
-        })
-      } else if (scope === 'regional') {
-        filtered = filtered.filter(a => {
-          if (!a.recipientCountries || a.recipientCountries.length === 0) return false
-          const countryAlloc = a.recipientCountries?.find(rc => countryCodeMatches(rc.code))
-          const hasMultipleCountries = (a.recipientCountries?.length || 0) > 1
-          return countryAlloc && (
-            (countryAlloc.percentage != null && countryAlloc.percentage < 100) ||
-            hasMultipleCountries
-          )
-        })
-      }
-    }
-
-    if (hierarchy != null) {
-      filtered = filtered.filter(a => a.hierarchy === hierarchy)
-    }
-
-    if (fetchStatus === 'success') {
-      const meta: BulkImportMeta = {
-        sourceMode: 'datastore',
-        reportingOrgRef: orgScopeData?.reportingOrgRef || orgIatiId || '',
-        reportingOrgName: orgScopeData?.organizationName || orgName,
-        activityCount: filtered.length,
-        fetchedAt: fetchedAt || undefined,
-      }
-      onActivitiesReady(filtered, meta)
-    }
-  }, [datastoreActivities, fetchStatus, orgScopeData, orgIatiId, orgName, fetchedAt, onActivitiesReady])
-
-  // --- Country filter handler ---
-  const handleCountryChange = useCallback((country: string) => {
-    setSelectedCountry(country)
-    // Reset country scope when clearing country filter
-    const newScope = country ? countryScope : 'all'
-    if (!country) {
-      setCountryScope('all')
-    }
-    applyFiltersAndNotify(country, selectedHierarchy, newScope)
-  }, [selectedHierarchy, countryScope, applyFiltersAndNotify])
-
-  // --- Hierarchy filter handler ---
-  const handleHierarchyChange = useCallback((hierarchy: number | null) => {
-    setSelectedHierarchy(hierarchy)
-    applyFiltersAndNotify(selectedCountry, hierarchy, countryScope)
-  }, [selectedCountry, countryScope, applyFiltersAndNotify])
-
-  // --- Country scope filter handler ---
-  const handleCountryScopeChange = useCallback((scope: 'all' | '100' | 'regional') => {
-    setCountryScope(scope)
-    applyFiltersAndNotify(selectedCountry, selectedHierarchy, scope)
-  }, [selectedCountry, selectedHierarchy, applyFiltersAndNotify])
-
   // --- XML mode handlers ---
   const handleXmlFileReady = useCallback((file: File, meta: BulkImportMeta) => {
     if (!file || !meta) {
@@ -1134,51 +940,70 @@ export default function BulkImportSourceStep({
                   </div>
 
                   {/* Pre-fetch filters */}
-                  <div className="border rounded-lg p-4 bg-gray-50 space-y-4">
+                  <div className="border rounded-lg p-4 bg-white space-y-4">
                     <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <Filter className="h-4 w-4" />
                       Pre-Fetch Filters
                       <span className="text-xs text-gray-400 font-normal">(applied at IATI Datastore for faster results)</span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="flex items-start gap-8 flex-wrap">
                       {/* Country filter */}
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-600">Recipient Country</label>
+                        <div className="text-sm font-medium text-gray-700">
+                          Recipient Country
+                        </div>
                         <Popover open={countryOpen} onOpenChange={(open) => { setCountryOpen(open); if (!open) setCountrySearch('') }}>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-between font-normal h-9 text-sm">
+                            <Button variant="outline" className="w-72 justify-between font-normal h-10 pr-2">
                               {selectedCountry ? (
-                                <span className="flex items-center gap-2">
+                                <span className="flex items-center gap-2 flex-1">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={`https://flagcdn.com/w40/${selectedCountry.toLowerCase()}.png`}
                                     alt=""
-                                    className="w-4 h-auto rounded-sm"
+                                    className="w-5 h-auto rounded-sm"
                                   />
+                                  <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-600">
+                                    {ALPHA2_TO_ALPHA3[selectedCountry] || selectedCountry}
+                                  </span>
                                   <span>{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span>
                                 </span>
                               ) : (
-                                <span className="text-gray-400">All countries</span>
+                                <span className="text-gray-500 flex-1 text-left">All countries</span>
                               )}
-                              <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                              <div className="flex items-center gap-1 shrink-0">
+                                {selectedCountry && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setSelectedCountry('')
+                                    }}
+                                    className="p-1 hover:bg-gray-100 rounded"
+                                    title="Clear country filter"
+                                  >
+                                    <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                                  </button>
+                                )}
+                                <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                              </div>
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-64 p-0" align="start">
+                          <PopoverContent className="w-72 p-0" align="start">
                             <div className="p-2 border-b">
                               <Input
-                                placeholder="Search..."
+                                placeholder="Search countries..."
                                 value={countrySearch}
                                 onChange={(e) => setCountrySearch(e.target.value)}
                                 className="h-8"
                                 autoFocus
                               />
                             </div>
-                            <ScrollArea className="h-48">
+                            <ScrollArea className="h-64">
                               <div className="p-1">
                                 <button
-                                  onClick={() => { setSelectedCountry(''); setCountryOpen(false) }}
-                                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-gray-100"
+                                  onClick={() => { setSelectedCountry(''); setCountryOpen(false); setCountrySearch('') }}
+                                  className="w-full flex items-center gap-2.5 px-2 py-2 rounded text-sm hover:bg-gray-100 transition-colors"
                                 >
                                   <span className="text-gray-400">All countries</span>
                                 </button>
@@ -1186,13 +1011,23 @@ export default function BulkImportSourceStep({
                                   <button
                                     key={country.code}
                                     onClick={() => { setSelectedCountry(country.code); setCountryOpen(false); setCountrySearch('') }}
-                                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-gray-100 ${selectedCountry === country.code ? 'bg-gray-100' : ''}`}
+                                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded text-sm hover:bg-gray-100 transition-colors ${selectedCountry === country.code ? 'bg-gray-100' : ''}`}
                                   >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={`https://flagcdn.com/w40/${country.code.toLowerCase()}.png`} alt="" className="w-4 h-auto rounded-sm" />
-                                    <span>{country.name}</span>
+                                    <img
+                                      src={`https://flagcdn.com/w40/${country.code.toLowerCase()}.png`}
+                                      alt=""
+                                      className="w-5 h-auto rounded-sm shrink-0"
+                                    />
+                                    <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-500 shrink-0">
+                                      {ALPHA2_TO_ALPHA3[country.code] || country.code}
+                                    </span>
+                                    <span className="text-gray-900">{country.name}</span>
                                   </button>
                                 ))}
+                                {searchedCountries.length === 0 && (
+                                  <p className="text-sm text-gray-400 text-center py-4">No countries found</p>
+                                )}
                               </div>
                             </ScrollArea>
                           </PopoverContent>
@@ -1201,58 +1036,78 @@ export default function BulkImportSourceStep({
 
                       {/* Hierarchy filter */}
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-600">Activity Level</label>
-                        <select
-                          value={selectedHierarchy ?? ''}
-                          onChange={(e) => setSelectedHierarchy(e.target.value ? parseInt(e.target.value, 10) : null)}
-                          className="w-full h-9 px-3 text-sm border rounded-md bg-white"
-                        >
-                          <option value="">All levels</option>
-                          <option value="1">Level 1 (Parent)</option>
-                          <option value="2">Level 2 (Sub-Activity)</option>
-                        </select>
+                        <div className="text-sm font-medium text-gray-700">
+                          Activity Level
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant={selectedHierarchy == null ? 'default' : 'outline'}
+                            size="sm"
+                            className={selectedHierarchy == null ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                            onClick={() => setSelectedHierarchy(null)}
+                          >
+                            All Levels
+                          </Button>
+                          <Button
+                            variant={selectedHierarchy === 1 ? 'default' : 'outline'}
+                            size="sm"
+                            className={selectedHierarchy === 1 ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                            onClick={() => setSelectedHierarchy(1)}
+                          >
+                            Level 1 (Parent)
+                          </Button>
+                          <Button
+                            variant={selectedHierarchy === 2 ? 'default' : 'outline'}
+                            size="sm"
+                            className={selectedHierarchy === 2 ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                            onClick={() => setSelectedHierarchy(2)}
+                          >
+                            Level 2 (Sub-Activity)
+                          </Button>
+                        </div>
                       </div>
 
-                      {/* Date range start */}
+                      {/* Date range filter */}
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-600 flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
+                            id="dateFilterEnabledPrefetch"
                             checked={dateFilterEnabled}
                             onChange={(e) => setDateFilterEnabled(e.target.checked)}
-                            className="h-3 w-3 rounded"
+                            className="h-4 w-4 rounded border-gray-300"
                           />
-                          Date From
-                        </label>
-                        <DatePicker
-                          value={dateRangeStart}
-                          onChange={(value) => setDateRangeStart(value)}
-                          disabled={!dateFilterEnabled}
-                          placeholder="Start date"
-                          className="h-9 text-sm"
-                        />
-                      </div>
-
-                      {/* Date range end */}
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-gray-600">Date To</label>
-                        <DatePicker
-                          value={dateRangeEnd}
-                          onChange={(value) => setDateRangeEnd(value)}
-                          disabled={!dateFilterEnabled}
-                          placeholder="End date"
-                          className="h-9 text-sm"
-                        />
+                          <label htmlFor="dateFilterEnabledPrefetch" className="text-sm font-medium text-gray-700">
+                            Date Range
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <DatePicker
+                            value={dateRangeStart}
+                            onChange={(value) => setDateRangeStart(value)}
+                            disabled={!dateFilterEnabled}
+                            placeholder="Start date"
+                            className="h-9 w-40 text-sm"
+                          />
+                          <span className="text-gray-400">to</span>
+                          <DatePicker
+                            value={dateRangeEnd}
+                            onChange={(value) => setDateRangeEnd(value)}
+                            disabled={!dateFilterEnabled}
+                            placeholder="End date"
+                            className="h-9 w-40 text-sm"
+                          />
+                        </div>
                       </div>
                     </div>
 
                     {/* Active filters summary */}
                     {(selectedCountry || selectedHierarchy != null || dateFilterEnabled) && (
-                      <div className="text-xs text-gray-500 pt-2 border-t">
-                        Fetching activities
-                        {selectedCountry && <> in <strong>{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</strong></>}
-                        {selectedHierarchy != null && <> at <strong>Level {selectedHierarchy}</strong></>}
-                        {dateFilterEnabled && <> from <strong>{dateRangeStart}</strong> to <strong>{dateRangeEnd}</strong></>}
+                      <div className="text-sm text-gray-500 pt-3 border-t">
+                        Will fetch activities
+                        {selectedCountry && <> in <span className="font-medium text-gray-700">{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span></>}
+                        {selectedHierarchy != null && <> at <span className="font-medium text-gray-700">Level {selectedHierarchy}</span></>}
+                        {dateFilterEnabled && <> from <span className="font-medium text-gray-700">{dateRangeStart}</span> to <span className="font-medium text-gray-700">{dateRangeEnd}</span></>}
                       </div>
                     )}
                   </div>
@@ -1400,243 +1255,36 @@ export default function BulkImportSourceStep({
                 </CardContent>
               </Card>
 
-              {/* Filters */}
-              {datastoreActivities.length > 0 && (
-                <Card>
-                  <CardContent className="p-4 space-y-3">
-                    {/* Filters row */}
-                    <div className="flex items-start gap-8">
-                      {/* Country filter */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                          <Filter className="h-4 w-4" />
-                          Recipient Country
-                        </div>
-                        <Popover open={countryOpen} onOpenChange={(open) => { setCountryOpen(open); if (!open) setCountrySearch('') }}>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-72 justify-between font-normal h-10 pr-2">
-                              {selectedCountry ? (
-                                <span className="flex items-center gap-2 flex-1">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={`https://flagcdn.com/w40/${selectedCountry.toLowerCase()}.png`}
-                                    alt=""
-                                    className="w-5 h-auto rounded-sm"
-                                  />
-                                  <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-600">
-                                    {ALPHA2_TO_ALPHA3[selectedCountry] || selectedCountry}
-                                  </span>
-                                  <span>{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span>
-                                </span>
-                              ) : (
-                                <span className="text-gray-500 flex-1 text-left">All countries</span>
-                              )}
-                              <div className="flex items-center gap-1 shrink-0">
-                                {selectedCountry && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleCountryChange('')
-                                    }}
-                                    className="p-1 hover:bg-gray-100 rounded"
-                                    title="Clear country filter"
-                                  >
-                                    <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                                  </button>
-                                )}
-                                <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                              </div>
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-72 p-0" align="start">
-                            <div className="p-2 border-b">
-                              <Input
-                                placeholder="Search countries..."
-                                value={countrySearch}
-                                onChange={(e) => setCountrySearch(e.target.value)}
-                                className="h-8"
-                                autoFocus
-                              />
-                            </div>
-                            <ScrollArea className="h-64">
-                              <div className="p-1">
-                                {searchedCountries.map((country) => (
-                                  <button
-                                    key={country.code}
-                                    onClick={() => {
-                                      handleCountryChange(country.code)
-                                      setCountryOpen(false)
-                                      setCountrySearch('')
-                                    }}
-                                    className={`w-full flex items-center gap-2.5 px-2 py-2 rounded text-sm hover:bg-gray-100 transition-colors ${
-                                      selectedCountry === country.code ? 'bg-gray-100' : ''
-                                    }`}
-                                  >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={`https://flagcdn.com/w40/${country.code.toLowerCase()}.png`}
-                                      alt=""
-                                      className="w-5 h-auto rounded-sm shrink-0"
-                                    />
-                                    <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-500 shrink-0">
-                                      {ALPHA2_TO_ALPHA3[country.code] || country.code}
-                                    </span>
-                                    <span className="text-gray-900">{country.name}</span>
-                                  </button>
-                                ))}
-                                {searchedCountries.length === 0 && (
-                                  <p className="text-sm text-gray-400 text-center py-4">No countries found</p>
-                                )}
-                              </div>
-                            </ScrollArea>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-
-                      {/* Country scope filter - only show when country is selected */}
-                      {selectedCountry && (
-                        <div className="space-y-1.5">
-                          <div className="text-sm font-medium text-gray-700">
-                            Country Scope
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant={countryScope === 'all' ? 'default' : 'outline'}
-                              size="sm"
-                              className={countryScope === 'all' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
-                              onClick={() => handleCountryScopeChange('all')}
-                            >
-                              All
-                            </Button>
-                            <Button
-                              variant={countryScope === '100' ? 'default' : 'outline'}
-                              size="sm"
-                              className={countryScope === '100' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
-                              onClick={() => handleCountryScopeChange('100')}
-                            >
-                              100% {COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}
-                            </Button>
-                            <Button
-                              variant={countryScope === 'regional' ? 'default' : 'outline'}
-                              size="sm"
-                              className={countryScope === 'regional' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
-                              onClick={() => handleCountryScopeChange('regional')}
-                            >
-                              Regional
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Hierarchy filter */}
-                      {availableHierarchies.length > 1 && (
-                        <div className="space-y-1.5">
-                          <div className="text-sm font-medium text-gray-700">
-                            Activity Level
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant={selectedHierarchy == null ? 'default' : 'outline'}
-                              size="sm"
-                              className={selectedHierarchy == null ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
-                              onClick={() => handleHierarchyChange(null)}
-                            >
-                              All Levels
-                            </Button>
-                            {availableHierarchies.map((level) => (
-                              <Button
-                                key={level}
-                                variant={selectedHierarchy === level ? 'default' : 'outline'}
-                                size="sm"
-                                className={selectedHierarchy === level ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
-                                onClick={() => handleHierarchyChange(level)}
-                              >
-                                {level === 1 ? 'Level 1 (Parent)' : level === 2 ? 'Level 2 (Sub-Activity)' : `Level ${level}`}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Date range filter */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            id="dateFilterEnabled"
-                            checked={dateFilterEnabled}
-                            onChange={(e) => setDateFilterEnabled(e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                          <label htmlFor="dateFilterEnabled" className="text-sm font-medium text-gray-700">
-                            Date Range
-                          </label>
-                        </div>
-                        {dateFilterEnabled && (
-                          <div className="flex items-center gap-2">
-                            <DatePicker
-                              value={dateRangeStart}
-                              onChange={(value) => setDateRangeStart(value)}
-                              placeholder="Start date"
-                              className="h-9 w-40 text-sm"
-                            />
-                            <span className="text-gray-400">to</span>
-                            <DatePicker
-                              value={dateRangeEnd}
-                              onChange={(value) => setDateRangeEnd(value)}
-                              placeholder="End date"
-                              className="h-9 w-40 text-sm"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Filter summary */}
-                    {(selectedCountry || selectedHierarchy != null || dateFilterEnabled) && (
-                      <div className="flex items-center justify-between pt-1 border-t border-gray-100">
-                        <div className="text-sm text-gray-500">
-                          Showing <span className="font-semibold text-gray-700">{filteredActivities.length}</span> of {datastoreActivities.length.toLocaleString()} activities
-                          {selectedCountry && (
-                            <span>
-                              {countryScope === '100' ? ' (100%)' : countryScope === 'regional' ? ' (regional)' : ''} in <span className="font-medium">{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span>
-                            </span>
-                          )}
-                          {selectedHierarchy != null && (
-                            <span> at Level {selectedHierarchy}</span>
-                          )}
-                          {dateFilterEnabled && (
-                            <span> from {dateRangeStart} to {dateRangeEnd}</span>
-                          )}
-                          <span> with <span className="font-semibold text-gray-700">{filteredTotals.totalTransactions.toLocaleString()}</span> transactions</span>
-                        </div>
-                        {(selectedCountry || selectedHierarchy != null) && (
-                          <button
-                            onClick={() => {
-                              setSelectedCountry('')
-                              setSelectedHierarchy(null)
-                              setCountryScope('all')
-                              applyFiltersAndNotify('', null, 'all')
-                            }}
-                            className="text-xs text-gray-400 hover:text-gray-600 underline"
-                          >
-                            Clear all filters
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Level 2 + Country warning */}
-                    {selectedHierarchy === 2 && selectedCountry && level2DiagnosticInfo && level2DiagnosticInfo.percentWithCountryData < 50 && filteredActivities.length > 0 && (
-                      <div className="pt-2 border-t border-gray-100">
-                        <p className="text-xs text-amber-600 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3 shrink-0" />
-                          Note: Only {level2DiagnosticInfo.percentWithCountryData}% of Level 2 sub-activities have explicit country data. Others inherit from their parent.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+              {/* Applied filters summary (read-only) */}
+              {(selectedCountry || selectedHierarchy != null || dateFilterEnabled) && (
+                <div className="flex items-center gap-2 flex-wrap text-sm">
+                  <span className="text-gray-500">Filters applied:</span>
+                  {selectedCountry && (
+                    <Badge variant="secondary" className="gap-1.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://flagcdn.com/w20/${selectedCountry.toLowerCase()}.png`}
+                        alt=""
+                        className="w-4 h-auto rounded-sm"
+                      />
+                      {COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}
+                    </Badge>
+                  )}
+                  {selectedHierarchy != null && (
+                    <Badge variant="secondary">
+                      Level {selectedHierarchy}
+                    </Badge>
+                  )}
+                  {dateFilterEnabled && (
+                    <Badge variant="secondary">
+                      {dateRangeStart} to {dateRangeEnd}
+                    </Badge>
+                  )}
+                  <span className="text-gray-400">|</span>
+                  <span className="text-gray-600">
+                    <span className="font-medium">{filteredActivities.length}</span> activities with <span className="font-medium">{filteredTotals.totalTransactions.toLocaleString()}</span> transactions
+                  </span>
+                </div>
               )}
 
               {datastoreActivities.length === 0 && (
