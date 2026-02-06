@@ -513,11 +513,28 @@ export default function BulkImportSourceStep({
     const fetchOrganizations = async () => {
       setLoadingOrgs(true)
       try {
-        // Fetch organizations that have IATI identifiers configured
-        const response = await apiFetch('/api/organizations-list?has_iati=true&limit=500')
+        // Fetch all organizations - super users can select any org
+        const response = await apiFetch('/api/organizations-list?limit=500')
         if (response.ok) {
           const result = await response.json()
-          setOrganizations(result.data || [])
+          let orgList: Organization[] = result.data || []
+
+          // Ensure user's own organization is in the list
+          if (user?.organizationId && user?.organization) {
+            const userOrgExists = orgList.some(o => o.id === user.organizationId)
+            if (!userOrgExists) {
+              // Add user's org at the beginning
+              orgList = [{
+                id: user.organizationId,
+                name: user.organization.name || '',
+                acronym: user.organization.acronym,
+                logo: user.organization.logo,
+                iati_org_id: user.organization.iati_org_id,
+              }, ...orgList]
+            }
+          }
+
+          setOrganizations(orgList)
         }
       } catch (err) {
         console.error('Failed to fetch organizations:', err)
@@ -527,7 +544,7 @@ export default function BulkImportSourceStep({
     }
 
     fetchOrganizations()
-  }, [isSuperUser])
+  }, [isSuperUser, user?.organizationId, user?.organization])
 
   // --- Datastore fetch ---
   const fetchFromDatastore = useCallback(async (forceRefresh = false, orgId?: string) => {
