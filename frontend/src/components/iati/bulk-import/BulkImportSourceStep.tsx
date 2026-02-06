@@ -39,6 +39,7 @@ import BulkUploadStep from './BulkUploadStep'
 import BulkValidationStep from './BulkValidationStep'
 import { OrganizationCombobox, type Organization } from '@/components/ui/organization-combobox'
 import { DatePicker } from '@/components/ui/date-picker'
+import { format, parseISO } from 'date-fns'
 import type {
   ImportSourceMode,
   BulkImportMeta,
@@ -200,7 +201,9 @@ export default function BulkImportSourceStep({
   const estimatedSecondsRef = useRef<number>(65) // Default estimate, updated by count query
 
   // --- Country filter state ---
+  // Default to system home country (set via useEffect when settings load)
   const [selectedCountry, setSelectedCountry] = useState<string>('')
+  const [countryInitialized, setCountryInitialized] = useState(false)
   const [selectedHierarchy, setSelectedHierarchy] = useState<number | null>(null)
   const [countryScope, setCountryScope] = useState<'all' | '100' | 'regional'>('all') // 100% vs regional allocation
   const [orgScopeData, setOrgScopeData] = useState<{ reportingOrgRef: string; organizationName: string } | null>(null)
@@ -502,6 +505,14 @@ export default function BulkImportSourceStep({
       setFetchPhase('processing')
     }
   }, [])
+
+  // Initialize country filter from system settings
+  useEffect(() => {
+    if (!countryInitialized && homeCountry && !settingsLoading) {
+      setSelectedCountry(homeCountry)
+      setCountryInitialized(true)
+    }
+  }, [homeCountry, settingsLoading, countryInitialized])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1107,7 +1118,9 @@ export default function BulkImportSourceStep({
                         Will fetch activities
                         {selectedCountry && <> in <span className="font-medium text-gray-700">{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span></>}
                         {selectedHierarchy != null && <> at <span className="font-medium text-gray-700">Level {selectedHierarchy}</span></>}
-                        {dateFilterEnabled && <> from <span className="font-medium text-gray-700">{dateRangeStart}</span> to <span className="font-medium text-gray-700">{dateRangeEnd}</span></>}
+                        {dateFilterEnabled && dateRangeStart && dateRangeEnd && (
+                          <> from <span className="font-medium text-gray-700">{format(parseISO(dateRangeStart), 'd MMMM yyyy')}</span> to <span className="font-medium text-gray-700">{format(parseISO(dateRangeEnd), 'd MMMM yyyy')}</span></>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1275,9 +1288,9 @@ export default function BulkImportSourceStep({
                       Level {selectedHierarchy}
                     </Badge>
                   )}
-                  {dateFilterEnabled && (
+                  {dateFilterEnabled && dateRangeStart && dateRangeEnd && (
                     <Badge variant="secondary">
-                      {dateRangeStart} to {dateRangeEnd}
+                      {format(parseISO(dateRangeStart), 'd MMM yyyy')} to {format(parseISO(dateRangeEnd), 'd MMM yyyy')}
                     </Badge>
                   )}
                   <span className="text-gray-400">|</span>

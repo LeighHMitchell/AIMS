@@ -6,10 +6,12 @@
       "date": "2026-02-06",
       "changes": [
         "IATI Import filters consolidated to single pre-fetch panel with improved UI",
+        "Recipient Country defaults to system home country from admin settings",
         "Country selector with flags, alpha-3 codes, and clear button",
         "Activity Level toggle buttons replace dropdown for better UX",
-        "Date Range filter with calendar picker and checkbox toggle",
-        "Applied filters shown as read-only badges after fetch completes"
+        "Date Range filter inline with other filters using calendar picker",
+        "Applied filters shown as read-only badges after fetch completes",
+        "Human-readable date format in filter summaries (e.g., '1 January 2021')"
       ]
     },
     {
