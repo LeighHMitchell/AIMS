@@ -10,9 +10,10 @@
         "Contacts include: organisation, person name, job title, email, phone, website, mailing address",
         "Documents include: URL, format, title, description, category, language, date",
         "Import progress now updates incrementally during batch processing",
-        "IATI Import filters consolidated to single pre-fetch panel with improved UI",
+        "IATI Import filters consolidated to single pre-fetch panel with all filters on one line",
         "Recipient Country defaults to system home country from admin settings",
-        "Rules step redesigned with horizontal hero cards and monochrome theme"
+        "Rules step redesigned with horizontal hero cards and monochrome theme",
+        "Streamlined IATI Import UI - removed redundant labels and helper text"
       ]
     },
     {

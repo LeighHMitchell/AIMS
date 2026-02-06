@@ -831,7 +831,6 @@ export default function BulkImportSourceStep({
                 // Super user: show organization selector
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">Importing for:</span>
                     <Badge variant="outline" className="text-xs text-white border-0" style={{ backgroundColor: '#DC2625' }}>
                       Super User
                     </Badge>
@@ -867,9 +866,6 @@ export default function BulkImportSourceStep({
                         onValueChange={handleOrgChange}
                         placeholder="Select organization to import..."
                       />
-                      <p className="text-xs text-gray-400 mt-1">
-                        {organizations.length} organization{organizations.length !== 1 ? 's' : ''} available
-                      </p>
                     </div>
                   )}
                 </div>
@@ -955,10 +951,9 @@ export default function BulkImportSourceStep({
                     <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <Filter className="h-4 w-4" />
                       Pre-Fetch Filters
-                      <span className="text-xs text-gray-400 font-normal">(applied at IATI Datastore for faster results)</span>
                     </div>
 
-                    <div className="flex items-start gap-8 flex-wrap">
+                    <div className="flex items-end gap-6">
                       {/* Country filter */}
                       <div className="space-y-1.5">
                         <div className="text-sm font-medium text-gray-700">
@@ -966,7 +961,7 @@ export default function BulkImportSourceStep({
                         </div>
                         <Popover open={countryOpen} onOpenChange={(open) => { setCountryOpen(open); if (!open) setCountrySearch('') }}>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-72 justify-between font-normal h-10 pr-2">
+                            <Button variant="outline" className="w-56 justify-between font-normal h-10 pr-2">
                               {selectedCountry ? (
                                 <span className="flex items-center gap-2 flex-1">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1000,7 +995,7 @@ export default function BulkImportSourceStep({
                               </div>
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-72 p-0" align="start">
+                          <PopoverContent className="w-56 p-0" align="start">
                             <div className="p-2 border-b">
                               <Input
                                 placeholder="Search countries..."
@@ -1098,7 +1093,7 @@ export default function BulkImportSourceStep({
                             onChange={(value) => setDateRangeStart(value)}
                             disabled={!dateFilterEnabled}
                             placeholder="Start date"
-                            className="h-9 w-40 text-sm"
+                            className="h-10 w-36 text-sm"
                           />
                           <span className="text-gray-400">to</span>
                           <DatePicker
@@ -1106,7 +1101,7 @@ export default function BulkImportSourceStep({
                             onChange={(value) => setDateRangeEnd(value)}
                             disabled={!dateFilterEnabled}
                             placeholder="End date"
-                            className="h-9 w-40 text-sm"
+                            className="h-10 w-36 text-sm"
                           />
                         </div>
                       </div>
@@ -1136,10 +1131,6 @@ export default function BulkImportSourceStep({
                       Fetch Activities from IATI Registry
                     </Button>
                   </div>
-
-                  <p className="text-xs text-center text-gray-400">
-                    Searching for activities published by <strong>{orgDisplayName}</strong>
-                  </p>
                 </div>
               </CardContent>
             </Card>
