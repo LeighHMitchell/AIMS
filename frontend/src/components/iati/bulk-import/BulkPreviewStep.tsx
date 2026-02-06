@@ -171,10 +171,10 @@ export default function BulkPreviewStep({
           <div className="grid grid-cols-[40px_1fr_200px_100px_120px_80px] gap-2 px-4 py-3 border-b bg-gray-50 text-xs font-medium text-gray-500 uppercase">
             <div />
             <button className="text-left hover:text-gray-700" onClick={() => toggleSort('id')}>
-              IATI ID / Title {sortField === 'id' && (sortAsc ? '↑' : '↓')}
+              Activity Title and IATI Identifier {sortField === 'id' && (sortAsc ? '↑' : '↓')}
             </button>
             <button className="text-left hover:text-gray-700" onClick={() => toggleSort('title')}>
-              Planned Dates
+              Planned Start/End Dates
             </button>
             <button className="text-right hover:text-gray-700" onClick={() => toggleSort('transactions')}>
               Transactions {sortField === 'transactions' && (sortAsc ? '↑' : '↓')}

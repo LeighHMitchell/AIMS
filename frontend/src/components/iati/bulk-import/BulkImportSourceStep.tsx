@@ -1105,18 +1105,6 @@ export default function BulkImportSourceStep({
                         </div>
                       </div>
                     </div>
-
-                    {/* Active filters summary */}
-                    {(selectedCountry || selectedHierarchy != null || dateFilterEnabled) && (
-                      <div className="text-sm text-gray-500 pt-3 border-t">
-                        Will fetch activities
-                        {selectedCountry && <> in <span className="font-medium text-gray-700">{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span></>}
-                        {selectedHierarchy != null && <> at <span className="font-medium text-gray-700">Level {selectedHierarchy}</span></>}
-                        {dateFilterEnabled && dateRangeStart && dateRangeEnd && (
-                          <> from <span className="font-medium text-gray-700">{format(parseISO(dateRangeStart), 'd MMMM yyyy')}</span> to <span className="font-medium text-gray-700">{format(parseISO(dateRangeEnd), 'd MMMM yyyy')}</span></>
-                        )}
-                      </div>
-                    )}
                   </div>
 
                   {/* Fetch button */}
