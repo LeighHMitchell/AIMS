@@ -243,13 +243,54 @@ export async function GET(request: NextRequest) {
       cached: false,
     })
   } catch (error) {
-    if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('timeout'))) {
-      return NextResponse.json(
-        { error: 'Request to IATI Datastore timed out. Please try again.' },
-        { status: 504 }
-      )
-    }
     console.error('[Fetch Org Activities] Error:', error)
+
+    // Check for various network/timeout errors
+    if (error instanceof Error) {
+      const errorMessage = error.message.toLowerCase()
+      const errorCause = (error as any).cause
+      const causeCode = errorCause?.code || ''
+      const causeName = errorCause?.name || ''
+
+      // Connection timeout
+      if (error.name === 'AbortError' ||
+          errorMessage.includes('timeout') ||
+          causeCode === 'UND_ERR_CONNECT_TIMEOUT' ||
+          causeName === 'ConnectTimeoutError') {
+        return NextResponse.json(
+          { error: 'Connection to IATI Datastore timed out. The server may be busy or your network may be slow. Please try again.' },
+          { status: 504 }
+        )
+      }
+
+      // DNS resolution failure
+      if (causeCode === 'ENOTFOUND' || errorMessage.includes('enotfound')) {
+        return NextResponse.json(
+          { error: 'Could not connect to IATI Datastore. Please check your internet connection and try again.' },
+          { status: 503 }
+        )
+      }
+
+      // Socket/network errors
+      if (causeCode === 'UND_ERR_SOCKET' ||
+          causeName === 'SocketError' ||
+          errorMessage.includes('fetch failed') ||
+          errorMessage.includes('network')) {
+        return NextResponse.json(
+          { error: 'Network error while fetching from IATI Datastore. Please check your internet connection and try again.' },
+          { status: 503 }
+        )
+      }
+
+      // Rate limit exceeded
+      if (errorMessage.includes('rate limit')) {
+        return NextResponse.json(
+          { error: 'IATI Datastore rate limit exceeded. Please wait a minute and try again.' },
+          { status: 429 }
+        )
+      }
+    }
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch IATI activities' },
       { status: 500 }
