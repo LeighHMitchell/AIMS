@@ -50,19 +50,31 @@ export function useDropdownContext() {
   return context;
 }
 
+// Optional version that returns null if no provider
+export function useDropdownContextOptional() {
+  return useContext(DropdownContext);
+}
+
 // Hook for individual dropdowns to manage their state
+// Falls back to local state if no DropdownProvider is present
 export function useDropdownState(dropdownId: string) {
-  const { openDropdown, setOpenDropdown, isDropdownOpen, openDropdownExclusive } = useDropdownContext();
-  
-  const isOpen = isDropdownOpen(dropdownId);
-  
+  const context = useDropdownContextOptional();
+  const [localOpen, setLocalOpen] = useState(false);
+
+  // If we have context, use shared state
+  const isOpen = context ? context.isDropdownOpen(dropdownId) : localOpen;
+
   const setOpen = useCallback((open: boolean) => {
-    if (open) {
-      openDropdownExclusive(dropdownId);
+    if (context) {
+      if (open) {
+        context.openDropdownExclusive(dropdownId);
+      } else {
+        context.setOpenDropdown(null);
+      }
     } else {
-      setOpenDropdown(null);
+      setLocalOpen(open);
     }
-  }, [dropdownId, openDropdownExclusive, setOpenDropdown]);
+  }, [context, dropdownId]);
 
   return { isOpen, setOpen };
 }
