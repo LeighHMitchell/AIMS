@@ -217,6 +217,10 @@ export default function BulkImportSourceStep({
   const [countryOpen, setCountryOpen] = useState(false)
   const [countrySearch, setCountrySearch] = useState('')
 
+  // --- Preview count state (shows expected results before fetch) ---
+  const [previewCount, setPreviewCount] = useState<{ activities: number; loading: boolean } | null>(null)
+  const previewCountTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   // --- XML mode state ---
   const [xmlFile, setXmlFile] = useState<File | null>(null)
   const [xmlMeta, setXmlMeta] = useState<BulkImportMeta | null>(null)
@@ -523,8 +527,63 @@ export default function BulkImportSourceStep({
       if (elapsedIntervalRef.current) {
         clearInterval(elapsedIntervalRef.current)
       }
+      if (previewCountTimeoutRef.current) {
+        clearTimeout(previewCountTimeoutRef.current)
+      }
     }
   }, [])
+
+  // Fetch preview count when filters change (debounced)
+  useEffect(() => {
+    // Only fetch preview when in idle state and we have an org configured
+    if (fetchStatus !== 'idle') return
+    if (!orgIatiId && !selectedOrgId) return
+
+    // Clear previous timeout
+    if (previewCountTimeoutRef.current) {
+      clearTimeout(previewCountTimeoutRef.current)
+    }
+
+    // Set loading state
+    setPreviewCount({ activities: 0, loading: true })
+
+    // Debounce the API call
+    previewCountTimeoutRef.current = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams()
+        params.set('count_only', 'true')
+
+        // Add org for super users
+        if (selectedOrgId && isSuperUser && selectedOrgId !== user?.organizationId) {
+          params.set('organization_id', selectedOrgId)
+        }
+
+        // Add filters
+        if (selectedCountry) {
+          params.set('country', selectedCountry)
+        }
+        if (dateFilterEnabled && dateRangeStart) {
+          params.set('date_start', dateRangeStart)
+        }
+        if (dateFilterEnabled && dateRangeEnd) {
+          params.set('date_end', dateRangeEnd)
+        }
+        if (selectedHierarchy != null) {
+          params.set('hierarchy', selectedHierarchy.toString())
+        }
+
+        const response = await apiFetch(`/api/iati/fetch-org-activities?${params.toString()}`)
+        if (response.ok) {
+          const data = await response.json()
+          setPreviewCount({ activities: data.count || 0, loading: false })
+        } else {
+          setPreviewCount(null)
+        }
+      } catch {
+        setPreviewCount(null)
+      }
+    }, 500) // 500ms debounce
+  }, [fetchStatus, orgIatiId, selectedOrgId, selectedCountry, selectedHierarchy, dateFilterEnabled, dateRangeStart, dateRangeEnd, isSuperUser, user?.organizationId])
 
   // Fetch organizations list for super users
   useEffect(() => {
@@ -1105,6 +1164,25 @@ export default function BulkImportSourceStep({
                         </div>
                       </div>
                     </div>
+
+                    {/* Preview count */}
+                    {previewCount && (
+                      <div className="text-sm text-gray-600 pt-3 border-t flex items-center gap-2">
+                        {previewCount.loading ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+                            <span className="text-gray-400">Checking IATI Registry...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Database className="h-3.5 w-3.5 text-gray-400" />
+                            <span>
+                              Expected: <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{previewCount.activities.toLocaleString()}</span> activities
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Fetch button */}
