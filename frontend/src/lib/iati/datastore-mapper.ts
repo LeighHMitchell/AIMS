@@ -61,6 +61,15 @@ export function mapDatastoreDocToParsedActivity(
   const txReceiverRefs = ensureArray(doc.transaction_receiver_org_ref)
   const defaultCurrency = doc.default_currency || 'USD'
 
+  // Transaction-level classification overrides
+  const txAidTypes = ensureArray(doc.transaction_aid_type_code)
+  const txFinanceTypes = ensureArray(doc.transaction_finance_type_code)
+  const txFlowTypes = ensureArray(doc.transaction_flow_type_code)
+  const txTiedStatuses = ensureArray(doc.transaction_tied_status_code)
+  // Transaction-level geography
+  const txRecipientCountries = ensureArray(doc.transaction_recipient_country_code)
+  const txRecipientRegions = ensureArray(doc.transaction_recipient_region_code)
+
   const txCount = txValues.length // anchor on values — the most reliable field
   const transactions: ParsedActivity['transactions'] = []
   for (let i = 0; i < txCount; i++) {
@@ -79,6 +88,12 @@ export function mapDatastoreDocToParsedActivity(
       providerOrgRef: txProviderRefs[i] || undefined,
       receiverOrg: txReceiverNames[i] || undefined,
       receiverOrgRef: txReceiverRefs[i] || undefined,
+      aidType: txAidTypes[i] || undefined,
+      financeType: txFinanceTypes[i] || undefined,
+      flowType: txFlowTypes[i] || undefined,
+      tiedStatus: txTiedStatuses[i] || undefined,
+      recipientCountryCode: txRecipientCountries[i] || undefined,
+      recipientRegionCode: txRecipientRegions[i] || undefined,
     })
   }
 
@@ -233,6 +248,144 @@ export function mapDatastoreDocToParsedActivity(
     narrative: tagNarratives[i] || undefined,
   })).filter((t: any) => t.code)
 
+  // --- Related Activities ---
+  const raRefs = ensureArray(doc.related_activity_ref)
+  const raTypes = ensureArray(doc.related_activity_type)
+  const relatedActivities = raRefs
+    .map((ref: string, i: number) => ({
+      ref: String(ref),
+      type: raTypes[i] ? String(raTypes[i]) : '',
+    }))
+    .filter((ra: any) => ra.ref)
+
+  // --- Other Identifiers ---
+  const oiRefs = ensureArray(doc.other_identifier_ref)
+  const oiTypes = ensureArray(doc.other_identifier_type)
+  const oiOwnerRefs = ensureArray(doc.other_identifier_owner_org_ref)
+  const oiOwnerNarratives = ensureArray(doc.other_identifier_owner_org_narrative)
+  const otherIdentifiers = oiRefs
+    .map((ref: string, i: number) => ({
+      ref: String(ref),
+      type: oiTypes[i] ? String(oiTypes[i]) : '',
+      ownerOrgRef: oiOwnerRefs[i] || undefined,
+      ownerOrgNarrative: oiOwnerNarratives[i] || undefined,
+    }))
+    .filter((oi: any) => oi.ref)
+
+  // --- Conditions ---
+  const conditionsAttached = doc.conditions_attached === true || doc.conditions_attached === 'true' || doc.conditions_attached === '1'
+  const condTypes = ensureArray(doc.condition_type)
+  const condNarratives = ensureArray(doc.condition_narrative)
+  const conditions = condTypes
+    .map((type: string, i: number) => ({
+      type: String(type),
+      narrative: condNarratives[i] || undefined,
+    }))
+    .filter((c: any) => c.type)
+
+  // --- Recipient Regions ---
+  const rrCodes = ensureArray(doc.recipient_region_code)
+  const rrVocabs = ensureArray(doc.recipient_region_vocabulary)
+  const rrPcts = ensureArray(doc.recipient_region_percentage)
+  const recipientRegions = rrCodes.map((code: string, i: number) => ({
+    code: String(code),
+    vocabulary: rrVocabs[i] || undefined,
+    percentage: rrPcts[i] != null && !isNaN(parseFloat(rrPcts[i])) ? parseFloat(rrPcts[i]) : undefined,
+  }))
+
+  // --- Country Budget Items ---
+  const cbiVocabulary = doc.country_budget_items_vocabulary ? String(doc.country_budget_items_vocabulary) : undefined
+  const cbiCodes = ensureArray(doc.country_budget_items_budget_item_code)
+  const cbiPcts = ensureArray(doc.country_budget_items_budget_item_percentage)
+  const cbiDescs = ensureArray(doc.country_budget_items_budget_item_description_narrative)
+  const cbiItems = cbiCodes.map((code: string, i: number) => ({
+    code: String(code),
+    percentage: cbiPcts[i] != null && !isNaN(parseFloat(cbiPcts[i])) ? parseFloat(cbiPcts[i]) : undefined,
+    description: cbiDescs[i] || undefined,
+  }))
+  const countryBudgetItems = cbiItems.length > 0
+    ? { vocabulary: cbiVocabulary, items: cbiItems }
+    : undefined
+
+  // --- FSS (Forward Spending Survey) ---
+  const fssExtractionDate = doc.fss_extraction_date ? String(doc.fss_extraction_date) : undefined
+  const fssPriority = doc.fss_priority != null ? Number(doc.fss_priority) : undefined
+  const fssPhaseoutYear = doc.fss_phaseout_year != null ? Number(doc.fss_phaseout_year) : undefined
+  const fssYears = ensureArray(doc.fss_forecast_year)
+  const fssValues = ensureArray(doc.fss_forecast_value)
+  const fssCurrencies = ensureArray(doc.fss_forecast_currency)
+  const fssValueDates = ensureArray(doc.fss_forecast_value_date)
+  const fssForecasts = fssYears
+    .map((year: any, i: number) => {
+      const val = parseFloat(fssValues[i])
+      if (isNaN(val) || year == null) return null
+      return {
+        year: Number(year),
+        value: val,
+        currency: fssCurrencies[i] || undefined,
+        valueDate: fssValueDates[i] || undefined,
+      }
+    })
+    .filter(Boolean) as Array<{ year: number; value: number; currency?: string; valueDate?: string }>
+  const fss = (fssExtractionDate || fssPriority != null || fssPhaseoutYear != null || fssForecasts.length > 0)
+    ? { extractionDate: fssExtractionDate, priority: fssPriority, phaseoutYear: fssPhaseoutYear, forecasts: fssForecasts }
+    : undefined
+
+  // --- CRS Additional Data ---
+  const crsFlags = ensureArray(doc.crs_add_other_flags_code)
+  const crsFlagSigs = ensureArray(doc.crs_add_other_flags_significance)
+  const crsOtherFlags = crsFlags
+    .map((code: string, i: number) => ({
+      code: String(code),
+      significance: crsFlagSigs[i] ? String(crsFlagSigs[i]) : '',
+    }))
+    .filter((f: any) => f.code)
+
+  const crsRate1 = doc.crs_add_loan_terms_rate_1 != null ? Number(doc.crs_add_loan_terms_rate_1) : undefined
+  const crsRate2 = doc.crs_add_loan_terms_rate_2 != null ? Number(doc.crs_add_loan_terms_rate_2) : undefined
+  const crsRepaymentType = doc.crs_add_repayment_type_code ? String(doc.crs_add_repayment_type_code) : undefined
+  const crsRepaymentPlan = doc.crs_add_repayment_plan_code ? String(doc.crs_add_repayment_plan_code) : undefined
+  const crsCommitmentDate = doc.crs_add_commitment_date_iso_date ? String(doc.crs_add_commitment_date_iso_date) : undefined
+  const crsRepaymentFirst = doc.crs_add_repayment_first_date_iso_date ? String(doc.crs_add_repayment_first_date_iso_date) : undefined
+  const crsRepaymentFinal = doc.crs_add_repayment_final_date_iso_date ? String(doc.crs_add_repayment_final_date_iso_date) : undefined
+  const hasLoanTerms = crsRate1 != null || crsRate2 != null || crsRepaymentType || crsRepaymentPlan || crsCommitmentDate || crsRepaymentFirst || crsRepaymentFinal
+  const crsLoanTerms = hasLoanTerms
+    ? { rate1: crsRate1, rate2: crsRate2, repaymentType: crsRepaymentType, repaymentPlan: crsRepaymentPlan, commitmentDate: crsCommitmentDate, repaymentFirstDate: crsRepaymentFirst, repaymentFinalDate: crsRepaymentFinal }
+    : undefined
+
+  const crsStatusYears = ensureArray(doc.crs_add_loan_status_year)
+  const crsStatusCurrencies = ensureArray(doc.crs_add_loan_status_currency)
+  const crsStatusValueDates = ensureArray(doc.crs_add_loan_status_value_date)
+  const crsStatusInterestReceived = ensureArray(doc.crs_add_loan_status_interest_received)
+  const crsStatusPrincipalOutstanding = ensureArray(doc.crs_add_loan_status_principal_outstanding)
+  const crsStatusPrincipalArrears = ensureArray(doc.crs_add_loan_status_principal_arrears)
+  const crsStatusInterestArrears = ensureArray(doc.crs_add_loan_status_interest_arrears)
+  const crsLoanStatus = crsStatusYears
+    .map((year: any, i: number) => {
+      if (year == null) return null
+      return {
+        year: Number(year),
+        currency: crsStatusCurrencies[i] || undefined,
+        valueDate: crsStatusValueDates[i] || undefined,
+        interestReceived: crsStatusInterestReceived[i] != null ? Number(crsStatusInterestReceived[i]) : undefined,
+        principalOutstanding: crsStatusPrincipalOutstanding[i] != null ? Number(crsStatusPrincipalOutstanding[i]) : undefined,
+        principalArrears: crsStatusPrincipalArrears[i] != null ? Number(crsStatusPrincipalArrears[i]) : undefined,
+        interestArrears: crsStatusInterestArrears[i] != null ? Number(crsStatusInterestArrears[i]) : undefined,
+      }
+    })
+    .filter(Boolean) as Array<{ year: number; currency?: string; valueDate?: string; interestReceived?: number; principalOutstanding?: number; principalArrears?: number; interestArrears?: number }>
+
+  const crsAdd = (crsOtherFlags.length > 0 || crsLoanTerms || crsLoanStatus.length > 0)
+    ? {
+        otherFlags: crsOtherFlags.length > 0 ? crsOtherFlags : undefined,
+        loanTerms: crsLoanTerms,
+        loanStatus: crsLoanStatus.length > 0 ? crsLoanStatus : undefined,
+      }
+    : undefined
+
+  // --- Last Updated ---
+  const lastUpdatedDatetime = doc.last_updated_datetime ? String(doc.last_updated_datetime) : undefined
+
   // --- Contacts (contact-info) ---
   // IATI Datastore fields: contact_info_type, contact_info_organisation_narrative,
   // contact_info_department_narrative, contact_info_person_name_narrative,
@@ -338,6 +491,19 @@ export function mapDatastoreDocToParsedActivity(
     policyMarkers: policyMarkers.length > 0 ? policyMarkers : undefined,
     humanitarianScopes: humanitarianScopes.length > 0 ? humanitarianScopes : undefined,
     tags: tags.length > 0 ? tags : undefined,
+    // Related activities, other identifiers, conditions
+    relatedActivities: relatedActivities.length > 0 ? relatedActivities : undefined,
+    otherIdentifiers: otherIdentifiers.length > 0 ? otherIdentifiers : undefined,
+    conditionsAttached: doc.conditions_attached != null ? conditionsAttached : undefined,
+    conditions: conditions.length > 0 ? conditions : undefined,
+    // Recipient regions, country budget items
+    recipientRegions: recipientRegions.length > 0 ? recipientRegions : undefined,
+    countryBudgetItems,
+    // FSS, CRS additional data
+    fss,
+    crsAdd,
+    // Last updated
+    lastUpdatedDatetime,
     // Note: capitalSpend and plannedDisbursements are not available from IATI Datastore
     // They're only available via XML upload (see dportal-mapper.ts)
   }

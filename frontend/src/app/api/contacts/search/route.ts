@@ -3,7 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 /**
- * Contact search across activity_contacts table
+ * Contact search across contacts table (normalized)
  * GET /api/contacts/search?q=query&limit=10
  */
 export async function GET(request: NextRequest) {
@@ -19,19 +19,16 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('q')?.trim();
     const limit = parseInt(searchParams.get('limit') || '10', 10);
 
-    // Require at least 2 characters for search
     if (!query || query.length < 2) {
       return NextResponse.json([]);
     }
 
-    console.log('[Contacts Search API] Searching activity_contacts for:', query, 'limit:', limit);
+    console.log('[Contacts Search API] Searching contacts table for:', query, 'limit:', limit);
 
-    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     const escapedQuery = escapeIlikeWildcards(query);
 
-    // Search activity_contacts table with organization join
     const { data: contacts, error: contactsError } = await supabase
-      .from('activity_contacts')
+      .from('contacts')
       .select(`
         id,
         title,
@@ -42,18 +39,17 @@ export async function GET(request: NextRequest) {
         phone,
         country_code,
         organisation_id,
-        organisation_name,
+        organisation,
         position,
         job_title,
         department,
-        type,
         profile_photo,
         organizations:organisation_id (
           name,
           acronym
         )
       `)
-      .or(`first_name.ilike.%${escapedQuery}%,last_name.ilike.%${escapedQuery}%,email.ilike.%${escapedQuery}%,organisation_name.ilike.%${escapedQuery}%`)
+      .or(`first_name.ilike.%${escapedQuery}%,last_name.ilike.%${escapedQuery}%,email.ilike.%${escapedQuery}%,organisation.ilike.%${escapedQuery}%`)
       .limit(limit)
       .order('last_name', { ascending: true });
 
@@ -65,12 +61,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Normalize results
     const normalizedContacts = (contacts || []).map((contact: any) => {
       const fullName = `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unknown Contact';
-      const orgName = contact.organizations?.name || contact.organisation_name || '';
+      const orgName = contact.organizations?.name || contact.organisation || '';
       const orgAcronym = contact.organizations?.acronym || '';
-      
+
       return {
         id: contact.id,
         title: contact.title || '',
@@ -85,10 +80,10 @@ export async function GET(request: NextRequest) {
         position: contact.position || '',
         jobTitle: contact.job_title || '',
         department: contact.department || '',
-        type: contact.type || '1',
+        type: '1',
         profilePhoto: contact.profile_photo || '',
         source: 'contact' as const,
-        label: orgName 
+        label: orgName
           ? `${fullName} (${contact.email || 'no email'}) - ${orgName}`
           : `${fullName} (${contact.email || 'no email'})`
       };
@@ -105,4 +100,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

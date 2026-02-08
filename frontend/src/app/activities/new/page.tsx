@@ -4269,7 +4269,7 @@ function NewActivityPageContent() {
       "forward-spending-survey": "Forward Spending Survey",
       "financing-terms": "Financing Terms",
       "conditions": "Conditions",
-      "xml-import": "IATI Import",
+      "xml-import": "Import Single Activity",
       readiness_checklist: "Government Readiness Checklist"
     };
     return sectionLabels[sectionId] || sectionId;
@@ -4984,10 +4984,10 @@ function NewActivityPageContent() {
   // Add navigationGroups here to match ActivityEditorNavigation
   const navigationGroups = [
     {
-      title: "TOOLS",
+      title: "IATI Tools",
       sections: [
-        { id: "iati", label: "IATI Link" },
-        { id: "xml-import", label: "IATI Import" }
+        { id: "xml-import", label: "Import Single Activity" },
+        { id: "iati", label: "IATI Link" }
       ]
     },
     {
@@ -5339,7 +5339,8 @@ function NewActivityPageContent() {
                !isStakeholdersSection(activeSection) &&
                !isFundingDeliverySection(activeSection) &&
                !isStrategicAlignmentSection(activeSection) &&
-               !isSupportingInfoSection(activeSection) && (
+               !isSupportingInfoSection(activeSection) &&
+               activeSection !== 'iati' && (
                 <div className="flex items-center gap-3 mb-6">
                   <h2 className="text-2xl font-semibold">{getSectionLabel(activeSection)}</h2>
                   <HelpTextTooltip content={getSectionHelpText(activeSection)}>
@@ -5491,7 +5492,7 @@ function NewActivityPageContent() {
               <div className="flex-1"></div>
 
               {/* Right side: Comments + Back + Save + Save & Next Navigation Buttons */}
-              {/* Hide these buttons on IATI Link and XML Import tabs */}
+              {/* Hide these buttons on IATI Tools tabs */}
               {activeSection !== 'iati' && activeSection !== 'xml-import' && (
               <div className={`flex items-center gap-3 transition-all ${isModalOpen ? 'blur-sm pointer-events-none' : ''}`}>
                 {/* Comments Button */}

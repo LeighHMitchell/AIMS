@@ -11,12 +11,21 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Plus,
   Search,
   Edit,
   Trash2,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   HelpCircle,
   Clock,
   ChevronsUpDown,
@@ -70,6 +79,16 @@ export default function FAQPage() {
   const [editingFAQ, setEditingFAQ] = useState<FAQItem | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageLimit, setPageLimit] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('faq-page-limit')
+      return saved ? Number(saved) : 10
+    }
+    return 10
+  })
+
   // Follow-up question state
   const [followUpFAQ, setFollowUpFAQ] = useState<FAQItem | null>(null)
   const [followUpQuestion, setFollowUpQuestion] = useState('')
@@ -119,15 +138,35 @@ export default function FAQPage() {
 
   // Filter FAQs based on search and category
   const filteredFAQs = faqs.filter(faq => {
-    const matchesSearch = 
+    const matchesSearch =
       faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
       faq.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
       faq.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    
+
     const matchesCategory = selectedCategory === 'All' || faq.category === selectedCategory
 
     return matchesSearch && matchesCategory
   })
+
+  // Pagination calculations
+  const totalFAQs = filteredFAQs.length
+  const totalPages = Math.ceil(totalFAQs / pageLimit)
+  const startIndex = (currentPage - 1) * pageLimit
+  const endIndex = Math.min(startIndex + pageLimit, totalFAQs)
+  const paginatedFAQs = filteredFAQs.slice(startIndex, endIndex)
+
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, selectedCategory])
+
+  const handlePageLimitChange = (newLimit: number) => {
+    setPageLimit(newLimit)
+    setCurrentPage(1)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('faq-page-limit', newLimit.toString())
+    }
+  }
 
   const toggleExpanded = (id: string) => {
     const newExpanded = new Set(expandedItems)
@@ -142,7 +181,7 @@ export default function FAQPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
-    
+
     try {
       const payload = {
         question: formData.question,
@@ -172,7 +211,7 @@ export default function FAQPage() {
       }
 
       toast.success(editingFAQ ? 'FAQ updated successfully' : 'FAQ created successfully')
-      
+
       // Reset form and refresh data
       setFormData({ question: '', answer: '', category: '', tags: '' })
       setIsCreateModalOpen(false)
@@ -287,7 +326,7 @@ export default function FAQPage() {
                 </div>
               </div>
             </div>
-            
+
             {isSuperUser && (
               <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                 <DialogTrigger asChild>
@@ -303,7 +342,7 @@ export default function FAQPage() {
                       {editingFAQ ? 'Update the question and answer.' : 'Add a new frequently asked question and its comprehensive answer.'}
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                       <Label htmlFor="question">Question</Label>
@@ -315,7 +354,7 @@ export default function FAQPage() {
                         required
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="answer">Answer</Label>
                       <Textarea
@@ -327,7 +366,7 @@ export default function FAQPage() {
                         required
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="category">Category</Label>
                       <Input
@@ -338,7 +377,7 @@ export default function FAQPage() {
                         required
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="tags">Tags (comma-separated)</Label>
                       <Input
@@ -348,7 +387,7 @@ export default function FAQPage() {
                         placeholder="e.g., activities, create, new, getting started"
                       />
                     </div>
-                    
+
                     <div className="flex justify-end space-x-2 pt-4">
                       <Button
                         type="button"
@@ -384,7 +423,7 @@ export default function FAQPage() {
                 className="pl-10"
               />
             </div>
-            
+
             <div className="relative">
               <select
                 value={selectedCategory}
@@ -422,8 +461,8 @@ export default function FAQPage() {
                   <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No FAQs found</h3>
                   <p className="text-gray-500 mb-4">
-                    {searchTerm || selectedCategory !== 'All' 
-                      ? 'Try adjusting your search or filter criteria.' 
+                    {searchTerm || selectedCategory !== 'All'
+                      ? 'Try adjusting your search or filter criteria.'
                       : 'No FAQs available yet.'}
                   </p>
                   {isSuperUser && (
@@ -439,12 +478,12 @@ export default function FAQPage() {
                 </CardContent>
               </Card>
             ) : (
-              filteredFAQs.map((faq) => {
+              paginatedFAQs.map((faq) => {
                 const isExpanded = expandedItems.has(faq.id)
-                const isLongAnswer = faq.answer.length > 300
+                const isLongAnswer = faq.answer.length > 800
                 const displayAnswer = isExpanded || !isLongAnswer
                   ? faq.answer
-                  : truncateText(faq.answer, 300)
+                  : truncateText(faq.answer, 800)
 
                 return (
                   <Card key={faq.id} className="overflow-hidden">
@@ -499,7 +538,7 @@ export default function FAQPage() {
                       {isLongAnswer && (
                         <button
                           onClick={() => toggleExpanded(faq.id)}
-                          className="mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                          className="mt-2 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
                         >
                           {isExpanded ? (
                             <>
@@ -597,6 +636,105 @@ export default function FAQPage() {
               })
             )}
           </div>
+
+          {/* Pagination */}
+          {!loading && totalFAQs > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Showing {Math.min(startIndex + 1, totalFAQs)} to {Math.min(endIndex, totalFAQs)} of {totalFAQs} FAQs
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      First
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Last
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600">Items per page:</label>
+                    <Select
+                      value={pageLimit.toString()}
+                      onValueChange={(value) => handlePageLimitChange(Number(value))}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Help Text */}
           <Card className="bg-muted/30 border-muted">

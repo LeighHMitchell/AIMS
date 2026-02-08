@@ -34,7 +34,6 @@ export interface RolodexPerson {
   source: 'user' | 'activity_contact' | 'organization';
   role?: string;
   source_label?: string;
-  // Dedup fields: when multiple activity_contacts represent the same person
   activity_count?: number;
   activity_ids?: string[];
 }
@@ -51,85 +50,6 @@ export interface RolodexFilters {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-}
-
-/**
- * Compute a dedup key for a contact. Contacts with the same key are considered
- * the same person and will be merged in the rolodex view.
- *
- * Priority: email (most reliable) > first+last name > unique id (no dedup)
- */
-function contactDedupKey(contact: {
-  email?: string | null;
-  first_name?: string | null;
-  last_name?: string | null;
-  id?: string;
-}): string {
-  // Primary: email (case-insensitive, trimmed)
-  if (contact.email && contact.email.trim()) {
-    return `email:${contact.email.trim().toLowerCase()}`;
-  }
-  // Secondary: first name + last name (both required)
-  if (contact.first_name?.trim() && contact.last_name?.trim()) {
-    return `name:${contact.first_name.trim().toLowerCase()}_${contact.last_name.trim().toLowerCase()}`;
-  }
-  // Fallback: unique id (no dedup possible)
-  return `id:${contact.id || Math.random()}`;
-}
-
-/**
- * Deduplicate activity contacts that represent the same person.
- * Merges duplicate entries into a single RolodexPerson with activity_count
- * and activity_ids tracking all linked activities.
- */
-function deduplicateActivityContacts(contacts: RolodexPerson[]): RolodexPerson[] {
-  const grouped = new Map<string, RolodexPerson[]>();
-
-  for (const contact of contacts) {
-    const key = contactDedupKey(contact);
-    const existing = grouped.get(key);
-    if (existing) {
-      existing.push(contact);
-    } else {
-      grouped.set(key, [contact]);
-    }
-  }
-
-  const deduplicated: RolodexPerson[] = [];
-  grouped.forEach((group) => {
-    // Start with the first entry as the canonical record
-    const canonical = { ...group[0] };
-
-    // Collect all activity IDs
-    const activityIds: string[] = [];
-    for (const entry of group) {
-      if (entry.activity_id) {
-        activityIds.push(entry.activity_id);
-      }
-      // Fill in missing fields from other entries (prefer non-empty values)
-      if (!canonical.email && entry.email) canonical.email = entry.email;
-      if (!canonical.phone && entry.phone) canonical.phone = entry.phone;
-      if (!canonical.fax && entry.fax) canonical.fax = entry.fax;
-      if (!canonical.position && entry.position) canonical.position = entry.position;
-      if (!canonical.job_title && entry.job_title) canonical.job_title = entry.job_title;
-      if (!canonical.department && entry.department) canonical.department = entry.department;
-      if (!canonical.organization_id && entry.organization_id) canonical.organization_id = entry.organization_id;
-      if (!canonical.organization_name && entry.organization_name) canonical.organization_name = entry.organization_name;
-      if (!canonical.organization_acronym && entry.organization_acronym) canonical.organization_acronym = entry.organization_acronym;
-      if (!canonical.notes && entry.notes) canonical.notes = entry.notes;
-      if (!canonical.profile_photo && entry.profile_photo) canonical.profile_photo = entry.profile_photo;
-      if (!canonical.secondary_email && entry.secondary_email) canonical.secondary_email = entry.secondary_email;
-    }
-
-    // Deduplicate activity IDs
-    const uniqueActivityIds = Array.from(new Set(activityIds));
-    canonical.activity_count = uniqueActivityIds.length;
-    canonical.activity_ids = uniqueActivityIds;
-
-    deduplicated.push(canonical);
-  });
-
-  return deduplicated;
 }
 
 export async function OPTIONS() {
@@ -157,7 +77,6 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
 
-    // Parse filters from query parameters - handle empty strings as undefined
     const filters: RolodexFilters = {
       search: searchParams.get('search') || undefined,
       source: searchParams.get('source') || undefined,
@@ -180,45 +99,37 @@ export async function GET(request: NextRequest) {
     });
 
     console.log('[AIMS Rolodex] Fetching people with filters:', filters);
-    console.log('[AIMS Rolodex] Query URL:', request.url);
-    console.log('[AIMS Rolodex] Source filter value:', filters.source, 'Type:', typeof filters.source);
 
-    // Calculate offset for pagination
     const offset = ((filters.page || 1) - 1) * (filters.limit || 24);
 
-    // Start with a direct approach - get users and activity contacts separately
-    console.log('[AIMS Rolodex] Using direct table queries...');
-    
-    // Get users data with organization information
+    // ============================================================
+    // Users query (unchanged)
+    // ============================================================
     let usersQuery = supabase
-            .from('users')
-            .select(`
-              id,
-              first_name,
-              last_name,
-              email,
-              role,
-              organization_id,
-              avatar_url,
-              job_title,
-              department,
-              telephone,
-              created_at,
-              updated_at,
-              organizations!users_organization_id_fkey (
-                id,
-                name,
-                acronym,
-                type
-              )
+      .from('users')
+      .select(`
+        id,
+        first_name,
+        last_name,
+        email,
+        role,
+        organization_id,
+        avatar_url,
+        job_title,
+        department,
+        telephone,
+        created_at,
+        updated_at,
+        organizations!users_organization_id_fkey (
+          id,
+          name,
+          acronym,
+          type
+        )
       `)
       .not('email', 'is', null)
       .neq('email', '');
 
-    console.log('[AIMS Rolodex] Users query with organization join:', usersQuery);
-    
-    // Apply user filters
-    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (filters.search) {
       const escapedSearch = escapeIlikeWildcards(filters.search);
       usersQuery = usersQuery.or(`email.ilike.%${escapedSearch}%,first_name.ilike.%${escapedSearch}%,last_name.ilike.%${escapedSearch}%`);
@@ -230,44 +141,21 @@ export async function GET(request: NextRequest) {
     if (filters.organization) {
       usersQuery = usersQuery.eq('organization_id', filters.organization);
     }
-    // Only exclude users if specifically filtering for a different source
     if (filters.source && filters.source !== 'user') {
-      // If filtering for non-user sources, return empty users
-      usersQuery = usersQuery.eq('id', '00000000-0000-0000-0000-000000000000'); // No matches
+      usersQuery = usersQuery.eq('id', '00000000-0000-0000-0000-000000000000');
     }
 
     const { data: users, error: usersError } = await usersQuery;
 
-    console.log('[AIMS Rolodex] Users query result:', { users: users?.length, error: usersError });
-    console.log('[AIMS Rolodex] Sample user data:', users?.[0]);
-    if (usersError) {
-      console.log('[AIMS Rolodex] Users error details:', usersError);
-    }
-    
-    // Let's also test a simple count query to see total users
-    const { count: totalUsersCount, error: countError } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true });
-    
-    // Test with the same conditions as stats API
-    const { count: filteredUsersCount, error: filteredCountError } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .not('email', 'is', null)
-      .neq('email', '');
-    
-    console.log('[AIMS Rolodex] Total users in database:', totalUsersCount, 'Error:', countError);
-    console.log('[AIMS Rolodex] Filtered users (same as stats):', filteredUsersCount, 'Error:', filteredCountError);
-    console.log('[AIMS Rolodex] Actual users returned by query:', users?.length);
-
     if (usersError) {
       console.error('[AIMS Rolodex] Users query error:', usersError);
-      // Don't fail completely, just proceed without users data
     }
 
-    // Get activity contacts data with organization details
+    // ============================================================
+    // Contacts query (from normalized contacts table)
+    // ============================================================
     let contactsQuery = supabase
-      .from('activity_contacts')
+      .from('contacts')
       .select(`
         id,
         title,
@@ -277,65 +165,93 @@ export async function GET(request: NextRequest) {
         email,
         secondary_email,
         position,
-        type,
+        job_title,
+        department,
         organisation,
         organisation_id,
         phone,
         fax,
         profile_photo,
-        activity_id,
         notes,
+        website,
+        mailing_address,
         created_at,
         updated_at,
-        organizations (
+        organizations:organisation_id (
           id,
           name,
           acronym,
           type
         )
-      `)
-;
+      `);
 
-    console.log('[AIMS Rolodex] Contacts query with organization join:', contactsQuery);
-    
-    // Apply contact filters
-    // SECURITY: Escape ILIKE wildcards to prevent filter injection
     if (filters.search) {
       const escapedSearch = escapeIlikeWildcards(filters.search);
-      contactsQuery = contactsQuery.or(`first_name.ilike.%${escapedSearch}%,last_name.ilike.%${escapedSearch}%,email.ilike.%${escapedSearch}%,position.ilike.%${escapedSearch}%`);
+      contactsQuery = contactsQuery.or(`first_name.ilike.%${escapedSearch}%,last_name.ilike.%${escapedSearch}%,email.ilike.%${escapedSearch}%,position.ilike.%${escapedSearch}%,organisation.ilike.%${escapedSearch}%`);
     }
     if (filters.role) {
       const escapedRole = escapeIlikeWildcards(filters.role);
-      contactsQuery = contactsQuery.or(`position.ilike.%${escapedRole}%,type.ilike.%${escapedRole}%`);
+      contactsQuery = contactsQuery.or(`position.ilike.%${escapedRole}%,job_title.ilike.%${escapedRole}%`);
     }
     if (filters.organization) {
       contactsQuery = contactsQuery.eq('organisation_id', filters.organization);
     }
-    if (filters.activity) {
-      contactsQuery = contactsQuery.eq('activity_id', filters.activity);
-    }
     if (filters.source && filters.source !== 'activity_contact') {
-      // If filtering for non-contact sources, return empty contacts
-      contactsQuery = contactsQuery.eq('id', '00000000-0000-0000-0000-000000000000'); // No matches
+      contactsQuery = contactsQuery.eq('id', '00000000-0000-0000-0000-000000000000');
     }
 
     const { data: contacts, error: contactsError } = await contactsQuery;
 
-    console.log('[AIMS Rolodex] Contacts query result:', { contacts: contacts?.length, error: contactsError });
-    
-    // Let's also test a simple count query for activity contacts
-    const { count: totalContactsCount, error: contactsCountError } = await supabase
-      .from('activity_contacts')
-      .select('*', { count: 'exact', head: true });
-    
-    console.log('[AIMS Rolodex] Total activity contacts in database:', totalContactsCount, 'Error:', contactsCountError);
-
     if (contactsError) {
       console.error('[AIMS Rolodex] Contacts query error:', contactsError);
-      // Don't fail completely, just proceed without contacts data
     }
 
-    // Transform and combine the data
+    // ============================================================
+    // Fetch activity counts per contact from junction table
+    // ============================================================
+    let activityCountMap = new Map<string, string[]>();
+    if (contacts && contacts.length > 0) {
+      const contactIds = contacts.map((c: any) => c.id);
+      const { data: junctionRows } = await supabase
+        .from('activity_contacts')
+        .select('contact_id, activity_id')
+        .in('contact_id', contactIds)
+        .not('contact_id', 'is', null);
+
+      if (junctionRows) {
+        for (const row of junctionRows) {
+          if (!row.contact_id || !row.activity_id) continue;
+          const existing = activityCountMap.get(row.contact_id);
+          if (existing) {
+            if (!existing.includes(row.activity_id)) {
+              existing.push(row.activity_id);
+            }
+          } else {
+            activityCountMap.set(row.contact_id, [row.activity_id]);
+          }
+        }
+      }
+    }
+
+    // ============================================================
+    // If filtering by activity, restrict contacts to those linked
+    // ============================================================
+    let contactIdsForActivity: Set<string> | null = null;
+    if (filters.activity) {
+      const { data: activityJunctions } = await supabase
+        .from('activity_contacts')
+        .select('contact_id')
+        .eq('activity_id', filters.activity)
+        .not('contact_id', 'is', null);
+
+      if (activityJunctions) {
+        contactIdsForActivity = new Set(activityJunctions.map((r: any) => r.contact_id));
+      }
+    }
+
+    // ============================================================
+    // Transform and combine
+    // ============================================================
     const transformedPeople: RolodexPerson[] = [];
 
     // Transform users
@@ -371,16 +287,22 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Transform activity contacts
+    // Transform contacts (already deduplicated at DB level)
     if (contacts) {
-      const rawContactPeople: RolodexPerson[] = [];
       contacts.forEach((contact: any) => {
+        // If filtering by activity, skip contacts not linked to that activity
+        if (contactIdsForActivity && !contactIdsForActivity.has(contact.id)) {
+          return;
+        }
+
         const fullName = [contact.first_name, contact.middle_name, contact.last_name]
           .filter(Boolean)
           .join(' ')
           .trim();
 
-        rawContactPeople.push({
+        const activityIds = activityCountMap.get(contact.id) || [];
+
+        transformedPeople.push({
           id: contact.id,
           source: 'activity_contact' as const,
           name: fullName || contact.email || 'Unknown Contact',
@@ -390,30 +312,28 @@ export async function GET(request: NextRequest) {
           last_name: contact.last_name,
           email: contact.email || '',
           secondary_email: contact.secondary_email,
-          role: contact.position || contact.type || '',
+          role: contact.position || contact.job_title || '',
           organization_id: contact.organisation_id,
-          organization_name: contact.organizations?.name || contact.organisation, // Use joined data first, fallback to text field
+          organization_name: contact.organizations?.name || contact.organisation,
           organization_acronym: contact.organizations?.acronym,
           org_type: contact.organizations?.type,
-          activity_id: contact.activity_id,
+          activity_id: activityIds[0] || undefined,
           position: contact.position,
+          job_title: contact.job_title,
           phone: contact.phone,
           fax: contact.fax,
           created_at: contact.created_at,
           updated_at: contact.updated_at,
-          role_label: contact.type || contact.position || '',
-          activity_title: undefined, // Will fetch separately if needed
-          country_code: undefined, // Will fetch separately if needed
+          role_label: contact.position || contact.job_title || '',
+          activity_title: undefined,
+          country_code: undefined,
           source_label: 'Activity Contact',
           profile_photo: contact.profile_photo || null,
           notes: contact.notes,
+          activity_count: activityIds.length,
+          activity_ids: activityIds,
         });
       });
-
-      // Deduplicate: merge contacts that represent the same person
-      const dedupedContacts = deduplicateActivityContacts(rawContactPeople);
-      console.log(`[AIMS Rolodex] Deduplicated ${rawContactPeople.length} contact rows → ${dedupedContacts.length} unique people`);
-      transformedPeople.push(...dedupedContacts);
     }
 
     // Apply sorting
@@ -449,24 +369,16 @@ export async function GET(request: NextRequest) {
       return sortOrder === 'desc' ? -comparison : comparison;
     });
 
-    // Additional client-side filters for joined table fields
+    // Additional client-side filters
     let filteredPeople = transformedPeople;
 
-    // Filter by org type (from joined organizations table)
     if (filters.orgType) {
       filteredPeople = filteredPeople.filter(person => person.org_type === filters.orgType);
     }
 
-    // Filter by activity - users don't have activities, so exclude them when filtering by activity
-    if (filters.activity) {
-      filteredPeople = filteredPeople.filter(person => person.activity_id === filters.activity);
-    }
-
-    // Search filter - check organization name from joined table
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filteredPeople = filteredPeople.filter(person =>
-        // Keep if any field matches (some already matched from DB query, but include org name here)
         (person.organization_name && person.organization_name.toLowerCase().includes(searchLower)) ||
         (person.organization_acronym && person.organization_acronym.toLowerCase().includes(searchLower)) ||
         (person.first_name && person.first_name.toLowerCase().includes(searchLower)) ||
@@ -478,9 +390,6 @@ export async function GET(request: NextRequest) {
 
     // Apply pagination
     const total = filteredPeople.length;
-    console.log('[AIMS Rolodex] Total filtered people:', total);
-    console.log('[AIMS Rolodex] First few people:', filteredPeople.slice(0, 3).map(p => ({ name: p.name, source: p.source })));
-    
     const paginatedPeople = filteredPeople.slice(offset, offset + (filters.limit || 24));
 
     const response = {
@@ -500,7 +409,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[AIMS Rolodex] Unexpected error:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch rolodex data',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
@@ -537,7 +446,6 @@ export async function PUT(request: NextRequest) {
     let error;
 
     if (source === 'user') {
-      // Update user table
       const userUpdateData = {
         first_name: updateData.first_name,
         last_name: updateData.last_name,
@@ -559,8 +467,8 @@ export async function PUT(request: NextRequest) {
       result = data;
       error = updateError;
     } else if (source === 'activity_contact') {
-      // Update activity_contacts table
-      const contactUpdateData = {
+      // Update the contacts table directly — edits propagate to all linked activities
+      const contactUpdateData: Record<string, any> = {
         first_name: updateData.first_name || updateData.name?.split(' ')[0],
         last_name: updateData.last_name || updateData.name?.split(' ').slice(1).join(' '),
         email: updateData.email,
@@ -574,7 +482,7 @@ export async function PUT(request: NextRequest) {
       };
 
       const { data, error: updateError } = await supabase
-        .from('activity_contacts')
+        .from('contacts')
         .update(contactUpdateData)
         .eq('id', id)
         .select()
@@ -642,8 +550,10 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Delete from contacts table — junction rows (activity_contacts) will have
+    // contact_id set to NULL via ON DELETE SET NULL
     const { error } = await supabase
-      .from('activity_contacts')
+      .from('contacts')
       .delete()
       .eq('id', id);
 
@@ -654,6 +564,14 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Also clean up orphaned junction rows that had this contact_id
+    // (they now have contact_id = NULL with no meaningful data)
+    await supabase
+      .from('activity_contacts')
+      .delete()
+      .is('contact_id', null)
+      .or('first_name.is.null,first_name.eq.');
 
     console.log('[AIMS Rolodex] Contact deleted successfully:', id);
     return NextResponse.json({ success: true, message: 'Contact deleted successfully' });

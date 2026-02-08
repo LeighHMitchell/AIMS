@@ -569,11 +569,14 @@ function ActivitiesPageContent() {
   
   // Column visibility state with localStorage persistence
   const [visibleColumns, setVisibleColumns] = useState<ActivityColumnId[]>(defaultVisibleActivityColumns);
-  
+
+  // User's saved default columns from profile (used as reset target)
+  const [userDefaultColumns, setUserDefaultColumns] = useState<ActivityColumnId[] | null>(null);
+
   // Location display mode state (percentage or USD)
   const [locationDisplayMode, setLocationDisplayMode] = useState<'percentage' | 'usd'>('percentage');
-  
-  // Load visible columns from localStorage on mount
+
+  // Load visible columns from localStorage on mount, falling back to user profile defaults
   useEffect(() => {
     try {
       const saved = localStorage.getItem(ACTIVITY_COLUMNS_LOCALSTORAGE_KEY);
@@ -589,10 +592,43 @@ function ActivitiesPageContent() {
           .map(c => c.id);
         const merged = [...new Set([...alwaysVisible, ...validColumns])];
         setVisibleColumns(merged);
+      } else {
+        // No localStorage — try to load user's saved defaults from profile
+        apiFetch('/api/users/column-preferences')
+          .then(res => res.json())
+          .then(data => {
+            if (data.columns && Array.isArray(data.columns)) {
+              const validColumns = (data.columns as string[]).filter(id =>
+                activityColumns.some(config => config.id === id)
+              ) as ActivityColumnId[];
+              const alwaysVisible = activityColumns
+                .filter(c => c.alwaysVisible)
+                .map(c => c.id);
+              const merged = [...new Set([...alwaysVisible, ...validColumns])];
+              setVisibleColumns(merged);
+              setUserDefaultColumns(validColumns);
+            }
+          })
+          .catch(() => {
+            // Silently fall back to system defaults (already set)
+          });
       }
     } catch (e) {
       console.error('Failed to load column preferences from localStorage:', e);
     }
+
+    // Also fetch user defaults for the reset button regardless
+    apiFetch('/api/users/column-preferences')
+      .then(res => res.json())
+      .then(data => {
+        if (data.columns && Array.isArray(data.columns)) {
+          const validColumns = (data.columns as string[]).filter(id =>
+            activityColumns.some(config => config.id === id)
+          ) as ActivityColumnId[];
+          setUserDefaultColumns(validColumns);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Save visible columns to localStorage when they change
@@ -1806,7 +1842,7 @@ const router = useRouter();
             <ColumnSelector
               columns={activityColumns}
               visibleColumns={visibleColumns}
-              defaultVisibleColumns={defaultVisibleActivityColumns}
+              defaultVisibleColumns={userDefaultColumns || defaultVisibleActivityColumns}
               onChange={handleColumnsChange}
               groupLabels={activityColumnGroups}
               open={openFilterId === 'columns'}
@@ -2253,6 +2289,11 @@ const router = useRouter();
                       <ColumnHeaderText columnId="createdByDepartment">Creator's Department</ColumnHeaderText>
                     </th>
                   )}
+                  {visibleColumns.includes('importedFromIrt') && (
+                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
+                      <ColumnHeaderText columnId="importedFromIrt">Imported from IRT</ColumnHeaderText>
+                    </th>
+                  )}
 
                   {/* Budget Status Column */}
                   {visibleColumns.includes('budgetStatus') && (
@@ -2571,8 +2612,8 @@ const router = useRouter();
                             
                             {/* Activity Title and Details */}
                             <div className="space-y-1 pr-2 flex-1 min-w-0">
-                              <h3 
-                                className="font-medium text-foreground leading-tight line-clamp-2" 
+                              <h3
+                                className="font-medium text-foreground leading-tight line-clamp-2"
                                 title={activity.title}
                               >
                                 {activity.title}
@@ -2580,6 +2621,20 @@ const router = useRouter();
                                   <span>
                                     {' '}({activity.acronym})
                                   </span>
+                                )}
+                                {activity.autoSync && activity.syncStatus === 'live' && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="inline-flex items-center ml-1 align-middle">
+                                          <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <span className="text-sm">IATI Synced</span>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 )}
                                 <button
                                   onClick={(e) => {
@@ -2678,8 +2733,12 @@ const router = useRouter();
                                     <span className="text-sm"><span className="font-semibold">Validation:</span> {submissionStatus === 'validated' ? 'Validated' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Globe className="h-4 w-4" />
-                                    <span className="text-sm"><span className="font-semibold">IATI:</span> {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
+                                    {activity.autoSync && activity.syncStatus === 'live' ? (
+                                      <RefreshCw className="h-4 w-4" />
+                                    ) : (
+                                      <Globe className="h-4 w-4" />
+                                    )}
+                                    <span className="text-sm"><span className="font-semibold">IATI:</span> {activity.autoSync && activity.syncStatus === 'live' ? 'Synced' : activity.autoSync && activity.syncStatus === 'pending' ? 'Pending' : activity.autoSync && activity.syncStatus === 'error' ? 'Error' : 'Not synced'}</span>
                                   </div>
                                 </div>
                               </TooltipContent>
@@ -3108,7 +3167,7 @@ const router = useRouter();
                       )}
                       {visibleColumns.includes('iatiSyncStatus') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
-                          {activity.syncStatus === 'live' ? 'Synced' : activity.syncStatus === 'pending' ? 'Pending' : activity.syncStatus === 'error' ? 'Error' : 'Not synced'}
+                          {activity.autoSync && activity.syncStatus === 'live' ? 'Synced' : activity.autoSync && activity.syncStatus === 'pending' ? 'Pending' : activity.autoSync && activity.syncStatus === 'error' ? 'Error' : 'Not synced'}
                         </td>
                       )}
                       
@@ -3208,6 +3267,20 @@ const router = useRouter();
                       {visibleColumns.includes('createdByDepartment') && (
                         <td className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.creatorProfile?.department || '—'}
+                        </td>
+                      )}
+                      {visibleColumns.includes('importedFromIrt') && (
+                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                          {activity.createdVia === 'import' ? (
+                            <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800">
+                              <DatabaseZap className="h-3 w-3 mr-1" />
+                              IRT Import
+                            </Badge>
+                          ) : activity.createdVia === 'quick_add' ? (
+                            <span className="text-muted-foreground">Quick Add</span>
+                          ) : (
+                            <span className="text-muted-foreground">Manual</span>
+                          )}
                         </td>
                       )}
 

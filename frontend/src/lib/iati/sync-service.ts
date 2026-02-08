@@ -14,6 +14,7 @@
 import { mapDatastoreDocToParsedActivity } from '@/lib/iati/datastore-mapper'
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper'
 import { getOrCreateOrganization } from '@/lib/organization-helpers'
+import { getOrCreateContact, contactDedupKey } from '@/lib/contact-helpers'
 import type { ParsedActivity } from '@/components/iati/bulk-import/types'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -603,7 +604,7 @@ export async function syncSingleActivity(
       await batchInsertWithFallback(supabase, 'activity_locations', locationRecords, 'location')
     }
 
-    // --- Contacts (only imported_from_iati records) ---
+    // --- Contacts (only imported_from_iati records, normalized via contacts table) ---
     if (changedFields.includes('contacts') && iatiActivity.contacts?.length) {
       await supabase.from('activity_contacts').delete()
         .eq('activity_id', activityId)
@@ -623,9 +624,30 @@ export async function syncSingleActivity(
           }
         }
 
+        // Resolve contact_id via getOrCreateContact
+        let resolvedContactId: string | null = null
+        try {
+          resolvedContactId = await getOrCreateContact(supabase, {
+            email: contact.email || undefined,
+            firstName: firstName || undefined,
+            lastName: lastName || undefined,
+            jobTitle: contact.jobTitle || undefined,
+            position: contact.jobTitle || undefined,
+            organisation: contact.organisationName || undefined,
+            department: contact.departmentName || undefined,
+            phone: contact.telephone || undefined,
+            website: contact.website || undefined,
+            mailingAddress: contact.mailingAddress || undefined,
+          })
+        } catch (err) {
+          console.warn(`[IATI Sync] Failed to resolve contact, proceeding without contact_id:`, err)
+        }
+
         contactRecords.push({
           activity_id: activityId,
+          contact_id: resolvedContactId,
           type: contact.type || '1',
+          // Keep old columns during transition period
           organisation_name: contact.organisationName || null,
           department: contact.departmentName || null,
           first_name: firstName,

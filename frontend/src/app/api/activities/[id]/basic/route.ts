@@ -262,6 +262,11 @@ export async function GET(
       budgetStatusUpdatedAt: activity.budget_status_updated_at,
       budgetStatusUpdatedBy: activity.budget_status_updated_by,
       language: activity.language,
+      // IATI sync fields
+      autoSync: activity.auto_sync || false,
+      lastSyncTime: activity.last_sync_time || null,
+      syncStatus: activity.sync_status || 'not_synced',
+      autoSyncFields: activity.auto_sync_fields || [],
       banner: activity.banner,
       bannerPosition: activity.banner_position ?? 50,
       banner_position: activity.banner_position ?? 50,

@@ -36,6 +36,12 @@ import {
   Heart,
   Tag,
   Shield,
+  Link2,
+  Hash,
+  ListChecks,
+  Clock,
+  TrendingUp,
+  Landmark,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ParsedActivity } from './types'
@@ -762,6 +768,13 @@ export default function BulkPreviewStep({
                           </div>
                         )}
 
+                        {activity.lastUpdatedDatetime && (
+                          <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
+                            <Clock className="h-3 w-3" />
+                            Last updated: {new Date(activity.lastUpdatedDatetime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </div>
+                        )}
+
                         {/* 3 column grid */}
                         <div className="grid grid-cols-3 gap-6">
                           {/* Column 1: Dates, Status, Hierarchy */}
@@ -808,6 +821,50 @@ export default function BulkPreviewStep({
                                     )
                                   })()}
                                 </p>
+                              </div>
+                            )}
+
+                            {activity.otherIdentifiers && activity.otherIdentifiers.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <Hash className="h-3 w-3" /> Other Identifiers
+                                </span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Type</th>
+                                      <th className="font-medium py-1">Reference</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.otherIdentifiers.map((oi, i) => {
+                                      const oiTypeNames: Record<string, string> = {
+                                        'A1': 'Reporting Org Internal',
+                                        'A2': 'CRS Activity ID',
+                                        'A3': 'Previous Activity ID',
+                                        'A9': 'Other',
+                                        'B1': 'Previous Donor ID',
+                                        'B9': 'Other',
+                                      }
+                                      return (
+                                        <tr key={i} className="border-t border-gray-100">
+                                          <td className="py-1 text-gray-600">
+                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{oi.type}</span>
+                                            {oiTypeNames[oi.type] || ''}
+                                          </td>
+                                          <td className="py-1 text-gray-600">
+                                            <span className="font-mono text-xs">{oi.ref}</span>
+                                            {(oi.ownerOrgRef || oi.ownerOrgNarrative) && (
+                                              <p className="text-gray-400 text-[10px] mt-0.5">
+                                                Owner: {oi.ownerOrgNarrative || oi.ownerOrgRef}
+                                              </p>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
                               </div>
                             )}
 
@@ -957,6 +1014,57 @@ export default function BulkPreviewStep({
                               </div>
                             )}
 
+                            {activity.recipientRegions && activity.recipientRegions.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <Globe className="h-3 w-3" /> Recipient Regions
+                                </span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Region</th>
+                                      <th className="font-medium py-1 text-right">%</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.recipientRegions.map((r, i) => {
+                                      const regionNames: Record<string, string> = {
+                                        '88': 'States Ex-Yugoslavia',
+                                        '89': 'Europe, regional',
+                                        '189': 'North of Sahara, regional',
+                                        '289': 'South of Sahara, regional',
+                                        '298': 'Africa, regional',
+                                        '380': 'West Indies, regional',
+                                        '389': 'N. & Central America, regional',
+                                        '489': 'South America, regional',
+                                        '498': 'America, regional',
+                                        '589': 'Middle East, regional',
+                                        '619': 'Central Asia, regional',
+                                        '679': 'South Asia, regional',
+                                        '689': 'South & Central Asia, regional',
+                                        '789': 'Far East Asia, regional',
+                                        '798': 'Asia, regional',
+                                        '889': 'Oceania, regional',
+                                        '998': 'Developing countries, unspecified',
+                                      }
+                                      return (
+                                        <tr key={i} className="border-t border-gray-100">
+                                          <td className="py-1 text-gray-600">
+                                            {r.vocabulary && r.vocabulary !== '1' && (
+                                              <span className="bg-gray-100 text-gray-600 px-1 py-0.5 rounded font-mono text-[10px] mr-1">V{r.vocabulary}</span>
+                                            )}
+                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{r.code}</span>
+                                            {regionNames[r.code] || r.code}
+                                          </td>
+                                          <td className="py-1 text-right">{r.percentage != null ? `${r.percentage}%` : '-'}</td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
                             {activity.locations && activity.locations.length > 0 && (
                               <div>
                                 <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
@@ -1083,6 +1191,83 @@ export default function BulkPreviewStep({
                                 </table>
                               </div>
                             )}
+
+                            {activity.relatedActivities && activity.relatedActivities.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <Link2 className="h-3 w-3" /> Related Activities
+                                </span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Type</th>
+                                      <th className="font-medium py-1">Identifier</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.relatedActivities.map((ra, i) => {
+                                      const raTypeNames: Record<string, string> = {
+                                        '1': 'Parent',
+                                        '2': 'Child',
+                                        '3': 'Sibling',
+                                        '4': 'Co-funded',
+                                        '5': 'Third Party',
+                                      }
+                                      return (
+                                        <tr key={i} className="border-t border-gray-100">
+                                          <td className="py-1 text-gray-600">
+                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{ra.type}</span>
+                                            {raTypeNames[ra.type] || ''}
+                                          </td>
+                                          <td className="py-1 text-gray-600 font-mono text-xs">{ra.ref}</td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {(activity.conditionsAttached != null || (activity.conditions && activity.conditions.length > 0)) && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <ListChecks className="h-3 w-3" /> Conditions
+                                </span>
+                                {activity.conditionsAttached != null && (
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    Conditions attached: <span className="font-medium">{activity.conditionsAttached ? 'Yes' : 'No'}</span>
+                                  </p>
+                                )}
+                                {activity.conditions && activity.conditions.length > 0 && (
+                                  <table className="mt-1 w-full text-xs">
+                                    <thead>
+                                      <tr className="text-left text-gray-500">
+                                        <th className="font-medium py-1">Type</th>
+                                        <th className="font-medium py-1">Description</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {activity.conditions.map((c, i) => {
+                                        const condTypeNames: Record<string, string> = {
+                                          '1': 'Policy',
+                                          '2': 'Performance',
+                                          '3': 'Fiduciary',
+                                        }
+                                        return (
+                                          <tr key={i} className="border-t border-gray-100">
+                                            <td className="py-1 text-gray-600">
+                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{c.type}</span>
+                                              {condTypeNames[c.type] || ''}
+                                            </td>
+                                            <td className="py-1 text-gray-600">{c.narrative || '-'}</td>
+                                          </tr>
+                                        )
+                                      })}
+                                    </tbody>
+                                  </table>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {/* Column 3: Transactions, Budgets */}
@@ -1117,10 +1302,22 @@ export default function BulkPreviewStep({
                                       return (
                                         <tr key={i} className="border-t border-gray-100">
                                           <td className="py-1 text-gray-600">
-                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{tx.type}</span>
-                                            {txTypeNames[tx.type] || tx.type}
+                                            <div>
+                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{tx.type}</span>
+                                              {txTypeNames[tx.type] || tx.type}
+                                            </div>
+                                            {(tx.aidType || tx.financeType || tx.flowType || tx.tiedStatus || tx.recipientCountryCode || tx.recipientRegionCode) && (
+                                              <div className="flex flex-wrap gap-1 mt-0.5">
+                                                {tx.aidType && <span className="bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-mono text-[10px]">Aid: {tx.aidType}</span>}
+                                                {tx.financeType && <span className="bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-mono text-[10px]">Fin: {tx.financeType}</span>}
+                                                {tx.flowType && <span className="bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-mono text-[10px]">Flow: {tx.flowType}</span>}
+                                                {tx.tiedStatus && <span className="bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-mono text-[10px]">Tied: {tx.tiedStatus}</span>}
+                                                {tx.recipientCountryCode && <span className="bg-green-50 text-green-600 px-1 py-0.5 rounded font-mono text-[10px]">Country: {tx.recipientCountryCode}</span>}
+                                                {tx.recipientRegionCode && <span className="bg-green-50 text-green-600 px-1 py-0.5 rounded font-mono text-[10px]">Region: {tx.recipientRegionCode}</span>}
+                                              </div>
+                                            )}
                                           </td>
-                                          <td className="py-1 text-right font-medium">{tx.currency} {tx.value?.toLocaleString()}</td>
+                                          <td className="py-1 text-right font-medium align-top">{tx.currency} {tx.value?.toLocaleString()}</td>
                                         </tr>
                                       )
                                     })}
@@ -1200,6 +1397,35 @@ export default function BulkPreviewStep({
                                 {activity.plannedDisbursements.length > 5 && (
                                   <p className="text-xs text-gray-500 mt-1">+ {activity.plannedDisbursements.length - 5} more</p>
                                 )}
+                              </div>
+                            )}
+                            {activity.countryBudgetItems && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase">Country Budget Items</span>
+                                {activity.countryBudgetItems.vocabulary && (
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    Vocabulary: <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.countryBudgetItems.vocabulary}</span>
+                                  </p>
+                                )}
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Code</th>
+                                      <th className="font-medium py-1 text-right">%</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.countryBudgetItems.items.map((item, i) => (
+                                      <tr key={i} className="border-t border-gray-100">
+                                        <td className="py-1 text-gray-600">
+                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{item.code}</span>
+                                          {item.description && <span className="ml-1.5">{item.description}</span>}
+                                        </td>
+                                        <td className="py-1 text-right">{item.percentage != null ? `${item.percentage}%` : '-'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
                               </div>
                             )}
                           </div>
@@ -1510,6 +1736,159 @@ export default function BulkPreviewStep({
                                 </div>
                               )}
                             </div>
+                          </div>
+                        )}
+
+                        {/* FSS and CRS Additional Data */}
+                        {(activity.fss || activity.crsAdd) && (
+                          <div className="grid grid-cols-2 gap-6 mt-4 pt-4 border-t">
+                            {/* FSS */}
+                            {activity.fss && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <TrendingUp className="h-3 w-3" /> Forward Spending Survey
+                                </span>
+                                <div className="mt-1 space-y-1 text-xs text-gray-600">
+                                  {activity.fss.extractionDate && <p>Extraction date: {activity.fss.extractionDate}</p>}
+                                  {activity.fss.priority != null && <p>Priority: {activity.fss.priority}</p>}
+                                  {activity.fss.phaseoutYear != null && <p>Phaseout year: {activity.fss.phaseoutYear}</p>}
+                                </div>
+                                {activity.fss.forecasts.length > 0 && (
+                                  <table className="mt-1 w-full text-xs">
+                                    <thead>
+                                      <tr className="text-left text-gray-500">
+                                        <th className="font-medium py-1">Year</th>
+                                        <th className="font-medium py-1 text-right">Value</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {activity.fss.forecasts.map((f, i) => (
+                                        <tr key={i} className="border-t border-gray-100">
+                                          <td className="py-1 text-gray-600">{f.year}</td>
+                                          <td className="py-1 text-right font-medium">{f.currency || 'USD'} {f.value?.toLocaleString()}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                )}
+                              </div>
+                            )}
+
+                            {/* CRS Add */}
+                            {activity.crsAdd && (
+                              <div className="space-y-3">
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <Landmark className="h-3 w-3" /> CRS Additional
+                                </span>
+
+                                {activity.crsAdd.otherFlags && activity.crsAdd.otherFlags.length > 0 && (
+                                  <div>
+                                    <p className="text-xs text-gray-500 font-medium">Other Flags</p>
+                                    <div className="mt-0.5 flex flex-wrap gap-1">
+                                      {activity.crsAdd.otherFlags.map((f, i) => {
+                                        const flagNames: Record<string, string> = {
+                                          '1': 'Free standing TC',
+                                          '2': 'Programme-based approach',
+                                          '3': 'Investment project',
+                                          '4': 'Associated financing',
+                                        }
+                                        return (
+                                          <Badge key={i} variant="outline" className="text-xs font-normal">
+                                            <span className="font-mono mr-1">{f.code}</span>
+                                            {flagNames[f.code] || ''}
+                                            {f.significance && <span className="text-gray-400 ml-1">sig: {f.significance}</span>}
+                                          </Badge>
+                                        )
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {activity.crsAdd.loanTerms && (
+                                  <div>
+                                    <p className="text-xs text-gray-500 font-medium">Loan Terms</p>
+                                    <table className="mt-0.5 w-full text-xs">
+                                      <tbody>
+                                        {activity.crsAdd.loanTerms.rate1 != null && (
+                                          <tr className="border-t border-gray-100">
+                                            <td className="py-1 text-gray-500 w-28">Rate 1</td>
+                                            <td className="py-1 text-gray-600">{activity.crsAdd.loanTerms.rate1}%</td>
+                                          </tr>
+                                        )}
+                                        {activity.crsAdd.loanTerms.rate2 != null && (
+                                          <tr className="border-t border-gray-100">
+                                            <td className="py-1 text-gray-500">Rate 2</td>
+                                            <td className="py-1 text-gray-600">{activity.crsAdd.loanTerms.rate2}%</td>
+                                          </tr>
+                                        )}
+                                        {activity.crsAdd.loanTerms.repaymentType && (
+                                          <tr className="border-t border-gray-100">
+                                            <td className="py-1 text-gray-500">Repayment Type</td>
+                                            <td className="py-1 text-gray-600">
+                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.crsAdd.loanTerms.repaymentType}</span>
+                                            </td>
+                                          </tr>
+                                        )}
+                                        {activity.crsAdd.loanTerms.repaymentPlan && (
+                                          <tr className="border-t border-gray-100">
+                                            <td className="py-1 text-gray-500">Repayment Plan</td>
+                                            <td className="py-1 text-gray-600">
+                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.crsAdd.loanTerms.repaymentPlan}</span>
+                                            </td>
+                                          </tr>
+                                        )}
+                                        {activity.crsAdd.loanTerms.commitmentDate && (
+                                          <tr className="border-t border-gray-100">
+                                            <td className="py-1 text-gray-500">Commitment Date</td>
+                                            <td className="py-1 text-gray-600">{activity.crsAdd.loanTerms.commitmentDate}</td>
+                                          </tr>
+                                        )}
+                                        {activity.crsAdd.loanTerms.repaymentFirstDate && (
+                                          <tr className="border-t border-gray-100">
+                                            <td className="py-1 text-gray-500">First Repayment</td>
+                                            <td className="py-1 text-gray-600">{activity.crsAdd.loanTerms.repaymentFirstDate}</td>
+                                          </tr>
+                                        )}
+                                        {activity.crsAdd.loanTerms.repaymentFinalDate && (
+                                          <tr className="border-t border-gray-100">
+                                            <td className="py-1 text-gray-500">Final Repayment</td>
+                                            <td className="py-1 text-gray-600">{activity.crsAdd.loanTerms.repaymentFinalDate}</td>
+                                          </tr>
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+
+                                {activity.crsAdd.loanStatus && activity.crsAdd.loanStatus.length > 0 && (
+                                  <div>
+                                    <p className="text-xs text-gray-500 font-medium">Loan Status</p>
+                                    <table className="mt-0.5 w-full text-xs">
+                                      <thead>
+                                        <tr className="text-left text-gray-500">
+                                          <th className="font-medium py-1">Year</th>
+                                          <th className="font-medium py-1 text-right">Principal</th>
+                                          <th className="font-medium py-1 text-right">Interest</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {activity.crsAdd.loanStatus.map((ls, i) => (
+                                          <tr key={i} className="border-t border-gray-100">
+                                            <td className="py-1 text-gray-600">{ls.year}</td>
+                                            <td className="py-1 text-right text-gray-600">
+                                              {ls.principalOutstanding != null ? `${ls.currency || 'USD'} ${ls.principalOutstanding.toLocaleString()}` : '-'}
+                                            </td>
+                                            <td className="py-1 text-right text-gray-600">
+                                              {ls.interestReceived != null ? `${ls.currency || 'USD'} ${ls.interestReceived.toLocaleString()}` : '-'}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
 

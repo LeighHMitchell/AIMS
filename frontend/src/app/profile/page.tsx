@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useUser } from "@/hooks/useUser";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -55,9 +55,18 @@ import {
   EyeOff,
   Printer,
   Trash2,
-  Loader2
+  Loader2,
+  Columns3,
+  RotateCcw
 } from "lucide-react";
 import { apiFetch } from '@/lib/api-fetch';
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  activityColumns,
+  activityColumnGroups,
+  defaultVisibleActivityColumns,
+  ActivityColumnId
+} from "@/app/activities/columns";
 
 // Helper function to split telephone into country code and phone number
 const splitTelephone = (telephone: string) => {
@@ -226,6 +235,9 @@ export default function ProfilePage() {
   const [emailChangeDialogOpen, setEmailChangeDialogOpen] = useState(false);
   const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
+  const [columnPrefs, setColumnPrefs] = useState<ActivityColumnId[]>(defaultVisibleActivityColumns);
+  const [columnPrefsLoading, setColumnPrefsLoading] = useState(true);
+  const [columnPrefsSaving, setColumnPrefsSaving] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -419,6 +431,109 @@ export default function ProfilePage() {
       }
     }
   }, [user]);
+
+  // Load column preferences from API on mount
+  useEffect(() => {
+    const loadColumnPrefs = async () => {
+      try {
+        const res = await apiFetch('/api/users/column-preferences');
+        const data = await res.json();
+        if (data.columns && Array.isArray(data.columns)) {
+          const valid = (data.columns as string[]).filter(id =>
+            activityColumns.some(c => c.id === id)
+          ) as ActivityColumnId[];
+          // Ensure always-visible columns are included
+          const alwaysVisible = activityColumns.filter(c => c.alwaysVisible).map(c => c.id);
+          setColumnPrefs([...new Set([...alwaysVisible, ...valid])]);
+        }
+      } catch {
+        // Silently fall back to system defaults
+      } finally {
+        setColumnPrefsLoading(false);
+      }
+    };
+    loadColumnPrefs();
+  }, []);
+
+  // Helpers for column preferences
+  const orderedColumnGroups = useMemo(() => {
+    const seen = new Set<string>();
+    const groups: string[] = [];
+    for (const col of activityColumns) {
+      if (!seen.has(col.group)) {
+        seen.add(col.group);
+        groups.push(col.group);
+      }
+    }
+    return groups;
+  }, []);
+
+  const toggleColumnPref = (columnId: ActivityColumnId) => {
+    const column = activityColumns.find(c => c.id === columnId);
+    if (column?.alwaysVisible) return;
+    setColumnPrefs(prev =>
+      prev.includes(columnId)
+        ? prev.filter(id => id !== columnId)
+        : [...prev, columnId]
+    );
+  };
+
+  const toggleColumnGroupPref = (group: string) => {
+    const groupCols = activityColumns.filter(c => c.group === group && !c.alwaysVisible);
+    const allVisible = groupCols.every(c => columnPrefs.includes(c.id));
+    if (allVisible) {
+      setColumnPrefs(prev => prev.filter(id => !groupCols.find(c => c.id === id)));
+    } else {
+      setColumnPrefs(prev => {
+        const newCols = [...prev];
+        groupCols.forEach(c => {
+          if (!newCols.includes(c.id)) newCols.push(c.id);
+        });
+        return newCols;
+      });
+    }
+  };
+
+  const saveColumnPrefs = async () => {
+    setColumnPrefsSaving(true);
+    try {
+      const res = await apiFetch('/api/users/column-preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ columns: columnPrefs })
+      });
+      if (res.ok) {
+        toast.success("Default columns saved");
+      } else {
+        toast.error("Failed to save column preferences");
+      }
+    } catch {
+      toast.error("Failed to save column preferences");
+    } finally {
+      setColumnPrefsSaving(false);
+    }
+  };
+
+  const resetColumnPrefsToSystem = async () => {
+    setColumnPrefsSaving(true);
+    try {
+      const res = await apiFetch('/api/users/column-preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ columns: null })
+      });
+      if (res.ok) {
+        setColumnPrefs(defaultVisibleActivityColumns);
+        toast.success("Reset to system defaults");
+      } else {
+        toast.error("Failed to reset column preferences");
+      }
+    } catch {
+      toast.error("Failed to reset column preferences");
+    } finally {
+      setColumnPrefsSaving(false);
+    }
+  };
 
   const handlePhotoChange = async (photoUrl: string) => {
     setProfilePhoto(photoUrl);
@@ -678,6 +793,10 @@ export default function ProfilePage() {
             <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <User className="h-4 w-4" />
               Personal Info
+            </TabsTrigger>
+            <TabsTrigger value="preferences" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Columns3 className="h-4 w-4" />
+              Preferences
             </TabsTrigger>
             <TabsTrigger value="system" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Settings className="h-4 w-4" />
@@ -1060,8 +1179,114 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
+          {/* Preferences Tab */}
+          <TabsContent value="preferences" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Columns3 className="h-5 w-5" />
+                      Default Activity Columns
+                    </CardTitle>
+                    <CardDescription>
+                      Choose which columns are visible by default on the Activities list. These defaults apply when you haven't customised columns in the current session.
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={resetColumnPrefsToSystem}
+                      disabled={columnPrefsSaving}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Reset to System Defaults
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={saveColumnPrefs}
+                      disabled={columnPrefsSaving}
+                    >
+                      {columnPrefsSaving ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save as My Defaults
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {columnPrefsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <LoadingText>Loading column preferences...</LoadingText>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {columnPrefs.length} of {activityColumns.length} columns selected
+                    </p>
+                    {orderedColumnGroups.map((groupKey) => {
+                      const groupCols = activityColumns.filter(c => c.group === groupKey);
+                      if (groupCols.length === 0) return null;
 
+                      const toggleable = groupCols.filter(c => !c.alwaysVisible);
+                      const allVisible = toggleable.length > 0 && toggleable.every(c => columnPrefs.includes(c.id));
+                      const someVisible = toggleable.some(c => columnPrefs.includes(c.id));
 
+                      return (
+                        <div key={groupKey} className="border rounded-md mb-2">
+                          <div
+                            className="flex items-center gap-2 px-3 py-2 bg-muted/50 cursor-pointer hover:bg-muted/80"
+                            onClick={() => toggleable.length > 0 && toggleColumnGroupPref(groupKey)}
+                          >
+                            <Checkbox
+                              checked={allVisible}
+                              indeterminate={someVisible && !allVisible}
+                              onCheckedChange={() => toggleColumnGroupPref(groupKey)}
+                              disabled={toggleable.length === 0}
+                            />
+                            <span className="text-sm font-medium">
+                              {activityColumnGroups[groupKey] || groupKey}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0">
+                            {groupCols.map(column => (
+                              <div
+                                key={column.id}
+                                className={`flex items-start gap-2 px-3 py-2 hover:bg-muted/30 ${
+                                  column.alwaysVisible ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                }`}
+                                onClick={() => !column.alwaysVisible && toggleColumnPref(column.id)}
+                              >
+                                <Checkbox
+                                  checked={columnPrefs.includes(column.id)}
+                                  onCheckedChange={() => toggleColumnPref(column.id)}
+                                  disabled={column.alwaysVisible}
+                                  className="mt-0.5"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-sm">{column.label}</span>
+                                  {column.description && (
+                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{column.description}</p>
+                                  )}
+                                  {column.alwaysVisible && (
+                                    <span className="text-xs text-muted-foreground">(Required)</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
 
           {/* System & Security Tab */}

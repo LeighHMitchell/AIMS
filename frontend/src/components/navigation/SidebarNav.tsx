@@ -110,6 +110,8 @@ export function SidebarNav({
     '/budgets': sidebarCounts.budgets,
     '/organizations': sidebarCounts.organizations,
     '/rolodex': sidebarCounts.rolodex,
+    '/library': sidebarCounts.documents,
+    '/faq': sidebarCounts.faqs,
   }
 
   if (isLoading) {
@@ -178,7 +180,6 @@ export function SidebarNav({
       items: [
         { name: "Calendar", href: "/calendar", show: true, underDevelopment: true },
         { name: "Data Clinic", href: "/data-clinic", show: true, underDevelopment: true },
-        { name: "IATI Import", href: "/iati-import", show: !!canCreateActivities, isNew: true },
         { name: "Library", href: "/library", show: true, isNew: true },
         { name: "Build History", href: "/build-history", show: true, isNew: true },
       ]
@@ -278,9 +279,18 @@ export function SidebarNav({
                   >
                     <Upload className="mr-2 h-4 w-4" />
                     <div className="flex flex-col">
-                      <span className="font-medium">Import from IATI/XML</span>
-                      <span className="text-xs text-muted-foreground">Import via Search, File, URL, or Paste</span>
+                      <span className="font-medium">Import Single Activity</span>
+                      <span className="text-xs text-muted-foreground">From IATI search, file, URL, or paste</span>
                     </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/iati-import" className="flex items-center cursor-pointer">
+                      <Database className="mr-2 h-4 w-4" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">Bulk IATI Import</span>
+                        <span className="text-xs text-muted-foreground">Import multiple activities at once</span>
+                      </div>
+                    </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

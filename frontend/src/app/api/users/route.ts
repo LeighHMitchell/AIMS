@@ -379,7 +379,8 @@ export async function PUT(request: NextRequest) {
       'organization_id', 'organisation', 'department', 'job_title',
       'telephone', 'website', 'mailing_address', 'avatar_url',
       'contact_type', 'fax_number', 'notes',
-      'address_line_1', 'address_line_2', 'city', 'state_province', 'country', 'postal_code'
+      'address_line_1', 'address_line_2', 'city', 'state_province', 'country', 'postal_code',
+      'default_activity_columns'
     ];
 
     for (const field of allowedFields) {

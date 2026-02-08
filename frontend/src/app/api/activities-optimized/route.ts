@@ -108,8 +108,12 @@ export async function GET(request: NextRequest) {
         upvote_count,
         downvote_count,
         humanitarian,
+        auto_sync,
+        last_sync_time,
+        sync_status,
         banner,
         icon,
+        created_via,
         recipient_countries,
         recipient_regions,
         activity_sdg_mappings (
@@ -602,6 +606,9 @@ export async function GET(request: NextRequest) {
         partnerId: activity.other_identifier,
         iatiId: activity.iati_identifier,
         iatiIdentifier: activity.iati_identifier,
+        autoSync: activity.auto_sync || false,
+        lastSyncTime: activity.last_sync_time || null,
+        syncStatus: activity.sync_status || null,
         title: activity.title_narrative,
         description: activity.description_narrative,
         description_general: activity.description_narrative,
@@ -640,6 +647,7 @@ export async function GET(request: NextRequest) {
         icon: activity.icon, // Include icon for card view
         createdAt: activity.created_at,
         updatedAt: activity.updated_at,
+        createdVia: activity.created_via || 'manual',
         // Include SDG mappings for display with proper field mapping
         sdgMappings: (activity.activity_sdg_mappings || []).map((mapping: any) => ({
           id: mapping.id,

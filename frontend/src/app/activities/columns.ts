@@ -95,7 +95,8 @@ export type ActivityColumnId =
   // Metadata columns
   | "createdByName"
   | "createdAt"
-  | "createdByDepartment";
+  | "createdByDepartment"
+  | "importedFromIrt";
 
 /**
  * Column configuration for the Activities table
@@ -208,6 +209,7 @@ export const activityColumns: ColumnConfig<ActivityColumnId>[] = [
   { id: "createdByName", label: "Created By", group: "metadata", defaultVisible: false, description: "Name of the user who originally created this activity." },
   { id: "createdAt", label: "Created Date & Time", group: "metadata", defaultVisible: false, description: "When this activity record was first created." },
   { id: "createdByDepartment", label: "Creator's Department", group: "metadata", defaultVisible: false, description: "Department or unit of the user who created the activity." },
+  { id: "importedFromIrt", label: "Imported from IRT", group: "metadata", defaultVisible: false, description: "Whether this activity was imported from the IATI Registry Tool (IRT) or created manually." },
 ];
 
 /**

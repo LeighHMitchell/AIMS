@@ -135,8 +135,16 @@ export function IATISyncPanel({
     setEnabledSyncFields(new Set(autoSyncFields));
   }, [autoSyncFields]);
 
-  // Format sync status display
+  // Format sync status display — only show "Synced" when auto-sync is actually on
   const getSyncStatusDisplay = () => {
+    if (!autoSync) {
+      return {
+        icon: <Activity className="h-4 w-4" />,
+        text: 'Not Synced',
+        variant: 'secondary' as const,
+        color: 'text-gray-600'
+      };
+    }
     switch (syncStatus) {
       case 'live':
         return {
@@ -218,15 +226,21 @@ export function IATISyncPanel({
     const newFields = checked ? allFields : [];
 
     try {
+      const patchBody: any = {
+        auto_sync: checked,
+        auto_sync_fields: newFields,
+      };
+      // When disabling auto-sync, reset sync_status so it shows "Not Synced"
+      if (!checked) {
+        patchBody.sync_status = 'pending';
+      }
+
       const response = await apiFetch(`/api/activities/${activityId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          auto_sync: checked,
-          auto_sync_fields: newFields
-        })
+        body: JSON.stringify(patchBody)
       });
 
       if (!response.ok) {
@@ -235,6 +249,10 @@ export function IATISyncPanel({
 
       // Update local state to reflect all fields enabled (or none)
       setEnabledSyncFields(new Set(newFields));
+      // Update local sync status display
+      if (!checked) {
+        setCurrentLastSyncTime(undefined);
+      }
       // Notify parent so state persists across tab switches
       onAutoSyncChange?.(checked, newFields);
       toast.success(checked ? 'Auto-sync enabled for all fields' : 'Auto-sync disabled');
@@ -356,12 +374,12 @@ export function IATISyncPanel({
 
   // Sync status banner helpers
   const getSyncBannerConfig = () => {
-    if (!currentLastSyncTime) {
+    if (!autoSync || !currentLastSyncTime) {
       return {
         bg: 'bg-gray-50 border-gray-200',
         text: 'text-gray-600',
         icon: <Clock className="h-4 w-4 text-gray-400" />,
-        label: 'Never synced with IATI Datastore',
+        label: autoSync ? 'Never synced with IATI Datastore' : 'Auto-sync is disabled',
         detail: null,
       };
     }
@@ -469,7 +487,7 @@ export function IATISyncPanel({
         <CardHeader>
             <div className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
-              <CardTitle>IATI Sync</CardTitle>
+              <CardTitle>IATI Link</CardTitle>
             </div>
             <CardDescription>
               Synchronize this activity with the IATI Datastore to ensure data consistency

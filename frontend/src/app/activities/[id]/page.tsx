@@ -1908,18 +1908,18 @@ export default function ActivityDetailPage() {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Badge 
-                                      variant={activity.syncStatus === 'live' || activity.syncStatus === 'outdated' ? "outline" : undefined}
-                                      className={activity.syncStatus === 'live' || activity.syncStatus === 'outdated' 
-                                        ? "border-slate-300 text-slate-700 hover:bg-slate-50" 
+                                    <Badge
+                                      variant={activity.autoSync && (activity.syncStatus === 'live' || activity.syncStatus === 'outdated') ? "outline" : undefined}
+                                      className={activity.autoSync && (activity.syncStatus === 'live' || activity.syncStatus === 'outdated')
+                                        ? "border-slate-300 text-slate-700 hover:bg-slate-50"
                                         : "bg-[#124e5f] text-white hover:bg-[#0d3a47]"}
                                     >
-                                      {activity.syncStatus === 'live' ? (
+                                      {activity.autoSync && activity.syncStatus === 'live' ? (
                                         <>
                                           <RefreshCw className="h-3 w-3 mr-1 text-green-600" />
                                           IATI Synced
                                         </>
-                                      ) : activity.syncStatus === 'outdated' ? (
+                                      ) : activity.autoSync && activity.syncStatus === 'outdated' ? (
                                         <>
                                           <AlertCircle className="h-3 w-3 mr-1 text-yellow-600" />
                                           IATI Outdated

@@ -530,6 +530,62 @@ async function fetchFromDatastore(orgRefs: string[], filters: DatastoreFilters =
       'tag_code',
       'tag_vocabulary',
       'tag_narrative',
+      // Related activities
+      'related_activity_ref',
+      'related_activity_type',
+      // Other identifiers
+      'other_identifier_ref',
+      'other_identifier_type',
+      'other_identifier_owner_org_ref',
+      'other_identifier_owner_org_narrative',
+      // Conditions
+      'conditions_attached',
+      'condition_type',
+      'condition_narrative',
+      // Recipient regions
+      'recipient_region_code',
+      'recipient_region_vocabulary',
+      'recipient_region_percentage',
+      // Country budget items
+      'country_budget_items_vocabulary',
+      'country_budget_items_budget_item_code',
+      'country_budget_items_budget_item_percentage',
+      'country_budget_items_budget_item_description_narrative',
+      // Transaction-level classification overrides
+      'transaction_aid_type_code',
+      'transaction_finance_type_code',
+      'transaction_flow_type_code',
+      'transaction_tied_status_code',
+      // Transaction-level geography
+      'transaction_recipient_country_code',
+      'transaction_recipient_region_code',
+      // FSS (Forward Spending Survey)
+      'fss_extraction_date',
+      'fss_priority',
+      'fss_phaseout_year',
+      'fss_forecast_year',
+      'fss_forecast_value',
+      'fss_forecast_currency',
+      'fss_forecast_value_date',
+      // CRS additional data
+      'crs_add_other_flags_code',
+      'crs_add_other_flags_significance',
+      'crs_add_loan_terms_rate_1',
+      'crs_add_loan_terms_rate_2',
+      'crs_add_repayment_type_code',
+      'crs_add_repayment_plan_code',
+      'crs_add_commitment_date_iso_date',
+      'crs_add_repayment_first_date_iso_date',
+      'crs_add_repayment_final_date_iso_date',
+      'crs_add_loan_status_year',
+      'crs_add_loan_status_currency',
+      'crs_add_loan_status_value_date',
+      'crs_add_loan_status_interest_received',
+      'crs_add_loan_status_principal_outstanding',
+      'crs_add_loan_status_principal_arrears',
+      'crs_add_loan_status_interest_arrears',
+      // Last updated (for change detection)
+      'last_updated_datetime',
     ].join(',')
 
     // Build filter query parameters

@@ -77,6 +77,9 @@ export async function GET(request: NextRequest) {
         capital_spend_percentage,
         likes_count,
         humanitarian,
+        auto_sync,
+        last_sync_time,
+        sync_status,
         recipient_countries,
         recipient_regions,
         ${includeImages ? 'banner, icon,' : ''}
@@ -305,10 +308,10 @@ export async function GET(request: NextRequest) {
       // Calculate modality on-the-fly if not stored (for backwards compatibility with older activities)
       default_aid_modality: activity.default_modality || calculateModality(activity.default_aid_type || '', activity.default_finance_type || ''),
       default_aid_modality_override: activity.default_modality_override,
-      // Add IATI sync fields (set to defaults)
-      autoSync: false,
-      lastSyncTime: null,
-      syncStatus: 'never',
+      // IATI sync fields
+      autoSync: activity.auto_sync || false,
+      lastSyncTime: activity.last_sync_time || null,
+      syncStatus: activity.sync_status || null,
       // Add empty arrays for related data to prevent frontend errors
       sectors: [],
       sdgMappings: (activity.activity_sdg_mappings || []).map((mapping: any) => ({

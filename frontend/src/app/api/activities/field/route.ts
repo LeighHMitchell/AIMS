@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { upsertActivitySectors } from '@/lib/activity-sectors-helper';
+import { getOrCreateContact } from '@/lib/contact-helpers';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -486,83 +487,97 @@ export async function POST(request: Request) {
 
           // Insert new contacts if any
           if (Array.isArray(body.value) && body.value.length > 0) {
-            const contactsData = body.value.map((contact: any) => {
-              // Validate required fields and provide defaults
-              const type = contact.type || '1'; // Default to "General Enquiries"
+            // Resolve contact_ids first, then build junction rows
+            const contactsData: any[] = [];
+            for (const contact of body.value) {
+              const type = contact.type || '1';
               const firstName = contact.firstName?.trim() || 'Unknown';
               const lastName = contact.lastName?.trim() || 'Unknown';
-              // Position is required by DB schema (NOT NULL) - handle empty strings
-              const position = (contact.position && contact.position.trim() !== '') 
-                ? contact.position.trim() 
+              const position = (contact.position && contact.position.trim() !== '')
+                ? contact.position.trim()
                 : 'Not specified';
-              
-              // Helper function to convert empty strings to null
+
               const toNullIfEmpty = (value: any) => {
                 if (value === '' || value === undefined || value === null || value === '__none__') return null;
                 return value;
               };
 
-              // Helper function to validate UUID format
               const isValidUUID = (value: any) => {
                 if (!value || value === '') return false;
                 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
                 return uuidRegex.test(value);
               };
-              
-              console.log('[Field API] Processing contact:', {
-                originalType: contact.type,
-                mappedType: type,
-                originalFirstName: contact.firstName,
-                mappedFirstName: firstName,
-                originalLastName: contact.lastName,
-                mappedLastName: lastName,
-                originalPosition: contact.position,
-                mappedPosition: position,
-                hasTemporaryId: contact.id?.startsWith('contact-')
-              });
-              
-              // Create contact data using the actual database schema columns
-              // NOTE: Explicitly NOT including 'id' field - let database generate UUID
+
+              // Resolve or create in the contacts table
+              let resolvedContactId: string | null = null;
+              try {
+                resolvedContactId = await getOrCreateContact(supabase, {
+                  email: toNullIfEmpty(contact.email) || undefined,
+                  firstName: firstName !== 'Unknown' ? firstName : undefined,
+                  lastName: lastName !== 'Unknown' ? lastName : undefined,
+                  middleName: toNullIfEmpty(contact.middleName) || undefined,
+                  title: toNullIfEmpty(contact.title) || undefined,
+                  position: position !== 'Not specified' ? position : undefined,
+                  jobTitle: toNullIfEmpty(contact.jobTitle) || undefined,
+                  department: toNullIfEmpty(contact.department) || undefined,
+                  organisation: toNullIfEmpty(contact.organisation) || undefined,
+                  organisationId: isValidUUID(contact.organisationId) ? contact.organisationId : undefined,
+                  phone: toNullIfEmpty(contact.phone) || undefined,
+                  phoneNumber: toNullIfEmpty(contact.phoneNumber || contact.phone) || undefined,
+                  countryCode: toNullIfEmpty(contact.countryCode) || undefined,
+                  fax: toNullIfEmpty(contact.fax) || undefined,
+                  faxCountryCode: toNullIfEmpty(contact.faxCountryCode) || undefined,
+                  faxNumber: toNullIfEmpty(contact.faxNumber) || undefined,
+                  secondaryEmail: toNullIfEmpty(contact.secondaryEmail) || undefined,
+                  website: toNullIfEmpty(contact.website) || undefined,
+                  mailingAddress: toNullIfEmpty(contact.mailingAddress) || undefined,
+                  profilePhoto: toNullIfEmpty(contact.profilePhoto) || undefined,
+                  notes: toNullIfEmpty(contact.notes) || undefined,
+                });
+              } catch (err) {
+                console.warn('[Field API] Failed to resolve contact, proceeding without contact_id:', err);
+              }
+
               const orgValue = toNullIfEmpty(contact.organisation);
               const contactData: any = {
                 activity_id: body.activityId,
+                contact_id: resolvedContactId,
                 type: type,
                 title: toNullIfEmpty(contact.title),
                 first_name: firstName,
                 middle_name: toNullIfEmpty(contact.middleName),
                 last_name: lastName,
                 position: position,
-                job_title: toNullIfEmpty(contact.jobTitle), // IATI job-title field
-                organisation: orgValue, // Legacy field - kept for compatibility
+                job_title: toNullIfEmpty(contact.jobTitle),
+                organisation: orgValue,
                 organisation_id: isValidUUID(contact.organisationId) ? contact.organisationId : null,
-                organisation_name: orgValue, // New field - same as organisation for simplified interface
-                department: toNullIfEmpty(contact.department), // IATI department field
-                phone: toNullIfEmpty(contact.phone), // Legacy field
+                organisation_name: orgValue,
+                department: toNullIfEmpty(contact.department),
+                phone: toNullIfEmpty(contact.phone),
                 country_code: toNullIfEmpty(contact.countryCode),
-                phone_number: toNullIfEmpty(contact.phoneNumber || contact.phone), // Prefer phoneNumber, fallback to phone
-                fax: toNullIfEmpty(contact.fax), // Legacy field
+                phone_number: toNullIfEmpty(contact.phoneNumber || contact.phone),
+                fax: toNullIfEmpty(contact.fax),
                 fax_country_code: toNullIfEmpty(contact.faxCountryCode),
                 fax_number: toNullIfEmpty(contact.faxNumber),
                 email: toNullIfEmpty(contact.email),
-                primary_email: toNullIfEmpty(contact.email), // Also save to primary_email field
+                primary_email: toNullIfEmpty(contact.email),
                 secondary_email: toNullIfEmpty(contact.secondaryEmail),
-                website: toNullIfEmpty(contact.website), // IATI website field
-                mailing_address: toNullIfEmpty(contact.mailingAddress), // IATI mailing-address field
+                website: toNullIfEmpty(contact.website),
+                mailing_address: toNullIfEmpty(contact.mailingAddress),
                 profile_photo: toNullIfEmpty(contact.profilePhoto),
                 notes: toNullIfEmpty(contact.notes),
-                display_on_web: contact.displayOnWeb !== undefined ? contact.displayOnWeb : true, // Default to true for visibility
+                display_on_web: contact.displayOnWeb !== undefined ? contact.displayOnWeb : true,
                 user_id: toNullIfEmpty(contact.userId),
                 role: toNullIfEmpty(contact.role),
                 name: toNullIfEmpty(contact.name),
                 is_focal_point: contact.isFocalPoint || false,
                 imported_from_iati: contact.importedFromIati || false,
-                // Contact roles and linking
                 has_editing_rights: contact.hasEditingRights || false,
                 linked_user_id: isValidUUID(contact.linkedUserId) ? contact.linkedUserId : null
               };
-              
-              return contactData;
-            });
+
+              contactsData.push(contactData);
+            }
 
             console.log('[Field API] 📝 About to insert contacts data:', JSON.stringify(contactsData, null, 2));
             console.log('[Field API] Number of contacts to insert:', contactsData.length);

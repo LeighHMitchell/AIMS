@@ -84,6 +84,12 @@ export interface ParsedActivity {
     receiverOrg?: string
     providerOrgRef?: string
     receiverOrgRef?: string
+    aidType?: string
+    financeType?: string
+    flowType?: string
+    tiedStatus?: string
+    recipientCountryCode?: string
+    recipientRegionCode?: string
   }>
   budgets?: Array<{
     type?: string
@@ -165,6 +171,78 @@ export interface ParsedActivity {
     vocabulary?: string  // '2' = SDG Goal, '3' = SDG Target
     narrative?: string
   }>
+  // Related activities
+  relatedActivities?: Array<{
+    ref: string
+    type: string // 1=Parent, 2=Child, 3=Sibling, 4=Co-funded, 5=Third-party
+  }>
+  // Other identifiers
+  otherIdentifiers?: Array<{
+    ref: string
+    type: string // A1=Internal, A2=CRS, A3=Previous, B1=Donor
+    ownerOrgRef?: string
+    ownerOrgNarrative?: string
+  }>
+  // Conditions
+  conditionsAttached?: boolean
+  conditions?: Array<{
+    type: string // 1=Policy, 2=Performance, 3=Fiduciary
+    narrative?: string
+  }>
+  // Recipient regions
+  recipientRegions?: Array<{
+    code: string
+    vocabulary?: string
+    percentage?: number
+  }>
+  // Country budget items
+  countryBudgetItems?: {
+    vocabulary?: string
+    items: Array<{
+      code: string
+      percentage?: number
+      description?: string
+    }>
+  }
+  // FSS (Forward Spending Survey)
+  fss?: {
+    extractionDate?: string
+    priority?: number
+    phaseoutYear?: number
+    forecasts: Array<{
+      year: number
+      value: number
+      currency?: string
+      valueDate?: string
+    }>
+  }
+  // CRS additional data
+  crsAdd?: {
+    otherFlags?: Array<{
+      code: string
+      significance: string
+    }>
+    loanTerms?: {
+      rate1?: number
+      rate2?: number
+      repaymentType?: string
+      repaymentPlan?: string
+      commitmentDate?: string
+      repaymentFirstDate?: string
+      repaymentFinalDate?: string
+    }
+    loanStatus?: Array<{
+      year: number
+      currency?: string
+      valueDate?: string
+      interestReceived?: number
+      principalOutstanding?: number
+      principalArrears?: number
+      interestArrears?: number
+    }>
+  }
+  // Last updated datetime (for change detection)
+  lastUpdatedDatetime?: string
 }
 
 export interface BatchStatus {

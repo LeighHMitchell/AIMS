@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { prefetchOrganizations, OrganizationParams } from '@/lib/organization-helpers';
+import { prefetchContacts, contactDedupKey, ContactParams } from '@/lib/contact-helpers';
 import { resolveUserOrgScope, resolveOrgScopeById, matchesOrgScope } from '@/lib/iati/org-scope';
 import { USER_ROLES } from '@/types/user';
 import { notifyImportComplete } from '@/lib/import-notifications';
@@ -324,6 +325,47 @@ export async function POST(request: NextRequest) {
         console.log(`[Bulk Import] Pre-fetching ${allOrgParams.length} org references...`);
         orgCache = await prefetchOrganizations(supabase, allOrgParams);
         console.log(`[Bulk Import] Org cache ready: ${orgCache.size} entries`);
+      }
+
+      // Pre-fetch all contact references across all activities
+      let contactCache = new Map<string, string>();
+      {
+        const allContactParams: ContactParams[] = [];
+        for (const activity of selectedActivities) {
+          if (activity.contacts?.length > 0) {
+            for (const contact of activity.contacts) {
+              let firstName: string | undefined;
+              let lastName: string | undefined;
+              if (contact.personName) {
+                const nameParts = contact.personName.trim().split(/\s+/);
+                if (nameParts.length >= 2) {
+                  firstName = nameParts[0];
+                  lastName = nameParts.slice(1).join(' ');
+                } else {
+                  lastName = contact.personName;
+                }
+              }
+              allContactParams.push({
+                email: contact.email || undefined,
+                firstName,
+                lastName,
+                jobTitle: contact.jobTitle || undefined,
+                position: contact.jobTitle || undefined,
+                organisation: contact.organisationName || undefined,
+                department: contact.departmentName || undefined,
+                phone: contact.telephone || undefined,
+                website: contact.website || undefined,
+                mailingAddress: contact.mailingAddress || undefined,
+              });
+            }
+          }
+        }
+
+        if (allContactParams.length > 0) {
+          console.log(`[Bulk Import] Pre-fetching ${allContactParams.length} contact references...`);
+          contactCache = await prefetchContacts(supabase, allContactParams);
+          console.log(`[Bulk Import] Contact cache ready: ${contactCache.size} entries`);
+        }
       }
 
       // Process each activity atomically
@@ -713,7 +755,7 @@ export async function POST(request: NextRequest) {
         }
 
         // ========================================================
-        // Import contacts (batched)
+        // Import contacts (normalized via contacts table)
         // ========================================================
         let contactsImported = 0;
         if (activityDbId && activity.contacts?.length > 0) {
@@ -732,9 +774,19 @@ export async function POST(request: NextRequest) {
               }
             }
 
+            // Resolve contact_id from prefetched cache
+            const cpKey = contactDedupKey({
+              email: contact.email || undefined,
+              firstName: firstName || undefined,
+              lastName: lastName || undefined,
+            });
+            const resolvedContactId = cpKey ? contactCache.get(cpKey) || null : null;
+
             contactRecords.push({
               activity_id: activityDbId,
+              contact_id: resolvedContactId,
               type: contact.type || '1',
+              // Keep old columns during transition period
               organisation_name: contact.organisationName || null,
               department: contact.departmentName || null,
               first_name: firstName,

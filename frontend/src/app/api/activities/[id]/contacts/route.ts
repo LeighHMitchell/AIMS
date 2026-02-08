@@ -25,78 +25,88 @@ export async function GET(
     // Get a fresh Supabase admin client to avoid stale connections
     console.log('[Contacts API] Using Supabase admin client');
 
-    // Fetch contacts with organization data
-    console.log('[Contacts API] Querying activity_contacts table with organization join...');
-    
+    // Fetch contacts via junction table with contacts join
+    console.log('[Contacts API] Querying activity_contacts with contacts join...');
+
     const queryBuilder = supabase
       .from('activity_contacts')
       .select(`
         *,
+        contacts:contact_id (
+          id,
+          title,
+          first_name,
+          middle_name,
+          last_name,
+          email,
+          secondary_email,
+          phone,
+          phone_number,
+          country_code,
+          fax,
+          position,
+          job_title,
+          department,
+          organisation,
+          organisation_id,
+          website,
+          mailing_address,
+          profile_photo,
+          notes,
+          organizations:organisation_id (
+            id,
+            name,
+            acronym
+          )
+        ),
         organizations:organisation_id (
           id,
           name,
           acronym
         )
       `, { count: 'exact' });
-    
-    // Apply activity_id filter
+
     const filteredQuery = queryBuilder.eq('activity_id', activityId);
-    
-    // Order results
     const orderedQuery = filteredQuery.order('created_at', { ascending: true });
-    
+
     console.log('[Contacts API] Executing query...');
     const { data: contacts, error, count } = await orderedQuery;
-    
-    console.log('[Contacts API] ========== QUERY RESULTS ==========');
-    console.log('[Contacts API] Count from query:', count);
-    console.log('[Contacts API] Data array length:', contacts?.length);
-    console.log('[Contacts API] Error:', error);
-    console.log('[Contacts API] Full data array:', JSON.stringify(contacts, null, 2));
-    console.log('[Contacts API] =====================================');
 
     if (error) {
-      console.error('[Contacts API] ❌ Error fetching contacts:', error);
-      console.error('[Contacts API] Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
+      console.error('[Contacts API] Error fetching contacts:', error);
       return NextResponse.json(
         { error: 'Failed to fetch contacts' },
         { status: 500 }
       );
     }
 
-    console.log('[Contacts API] ✅ Query successful. Found contacts:', contacts?.length || 0);
-    if (contacts && contacts.length > 0) {
-      console.log('[Contacts API] Sample contact data (first contact):', JSON.stringify(contacts[0], null, 2));
-    } else {
-      console.warn('[Contacts API] ⚠️ No contacts found in database for activity:', activityId);
-    }
+    console.log('[Contacts API] Found contacts:', contacts?.length || 0);
 
-    // Transform database format to frontend format (simplified fields only)
+    // Transform: prefer data from contacts table, fallback to activity_contacts columns
     const transformedContacts = (contacts || []).map((contact: any) => {
+      const c = contact.contacts; // joined contacts record (may be null for pre-migration rows)
+      const orgData = c?.organizations || contact.organizations;
+
       return {
         id: contact.id,
+        contactId: c?.id || contact.contact_id,
         type: contact.type,
-        title: contact.title,
-        firstName: contact.first_name,
-        lastName: contact.last_name,
-        jobTitle: contact.job_title || contact.position, // Backward compatibility
-        position: contact.position, // Keep for backward compatibility
-        department: contact.department,
-        organisation: contact.organizations?.name || contact.organisation_name || contact.organisation,
-        organisationId: contact.organisation_id,
-        organisationAcronym: contact.organizations?.acronym || contact.organisation_acronym,
-        email: contact.primary_email || contact.email,
-        phone: contact.phone_number || contact.phone,
-        phoneNumber: contact.phone_number || contact.phone,
-        countryCode: contact.country_code,
-        website: contact.website,
-        mailingAddress: contact.mailing_address,
-        profilePhoto: contact.profile_photo,
+        title: c?.title || contact.title,
+        firstName: c?.first_name || contact.first_name,
+        lastName: c?.last_name || contact.last_name,
+        jobTitle: c?.job_title || contact.job_title || c?.position || contact.position,
+        position: c?.position || contact.position,
+        department: c?.department || contact.department,
+        organisation: orgData?.name || c?.organisation || contact.organisation_name || contact.organisation,
+        organisationId: c?.organisation_id || contact.organisation_id,
+        organisationAcronym: orgData?.acronym || contact.organisation_acronym,
+        email: c?.email || contact.primary_email || contact.email,
+        phone: c?.phone_number || c?.phone || contact.phone_number || contact.phone,
+        phoneNumber: c?.phone_number || contact.phone_number || contact.phone,
+        countryCode: c?.country_code || contact.country_code,
+        website: c?.website || contact.website,
+        mailingAddress: c?.mailing_address || contact.mailing_address,
+        profilePhoto: c?.profile_photo || contact.profile_photo,
         isFocalPoint: contact.is_focal_point,
         importedFromIati: contact.imported_from_iati || false,
       };
