@@ -28,21 +28,32 @@ export async function GET(request: NextRequest) {
       logPrefix: '[Proxy PDF]'
     });
     if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 403 });
+      console.warn(`[Proxy PDF] URL validation failed for ${url}: ${validationError}`);
+      // Return the raw URL as a fallback header so the client can try opening directly
+      return NextResponse.json(
+        { error: validationError, fallbackUrl: url },
+        { status: 403 }
+      );
     }
 
     console.log(`[Proxy PDF] User ${user?.id} fetching: ${url}`);
 
     // Fetch the PDF
-    // SECURITY: Disable redirects to prevent redirect-based SSRF bypass
+    // Follow redirects (many PDF hosts redirect HTTP→HTTPS or to CDN)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; AIMS-Bot/1.0)',
       },
-      redirect: 'error',
+      redirect: 'follow',
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
+      console.warn(`[Proxy PDF] Upstream returned ${response.status} for ${url}`);
       return NextResponse.json(
         { error: `Failed to fetch: ${response.status}` },
         { status: response.status }
@@ -53,16 +64,19 @@ export async function GET(request: NextRequest) {
     const contentType = response.headers.get('content-type') || 'application/pdf';
 
     // Check if it's actually a PDF or allowed type
+    // Be permissive: allow application/octet-stream since many servers misreport PDF content-type
     const allowedTypes = [
       'application/pdf',
+      'application/octet-stream',
       'image/jpeg',
       'image/png',
       'image/gif',
       'image/webp',
     ];
 
+    const isPdfUrl = url.toLowerCase().endsWith('.pdf');
     const isAllowed = allowedTypes.some(type => contentType.includes(type));
-    if (!isAllowed && !url.toLowerCase().endsWith('.pdf')) {
+    if (!isAllowed && !isPdfUrl) {
       return NextResponse.json(
         { error: 'Only PDF and image files are allowed' },
         { status: 400 }
@@ -72,10 +86,15 @@ export async function GET(request: NextRequest) {
     // Get the body as array buffer
     const arrayBuffer = await response.arrayBuffer();
 
+    // If the server said octet-stream but we know it's a PDF, fix the content-type
+    const finalContentType = (contentType.includes('octet-stream') && isPdfUrl)
+      ? 'application/pdf'
+      : contentType;
+
     // Return with appropriate headers
     return new NextResponse(arrayBuffer, {
       headers: {
-        'Content-Type': contentType,
+        'Content-Type': finalContentType,
         'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
         'Access-Control-Allow-Origin': '*',
       },
@@ -83,11 +102,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[AIMS] Error proxying PDF:', error);
 
-    // SECURITY: Handle redirect errors gracefully
-    if (error instanceof Error && error.message.includes('redirect')) {
+    if (error instanceof Error && error.name === 'AbortError') {
       return NextResponse.json(
-        { error: 'URL redirects are not allowed for security reasons' },
-        { status: 403 }
+        { error: 'Request timed out fetching the document' },
+        { status: 504 }
       );
     }
 

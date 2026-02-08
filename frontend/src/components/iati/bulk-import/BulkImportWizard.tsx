@@ -228,6 +228,7 @@ export default function BulkImportWizard() {
               onRulesChange={handleRulesChange}
               activities={state.parsedActivities}
               selectedIds={state.selectedActivityIds}
+              sourceMode={state.sourceMode}
             />
           )}
           {state.step === 'import' && state.meta && (
@@ -256,6 +257,7 @@ export default function BulkImportWizard() {
               <>
                 <Button
                   variant="outline"
+                  className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
                   onClick={() => {
                     // Go back to rules step and reset batch state
                     setState(prev => ({

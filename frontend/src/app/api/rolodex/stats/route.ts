@@ -23,17 +23,36 @@ export async function GET(request: NextRequest) {
       .not('email', 'is', null)
       .neq('email', '');
 
-    const { count: contactsCount } = await supabase
+    // Fetch contact emails and names to compute deduplicated count
+    const { data: contactRows } = await supabase
       .from('activity_contacts')
-      .select('*', { count: 'exact', head: true })
+      .select('email, first_name, last_name')
       .or('not.email.is.null,not.first_name.is.null');
+
+    // Deduplicate by email (primary) or first+last name (secondary)
+    let dedupedContactCount = 0;
+    if (contactRows) {
+      const seen = new Set<string>();
+      for (const c of contactRows) {
+        let key: string;
+        if (c.email && c.email.trim()) {
+          key = `email:${c.email.trim().toLowerCase()}`;
+        } else if (c.first_name?.trim() && c.last_name?.trim()) {
+          key = `name:${c.first_name.trim().toLowerCase()}_${c.last_name.trim().toLowerCase()}`;
+        } else {
+          key = `row:${dedupedContactCount}_${Math.random()}`; // unique, no dedup
+        }
+        seen.add(key);
+      }
+      dedupedContactCount = seen.size;
+    }
 
     const stats = [
       { contact_type: 'user', count: usersCount || 0 },
-      { contact_type: 'activity_contact', count: contactsCount || 0 }
+      { contact_type: 'activity_contact', count: dedupedContactCount }
     ];
 
-    const total = (usersCount || 0) + (contactsCount || 0);
+    const total = (usersCount || 0) + dedupedContactCount;
 
     console.log(`[AIMS Rolodex Stats] Successfully fetched stats:`, stats);
 

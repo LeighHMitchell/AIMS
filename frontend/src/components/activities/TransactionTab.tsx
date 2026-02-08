@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Transaction, TransactionFormData } from '@/types/transaction';
 import TransactionList from './TransactionList';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface TransactionTabProps {
   activityId: string;
@@ -50,7 +51,7 @@ export default function TransactionTab({
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch(`/api/activities/${activityId}/transactions`);
+      const response = await apiFetch(`/api/activities/${activityId}/transactions`);
       if (!response.ok) throw new Error('Failed to fetch transactions');
       const data = await response.json();
       console.log('[TransactionTab] Fetched transactions:', data);
@@ -76,7 +77,7 @@ export default function TransactionTab({
 
   const fetchOrganizations = async () => {
     try {
-      const response = await fetch('/api/organizations');
+      const response = await apiFetch('/api/organizations');
       if (!response.ok) throw new Error('Failed to fetch organizations');
       const data = await response.json();
       setOrganizations(data);
@@ -130,7 +131,7 @@ export default function TransactionTab({
         throw new Error("Currency is required");
       }
       
-      const response = await fetch(`/api/activities/${activityId}/transactions`, {
+      const response = await apiFetch(`/api/activities/${activityId}/transactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -179,7 +180,7 @@ export default function TransactionTab({
         throw new Error("Currency is required");
       }
       
-      const response = await fetch(`/api/activities/${activityId}/transactions/${uuid}`, {
+      const response = await apiFetch(`/api/activities/${activityId}/transactions/${uuid}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -214,18 +215,23 @@ export default function TransactionTab({
     }
     
     // Optimistically remove transaction from UI immediately
-    const deletedTransaction = transactions.find(t => (t.uuid || t.id) === uuid);
+    const deletedIndex = transactions.findIndex(t => (t.uuid || t.id) === uuid);
+    const deletedTransaction = deletedIndex >= 0 ? transactions[deletedIndex] : undefined;
     setTransactions(prev => prev.filter(t => (t.uuid || t.id) !== uuid));
-    
+
     try {
-      const response = await fetch(`/api/activities/${activityId}/transactions/${uuid}`, {
+      const response = await apiFetch(`/api/activities/${activityId}/transactions/${uuid}`, {
         method: 'DELETE'
       });
-      
+
       if (!response.ok) {
-        // If delete failed, restore the transaction in the UI
+        // If delete failed, restore the transaction at its original position
         if (deletedTransaction) {
-          setTransactions(prev => [...prev, deletedTransaction]);
+          setTransactions(prev => {
+            const restored = [...prev];
+            restored.splice(deletedIndex, 0, deletedTransaction);
+            return restored;
+          });
         }
         
         let errorMessage = 'Failed to delete transaction';

@@ -73,7 +73,6 @@ import {
   LinkedActivitiesSkeleton,
   GenericTabSkeleton 
 } from '@/components/activities/TabSkeletons';
-import { supabase } from '@/lib/supabase';
 import { DebugPanel } from '@/components/DebugPanel';
 import { fetchActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache';
 // Removed old bulk autosave imports - now using field-level autosave
@@ -96,7 +95,6 @@ import { useTabDataLoader, getTabGroup, TabGroupData } from "@/hooks/useTabDataL
 
 
 import { IATISyncPanel } from "@/components/activities/IATISyncPanel";
-import IatiLinkTab from "@/components/activities/IatiLinkTab";
 import IatiImportTab from "@/components/activities/IatiImportTab";
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab";
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab";
@@ -2815,9 +2813,20 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "iati":
       return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <IatiLinkTab 
+          <IATISyncPanel
             activityId={general.id || ''}
             iatiIdentifier={general.iatiIdentifier}
+            autoSync={general.autoSync}
+            lastSyncTime={general.lastSyncTime}
+            syncStatus={general.syncStatus as 'live' | 'pending' | 'outdated' | undefined}
+            autoSyncFields={general.autoSyncFields}
+            onUpdate={() => {
+              window.location.href = window.location.pathname + '?section=iati';
+            }}
+            onAutoSyncChange={(autoSync, autoSyncFields) => {
+              setGeneral((prev: any) => ({ ...prev, autoSync, autoSyncFields }));
+            }}
+            canEdit={true}
           />
         </div>
       );
@@ -3768,21 +3777,11 @@ function NewActivityPageContent() {
   const [publishing, setPublishing] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  // Set loading to false once user is loaded (for new activities or when user finishes loading)
+  // Set loading to false immediately for new activities (no API fetch needed)
+  // For existing activities, loadActivity() handles setLoading(false) after data arrives
   useEffect(() => {
-    if (!userLoading) {
-      // If there's no activity ID, we're creating a new activity - set loading to false immediately
-      if (!searchParams?.get("id")) {
-        setLoading(false);
-      } else {
-        // For existing activities, set a timeout to ensure loading is set to false
-        // even if the loadActivity effect hasn't completed yet
-        const timeoutId = setTimeout(() => {
-          setLoading(false);
-        }, 5000); // 5 second timeout as fallback
-        
-        return () => clearTimeout(timeoutId);
-      }
+    if (!userLoading && !searchParams?.get("id")) {
+      setLoading(false);
     }
   }, [userLoading, searchParams]);
   
@@ -4060,7 +4059,7 @@ function NewActivityPageContent() {
             descriptionObjectives: data.descriptionObjectives || "",
             descriptionTargetGroups: data.descriptionTargetGroups || "",
             descriptionOther: data.descriptionOther || "",
-            created_by_org_name: data.created_by_org_name || "",
+            created_by_org_name: data.created_by_org_name || data.reporting_org_name || "",
             created_by_org_acronym: data.created_by_org_acronym || "",
             collaborationType: data.collaborationType || "",
             activityStatus: data.activityStatus || "",
@@ -4245,7 +4244,7 @@ function NewActivityPageContent() {
     const sectionLabels: Record<string, string> = {
       metadata: "Metadata",
       general: "General Information",
-      iati: "IATI Sync",
+      iati: "IATI Link",
       sectors: "Sectors",
       humanitarian: "Humanitarian",
       locations: "Activity Locations",
@@ -5183,7 +5182,7 @@ function NewActivityPageContent() {
                             return general.created_by_org_name || general.created_by_org_acronym || "Unknown Organization";
                           })()}
                         </p>
-                        <p className="text-gray-600">
+                        <p className="text-gray-600 mt-1">
                           Submitted by {(() => {
                             // Format user name with position/role
                             if (general.createdBy?.name) {

@@ -31,7 +31,13 @@ import {
   Receipt,
   PiggyBank,
   CalendarClock,
+  Layers,
+  Copy,
+  Heart,
+  Tag,
+  Shield,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import type { ParsedActivity } from './types'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
 import { useHomeCountry } from '@/contexts/SystemSettingsContext'
@@ -55,22 +61,37 @@ const ACTIVITY_STATUS_OPTIONS: Record<string, string> = {
   '6': 'Suspended',
 }
 
-// Common aid type codes
+// OECD DAC Aid Type codes (comprehensive list)
 const AID_TYPE_OPTIONS: Record<string, string> = {
+  // Budget support
   'A01': 'General budget support',
   'A02': 'Sector budget support',
-  'B01': 'Core support to NGOs',
-  'B02': 'Core contributions to multilaterals',
-  'B03': 'Contributions to specific programmes',
-  'B04': 'Basket funds',
+  // Core contributions
+  'B01': 'Core support to NGOs, other private bodies, PPPs and research institutes',
+  'B02': 'Core contributions to multilateral institutions',
+  'B03': 'Contributions to specific-purpose programmes and funds managed by implementing partners',
+  'B031': 'Contributions to multi-donor/multi-entity funding mechanisms',
+  'B032': 'Contributions to specific-purpose programmes and funds managed by implementing partners',
+  'B033': 'Contributions to PPPs with multilaterals',
+  'B04': 'Basket funds/pooled funding',
+  // Project-type
   'C01': 'Project-type interventions',
+  // Experts and technical assistance
   'D01': 'Donor country personnel',
   'D02': 'Other technical assistance',
-  'E01': 'Scholarships in donor country',
+  // Scholarships
+  'E01': 'Scholarships/training in donor country',
+  'E02': 'Imputed student costs',
+  // Debt relief
   'F01': 'Debt relief',
-  'G01': 'Administrative costs',
+  // Administrative costs
+  'G01': 'Administrative costs not included elsewhere',
+  // Other in-donor expenditures
   'H01': 'Development awareness',
-  'H02': 'Refugees in donor countries',
+  'H02': 'Refugees/Asylum seekers in donor countries',
+  'H03': 'Asylum seekers ultimately not granted asylum',
+  'H04': 'In-donor scholarships for students from developing countries',
+  'H05': 'In-donor support to refugees',
 }
 
 // Common finance type codes
@@ -101,6 +122,7 @@ export default function BulkPreviewStep({
 
   // Advanced filters
   const [activityStatusFilter, setActivityStatusFilter] = useState<string[]>([])
+  const [hierarchyFilter, setHierarchyFilter] = useState<number[]>([])
   const [aidTypeFilter, setAidTypeFilter] = useState<string[]>([])
   const [financeTypeFilter, setFinanceTypeFilter] = useState<string[]>([])
   const [transactionFilter, setTransactionFilter] = useState<'all' | 'has' | 'none'>('all')
@@ -111,17 +133,19 @@ export default function BulkPreviewStep({
   const activeFilterCount = useMemo(() => {
     let count = 0
     if (activityStatusFilter.length > 0) count++
+    if (hierarchyFilter.length > 0) count++
     if (aidTypeFilter.length > 0) count++
     if (financeTypeFilter.length > 0) count++
     if (transactionFilter !== 'all') count++
     if (budgetFilter !== 'all') count++
     if (plannedDisbursementFilter !== 'all') count++
     return count
-  }, [activityStatusFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter])
+  }, [activityStatusFilter, hierarchyFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter])
 
   // Get unique values from activities for filter options with counts
   const availableOptions = useMemo(() => {
     const statusCounts = new Map<string, number>()
+    const hierarchyCounts = new Map<number, number>()
     const aidTypeCounts = new Map<string, number>()
     const financeTypeCounts = new Map<string, number>()
 
@@ -129,6 +153,9 @@ export default function BulkPreviewStep({
       const status = a.status || a.activity_status
       if (status) {
         statusCounts.set(status, (statusCounts.get(status) || 0) + 1)
+      }
+      if (a.hierarchy != null) {
+        hierarchyCounts.set(a.hierarchy, (hierarchyCounts.get(a.hierarchy) || 0) + 1)
       }
       if (a.defaultAidType) {
         aidTypeCounts.set(a.defaultAidType, (aidTypeCounts.get(a.defaultAidType) || 0) + 1)
@@ -142,6 +169,9 @@ export default function BulkPreviewStep({
       statuses: Array.from(statusCounts.entries())
         .map(([code, count]) => ({ code, count }))
         .sort((a, b) => a.code.localeCompare(b.code)),
+      hierarchies: Array.from(hierarchyCounts.entries())
+        .map(([level, count]) => ({ level, count }))
+        .sort((a, b) => a.level - b.level),
       aidTypes: Array.from(aidTypeCounts.entries())
         .map(([code, count]) => ({ code, count }))
         .sort((a, b) => a.code.localeCompare(b.code)),
@@ -153,6 +183,7 @@ export default function BulkPreviewStep({
 
   const clearAllFilters = () => {
     setActivityStatusFilter([])
+    setHierarchyFilter([])
     setAidTypeFilter([])
     setFinanceTypeFilter([])
     setTransactionFilter('all')
@@ -188,6 +219,11 @@ export default function BulkPreviewStep({
         const status = a.status || a.activity_status
         return status && activityStatusFilter.includes(status)
       })
+    }
+
+    // Hierarchy filter
+    if (hierarchyFilter.length > 0) {
+      result = result.filter(a => a.hierarchy != null && hierarchyFilter.includes(a.hierarchy))
     }
 
     // Aid type filter
@@ -241,7 +277,7 @@ export default function BulkPreviewStep({
     })
 
     return result
-  }, [activities, searchQuery, filterStatus, activityStatusFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter, sortField, sortAsc])
+  }, [activities, searchQuery, filterStatus, activityStatusFilter, hierarchyFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter, sortField, sortAsc])
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -320,7 +356,7 @@ export default function BulkPreviewStep({
       {showFilters && (
         <Card className="overflow-visible">
           <CardContent className="p-4 overflow-visible">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+            <div className="flex flex-wrap gap-6">
               {/* Activity Status */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium flex items-center gap-2">
@@ -334,7 +370,7 @@ export default function BulkPreviewStep({
                         id={`status-${code}`}
                         checked={activityStatusFilter.includes(code)}
                         onCheckedChange={(checked) => {
-                          if (checked) {
+                          if (checked === true) {
                             setActivityStatusFilter([...activityStatusFilter, code])
                           } else {
                             setActivityStatusFilter(activityStatusFilter.filter(s => s !== code))
@@ -356,33 +392,75 @@ export default function BulkPreviewStep({
                 </div>
               </div>
 
-              {/* Aid Type */}
+              {/* Hierarchy Level */}
               <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Layers className="h-4 w-4" />
+                  Hierarchy Level
+                </Label>
+                <div className="flex flex-col gap-2">
+                  {availableOptions.hierarchies.map(({ level, count }) => {
+                    const hierarchyNames: Record<number, string> = {
+                      1: 'Parent',
+                      2: 'Sub-Activity',
+                    }
+                    return (
+                      <div key={level} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`hierarchy-${level}`}
+                          checked={hierarchyFilter.includes(level)}
+                          onCheckedChange={(checked) => {
+                            if (checked === true) {
+                              setHierarchyFilter([...hierarchyFilter, level])
+                            } else {
+                              setHierarchyFilter(hierarchyFilter.filter(h => h !== level))
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor={`hierarchy-${level}`}
+                          className="flex items-center gap-2 text-sm cursor-pointer font-normal"
+                        >
+                          <span>Level {level} ({hierarchyNames[level] || `Level ${level}`})</span>
+                          <span className="text-gray-400">({count})</span>
+                        </Label>
+                      </div>
+                    )
+                  })}
+                  {availableOptions.hierarchies.length === 0 && (
+                    <span className="text-sm text-gray-400">No hierarchy data</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Aid Type */}
+              <div className="space-y-3 max-w-xs">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Banknote className="h-4 w-4" />
                   Aid Type
                 </Label>
                 <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
                   {availableOptions.aidTypes.map(({ code, count }) => (
-                    <div key={code} className="flex items-center gap-2">
+                    <div key={code} className="flex items-start gap-2">
                       <Checkbox
                         id={`aid-${code}`}
                         checked={aidTypeFilter.includes(code)}
                         onCheckedChange={(checked) => {
-                          if (checked) {
+                          if (checked === true) {
                             setAidTypeFilter([...aidTypeFilter, code])
                           } else {
                             setAidTypeFilter(aidTypeFilter.filter(t => t !== code))
                           }
                         }}
+                        className="mt-0.5"
                       />
                       <Label
                         htmlFor={`aid-${code}`}
-                        className="flex items-center gap-2 text-sm cursor-pointer font-normal"
-                        title={AID_TYPE_OPTIONS[code] || code}
+                        className="flex flex-wrap items-baseline gap-1 text-sm cursor-pointer font-normal leading-snug"
                       >
-                        <span className="truncate max-w-[140px]">{AID_TYPE_OPTIONS[code] || code}</span>
-                        <span className="text-gray-400">({count})</span>
+                        <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-xs text-gray-500 shrink-0">{code}</span>
+                        <span className="break-words">{AID_TYPE_OPTIONS[code] || code}</span>
+                        <span className="text-gray-400 shrink-0">({count})</span>
                       </Label>
                     </div>
                   ))}
@@ -405,7 +483,7 @@ export default function BulkPreviewStep({
                         id={`finance-${code}`}
                         checked={financeTypeFilter.includes(code)}
                         onCheckedChange={(checked) => {
-                          if (checked) {
+                          if (checked === true) {
                             setFinanceTypeFilter([...financeTypeFilter, code])
                           } else {
                             setFinanceTypeFilter(financeTypeFilter.filter(t => t !== code))
@@ -440,7 +518,10 @@ export default function BulkPreviewStep({
                       <Checkbox
                         id={`tx-${opt}`}
                         checked={transactionFilter === opt}
-                        onCheckedChange={() => setTransactionFilter(opt)}
+                        onCheckedChange={() => {
+                          // Toggle: clicking already-selected option reverts to 'all'
+                          setTransactionFilter(transactionFilter === opt ? 'all' : opt)
+                        }}
                       />
                       <Label
                         htmlFor={`tx-${opt}`}
@@ -465,7 +546,10 @@ export default function BulkPreviewStep({
                       <Checkbox
                         id={`budget-${opt}`}
                         checked={budgetFilter === opt}
-                        onCheckedChange={() => setBudgetFilter(opt)}
+                        onCheckedChange={() => {
+                          // Toggle: clicking already-selected option reverts to 'all'
+                          setBudgetFilter(budgetFilter === opt ? 'all' : opt)
+                        }}
                       />
                       <Label
                         htmlFor={`budget-${opt}`}
@@ -490,13 +574,16 @@ export default function BulkPreviewStep({
                       <Checkbox
                         id={`pd-${opt}`}
                         checked={plannedDisbursementFilter === opt}
-                        onCheckedChange={() => setPlannedDisbursementFilter(opt)}
+                        onCheckedChange={() => {
+                          // Toggle: clicking already-selected option reverts to 'all'
+                          setPlannedDisbursementFilter(plannedDisbursementFilter === opt ? 'all' : opt)
+                        }}
                       />
                       <Label
                         htmlFor={`pd-${opt}`}
                         className="text-sm cursor-pointer font-normal"
                       >
-                        {opt === 'all' ? 'All Activities' : opt === 'has' ? 'Has Planned' : 'No Planned'}
+                        {opt === 'all' ? 'All Activities' : opt === 'has' ? 'Has Planned Disbursements' : 'No Planned Disbursements'}
                       </Label>
                     </div>
                   ))}
@@ -588,13 +675,39 @@ export default function BulkPreviewStep({
                           ) : (
                             <ChevronRight className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                           )}
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm">
-                              {activity.title || 'Untitled'}
+                          <div className="min-w-0 group/activity">
+                            <p className="font-medium text-sm flex items-center gap-1 flex-wrap">
+                              <span className="inline-flex items-center gap-1">
+                                {activity.title || 'Untitled'}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    navigator.clipboard.writeText(activity.title || '')
+                                    toast.success('Title copied')
+                                  }}
+                                  className="opacity-0 group-hover/activity:opacity-100 transition-opacity p-0.5 hover:bg-gray-200 rounded"
+                                  title="Copy title"
+                                >
+                                  <Copy className="h-3 w-3 text-gray-400" />
+                                </button>
+                              </span>
                               {' '}
-                              <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-600 font-normal whitespace-nowrap">{activity.iatiIdentifier}</span>
+                              <span className="inline-flex items-center gap-1 bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-600 font-normal whitespace-nowrap">
+                                {activity.iatiIdentifier}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    navigator.clipboard.writeText(activity.iatiIdentifier)
+                                    toast.success('IATI ID copied')
+                                  }}
+                                  className="opacity-0 group-hover/activity:opacity-100 transition-opacity p-0.5 hover:bg-gray-200 rounded"
+                                  title="Copy IATI ID"
+                                >
+                                  <Copy className="h-3 w-3 text-gray-400" />
+                                </button>
+                              </span>
                               {activity.matched && (
-                                <span title="Exists in database" className="inline-flex ml-1.5 align-middle"><Database className="h-3 w-3 text-blue-500" /></span>
+                                <span title="Exists in database" className="inline-flex ml-0.5 align-middle"><Database className="h-3 w-3 text-gray-400" /></span>
                               )}
                             </p>
                           </div>
@@ -1101,8 +1214,8 @@ export default function BulkPreviewStep({
                                 <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
                                   <User className="h-3 w-3" /> Contacts
                                 </span>
-                                <div className="mt-1 space-y-2">
-                                  {activity.contacts.slice(0, 3).map((contact, i) => {
+                                <div className="mt-1 space-y-3">
+                                  {activity.contacts.slice(0, 5).map((contact, i) => {
                                     const contactTypeNames: Record<string, string> = {
                                       '1': 'General Enquiries',
                                       '2': 'Project Management',
@@ -1110,52 +1223,69 @@ export default function BulkPreviewStep({
                                       '4': 'Communications',
                                     }
                                     return (
-                                      <div key={i} className="text-xs bg-white border border-gray-100 rounded p-2">
-                                        <div className="flex items-start justify-between">
-                                          <div>
-                                            {contact.personName && (
-                                              <p className="font-medium text-gray-900">{contact.personName}</p>
-                                            )}
-                                            {contact.jobTitle && (
-                                              <p className="text-gray-500">{contact.jobTitle}</p>
-                                            )}
-                                            {contact.organisationName && (
-                                              <p className="text-gray-600">{contact.organisationName}</p>
-                                            )}
-                                          </div>
-                                          {contact.type && (
-                                            <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] text-gray-500">
-                                              {contactTypeNames[contact.type] || `Type ${contact.type}`}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="mt-1 space-y-0.5 text-gray-600">
-                                          {contact.email && (
-                                            <p className="flex items-center gap-1">
-                                              <span className="text-gray-400">Email:</span> {contact.email}
-                                            </p>
-                                          )}
-                                          {contact.telephone && (
-                                            <p className="flex items-center gap-1">
-                                              <span className="text-gray-400">Tel:</span> {contact.telephone}
-                                            </p>
-                                          )}
-                                          {contact.website && (
-                                            <p className="flex items-center gap-1">
-                                              <span className="text-gray-400">Web:</span>
-                                              <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate max-w-[200px]">
-                                                {contact.website.replace(/^https?:\/\//, '')}
-                                              </a>
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
+                                      <table key={i} className="w-full text-xs border border-gray-100 rounded">
+                                        <tbody>
+                                          <tr className="border-b border-gray-100">
+                                            <td className="py-1.5 px-2 text-gray-500 w-20 bg-gray-50">Type</td>
+                                            <td className="py-1.5 px-2 text-gray-600">
+                                              {contact.type ? (
+                                                <>
+                                                  <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{contact.type}</span>
+                                                  {' '}
+                                                  <span className="text-gray-500">{contactTypeNames[contact.type] || ''}</span>
+                                                </>
+                                              ) : (
+                                                <span className="text-gray-400">-</span>
+                                              )}
+                                            </td>
+                                          </tr>
+                                          <tr className="border-b border-gray-100">
+                                            <td className="py-1.5 px-2 text-gray-500 bg-gray-50">Org</td>
+                                            <td className="py-1.5 px-2 text-gray-600">
+                                              {contact.organisationName || contact.departmentName ? (
+                                                <>
+                                                  {contact.organisationName && <span className="font-medium">{contact.organisationName}</span>}
+                                                  {contact.organisationName && contact.departmentName && ' · '}
+                                                  {contact.departmentName && <span className="text-gray-500">{contact.departmentName}</span>}
+                                                </>
+                                              ) : (
+                                                <span className="text-gray-400">-</span>
+                                              )}
+                                            </td>
+                                          </tr>
+                                          <tr>
+                                            <td className="py-1.5 px-2 text-gray-500 bg-gray-50 align-top">Contact</td>
+                                            <td className="py-1.5 px-2 text-gray-600">
+                                              <div className="space-y-0.5">
+                                                {contact.personName && <p className="font-medium">{contact.personName}</p>}
+                                                {contact.jobTitle && <p className="text-gray-500">{contact.jobTitle}</p>}
+                                                {contact.email && (
+                                                  <p>
+                                                    <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline">{contact.email}</a>
+                                                  </p>
+                                                )}
+                                                {contact.telephone && <p className="text-gray-500">{contact.telephone}</p>}
+                                                {contact.website && (
+                                                  <p>
+                                                    <a href={contact.website.startsWith('http') ? contact.website : `https://${contact.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                      {contact.website.replace(/^https?:\/\//, '')}
+                                                    </a>
+                                                  </p>
+                                                )}
+                                                {!contact.personName && !contact.email && !contact.telephone && !contact.website && (
+                                                  <span className="text-gray-400">-</span>
+                                                )}
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        </tbody>
+                                      </table>
                                     )
                                   })}
-                                  {activity.contacts.length > 3 && (
-                                    <p className="text-xs text-gray-500">+ {activity.contacts.length - 3} more</p>
-                                  )}
                                 </div>
+                                {activity.contacts.length > 5 && (
+                                  <p className="text-xs text-gray-500 mt-1">+ {activity.contacts.length - 5} more</p>
+                                )}
                               </div>
                             )}
 
@@ -1168,6 +1298,7 @@ export default function BulkPreviewStep({
                                 <table className="mt-1 w-full text-xs">
                                   <thead>
                                     <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Category</th>
                                       <th className="font-medium py-1">Title</th>
                                       <th className="font-medium py-1">Format</th>
                                       <th className="font-medium py-1 w-8"></th>
@@ -1194,24 +1325,32 @@ export default function BulkPreviewStep({
                                       }
                                       return (
                                         <tr key={i} className="border-t border-gray-100">
-                                          <td className="py-1.5 text-gray-600">
-                                            <div className="max-w-[200px]">
-                                              <p className="truncate font-medium">{doc.title || 'Untitled'}</p>
-                                              {doc.categoryCode && (
-                                                <span className="text-[10px] text-gray-400">
-                                                  {docCategoryNames[doc.categoryCode] || doc.categoryCode}
-                                                </span>
-                                              )}
-                                            </div>
+                                          <td className="py-1.5 text-gray-600 align-top">
+                                            {doc.categoryCode ? (
+                                              <>
+                                                <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{doc.categoryCode}</span>
+                                                <p className="text-gray-500 mt-0.5">{docCategoryNames[doc.categoryCode] || ''}</p>
+                                              </>
+                                            ) : (
+                                              <span className="text-gray-400">-</span>
+                                            )}
                                           </td>
-                                          <td className="py-1.5 text-gray-500">
+                                          <td className="py-1.5 text-gray-600 align-top">
+                                            <p className="font-medium">{doc.title || 'Untitled'}</p>
+                                            {doc.documentDate && (
+                                              <p className="text-gray-400 text-[10px]">
+                                                {new Date(doc.documentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                              </p>
+                                            )}
+                                          </td>
+                                          <td className="py-1.5 text-gray-500 align-top">
                                             {doc.format && (
                                               <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-[10px]">
                                                 {doc.format.replace('application/', '').replace('text/', '').toUpperCase()}
                                               </span>
                                             )}
                                           </td>
-                                          <td className="py-1.5">
+                                          <td className="py-1.5 align-top">
                                             <a
                                               href={doc.url}
                                               target="_blank"
@@ -1232,6 +1371,145 @@ export default function BulkPreviewStep({
                                 )}
                               </div>
                             )}
+                          </div>
+                        )}
+
+                        {/* New IATI Fields: Humanitarian, Scope, Policy Markers, Humanitarian Scope, Tags */}
+                        {(activity.humanitarian || activity.activityScope || activity.language ||
+                          (activity.policyMarkers && activity.policyMarkers.length > 0) ||
+                          (activity.humanitarianScopes && activity.humanitarianScopes.length > 0) ||
+                          (activity.tags && activity.tags.length > 0)) && (
+                          <div className="grid grid-cols-3 gap-6 mt-4 pt-4 border-t">
+                            {/* Column 1: Flags & Scope */}
+                            <div className="space-y-3">
+                              {activity.humanitarian && (
+                                <div>
+                                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                    <Heart className="h-3 w-3 mr-1" />
+                                    Humanitarian
+                                  </Badge>
+                                </div>
+                              )}
+
+                              {activity.activityScope && (
+                                <div>
+                                  <span className="font-medium text-gray-700 text-xs uppercase">Activity Scope</span>
+                                  <p className="text-gray-600 mt-0.5">
+                                    <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{activity.activityScope}</span>
+                                    {(() => {
+                                      const scopeNames: Record<string, string> = {
+                                        '1': 'Global', '2': 'Regional', '3': 'Multi-national',
+                                        '4': 'National', '5': 'Sub-national: Multi-first-level',
+                                        '6': 'Sub-national: Single first-level', '7': 'Sub-national: Multi-second-level',
+                                        '8': 'Single location',
+                                      }
+                                      return scopeNames[activity.activityScope!] || ''
+                                    })()}
+                                  </p>
+                                </div>
+                              )}
+
+                              {activity.language && (
+                                <div>
+                                  <span className="font-medium text-gray-700 text-xs uppercase">Language</span>
+                                  <p className="text-gray-600 mt-0.5">
+                                    <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.language}</span>
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Column 2: Policy Markers */}
+                            {activity.policyMarkers && activity.policyMarkers.length > 0 && (
+                              <div>
+                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                  <Shield className="h-3 w-3" /> Policy Markers
+                                </span>
+                                <table className="mt-1 w-full text-xs">
+                                  <thead>
+                                    <tr className="text-left text-gray-500">
+                                      <th className="font-medium py-1">Marker</th>
+                                      <th className="font-medium py-1 text-right">Significance</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {activity.policyMarkers.map((pm, i) => {
+                                      const markerNames: Record<string, string> = {
+                                        '1': 'Gender Equality', '2': 'Aid to Environment',
+                                        '3': 'PD/GG', '4': 'Trade Development',
+                                        '5': 'Biodiversity', '6': 'Climate Mitigation',
+                                        '7': 'Climate Adaptation', '8': 'Desertification',
+                                        '9': 'Disability', '10': 'Nutrition',
+                                      }
+                                      const sigNames: Record<number, string> = {
+                                        0: 'Not targeted', 1: 'Significant', 2: 'Principal', 3: 'Explicit primary',
+                                      }
+                                      return (
+                                        <tr key={i} className="border-t border-gray-100">
+                                          <td className="py-1 text-gray-600">
+                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{pm.code}</span>
+                                            {pm.narrative || markerNames[pm.code] || ''}
+                                          </td>
+                                          <td className="py-1 text-right">
+                                            {pm.significance != null ? (
+                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600" title={sigNames[pm.significance] || ''}>
+                                                {sigNames[pm.significance] || pm.significance}
+                                              </span>
+                                            ) : '-'}
+                                          </td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {/* Column 3: Humanitarian Scope + Tags */}
+                            <div className="space-y-3">
+                              {activity.humanitarianScopes && activity.humanitarianScopes.length > 0 && (
+                                <div>
+                                  <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                    <Heart className="h-3 w-3" /> Humanitarian Scope
+                                  </span>
+                                  <div className="mt-1 space-y-1">
+                                    {activity.humanitarianScopes.map((hs, i) => {
+                                      const typeNames: Record<string, string> = { '1': 'Emergency', '2': 'Appeal' }
+                                      return (
+                                        <div key={i} className="text-xs text-gray-600">
+                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{typeNames[hs.type] || hs.type}</span>
+                                          <span className="font-mono">{hs.code}</span>
+                                          {hs.narrative && <span className="ml-1 text-gray-500">{hs.narrative}</span>}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {activity.tags && activity.tags.length > 0 && (
+                                <div>
+                                  <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                    <Tag className="h-3 w-3" /> Tags / SDGs
+                                  </span>
+                                  <div className="mt-1 flex flex-wrap gap-1">
+                                    {activity.tags.map((tag, i) => {
+                                      const vocabLabels: Record<string, string> = {
+                                        '1': 'OECD', '2': 'SDG Goal', '3': 'SDG Target', '99': 'Custom',
+                                      }
+                                      return (
+                                        <Badge key={i} variant="outline" className="text-xs font-normal">
+                                          {tag.vocabulary && tag.vocabulary !== '99' && (
+                                            <span className="text-gray-400 mr-1">{vocabLabels[tag.vocabulary] || `V${tag.vocabulary}`}:</span>
+                                          )}
+                                          {tag.narrative || tag.code}
+                                        </Badge>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
 

@@ -372,7 +372,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
                             </div>
                             {org.iati_org_id && (
                               <div className="text-xs text-muted-foreground truncate">
-                                IATI: {org.iati_org_id}
+                                IATI: <span className="font-mono bg-muted px-1 py-0.5 rounded">{org.iati_org_id}</span>
                               </div>
                             )}
                           </div>

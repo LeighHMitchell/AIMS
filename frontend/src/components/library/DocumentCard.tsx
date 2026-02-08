@@ -21,10 +21,12 @@ import {
   ExternalLink,
   Link2,
   Pencil,
+  Bookmark,
+  BookOpen,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { UnifiedDocument, DocumentSourceType } from '@/types/library-document';
-import { getFormatLabel } from '@/types/library-document';
+import { getFormatLabel, getFormatBadgeClasses } from '@/types/library-document';
 
 interface DocumentCardProps {
   document: UnifiedDocument;
@@ -35,6 +37,12 @@ interface DocumentCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onNavigate?: () => void;
+  // Bookmark props
+  isPersonalBookmarked?: boolean;
+  isReadingRoomBookmarked?: boolean;
+  onTogglePersonalBookmark?: () => void;
+  onToggleReadingRoomBookmark?: () => void;
+  addedByName?: string;
 }
 
 // Source type labels
@@ -58,6 +66,11 @@ export function DocumentCard({
   onEdit,
   onDelete,
   onNavigate,
+  isPersonalBookmarked,
+  isReadingRoomBookmarked,
+  onTogglePersonalBookmark,
+  onToggleReadingRoomBookmark,
+  addedByName,
 }: DocumentCardProps) {
   return (
     <Card className={`group relative transition-all hover:shadow-md ${isSelected ? 'ring-2 ring-primary' : ''}`}>
@@ -99,6 +112,21 @@ export function DocumentCard({
                 Go to {SOURCE_TYPE_LABELS[document.sourceType]}
               </DropdownMenuItem>
             )}
+            {onTogglePersonalBookmark && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onTogglePersonalBookmark}>
+                  <Bookmark className={`h-4 w-4 mr-2 ${isPersonalBookmarked ? 'fill-current' : ''}`} />
+                  {isPersonalBookmarked ? 'Remove from My Library' : 'Save to My Library'}
+                </DropdownMenuItem>
+              </>
+            )}
+            {onToggleReadingRoomBookmark && (
+              <DropdownMenuItem onClick={onToggleReadingRoomBookmark}>
+                <BookOpen className={`h-4 w-4 mr-2 ${isReadingRoomBookmarked ? 'fill-current' : ''}`} />
+                {isReadingRoomBookmarked ? 'Remove from Reading Room' : 'Add to Reading Room'}
+              </DropdownMenuItem>
+            )}
             {onDelete && document.sourceType === 'standalone' && (
               <>
                 <DropdownMenuSeparator />
@@ -118,7 +146,7 @@ export function DocumentCard({
       <CardContent className="p-0">
         {/* Thumbnail - cropped preview showing top of document */}
         <div
-          className="relative w-full aspect-[4/3] bg-muted rounded-t-lg overflow-hidden cursor-pointer"
+          className="relative w-full aspect-[16/10] bg-muted rounded-t-lg overflow-hidden cursor-pointer"
           onClick={onPreview}
         >
           <DocumentThumbnail
@@ -153,8 +181,11 @@ export function DocumentCard({
           </TooltipProvider>
 
           {/* Format and Source Type */}
-          <div className="text-xs text-gray-600 dark:text-gray-400">
-            {getFormatLabel(document.format)} · {SOURCE_TYPE_LABELS[document.sourceType]}
+          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+            <span className={`inline-block font-medium px-2 py-0.5 rounded ${getFormatBadgeClasses(document.format)}`}>
+              {getFormatLabel(document.format)}
+            </span>
+            <span>{SOURCE_TYPE_LABELS[document.sourceType]}</span>
           </div>
 
           {/* Category */}
@@ -193,6 +224,13 @@ export function DocumentCard({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+
+          {/* Added by (Reading Room) */}
+          {addedByName && (
+            <div className="text-xs text-muted-foreground italic">
+              Added by {addedByName}
+            </div>
           )}
 
           {/* Footer - Date and Org */}

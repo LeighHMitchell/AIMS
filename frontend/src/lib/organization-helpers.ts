@@ -193,27 +193,139 @@ export async function getOrCreateOrganization(
 }
 
 /**
- * Batch resolve or create multiple organizations.
- * More efficient than calling getOrCreateOrganization repeatedly.
+ * Pre-fetch and resolve all organizations in batch before the main import loop.
  *
- * @param supabase - Supabase client
- * @param organizations - Array of organization parameters
- * @returns Map of organization key (ref or name) to UUID
+ * Instead of calling getOrCreateOrganization() per org per activity (N×M queries),
+ * this resolves all unique org refs/names with a handful of batch queries, then
+ * falls back to individual creation only for genuinely new orgs.
+ *
+ * @param supabase - Supabase client (admin recommended)
+ * @param orgParams - All organization params collected from activities
+ * @returns Map keyed by ref AND lowercase name → org UUID
  */
-export async function batchGetOrCreateOrganizations(
+export async function prefetchOrganizations(
   supabase: SupabaseClient<any>,
-  organizations: OrganizationParams[]
+  orgParams: OrganizationParams[]
 ): Promise<Map<string, string>> {
-  const orgMap = new Map<string, string>();
+  const cache = new Map<string, string>();
+  if (orgParams.length === 0) return cache;
 
-  for (const org of organizations) {
-    const orgId = await getOrCreateOrganization(supabase, org);
-    if (orgId) {
-      // Store by both ref and name for flexible lookup
-      if (org.ref) orgMap.set(org.ref, orgId);
-      if (org.name) orgMap.set(org.name, orgId);
+  // --- 1. Deduplicate by ref || name ---
+  const uniqueMap = new Map<string, OrganizationParams>();
+  for (const p of orgParams) {
+    const key = p.ref || p.name?.toLowerCase();
+    if (key && !uniqueMap.has(key)) {
+      uniqueMap.set(key, p);
+    }
+  }
+  const uniqueOrgs = Array.from(uniqueMap.values());
+  const allRefs = uniqueOrgs.map(o => o.ref).filter((r): r is string => !!r);
+  console.log(`[Org Prefetch] ${orgParams.length} total params → ${uniqueOrgs.length} unique (${allRefs.length} with refs)`);
+
+  // Helper to store result in cache under both ref and lowercase name
+  const storeInCache = (ref: string | undefined, name: string | undefined, id: string) => {
+    if (ref) cache.set(ref, id);
+    if (name) cache.set(name.toLowerCase(), id);
+  };
+
+  // --- 2. Batch fetch by iati_org_id ---
+  if (allRefs.length > 0) {
+    try {
+      const { data: refMatches } = await withTimeout(
+        Promise.resolve(supabase
+          .from('organizations')
+          .select('id, name, iati_org_id')
+          .in('iati_org_id', allRefs)),
+        DB_TIMEOUT_MS * 2,
+        'Batch fetch orgs by ref'
+      ) as any;
+      if (refMatches) {
+        for (const org of refMatches) {
+          storeInCache(org.iati_org_id, org.name, org.id);
+        }
+        console.log(`[Org Prefetch] Matched ${refMatches.length} orgs by iati_org_id`);
+      }
+    } catch (err) {
+      console.warn('[Org Prefetch] Batch ref lookup failed, will fall back:', err);
     }
   }
 
-  return orgMap;
+  // --- 3. Batch fetch alias_refs (single query, client-side check) ---
+  const unresolvedWithRef = uniqueOrgs.filter(o => o.ref && !cache.has(o.ref));
+  if (unresolvedWithRef.length > 0) {
+    try {
+      const { data: aliasOrgs } = await withTimeout(
+        Promise.resolve(supabase
+          .from('organizations')
+          .select('id, name, alias_refs')
+          .not('alias_refs', 'is', null)),
+        DB_TIMEOUT_MS * 2,
+        'Batch fetch orgs with alias_refs'
+      ) as any;
+      if (aliasOrgs) {
+        for (const param of unresolvedWithRef) {
+          const match = aliasOrgs.find((org: any) =>
+            Array.isArray(org.alias_refs) && org.alias_refs.includes(param.ref)
+          );
+          if (match) {
+            storeInCache(param.ref, param.name, match.id);
+          }
+        }
+        const aliasResolved = unresolvedWithRef.filter(o => o.ref && cache.has(o.ref)).length;
+        if (aliasResolved > 0) {
+          console.log(`[Org Prefetch] Matched ${aliasResolved} orgs by alias_refs`);
+        }
+      }
+    } catch (err) {
+      console.warn('[Org Prefetch] Alias ref lookup failed:', err);
+    }
+  }
+
+  // --- 4. Batch fetch by name for name-only orgs ---
+  const nameOnlyOrgs = uniqueOrgs.filter(o => !o.ref && o.name && !cache.has(o.name.toLowerCase()));
+  if (nameOnlyOrgs.length > 0) {
+    try {
+      // Fetch all orgs and match names client-side (case-insensitive)
+      // Supabase doesn't support .in() with ilike, so we filter client-side
+      const { data: nameMatches } = await withTimeout(
+        Promise.resolve(supabase
+          .from('organizations')
+          .select('id, name')),
+        DB_TIMEOUT_MS * 2,
+        'Batch fetch orgs for name matching'
+      ) as any;
+      if (nameMatches) {
+        const nameLookup = new Map<string, string>();
+        for (const org of nameMatches) {
+          if (org.name) nameLookup.set(org.name.toLowerCase(), org.id);
+        }
+        for (const param of nameOnlyOrgs) {
+          const matchId = nameLookup.get(param.name!.toLowerCase());
+          if (matchId) {
+            storeInCache(undefined, param.name, matchId);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[Org Prefetch] Name batch lookup failed:', err);
+    }
+  }
+
+  // --- 5. Create genuinely new orgs individually ---
+  const stillUnresolved = uniqueOrgs.filter(o => {
+    const key = o.ref || o.name?.toLowerCase();
+    return key && !cache.has(key);
+  });
+  if (stillUnresolved.length > 0) {
+    console.log(`[Org Prefetch] Creating ${stillUnresolved.length} new organizations...`);
+    for (const param of stillUnresolved) {
+      const orgId = await getOrCreateOrganization(supabase, param);
+      if (orgId) {
+        storeInCache(param.ref, param.name, orgId);
+      }
+    }
+  }
+
+  console.log(`[Org Prefetch] Resolved ${cache.size} cache entries total`);
+  return cache;
 }

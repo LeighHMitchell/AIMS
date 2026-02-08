@@ -29,10 +29,12 @@ import {
   ArrowUp,
   ArrowDown,
   Pencil,
+  Bookmark,
+  BookOpen,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { UnifiedDocument, DocumentSourceType, LibrarySortField } from '@/types/library-document';
-import { getFormatLabel } from '@/types/library-document';
+import { getFormatLabel, getFormatBadgeClasses } from '@/types/library-document';
 
 interface DocumentTableProps {
   documents: UnifiedDocument[];
@@ -47,6 +49,13 @@ interface DocumentTableProps {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   onSort: (field: LibrarySortField) => void;
+  // Bookmark props
+  isPersonalBookmarked?: (url: string) => boolean;
+  isReadingRoomBookmarked?: (url: string) => boolean;
+  onTogglePersonalBookmark?: (doc: { url: string; title: string; format: string }) => void;
+  onToggleReadingRoomBookmark?: (doc: { url: string; title: string; format: string }) => void;
+  showAddedBy?: boolean;
+  attributionMap?: Map<string, string>;
 }
 
 // Source type labels
@@ -111,13 +120,19 @@ export function DocumentTable({
   sortBy,
   sortOrder,
   onSort,
+  isPersonalBookmarked,
+  isReadingRoomBookmarked,
+  onTogglePersonalBookmark,
+  onToggleReadingRoomBookmark,
+  showAddedBy,
+  attributionMap,
 }: DocumentTableProps) {
   const allSelected = documents.length > 0 && documents.every(d => selectedIds.has(d.id));
   const someSelected = documents.some(d => selectedIds.has(d.id)) && !allSelected;
 
   return (
-    <div className="border rounded-lg">
-      <Table>
+    <div className="border rounded-lg overflow-hidden">
+      <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow>
             <TableHead className="w-[40px]">
@@ -131,16 +146,16 @@ export function DocumentTable({
                 onCheckedChange={(checked) => onSelectAll(checked as boolean)}
               />
             </TableHead>
-            <TableHead className="min-w-[200px]">
+            <TableHead className="w-[25%]">
               <SortableHeader
                 field="title"
-                label="Title"
+                label="Document Title"
                 currentSortBy={sortBy}
                 sortOrder={sortOrder}
                 onSort={onSort}
               />
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[18%]">
               <SortableHeader
                 field="categoryCode"
                 label="Category"
@@ -149,7 +164,17 @@ export function DocumentTable({
                 onSort={onSort}
               />
             </TableHead>
-            <TableHead>
+            <TableHead className="w-[14%]">Activity</TableHead>
+            <TableHead className="w-[14%]">
+              <SortableHeader
+                field="reportingOrgName"
+                label="Organisation"
+                currentSortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={onSort}
+              />
+            </TableHead>
+            <TableHead className="w-[8%]">
               <SortableHeader
                 field="format"
                 label="Format"
@@ -158,26 +183,7 @@ export function DocumentTable({
                 onSort={onSort}
               />
             </TableHead>
-            <TableHead>
-              <SortableHeader
-                field="sourceType"
-                label="Source"
-                currentSortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={onSort}
-              />
-            </TableHead>
-            <TableHead>Linked To</TableHead>
-            <TableHead>
-              <SortableHeader
-                field="reportingOrgName"
-                label="Organization"
-                currentSortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={onSort}
-              />
-            </TableHead>
-            <TableHead>
+            <TableHead className="w-[10%]">
               <SortableHeader
                 field="createdAt"
                 label="Date"
@@ -186,7 +192,19 @@ export function DocumentTable({
                 onSort={onSort}
               />
             </TableHead>
-            <TableHead className="w-[60px]">Actions</TableHead>
+            <TableHead className={showAddedBy ? "w-[7%]" : "w-[8%]"}>
+              <SortableHeader
+                field="sourceType"
+                label="Source"
+                currentSortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={onSort}
+              />
+            </TableHead>
+            {showAddedBy && (
+              <TableHead className="w-[10%]">Added By</TableHead>
+            )}
+            <TableHead className="w-[50px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -209,7 +227,7 @@ export function DocumentTable({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          className="text-left font-medium hover:text-primary hover:underline max-w-[300px] truncate block"
+                          className="text-left font-medium hover:text-primary hover:underline"
                           onClick={() => onPreview(doc)}
                         >
                           {doc.title}
@@ -226,29 +244,17 @@ export function DocumentTable({
                 </TableCell>
                 <TableCell>
                   {doc.categoryCode ? (
-                    <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       <span className="text-xs font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
                         {doc.categoryCode}
                       </span>
                       {doc.categoryName && (
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {doc.categoryName}
-                        </span>
+                        <> {doc.categoryName}</>
                       )}
-                    </div>
+                    </span>
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    {getFormatLabel(doc.format)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    {sourceLabel}
-                  </span>
                 </TableCell>
                 <TableCell>
                   {doc.sourceType !== 'standalone' ? (
@@ -256,7 +262,7 @@ export function DocumentTable({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
-                            className="text-sm text-muted-foreground hover:text-primary hover:underline max-w-[150px] truncate block"
+                            className="text-sm text-muted-foreground hover:text-primary hover:underline text-left"
                             onClick={() => onNavigate(doc)}
                           >
                             {doc.sourceName}
@@ -281,9 +287,20 @@ export function DocumentTable({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-sm max-w-[100px] truncate block">
-                            {doc.reportingOrgName}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {doc.reportingOrgLogo ? (
+                              <img src={doc.reportingOrgLogo} alt="" className="h-5 w-5 rounded-sm object-contain flex-shrink-0" />
+                            ) : (
+                              <div className="h-5 w-5 rounded-sm bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                                <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                                  {(doc.reportingOrgAcronym || doc.reportingOrgName || '?')[0].toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <span className="text-sm">
+                              {doc.reportingOrgAcronym || doc.reportingOrgName}
+                            </span>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>{doc.reportingOrgName}</p>
@@ -294,14 +311,29 @@ export function DocumentTable({
                     <span className="text-muted-foreground">-</span>
                   )}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {doc.documentDate 
-                    ? format(new Date(doc.documentDate), 'MMM d, yyyy')
+                <TableCell>
+                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded ${getFormatBadgeClasses(doc.format)}`}>
+                    {getFormatLabel(doc.format)}
+                  </span>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                  {doc.documentDate
+                    ? format(new Date(doc.documentDate), 'd MMM yyyy')
                     : doc.createdAt
-                      ? format(new Date(doc.createdAt), 'MMM d, yyyy')
+                      ? format(new Date(doc.createdAt), 'd MMM yyyy')
                       : '-'
                   }
                 </TableCell>
+                <TableCell>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {sourceLabel}
+                  </span>
+                </TableCell>
+                {showAddedBy && (
+                  <TableCell className="text-sm text-muted-foreground">
+                    {attributionMap?.get(doc.url) || '-'}
+                  </TableCell>
+                )}
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -328,6 +360,21 @@ export function DocumentTable({
                         <DropdownMenuItem onClick={() => onNavigate(doc)}>
                           <ExternalLink className="h-4 w-4 mr-2" />
                           Go to {sourceLabel}
+                        </DropdownMenuItem>
+                      )}
+                      {onTogglePersonalBookmark && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => onTogglePersonalBookmark(doc)}>
+                            <Bookmark className={`h-4 w-4 mr-2 ${isPersonalBookmarked?.(doc.url) ? 'fill-current' : ''}`} />
+                            {isPersonalBookmarked?.(doc.url) ? 'Remove from My Library' : 'Save to My Library'}
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {onToggleReadingRoomBookmark && (
+                        <DropdownMenuItem onClick={() => onToggleReadingRoomBookmark(doc)}>
+                          <BookOpen className={`h-4 w-4 mr-2 ${isReadingRoomBookmarked?.(doc.url) ? 'fill-current' : ''}`} />
+                          {isReadingRoomBookmarked?.(doc.url) ? 'Remove from Reading Room' : 'Add to Reading Room'}
                         </DropdownMenuItem>
                       )}
                       {onDelete && doc.sourceType === 'standalone' && (

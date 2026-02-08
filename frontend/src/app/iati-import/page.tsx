@@ -30,11 +30,17 @@ import {
   Undo2,
   Clock,
   ChevronRight,
+  ChevronDown,
   Database,
   AlertTriangle,
   ClipboardPaste,
-  Globe
+  Globe,
+  Search,
+  SkipForward,
+  RefreshCw,
+  Plus,
 } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
 import { IATIImportSkeleton } from '@/components/skeletons'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
@@ -88,6 +94,265 @@ interface ImportState {
     imported: string[]
     errors: string[]
   }
+}
+
+/**
+ * Enhanced History Tab with drill-down, filters, search, and detailed stats.
+ */
+function HistoryTab() {
+  const [historyData, setHistoryData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null)
+  const [batchItems, setBatchItems] = useState<any[]>([])
+  const [loadingItems, setLoadingItems] = useState(false)
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(searchQuery), 300)
+    return () => clearTimeout(timeout)
+  }, [searchQuery])
+
+  const [historyError, setHistoryError] = useState<string | null>(null)
+
+  const fetchHistory = useCallback(async () => {
+    setLoading(true)
+    setHistoryError(null)
+    try {
+      const params = new URLSearchParams()
+      if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
+      const response = await apiFetch(`/api/iati/history?${params.toString()}`)
+      if (response.ok) {
+        const data = await response.json()
+        setHistoryData(Array.isArray(data) ? data : [])
+      } else {
+        const errData = await response.json().catch(() => ({}))
+        console.error('Failed to fetch import history:', errData)
+        setHistoryError(errData.error || `Server error (${response.status})`)
+      }
+    } catch (error) {
+      console.error('Failed to fetch import history:', error)
+      setHistoryError('Failed to connect to server')
+    } finally {
+      setLoading(false)
+    }
+  }, [statusFilter, debouncedSearch])
+
+  useEffect(() => {
+    fetchHistory()
+  }, [fetchHistory])
+
+  const fetchBatchItems = async (batchId: string) => {
+    if (expandedBatchId === batchId) {
+      setExpandedBatchId(null)
+      setBatchItems([])
+      return
+    }
+    setExpandedBatchId(batchId)
+    setLoadingItems(true)
+    try {
+      const response = await apiFetch(`/api/iati/history?batchId=${batchId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setBatchItems(data.items || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch batch items:', error)
+    } finally {
+      setLoadingItems(false)
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge variant="outline" className="bg-green-50 text-green-700"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>
+      case 'failed':
+        return <Badge variant="outline" className="bg-red-50 text-red-700"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
+      case 'importing':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Importing</Badge>
+      default:
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700"><Clock className="h-3 w-3 mr-1" />{status}</Badge>
+    }
+  }
+
+  const getItemActionIcon = (action: string) => {
+    switch (action) {
+      case 'create': return <Plus className="h-3.5 w-3.5 text-gray-700" />
+      case 'update': return <RefreshCw className="h-3.5 w-3.5 text-gray-700" />
+      case 'skip': return <SkipForward className="h-3.5 w-3.5 text-gray-400" />
+      case 'fail': return <XCircle className="h-3.5 w-3.5 text-red-500" />
+      default: return <Clock className="h-3.5 w-3.5 text-gray-400" />
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Import History</CardTitle>
+        <CardDescription>
+          View past bulk imports and their status. Click a batch to see individual activity details.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* Filters */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search by organisation or file name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex gap-1">
+            {['all', 'completed', 'failed', 'importing'].map(status => (
+              <Button
+                key={status}
+                variant={statusFilter === status ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter(status)}
+              >
+                {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* History List */}
+        <div className="space-y-2">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              <span className="text-gray-500">Loading history...</span>
+            </div>
+          ) : historyError ? (
+            <div className="text-center py-8">
+              <p className="text-red-600 text-sm">{historyError}</p>
+              <Button variant="outline" size="sm" className="mt-2" onClick={fetchHistory}>Retry</Button>
+            </div>
+          ) : historyData.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No import history found</p>
+          ) : (
+            historyData.map((record) => {
+              const isExpanded = expandedBatchId === record.id
+              return (
+                <div key={record.id} className="border rounded-lg overflow-hidden">
+                  {/* Batch Row */}
+                  <button
+                    className="w-full flex items-center justify-between p-4 hover:bg-gray-50 text-left"
+                    onClick={() => fetchBatchItems(record.id)}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium truncate">{record.reportingOrgName || record.fileName}</p>
+                          {record.sourceMode === 'datastore' && (
+                            <Badge variant="outline" className="text-xs shrink-0">
+                              <Globe className="h-3 w-3 mr-1" />
+                              Registry
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          By {record.userName} · {formatDistanceToNow(new Date(record.timestamp), { addSuffix: true })}
+                          <span className="hidden sm:inline text-gray-400 ml-1" title={new Date(record.timestamp).toLocaleString()}>
+                            ({new Date(record.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
+                          </span>
+                        </p>
+                        <div className="flex gap-3 mt-1.5 text-xs">
+                          <span className="text-gray-700 font-mono bg-gray-100 px-1.5 py-0.5 rounded">{record.totalActivities} total</span>
+                          {record.createdCount > 0 && <span className="text-gray-700">{record.createdCount} created</span>}
+                          {record.updatedCount > 0 && <span className="text-gray-700">{record.updatedCount} updated</span>}
+                          {record.skippedCount > 0 && <span className="text-gray-500">{record.skippedCount} skipped</span>}
+                          {record.failedCount > 0 && <span className="text-red-600">{record.failedCount} failed</span>}
+                        </div>
+                        {record.errorMessage && (
+                          <p className="text-xs text-red-600 mt-1">{record.errorMessage}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="shrink-0 ml-3">
+                      {getStatusBadge(record.status)}
+                    </div>
+                  </button>
+
+                  {/* Expanded Batch Items (drill-down) */}
+                  {isExpanded && (
+                    <div className="border-t bg-gray-50 px-4 py-3">
+                      {loadingItems ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm text-gray-500">Loading activities...</span>
+                        </div>
+                      ) : batchItems.length === 0 ? (
+                        <p className="text-sm text-gray-500 text-center py-4">No activity details available</p>
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="grid grid-cols-[1fr_200px_100px] gap-2 text-xs font-medium text-gray-500 uppercase px-2 py-1">
+                            <div>Activity</div>
+                            <div>Import Details</div>
+                            <div className="text-right">Action</div>
+                          </div>
+                          <ScrollArea className="max-h-80">
+                            {batchItems.map((item: any) => (
+                              <div
+                                key={item.id}
+                                className="grid grid-cols-[1fr_200px_100px] gap-2 px-2 py-2 border-b border-gray-100 last:border-b-0 items-center"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
+                                  <span className="text-xs font-mono bg-white px-1.5 py-0.5 rounded text-gray-500 border">{item.iatiIdentifier}</span>
+                                  {item.errorMessage && (
+                                    <p className="text-xs text-red-500 mt-0.5">{item.errorMessage}</p>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {(() => {
+                                    const pl = (n: number, s: string) => `${n} ${n === 1 ? s : s + 's'}`;
+                                    const parts: string[] = [];
+                                    if (item.transactionsImported > 0) parts.push(pl(item.transactionsImported, 'transaction'));
+                                    if (item.importDetails?.organizations) parts.push(pl(item.importDetails.organizations, 'organisation'));
+                                    if (item.importDetails?.budgets) parts.push(pl(item.importDetails.budgets, 'budget'));
+                                    if (item.importDetails?.sectors) parts.push(pl(item.importDetails.sectors, 'sector'));
+                                    if (item.importDetails?.locations) parts.push(pl(item.importDetails.locations, 'location'));
+                                    if (item.importDetails?.contacts) parts.push(pl(item.importDetails.contacts, 'contact'));
+                                    if (item.importDetails?.documents) parts.push(pl(item.importDetails.documents, 'document'));
+                                    if (item.importDetails?.policyMarkers) parts.push(pl(item.importDetails.policyMarkers, 'policy marker'));
+                                    if (item.importDetails?.humanitarianScopes) parts.push(pl(item.importDetails.humanitarianScopes, 'humanitarian scope'));
+                                    if (item.importDetails?.tags) parts.push(pl(item.importDetails.tags, 'tag'));
+                                    if (item.importDetails?.results) parts.push(pl(item.importDetails.results, 'result'));
+                                    if (item.importDetails?.indicators) parts.push(pl(item.importDetails.indicators, 'indicator'));
+                                    return parts.length > 0 ? parts.join(', ') : '-';
+                                  })()}
+                                </div>
+                                <div className="text-right flex items-center justify-end gap-1.5">
+                                  {getItemActionIcon(item.action)}
+                                  <span className="text-xs text-gray-600 capitalize">{item.action === 'fail' ? 'Failed' : item.action}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </ScrollArea>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export default function IATIImportPage() {
@@ -660,13 +925,13 @@ export default function IATIImportPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="bulk-import">
-              <Database className="h-4 w-4 mr-2" />
+          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+            <TabsTrigger value="bulk-import" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Database className="h-4 w-4" />
               Bulk Import
             </TabsTrigger>
-            <TabsTrigger value="history">
-              <History className="h-4 w-4 mr-2" />
+            <TabsTrigger value="history" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <History className="h-4 w-4" />
               History
             </TabsTrigger>
           </TabsList>
@@ -1282,7 +1547,7 @@ export default function IATIImportPage() {
                               <div className="flex-1">
                                 <p className="font-medium">{activity.title}</p>
                                 <p className="text-sm text-gray-500">
-                                  ID: {activity.iatiIdentifier} • Status: {activity.status}
+                                  ID: <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs">{activity.iatiIdentifier}</span> • Status: {activity.status}
                                 </p>
                                 {activity.description && (
                                   <p className="text-sm text-gray-600 mt-1 line-clamp-2">
@@ -1572,92 +1837,7 @@ export default function IATIImportPage() {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Import History</CardTitle>
-                <CardDescription>
-                  View past bulk imports and their status
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {loadingHistory ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                      <span className="text-gray-500">Loading history...</span>
-                    </div>
-                  ) : importHistory.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No import history yet</p>
-                  ) : (
-                    importHistory.map((record) => (
-                      <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{record.reportingOrgName || record.fileName}</p>
-                            {record.sourceMode === 'datastore' && (
-                              <Badge variant="outline" className="text-xs">
-                                <Globe className="h-3 w-3 mr-1" />
-                                Registry
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-500">
-                            By {record.userName} • {new Date(record.timestamp).toLocaleString()}
-                          </p>
-                          <div className="flex gap-4 mt-2">
-                            <span className="text-sm text-green-600">
-                              <CheckCircle2 className="inline h-4 w-4 mr-1" />
-                              {record.createdCount} created
-                            </span>
-                            <span className="text-sm text-blue-600">
-                              <Activity className="inline h-4 w-4 mr-1" />
-                              {record.updatedCount} updated
-                            </span>
-                            {record.skippedCount > 0 && (
-                              <span className="text-sm text-gray-500">
-                                {record.skippedCount} skipped
-                              </span>
-                            )}
-                            {record.failedCount > 0 && (
-                              <span className="text-sm text-red-600">
-                                <XCircle className="inline h-4 w-4 mr-1" />
-                                {record.failedCount} failed
-                              </span>
-                            )}
-                          </div>
-                          {record.errorMessage && (
-                            <p className="text-sm text-red-600 mt-1">{record.errorMessage}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {record.status === 'completed' ? (
-                            <Badge variant="outline" className="bg-green-50">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Completed
-                            </Badge>
-                          ) : record.status === 'failed' ? (
-                            <Badge variant="outline" className="bg-red-50">
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Failed
-                            </Badge>
-                          ) : record.status === 'importing' ? (
-                            <Badge variant="outline" className="bg-blue-50">
-                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                              Importing
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-yellow-50">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {record.status}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <HistoryTab />
           </TabsContent>
         </Tabs>
       </div>

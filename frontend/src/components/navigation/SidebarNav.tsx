@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -84,6 +84,33 @@ export function SidebarNav({
   })
   const [showQuickAddModal, setShowQuickAddModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  const [sidebarCounts, setSidebarCounts] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    let cancelled = false
+    async function fetchCounts() {
+      try {
+        const res = await apiFetch('/api/sidebar-counts')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled) setSidebarCounts(data)
+      } catch {
+        // silently fail - counts are cosmetic
+      }
+    }
+    fetchCounts()
+    return () => { cancelled = true }
+  }, [])
+
+  // Map href to count key
+  const countMap: Record<string, number | undefined> = {
+    '/activities': sidebarCounts.activities,
+    '/transactions': sidebarCounts.transactions,
+    '/planned-disbursements': sidebarCounts.plannedDisbursements,
+    '/budgets': sidebarCounts.budgets,
+    '/organizations': sidebarCounts.organizations,
+    '/rolodex': sidebarCounts.rolodex,
+  }
 
   if (isLoading) {
     return (
@@ -400,11 +427,13 @@ export function SidebarNav({
                         {filteredItems.map((item, index) => {
                           const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
 
+                          const itemCount = countMap[item.href]
+
                           const linkContent = (
                             <Link
                               href={item.href}
                               className={cn(
-                                "group relative flex items-center py-2 px-3 text-sm font-medium rounded-md",
+                                "group relative flex items-center justify-between py-2 px-3 text-sm font-medium rounded-md",
                                 "transition-colors duration-200",
                                 "hover:bg-gray-100 dark:hover:bg-gray-800",
                                 isActive
@@ -444,6 +473,11 @@ export function SidebarNav({
                                   </Tooltip>
                                 )}
                               </span>
+                              {!isCollapsed && itemCount != null && itemCount > 0 && (
+                                <span className="text-[11px] tabular-nums text-gray-400 dark:text-gray-500 font-normal ml-auto">
+                                  {itemCount.toLocaleString()}
+                                </span>
+                              )}
                             </Link>
                           )
 

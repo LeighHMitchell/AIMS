@@ -58,7 +58,7 @@ export function LibraryFiltersPanel({
   onFiltersChange,
   onClear
 }: LibraryFiltersPanelProps) {
-  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym?: string; logo?: string }>>([]);
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym?: string; logo?: string; iati_org_id?: string }>>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
 
   // Track which dropdown is open - only one can be open at a time
@@ -128,6 +128,7 @@ export function LibraryFiltersPanel({
   const orgOptions: SearchableSelectOption[] = organizations.map(org => ({
     value: org.id,
     label: org.acronym ? `${org.name} (${org.acronym})` : org.name,
+    code: org.iati_org_id || undefined,
     icon: org.logo ? (
       <img src={org.logo} alt="" className="h-5 w-5 rounded-sm object-contain flex-shrink-0" />
     ) : (

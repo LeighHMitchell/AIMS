@@ -18,6 +18,13 @@ const CACHE_TTL_HOURS = 1
 interface DatastoreFilters {
   /** ISO country code (e.g., "MM" for Myanmar) */
   country?: string
+  /**
+   * How to match country:
+   * - 'activity': Only activity-level recipient_country_code (default)
+   * - 'transaction': Only transaction-level recipient_country_code
+   * - 'both': Either activity OR transaction level
+   */
+  countryFilterMode?: 'activity' | 'transaction' | 'both'
   /** Start of date range (ISO date string, e.g., "2021-01-01") */
   dateStart?: string
   /** End of date range (ISO date string, e.g., "2028-12-31") */
@@ -136,8 +143,12 @@ export async function GET(request: NextRequest) {
     const countOnly = searchParams.get('count_only') === 'true'
 
     // Pre-fetch filters (applied at Datastore level for performance)
+    const countryFilterModeParam = searchParams.get('country_filter_mode')
     const filterOptions: DatastoreFilters = {
       country: searchParams.get('country') || undefined,
+      countryFilterMode: (countryFilterModeParam === 'activity' || countryFilterModeParam === 'transaction' || countryFilterModeParam === 'both')
+        ? countryFilterModeParam
+        : 'both', // Default to 'both' to capture all Myanmar-related activities
       dateStart: searchParams.get('date_start') || undefined,
       dateEnd: searchParams.get('date_end') || undefined,
       hierarchy: searchParams.get('hierarchy') ? parseInt(searchParams.get('hierarchy')!, 10) : undefined,
@@ -146,7 +157,13 @@ export async function GET(request: NextRequest) {
     // Quick count query - just return total activities without fetching data
     if (countOnly) {
       const count = await getActivityCount(orgScope.allRefs, filterOptions)
-      const estimatedSeconds = Math.ceil((count / 1000) * 13) + 15 // 13s per page + 15s overhead
+      // Estimate breakdown:
+      // - 15s per 1000 activities for IATI Datastore (13s rate limit delay + API time)
+      // - 10s per 1000 activities for d-portal sector enrichment
+      // - 5s per 1000 activities for d-portal hierarchy enrichment
+      // - 20s overhead for initial setup, database checks, cache writes
+      const pagesNeeded = Math.ceil(count / 1000)
+      const estimatedSeconds = (pagesNeeded * 30) + 20 // 30s per page + 20s overhead
       return NextResponse.json({
         count,
         estimatedSeconds,
@@ -208,9 +225,12 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Fetch Org Activities] Fetched ${activities.length} activities from IATI Datastore`)
 
-    // 5. Enrich with sector percentages from d-portal (only data not in Datastore)
+    // 5. Enrich with data from d-portal (not available in IATI Datastore)
     if (activities.length > 0) {
+      // Sector percentages (only available in d-portal)
       await enrichWithSectorPercentages(activities, orgScope.allRefs)
+      // Hierarchy (IATI Datastore doesn't index this attribute)
+      await enrichWithHierarchy(activities, orgScope.allRefs)
     }
 
     if (activities.length === 0) {
@@ -328,9 +348,22 @@ export async function GET(request: NextRequest) {
 function buildSolrFilterQuery(filters: DatastoreFilters): string[] {
   const fq: string[] = []
 
-  // Country filter: recipient_country_code contains the country code
+  // Country filter based on mode:
+  // - 'activity': Only activity-level recipient_country_code
+  // - 'transaction': Only transaction-level transaction_recipient_country_code
+  // - 'both': Either activity OR transaction level (captures all related activities)
   if (filters.country) {
-    fq.push(`recipient_country_code:${filters.country}`)
+    const mode = filters.countryFilterMode || 'both'
+    const code = filters.country
+
+    if (mode === 'activity') {
+      fq.push(`recipient_country_code:${code}`)
+    } else if (mode === 'transaction') {
+      fq.push(`transaction_recipient_country_code:${code}`)
+    } else {
+      // 'both' - use OR to capture activities with country at either level
+      fq.push(`(recipient_country_code:${code} OR transaction_recipient_country_code:${code})`)
+    }
   }
 
   // Hierarchy filter
@@ -455,11 +488,48 @@ async function fetchFromDatastore(orgRefs: string[], filters: DatastoreFilters =
       'default_finance_type_code',
       'default_flow_type_code',
       'default_tied_status_code',
+      // Contacts (contact-info)
+      'contact_info_type',
+      'contact_info_organisation_narrative',
+      'contact_info_department_narrative',
+      'contact_info_person_name_narrative',
+      'contact_info_job_title_narrative',
+      'contact_info_telephone',
+      'contact_info_email',
+      'contact_info_website',
+      'contact_info_mailing_address_narrative',
+      // Documents (document-link)
+      'document_link_url',
+      'document_link_format',
+      'document_link_title_narrative',
+      'document_link_description_narrative',
+      'document_link_category_code',
+      'document_link_language_code',
+      'document_link_document_date_iso_date',
       // Note: capital_spend and planned_disbursement fields are NOT indexed in IATI Datastore
       // They would need to be fetched from d-portal or raw XML if needed
       // Reporting org
       'reporting_org_ref',
       'reporting_org_narrative',
+      // Humanitarian flag
+      'humanitarian',
+      // Activity scope & language
+      'activity_scope_code',
+      'default_lang',
+      // Policy markers
+      'policy_marker_code',
+      'policy_marker_vocabulary',
+      'policy_marker_significance',
+      'policy_marker_narrative',
+      // Humanitarian scope
+      'humanitarian_scope_type',
+      'humanitarian_scope_vocabulary',
+      'humanitarian_scope_code',
+      'humanitarian_scope_narrative',
+      // Tags (including SDGs)
+      'tag_code',
+      'tag_vocabulary',
+      'tag_narrative',
     ].join(',')
 
     // Build filter query parameters
@@ -624,6 +694,94 @@ async function enrichWithSectorPercentages(
   }
 
   console.log(`[Fetch Org Activities] Enriched ${enrichedCount} sector entries with percentages`)
+}
+
+/**
+ * Enrich activities with hierarchy from d-portal.
+ * The IATI Datastore doesn't index the hierarchy attribute, but d-portal's jml table has it.
+ */
+async function enrichWithHierarchy(
+  activities: ParsedActivity[],
+  orgRefs: string[]
+): Promise<void> {
+  console.log('[Fetch Org Activities] Enriching with hierarchy from d-portal jml table')
+
+  const PAGE_SIZE = 1000
+  const hierarchyMap = new Map<string, number>() // aid -> hierarchy
+
+  // Fetch hierarchy data from d-portal for each org ref
+  for (const ref of orgRefs) {
+    let offset = 0
+    let hasMore = true
+
+    while (hasMore) {
+      // Query jml table joined with act to get hierarchy
+      const dportalUrl = `${DPORTAL_BASE}?from=jml,act&reporting_ref=${encodeURIComponent(ref)}&limit=${PAGE_SIZE}&offset=${offset}`
+
+      try {
+        const abortController = new AbortController()
+        const timeoutId = setTimeout(() => abortController.abort(), 30000)
+
+        const response = await fetch(dportalUrl, {
+          method: 'GET',
+          headers: { Accept: 'application/json', 'User-Agent': 'AIMS-IATI-Import/1.0' },
+          signal: abortController.signal,
+        })
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          console.warn(`[Fetch Org Activities] d-portal jml error for ${ref}:`, response.status)
+          break
+        }
+
+        const data = await response.json()
+        const rows = data.rows || []
+
+        if (offset === 0) {
+          console.log(`[Fetch Org Activities] d-portal jml for ${ref}: ${data.count || rows.length} total activities`)
+        }
+
+        // Parse hierarchy from jml JSON
+        for (const row of rows) {
+          if (row.aid && row.jml) {
+            try {
+              const jmlData = typeof row.jml === 'string' ? JSON.parse(row.jml) : row.jml
+              const hierarchy = jmlData.hierarchy
+              if (hierarchy != null) {
+                hierarchyMap.set(row.aid, parseInt(hierarchy, 10))
+              }
+            } catch {
+              // Skip if jml parsing fails
+            }
+          }
+        }
+
+        hasMore = rows.length >= PAGE_SIZE
+        offset += PAGE_SIZE
+
+        if (hasMore) {
+          await new Promise(resolve => setTimeout(resolve, 200))
+        }
+      } catch (error) {
+        console.warn(`[Fetch Org Activities] Error fetching hierarchy from d-portal for ${ref}:`, error)
+        break
+      }
+    }
+  }
+
+  console.log(`[Fetch Org Activities] Got hierarchy for ${hierarchyMap.size} activities from d-portal`)
+
+  // Apply hierarchy to activities
+  let enrichedCount = 0
+  for (const activity of activities) {
+    const hierarchy = hierarchyMap.get(activity.iatiIdentifier)
+    if (hierarchy != null) {
+      activity.hierarchy = hierarchy
+      enrichedCount++
+    }
+  }
+
+  console.log(`[Fetch Org Activities] Enriched ${enrichedCount} activities with hierarchy`)
 }
 
 /**

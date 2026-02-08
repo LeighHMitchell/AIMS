@@ -189,6 +189,50 @@ export function mapDatastoreDocToParsedActivity(
   // Note: capital_spend and planned_disbursement are NOT indexed in IATI Datastore
   // They're only available via XML upload (d-portal mapper handles them)
 
+  // --- Humanitarian flag ---
+  const humanitarian = doc.humanitarian === true || doc.humanitarian === 'true' || doc.humanitarian === '1'
+
+  // --- Activity scope & language ---
+  const activityScope = doc.activity_scope_code ? String(doc.activity_scope_code) : undefined
+  const language = doc.default_lang ? String(doc.default_lang) : undefined
+
+  // --- Policy markers ---
+  const pmCodes = ensureArray(doc.policy_marker_code)
+  const pmVocabs = ensureArray(doc.policy_marker_vocabulary)
+  const pmSignificances = ensureArray(doc.policy_marker_significance)
+  const pmNarratives = ensureArray(doc.policy_marker_narrative)
+
+  const policyMarkers = pmCodes.map((code: string, i: number) => ({
+    code: String(code),
+    vocabulary: pmVocabs[i] ? String(pmVocabs[i]) : '1',
+    significance: pmSignificances[i] != null ? Number(pmSignificances[i]) : undefined,
+    narrative: pmNarratives[i] || undefined,
+  })).filter((pm: any) => pm.code)
+
+  // --- Humanitarian scope ---
+  const hsCodes = ensureArray(doc.humanitarian_scope_code)
+  const hsTypes = ensureArray(doc.humanitarian_scope_type)
+  const hsVocabs = ensureArray(doc.humanitarian_scope_vocabulary)
+  const hsNarratives = ensureArray(doc.humanitarian_scope_narrative)
+
+  const humanitarianScopes = hsCodes.map((code: string, i: number) => ({
+    type: hsTypes[i] ? String(hsTypes[i]) : '1',
+    vocabulary: hsVocabs[i] ? String(hsVocabs[i]) : '1-2',
+    code: String(code),
+    narrative: hsNarratives[i] || undefined,
+  })).filter((hs: any) => hs.code)
+
+  // --- Tags (including SDGs) ---
+  const tagCodes = ensureArray(doc.tag_code)
+  const tagVocabs = ensureArray(doc.tag_vocabulary)
+  const tagNarratives = ensureArray(doc.tag_narrative)
+
+  const tags = tagCodes.map((code: string, i: number) => ({
+    code: String(code),
+    vocabulary: tagVocabs[i] ? String(tagVocabs[i]) : '99',
+    narrative: tagNarratives[i] || undefined,
+  })).filter((t: any) => t.code)
+
   // --- Contacts (contact-info) ---
   // IATI Datastore fields: contact_info_type, contact_info_organisation_narrative,
   // contact_info_department_narrative, contact_info_person_name_narrative,
@@ -286,6 +330,14 @@ export function mapDatastoreDocToParsedActivity(
     // Contacts and documents
     contacts: contacts.length > 0 ? contacts : undefined,
     documents: documents.length > 0 ? documents : undefined,
+    // Humanitarian flag, scope, language
+    humanitarian,
+    activityScope,
+    language,
+    // Policy markers, humanitarian scope, tags
+    policyMarkers: policyMarkers.length > 0 ? policyMarkers : undefined,
+    humanitarianScopes: humanitarianScopes.length > 0 ? humanitarianScopes : undefined,
+    tags: tags.length > 0 ? tags : undefined,
     // Note: capitalSpend and plannedDisbursements are not available from IATI Datastore
     // They're only available via XML upload (see dportal-mapper.ts)
   }

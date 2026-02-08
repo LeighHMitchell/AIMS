@@ -258,7 +258,7 @@ export default function BulkValidationStep({
                         )}
                         <div>
                           <p className="font-medium text-sm">{activity.title || activity.iatiIdentifier}</p>
-                          <p className="text-xs text-gray-500">{activity.iatiIdentifier}</p>
+                          <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

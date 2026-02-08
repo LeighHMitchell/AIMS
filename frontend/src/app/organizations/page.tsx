@@ -1097,9 +1097,10 @@ const OrganizationListView: React.FC<{
 
               {/* IATI ID */}
               <div className="flex items-center gap-1 flex-shrink-0">
-                <p className="text-sm text-gray-500">
-                  {org.iati_org_id || 'No IATI ID'}
-                </p>
+                {org.iati_org_id
+                  ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{org.iati_org_id}</span>
+                  : <p className="text-sm text-gray-500">No IATI ID</p>
+                }
                 {org.iati_org_id && (
                   <Button
                     variant="ghost"

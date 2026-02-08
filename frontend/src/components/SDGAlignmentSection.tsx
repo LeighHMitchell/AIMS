@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 import { SDG_GOALS, SDG_TARGETS, getTargetsForGoal } from "@/data/sdg-targets";
 import { toast } from "sonner";
 import { apiFetch } from '@/lib/api-fetch';
+import SDGIconHover from "@/components/ui/SDGIconHover";
 
 // Alignment strength types
 type AlignmentStrength = 'primary' | 'secondary' | 'indirect';
@@ -325,14 +326,15 @@ export default function SDGAlignmentSection({
                           "relative aspect-square rounded-lg border-2 transition-all hover:scale-105 overflow-visible",
                           isSelected
                             ? "border-primary ring-2 ring-primary/20 shadow-lg"
-                            : "border-gray-200 hover:border-gray-300 grayscale hover:grayscale-0",
+                            : "border-gray-200 hover:border-gray-300",
                           !canEdit && "opacity-50 cursor-not-allowed"
                         )}
                       >
-                        <img
+                        <SDGIconHover
                           src={getSDGImageURL(goal.id)}
                           alt={`SDG ${goal.id}: ${goal.name}`}
-                          className="w-full h-full object-cover rounded-md"
+                          selected={isSelected}
+                          className="w-full h-full rounded-md"
                         />
                         {isSelected && (
                           <div className="absolute -top-2 -right-2 bg-primary rounded-full p-1 shadow-md z-10">

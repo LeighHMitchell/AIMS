@@ -1201,7 +1201,7 @@ export function TransactionTable({
                           <div className="text-xs text-gray-500 ml-5">
                             <span>{activityDetails[transaction.provider_org_activity_id]?.title || activityDetails[transaction.provider_org_activity_id]?.acronym}</span>
                             {activityDetails[transaction.provider_org_activity_id]?.iati_identifier && (
-                              <span className="ml-1">({activityDetails[transaction.provider_org_activity_id]?.iati_identifier})</span>
+                              <span className="ml-1 font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activityDetails[transaction.provider_org_activity_id]?.iati_identifier}</span>
                             )}
                           </div>
                         )}
@@ -1234,7 +1234,7 @@ export function TransactionTable({
                           <div className="text-xs text-gray-500 ml-5">
                             <span>{activityDetails[transaction.receiver_org_activity_id]?.title || activityDetails[transaction.receiver_org_activity_id]?.acronym}</span>
                             {activityDetails[transaction.receiver_org_activity_id]?.iati_identifier && (
-                              <span className="ml-1">({activityDetails[transaction.receiver_org_activity_id]?.iati_identifier})</span>
+                              <span className="ml-1 font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activityDetails[transaction.receiver_org_activity_id]?.iati_identifier}</span>
                             )}
                           </div>
                         )}

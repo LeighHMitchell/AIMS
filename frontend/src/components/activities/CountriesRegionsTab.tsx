@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -125,6 +125,7 @@ export default function CountriesRegionsTab({
   const formRef = useOutsideClick(closeAllDropdowns, true);
 
   const [allocationStatus, setAllocationStatus] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
+  const isDirtyRef = useRef(false);
 
   // Type options for the dropdown
   const typeOptions = [
@@ -188,8 +189,8 @@ export default function CountriesRegionsTab({
   // Check for overlapping allocations
   const hasOverlappingAllocations = useMemo(() => {
     const allCodes = [
-      ...countries.map(c => c.country.code),
-      ...regions.map(r => r.region.code),
+      ...countries.map(c => c.country?.code),
+      ...regions.map(r => r.region?.code),
       ...customGeographies.map(c => c.code)
     ];
     
@@ -240,9 +241,9 @@ export default function CountriesRegionsTab({
 
   // Advanced fields are collapsed by default - users can expand manually if needed
 
-  // Autosave when data changes
+  // Autosave when data changes (skip initial load)
   useEffect(() => {
-    if (activityId && activityId !== 'new') {
+    if (activityId && activityId !== 'new' && isDirtyRef.current) {
       const timeoutId = setTimeout(() => {
         saveData();
       }, 1000); // Debounce for 1 second
@@ -267,38 +268,42 @@ export default function CountriesRegionsTab({
       const data = await response.json();
       
       // Transform countries data to ensure proper structure with full names
-      const transformedCountries = (data.countries || []).map((country: any) => {
-        const countryCode = country.country?.code || country.code;
-        const countryData = IATI_COUNTRIES.find(c => c.code === countryCode);
-        const countryName = countryData ? countryData.name : (country.country?.name || country.name || countryCode);
-        
-        return {
-          ...country,
-          country: {
-            code: countryCode,
-            name: countryName,
-            iso2: countryCode,
-            withdrawn: false
-          }
-        };
-      });
+      const transformedCountries = (data.countries || [])
+        .filter((country: any) => country && (country.country?.code || country.code))
+        .map((country: any) => {
+          const countryCode = country.country?.code || country.code;
+          const countryData = IATI_COUNTRIES.find(c => c.code === countryCode);
+          const countryName = countryData ? countryData.name : (country.country?.name || country.name || countryCode);
+
+          return {
+            ...country,
+            country: {
+              code: countryCode,
+              name: countryName,
+              iso2: countryCode,
+              withdrawn: false
+            }
+          };
+        });
       
       // Transform regions data to ensure proper structure with full names
-      const transformedRegions = (data.regions || []).map((region: any) => {
-        const regionCode = region.region?.code || region.code;
-        const regionData = IATI_REGIONS.find(r => r.code === regionCode);
-        const regionName = regionData ? regionData.name : (region.region?.name || region.name || regionCode);
-        
-        return {
-          ...region,
-          region: {
-            code: regionCode,
-            name: regionName,
-            vocabulary: region.vocabulary || '1',
-            withdrawn: false
-          }
-        };
-      });
+      const transformedRegions = (data.regions || [])
+        .filter((region: any) => region && (region.region?.code || region.code))
+        .map((region: any) => {
+          const regionCode = region.region?.code || region.code;
+          const regionData = IATI_REGIONS.find(r => r.code === regionCode);
+          const regionName = regionData ? regionData.name : (region.region?.name || region.name || regionCode);
+
+          return {
+            ...region,
+            region: {
+              code: regionCode,
+              name: regionName,
+              vocabulary: region.vocabulary || '1',
+              withdrawn: false
+            }
+          };
+        });
       
       // Custom geographies should already have the correct structure
       const transformedCustomGeographies = data.customGeographies || [];
@@ -387,6 +392,7 @@ export default function CountriesRegionsTab({
 
   // Add/Update allocation with percentage
   const addAllocation = () => {
+    isDirtyRef.current = true;
     if (!selectedType || !percentage) return;
     
     const percentageValue = parseFloat(percentage);
@@ -451,8 +457,8 @@ export default function CountriesRegionsTab({
       
       // Check for duplicate codes
       const allCodes = [
-        ...countries.map(c => c.country.code),
-        ...regions.map(r => r.region.code),
+        ...countries.map(c => c.country?.code),
+        ...regions.map(r => r.region?.code),
         ...customGeographies.map(c => c.code)
       ];
       
@@ -493,8 +499,8 @@ export default function CountriesRegionsTab({
     
     // Check for duplicate codes
     const allCodes = [
-      ...countries.map(c => c.country.code),
-      ...regions.map(r => r.region.code),
+      ...countries.map(c => c.country?.code),
+      ...regions.map(r => r.region?.code),
       ...customGeographies.map(c => c.code)
     ];
     
@@ -505,7 +511,7 @@ export default function CountriesRegionsTab({
     
     if (selectedType === 'country') {
       const countryData = COUNTRIES.find(c => c.code === selectedItem);
-      if (countryData && !countries.some(c => c.country.code === countryData.code)) {
+      if (countryData && !countries.some(c => c.country?.code === countryData.code)) {
         const country: IATICountry = {
           code: countryData.code,
           name: countryData.name,
@@ -530,7 +536,7 @@ export default function CountriesRegionsTab({
       }
     } else if (selectedType === 'region') {
       const regionData = REGIONS.find(r => r.code === selectedItem);
-      if (regionData && !regions.some(r => r.region.code === regionData.code)) {
+      if (regionData && !regions.some(r => r.region?.code === regionData.code)) {
         const region: IATIRegion = {
           code: regionData.code,
           name: regionData.name,
@@ -605,21 +611,21 @@ export default function CountriesRegionsTab({
   const editCountry = (countryAllocation: CountryAllocation) => {
     setEditingId(countryAllocation.id);
     setSelectedType('country');
-    setSelectedItem(countryAllocation.country.code);
+    setSelectedItem(countryAllocation.country?.code || '');
     setPercentage(countryAllocation.percentage.toString());
     setNarrative(countryAllocation.narrative || '');
     setVocabulary(countryAllocation.vocabulary || 'A4');
-    setItemSearchQuery(countryAllocation.country.name);
+    setItemSearchQuery(countryAllocation.country?.name || '');
   };
 
   const editRegion = (regionAllocation: RegionAllocation) => {
     setEditingId(regionAllocation.id);
     setSelectedType('region');
-    setSelectedItem(regionAllocation.region.code);
+    setSelectedItem(regionAllocation.region?.code || '');
     setPercentage(regionAllocation.percentage.toString());
     setNarrative(regionAllocation.narrative || '');
     setVocabulary(regionAllocation.vocabulary || '1');
-    setItemSearchQuery(regionAllocation.region.name);
+    setItemSearchQuery(regionAllocation.region?.name || '');
   };
 
   const editCustomGeography = (customAllocation: CustomGeographyAllocation) => {
@@ -656,7 +662,8 @@ export default function CountriesRegionsTab({
 
   // Update country percentage
   const updateCountryPercentage = (id: string, percentage: number) => {
-    const updatedCountries = countries.map(c => 
+    isDirtyRef.current = true;
+    const updatedCountries = countries.map(c =>
       c.id === id ? { ...c, percentage: Math.max(0, Math.min(100, percentage)) } : c
     );
     setCountries(updatedCountries);
@@ -665,7 +672,8 @@ export default function CountriesRegionsTab({
 
   // Update region percentage
   const updateRegionPercentage = (id: string, percentage: number) => {
-    const updatedRegions = regions.map(r => 
+    isDirtyRef.current = true;
+    const updatedRegions = regions.map(r =>
       r.id === id ? { ...r, percentage: Math.max(0, Math.min(100, percentage)) } : r
     );
     setRegions(updatedRegions);
@@ -674,31 +682,24 @@ export default function CountriesRegionsTab({
 
   // Remove country allocation
   const removeCountry = (id: string) => {
+    isDirtyRef.current = true;
     const updatedCountries = countries.filter(c => c.id !== id);
     setCountries(updatedCountries);
     onCountriesChange?.(updatedCountries);
-    
-    // Immediately save deletion to database
-    if (activityId && activityId !== 'new') {
-      saveData();
-    }
   };
 
   // Remove region allocation
   const removeRegion = (id: string) => {
+    isDirtyRef.current = true;
     const updatedRegions = regions.filter(r => r.id !== id);
     setRegions(updatedRegions);
     onRegionsChange?.(updatedRegions);
-    
-    // Immediately save deletion to database
-    if (activityId && activityId !== 'new') {
-      saveData();
-    }
   };
 
   // Update custom geography percentage
   const updateCustomGeographyPercentage = (id: string, percentage: number) => {
-    const updatedCustomGeographies = customGeographies.map(c => 
+    isDirtyRef.current = true;
+    const updatedCustomGeographies = customGeographies.map(c =>
       c.id === id ? { ...c, percentage: Math.max(0, Math.min(100, percentage)) } : c
     );
     setCustomGeographies(updatedCustomGeographies);
@@ -707,18 +708,15 @@ export default function CountriesRegionsTab({
 
   // Remove custom geography allocation
   const removeCustomGeography = (id: string) => {
+    isDirtyRef.current = true;
     const updatedCustomGeographies = customGeographies.filter(c => c.id !== id);
     setCustomGeographies(updatedCustomGeographies);
     onCustomGeographiesChange?.(updatedCustomGeographies);
-    
-    // Immediately save deletion to database
-    if (activityId && activityId !== 'new') {
-      saveData();
-    }
   };
 
   // Auto-distribute remaining percentage
   const autoDistributeRemaining = () => {
+    isDirtyRef.current = true;
     const remaining = 100 - totalPercentage;
     if (remaining <= 0) return;
 
@@ -1287,7 +1285,7 @@ export default function CountriesRegionsTab({
               <CardTitle>Current Allocations</CardTitle>
             </CardHeader>
             <CardContent>
-              {countries.length === 0 && regions.length === 0 ? (
+              {countries.length === 0 && regions.length === 0 && customGeographies.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="text-lg font-medium">No allocations added</p>
@@ -1320,9 +1318,9 @@ export default function CountriesRegionsTab({
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">
-                            {countryAllocation.country.code}
+                            {countryAllocation.country?.code}
                           </Badge>
-                            <span className="text-sm font-medium text-gray-900">{countryAllocation.country.name}</span>
+                            <span className="text-sm font-medium text-gray-900">{countryAllocation.country?.name}</span>
                             {countryAllocation.id && (
                               <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
                             )}
@@ -1381,9 +1379,9 @@ export default function CountriesRegionsTab({
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">
-                            {regionAllocation.region.code}
+                            {regionAllocation.region?.code}
                           </Badge>
-                            <span className="text-sm font-medium text-gray-900">{regionAllocation.region.name}</span>
+                            <span className="text-sm font-medium text-gray-900">{regionAllocation.region?.name}</span>
                             {regionAllocation.id && (
                               <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
                             )}

@@ -46,70 +46,6 @@ import type {
   ParsedActivity,
 } from './types'
 
-/**
- * Approximate bounding boxes for countries (for location-based country inference).
- * Used when activities don't have recipient-country but do have location coordinates.
- * These are approximate and meant for filtering, not precise boundary detection.
- * Format: { minLat, maxLat, minLng, maxLng }
- */
-const COUNTRY_BOUNDING_BOXES: Record<string, { minLat: number; maxLat: number; minLng: number; maxLng: number }> = {
-  // Southeast Asia
-  MM: { minLat: 9.5, maxLat: 28.5, minLng: 92.0, maxLng: 101.5 },   // Myanmar
-  TH: { minLat: 5.5, maxLat: 20.5, minLng: 97.3, maxLng: 105.7 },   // Thailand
-  VN: { minLat: 8.2, maxLat: 23.4, minLng: 102.1, maxLng: 109.5 },  // Vietnam
-  KH: { minLat: 10.0, maxLat: 14.7, minLng: 102.3, maxLng: 107.7 }, // Cambodia
-  LA: { minLat: 13.9, maxLat: 22.5, minLng: 100.0, maxLng: 107.7 }, // Laos
-  PH: { minLat: 4.5, maxLat: 21.2, minLng: 116.9, maxLng: 126.6 },  // Philippines
-  ID: { minLat: -11.0, maxLat: 6.1, minLng: 95.0, maxLng: 141.0 },  // Indonesia
-
-  // South Asia
-  BD: { minLat: 20.6, maxLat: 26.6, minLng: 88.0, maxLng: 92.7 },   // Bangladesh
-  IN: { minLat: 6.7, maxLat: 35.5, minLng: 68.1, maxLng: 97.4 },    // India
-  NP: { minLat: 26.3, maxLat: 30.5, minLng: 80.0, maxLng: 88.2 },   // Nepal
-  PK: { minLat: 23.6, maxLat: 37.1, minLng: 60.8, maxLng: 77.8 },   // Pakistan
-  LK: { minLat: 5.9, maxLat: 9.9, minLng: 79.5, maxLng: 82.0 },     // Sri Lanka
-  AF: { minLat: 29.4, maxLat: 38.5, minLng: 60.5, maxLng: 75.0 },   // Afghanistan
-
-  // East Africa
-  ET: { minLat: 3.4, maxLat: 15.0, minLng: 32.9, maxLng: 48.0 },    // Ethiopia
-  KE: { minLat: -4.7, maxLat: 5.0, minLng: 33.9, maxLng: 41.9 },    // Kenya
-  UG: { minLat: -1.5, maxLat: 4.2, minLng: 29.5, maxLng: 35.0 },    // Uganda
-  TZ: { minLat: -11.7, maxLat: -1.0, minLng: 29.3, maxLng: 40.5 },  // Tanzania
-  RW: { minLat: -2.8, maxLat: -1.0, minLng: 28.8, maxLng: 30.9 },   // Rwanda
-
-  // West Africa
-  NG: { minLat: 4.2, maxLat: 13.9, minLng: 2.7, maxLng: 14.7 },     // Nigeria
-  GH: { minLat: 4.7, maxLat: 11.2, minLng: -3.3, maxLng: 1.2 },     // Ghana
-  SN: { minLat: 12.3, maxLat: 16.7, minLng: -17.5, maxLng: -11.4 }, // Senegal
-  ML: { minLat: 10.1, maxLat: 25.0, minLng: -12.2, maxLng: 4.3 },   // Mali
-  BF: { minLat: 9.4, maxLat: 15.1, minLng: -5.5, maxLng: 2.4 },     // Burkina Faso
-  NE: { minLat: 11.7, maxLat: 23.5, minLng: 0.1, maxLng: 16.0 },    // Niger
-
-  // Central/Southern Africa
-  CD: { minLat: -13.5, maxLat: 5.4, minLng: 12.2, maxLng: 31.3 },   // DR Congo
-  ZA: { minLat: -34.8, maxLat: -22.1, minLng: 16.5, maxLng: 32.9 }, // South Africa
-  MZ: { minLat: -26.9, maxLat: -10.5, minLng: 30.2, maxLng: 41.0 }, // Mozambique
-  MW: { minLat: -17.1, maxLat: -9.4, minLng: 32.7, maxLng: 35.9 },  // Malawi
-  ZM: { minLat: -18.1, maxLat: -8.2, minLng: 22.0, maxLng: 33.7 },  // Zambia
-  ZW: { minLat: -22.4, maxLat: -15.6, minLng: 25.2, maxLng: 33.1 }, // Zimbabwe
-
-  // Middle East
-  YE: { minLat: 12.1, maxLat: 19.0, minLng: 42.5, maxLng: 54.5 },   // Yemen
-  JO: { minLat: 29.2, maxLat: 33.4, minLng: 34.9, maxLng: 39.3 },   // Jordan
-  LB: { minLat: 33.1, maxLat: 34.7, minLng: 35.1, maxLng: 36.6 },   // Lebanon
-  SY: { minLat: 32.3, maxLat: 37.3, minLng: 35.7, maxLng: 42.4 },   // Syria
-  IQ: { minLat: 29.1, maxLat: 37.4, minLng: 38.8, maxLng: 48.6 },   // Iraq
-
-  // Latin America
-  CO: { minLat: -4.2, maxLat: 13.4, minLng: -81.7, maxLng: -66.9 }, // Colombia
-  PE: { minLat: -18.4, maxLat: -0.0, minLng: -81.3, maxLng: -68.7 }, // Peru
-  BR: { minLat: -33.8, maxLat: 5.3, minLng: -73.9, maxLng: -28.8 }, // Brazil
-  MX: { minLat: 14.5, maxLat: 32.7, minLng: -117.1, maxLng: -86.7 }, // Mexico
-  GT: { minLat: 13.7, maxLat: 17.8, minLng: -92.2, maxLng: -88.2 }, // Guatemala
-  HN: { minLat: 12.9, maxLat: 16.5, minLng: -89.4, maxLng: -83.1 }, // Honduras
-  HT: { minLat: 18.0, maxLat: 20.1, minLng: -74.5, maxLng: -71.6 }, // Haiti
-}
-
 function LoadingTextRoller({ orgName }: { orgName: string }) {
   const messages = useMemo(() => [
     'Connecting to IATI Registry...',
@@ -187,6 +123,7 @@ export default function BulkImportSourceStep({
   const [fetchedAt, setFetchedAt] = useState<string | null>(null)
   const [wasCached, setWasCached] = useState(false)
   const fetchedRef = useRef(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // --- Progress tracking state ---
   const [fetchProgress, setFetchProgress] = useState(0)
@@ -195,6 +132,7 @@ export default function BulkImportSourceStep({
   const [longFetchWarning, setLongFetchWarning] = useState(false)
   const [estimatedTime, setEstimatedTime] = useState<{ count: number; seconds: number } | null>(null)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [fetchDuration, setFetchDuration] = useState<number | null>(null) // Final duration in seconds
   const fetchStartTimeRef = useRef<number>(0)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const elapsedIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -205,7 +143,11 @@ export default function BulkImportSourceStep({
   const [selectedCountry, setSelectedCountry] = useState<string>('')
   const [countryInitialized, setCountryInitialized] = useState(false)
   const [selectedHierarchy, setSelectedHierarchy] = useState<number | null>(null)
-  const [countryScope, setCountryScope] = useState<'all' | '100' | 'regional'>('all') // 100% vs regional allocation
+  // Country filter mode: where to look for country code
+  // - 'both': Activity-level OR transaction-level recipient country (default - most comprehensive)
+  // - 'activity': Only activity-level recipient_country_code
+  // - 'transaction': Only transaction-level recipient_country_code
+  const [countryFilterMode, setCountryFilterMode] = useState<'both' | 'activity' | 'transaction'>('both')
   const [orgScopeData, setOrgScopeData] = useState<{ reportingOrgRef: string; organizationName: string } | null>(null)
 
   // --- Date filter state ---
@@ -248,108 +190,13 @@ export default function BulkImportSourceStep({
   }, [])
 
   const filteredActivities = useMemo(() => {
+    // NOTE: Country filtering is NOT done here because it's already applied at the API level
+    // (via Solr query with countryFilterMode support for activity/transaction/both).
+    // Re-filtering here would incorrectly remove activities that have the country
+    // at transaction level only.
     let result = datastoreActivities
-    if (selectedCountry) {
-      // IATI Geography Rules Implementation:
-      // An activity is considered to be in a country if EITHER:
-      // Condition A: recipient-country includes the country code
-      // Condition B: recipient-country is empty AND all locations resolve to that country
-      //
-      // For location-based inference, we use country bounding boxes.
-      // Note: This is approximate - a more precise approach would use GeoJSON boundaries.
-      const countryBounds = COUNTRY_BOUNDING_BOXES[selectedCountry]
-      const alpha3Code = ALPHA2_TO_ALPHA3[selectedCountry] || selectedCountry
 
-      // Helper: check if a country code matches (handles alpha-2 and alpha-3)
-      const countryCodeMatches = (code: string | undefined): boolean => {
-        if (!code) return false
-        const upperCode = code.toUpperCase()
-        return upperCode === selectedCountry.toUpperCase() || upperCode === alpha3Code.toUpperCase()
-      }
-
-      // Helper: check if coordinates fall within country bounds
-      const coordsInCountry = (lat: number, lng: number): boolean => {
-        if (!countryBounds) return false
-        return lat >= countryBounds.minLat && lat <= countryBounds.maxLat &&
-               lng >= countryBounds.minLng && lng <= countryBounds.maxLng
-      }
-
-      // Helper: check if activity is in country via locations (Condition B)
-      const activityInCountryViaLocations = (a: ParsedActivity): boolean => {
-        // Must have no recipient-country data
-        if (a.recipientCountries && a.recipientCountries.length > 0) return false
-        // Must have at least one location with coordinates
-        if (!a.locations || a.locations.length === 0) return false
-        const locationsWithCoords = a.locations.filter(l => l.coordinates)
-        if (locationsWithCoords.length === 0) return false
-        // ALL locations must be in the selected country
-        return locationsWithCoords.every(l =>
-          l.coordinates && coordsInCountry(l.coordinates.latitude, l.coordinates.longitude)
-        )
-      }
-
-      // Debug: count what's being filtered
-      const beforeFilter = result.length
-      const withRecipientCountry = result.filter(a => a.recipientCountries?.some(rc => countryCodeMatches(rc.code))).length
-      const withLocationInference = result.filter(a => activityInCountryViaLocations(a)).length
-      console.log('[Filter Debug] Country filter:', {
-        selectedCountry,
-        alpha3Code,
-        beforeFilter,
-        withRecipientCountry,
-        withLocationInference,
-      })
-
-      result = result.filter(a => {
-        // Condition A: Has recipient-country with selected code (check both alpha-2 and alpha-3)
-        const hasRecipientCountry = a.recipientCountries?.some(rc => countryCodeMatches(rc.code))
-        if (hasRecipientCountry) return true
-
-        // Condition B: No recipient-country, but all locations in selected country
-        return activityInCountryViaLocations(a)
-      })
-
-      console.log('[Filter Debug] After country filter:', result.length, 'activities')
-
-      // Apply country scope filter (100% vs regional)
-      if (countryScope === '100') {
-        // Debug: show what percentages exist
-        const percentages = result.map(a => a.recipientCountries?.find(rc => countryCodeMatches(rc.code))?.percentage)
-        console.log('[Filter Debug] Percentages for selected country:', Array.from(new Set(percentages)))
-
-        // Only activities where selected country is 100% (or only country listed, or inferred from locations)
-        result = result.filter(a => {
-          const countryAlloc = a.recipientCountries?.find(rc => countryCodeMatches(rc.code))
-
-          // If activity was matched via locations (no recipient-country), treat as 100%
-          if (!a.recipientCountries || a.recipientCountries.length === 0) {
-            return activityInCountryViaLocations(a)
-          }
-
-          // 100% if: explicit 100% (handle string/number), or it's the only country
-          const pct = countryAlloc?.percentage
-          const is100 = pct !== undefined && pct !== null && Number(pct) >= 99.9
-          const isSingleCountry = a.recipientCountries?.length === 1
-          return countryAlloc && (is100 || (isSingleCountry && (pct == null || Number(pct) >= 99.9)))
-        })
-        console.log('[Filter Debug] After 100% filter:', result.length, 'activities')
-      } else if (countryScope === 'regional') {
-        // Only activities where selected country has partial allocation (<100%)
-        // Activities matched via locations are NOT regional (they're 100% by inference)
-        result = result.filter(a => {
-          // Skip activities matched via locations (they're 100%, not regional)
-          if (!a.recipientCountries || a.recipientCountries.length === 0) return false
-
-          const countryAlloc = a.recipientCountries?.find(rc => countryCodeMatches(rc.code))
-          const hasMultipleCountries = (a.recipientCountries?.length || 0) > 1
-          // Regional if: explicit <100%, or multiple countries listed
-          return countryAlloc && (
-            (countryAlloc.percentage != null && countryAlloc.percentage < 100) ||
-            hasMultipleCountries
-          )
-        })
-      }
-    }
+    // Hierarchy filter - can be applied locally since it's simple
     if (selectedHierarchy != null) {
       const beforeHierarchyFilter = result.length
       result = result.filter(a => a.hierarchy === selectedHierarchy)
@@ -396,7 +243,7 @@ export default function BulkImportSourceStep({
     }
 
     return result
-  }, [datastoreActivities, selectedCountry, selectedHierarchy, countryScope, dateFilterEnabled, dateRangeStart, dateRangeEnd])
+  }, [datastoreActivities, selectedHierarchy, dateFilterEnabled, dateRangeStart, dateRangeEnd])
 
   // Calculate totals for filtered activities
   const filteredTotals = useMemo(() => {
@@ -492,6 +339,11 @@ export default function BulkImportSourceStep({
   }, [])
 
   const stopProgressSimulation = useCallback((success: boolean) => {
+    // Record final duration before clearing
+    if (success && fetchStartTimeRef.current > 0) {
+      const duration = (Date.now() - fetchStartTimeRef.current) / 1000
+      setFetchDuration(Math.round(duration * 10) / 10) // Round to 1 decimal
+    }
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current)
       progressIntervalRef.current = null
@@ -518,6 +370,26 @@ export default function BulkImportSourceStep({
     }
   }, [homeCountry, settingsLoading, countryInitialized])
 
+  // Cancel fetch function
+  const cancelFetch = useCallback(() => {
+    // Abort any in-progress fetch
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    // Stop progress simulation
+    stopProgressSimulation(false)
+    // Reset to idle state
+    setFetchStatus('idle')
+    setFetchError(null)
+    setEstimatedTime(null)
+    setFetchProgress(0)
+    setElapsedSeconds(0)
+    setLongFetchWarning(false)
+    setFetchProgressMessage(null)
+    toast.info('Fetch cancelled')
+  }, [stopProgressSimulation])
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -529,6 +401,10 @@ export default function BulkImportSourceStep({
       }
       if (previewCountTimeoutRef.current) {
         clearTimeout(previewCountTimeoutRef.current)
+      }
+      // Abort any in-progress fetch on unmount
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
       }
     }
   }, [])
@@ -561,6 +437,7 @@ export default function BulkImportSourceStep({
         // Add filters
         if (selectedCountry) {
           params.set('country', selectedCountry)
+          params.set('country_filter_mode', countryFilterMode)
         }
         if (dateFilterEnabled && dateRangeStart) {
           params.set('date_start', dateRangeStart)
@@ -583,7 +460,7 @@ export default function BulkImportSourceStep({
         setPreviewCount(null)
       }
     }, 500) // 500ms debounce
-  }, [fetchStatus, orgIatiId, selectedOrgId, selectedCountry, selectedHierarchy, dateFilterEnabled, dateRangeStart, dateRangeEnd, isSuperUser, user?.organizationId])
+  }, [fetchStatus, orgIatiId, selectedOrgId, selectedCountry, countryFilterMode, selectedHierarchy, dateFilterEnabled, dateRangeStart, dateRangeEnd, isSuperUser, user?.organizationId])
 
   // Fetch organizations list for super users
   useEffect(() => {
@@ -693,6 +570,10 @@ export default function BulkImportSourceStep({
 
   // --- Datastore fetch ---
   const fetchFromDatastore = useCallback(async (forceRefresh = false, orgId?: string) => {
+    // Create new abort controller for this fetch
+    abortControllerRef.current = new AbortController()
+    const signal = abortControllerRef.current.signal
+
     setFetchStatus('fetching')
     setFetchError(null)
     setEstimatedTime(null)
@@ -710,6 +591,7 @@ export default function BulkImportSourceStep({
       // Add pre-fetch filters (applied at IATI Datastore level for performance)
       if (selectedCountry) {
         params.set('country', selectedCountry)
+        params.set('country_filter_mode', countryFilterMode)
       }
       if (dateFilterEnabled && dateRangeStart) {
         params.set('date_start', dateRangeStart)
@@ -727,7 +609,7 @@ export default function BulkImportSourceStep({
       const countUrl = `/api/iati/fetch-org-activities?${countParams.toString()}`
 
       try {
-        const countResponse = await apiFetch(countUrl)
+        const countResponse = await apiFetch(countUrl, { signal })
         if (countResponse.ok) {
           const countData = await countResponse.json()
           setEstimatedTime({ count: countData.count, seconds: countData.estimatedSeconds })
@@ -737,15 +619,22 @@ export default function BulkImportSourceStep({
           // Count failed, start with default estimate
           startProgressSimulation()
         }
-      } catch {
+      } catch (countErr) {
+        // Check if aborted
+        if (signal.aborted) throw countErr
         // Count failed, start with default estimate
         startProgressSimulation()
+      }
+
+      // Check if aborted before starting main fetch
+      if (signal.aborted) {
+        throw new DOMException('Aborted', 'AbortError')
       }
 
       // Step 2: Full fetch
       const url = `/api/iati/fetch-org-activities${params.toString() ? '?' + params.toString() : ''}`
 
-      const response = await apiFetch(url)
+      const response = await apiFetch(url, { signal })
       const data = await response.json()
 
       if (!response.ok) {
@@ -768,64 +657,37 @@ export default function BulkImportSourceStep({
         organizationName: data.orgScope?.organizationName || '',
       })
 
-      // Set default country filter to home country from system settings
-      const defaultCountry = homeCountry || ''
+      // Country/hierarchy filters are already applied at the API level (Solr query),
+      // so we don't need to re-filter here. Just pass activities through.
+      // The selectedCountry/selectedHierarchy state is used for the UI display.
+      setSelectedCountry(selectedCountry || homeCountry || '')
+      setSelectedHierarchy(selectedHierarchy)
 
-      setSelectedCountry(defaultCountry)
-      setSelectedHierarchy(null)
-
-      // Filter activities by home country if applicable (using IATI geography rules)
-      let filteredByCountry = activities
-      if (defaultCountry) {
-        const countryBounds = COUNTRY_BOUNDING_BOXES[defaultCountry]
-        const alpha3Code = ALPHA2_TO_ALPHA3[defaultCountry] || defaultCountry
-
-        const countryCodeMatches = (code: string | undefined): boolean => {
-          if (!code) return false
-          const upperCode = code.toUpperCase()
-          return upperCode === defaultCountry.toUpperCase() || upperCode === alpha3Code.toUpperCase()
-        }
-
-        const coordsInCountry = (lat: number, lng: number): boolean => {
-          if (!countryBounds) return false
-          return lat >= countryBounds.minLat && lat <= countryBounds.maxLat &&
-                 lng >= countryBounds.minLng && lng <= countryBounds.maxLng
-        }
-
-        const activityInCountryViaLocations = (a: ParsedActivity): boolean => {
-          if (a.recipientCountries && a.recipientCountries.length > 0) return false
-          if (!a.locations || a.locations.length === 0) return false
-          const locationsWithCoords = a.locations.filter(l => l.coordinates)
-          if (locationsWithCoords.length === 0) return false
-          return locationsWithCoords.every(l =>
-            l.coordinates && coordsInCountry(l.coordinates.latitude, l.coordinates.longitude)
-          )
-        }
-
-        filteredByCountry = activities.filter((a: ParsedActivity) =>
-          a.recipientCountries?.some(rc => countryCodeMatches(rc.code)) ||
-          activityInCountryViaLocations(a)
-        )
-      }
-
-      // Notify parent with filtered activities
+      // Notify parent with fetched activities (already filtered by API)
       // For super users importing for another org, include the organizationId
       // targetOrgId is already defined above for the API request
       const meta: BulkImportMeta = {
         sourceMode: 'datastore',
         reportingOrgRef: data.orgScope?.reportingOrgRef || orgIatiId || '',
         reportingOrgName: data.orgScope?.organizationName || orgName,
-        activityCount: filteredByCountry.length,
+        activityCount: activities.length,
         fetchedAt: data.fetchedAt,
         organizationId: targetOrgId || data.orgScope?.organizationId,
       }
-      onActivitiesReady(filteredByCountry, meta)
+      onActivitiesReady(activities, meta)
     } catch (err) {
+      // Don't show error if the fetch was cancelled
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        // Already handled by cancelFetch
+        return
+      }
       stopProgressSimulation(false)
       setFetchStatus('error')
       setFetchError(err instanceof Error ? err.message : 'Failed to fetch activities')
+    } finally {
+      abortControllerRef.current = null
     }
-  }, [homeCountry, orgIatiId, orgName, onActivitiesReady, startProgressSimulation, stopProgressSimulation, selectedOrgId, isSuperUser, user?.organizationId, selectedCountry, selectedHierarchy, dateFilterEnabled, dateRangeStart, dateRangeEnd])
+  }, [homeCountry, orgIatiId, orgName, onActivitiesReady, startProgressSimulation, stopProgressSimulation, selectedOrgId, isSuperUser, user?.organizationId, selectedCountry, countryFilterMode, selectedHierarchy, dateFilterEnabled, dateRangeStart, dateRangeEnd])
 
   // Note: Auto-fetch removed - user must click "Fetch Activities" button to start
 
@@ -941,7 +803,7 @@ export default function BulkImportSourceStep({
                           <img
                             src={`https://flagcdn.com/w20/${orgCountry.toLowerCase()}.png`}
                             alt=""
-                            className="w-4 h-auto rounded-sm"
+                            className="w-4 h-auto rounded-[2px]"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                           />
                           {COUNTRY_COORDINATES[orgCountry]?.name || orgCountry}
@@ -1007,15 +869,15 @@ export default function BulkImportSourceStep({
                       Pre-Fetch Filters
                     </div>
 
-                    <div className="flex items-end gap-6">
-                      {/* Country filter */}
-                      <div className="space-y-1.5">
-                        <div className="text-sm font-medium text-gray-700">
+                    <div className="space-y-3">
+                      {/* Country filter - one line */}
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm font-medium text-gray-700 w-36 shrink-0">
                           Recipient Country
                         </div>
                         <Popover open={countryOpen} onOpenChange={(open) => { setCountryOpen(open); if (!open) setCountrySearch('') }}>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-56 justify-between font-normal h-10 pr-2">
+                            <Button variant="outline" className="w-56 justify-between font-normal h-9 pr-2">
                               {selectedCountry ? (
                                 <span className="flex items-center gap-2 flex-1">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1094,10 +956,48 @@ export default function BulkImportSourceStep({
                         </Popover>
                       </div>
 
-                      {/* Hierarchy filter */}
-                      <div className="space-y-1.5">
-                        <div className="text-sm font-medium text-gray-700">
-                          Activity Level
+                      {/* Country filter mode - only show when a country is selected */}
+                      {selectedCountry && (
+                        <div className="flex items-center gap-3">
+                          <div className="text-sm font-medium text-gray-700 w-36 shrink-0">
+                            Include
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant={countryFilterMode === 'both' ? 'default' : 'outline'}
+                              size="sm"
+                              className={countryFilterMode === 'both' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                              onClick={() => setCountryFilterMode('both')}
+                              title="Activities where the country appears at activity-level OR transaction-level"
+                            >
+                              All
+                            </Button>
+                            <Button
+                              variant={countryFilterMode === 'activity' ? 'default' : 'outline'}
+                              size="sm"
+                              className={countryFilterMode === 'activity' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                              onClick={() => setCountryFilterMode('activity')}
+                              title="Only activities with recipient-country at the activity level"
+                            >
+                              Activity-Level Only
+                            </Button>
+                            <Button
+                              variant={countryFilterMode === 'transaction' ? 'default' : 'outline'}
+                              size="sm"
+                              className={countryFilterMode === 'transaction' ? 'bg-gray-900 text-white hover:bg-gray-800' : ''}
+                              onClick={() => setCountryFilterMode('transaction')}
+                              title="Only activities with recipient-country at the transaction level"
+                            >
+                              Transaction-Level Only
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Hierarchy filter - one line */}
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm font-medium text-gray-700 w-36 shrink-0">
+                          Level
                         </div>
                         <div className="flex items-center gap-1">
                           <Button
@@ -1127,9 +1027,9 @@ export default function BulkImportSourceStep({
                         </div>
                       </div>
 
-                      {/* Date range filter */}
-                      <div className="space-y-1.5">
-                        <div className="text-sm font-medium text-gray-700">
+                      {/* Date range filter - one line */}
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm font-medium text-gray-700 w-36 shrink-0">
                           Date Range
                         </div>
                         <div className="flex items-center gap-2">
@@ -1146,7 +1046,7 @@ export default function BulkImportSourceStep({
                             onChange={(value) => { setDateRangeStart(value); setDateFilterEnabled(true) }}
                             disabled={!dateFilterEnabled}
                             placeholder="Start"
-                            className={`h-10 w-32 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
+                            className={`h-9 w-32 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
                           />
                           <span className={`text-gray-400 ${!dateFilterEnabled ? 'opacity-50' : ''}`}>to</span>
                           <DatePicker
@@ -1154,7 +1054,7 @@ export default function BulkImportSourceStep({
                             onChange={(value) => { setDateRangeEnd(value); setDateFilterEnabled(true) }}
                             disabled={!dateFilterEnabled}
                             placeholder="End"
-                            className={`h-10 w-32 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
+                            className={`h-9 w-32 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
                           />
                         </div>
                       </div>
@@ -1276,6 +1176,24 @@ export default function BulkImportSourceStep({
                   </div>
 
                   <LoadingTextRoller orgName={orgName} />
+
+                  {/* Info message */}
+                  <div className="mt-6 p-4 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-700 max-w-md text-center">
+                    <p className="font-medium">You can navigate away from this screen</p>
+                    <p className="text-gray-500 mt-1">
+                      Just don't close this browser tab. Come back when you're ready — the fetch will continue in the background.
+                    </p>
+                  </div>
+
+                  {/* Cancel button */}
+                  <Button
+                    variant="outline"
+                    onClick={cancelFetch}
+                    className="mt-4"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -1301,6 +1219,13 @@ export default function BulkImportSourceStep({
                         {fetchedAt && (
                           <div className="text-gray-400">
                             Fetched: {formatTimestamp(fetchedAt)}
+                            {fetchDuration != null && !wasCached && (
+                              <span className="ml-1">
+                                ({fetchDuration < 60
+                                  ? `${fetchDuration}s`
+                                  : `${Math.floor(fetchDuration / 60)}m ${Math.round(fetchDuration % 60)}s`})
+                              </span>
+                            )}
                             {wasCached && ' (cached)'}
                           </div>
                         )}

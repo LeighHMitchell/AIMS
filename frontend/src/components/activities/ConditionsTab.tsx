@@ -404,17 +404,6 @@ export function ConditionsTab({
       )}
 
 
-      {/* Add Condition Button */}
-      {!readOnly && !showAddCondition && (
-        <Button 
-          onClick={() => setShowAddCondition(true)} 
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Add Condition
-        </Button>
-      )}
-
       {/* Add Condition Form */}
       {showAddCondition && !readOnly && (
         <Card className="border-2 border-gray-400 bg-gray-50">
@@ -477,21 +466,30 @@ export function ConditionsTab({
 
       {/* Conditions List */}
       {conditions.length === 0 ? (
-        <div className="bg-gray-50 rounded-lg p-8 text-center">
-          <ScrollText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h4 className="text-lg font-medium text-gray-900 mb-2">No conditions yet</h4>
-          <p className="text-gray-600 mb-4">
-            Add conditions that must be met for this activity
-          </p>
-          {!readOnly && (
-            <Button 
-              onClick={() => setShowAddCondition(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Condition
-            </Button>
-          )}
-        </div>
+        <Card className="border border-gray-200 bg-white">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-2xl font-semibold text-gray-900">Conditions</CardTitle>
+              {!readOnly && !showAddCondition && (
+                <Button
+                  size="sm"
+                  onClick={() => setShowAddCondition(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Condition
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="text-center pb-8">
+            <ScrollText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h4 className="text-lg font-medium text-gray-900 mb-2">No conditions yet</h4>
+            <p className="text-gray-600">
+              Add conditions that must be met for this activity
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-4">
           {conditions.map((condition, index) => (

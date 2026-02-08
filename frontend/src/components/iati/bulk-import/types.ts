@@ -23,12 +23,15 @@ export interface ImportRules {
   activityMatching: 'update_existing' | 'skip_existing' | 'create_new_version'
   transactionHandling: 'replace_all' | 'append_new' | 'skip'
   autoMatchOrganizations: boolean
+  /** Enable automatic 24-hour sync with IATI Datastore (only for datastore imports) */
+  enableAutoSync?: boolean
 }
 
 export const DEFAULT_IMPORT_RULES: ImportRules = {
   activityMatching: 'update_existing',
   transactionHandling: 'replace_all',
   autoMatchOrganizations: true,
+  enableAutoSync: false,
 }
 
 export interface ValidationIssue {
@@ -137,6 +140,31 @@ export interface ParsedActivity {
     languageCode?: string
     documentDate?: string
   }>
+  // Humanitarian flag
+  humanitarian?: boolean
+  // Activity scope & language
+  activityScope?: string
+  language?: string
+  // Policy markers
+  policyMarkers?: Array<{
+    code: string
+    vocabulary?: string
+    significance?: number
+    narrative?: string
+  }>
+  // Humanitarian scope
+  humanitarianScopes?: Array<{
+    type: string   // '1' = Emergency, '2' = Appeal
+    vocabulary: string
+    code: string
+    narrative?: string
+  }>
+  // Tags (including SDGs)
+  tags?: Array<{
+    code: string
+    vocabulary?: string  // '2' = SDG Goal, '3' = SDG Target
+    narrative?: string
+  }>
 }
 
 export interface BatchStatus {
@@ -161,6 +189,33 @@ export interface BatchStatus {
   items: BatchItemStatus[]
 }
 
+export interface ImportDetails {
+  // Expected totals (from source data)
+  budgetsTotal?: number
+  organizationsTotal?: number
+  sectorsTotal?: number
+  locationsTotal?: number
+  contactsTotal?: number
+  documentsTotal?: number
+  policyMarkersTotal?: number
+  humanitarianScopesTotal?: number
+  tagsTotal?: number
+  // Imported counts
+  budgets?: number
+  organizations?: number
+  sectors?: number
+  locations?: number
+  contacts?: number
+  documents?: number
+  policyMarkers?: number
+  humanitarianScopes?: number
+  tags?: number
+  // Results framework
+  results?: number
+  indicators?: number
+  periods?: number
+}
+
 export interface BatchItemStatus {
   id: string
   batchId: string
@@ -171,8 +226,10 @@ export interface BatchItemStatus {
   status: 'queued' | 'processing' | 'completed' | 'failed' | 'skipped'
   transactionsCount: number
   transactionsImported: number
+  importDetails?: ImportDetails
   errorMessage?: string
   validationIssues?: ValidationIssue[]
+  completedAt?: string
 }
 
 export interface BulkImportState {

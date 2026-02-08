@@ -408,7 +408,7 @@ export default function SDGProfilePage() {
                               {activity.title_narrative || 'Untitled Activity'}
                             </h3>
                             {activity.iati_identifier && (
-                              <code className="text-xs text-slate-500">{activity.iati_identifier}</code>
+                              <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{activity.iati_identifier}</code>
                             )}
                           </div>
                           <div className="text-right ml-4">
@@ -528,7 +528,7 @@ export default function SDGProfilePage() {
                               {activity.title_narrative || 'Untitled Activity'}
                             </h3>
                             {activity.iati_identifier && (
-                              <code className="text-xs text-slate-500">{activity.iati_identifier}</code>
+                              <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{activity.iati_identifier}</code>
                             )}
                           </div>
                           <div className="text-right ml-4">

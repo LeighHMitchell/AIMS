@@ -212,7 +212,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
         <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg max-w-xs">
           <p className="font-semibold text-gray-900 mb-1 break-words">{item.title}</p>
           {item.iatiIdentifier && (
-            <p className="text-xs text-gray-500 mb-1 font-mono">{item.iatiIdentifier}</p>
+            <p className="text-xs text-muted-foreground mb-1 font-mono bg-muted px-1.5 py-0.5 rounded inline-block">{item.iatiIdentifier}</p>
           )}
           <div className="border-t mt-2 pt-2 space-y-1">
             <p className="text-sm">
@@ -362,7 +362,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
                     {activity.title}
                   </div>
                   {activity.iatiIdentifier && (
-                    <div className="text-xs text-gray-500 font-mono">{activity.iatiIdentifier}</div>
+                    <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded inline-block">{activity.iatiIdentifier}</span>
                   )}
                 </div>
               </TableCell>

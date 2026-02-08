@@ -793,6 +793,9 @@ export default function ImprovedSectorAllocationForm({
   // Clear all sectors
   const clearAll = () => {
     onChange([]);
+    if (sectorsAutosave) {
+      sectorsAutosave.triggerFieldSave([]);
+    }
   };
 
   // Group allocations by category for display

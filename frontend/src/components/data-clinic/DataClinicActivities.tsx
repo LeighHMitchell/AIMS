@@ -570,8 +570,11 @@ export function DataClinicActivities() {
                           </Tooltip>
                         </TooltipProvider>
                       </td>
-                      <td className="p-4 text-sm text-muted-foreground">
-                        {activity.iatiIdentifier || '-'}
+                      <td className="p-4">
+                        {activity.iatiIdentifier
+                          ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>
+                          : <span className="text-sm text-muted-foreground">-</span>
+                        }
                       </td>
                       <td className="p-4">
                         {renderFieldValue(activity, 'default_aid_type')}

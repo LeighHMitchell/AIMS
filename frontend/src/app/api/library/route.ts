@@ -76,12 +76,13 @@ function formatOrgName(org: { name?: string; acronym?: string } | null | undefin
 }
 
 // Helper to extract organization details
-function extractOrgDetails(org: { name?: string; acronym?: string; logo?: string } | null | undefined) {
-  if (!org) return { name: undefined, acronym: undefined, logo: undefined };
+function extractOrgDetails(org: { name?: string; acronym?: string; logo?: string; iati_org_id?: string } | null | undefined) {
+  if (!org) return { name: undefined, acronym: undefined, logo: undefined, iatiOrgId: undefined };
   return {
     name: org.name || undefined,
     acronym: org.acronym || undefined,
     logo: org.logo || undefined,
+    iatiOrgId: org.iati_org_id || undefined,
   };
 }
 
@@ -96,7 +97,7 @@ async function queryActivityDocuments(supabase: any, filters: LibraryFilters): P
         title_narrative,
         iati_identifier,
         reporting_org_id,
-        organizations:reporting_org_id(id, name, acronym, logo)
+        organizations:reporting_org_id(id, name, acronym, logo, iati_org_id)
       )
     `)
     .order('created_at', { ascending: false });
@@ -166,6 +167,8 @@ async function queryActivityDocuments(supabase: any, filters: LibraryFilters): P
       reportingOrgName: formatOrgName(doc.activities?.organizations),
       reportingOrgAcronym: orgDetails.acronym,
       reportingOrgLogo: orgDetails.logo,
+      reportingOrgIatiId: orgDetails.iatiOrgId,
+      sourceIdentifier: doc.activities?.iati_identifier,
       createdAt: doc.created_at,
       updatedAt: doc.updated_at,
     };
@@ -185,8 +188,9 @@ async function queryTransactionDocuments(supabase: any, filters: LibraryFilters)
         activities:activity_id(
           id,
           title_narrative,
+          iati_identifier,
           reporting_org_id,
-          organizations:reporting_org_id(id, name, acronym, logo)
+          organizations:reporting_org_id(id, name, acronym, logo, iati_org_id)
         )
       )
     `)
@@ -253,6 +257,8 @@ async function queryTransactionDocuments(supabase: any, filters: LibraryFilters)
       reportingOrgName: formatOrgName(activity?.organizations),
       reportingOrgAcronym: orgDetails.acronym,
       reportingOrgLogo: orgDetails.logo,
+      reportingOrgIatiId: orgDetails.iatiOrgId,
+      sourceIdentifier: activity?.iati_identifier,
       createdAt: doc.created_at,
       updatedAt: doc.updated_at,
     };
@@ -265,7 +271,7 @@ async function queryOrganizationDocuments(supabase: any, filters: LibraryFilters
     .from('organization_document_links')
     .select(`
       *,
-      organizations:organization_id(id, name, acronym, logo),
+      organizations:organization_id(id, name, acronym, logo, iati_org_id),
       organization_document_titles(narrative, language_code),
       organization_document_descriptions(narrative, language_code),
       organization_document_categories(category_code)
@@ -357,6 +363,7 @@ async function queryOrganizationDocuments(supabase: any, filters: LibraryFilters
       reportingOrgName: formatOrgName(doc.organizations),
       reportingOrgAcronym: orgDetails.acronym,
       reportingOrgLogo: orgDetails.logo,
+      reportingOrgIatiId: orgDetails.iatiOrgId,
       createdAt: doc.created_at,
       updatedAt: doc.updated_at,
     };
@@ -376,8 +383,9 @@ async function queryResultDocuments(supabase: any, filters: LibraryFilters): Pro
         activities:activity_id(
           id,
           title_narrative,
+          iati_identifier,
           reporting_org_id,
-          organizations:reporting_org_id(id, name, acronym, logo)
+          organizations:reporting_org_id(id, name, acronym, logo, iati_org_id)
         )
       )
     `)
@@ -456,6 +464,8 @@ async function queryResultDocuments(supabase: any, filters: LibraryFilters): Pro
       reportingOrgName: formatOrgName(activity?.organizations),
       reportingOrgAcronym: orgDetails.acronym,
       reportingOrgLogo: orgDetails.logo,
+      reportingOrgIatiId: orgDetails.iatiOrgId,
+      sourceIdentifier: activity?.iati_identifier,
       createdAt: doc.created_at,
       updatedAt: doc.updated_at,
     };
@@ -479,7 +489,7 @@ async function queryIndicatorDocuments(supabase: any, filters: LibraryFilters): 
             id,
             title_narrative,
             reporting_org_id,
-            organizations:reporting_org_id(id, name, acronym, logo)
+            organizations:reporting_org_id(id, name, acronym, logo, iati_org_id)
           )
         )
       )
@@ -560,6 +570,8 @@ async function queryIndicatorDocuments(supabase: any, filters: LibraryFilters): 
       reportingOrgName: formatOrgName(activity?.organizations),
       reportingOrgAcronym: orgDetails.acronym,
       reportingOrgLogo: orgDetails.logo,
+      reportingOrgIatiId: orgDetails.iatiOrgId,
+      sourceIdentifier: activity?.iati_identifier,
       createdAt: doc.created_at,
       updatedAt: doc.updated_at,
     };
@@ -574,7 +586,7 @@ async function queryStandaloneDocuments(supabase: any, filters: LibraryFilters):
     .from('library_documents')
     .select(`
       *,
-      organizations:organization_id(id, name, acronym, logo)
+      organizations:organization_id(id, name, acronym, logo, iati_org_id)
     `)
     .order('created_at', { ascending: false });
 
@@ -638,6 +650,7 @@ async function queryStandaloneDocuments(supabase: any, filters: LibraryFilters):
       reportingOrgName: formatOrgName(doc.organizations),
       reportingOrgAcronym: orgDetails.acronym,
       reportingOrgLogo: orgDetails.logo,
+      reportingOrgIatiId: orgDetails.iatiOrgId,
       createdAt: doc.created_at,
       updatedAt: doc.updated_at,
     };
@@ -792,7 +805,14 @@ export async function GET(request: NextRequest) {
     
     // Merge documents with the same URL
     allDocuments = mergeDocumentsByUrl(allDocuments);
-    
+
+    // Filter by specific URLs if provided (used by bookmark views)
+    const urlsParam = searchParams.get('urls');
+    if (urlsParam) {
+      const urls = new Set(urlsParam.split(',').map(u => decodeURIComponent(u)));
+      allDocuments = allDocuments.filter(doc => urls.has(doc.url));
+    }
+
     // Apply text search filter
     if (filters.search) {
       allDocuments = applySearchFilter(allDocuments, filters.search);

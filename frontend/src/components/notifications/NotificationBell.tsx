@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Check, HelpCircle, MessageSquare, ExternalLink, Calendar, ClipboardList, AlertTriangle, CheckCircle2, ArrowRightLeft, Share2, UserPlus } from 'lucide-react';
+import { Bell, Check, HelpCircle, MessageSquare, ExternalLink, Calendar, ClipboardList, AlertTriangle, CheckCircle2, ArrowRightLeft, Share2, UserPlus, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
@@ -208,6 +208,8 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
         return <Share2 className={iconClass} />;
       case 'new_user_registered':
         return <UserPlus className={iconClass} />;
+      case 'import_completed':
+        return <Download className={iconClass} />;
       default:
         return <Bell className={iconClass} />;
     }
@@ -245,7 +247,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="h-auto p-1 text-xs text-blue-600 hover:text-blue-800"
+              className="h-auto p-1 text-xs text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
               onClick={(e) => {
                 e.preventDefault();
                 markAllAsRead();
@@ -273,7 +275,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
                 key={notification.id}
                 className={cn(
                   'flex flex-col items-start gap-1 p-3 cursor-pointer',
-                  !notification.is_read && 'bg-blue-50'
+                  !notification.is_read && 'bg-gray-50 dark:bg-gray-800/50'
                 )}
                 onClick={() => handleNotificationClick(notification)}
               >
@@ -304,7 +306,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="text-center text-sm text-blue-600 cursor-pointer justify-center"
+          className="text-center text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 cursor-pointer justify-center"
           onClick={() => {
             router.push('/dashboard?tab=notifications');
             setOpen(false);

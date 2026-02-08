@@ -16,7 +16,28 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import type { BatchStatus } from './types'
+import type { BatchStatus, BatchItemStatus } from './types'
+
+/** Format import detail counts with full readable labels and pluralisation */
+function formatImportCounts(item: BatchItemStatus): string | null {
+  const pl = (n: number, s: string) => `${n} ${n === 1 ? s : s + 's'}`;
+  const parts: string[] = [];
+  const d = item.importDetails;
+  if (item.transactionsImported > 0) parts.push(pl(item.transactionsImported, 'transaction'));
+  if (d?.organizations) parts.push(pl(d.organizations, 'organisation'));
+  if (d?.budgets) parts.push(pl(d.budgets, 'budget'));
+  if (d?.sectors) parts.push(pl(d.sectors, 'sector'));
+  if (d?.locations) parts.push(pl(d.locations, 'location'));
+  if (d?.contacts) parts.push(pl(d.contacts, 'contact'));
+  if (d?.documents) parts.push(pl(d.documents, 'document'));
+  if (d?.policyMarkers) parts.push(pl(d.policyMarkers, 'policy marker'));
+  if (d?.humanitarianScopes) parts.push(pl(d.humanitarianScopes, 'humanitarian scope'));
+  if (d?.tags) parts.push(pl(d.tags, 'tag'));
+  if (d?.results) parts.push(pl(d.results, 'result'));
+  if (d?.indicators) parts.push(pl(d.indicators, 'indicator'));
+  if (d?.periods) parts.push(pl(d.periods, 'period'));
+  return parts.length > 0 ? parts.join(', ') : null;
+}
 
 interface BulkImportResultsStepProps {
   batchStatus: BatchStatus
@@ -33,7 +54,7 @@ export default function BulkImportResultsStep({
   const importedItems = batchStatus.items.filter(i => i.status === 'completed' && i.activityId)
 
   const downloadReport = () => {
-    const rows = [['IATI Identifier', 'Title', 'Action', 'Status', 'Activity ID', 'Transactions Imported', 'Error']]
+    const rows = [['IATI Identifier', 'Title', 'Action', 'Status', 'Activity ID', 'Transactions Imported', 'Organizations Imported', 'Budgets Imported', 'Sectors Imported', 'Locations Imported', 'Contacts Imported', 'Documents Imported', 'Policy Markers Imported', 'Humanitarian Scopes Imported', 'Tags Imported', 'Results Imported', 'Indicators Imported', 'Periods Imported', 'Error']]
     for (const item of batchStatus.items) {
       rows.push([
         item.iatiIdentifier,
@@ -42,6 +63,18 @@ export default function BulkImportResultsStep({
         item.status,
         item.activityId || '',
         String(item.transactionsImported || 0),
+        String(item.importDetails?.organizations || 0),
+        String(item.importDetails?.budgets || 0),
+        String(item.importDetails?.sectors || 0),
+        String(item.importDetails?.locations || 0),
+        String(item.importDetails?.contacts || 0),
+        String(item.importDetails?.documents || 0),
+        String(item.importDetails?.policyMarkers || 0),
+        String(item.importDetails?.humanitarianScopes || 0),
+        String(item.importDetails?.tags || 0),
+        String(item.importDetails?.results || 0),
+        String(item.importDetails?.indicators || 0),
+        String(item.importDetails?.periods || 0),
         item.errorMessage || '',
       ])
     }
@@ -128,7 +161,7 @@ export default function BulkImportResultsStep({
                   <XCircle className="h-4 w-4 text-gray-600 mt-0.5 shrink-0" />
                   <div>
                     <p className="font-medium text-sm">{item.activityTitle || item.iatiIdentifier}</p>
-                    <p className="text-xs text-gray-500">{item.iatiIdentifier}</p>
+                    <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{item.iatiIdentifier}</span>
                     {item.errorMessage && (
                       <p className="text-xs text-gray-600 mt-1">{item.errorMessage}</p>
                     )}
@@ -153,21 +186,30 @@ export default function BulkImportResultsStep({
           </Button>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="grid grid-cols-[1fr_200px_100px_100px_80px] gap-2 px-4 py-3 border-b bg-gray-50 text-xs font-medium text-gray-500 uppercase">
+          <div className="grid grid-cols-[1fr_100px_200px] gap-2 px-4 py-3 border-b bg-gray-50 text-xs font-medium text-gray-500 uppercase">
             <div>Activity</div>
-            <div>IATI ID</div>
             <div>Action</div>
-            <div className="text-right">Transactions</div>
-            <div className="text-center">Link</div>
+            <div className="text-right">Import Details</div>
           </div>
           <ScrollArea className="h-64">
             {batchStatus.items.map((item) => (
               <div
                 key={item.id}
-                className="grid grid-cols-[1fr_200px_100px_100px_80px] gap-2 px-4 py-3 border-b last:border-b-0 items-center"
+                className="grid grid-cols-[1fr_100px_200px] gap-2 px-4 py-3 border-b last:border-b-0 items-center"
               >
-                <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
-                <p className="text-xs text-gray-500 truncate">{item.iatiIdentifier}</p>
+                <div className="min-w-0">
+                  {item.activityId ? (
+                    <button
+                      onClick={() => router.push(`/activities/${item.activityId}`)}
+                      className="text-sm text-left hover:text-gray-600 truncate block w-full"
+                    >
+                      {item.activityTitle || item.iatiIdentifier}
+                    </button>
+                  ) : (
+                    <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
+                  )}
+                  <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.iatiIdentifier}</span>
+                </div>
                 <div>
                   {item.action === 'create' && (
                     <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700">Created</Badge>
@@ -182,18 +224,8 @@ export default function BulkImportResultsStep({
                     <Badge variant="outline" className="text-xs bg-gray-200 text-gray-700">Failed</Badge>
                   )}
                 </div>
-                <p className="text-sm text-right text-gray-600">{item.transactionsImported || 0}</p>
-                <div className="text-center">
-                  {item.activityId && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      onClick={() => router.push(`/activities/${item.activityId}`)}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
+                <div className="text-right text-xs text-gray-500">
+                  {formatImportCounts(item) || '-'}
                 </div>
               </div>
             ))}

@@ -66,8 +66,12 @@ export async function GET(
         status: item.status,
         transactionsCount: item.transactions_count,
         transactionsImported: item.transactions_imported,
+        importDetails: item.import_details || {},
         errorMessage: item.error_message,
         validationIssues: item.validation_issues,
+        completedAt: item.status === 'completed' || item.status === 'failed' || item.status === 'skipped'
+          ? item.updated_at
+          : undefined,
       })),
     });
   } catch (error) {

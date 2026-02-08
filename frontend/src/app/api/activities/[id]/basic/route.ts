@@ -170,6 +170,21 @@ export async function GET(
     // Extract sectors
     const sectors = activity.activity_sectors || [];
     
+    // If created_by_org_name is missing but reporting_org_id exists, look up the org
+    let resolvedOrgName = activity.created_by_org_name || activity.reporting_org_name || '';
+    let resolvedOrgAcronym = activity.created_by_org_acronym || '';
+    if (!resolvedOrgName && activity.reporting_org_id) {
+      const { data: reportingOrg } = await supabase
+        .from('organizations')
+        .select('name, acronym')
+        .eq('id', activity.reporting_org_id)
+        .single();
+      if (reportingOrg) {
+        resolvedOrgName = reportingOrg.name || '';
+        resolvedOrgAcronym = reportingOrg.acronym || resolvedOrgAcronym;
+      }
+    }
+
     // Transform to match frontend format
     const transformedActivity = {
       id: activity.id,
@@ -192,8 +207,8 @@ export async function GET(
       iatiId: activity.iati_identifier,
       iatiIdentifier: activity.iati_identifier,
       iati_identifier: activity.iati_identifier,
-      created_by_org_name: activity.created_by_org_name,
-      created_by_org_acronym: activity.created_by_org_acronym,
+      created_by_org_name: resolvedOrgName,
+      created_by_org_acronym: resolvedOrgAcronym,
       collaborationType: activity.collaboration_type,
       collaboration_type: activity.collaboration_type,
       activityScope: activity.activity_scope,

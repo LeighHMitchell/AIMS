@@ -1000,6 +1000,26 @@ table td:has(div:contains("AA-AAA")) {
   height: 100dvh;
 }
 
+/* ===== SDG Icon Hover — Circular Colour Reveal ===== */
+
+/* The colour layer is hidden by default via a zero-radius circle clip */
+.sdg-icon-colour {
+  clip-path: circle(0% at 50% 50%);
+  transition: clip-path 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: clip-path;
+}
+
+/* Reveal on container hover or keyboard focus-within */
+.sdg-icon-hover:hover .sdg-icon-colour,
+.sdg-icon-hover:focus-within .sdg-icon-colour {
+  clip-path: circle(75% at 50% 50%);
+}
+
+/* When an SDG is selected the colour is always fully visible */
+.sdg-icon-colour.sdg-icon-selected {
+  clip-path: circle(75% at 50% 50%);
+}
+
 /* Gap Fallback for Older Safari (< 14.1) */
 @supports not (gap: 1rem) {
   .flex-gap-fallback > * + * {

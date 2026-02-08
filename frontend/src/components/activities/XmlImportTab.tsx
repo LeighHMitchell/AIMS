@@ -5460,6 +5460,24 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         message: `Saving ${basicFieldCount} basic field${basicFieldCount !== 1 ? 's' : ''} to database...`
       });
 
+      // Set sync tracking metadata for IATI Datastore imports
+      if (importMethod === 'iatiSearch') {
+        const importedFieldNames: string[] = ['title', 'description', 'status', 'dates'];
+        if (updateData._importSectors || updateData.importedSectors?.length) importedFieldNames.push('sectors');
+        if (updateData._importTransactions || updateData.importedTransactions?.length) importedFieldNames.push('transactions');
+        if (updateData.importedBudgets?.length) importedFieldNames.push('budgets');
+        if (updateData._importOrganizations || updateData.importedOrganizations?.length) importedFieldNames.push('organizations');
+        if (updateData._importLocations || updateData.importedLocations?.length) importedFieldNames.push('locations');
+        if (updateData._importContacts || updateData.importedContacts?.length) importedFieldNames.push('contacts');
+        if (updateData._importDocuments || updateData.importedDocuments?.length) importedFieldNames.push('documents');
+        if (updateData.recipient_countries?.length) importedFieldNames.push('countries');
+        if (updateData.importedPlannedDisbursements?.length) importedFieldNames.push('planned_disbursements');
+        if (updateData.importedPolicyMarkers?.length) importedFieldNames.push('policy_markers');
+        updateData.last_sync_time = new Date().toISOString();
+        updateData.sync_status = 'live';
+        updateData.auto_sync_fields = importedFieldNames;
+      }
+
       // Make API call to update the activity
       console.log('[XML Import] Making API call with data:', updateData);
       console.log('[XML Import] API URL:', `/api/activities/${activityId}`);

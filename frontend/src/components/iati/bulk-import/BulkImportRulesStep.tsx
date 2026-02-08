@@ -15,13 +15,14 @@ import {
   Receipt,
   Users,
 } from 'lucide-react'
-import type { ImportRules, ParsedActivity, ImpactPreview } from './types'
+import type { ImportRules, ImportSourceMode, ParsedActivity, ImpactPreview } from './types'
 
 interface BulkImportRulesStepProps {
   rules: ImportRules
   onRulesChange: (rules: ImportRules) => void
   activities: ParsedActivity[]
   selectedIds: Set<string>
+  sourceMode?: ImportSourceMode
 }
 
 function RadioOption({
@@ -71,6 +72,7 @@ export default function BulkImportRulesStep({
   onRulesChange,
   activities,
   selectedIds,
+  sourceMode,
 }: BulkImportRulesStepProps) {
   const impact: ImpactPreview = useMemo(() => {
     const selected = activities.filter(a => selectedIds.has(a.iatiIdentifier))
@@ -231,6 +233,41 @@ export default function BulkImportRulesStep({
           </CardContent>
         </Card>
       </div>
+
+      {/* Auto-Sync Option - only for Datastore imports */}
+      {sourceMode === 'datastore' && (
+        <Card className="border-gray-200">
+          <CardContent className="p-5">
+            <div
+              className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
+                rules.enableAutoSync
+                  ? 'border-2 border-gray-900 bg-gray-50'
+                  : 'border border-gray-200 hover:border-gray-400'
+              }`}
+              onClick={() => onRulesChange({ ...rules, enableAutoSync: !rules.enableAutoSync })}
+            >
+              <div className="flex items-center gap-3">
+                <RefreshCw className={`h-4 w-4 ${rules.enableAutoSync ? 'text-gray-900' : 'text-gray-400'}`} />
+                <div>
+                  <Label className={`text-sm cursor-pointer ${rules.enableAutoSync ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                    Enable Auto-Sync
+                  </Label>
+                  <p className="text-xs mt-0.5 text-gray-500">
+                    Keep these activities synchronized with the IATI Datastore
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={rules.enableAutoSync || false}
+                onCheckedChange={(checked) => onRulesChange({ ...rules, enableAutoSync: checked })}
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-3 px-1">
+              When enabled, imported activities will be automatically checked against the IATI Datastore every 24 hours and updated with any changes to the fields that were imported.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Impact Preview - monochrome */}
       <Card className="border-gray-300 bg-gray-50">

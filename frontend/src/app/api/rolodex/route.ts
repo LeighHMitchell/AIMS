@@ -34,6 +34,9 @@ export interface RolodexPerson {
   source: 'user' | 'activity_contact' | 'organization';
   role?: string;
   source_label?: string;
+  // Dedup fields: when multiple activity_contacts represent the same person
+  activity_count?: number;
+  activity_ids?: string[];
 }
 
 export interface RolodexFilters {
@@ -48,6 +51,85 @@ export interface RolodexFilters {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * Compute a dedup key for a contact. Contacts with the same key are considered
+ * the same person and will be merged in the rolodex view.
+ *
+ * Priority: email (most reliable) > first+last name > unique id (no dedup)
+ */
+function contactDedupKey(contact: {
+  email?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  id?: string;
+}): string {
+  // Primary: email (case-insensitive, trimmed)
+  if (contact.email && contact.email.trim()) {
+    return `email:${contact.email.trim().toLowerCase()}`;
+  }
+  // Secondary: first name + last name (both required)
+  if (contact.first_name?.trim() && contact.last_name?.trim()) {
+    return `name:${contact.first_name.trim().toLowerCase()}_${contact.last_name.trim().toLowerCase()}`;
+  }
+  // Fallback: unique id (no dedup possible)
+  return `id:${contact.id || Math.random()}`;
+}
+
+/**
+ * Deduplicate activity contacts that represent the same person.
+ * Merges duplicate entries into a single RolodexPerson with activity_count
+ * and activity_ids tracking all linked activities.
+ */
+function deduplicateActivityContacts(contacts: RolodexPerson[]): RolodexPerson[] {
+  const grouped = new Map<string, RolodexPerson[]>();
+
+  for (const contact of contacts) {
+    const key = contactDedupKey(contact);
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.push(contact);
+    } else {
+      grouped.set(key, [contact]);
+    }
+  }
+
+  const deduplicated: RolodexPerson[] = [];
+  grouped.forEach((group) => {
+    // Start with the first entry as the canonical record
+    const canonical = { ...group[0] };
+
+    // Collect all activity IDs
+    const activityIds: string[] = [];
+    for (const entry of group) {
+      if (entry.activity_id) {
+        activityIds.push(entry.activity_id);
+      }
+      // Fill in missing fields from other entries (prefer non-empty values)
+      if (!canonical.email && entry.email) canonical.email = entry.email;
+      if (!canonical.phone && entry.phone) canonical.phone = entry.phone;
+      if (!canonical.fax && entry.fax) canonical.fax = entry.fax;
+      if (!canonical.position && entry.position) canonical.position = entry.position;
+      if (!canonical.job_title && entry.job_title) canonical.job_title = entry.job_title;
+      if (!canonical.department && entry.department) canonical.department = entry.department;
+      if (!canonical.organization_id && entry.organization_id) canonical.organization_id = entry.organization_id;
+      if (!canonical.organization_name && entry.organization_name) canonical.organization_name = entry.organization_name;
+      if (!canonical.organization_acronym && entry.organization_acronym) canonical.organization_acronym = entry.organization_acronym;
+      if (!canonical.notes && entry.notes) canonical.notes = entry.notes;
+      if (!canonical.profile_photo && entry.profile_photo) canonical.profile_photo = entry.profile_photo;
+      if (!canonical.secondary_email && entry.secondary_email) canonical.secondary_email = entry.secondary_email;
+    }
+
+    // Deduplicate activity IDs
+    const uniqueActivityIds = Array.from(new Set(activityIds));
+    canonical.activity_count = uniqueActivityIds.length;
+    canonical.activity_ids = uniqueActivityIds;
+
+    deduplicated.push(canonical);
+  });
+
+  return deduplicated;
 }
 
 export async function OPTIONS() {
@@ -291,13 +373,14 @@ export async function GET(request: NextRequest) {
 
     // Transform activity contacts
     if (contacts) {
+      const rawContactPeople: RolodexPerson[] = [];
       contacts.forEach((contact: any) => {
         const fullName = [contact.first_name, contact.middle_name, contact.last_name]
           .filter(Boolean)
           .join(' ')
           .trim();
 
-        transformedPeople.push({
+        rawContactPeople.push({
           id: contact.id,
           source: 'activity_contact' as const,
           name: fullName || contact.email || 'Unknown Contact',
@@ -326,6 +409,11 @@ export async function GET(request: NextRequest) {
           notes: contact.notes,
         });
       });
+
+      // Deduplicate: merge contacts that represent the same person
+      const dedupedContacts = deduplicateActivityContacts(rawContactPeople);
+      console.log(`[AIMS Rolodex] Deduplicated ${rawContactPeople.length} contact rows → ${dedupedContacts.length} unique people`);
+      transformedPeople.push(...dedupedContacts);
     }
 
     // Apply sorting

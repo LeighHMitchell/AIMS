@@ -340,11 +340,12 @@ export default function LocationsTab({
   return (
     <div className="space-y-6">
       {/* Activity Locations Map */}
-      <ActivityLocationsHeatmap 
+      <ActivityLocationsHeatmap
         locations={locations}
         title="Activity Locations Map"
         activityTitle={activityTitle}
         activity={activityData}
+        simpleMarkers
       />
 
       {/* Header */}

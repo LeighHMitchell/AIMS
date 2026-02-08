@@ -494,7 +494,7 @@ export default function PolicyMarkerProfilePage() {
                               )}
                             </div>
                             {activity.iati_identifier && (
-                              <code className="text-xs text-slate-500">{activity.iati_identifier}</code>
+                              <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{activity.iati_identifier}</code>
                             )}
                             {activity.rationale && (
                               <p className="text-xs text-slate-600 mt-1 italic">{activity.rationale}</p>
@@ -624,7 +624,7 @@ export default function PolicyMarkerProfilePage() {
                               )}
                             </div>
                             {activity.iati_identifier && (
-                              <code className="text-xs text-slate-500">{activity.iati_identifier}</code>
+                              <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{activity.iati_identifier}</code>
                             )}
                             {activity.rationale && (
                               <p className="text-xs text-slate-600 mt-1 italic">{activity.rationale}</p>

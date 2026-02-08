@@ -285,9 +285,12 @@ export function OrganizationCombobox({
                       {(orgTypeCode || orgTypeName) && (
                         <>
                           <span className="text-gray-300">·</span>
-                          <span className="truncate">
-                            {orgTypeCode}{orgTypeCode && orgTypeName ? ' ' : ''}{orgTypeName}
-                          </span>
+                          {orgTypeCode && (
+                            <span className="font-mono bg-gray-100 px-1 py-0.5 rounded text-[10px]">{orgTypeCode}</span>
+                          )}
+                          {orgTypeName && (
+                            <span className="truncate">{orgTypeName}</span>
+                          )}
                         </>
                       )}
 
@@ -301,7 +304,7 @@ export function OrganizationCombobox({
                               <img
                                 src={`https://flagcdn.com/w20/${getCountryCode(selected.country)}.png`}
                                 alt=""
-                                className="w-3.5 h-auto rounded-sm"
+                                className="w-3.5 h-auto rounded-[2px]"
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                               />
                             )}
@@ -427,11 +430,12 @@ export function OrganizationCombobox({
                               {(orgTypeCode || orgTypeName) && (
                                 <>
                                   <span className="text-gray-300">·</span>
-                                  <span className="text-xs text-gray-500">
-                                    {orgTypeCode && <span className="font-mono">{orgTypeCode}</span>}
-                                    {orgTypeCode && orgTypeName && ' '}
-                                    {orgTypeName}
-                                  </span>
+                                  {orgTypeCode && (
+                                    <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{orgTypeCode}</span>
+                                  )}
+                                  {orgTypeName && (
+                                    <span className="text-xs text-gray-500">{orgTypeName}</span>
+                                  )}
                                 </>
                               )}
 
@@ -445,7 +449,7 @@ export function OrganizationCombobox({
                                       <img
                                         src={`https://flagcdn.com/w20/${getCountryCode(org.country)}.png`}
                                         alt=""
-                                        className="w-4 h-auto rounded-sm"
+                                        className="w-4 h-auto rounded-[2px]"
                                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                                       />
                                     )}

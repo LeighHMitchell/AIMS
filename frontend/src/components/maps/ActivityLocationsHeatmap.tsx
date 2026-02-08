@@ -18,6 +18,7 @@ import { Map, MapControls, useMap } from '@/components/ui/map'
 
 // Dynamic import for MapLibre-based layers
 const ActivityMarkersLayer = dynamic(() => import('../maps-v2/ActivityMarkersLayer'), { ssr: false })
+const SimpleActivityMarkersLayer = dynamic(() => import('../maps-v2/SimpleActivityMarkersLayer'), { ssr: false })
 const HeatmapLayer = dynamic(() => import('../maps-v2/HeatmapLayer'), { ssr: false })
 
 interface SectorData {
@@ -52,6 +53,7 @@ interface ActivityLocationsHeatmapProps {
   title?: string
   activityTitle?: string
   activity?: ActivityData
+  simpleMarkers?: boolean
 }
 
 type ViewMode = 'markers' | 'heatmap'
@@ -241,7 +243,8 @@ export default function ActivityLocationsHeatmap({
   locations = [],
   title = "Activity Locations Map",
   activityTitle,
-  activity
+  activity,
+  simpleMarkers = false
 }: ActivityLocationsHeatmapProps) {
   const [mapStyle, setMapStyle] = useState<MapStyleKey>('carto_light')
   const [isExporting, setIsExporting] = useState(false)
@@ -450,10 +453,17 @@ export default function ActivityLocationsHeatmap({
 
             {/* Markers Mode */}
             {viewMode === 'markers' && validLocations.length > 0 && (
-              <ActivityMarkersLayer 
-                locations={validLocations} 
-                activity={activity}
-              />
+              simpleMarkers ? (
+                <SimpleActivityMarkersLayer
+                  locations={validLocations}
+                  activityTitle={activityTitle}
+                />
+              ) : (
+                <ActivityMarkersLayer
+                  locations={validLocations}
+                  activity={activity}
+                />
+              )
             )}
 
             {/* Heatmap Mode */}

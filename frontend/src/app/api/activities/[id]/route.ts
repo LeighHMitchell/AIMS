@@ -100,7 +100,8 @@ export async function PATCH(
       'iati_identifier', 'default_currency', 'default_aid_type', 'default_finance_type',
       'default_flow_type', 'default_tied_status', 'activity_scope', 'language',
       'recipient_countries', 'recipient_regions', 'custom_geographies', 'capital_spend_percentage',
-      'banner', 'banner_position', 'icon', 'geography_level', 'sector_export_level'
+      'banner', 'banner_position', 'icon', 'geography_level', 'sector_export_level',
+      'auto_sync', 'last_sync_time', 'sync_status', 'auto_sync_fields'
     ];
     
     // Normalize activity_scope value (string '1'-'8') if provided using a helper
@@ -1160,6 +1161,28 @@ export async function GET(
       policyMarkers: activityPolicyMarkers.length
     });
     
+    // If created_by_org_name is missing but reporting_org_id exists, look up the org
+    let resolvedOrgName = activity.created_by_org_name || activity.reporting_org_name || '';
+    let resolvedOrgAcronym = activity.created_by_org_acronym || '';
+    if (!resolvedOrgName && activity.reporting_org_id) {
+      const { data: reportingOrg } = await supabase
+        .from('organizations')
+        .select('name, acronym')
+        .eq('id', activity.reporting_org_id)
+        .single();
+      if (reportingOrg) {
+        resolvedOrgName = reportingOrg.name || '';
+        resolvedOrgAcronym = reportingOrg.acronym || resolvedOrgAcronym;
+      }
+    }
+    console.log('[AIMS API] Resolved org for sidebar:', {
+      created_by_org_name: activity.created_by_org_name,
+      reporting_org_name: activity.reporting_org_name,
+      reporting_org_id: activity.reporting_org_id,
+      resolvedOrgName,
+      resolvedOrgAcronym,
+    });
+
     // Transform to match frontend format
     const transformedActivity = {
       ...activity,
@@ -1175,8 +1198,8 @@ export async function GET(
       partnerId: activity.other_identifier,
       iatiId: activity.iati_identifier,
       iatiIdentifier: activity.iati_identifier,
-      created_by_org_name: activity.created_by_org_name,
-      created_by_org_acronym: activity.created_by_org_acronym,
+      created_by_org_name: resolvedOrgName,
+      created_by_org_acronym: resolvedOrgAcronym,
       collaborationType: activity.collaboration_type,
       activityStatus: activity.activity_status,
       publicationStatus: activity.publication_status,

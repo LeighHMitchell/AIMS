@@ -295,7 +295,7 @@ const isFlowType = (v: any): v is FlowType => typeof v === 'string' && ['10','20
 const isFinanceType = (v: any): v is FinanceType => typeof v === 'string' && [
   '1','110','111','210','211','310','311','410','411','412','413','414','451','452','453','510','511','512','513','520','530','600','601','602','603','610','620','621','622','623','630','631','632','700','810','910','1100'
 ].includes(v);
-const isTiedStatus = (v: any): v is TiedStatus => typeof v === 'string' && ['3','4','5'].includes(v);
+const isTiedStatus = (v: any): v is TiedStatus => typeof v === 'string' && ['1','2','3','4'].includes(v);
 
 interface ActivitySector {
   id?: string;
@@ -1831,7 +1831,7 @@ export default function TransactionModal({
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-amber-800 truncate">
+                          <div className="text-sm font-medium text-amber-800 truncate font-mono">
                             {formData.provider_org_activity_id}
                           </div>
                           <div className="text-xs text-amber-600">
@@ -2035,7 +2035,7 @@ export default function TransactionModal({
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-amber-800 truncate">
+                          <div className="text-sm font-medium text-amber-800 truncate font-mono">
                             {formData.receiver_org_activity_id}
                           </div>
                           <div className="text-xs text-amber-600">

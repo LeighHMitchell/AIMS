@@ -18,18 +18,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { 
-  Mail, 
-  Phone, 
-  Building2, 
-  FileText, 
-  ExternalLink, 
+import {
+  Mail,
+  Phone,
+  Building2,
+  FileText,
+  ExternalLink,
   MoreVertical,
   Briefcase,
   Printer,
   Edit,
   User,
-  Trash2
+  Trash2,
+  Layers
 } from 'lucide-react';
 import { getRoleBadgeVariant, getRoleDisplayLabel } from '@/lib/role-badge-utils';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -228,9 +229,15 @@ export function PersonCard({
                 >
                   {person.source === 'user' ? 'User' : 'Activity'}
                 </Badge>
+                {(person.activity_count ?? 0) > 1 && (
+                  <Badge variant="outline" className="text-xs flex-shrink-0">
+                    <Layers className="h-3 w-3 mr-1" />
+                    {person.activity_count} activities
+                  </Badge>
+                )}
               </div>
             </div>
-            
+
             <div className="space-y-1">
               {/* Role Pill - only for Users (but not super users since they have their own badge) */}
               {person.source === 'user' && person.role && !isPersonSuperUser && (
@@ -299,12 +306,19 @@ export function PersonCard({
                   View Organization
                 </DropdownMenuItem>
               )}
-              {person.activity_id && (
+              {person.activity_ids && person.activity_ids.length > 1 ? (
+                person.activity_ids.map((actId, idx) => (
+                  <DropdownMenuItem key={actId} onClick={() => onActivityClick?.(actId)}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    View Activity {idx + 1}
+                  </DropdownMenuItem>
+                ))
+              ) : person.activity_id ? (
                 <DropdownMenuItem onClick={handleActivityClick}>
                   <FileText className="mr-2 h-4 w-4" />
                   View Activity
                 </DropdownMenuItem>
-              )}
+              ) : null}
               {person.email && (
                 <DropdownMenuItem onClick={() => handleEmailClick(person.email)}>
                   <Mail className="mr-2 h-4 w-4" />
@@ -314,7 +328,7 @@ export function PersonCard({
               {onDelete && person.source === 'activity_contact' && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={handleDeleteContact}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
@@ -367,7 +381,13 @@ export function PersonCard({
               >
                 {person.source === 'user' ? 'User Contact' : 'Activity Contact'}
               </Badge>
-              
+              {(person.activity_count ?? 0) > 1 && (
+                <Badge variant="outline" className="text-xs flex-shrink-0">
+                  <Layers className="h-3 w-3 mr-1" />
+                  {person.activity_count} activities
+                </Badge>
+              )}
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon" className="h-8 w-8 flex-shrink-0">
@@ -381,12 +401,19 @@ export function PersonCard({
                       View Organization
                     </DropdownMenuItem>
                   )}
-                  {person.activity_id && (
+                  {person.activity_ids && person.activity_ids.length > 1 ? (
+                    person.activity_ids.map((actId, idx) => (
+                      <DropdownMenuItem key={actId} onClick={() => onActivityClick?.(actId)}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        View Activity {idx + 1}
+                      </DropdownMenuItem>
+                    ))
+                  ) : person.activity_id ? (
                     <DropdownMenuItem onClick={handleActivityClick}>
                       <FileText className="mr-2 h-4 w-4" />
                       View Activity
                     </DropdownMenuItem>
-                  )}
+                  ) : null}
                   {person.email && (
                     <DropdownMenuItem onClick={() => handleEmailClick(person.email)}>
                       <Mail className="mr-2 h-4 w-4" />
@@ -396,7 +423,7 @@ export function PersonCard({
                   {onDelete && person.source === 'activity_contact' && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={handleDeleteContact}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
@@ -409,7 +436,7 @@ export function PersonCard({
               </DropdownMenu>
             </div>
           </div>
-          
+
           {/* Content area with proper text wrapping */}
           <div className="min-w-0 space-y-1">
             <h3 className="text-base font-semibold text-slate-900 leading-tight break-words">

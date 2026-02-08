@@ -280,7 +280,7 @@ export default function NewGroupPage() {
                                   {org.acronym ? `${org.acronym} - ${org.name}` : org.name}
                                 </div>
                                 {org.iati_org_id && (
-                                  <div className="text-xs text-gray-500">{org.iati_org_id}</div>
+                                  <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{org.iati_org_id}</span>
                                 )}
                               </div>
                             </CommandItem>

@@ -958,7 +958,7 @@ function ActivitiesPageContent() {
                                 <div className="text-xs text-muted-foreground line-clamp-1">
                                   {activity.partnerId}
                                   {activity.partnerId && activity.iatiIdentifier && '  •  '}
-                                  <span className="text-slate-400">{activity.iatiIdentifier}</span>
+                                  <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>
                                 </div>
                               )}
                             </div>
@@ -1129,7 +1129,7 @@ function ActivitiesPageContent() {
                       <p className="text-sm text-slate-500">
                         {activity.partnerId}
                         {activity.partnerId && activity.iatiIdentifier && ' • '}
-                        {activity.iatiIdentifier}
+                        {activity.iatiIdentifier && <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>}
                       </p>
                     )}
                     {/* IATI Sync Status */}

@@ -19,25 +19,41 @@ import {
 } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { 
-  RefreshCw, 
-  Globe, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  RefreshCw,
+  Globe,
+  CheckCircle2,
+  AlertCircle,
   ChevronDown,
   Loader2,
   Info,
   Calendar,
-  Activity
+  Activity,
+  Clock,
+  History,
+  Zap,
+  XCircle
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { 
-  mapIatiToAims, 
-  mapAimsToIati, 
-  getAllFieldMappings,
-  compareData,
-  FIELD_MAPPINGS
-} from '@/lib/iati-field-mapper';
+import { format, formatDistanceToNow } from 'date-fns';
+import { FIELD_MAPPINGS } from '@/lib/iati-field-mapper';
+
+// Sync field groups that match the cron route's hasFieldChanged() keys
+const SYNC_FIELD_GROUPS: Record<string, string> = {
+  title: 'Title',
+  description: 'Description',
+  status: 'Activity Status',
+  dates: 'Dates (planned/actual start & end)',
+  transactions: 'Transactions',
+  budgets: 'Budgets',
+  sectors: 'Sectors',
+  organizations: 'Participating Organizations',
+  locations: 'Locations',
+  contacts: 'Contacts',
+  documents: 'Documents',
+  countries: 'Recipient Countries',
+  planned_disbursements: 'Planned Disbursements',
+  policy_markers: 'Policy Markers',
+};
 import { CompareDataModal } from './CompareDataModal';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -49,6 +65,7 @@ interface IATISyncPanelProps {
   syncStatus?: 'live' | 'pending' | 'outdated';
   autoSyncFields?: string[];
   onUpdate?: () => void;
+  onAutoSyncChange?: (autoSync: boolean, autoSyncFields: string[]) => void;
   onStateChange?: (state: { isEnabled: boolean; syncStatus: 'live' | 'pending' | 'outdated' }) => void;
   canEdit?: boolean;
 }
@@ -70,6 +87,7 @@ export function IATISyncPanel({
   syncStatus = 'pending',
   autoSyncFields = [],
   onUpdate,
+  onAutoSyncChange,
   onStateChange,
   canEdit = true
 }: IATISyncPanelProps) {
@@ -81,24 +99,41 @@ export function IATISyncPanel({
   const [comparisonData, setComparisonData] = useState<any>(null);
   const [selectedFields, setSelectedFields] = useState<Record<string, boolean>>({});
   const [expandedSection, setExpandedSection] = useState(false);
-  const [isIatiSyncEnabled, setIsIatiSyncEnabled] = useState(false);
+
+  // Sync Now state
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [currentLastSyncTime, setCurrentLastSyncTime] = useState(lastSyncTime);
+
+  // Sync History state
+  const [showHistory, setShowHistory] = useState(false);
+  const [syncHistory, setSyncHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Keep currentLastSyncTime in sync with prop
+  useEffect(() => {
+    setCurrentLastSyncTime(lastSyncTime);
+  }, [lastSyncTime]);
 
   // Notify parent of state changes
   useEffect(() => {
     if (onStateChange) {
       onStateChange({
-        isEnabled: isIatiSyncEnabled,
+        isEnabled: autoSync,
         syncStatus: syncStatus
       });
     }
-  }, [isIatiSyncEnabled, syncStatus, onStateChange]);
+  }, [autoSync, syncStatus, onStateChange]);
 
-  // Get field mappings from the mapper utility
-  const fieldMappings = getAllFieldMappings();
-  const fieldLabels = fieldMappings.reduce((acc, mapping) => {
-    acc[mapping.iatiField] = mapping.description || mapping.aimsField;
-    return acc;
-  }, {} as Record<string, string>);
+  // Local state for which sync field groups are enabled
+  const [enabledSyncFields, setEnabledSyncFields] = useState<Set<string>>(
+    () => new Set(autoSyncFields)
+  );
+  const [isSavingSyncFields, setIsSavingSyncFields] = useState(false);
+
+  // Keep local state in sync if the prop changes externally (e.g. page reload)
+  useEffect(() => {
+    setEnabledSyncFields(new Set(autoSyncFields));
+  }, [autoSyncFields]);
 
   // Format sync status display
   const getSyncStatusDisplay = () => {
@@ -178,8 +213,10 @@ export function IATISyncPanel({
   // Handle auto-sync toggle
   const handleAutoSyncToggle = async (checked: boolean) => {
     setAutoSync(checked);
-    
-    // TODO: Update auto-sync setting in backend
+
+    const allFields = Object.keys(SYNC_FIELD_GROUPS);
+    const newFields = checked ? allFields : [];
+
     try {
       const response = await apiFetch(`/api/activities/${activityId}`, {
         method: 'PATCH',
@@ -188,7 +225,7 @@ export function IATISyncPanel({
         },
         body: JSON.stringify({
           auto_sync: checked,
-          auto_sync_fields: checked ? Object.keys(fieldLabels) : []
+          auto_sync_fields: newFields
         })
       });
 
@@ -196,13 +233,172 @@ export function IATISyncPanel({
         throw new Error('Failed to update auto-sync setting');
       }
 
-      toast.success(checked ? 'Auto-sync enabled' : 'Auto-sync disabled');
+      // Update local state to reflect all fields enabled (or none)
+      setEnabledSyncFields(new Set(newFields));
+      // Notify parent so state persists across tab switches
+      onAutoSyncChange?.(checked, newFields);
+      toast.success(checked ? 'Auto-sync enabled for all fields' : 'Auto-sync disabled');
     } catch (error) {
       console.error('Auto-sync toggle error:', error);
       toast.error('Failed to update auto-sync setting');
       setAutoSync(!checked); // Revert on error
     }
   };
+
+  // Handle toggling an individual sync field
+  const handleSyncFieldToggle = async (field: string, checked: boolean) => {
+    const updated = new Set(enabledSyncFields);
+    if (checked) {
+      updated.add(field);
+    } else {
+      updated.delete(field);
+    }
+
+    const previousFields = new Set(enabledSyncFields);
+    setEnabledSyncFields(updated);
+    setIsSavingSyncFields(true);
+
+    try {
+      const response = await apiFetch(`/api/activities/${activityId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          auto_sync_fields: Array.from(updated)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update sync fields');
+      }
+
+      const updatedArray = Array.from(updated);
+      onAutoSyncChange?.(autoSync, updatedArray);
+      toast.success(
+        checked
+          ? `"${SYNC_FIELD_GROUPS[field]}" will be synced from IATI`
+          : `"${SYNC_FIELD_GROUPS[field]}" will keep your local data`
+      );
+    } catch (error) {
+      console.error('Sync field toggle error:', error);
+      toast.error('Failed to update sync fields');
+      setEnabledSyncFields(previousFields); // Revert on error
+    } finally {
+      setIsSavingSyncFields(false);
+    }
+  };
+
+  // Handle manual sync
+  const handleSyncNow = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await apiFetch(`/api/activities/${activityId}/sync`, {
+        method: 'POST',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Sync failed');
+      }
+
+      if (result.action === 'updated') {
+        const fieldLabels = result.fieldsChanged
+          .map((f: string) => SYNC_FIELD_GROUPS[f] || f)
+          .join(', ');
+        toast.success(`Synced: ${fieldLabels}`);
+        onUpdate?.();
+      } else if (result.action === 'unchanged') {
+        toast.info('No changes found — already up to date');
+      } else if (result.action === 'failed') {
+        toast.error(result.error || 'Sync failed');
+      }
+
+      if (result.lastSyncTime) {
+        setCurrentLastSyncTime(result.lastSyncTime);
+      }
+
+      // Refresh history if it's open
+      if (showHistory) {
+        fetchSyncHistory();
+      }
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast.error(error instanceof Error ? error.message : 'Sync failed');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Fetch sync history
+  const fetchSyncHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const response = await apiFetch(`/api/activities/${activityId}/sync-history`);
+      if (response.ok) {
+        const data = await response.json();
+        setSyncHistory(data.logs || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sync history:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  // Fetch history when expanded
+  useEffect(() => {
+    if (showHistory) {
+      fetchSyncHistory();
+    }
+  }, [showHistory]);
+
+  // Sync status banner helpers
+  const getSyncBannerConfig = () => {
+    if (!currentLastSyncTime) {
+      return {
+        bg: 'bg-gray-50 border-gray-200',
+        text: 'text-gray-600',
+        icon: <Clock className="h-4 w-4 text-gray-400" />,
+        label: 'Never synced with IATI Datastore',
+        detail: null,
+      };
+    }
+
+    const syncDate = new Date(currentLastSyncTime);
+    const hoursAgo = (Date.now() - syncDate.getTime()) / (1000 * 60 * 60);
+    const relative = formatDistanceToNow(syncDate, { addSuffix: true });
+    const exact = format(syncDate, 'dd MMM yyyy HH:mm');
+
+    if (hoursAgo < 48) {
+      return {
+        bg: 'bg-green-50 border-green-200',
+        text: 'text-green-700',
+        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+        label: `Last synced ${relative}`,
+        detail: exact,
+      };
+    } else if (hoursAgo < 168) { // 7 days
+      return {
+        bg: 'bg-yellow-50 border-yellow-200',
+        text: 'text-yellow-700',
+        icon: <AlertCircle className="h-4 w-4 text-yellow-500" />,
+        label: `Last synced ${relative}`,
+        detail: exact,
+      };
+    } else {
+      return {
+        bg: 'bg-gray-50 border-gray-200',
+        text: 'text-gray-600',
+        icon: <AlertCircle className="h-4 w-4 text-gray-400" />,
+        label: `Last synced ${relative}`,
+        detail: exact,
+      };
+    }
+  };
+
+  const syncBanner = getSyncBannerConfig();
 
   // Format value for display
   const formatValue = (value: any, field: string): string => {
@@ -269,55 +465,34 @@ export function IATISyncPanel({
 
   return (
     <div className="space-y-4">
-      {/* Master IATI Sync Toggle */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between space-x-2 p-4 bg-gray-50 rounded-lg">
-            <div className="space-y-0.5">
-              <Label htmlFor="iati-sync-enabled" className="text-base cursor-pointer">
-                Enable IATI Sync
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Enable this option to synchronise the activity with the IATI Datastore. When enabled, changes made here will automatically reflect in your IATI-published data and help ensure consistency between your internal records and externally shared information.
-              </p>
-            </div>
-            <Switch
-              id="iati-sync-enabled"
-              checked={isIatiSyncEnabled}
-              onCheckedChange={setIsIatiSyncEnabled}
-              disabled={!canEdit}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* IATI Sync Interface - Only shown when enabled */}
-      {isIatiSyncEnabled && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                <CardTitle>IATI Sync</CardTitle>
-              </div>
-              <div className="flex items-center gap-4">
-                {lastSyncTime && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>Last sync: {format(new Date(lastSyncTime), 'dd MMM yyyy HH:mm')}</span>
-                  </div>
-                )}
-                <Badge variant={syncStatusDisplay.variant} className="flex items-center gap-1">
-                  {syncStatusDisplay.icon}
-                  {syncStatusDisplay.text}
-                </Badge>
-              </div>
+        <CardHeader>
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              <CardTitle>IATI Sync</CardTitle>
             </div>
             <CardDescription>
               Synchronize this activity with the IATI Datastore to ensure data consistency
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Sync Status Banner */}
+            <div className={`flex items-center justify-between p-3 rounded-lg border ${syncBanner.bg}`}>
+              <div className="flex items-center gap-2">
+                {syncBanner.icon}
+                <span className={`text-sm font-medium ${syncBanner.text}`}>
+                  {syncBanner.label}
+                </span>
+                {syncBanner.detail && (
+                  <span className="text-xs text-muted-foreground">({syncBanner.detail})</span>
+                )}
+              </div>
+              <Badge variant={syncStatusDisplay.variant} className="flex items-center gap-1">
+                {syncStatusDisplay.icon}
+                {syncStatusDisplay.text}
+              </Badge>
+            </div>
+
             {/* IATI Identifier Input */}
             <div className="space-y-2">
               <Label htmlFor="iati-identifier">IATI Identifier</Label>
@@ -329,8 +504,8 @@ export function IATISyncPanel({
                   onChange={(e) => setIatiId(e.target.value)}
                   disabled={!canEdit}
                 />
-                <Button 
-                  onClick={handleCompare} 
+                <Button
+                  onClick={handleCompare}
                   disabled={isComparing || !canEdit}
                   className="whitespace-nowrap"
                 >
@@ -348,6 +523,28 @@ export function IATISyncPanel({
                 </Button>
               </div>
             </div>
+
+            {/* Sync Now Button */}
+            {(iatiId || initialIatiId) && (
+              <Button
+                onClick={handleSyncNow}
+                disabled={isSyncing || !canEdit}
+                variant="outline"
+                className="w-full"
+              >
+                {isSyncing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Syncing with IATI Datastore...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="mr-2 h-4 w-4" />
+                    Sync Now
+                  </>
+                )}
+              </Button>
+            )}
 
             {/* Auto-sync Toggle */}
             <div className="flex items-center justify-between space-x-2 p-4 bg-gray-50 rounded-lg">
@@ -380,17 +577,18 @@ export function IATISyncPanel({
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertDescription>
-                      Select which fields should be automatically synced from IATI. 
-                      Changes made locally to these fields will be overwritten during sync.
+                      Checked fields will be overwritten with IATI data during each sync.
+                      Uncheck a field to keep your local data and prevent it from being overwritten.
                     </AlertDescription>
                   </Alert>
                   <div className="space-y-2">
-                    {Object.entries(fieldLabels).map(([field, label]) => (
+                    {Object.entries(SYNC_FIELD_GROUPS).map(([field, label]) => (
                       <div key={field} className="flex items-center space-x-2">
                         <Checkbox
                           id={`auto-${field}`}
-                          checked={autoSyncFields.includes(field)}
-                          disabled={!canEdit}
+                          checked={enabledSyncFields.has(field)}
+                          onCheckedChange={(checked) => handleSyncFieldToggle(field, !!checked)}
+                          disabled={!canEdit || isSavingSyncFields}
                         />
                         <Label htmlFor={`auto-${field}`} className="text-sm font-normal cursor-pointer">
                           {label}
@@ -403,7 +601,67 @@ export function IATISyncPanel({
             )}
           </CardContent>
         </Card>
-      )}
+
+      {/* Sync History */}
+      <Card>
+        <Collapsible open={showHistory} onOpenChange={setShowHistory}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  <CardTitle className="text-base">Sync History</CardTitle>
+                </div>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              {isLoadingHistory ? (
+                <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading history...
+                </div>
+              ) : syncHistory.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No sync history yet
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {syncHistory.map((log: any) => (
+                    <div
+                      key={log.id}
+                      className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/30 text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        {log.import_status === 'success' ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                        ) : (
+                          <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                        )}
+                        <Badge variant="outline" className="text-xs font-normal">
+                          {log.import_source === 'auto_sync' ? 'Auto sync' : 'Manual sync'}
+                        </Badge>
+                        {log.error_message && (
+                          <span className="text-xs text-red-600 truncate max-w-[200px]" title={log.error_message}>
+                            {log.error_message}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                        {log.import_date
+                          ? formatDistanceToNow(new Date(log.import_date), { addSuffix: true })
+                          : 'Unknown'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
 
       {/* Comparison Modal */}
       <CompareDataModal

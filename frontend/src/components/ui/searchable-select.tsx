@@ -235,12 +235,12 @@ export function SearchableSelect({
                                 {option.value}
                               </span>
                             )}
+                            <span className="truncate">{option.label}</span>
                             {option.code && (
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
                                 {option.code}
                               </span>
                             )}
-                            <span className="truncate">{option.label}</span>
                           </div>
                           {option.description && (
                             <span className="text-xs text-muted-foreground pl-7">

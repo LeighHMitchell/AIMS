@@ -12,10 +12,51 @@ import {
   Loader2,
   SkipForward,
   Info,
+  Circle,
+  Plus,
+  RefreshCw,
 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
 import type { ParsedActivity, ImportRules, BulkImportMeta, BatchStatus, BatchItemStatus } from './types'
+
+/** Format import detail counts with full readable labels and pluralisation */
+function formatImportCounts(item: BatchItemStatus, mode: 'expected' | 'imported'): string | null {
+  const pl = (n: number, s: string) => `${n} ${n === 1 ? s : s + 's'}`;
+  const parts: string[] = [];
+
+  if (mode === 'expected') {
+    const d = item.importDetails;
+    if (item.transactionsCount > 0) parts.push(pl(item.transactionsCount, 'transaction'));
+    if (d?.organizationsTotal) parts.push(pl(d.organizationsTotal, 'organisation'));
+    if (d?.budgetsTotal) parts.push(pl(d.budgetsTotal, 'budget'));
+    if (d?.sectorsTotal) parts.push(pl(d.sectorsTotal, 'sector'));
+    if (d?.locationsTotal) parts.push(pl(d.locationsTotal, 'location'));
+    if (d?.contactsTotal) parts.push(pl(d.contactsTotal, 'contact'));
+    if (d?.documentsTotal) parts.push(pl(d.documentsTotal, 'document'));
+    if (d?.policyMarkersTotal) parts.push(pl(d.policyMarkersTotal, 'policy marker'));
+    if (d?.humanitarianScopesTotal) parts.push(pl(d.humanitarianScopesTotal, 'humanitarian scope'));
+    if (d?.tagsTotal) parts.push(pl(d.tagsTotal, 'tag'));
+  } else {
+    const d = item.importDetails;
+    if (item.transactionsImported > 0) parts.push(pl(item.transactionsImported, 'transaction'));
+    if (d?.organizations) parts.push(pl(d.organizations, 'organisation'));
+    if (d?.budgets) parts.push(pl(d.budgets, 'budget'));
+    if (d?.sectors) parts.push(pl(d.sectors, 'sector'));
+    if (d?.locations) parts.push(pl(d.locations, 'location'));
+    if (d?.contacts) parts.push(pl(d.contacts, 'contact'));
+    if (d?.documents) parts.push(pl(d.documents, 'document'));
+    if (d?.policyMarkers) parts.push(pl(d.policyMarkers, 'policy marker'));
+    if (d?.humanitarianScopes) parts.push(pl(d.humanitarianScopes, 'humanitarian scope'));
+    if (d?.tags) parts.push(pl(d.tags, 'tag'));
+    if (d?.results) parts.push(pl(d.results, 'result'));
+    if (d?.indicators) parts.push(pl(d.indicators, 'indicator'));
+    if (d?.periods) parts.push(pl(d.periods, 'period'));
+  }
+
+  return parts.length > 0 ? parts.join(', ') : null;
+}
 
 interface BulkImportExecutionStepProps {
   activities: ParsedActivity[]
@@ -137,16 +178,16 @@ export default function BulkImportExecutionStep({
 
   return (
     <div className="space-y-6">
-      {/* Progress */}
-      <Card>
+      {/* Progress - Monochrome */}
+      <Card className="border-gray-200">
         <CardContent className="p-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {importing ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                  <Loader2 className="h-5 w-5 animate-spin text-gray-600" />
                 ) : (
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <CheckCircle2 className="h-5 w-5 text-gray-800" />
                 )}
                 <span className="font-medium text-lg">
                   {importing
@@ -154,23 +195,23 @@ export default function BulkImportExecutionStep({
                     : 'Import Complete'}
                 </span>
               </div>
-              <span className="text-sm text-gray-500 font-medium">{progressPercent}%</span>
+              <span className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded text-gray-700">{progressPercent}%</span>
             </div>
-            <Progress value={progressPercent} className="h-3" />
+            <Progress value={progressPercent} className="h-3 bg-gray-200 [&>div]:bg-gray-700" />
 
             {batchStatus && (
               <div className="flex gap-6 text-sm">
-                <span className="text-green-600">
-                  Created: <span className="font-semibold">{batchStatus.createdCount}</span>
+                <span className="text-gray-700">
+                  Created: <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{batchStatus.createdCount}</span>
                 </span>
-                <span className="text-blue-600">
-                  Updated: <span className="font-semibold">{batchStatus.updatedCount}</span>
+                <span className="text-gray-700">
+                  Updated: <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{batchStatus.updatedCount}</span>
                 </span>
                 <span className="text-gray-500">
-                  Skipped: <span className="font-semibold">{batchStatus.skippedCount}</span>
+                  Skipped: <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{batchStatus.skippedCount}</span>
                 </span>
-                <span className="text-red-600">
-                  Failed: <span className="font-semibold">{batchStatus.failedCount}</span>
+                <span className="text-gray-700">
+                  Failed: <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{batchStatus.failedCount}</span>
                 </span>
               </div>
             )}
@@ -179,68 +220,117 @@ export default function BulkImportExecutionStep({
       </Card>
 
       {importing && (
-        <Alert className="bg-blue-50 border-blue-200">
-          <Info className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">
+        <Alert className="bg-gray-50 border-gray-200">
+          <Info className="h-4 w-4 text-gray-600" />
+          <AlertDescription className="text-gray-700">
             You can leave this page. The import will continue in the background.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Per-activity status table */}
-      <Card>
+      {/* Per-activity status table - Monochrome */}
+      <Card className="border-gray-200">
         <CardContent className="p-0">
-          <div className="grid grid-cols-[1fr_200px_120px_100px] gap-2 px-4 py-3 border-b bg-gray-50 text-xs font-medium text-gray-500 uppercase">
+          <div className="grid grid-cols-[1fr_300px] gap-2 px-4 py-3 border-b bg-gray-50 text-xs font-medium text-gray-500 uppercase">
             <div>Activity</div>
-            <div>IATI ID</div>
-            <div>Action</div>
-            <div className="text-center">Status</div>
+            <div className="text-right">Status</div>
           </div>
           <ScrollArea className="h-80">
-            {(batchStatus?.items || selectedActivities.map(a => ({
+            {[...(batchStatus?.items || selectedActivities.map(a => ({
               iatiIdentifier: a.iatiIdentifier,
               activityTitle: a.title || '',
               action: 'pending' as const,
               status: 'queued' as const,
-            } as BatchItemStatus))).map((item, i) => (
+            } as BatchItemStatus)))].sort((a, b) => {
+              const order: Record<string, number> = { processing: 0, completed: 1, failed: 1, skipped: 1, queued: 2 };
+              return (order[a.status] ?? 3) - (order[b.status] ?? 3);
+            }).map((item, i) => (
               <div
                 key={item.iatiIdentifier || i}
-                className="grid grid-cols-[1fr_200px_120px_100px] gap-2 px-4 py-3 border-b last:border-b-0 items-center"
+                className="grid grid-cols-[1fr_300px] gap-2 px-4 py-3 border-b last:border-b-0 items-center"
               >
-                <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
-                <p className="text-xs text-gray-500 truncate">{item.iatiIdentifier}</p>
-                <div>
-                  {item.action === 'create' && (
-                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700">Create</Badge>
-                  )}
-                  {item.action === 'update' && (
-                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">Update</Badge>
-                  )}
-                  {item.action === 'skip' && (
-                    <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500">Skip</Badge>
-                  )}
-                  {item.action === 'fail' && (
-                    <Badge variant="outline" className="text-xs bg-red-50 text-red-700">Failed</Badge>
-                  )}
-                  {item.action === 'pending' && (
-                    <Badge variant="outline" className="text-xs">Pending</Badge>
-                  )}
+                {/* Activity Title + IATI Identifier */}
+                <div className="min-w-0">
+                  <p className="text-sm truncate">
+                    {item.activityTitle || item.iatiIdentifier}
+                    <span className="ml-2 font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{item.iatiIdentifier}</span>
+                  </p>
                 </div>
-                <div className="text-center">
-                  {item.status === 'processing' && (
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-600 mx-auto" />
+                {/* Combined Status */}
+                <div className="text-right flex items-center justify-end gap-2">
+                  {item.status === 'queued' && (
+                    <>
+                      <Circle className="h-4 w-4 text-gray-300" />
+                      <span className="text-xs text-gray-400">Pending</span>
+                    </>
                   )}
-                  {item.status === 'completed' && (
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
+                  {item.status === 'processing' && (
+                    <div className="flex items-center gap-2 w-full">
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-600 shrink-0" />
+                      <div className="flex-1 min-w-0 text-right">
+                        <span className="text-xs text-gray-600 block">Importing...</span>
+                        <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden my-1">
+                          <div
+                            className="h-full bg-gray-500 rounded-full"
+                            style={{
+                              width: '100%',
+                              animation: 'pulse 1.5s ease-in-out infinite',
+                            }}
+                          />
+                        </div>
+                        {formatImportCounts(item, 'expected') && (
+                          <span className="text-[11px] text-gray-400 block">
+                            {formatImportCounts(item, 'expected')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {item.status === 'completed' && item.action === 'create' && (
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4 text-gray-700 shrink-0" />
+                      <div className="text-xs text-gray-600 text-right">
+                        <span className="font-mono">Created {item.completedAt ? format(new Date(item.completedAt), 'HH:mm:ss') : ''}</span>
+                        {formatImportCounts(item, 'imported') && (
+                          <span className="block text-[11px] text-gray-400">
+                            Imported {formatImportCounts(item, 'imported')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {item.status === 'completed' && item.action === 'update' && (
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4 text-gray-700 shrink-0" />
+                      <div className="text-xs text-gray-600 text-right">
+                        <span className="font-mono">Updated {item.completedAt ? format(new Date(item.completedAt), 'HH:mm:ss') : ''}</span>
+                        {formatImportCounts(item, 'imported') && (
+                          <span className="block text-[11px] text-gray-400">
+                            Imported {formatImportCounts(item, 'imported')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {item.status === 'completed' && item.action !== 'create' && item.action !== 'update' && (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-gray-700 shrink-0" />
+                      <span className="text-xs text-gray-600 font-mono">
+                        Done {item.completedAt ? format(new Date(item.completedAt), 'HH:mm:ss') : ''}
+                      </span>
+                    </div>
                   )}
                   {item.status === 'failed' && (
-                    <XCircle className="h-4 w-4 text-red-500 mx-auto" />
+                    <>
+                      <XCircle className="h-4 w-4 text-gray-600" />
+                      <span className="text-xs text-gray-500">Failed</span>
+                    </>
                   )}
                   {item.status === 'skipped' && (
-                    <SkipForward className="h-4 w-4 text-gray-400 mx-auto" />
-                  )}
-                  {item.status === 'queued' && (
-                    <div className="h-4 w-4 rounded-full border-2 border-gray-300 mx-auto" />
+                    <>
+                      <SkipForward className="h-4 w-4 text-gray-400" />
+                      <span className="text-xs text-gray-400">Skipped</span>
+                    </>
                   )}
                 </div>
               </div>

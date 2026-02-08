@@ -149,9 +149,14 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
 
   // Using getInitials from UserAvatar component
 
-  // Get full name from contact
+  // Get full name from contact (handles IATI contacts with only org name)
   const getFullName = (contact: Contact) => {
-    return `${contact.title ? contact.title + ' ' : ''}${contact.firstName} ${contact.lastName}`.trim();
+    const hasName = contact.firstName || contact.lastName;
+    if (hasName) {
+      return `${contact.title ? contact.title + ' ' : ''}${contact.firstName || ''} ${contact.lastName || ''}`.trim();
+    }
+    // Fall back to organisation name for IATI contacts without person name
+    return contact.organisation || 'Contact';
   };
 
   // Get job line (job title + department)
@@ -248,7 +253,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
 
           {/* Content - right side */}
           <div className="flex-1 min-w-0 space-y-1">
-            {/* Line 1: Title, First Name, Last Name */}
+            {/* Line 1: Title, First Name, Last Name (or Organisation for IATI contacts without person) */}
             <h3 className="text-lg font-semibold text-slate-900 leading-tight break-words">
               {fullName}
               {contact.isFocalPoint && (
@@ -265,6 +270,20 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                   </Tooltip>
                 </TooltipProvider>
               )}
+              {contact.importedFromIati && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-default">
+                        <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 h-4 align-middle bg-blue-50 text-blue-700 border-blue-200">IATI</Badge>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">
+                      <p className="text-sm text-gray-600 font-normal">This contact was imported from IATI data</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </h3>
 
             {/* Line 2: Job Title • Department */}
@@ -274,8 +293,8 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
               </p>
             )}
 
-            {/* Line 3: Organization */}
-            {contact.organisation && (
+            {/* Line 3: Organization (only show if person name exists, otherwise it's already in the title) */}
+            {contact.organisation && (contact.firstName || contact.lastName) && (
               <p className="text-sm text-slate-600 break-words">
                 {contact.organisation}
                 {contact.organisationAcronym && (

@@ -3817,9 +3817,9 @@ export default function ActivityDetailPage() {
                                           )}
                                         </div>
                                         {(org.iati_org_ref || org.organization?.iati_org_id) && (
-                                          <div className="text-xs text-slate-500 font-mono mt-1">
+                                          <span className="text-xs text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
                                             {org.iati_org_ref || org.organization?.iati_org_id}
-                                          </div>
+                                          </span>
                                     )}
                                   </div>
                                     </div>

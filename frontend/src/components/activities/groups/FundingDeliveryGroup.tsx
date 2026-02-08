@@ -494,12 +494,6 @@ export function FundingDeliveryGroup({
             ref={conditionsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="conditions"
-              title={getSectionLabel('conditions')}
-              helpText={getSectionHelpText('conditions')}
-              showDivider={false}
-            />
             {isSectionActive('conditions') || activeSections.has('conditions') ? (
               <ConditionsTab
                 activityId={activityId}

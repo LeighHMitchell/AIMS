@@ -63,6 +63,8 @@ export interface UnifiedDocument {
   reportingOrgName?: string;
   reportingOrgAcronym?: string;
   reportingOrgLogo?: string;
+  reportingOrgIatiId?: string;
+  sourceIdentifier?: string; // IATI identifier for the linked activity/org
   createdAt: string;
   updatedAt?: string;
 }
@@ -289,6 +291,82 @@ export function getFormatLabel(mimeType: string): string {
   }
   
   return 'File';
+}
+
+/** Returns Tailwind classes for a format badge using exact brand colours */
+export function getFormatBadgeClasses(mimeType: string): string {
+  const lower = mimeType.toLowerCase();
+
+  // Adobe PDF — #EC1C24 red
+  if (lower === 'application/pdf') {
+    return 'bg-[#EC1C24] text-white';
+  }
+  // Microsoft Word — #2B579A blue
+  if (lower.includes('msword') || lower.includes('wordprocessingml') || lower === 'application/rtf') {
+    return 'bg-[#2B579A] text-white';
+  }
+  // OpenDocument Text — lighter blue
+  if (lower.includes('opendocument.text')) {
+    return 'bg-[#2B579A] text-white';
+  }
+  // Microsoft Excel — #217346 green
+  if (lower.includes('excel') || lower.includes('spreadsheetml')) {
+    return 'bg-[#217346] text-white';
+  }
+  // CSV — Excel-adjacent green
+  if (lower === 'text/csv') {
+    return 'bg-[#217346] text-white';
+  }
+  // OpenDocument Spreadsheet
+  if (lower.includes('opendocument.spreadsheet')) {
+    return 'bg-[#217346] text-white';
+  }
+  // Microsoft PowerPoint — #D24726 orange-red
+  if (lower.includes('powerpoint') || lower.includes('presentationml')) {
+    return 'bg-[#D24726] text-white';
+  }
+  // OpenDocument Presentation
+  if (lower.includes('opendocument.presentation')) {
+    return 'bg-[#D24726] text-white';
+  }
+  // Images — #7B2D8E purple
+  if (lower.startsWith('image/')) {
+    return 'bg-[#7B2D8E] text-white';
+  }
+  // Video — #E91E63 pink/magenta
+  if (lower.startsWith('video/')) {
+    return 'bg-[#E91E63] text-white';
+  }
+  // Audio — #FF6F00 amber
+  if (lower.startsWith('audio/')) {
+    return 'bg-[#FF6F00] text-white';
+  }
+  // HTML — #E44D26 HTML orange
+  if (lower === 'text/html') {
+    return 'bg-[#E44D26] text-white';
+  }
+  // XML — #F48024 orange
+  if (lower.includes('xml')) {
+    return 'bg-[#F48024] text-white';
+  }
+  // JSON — #292929 dark
+  if (lower === 'application/json') {
+    return 'bg-[#292929] text-white';
+  }
+  // Markdown — #083FA1 blue
+  if (lower === 'text/markdown') {
+    return 'bg-[#083FA1] text-white';
+  }
+  // Archives (ZIP, RAR, 7Z, GZ) — #6D6E71 slate
+  if (lower.includes('zip') || lower.includes('rar') || lower.includes('gzip') || lower.includes('7z')) {
+    return 'bg-[#6D6E71] text-white';
+  }
+  // Plain text — #5C6BC0 indigo
+  if (lower === 'text/plain') {
+    return 'bg-[#5C6BC0] text-white';
+  }
+  // Default — gray
+  return 'bg-gray-500 text-white';
 }
 
 // Source type labels
