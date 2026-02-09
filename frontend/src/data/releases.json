@@ -1,6 +1,13 @@
 {
-  "currentVersion": "2.1.0",
+  "currentVersion": "2.1.1",
   "releases": [
+    {
+      "version": "2.1.1",
+      "date": "2026-02-09",
+      "changes": [
+        "Fixed Activities list pagination not responding to user's items-per-page selection (was always showing 20 regardless of dropdown choice)"
+      ]
+    },
     {
       "version": "2.1.0",
       "date": "2026-02-08",
