@@ -40,15 +40,6 @@
     "src/app/api/cron/tasks/reminders/route.ts": {
       "maxDuration": 60
     },
-    "src/app/api/iati/fetch-org-activities/route.ts": {
-      "maxDuration": 300
-    },
-    "src/app/api/iati/bulk-import/route.ts": {
-      "maxDuration": 30
-    },
-    "src/app/api/iati/bulk-import/[batchId]/process-chunk/route.ts": {
-      "maxDuration": 60
-    },
     "src/app/api/cron/iati-sync/route.ts": {
       "maxDuration": 300
     },

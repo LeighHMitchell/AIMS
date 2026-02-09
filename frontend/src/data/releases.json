@@ -1,23 +1,6 @@
 {
-  "currentVersion": "2.2.0",
+  "currentVersion": "2.1.1",
   "releases": [
-    {
-      "version": "2.2.0",
-      "date": "2026-02-09",
-      "changes": [
-        "--- Chunked Bulk Import ---",
-        "IATI Bulk Import now processes activities in frontend-driven chunks instead of a single background request, fixing timeouts on Vercel production",
-        "New /api/iati/bulk-import/[batchId]/process-chunk endpoint processes 10 activities per request within a 60-second timeout",
-        "POST /api/iati/bulk-import simplified to only create the batch and batch items (no longer fires background processing)",
-        "Frontend sends chunks sequentially, polling batch status after each chunk to update the progress UI in real time",
-        "Chunk progress indicator shows 'Processing chunk X of Y...' with a reminder to keep the page open",
-        "Automatic retry (once) for failed chunks before stopping with an error message",
-        "Idempotent chunk processing — already-completed activities are skipped if a chunk is retried",
-        "Batch finalization (status update, notification) happens server-side when the last chunk completes",
-        "Removed 'You can leave this page' message since processing now requires the browser to remain open",
-        "Vercel function duration reduced from 300s to 30s for batch creation route, 60s for chunk processing route"
-      ]
-    },
     {
       "version": "2.1.1",
       "date": "2026-02-09",
