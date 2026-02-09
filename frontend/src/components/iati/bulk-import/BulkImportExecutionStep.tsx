@@ -21,6 +21,8 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import type { ParsedActivity, ImportRules, BulkImportMeta, BatchStatus, BatchItemStatus } from './types'
 
+const CHUNK_SIZE = 10;
+
 /** Format import detail counts with full readable labels and pluralisation */
 function formatImportCounts(item: BatchItemStatus, mode: 'expected' | 'imported'): string | null {
   const pl = (n: number, s: string) => `${n} ${n === 1 ? s : s + 's'}`;
@@ -58,6 +60,14 @@ function formatImportCounts(item: BatchItemStatus, mode: 'expected' | 'imported'
   return parts.length > 0 ? parts.join(', ') : null;
 }
 
+function splitIntoChunks<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
 interface BulkImportExecutionStepProps {
   activities: ParsedActivity[]
   selectedIds: Set<string>
@@ -79,17 +89,34 @@ export default function BulkImportExecutionStep({
 }: BulkImportExecutionStepProps) {
   const [importing, setImporting] = useState(false)
   const [batchStatus, setBatchStatus] = useState<BatchStatus | null>(null)
+  const [chunkProgress, setChunkProgress] = useState<{ current: number; total: number } | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
   const startedRef = useRef(false)
-  const pollRef = useRef<NodeJS.Timeout | null>(null)
 
   const selectedActivities = activities.filter(a => selectedIds.has(a.iatiIdentifier))
+
+  const pollBatchStatus = useCallback(async (id: string): Promise<BatchStatus | null> => {
+    try {
+      const response = await apiFetch(`/api/iati/bulk-import/${id}/status`)
+      if (response.ok) {
+        const status: BatchStatus = await response.json()
+        setBatchStatus(status)
+        return status
+      }
+    } catch (error) {
+      console.error('[Bulk Import] Poll error:', error)
+    }
+    return null
+  }, [])
 
   const startImport = useCallback(async () => {
     if (startedRef.current) return
     startedRef.current = true
     setImporting(true)
+    setImportError(null)
 
     try {
+      // Step 1: Create batch (lightweight — just creates batch + items)
       const response = await apiFetch('/api/iati/bulk-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,68 +132,118 @@ export default function BulkImportExecutionStep({
             reportingOrgRef: meta.reportingOrgRef,
             reportingOrgName: meta.reportingOrgName,
           },
-          // For super users: pass the organization ID to import on behalf of
           organizationId: meta.organizationId,
         }),
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Import failed')
+        throw new Error(errorData.error || 'Failed to create import batch')
       }
 
       const result = await response.json()
-      onBatchIdChange(result.batchId)
+      const newBatchId = result.batchId
+      onBatchIdChange(newBatchId)
 
-      // Start polling for status
-      pollBatchStatus(result.batchId)
-    } catch (error) {
-      console.error('[Bulk Import] Import failed:', error)
-      toast.error(error instanceof Error ? error.message : 'Import failed')
+      // Poll once to get initial batch items for the UI
+      await pollBatchStatus(newBatchId)
+
+      // Step 2: Split activities into chunks and process sequentially
+      const chunks = splitIntoChunks(selectedActivities, CHUNK_SIZE)
+      setChunkProgress({ current: 0, total: chunks.length })
+
+      for (let i = 0; i < chunks.length; i++) {
+        setChunkProgress({ current: i + 1, total: chunks.length })
+
+        let chunkSuccess = false;
+        let retries = 0;
+        const maxRetries = 1;
+
+        while (!chunkSuccess && retries <= maxRetries) {
+          try {
+            const chunkResponse = await apiFetch(`/api/iati/bulk-import/${newBatchId}/process-chunk`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                activities: chunks[i],
+                importRules,
+                meta: {
+                  sourceMode: meta.sourceMode,
+                  reportingOrgRef: meta.reportingOrgRef,
+                  reportingOrgName: meta.reportingOrgName,
+                },
+                organizationId: meta.organizationId,
+              }),
+            })
+
+            if (!chunkResponse.ok) {
+              const errorData = await chunkResponse.json().catch(() => ({}))
+              throw new Error(errorData.error || `Chunk ${i + 1} failed`)
+            }
+
+            const chunkResult = await chunkResponse.json()
+            chunkSuccess = true
+
+            // Poll status after each chunk to update UI
+            const status = await pollBatchStatus(newBatchId)
+
+            if (chunkResult.batchComplete || status?.status === 'completed' || status?.status === 'failed') {
+              // Batch is done
+              setImporting(false)
+              if (status) {
+                onComplete(status)
+                if (status.status === 'completed') {
+                  toast.success('Import completed successfully!')
+                } else {
+                  toast.error('Import completed with errors')
+                }
+              }
+              return
+            }
+          } catch (chunkError) {
+            retries++;
+            if (retries > maxRetries) {
+              console.error(`[Bulk Import] Chunk ${i + 1} failed after retry:`, chunkError)
+              setImportError(
+                `Failed to process chunk ${i + 1} of ${chunks.length}: ${chunkError instanceof Error ? chunkError.message : 'Unknown error'}. ` +
+                `${i} of ${chunks.length} chunks were processed successfully.`
+              )
+              // Poll one more time to get final state
+              const finalStatus = await pollBatchStatus(newBatchId)
+              setImporting(false)
+              if (finalStatus) {
+                onComplete(finalStatus)
+              }
+              toast.error('Import stopped due to an error')
+              return
+            }
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 2000))
+          }
+        }
+      }
+
+      // Final poll after all chunks
+      const finalStatus = await pollBatchStatus(newBatchId)
       setImporting(false)
-    }
-  }, [selectedActivities, selectedIds, importRules, meta, onBatchIdChange])
-
-  const pollBatchStatus = useCallback(async (id: string) => {
-    try {
-      const response = await apiFetch(`/api/iati/bulk-import/${id}/status`)
-      if (response.ok) {
-        const status: BatchStatus = await response.json()
-        setBatchStatus(status)
-
-        if (status.status === 'completed' || status.status === 'failed') {
-          setImporting(false)
-          if (pollRef.current) {
-            clearInterval(pollRef.current)
-            pollRef.current = null
-          }
-          onComplete(status)
-          if (status.status === 'completed') {
-            toast.success('Import completed successfully!')
-          } else {
-            toast.error('Import completed with errors')
-          }
-          return
+      if (finalStatus) {
+        onComplete(finalStatus)
+        if (finalStatus.status === 'completed') {
+          toast.success('Import completed successfully!')
+        } else {
+          toast.error('Import completed with errors')
         }
       }
     } catch (error) {
-      console.error('[Bulk Import] Poll error:', error)
+      console.error('[Bulk Import] Import failed:', error)
+      toast.error(error instanceof Error ? error.message : 'Import failed')
+      setImportError(error instanceof Error ? error.message : 'Import failed')
+      setImporting(false)
     }
-
-    // Continue polling
-    if (!pollRef.current) {
-      pollRef.current = setInterval(() => pollBatchStatus(id), 2000)
-    }
-  }, [onComplete])
+  }, [selectedActivities, selectedIds, importRules, meta, onBatchIdChange, onComplete, pollBatchStatus])
 
   useEffect(() => {
     startImport()
-    return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current)
-        pollRef.current = null
-      }
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -219,11 +296,20 @@ export default function BulkImportExecutionStep({
         </CardContent>
       </Card>
 
-      {importing && (
+      {importing && chunkProgress && (
         <Alert className="bg-gray-50 border-gray-200">
           <Info className="h-4 w-4 text-gray-600" />
           <AlertDescription className="text-gray-700">
-            You can leave this page. The import will continue in the background.
+            Processing chunk {chunkProgress.current} of {chunkProgress.total}... Please keep this page open until the import completes.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {importError && (
+        <Alert className="bg-red-50 border-red-200">
+          <XCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-700">
+            {importError}
           </AlertDescription>
         </Alert>
       )}
