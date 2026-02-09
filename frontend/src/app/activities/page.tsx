@@ -643,7 +643,7 @@ function ActivitiesPageContent() {
   
   // Use optimized hook if enabled, otherwise fall back to original implementation
   const optimizedData = useOptimizedActivities({
-    pageSize: 20,
+    pageSize: pageLimit,
     enableOptimization,
     viewMode: viewMode,
     onError: (error) => {
