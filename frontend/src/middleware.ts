@@ -21,7 +21,12 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
-  if (supabaseUrl && supabaseAnonKey) {
+  // Skip Supabase session refresh for API routes — they handle their own
+  // auth via requireAuth(). This avoids middleware timeouts when the
+  // Supabase getUser() call is slow from certain edge locations.
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
+
+  if (supabaseUrl && supabaseAnonKey && !isApiRoute) {
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
@@ -56,7 +61,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Handle CORS for all API routes
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  if (isApiRoute) {
     if (request.method === 'OPTIONS') {
       const corsResponse = new NextResponse(null, { status: 200 });
       corsResponse.headers.set('Access-Control-Allow-Origin', '*');
@@ -78,7 +83,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Add request ID for debugging API calls
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  if (isApiRoute) {
     const requestId = Math.random().toString(36).substring(7)
     
     // Add cache headers to prevent stale responses
