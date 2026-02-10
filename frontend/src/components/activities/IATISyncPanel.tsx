@@ -568,10 +568,10 @@ export function IATISyncPanel({
             <div className="flex items-center justify-between space-x-2 p-4 bg-gray-50 rounded-lg">
               <div className="space-y-0.5">
                 <Label htmlFor="auto-sync" className="text-base cursor-pointer">
-                  Enable auto-sync every 24 hours
+                  Enable auto-sync
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Automatically sync selected fields with IATI Datastore daily
+                  Flag this activity for synchronisation with the IATI Datastore
                 </p>
               </div>
               <Switch

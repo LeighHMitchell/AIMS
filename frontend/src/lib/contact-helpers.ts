@@ -276,7 +276,8 @@ export async function prefetchContacts(
       const { data: allContacts } = await withTimeout(
         Promise.resolve(supabase
           .from('contacts')
-          .select('id, first_name, last_name')),
+          .select('id, first_name, last_name')
+          .limit(5000)),
         DB_TIMEOUT_MS * 2,
         'Batch fetch contacts for name matching'
       ) as any;

@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export interface OrgScope {
   organizationId: string;
@@ -22,7 +23,9 @@ export async function resolveUserOrgScope(
   authUserId: string
 ): Promise<OrgScope | null> {
   // Step 1: Get user's organization_id from the users table
-  const { data: userData, error: userError } = await supabase
+  // Use admin client to bypass RLS (users table has recursive policy)
+  const adminClient = getSupabaseAdmin();
+  const { data: userData, error: userError } = await (adminClient || supabase)
     .from('users')
     .select('organization_id')
     .eq('id', authUserId)
@@ -32,8 +35,8 @@ export async function resolveUserOrgScope(
     return null;
   }
 
-  // Step 2: Get the organisation's IATI identifiers
-  const { data: org, error: orgError } = await supabase
+  // Step 2: Get the organisation's IATI identifiers (use admin to bypass RLS)
+  const { data: org, error: orgError } = await (adminClient || supabase)
     .from('organizations')
     .select('id, name, iati_org_id, reporting_org_ref, alias_refs')
     .eq('id', userData.organization_id)
@@ -94,7 +97,9 @@ export async function resolveOrgScopeById(
   supabase: SupabaseClient,
   organizationId: string
 ): Promise<OrgScope | null> {
-  const { data: org, error: orgError } = await supabase
+  // Use admin client to bypass RLS (avoids recursion issues with users table policies)
+  const adminClient = getSupabaseAdmin();
+  const { data: org, error: orgError } = await (adminClient || supabase)
     .from('organizations')
     .select('id, name, iati_org_id, reporting_org_ref, alias_refs')
     .eq('id', organizationId)

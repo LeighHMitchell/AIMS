@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { prefetchOrganizations, OrganizationParams } from '@/lib/organization-helpers';
 import { prefetchContacts, contactDedupKey, ContactParams } from '@/lib/contact-helpers';
@@ -112,8 +113,9 @@ export async function POST(request: NextRequest) {
     const data: BulkImportRequest = await request.json();
     const { activities, selectedActivityIds, importRules, meta, organizationId } = data;
 
-    // Fetch user's role from the users table
-    const { data: userData } = await supabase
+    // Fetch user's role using admin client to bypass RLS (users table has recursive policy)
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data: userData } = await (supabaseAdmin || supabase)
       .from('users')
       .select('role')
       .eq('id', user.id)
@@ -374,8 +376,22 @@ export async function POST(request: NextRequest) {
       let skippedCount = 0;
       let failedCount = 0;
 
-      for (const activity of selectedActivities) {
+      for (let activityIndex = 0; activityIndex < selectedActivities.length; activityIndex++) {
+      const activity = selectedActivities[activityIndex];
       const iatiId = activity.iatiIdentifier || activity.iati_id;
+
+      // Check for cancellation every 5 activities
+      if (activityIndex % 5 === 0 && activityIndex > 0) {
+        const { data: batchCheck } = await supabase
+          .from('iati_import_batches')
+          .select('status')
+          .eq('id', batchId)
+          .single();
+        if (batchCheck?.status === 'cancelled') {
+          console.log(`[Bulk Import] Batch ${batchId} was cancelled by user at activity ${activityIndex}/${selectedActivities.length}`);
+          break;
+        }
+      }
 
       try {
         // Update batch item to processing

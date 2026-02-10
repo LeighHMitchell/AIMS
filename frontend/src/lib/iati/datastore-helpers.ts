@@ -38,9 +38,10 @@ export const DATASTORE_FIELDS = [
   // Countries (with percentages!)
   'recipient_country_code',
   'recipient_country_percentage',
-  // Sectors (no percentages in Datastore)
+  // Sectors
   'sector_code',
   'sector_vocabulary',
+  'sector_percentage',
   'sector_narrative',
   // Transactions
   'transaction_transaction_type_code',

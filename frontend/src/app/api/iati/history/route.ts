@@ -4,6 +4,57 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
+export async function PATCH(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  const { batchId, action } = await request.json();
+
+  if (action !== 'cancel') {
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  }
+  if (!batchId) {
+    return NextResponse.json({ error: 'batchId required' }, { status: 400 });
+  }
+
+  // Fetch current batch — only allow cancelling 'importing' batches
+  const { data: batch, error: fetchError } = await supabase
+    .from('iati_import_batches')
+    .select('id, status')
+    .eq('id', batchId)
+    .single();
+
+  if (fetchError || !batch) {
+    return NextResponse.json({ error: 'Batch not found' }, { status: 404 });
+  }
+  if (batch.status !== 'importing') {
+    return NextResponse.json({ error: `Cannot cancel batch with status '${batch.status}'` }, { status: 400 });
+  }
+
+  // Update batch status to 'cancelled'
+  const { error: updateError } = await supabase
+    .from('iati_import_batches')
+    .update({ status: 'cancelled', completed_at: new Date().toISOString() })
+    .eq('id', batchId);
+
+  if (updateError) {
+    return NextResponse.json({ error: 'Failed to cancel batch' }, { status: 500 });
+  }
+
+  // Update any 'queued' or 'processing' items to 'skipped'
+  await supabase
+    .from('iati_import_batch_items')
+    .update({ status: 'skipped', error_message: 'Batch cancelled by user' })
+    .eq('batch_id', batchId)
+    .in('status', ['queued', 'processing']);
+
+  return NextResponse.json({ success: true, batchId });
+}
+
 export async function GET(request: NextRequest) {
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
@@ -13,6 +64,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Use admin client to bypass RLS (avoids recursion issues with users table policies)
+    const adminClient = getSupabaseAdmin() || supabase;
+
     const searchParams = request.nextUrl.searchParams;
     const batchId = searchParams.get('batchId');
     const statusFilter = searchParams.get('status');
@@ -20,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     // If batchId is specified, return items for that batch (drill-down)
     if (batchId) {
-      const { data: items, error: itemsError } = await supabase
+      const { data: items, error: itemsError } = await adminClient
         .from('iati_import_batch_items')
         .select('*')
         .eq('batch_id', batchId)
@@ -52,7 +106,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch import history from iati_import_batches
     // Avoid joining on users table — FK may not exist and causes query failures
-    let query = supabase
+    let query = adminClient
       .from('iati_import_batches')
       .select('*')
       .order('created_at', { ascending: false })
@@ -75,13 +129,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: `Failed to fetch import history: ${error.message}` }, { status: 500 });
     }
 
-    // Resolve user names — try admin client first (bypasses RLS), fall back to anon client
-    const userIds = [...new Set((batches || []).map((b: any) => b.user_id).filter(Boolean))];
+    // Resolve user names using admin client (bypasses RLS)
+    const userIds = Array.from(new Set((batches || []).map((b: any) => b.user_id).filter(Boolean)));
     let userMap: Record<string, string> = {};
     if (userIds.length > 0) {
       try {
-        const client = getSupabaseAdmin() || supabase;
-        const { data: users, error: usersError } = await client
+        const { data: users, error: usersError } = await adminClient
           .from('users')
           .select('id, first_name, last_name')
           .in('id', userIds);

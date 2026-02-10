@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,9 @@ export async function GET() {
   }
 
   try {
-    const { data, error } = await supabase
+    // Use admin client to bypass RLS (users table has recursive policy)
+    const client = getSupabaseAdmin() || supabase;
+    const { data, error } = await client
       .from('users')
       .select('default_activity_columns')
       .eq('id', authUser.id)
@@ -49,7 +52,8 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    const { error } = await supabase
+    const client = getSupabaseAdmin() || supabase;
+    const { error } = await client
       .from('users')
       .update({
         default_activity_columns: columns,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
 
 // Force dynamic rendering to ensure environment variables are always loaded
@@ -17,9 +18,9 @@ export async function OPTIONS() {
 export async function GET(request: NextRequest) {
   console.log('[AIMS] GET /api/organizations - Starting request');
   
-  const { supabase: supabaseAdmin, response: authResponse } = await requireAuth();
+  const { response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
-  
+
   try {
     // Add caching headers to reduce repeated requests
     const headers = {
@@ -28,20 +29,21 @@ export async function GET(request: NextRequest) {
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     };
-    // Get Supabase admin client
+    // Use admin client to bypass RLS — all authenticated users can view the org directory
+    const supabaseAdmin = getSupabaseAdmin();
     if (!supabaseAdmin) {
-      console.error('[AIMS] Supabase client is not initialized');
+      console.error('[AIMS] Supabase admin client is not initialized');
       return NextResponse.json(
         { error: 'Database connection not initialized' },
         { status: 500 }
       );
     }
-    
+
     // Get query parameters for filtering
     const searchParams = request.nextUrl.searchParams;
     const iatiOrgId = searchParams.get('iati_org_id');
     const searchTerm = searchParams.get('search');
-    
+
     // Build query with filters
     let query = supabaseAdmin
       .from('organizations')

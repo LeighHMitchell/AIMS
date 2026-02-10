@@ -716,7 +716,8 @@ export async function POST(request: NextRequest) {
     const { data: allActivities } = await supabase
       .from('activities')
       .select('id, iati_identifier, title_narrative')
-      .order('title_narrative');
+      .order('title_narrative')
+      .limit(5000);
     
     if (allActivities) {
       result.existingActivities = allActivities;

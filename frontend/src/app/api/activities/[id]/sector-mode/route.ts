@@ -54,20 +54,7 @@ export async function GET(
       .select('*', { count: 'exact', head: true })
       .eq('activity_id', activityId)
 
-    // Check if there's any transaction sector data
-    const { data: transactionSectorData } = await supabase
-      .from('transaction_sector_lines')
-      .select('id, transaction_id')
-      .in('transaction_id', 
-        supabase
-          .from('transactions')
-          .select('uuid')
-          .eq('activity_id', activityId)
-      )
-      .is('deleted_at', null)
-      .limit(1)
-
-    // Check more thoroughly for transaction sector data
+    // Check for transaction sector data
     const { data: transactions } = await supabase
       .from('transactions')
       .select('uuid')

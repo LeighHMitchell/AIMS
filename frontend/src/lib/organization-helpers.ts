@@ -258,7 +258,8 @@ export async function prefetchOrganizations(
         Promise.resolve(supabase
           .from('organizations')
           .select('id, name, alias_refs')
-          .not('alias_refs', 'is', null)),
+          .not('alias_refs', 'is', null)
+          .limit(5000)),
         DB_TIMEOUT_MS * 2,
         'Batch fetch orgs with alias_refs'
       ) as any;
@@ -290,7 +291,8 @@ export async function prefetchOrganizations(
       const { data: nameMatches } = await withTimeout(
         Promise.resolve(supabase
           .from('organizations')
-          .select('id, name')),
+          .select('id, name')
+          .limit(5000)),
         DB_TIMEOUT_MS * 2,
         'Batch fetch orgs for name matching'
       ) as any;

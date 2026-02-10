@@ -23,7 +23,6 @@ import {
 import { useUser } from '@/hooks/useUser'
 import { useHomeCountry, useSystemSettings } from '@/contexts/SystemSettingsContext'
 import { apiFetch } from '@/lib/api-fetch'
-import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { USER_ROLES, ROLE_LABELS } from '@/types/user'
 import {
@@ -438,9 +437,10 @@ export default function BulkImportSourceStep({
         const params = new URLSearchParams()
         params.set('count_only', 'true')
 
-        // Add org for super users
-        if (selectedOrgId && isSuperUser && selectedOrgId !== user?.organizationId) {
-          params.set('organization_id', selectedOrgId)
+        // Always pass org for super users (backend may not resolve user's own org due to RLS)
+        const effectivePreviewOrgId = selectedOrgId || user?.organizationId
+        if (effectivePreviewOrgId && isSuperUser) {
+          params.set('organization_id', effectivePreviewOrgId)
         }
 
         // Add filters
@@ -494,30 +494,32 @@ export default function BulkImportSourceStep({
       console.log('[IATI Import] Starting organization fetch for super user...', { user: user?.id, role: user?.role })
 
       try {
-        // Fetch all organizations directly from Supabase (same pattern as profile page)
-        const { data, error } = await supabase
-          .from('organizations')
-          .select('id, name, acronym, iati_org_id, reporting_org_ref, logo, country, Organisation_Type_Code, Organisation_Type_Name')
-          .order('name')
-
-        if (error) {
-          console.error('[IATI Import] Supabase error fetching organizations:', error)
-          throw error
+        // Fetch all organizations via API (server-side, bypasses RLS)
+        const response = await apiFetch('/api/organizations')
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}))
+          console.error('[IATI Import] API error fetching organizations:', errData)
+          throw new Error(errData.error || `Failed to fetch organizations (${response.status})`)
         }
 
-        console.log('[IATI Import] Fetched organizations from Supabase:', {
+        const data = await response.json()
+
+        console.log('[IATI Import] Fetched organizations from API:', {
           count: data?.length,
           sample: data?.slice(0, 3).map((o: { id: string; name: string }) => ({ id: o.id, name: o.name }))
         })
 
-        // Filter to only organizations with IATI identifiers
+        // Filter to only organizations with IATI identifiers (iati_org_id or reporting_org_ref)
         let orgList: Organization[] = (data || [])
-          .filter((org: { iati_org_id: string | null }) => org.iati_org_id && org.iati_org_id.trim() !== '')
+          .filter((org: { iati_org_id: string | null; reporting_org_ref: string | null }) =>
+            (org.iati_org_id && org.iati_org_id.trim() !== '') ||
+            (org.reporting_org_ref && org.reporting_org_ref.trim() !== ''))
           .map((org: {
             id: string;
             name: string;
             acronym: string | null;
             iati_org_id: string | null;
+            reporting_org_ref: string | null;
             logo: string | null;
             country: string | null;
             Organisation_Type_Code: string | null;
@@ -527,6 +529,7 @@ export default function BulkImportSourceStep({
             name: org.name,
             acronym: org.acronym || undefined,
             iati_org_id: org.iati_org_id || undefined,
+            reporting_org_ref: org.reporting_org_ref || undefined,
             logo: org.logo || undefined,
             country: org.country || undefined,
             Organisation_Type_Code: org.Organisation_Type_Code || undefined,
@@ -592,10 +595,9 @@ export default function BulkImportSourceStep({
     try {
       const params = new URLSearchParams()
       if (forceRefresh) params.set('force_refresh', 'true')
-      // Only include organization_id for super users who selected a DIFFERENT org
-      // Empty selectedOrgId means "use your own org" (no parameter needed)
-      const targetOrgId = orgId ?? selectedOrgId
-      if (targetOrgId && isSuperUser && targetOrgId !== user?.organizationId) {
+      // Always pass org for super users (backend may not resolve user's own org due to RLS)
+      const targetOrgId = orgId ?? (selectedOrgId || user?.organizationId)
+      if (targetOrgId && isSuperUser) {
         params.set('organization_id', targetOrgId)
       }
 

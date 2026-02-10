@@ -173,6 +173,8 @@ function HistoryTab() {
         return <Badge variant="outline" className="bg-red-50 text-red-700"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
       case 'importing':
         return <Badge variant="outline" className="bg-blue-50 text-blue-700"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Importing</Badge>
+      case 'cancelled':
+        return <Badge variant="outline" className="bg-orange-50 text-orange-700"><XCircle className="h-3 w-3 mr-1" />Cancelled</Badge>
       default:
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700"><Clock className="h-3 w-3 mr-1" />{status}</Badge>
     }
@@ -209,7 +211,7 @@ function HistoryTab() {
             />
           </div>
           <div className="flex gap-1">
-            {['all', 'completed', 'failed', 'importing'].map(status => (
+            {['all', 'completed', 'failed', 'importing', 'cancelled'].map(status => (
               <Button
                 key={status}
                 variant={statusFilter === status ? 'default' : 'outline'}
@@ -280,8 +282,38 @@ function HistoryTab() {
                         )}
                       </div>
                     </div>
-                    <div className="shrink-0 ml-3">
+                    <div className="shrink-0 ml-3 flex items-center">
                       {getStatusBadge(record.status)}
+                      {record.status === 'importing' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            if (!confirm('Cancel this import? Items already imported will remain.')) return
+                            try {
+                              const res = await apiFetch('/api/iati/history', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ batchId: record.id, action: 'cancel' })
+                              })
+                              if (res.ok) {
+                                toast.success('Import cancelled')
+                                fetchHistory()
+                              } else {
+                                const err = await res.json()
+                                toast.error(err.error || 'Failed to cancel')
+                              }
+                            } catch {
+                              toast.error('Failed to cancel import')
+                            }
+                          }}
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Cancel
+                        </Button>
+                      )}
                     </div>
                   </button>
 

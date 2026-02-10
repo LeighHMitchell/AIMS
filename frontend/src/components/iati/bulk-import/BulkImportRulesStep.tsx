@@ -263,7 +263,7 @@ export default function BulkImportRulesStep({
               />
             </div>
             <p className="text-xs text-gray-400 mt-3 px-1">
-              When enabled, imported activities will be automatically checked against the IATI Datastore every 24 hours and updated with any changes to the fields that were imported.
+              When enabled, imported activities will be flagged for synchronisation with the IATI Datastore. Use the Sync panel on each activity to manually sync, or ask an administrator to enable scheduled sync.
             </p>
           </CardContent>
         </Card>

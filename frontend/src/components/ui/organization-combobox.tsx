@@ -66,6 +66,7 @@ export interface Organization {
   country?: string
   iati_org_id?: string
   iati_identifier?: string  // Database field name
+  reporting_org_ref?: string
   logo?: string
 }
 

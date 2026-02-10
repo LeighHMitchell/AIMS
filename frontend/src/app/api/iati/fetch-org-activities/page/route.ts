@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { resolveUserOrgScope, resolveOrgScopeById } from '@/lib/iati/org-scope'
 import {
   fetchDatastorePage,
@@ -54,7 +55,9 @@ export async function GET(request: NextRequest) {
     // Resolve org scope (same logic as main route)
     const requestedOrgId = searchParams.get('organization_id')
 
-    const { data: userData } = await supabase
+    // Use admin client to bypass RLS (users table has recursive policy)
+    const supabaseAdmin = getSupabaseAdmin()
+    const { data: userData } = await (supabaseAdmin || supabase)
       .from('users')
       .select('role')
       .eq('id', user.id)
@@ -86,7 +89,9 @@ export async function GET(request: NextRequest) {
 
     if (!orgScope) {
       return NextResponse.json(
-        { error: 'Your user account is not assigned to an organisation.' },
+        { error: isSuperUser
+            ? 'Could not resolve your organisation. Please select an organisation from the dropdown above.'
+            : 'Your user account is not assigned to an organisation. Please contact an administrator.' },
         { status: 403 }
       )
     }

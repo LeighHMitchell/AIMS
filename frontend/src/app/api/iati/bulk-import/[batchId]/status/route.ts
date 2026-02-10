@@ -31,7 +31,8 @@ export async function GET(
       .from('iati_import_batch_items')
       .select('*')
       .eq('batch_id', batchId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(5000);
 
     if (itemsError) {
       return NextResponse.json({ error: 'Failed to fetch batch items' }, { status: 500 });

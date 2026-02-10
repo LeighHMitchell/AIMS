@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { resolveUserOrgScope, resolveOrgScopeById } from '@/lib/iati/org-scope'
 import { mapDatastoreDocToParsedActivity } from '@/lib/iati/datastore-mapper'
 import {
@@ -16,7 +17,7 @@ import crypto from 'crypto'
 import type { ParsedActivity } from '@/components/iati/bulk-import/types'
 import { USER_ROLES } from '@/types/user'
 
-// D-portal is used ONLY for sector percentages (not available in Datastore)
+// D-portal is used ONLY for sector percentages when Datastore doesn't return them
 const DPORTAL_BASE = 'https://d-portal.org/q.json'
 
 const IATI_API_KEY = process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_API_KEY
@@ -48,16 +49,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
+  const requestStartTime = Date.now()
+
   try {
     const searchParams = request.nextUrl.searchParams
     const requestedOrgId = searchParams.get('organization_id')
 
-    // Fetch user's role from the users table (not from Supabase Auth user)
-    const { data: userData, error: userError } = await supabase
+    // Fetch user's role using admin client to bypass RLS (users table has recursive policy)
+    const supabaseAdmin = getSupabaseAdmin()
+    const { data: userData, error: userError } = await (supabaseAdmin || supabase)
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single()
+
+    if (userError) {
+      console.warn('[Fetch Org Activities] Error fetching user role:', userError.message)
+    }
 
     const userRole = userData?.role || null
 
@@ -106,7 +114,9 @@ export async function GET(request: NextRequest) {
 
     if (!orgScope) {
       return NextResponse.json(
-        { error: 'Your user account is not assigned to an organisation.' },
+        { error: isSuperUser
+            ? 'Could not resolve your organisation. Please select an organisation from the dropdown above.'
+            : 'Your user account is not assigned to an organisation. Please contact an administrator.' },
         { status: 403 }
       )
     }
@@ -142,11 +152,11 @@ export async function GET(request: NextRequest) {
       const count = await getDatastoreCount(orgScope.allRefs, filterOptions, IATI_API_KEY!)
       // Estimate breakdown:
       // - 15s per 1000 activities for IATI Datastore (13s rate limit delay + API time)
-      // - 10s per 1000 activities for d-portal sector enrichment
-      // - 5s per 1000 activities for d-portal hierarchy enrichment
-      // - 20s overhead for initial setup, database checks, cache writes
+      // - Sector enrichment is now filtered/conditional, adding minimal time
+      // - Hierarchy comes directly from Datastore (no d-portal call)
+      // - 5s overhead for initial setup, database checks, cache writes
       const pagesNeeded = Math.ceil(count / DATASTORE_PAGE_SIZE)
-      const estimatedSeconds = (pagesNeeded * 30) + 20 // 30s per page + 20s overhead
+      const estimatedSeconds = (pagesNeeded * 15) + 5 // 15s per page + 5s overhead
       return NextResponse.json({
         count,
         estimatedSeconds,
@@ -216,12 +226,22 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Fetch Org Activities] Fetched ${activities.length} activities from IATI Datastore`)
 
-    // 5. Enrich with data from d-portal (not available in IATI Datastore)
+    // 5. Enrich with sector percentages from d-portal if Datastore didn't provide them
+    // Note: hierarchy is already fetched from Datastore (DATASTORE_FIELDS includes 'hierarchy')
     if (activities.length > 0) {
-      // Sector percentages (only available in d-portal)
-      await enrichWithSectorPercentages(activities, orgScope.allRefs)
-      // Hierarchy (IATI Datastore doesn't index this attribute)
-      await enrichWithHierarchy(activities, orgScope.allRefs)
+      const elapsedSeconds = (Date.now() - requestStartTime) / 1000
+      if (elapsedSeconds > 240) {
+        console.warn(`[Fetch Org Activities] Skipping d-portal sector enrichment — ${elapsedSeconds.toFixed(0)}s elapsed (>240s time budget)`)
+      } else {
+        const needsSectorEnrichment = activities.some(a =>
+          a.sectors && a.sectors.length > 0 && a.sectors.some(s => s.percentage == null)
+        )
+        if (needsSectorEnrichment) {
+          await enrichWithSectorPercentages(activities, orgScope.allRefs, filterOptions)
+        } else {
+          console.log('[Fetch Org Activities] Skipping d-portal sector enrichment — Datastore provided all percentages')
+        }
+      }
     }
 
     if (activities.length === 0) {
@@ -456,24 +476,40 @@ async function fetchFromDatastore(orgRefs: string[], filters: DatastoreFilters =
 
 /**
  * Enrich activities with sector percentages from d-portal.
- * D-portal is the ONLY source for sector percentages (not in IATI Datastore).
+ * Only called when the Datastore didn't return sector percentages.
+ * Supports country filtering and early termination for performance.
  */
 async function enrichWithSectorPercentages(
   activities: ParsedActivity[],
-  orgRefs: string[]
+  orgRefs: string[],
+  filters: DatastoreFilters = {}
 ): Promise<void> {
   console.log('[Fetch Org Activities] Enriching with sector percentages from d-portal')
 
   const PAGE_SIZE = 1000
+  const MAX_PAGES = 20 // Safety cap: 20 pages = 20k rows max
   const sectorPercentageMap = new Map<string, Map<string, number>>() // aid -> (sector_code -> percentage)
+
+  // Build a set of target activity identifiers for early termination
+  const targetIds = new Set(activities.map(a => a.iatiIdentifier))
+  const unmatchedIds = new Set(targetIds)
+
+  // Build country filter param for d-portal (Solr field on act table)
+  const countryParam = filters.country ? `&recipient_country=${encodeURIComponent(filters.country)}` : ''
 
   // Fetch sector data from d-portal for each org ref
   for (const ref of orgRefs) {
     let offset = 0
     let hasMore = true
+    let pageCount = 0
 
     while (hasMore) {
-      const dportalUrl = `${DPORTAL_BASE}?from=act,sector&reporting_ref=${encodeURIComponent(ref)}&limit=${PAGE_SIZE}&offset=${offset}`
+      if (pageCount >= MAX_PAGES) {
+        console.log(`[Fetch Org Activities] d-portal sector: hit ${MAX_PAGES}-page cap for ${ref}, stopping`)
+        break
+      }
+
+      const dportalUrl = `${DPORTAL_BASE}?from=act,sector&reporting_ref=${encodeURIComponent(ref)}${countryParam}&limit=${PAGE_SIZE}&offset=${offset}`
 
       try {
         const abortController = new AbortController()
@@ -493,9 +529,10 @@ async function enrichWithSectorPercentages(
 
         const data = await response.json()
         const rows = data.rows || []
+        pageCount++
 
         if (offset === 0) {
-          console.log(`[Fetch Org Activities] d-portal sectors for ${ref}: ${rows.length} rows`)
+          console.log(`[Fetch Org Activities] d-portal sectors for ${ref}: ${data.count || rows.length} total rows${countryParam ? ' (country-filtered)' : ''}`)
         }
 
         // Build map of sector percentages
@@ -505,7 +542,19 @@ async function enrichWithSectorPercentages(
               sectorPercentageMap.set(row.aid, new Map())
             }
             sectorPercentageMap.get(row.aid)!.set(row.sector_code.toString(), Number(row.sector_percent))
+
+            // Track which target activities we've found
+            if (unmatchedIds.has(row.aid)) {
+              unmatchedIds.delete(row.aid)
+            }
           }
+        }
+
+        // Early termination: all target activities matched
+        if (unmatchedIds.size === 0) {
+          console.log(`[Fetch Org Activities] d-portal sector: all ${targetIds.size} target activities matched after ${pageCount} pages, stopping early`)
+          hasMore = false
+          break
         }
 
         hasMore = rows.length >= PAGE_SIZE
@@ -519,6 +568,9 @@ async function enrichWithSectorPercentages(
         break
       }
     }
+
+    // If all targets matched, skip remaining org refs
+    if (unmatchedIds.size === 0) break
   }
 
   console.log(`[Fetch Org Activities] Got sector percentages for ${sectorPercentageMap.size} activities from d-portal`)
@@ -539,94 +591,6 @@ async function enrichWithSectorPercentages(
   }
 
   console.log(`[Fetch Org Activities] Enriched ${enrichedCount} sector entries with percentages`)
-}
-
-/**
- * Enrich activities with hierarchy from d-portal.
- * The IATI Datastore doesn't index the hierarchy attribute, but d-portal's jml table has it.
- */
-async function enrichWithHierarchy(
-  activities: ParsedActivity[],
-  orgRefs: string[]
-): Promise<void> {
-  console.log('[Fetch Org Activities] Enriching with hierarchy from d-portal jml table')
-
-  const PAGE_SIZE = 1000
-  const hierarchyMap = new Map<string, number>() // aid -> hierarchy
-
-  // Fetch hierarchy data from d-portal for each org ref
-  for (const ref of orgRefs) {
-    let offset = 0
-    let hasMore = true
-
-    while (hasMore) {
-      // Query jml table joined with act to get hierarchy
-      const dportalUrl = `${DPORTAL_BASE}?from=jml,act&reporting_ref=${encodeURIComponent(ref)}&limit=${PAGE_SIZE}&offset=${offset}`
-
-      try {
-        const abortController = new AbortController()
-        const timeoutId = setTimeout(() => abortController.abort(), 30000)
-
-        const response = await fetch(dportalUrl, {
-          method: 'GET',
-          headers: { Accept: 'application/json', 'User-Agent': 'AIMS-IATI-Import/1.0' },
-          signal: abortController.signal,
-        })
-        clearTimeout(timeoutId)
-
-        if (!response.ok) {
-          console.warn(`[Fetch Org Activities] d-portal jml error for ${ref}:`, response.status)
-          break
-        }
-
-        const data = await response.json()
-        const rows = data.rows || []
-
-        if (offset === 0) {
-          console.log(`[Fetch Org Activities] d-portal jml for ${ref}: ${data.count || rows.length} total activities`)
-        }
-
-        // Parse hierarchy from jml JSON
-        for (const row of rows) {
-          if (row.aid && row.jml) {
-            try {
-              const jmlData = typeof row.jml === 'string' ? JSON.parse(row.jml) : row.jml
-              const hierarchy = jmlData.hierarchy
-              if (hierarchy != null) {
-                hierarchyMap.set(row.aid, parseInt(hierarchy, 10))
-              }
-            } catch {
-              // Skip if jml parsing fails
-            }
-          }
-        }
-
-        hasMore = rows.length >= PAGE_SIZE
-        offset += PAGE_SIZE
-
-        if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 200))
-        }
-      } catch (error) {
-        console.warn(`[Fetch Org Activities] Error fetching hierarchy from d-portal for ${ref}:`, error)
-        break
-      }
-    }
-  }
-
-  console.log(`[Fetch Org Activities] Got hierarchy for ${hierarchyMap.size} activities from d-portal`)
-
-  // Apply hierarchy to activities
-  let enrichedCount = 0
-  for (const activity of activities) {
-    const hierarchy = hierarchyMap.get(activity.iatiIdentifier)
-    if (hierarchy != null) {
-      activity.hierarchy = hierarchy
-      enrichedCount++
-    }
-  }
-
-  console.log(`[Fetch Org Activities] Enriched ${enrichedCount} activities with hierarchy`)
 }
 
 // markExistingActivities is now imported from @/lib/iati/datastore-helpers
