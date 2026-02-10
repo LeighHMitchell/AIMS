@@ -50,12 +50,7 @@
       "maxDuration": 60
     }
   },
-  "crons": [
-    {
-      "path": "/api/cron/iati-sync",
-      "schedule": "0 2 * * *"
-    }
-  ],
+  "crons": [],
   "headers": [
     {
       "source": "/api/activities/(.*)",
