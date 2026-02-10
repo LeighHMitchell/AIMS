@@ -1029,7 +1029,7 @@ export default function PartnersPage() {
           {/* Main Content */}
           <Tabs value={groupBy} onValueChange={(value) => setGroupBy(value as 'type' | 'custom')}>
             <div className="flex items-center justify-between mb-6">
-              <TabsList className="p-1 h-auto bg-background gap-1 border">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
                 <TabsTrigger value="type" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Building2 className="h-4 w-4" />
                   Development Partners

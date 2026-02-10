@@ -769,7 +769,7 @@ export default function FAQPage() {
           {followUpFAQ && (
             <div className="space-y-4">
               {/* Original FAQ context */}
-              <div className="bg-gray-50 rounded-lg p-3 border">
+              <div className="bg-surface-muted rounded-lg p-3 border">
                 <p className="text-xs text-gray-500 uppercase font-medium mb-1">Related to:</p>
                 <p className="text-sm font-medium text-gray-900">{followUpFAQ.question}</p>
               </div>

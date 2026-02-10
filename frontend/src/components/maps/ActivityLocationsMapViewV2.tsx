@@ -299,7 +299,7 @@ export default function ActivityLocationsMapViewV2({
 
   if (validLocations.length === 0) {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-slate-50 rounded-md">
+      <div className="h-full w-full flex items-center justify-center bg-surface-muted rounded-md">
         <div className="text-center">
           <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">No location data available</p>

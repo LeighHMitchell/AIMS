@@ -55,7 +55,8 @@ module.exports = {
   				'cool-steel': '#7b95a7',
   				'platinum': '#f1f4f8'
   			},
-  			chart: {
+  			'surface-muted': 'var(--surface-muted)',
+			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',
   				'3': 'hsl(var(--chart-3))',

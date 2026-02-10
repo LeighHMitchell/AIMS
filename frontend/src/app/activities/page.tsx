@@ -1709,7 +1709,7 @@ const router = useRouter();
       </div>
 
       {/* Filters and View Controls - All in One Row */}
-      <div className="flex items-end gap-3 py-2 bg-slate-50 rounded-lg px-3 border border-gray-200">
+      <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200">
         {/* Status Filter */}
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground">Status</Label>

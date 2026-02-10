@@ -390,11 +390,23 @@ export default function PartnerProfilePage() {
 
           {/* Tabs Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
-              <TabsTrigger value="about" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">About</TabsTrigger>
-              <TabsTrigger value="financials" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Financials</TabsTrigger>
-              <TabsTrigger value="activities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Activities</TabsTrigger>
-              <TabsTrigger value="people" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">People</TabsTrigger>
+            <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+              <TabsTrigger value="about" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Building2 className="h-4 w-4" />
+                About
+              </TabsTrigger>
+              <TabsTrigger value="financials" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <DollarSign className="h-4 w-4" />
+                Financials
+              </TabsTrigger>
+              <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Activity className="h-4 w-4" />
+                Activities
+              </TabsTrigger>
+              <TabsTrigger value="people" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Users className="h-4 w-4" />
+                People
+              </TabsTrigger>
             </TabsList>
 
             {/* About Tab */}

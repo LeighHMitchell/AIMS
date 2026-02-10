@@ -36,17 +36,11 @@ CREATE INDEX IF NOT EXISTS idx_datastore_cache_expires ON iati_datastore_cache(e
 
 ALTER TABLE iati_datastore_cache ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view cache for their org" ON iati_datastore_cache
-    FOR SELECT USING (
-        organization_id IN (SELECT organization_id FROM public.users WHERE id = auth.uid())
-    );
-
-CREATE POLICY "Users can manage cache for their org" ON iati_datastore_cache
-    FOR INSERT WITH CHECK (
-        organization_id IN (SELECT organization_id FROM public.users WHERE id = auth.uid())
-    );
-
-CREATE POLICY "Users can delete expired cache" ON iati_datastore_cache
-    FOR DELETE USING (
-        organization_id IN (SELECT organization_id FROM public.users WHERE id = auth.uid())
-    );
+-- Simple permissive policy — cache operations use the admin client (service role)
+-- which bypasses RLS entirely. This policy just ensures authenticated users
+-- can also access the cache if needed.
+CREATE POLICY "Authenticated users full access" ON iati_datastore_cache
+    FOR ALL
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);

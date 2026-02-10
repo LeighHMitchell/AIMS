@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
     // 3. Check cache (unless force_refresh or filters applied)
     if (!forceRefresh && !hasFilters) {
       try {
-        const { data: cached, error: cacheError } = await supabase
+        const { data: cached, error: cacheError } = await (supabaseAdmin || supabase)
           .from('iati_datastore_cache')
           .select('response_data, total_activities, fetched_at')
           .eq('organization_id', orgScope.organizationId)
@@ -275,7 +275,7 @@ export async function GET(request: NextRequest) {
 
     try {
       // Delete old cache entries for this org+query
-      const { error: deleteErr } = await supabase
+      const { error: deleteErr } = await (supabaseAdmin || supabase)
         .from('iati_datastore_cache')
         .delete()
         .eq('organization_id', orgScope.organizationId)
@@ -283,7 +283,7 @@ export async function GET(request: NextRequest) {
       if (deleteErr) console.warn('[Fetch Org Activities] Cache delete error:', deleteErr.message)
 
       // Cache the aggregated activities
-      const { error: insertErr } = await supabase.from('iati_datastore_cache').insert({
+      const { error: insertErr } = await (supabaseAdmin || supabase).from('iati_datastore_cache').insert({
         organization_id: orgScope.organizationId,
         query_hash: queryHash,
         total_activities: activities.length,

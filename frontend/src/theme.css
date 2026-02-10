@@ -35,6 +35,7 @@
   --font-sans: Inter, sans-serif;
   --font-serif: Source Serif 4, serif;
   --font-mono: JetBrains Mono, monospace;
+  --surface-muted: #f6f5f3;
   --radius: 0.5rem;
   --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
@@ -79,4 +80,5 @@
   --sidebar-accent-foreground: oklch(0.8823 0.0571 254.1284);
   --sidebar-border: oklch(0.3715 0 0);
   --sidebar-ring: oklch(0.6231 0.1880 259.8145);
+  --surface-muted: #2a2a28;
 }

@@ -325,7 +325,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`[Bulk Import] Pre-fetching ${allOrgParams.length} org references...`);
-        orgCache = await prefetchOrganizations(supabase, allOrgParams);
+        orgCache = await prefetchOrganizations(supabaseAdmin || supabase, allOrgParams);
         console.log(`[Bulk Import] Org cache ready: ${orgCache.size} entries`);
       }
 
@@ -365,7 +365,7 @@ export async function POST(request: NextRequest) {
 
         if (allContactParams.length > 0) {
           console.log(`[Bulk Import] Pre-fetching ${allContactParams.length} contact references...`);
-          contactCache = await prefetchContacts(supabase, allContactParams);
+          contactCache = await prefetchContacts(supabaseAdmin || supabase, allContactParams);
           console.log(`[Bulk Import] Contact cache ready: ${contactCache.size} entries`);
         }
       }

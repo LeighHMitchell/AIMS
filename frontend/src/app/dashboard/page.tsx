@@ -298,7 +298,7 @@ export default function Dashboard() {
                 router.push(url.pathname + url.search, { scroll: false });
               }}
             >
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
                 <TabsTrigger 
                   value="overview" 
                   className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"

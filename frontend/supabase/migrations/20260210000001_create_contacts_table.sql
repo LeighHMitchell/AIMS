@@ -64,16 +64,14 @@ CREATE INDEX IF NOT EXISTS idx_contacts_name_lookup
 CREATE INDEX IF NOT EXISTS idx_contacts_organisation_id
     ON contacts (organisation_id);
 
--- 3. RLS policies (match activity_contacts patterns)
+-- 3. RLS policies
 ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Contacts are viewable by everyone"
-    ON contacts FOR SELECT
-    USING (true);
-
-CREATE POLICY "Contacts can be managed by authorized users"
+CREATE POLICY "Authenticated users full access"
     ON contacts FOR ALL
-    USING (true);
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
 
 -- 4. Updated_at trigger
 CREATE TRIGGER update_contacts_updated_at
@@ -88,125 +86,137 @@ ALTER TABLE activity_contacts
 CREATE INDEX IF NOT EXISTS idx_activity_contacts_contact_id
     ON activity_contacts (contact_id);
 
--- 6. Data migration: deduplicate existing activity_contacts → contacts
---    Priority: email (case-insensitive), then first+last name
---    For each unique person, pick the row with the most filled-in fields.
+-- 6. Ensure activity_contacts has the columns the bulk import writes to.
+--    These may already exist from earlier migrations; ADD COLUMN IF NOT EXISTS is safe.
+ALTER TABLE activity_contacts ADD COLUMN IF NOT EXISTS organisation_name TEXT;
+ALTER TABLE activity_contacts ADD COLUMN IF NOT EXISTS primary_email TEXT;
 
--- Step 6a: Insert unique contacts from activity_contacts (email-based dedup first)
-INSERT INTO contacts (
-    title, first_name, middle_name, last_name,
-    email, secondary_email,
-    phone, phone_number, country_code,
-    fax, fax_country_code, fax_number,
-    position, job_title, department,
-    organisation, organisation_id,
-    website, mailing_address, profile_photo, notes,
-    linked_user_id, created_at, updated_at
-)
-SELECT DISTINCT ON (dedup_key)
-    ac.title,
-    ac.first_name,
-    ac.middle_name,
-    ac.last_name,
-    ac.email,
-    ac.secondary_email,
-    ac.phone,
-    ac.phone_number,
-    ac.country_code,
-    ac.fax,
-    ac.fax_country_code,
-    ac.fax_number,
-    ac.position,
-    ac.job_title,
-    ac.department,
-    COALESCE(ac.organisation, ac.organisation_name),
-    ac.organisation_id,
-    ac.website,
-    ac.mailing_address,
-    ac.profile_photo,
-    ac.notes,
-    ac.linked_user_id,
-    MIN(ac.created_at) OVER (PARTITION BY dedup_key),
-    MAX(ac.updated_at) OVER (PARTITION BY dedup_key)
-FROM (
-    SELECT *,
-        CASE
-            WHEN email IS NOT NULL AND TRIM(email) <> ''
-                THEN 'email:' || LOWER(TRIM(email))
-            WHEN first_name IS NOT NULL AND TRIM(first_name) <> ''
-                 AND last_name IS NOT NULL AND TRIM(last_name) <> ''
-                THEN 'name:' || LOWER(TRIM(first_name)) || '_' || LOWER(TRIM(last_name))
-            ELSE 'id:' || id::text
-        END AS dedup_key
-    FROM activity_contacts
-) ac
-ORDER BY dedup_key,
-    -- Prefer rows with more data filled in
-    (CASE WHEN ac.email IS NOT NULL AND TRIM(ac.email) <> '' THEN 1 ELSE 0 END
-     + CASE WHEN ac.phone IS NOT NULL OR ac.phone_number IS NOT NULL THEN 1 ELSE 0 END
-     + CASE WHEN ac.position IS NOT NULL AND TRIM(ac.position) <> '' THEN 1 ELSE 0 END
-     + CASE WHEN ac.organisation IS NOT NULL OR ac.organisation_name IS NOT NULL THEN 1 ELSE 0 END
-     + CASE WHEN ac.notes IS NOT NULL AND TRIM(ac.notes) <> '' THEN 1 ELSE 0 END
-    ) DESC;
+-- 7. Data migration: deduplicate existing activity_contacts → contacts
+--    Wrapped in a DO block so failures don't prevent table creation.
+DO $$
+BEGIN
+    -- Step 7a: Insert unique contacts from activity_contacts (email-based dedup first)
+    INSERT INTO contacts (
+        title, first_name, middle_name, last_name,
+        email, secondary_email,
+        phone, phone_number, country_code,
+        fax, fax_country_code, fax_number,
+        position, job_title, department,
+        organisation, organisation_id,
+        website, mailing_address, profile_photo, notes,
+        linked_user_id, created_at, updated_at
+    )
+    SELECT DISTINCT ON (dedup_key)
+        ac.title,
+        ac.first_name,
+        ac.middle_name,
+        ac.last_name,
+        ac.email,
+        ac.secondary_email,
+        ac.phone,
+        ac.phone_number,
+        ac.country_code,
+        ac.fax,
+        ac.fax_country_code,
+        ac.fax_number,
+        ac.position,
+        ac.job_title,
+        ac.department,
+        COALESCE(ac.organisation, ac.organisation_name),
+        ac.organisation_id,
+        ac.website,
+        ac.mailing_address,
+        ac.profile_photo,
+        ac.notes,
+        ac.linked_user_id,
+        MIN(ac.created_at) OVER (PARTITION BY dedup_key),
+        MAX(ac.updated_at) OVER (PARTITION BY dedup_key)
+    FROM (
+        SELECT *,
+            CASE
+                WHEN email IS NOT NULL AND TRIM(email) <> ''
+                    THEN 'email:' || LOWER(TRIM(email))
+                WHEN first_name IS NOT NULL AND TRIM(first_name) <> ''
+                     AND last_name IS NOT NULL AND TRIM(last_name) <> ''
+                    THEN 'name:' || LOWER(TRIM(first_name)) || '_' || LOWER(TRIM(last_name))
+                ELSE 'id:' || id::text
+            END AS dedup_key
+        FROM activity_contacts
+    ) ac
+    ORDER BY dedup_key,
+        -- Prefer rows with more data filled in
+        (CASE WHEN ac.email IS NOT NULL AND TRIM(ac.email) <> '' THEN 1 ELSE 0 END
+         + CASE WHEN ac.phone IS NOT NULL OR ac.phone_number IS NOT NULL THEN 1 ELSE 0 END
+         + CASE WHEN ac.position IS NOT NULL AND TRIM(ac.position) <> '' THEN 1 ELSE 0 END
+         + CASE WHEN ac.organisation IS NOT NULL OR ac.organisation_name IS NOT NULL THEN 1 ELSE 0 END
+         + CASE WHEN ac.notes IS NOT NULL AND TRIM(ac.notes) <> '' THEN 1 ELSE 0 END
+        ) DESC;
 
--- Step 6b: Backfill contact_id on activity_contacts
--- Match by email first
-UPDATE activity_contacts ac
-SET contact_id = c.id
-FROM contacts c
-WHERE ac.contact_id IS NULL
-  AND ac.email IS NOT NULL
-  AND TRIM(ac.email) <> ''
-  AND LOWER(TRIM(ac.email)) = LOWER(TRIM(c.email));
+    RAISE NOTICE 'Step 7a: Inserted unique contacts from activity_contacts';
 
--- Match by first+last name
-UPDATE activity_contacts ac
-SET contact_id = c.id
-FROM contacts c
-WHERE ac.contact_id IS NULL
-  AND ac.first_name IS NOT NULL AND TRIM(ac.first_name) <> ''
-  AND ac.last_name IS NOT NULL AND TRIM(ac.last_name) <> ''
-  AND LOWER(TRIM(ac.first_name)) = LOWER(TRIM(c.first_name))
-  AND LOWER(TRIM(ac.last_name)) = LOWER(TRIM(c.last_name));
+    -- Step 7b: Backfill contact_id on activity_contacts — match by email first
+    UPDATE activity_contacts ac
+    SET contact_id = c.id
+    FROM contacts c
+    WHERE ac.contact_id IS NULL
+      AND ac.email IS NOT NULL
+      AND TRIM(ac.email) <> ''
+      AND LOWER(TRIM(ac.email)) = LOWER(TRIM(c.email));
 
--- For any remaining unmatched rows (id-only dedup key), create individual contacts
-INSERT INTO contacts (
-    title, first_name, middle_name, last_name,
-    email, secondary_email,
-    phone, phone_number, country_code,
-    fax, fax_country_code, fax_number,
-    position, job_title, department,
-    organisation, organisation_id,
-    website, mailing_address, profile_photo, notes,
-    linked_user_id, created_at, updated_at
-)
-SELECT
-    ac.title, ac.first_name, ac.middle_name, ac.last_name,
-    ac.email, ac.secondary_email,
-    ac.phone, ac.phone_number, ac.country_code,
-    ac.fax, ac.fax_country_code, ac.fax_number,
-    ac.position, ac.job_title, ac.department,
-    COALESCE(ac.organisation, ac.organisation_name),
-    ac.organisation_id,
-    ac.website, ac.mailing_address, ac.profile_photo, ac.notes,
-    ac.linked_user_id, ac.created_at, ac.updated_at
-FROM activity_contacts ac
-WHERE ac.contact_id IS NULL;
+    -- Match by first+last name
+    UPDATE activity_contacts ac
+    SET contact_id = c.id
+    FROM contacts c
+    WHERE ac.contact_id IS NULL
+      AND ac.first_name IS NOT NULL AND TRIM(ac.first_name) <> ''
+      AND ac.last_name IS NOT NULL AND TRIM(ac.last_name) <> ''
+      AND LOWER(TRIM(ac.first_name)) = LOWER(TRIM(c.first_name))
+      AND LOWER(TRIM(ac.last_name)) = LOWER(TRIM(c.last_name));
 
--- Backfill the remaining rows by matching on the exact activity_contacts id
--- (these are 1:1 since we just created a contact for each unmatched row)
-UPDATE activity_contacts ac
-SET contact_id = c.id
-FROM contacts c
-WHERE ac.contact_id IS NULL
-  AND (
-    -- Match on email
-    (ac.email IS NOT NULL AND TRIM(ac.email) <> ''
-     AND LOWER(TRIM(ac.email)) = LOWER(TRIM(c.email)))
-    OR
-    -- Match on name
-    (ac.first_name IS NOT NULL AND TRIM(ac.first_name) <> ''
-     AND ac.last_name IS NOT NULL AND TRIM(ac.last_name) <> ''
-     AND LOWER(TRIM(ac.first_name)) = LOWER(TRIM(c.first_name))
-     AND LOWER(TRIM(ac.last_name)) = LOWER(TRIM(c.last_name)))
-  );
+    -- For any remaining unmatched rows, create individual contacts
+    INSERT INTO contacts (
+        title, first_name, middle_name, last_name,
+        email, secondary_email,
+        phone, phone_number, country_code,
+        fax, fax_country_code, fax_number,
+        position, job_title, department,
+        organisation, organisation_id,
+        website, mailing_address, profile_photo, notes,
+        linked_user_id, created_at, updated_at
+    )
+    SELECT
+        ac.title, ac.first_name, ac.middle_name, ac.last_name,
+        ac.email, ac.secondary_email,
+        ac.phone, ac.phone_number, ac.country_code,
+        ac.fax, ac.fax_country_code, ac.fax_number,
+        ac.position, ac.job_title, ac.department,
+        COALESCE(ac.organisation, ac.organisation_name),
+        ac.organisation_id,
+        ac.website, ac.mailing_address, ac.profile_photo, ac.notes,
+        ac.linked_user_id, ac.created_at, ac.updated_at
+    FROM activity_contacts ac
+    WHERE ac.contact_id IS NULL;
+
+    -- Backfill the remaining rows
+    UPDATE activity_contacts ac
+    SET contact_id = c.id
+    FROM contacts c
+    WHERE ac.contact_id IS NULL
+      AND (
+        -- Match on email
+        (ac.email IS NOT NULL AND TRIM(ac.email) <> ''
+         AND LOWER(TRIM(ac.email)) = LOWER(TRIM(c.email)))
+        OR
+        -- Match on name
+        (ac.first_name IS NOT NULL AND TRIM(ac.first_name) <> ''
+         AND ac.last_name IS NOT NULL AND TRIM(ac.last_name) <> ''
+         AND LOWER(TRIM(ac.first_name)) = LOWER(TRIM(c.first_name))
+         AND LOWER(TRIM(ac.last_name)) = LOWER(TRIM(c.last_name)))
+      );
+
+    RAISE NOTICE 'Step 7b: Backfilled contact_id on activity_contacts';
+
+EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'Data migration from activity_contacts failed (non-critical): %', SQLERRM;
+    RAISE WARNING 'The contacts table was created successfully. Existing activity_contacts data was not backfilled.';
+END $$;

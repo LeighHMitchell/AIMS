@@ -10,6 +10,7 @@ import { SearchResultsSkeleton } from '@/components/ui/skeleton-loader'
 import { SearchResultRow } from '@/components/search'
 import { GlobalSearchBar } from '@/components/search/GlobalSearchBar'
 import { cn } from '@/lib/utils'
+import { Search, Activity, Building2, PieChart, Tag, Users, Contact2 } from 'lucide-react'
 import type { SearchResult, SearchResultType } from '@/types/search'
 import { normalizeSearchResults } from '@/lib/search-normalizer'
 import { LoadingText } from '@/components/ui/loading-text'
@@ -31,6 +32,15 @@ const resultTypeLabels: Record<SearchResultType, string> = {
   tag: 'Tags',
   user: 'Users',
   contact: 'Contacts'
+}
+
+const resultTypeIcons: Record<SearchResultType, React.ComponentType<{ className?: string }>> = {
+  activity: Activity,
+  organisation: Building2,
+  sector: PieChart,
+  tag: Tag,
+  user: Users,
+  contact: Contact2
 }
 
 
@@ -244,28 +254,27 @@ function SearchPageContent() {
         {/* Results */}
         {query && !error && (
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'all' | SearchResultType)} className="w-full">
-            <TabsList className="h-auto bg-transparent p-0 gap-4 sm:gap-6 border-b border-gray-200 w-full justify-start rounded-none mb-6 flex flex-wrap">
-              <TabsTrigger 
-                value="all" 
-                className="text-sm text-gray-600 bg-transparent rounded-none border-b-2 border-transparent pb-3 px-1 
-                           data-[state=active]:text-blue-600 data-[state=active]:border-blue-600 
-                           data-[state=active]:bg-transparent data-[state=active]:shadow-none
-                           hover:text-gray-900 transition-colors"
+            <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+              <TabsTrigger
+                value="all"
+                className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
+                <Search className="h-4 w-4" />
                 All ({resultCounts.all})
               </TabsTrigger>
-              {searchResultOrder.map((type) => (
-                <TabsTrigger
-                  key={type}
-                  value={type}
-                  className="text-sm text-gray-600 bg-transparent rounded-none border-b-2 border-transparent pb-3 px-1 
-                             data-[state=active]:text-blue-600 data-[state=active]:border-blue-600 
-                             data-[state=active]:bg-transparent data-[state=active]:shadow-none
-                             hover:text-gray-900 transition-colors"
-                >
-                  {resultTypeLabels[type]} ({resultCounts[type]})
-                </TabsTrigger>
-              ))}
+              {searchResultOrder.map((type) => {
+                const Icon = resultTypeIcons[type]
+                return (
+                  <TabsTrigger
+                    key={type}
+                    value={type}
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {resultTypeLabels[type]} ({resultCounts[type]})
+                  </TabsTrigger>
+                )
+              })}
             </TabsList>
 
             <TabsContent value={activeTab} className="space-y-4">

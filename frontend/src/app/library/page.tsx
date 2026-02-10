@@ -420,7 +420,7 @@ export default function LibraryPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-4 flex flex-wrap">
+          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
             <TabsTrigger value="all" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <LibraryIcon className="h-4 w-4" />
               All Documents

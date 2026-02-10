@@ -169,7 +169,7 @@ export default function FinancialCompletenessPage() {
 
           {/* Error State */}
           {error && (
-            <Card className="border-slate-200 bg-slate-50 mb-6">
+            <Card className="border-slate-200 bg-surface-muted mb-6">
               <CardContent className="flex items-center gap-3 py-6">
                 <AlertCircle className="h-8 w-8 text-slate-400" />
                 <div>

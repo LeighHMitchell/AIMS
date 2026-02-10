@@ -4549,7 +4549,7 @@ export default function ActivityDetailPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="h-96 flex items-center justify-center bg-slate-50 rounded-md border border-slate-200">
+                      <div className="h-96 flex items-center justify-center bg-surface-muted rounded-md border border-slate-200">
                         <div className="text-center">
                           <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
                           <p className="text-slate-500">No regional breakdown data available</p>

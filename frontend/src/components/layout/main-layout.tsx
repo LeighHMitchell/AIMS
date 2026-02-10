@@ -42,13 +42,10 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
     <div className="flex h-screen overflow-hidden bg-background border-0">
       {/* Fixed Sidebar */}
       <aside
-        className={`${sidebarWidth} flex-shrink-0 border-r h-full fixed top-0 left-0 z-40 flex flex-col`}
-        style={{
-          backgroundColor: '#f6f5f3'
-        }}
+        className={`${sidebarWidth} flex-shrink-0 border-r h-full fixed top-0 left-0 z-40 flex flex-col bg-surface-muted`}
       >
         {/* Logo Section */}
-        <div className="py-3 px-4 flex-shrink-0" style={{ backgroundColor: '#f6f5f3' }}>
+        <div className="py-3 px-4 flex-shrink-0 bg-surface-muted">
           <Link href={homeRoute} className="flex items-center hover:opacity-80 transition-opacity duration-200">
             <img
               src="/images/Logo - No Text 2.jpeg"

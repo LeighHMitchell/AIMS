@@ -406,7 +406,7 @@ export default function PlannedDisbursementsPage() {
         </div>
 
         {/* Search and Filters */}
-        <div className="flex items-end gap-3 py-3 bg-slate-50 rounded-lg px-3 border border-gray-200">
+        <div className="flex items-end gap-3 py-3 bg-surface-muted rounded-lg px-3 border border-gray-200">
             {/* Search Input */}
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">Search</Label>
