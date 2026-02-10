@@ -46,8 +46,14 @@
     "src/app/api/activities/[id]/sync/route.ts": {
       "maxDuration": 60
     },
+    "src/app/api/iati/fetch-org-activities/route.ts": {
+      "maxDuration": 300
+    },
     "src/app/api/iati/fetch-org-activities/page/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/iati/bulk-import/route.ts": {
+      "maxDuration": 300
     }
   },
   "crons": [],

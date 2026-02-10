@@ -179,6 +179,7 @@ select:focus {
     --ring: 0 0% 3.9%;
 
     --radius: 0.5rem;
+    --surface-muted: #f6f5f3;
 
     /* Calendar Color Scheme */
     --calendar-primary-scarlet: 0 72% 50%; /* #dc2625 */
@@ -224,6 +225,7 @@ select:focus {
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
+    --surface-muted: #2a2a28;
 
     /* Calendar Color Scheme (dark mode) */
     --calendar-primary-scarlet: 0 72% 50%; /* #dc2625 */
