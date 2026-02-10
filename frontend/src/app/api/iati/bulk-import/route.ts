@@ -1080,26 +1080,28 @@ export async function POST(request: NextRequest) {
       rateCache.clear();
     };
 
-    // Start background processing (fire and forget)
-    // In serverless, this may be interrupted after response is sent,
-    // but in dev mode and long-running servers it will complete
-    processActivities().catch(async (error) => {
-      console.error('[Bulk Import] Background processing error:', error);
+    // Process activities synchronously before returning response.
+    // On Vercel serverless, fire-and-forget promises are killed after
+    // the response is sent, so we must await completion here.
+    // maxDuration=300 gives us 5 minutes for this.
+    try {
+      await processActivities();
+    } catch (error) {
+      console.error('[Bulk Import] Processing error:', error);
       try {
         await supabase
           .from('iati_import_batches')
           .update({
             status: 'failed',
-            error_message: error instanceof Error ? error.message : 'Background processing failed',
+            error_message: error instanceof Error ? error.message : 'Processing failed',
             completed_at: new Date().toISOString(),
           })
           .eq('id', batchId);
       } catch (updateError) {
         console.error('[Bulk Import] Failed to update batch status:', updateError);
       }
-    });
+    }
 
-    // Return immediately so client can start polling
     return responsePromise;
   } catch (error) {
     console.error('[Bulk Import] Fatal error:', error);
