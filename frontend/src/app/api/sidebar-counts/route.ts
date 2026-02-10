@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export async function GET() {
   const { supabase, response: authResponse } = await requireAuth();
@@ -42,6 +41,10 @@ export async function GET() {
       rolodex: (rolodexUsers.count ?? 0) + (rolodexContacts.count ?? 0),
       documents: (activityDocs.count ?? 0) + (transactionDocs.count ?? 0) + (orgDocs.count ?? 0) + (resultDocs.count ?? 0) + (indicatorDocs.count ?? 0) + (standaloneDocs.count ?? 0),
       faqs: faqs.count ?? 0,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      },
     });
   } catch (error) {
     console.error('[Sidebar Counts] Error:', error);

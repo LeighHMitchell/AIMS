@@ -71,7 +71,7 @@ const getCachedOrganizationStats = unstable_cache(
   },
   ['organization-bulk-stats'],
   {
-    revalidate: 60, // Cache for 60 seconds
+    revalidate: 3600, // Cache for 1 hour — these full-table queries are expensive on disk IO
     tags: ['organizations']
   }
 );
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
     
     // Add caching headers to reduce repeated requests
     const headers = {
-      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120', // 1 minute cache (reduced from 5 min)
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200', // 1 hour cache to reduce disk IO
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'

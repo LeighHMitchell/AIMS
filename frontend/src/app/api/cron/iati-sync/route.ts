@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     .eq('auto_sync', true)
     .neq('sync_status', 'outdated')
     .not('iati_identifier', 'is', null)
-    .limit(500) // Safety limit per run
+    .limit(100) // Reduced from 500 to limit disk IO on Micro compute
 
   if (queryError) {
     console.error('[IATI Sync] Query error:', queryError.message)
@@ -113,29 +113,29 @@ export async function GET(request: NextRequest) {
     countMap.set(id, {})
   }
 
-  // Fetch counts for each child table in parallel
+  // Fetch counts for each child table using head:true COUNT queries
+  // This avoids reading actual rows — just counts via index, much less disk IO
   await Promise.all(
     countTables.map(async ({ table, key }) => {
       try {
-        // Query counts grouped by activity_id using individual count queries
-        // (Supabase doesn't support GROUP BY well, so we batch with IN filter)
-        for (let i = 0; i < activityIds.length; i += 100) {
-          const batch = activityIds.slice(i, i + 100)
-          const { data: rows } = await supabase
-            .from(table)
-            .select('activity_id')
-            .in('activity_id', batch)
-
-          if (rows) {
-            // Count per activity
-            const perActivity = new Map<string, number>()
-            for (const row of rows) {
-              perActivity.set(row.activity_id, (perActivity.get(row.activity_id) || 0) + 1)
-            }
-            perActivity.forEach((count, aid) => {
-              const entry = countMap.get(aid)
-              if (entry) entry[key] = count
+        // Use individual count queries per activity (head:true = no row data transferred)
+        // Process in batches of 20 concurrent queries to avoid overwhelming the DB
+        for (let i = 0; i < activityIds.length; i += 20) {
+          const batch = activityIds.slice(i, i + 20)
+          const results = await Promise.all(
+            batch.map(async (activityId) => {
+              const { count } = await supabase
+                .from(table)
+                .select('*', { count: 'exact', head: true })
+                .eq('activity_id', activityId)
+              return { activityId, count: count || 0 }
             })
+          )
+          for (const { activityId, count } of results) {
+            if (count > 0) {
+              const entry = countMap.get(activityId)
+              if (entry) entry[key] = count
+            }
           }
         }
       } catch (err) {
