@@ -1,6 +1,30 @@
 {
-  "currentVersion": "2.1.1",
+  "currentVersion": "2.2.0",
   "releases": [
+    {
+      "version": "2.2.0",
+      "date": "2026-02-10",
+      "changes": [
+        "--- Paginated IATI Datastore Fetch ---",
+        "Large organisations (e.g. USAID with ~30k activities) now fetch page-by-page instead of a single request, preventing Vercel 300s timeout",
+        "Real progress bar for paginated fetches showing page count, activity count, and ETA",
+        "Automatic 429 rate-limit retry with exponential backoff and cancel support between pages",
+        "New /api/iati/fetch-org-activities/page endpoint for single-page fetches with 60s max duration",
+        "Shared datastore-helpers module extracted for reuse across IATI fetch routes",
+        "--- Performance & Disk IO Optimization ---",
+        "Bulk stats API cache TTL increased from 60s to 1 hour — reduces full table scans on transactions, budgets, and planned disbursements",
+        "Sidebar counts API now cached at CDN level for 5 minutes (was zero caching) — eliminates 14 COUNT queries per page navigation",
+        "IATI sync cron uses COUNT queries (head:true) instead of fetching all rows from 9 child tables just to count them",
+        "Disabled automatic nightly IATI sync cron to reduce disk IO on Micro Supabase instance (manual sync per activity still available)",
+        "--- Middleware & Auth Fixes ---",
+        "Fixed MIDDLEWARE_INVOCATION_TIMEOUT (504) caused by Supabase getUser() timing out from distant edge regions",
+        "Restored Supabase session refresh in middleware with 5-second timeout for graceful degradation",
+        "API routes now skip redundant middleware session refresh since they use requireAuth() directly",
+        "--- Bug Fixes ---",
+        "Added /notifications page to resolve 404 from top nav notification bell link",
+        "Fixed PostgREST error on IATI cache query by switching from .single() to .maybeSingle()"
+      ]
+    },
     {
       "version": "2.1.1",
       "date": "2026-02-09",
