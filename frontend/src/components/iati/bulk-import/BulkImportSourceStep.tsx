@@ -159,6 +159,11 @@ export default function BulkImportSourceStep({
   const [countryOpen, setCountryOpen] = useState(false)
   const [countrySearch, setCountrySearch] = useState('')
 
+  // --- Paginated fetch state (for large orgs > 5000 activities) ---
+  const [isPaginated, setIsPaginated] = useState(false)
+  const [paginatedProgress, setPaginatedProgress] = useState({ currentPage: 0, totalPages: 0, activitiesFetched: 0, totalActivities: 0 })
+  const paginatedAbortRef = useRef(false)
+
   // --- Preview count state (shows expected results before fetch) ---
   const [previewCount, setPreviewCount] = useState<{ activities: number; loading: boolean } | null>(null)
   const previewCountTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -377,6 +382,8 @@ export default function BulkImportSourceStep({
       abortControllerRef.current.abort()
       abortControllerRef.current = null
     }
+    // Signal paginated fetch to stop
+    paginatedAbortRef.current = true
     // Stop progress simulation
     stopProgressSimulation(false)
     // Reset to idle state
@@ -387,6 +394,8 @@ export default function BulkImportSourceStep({
     setElapsedSeconds(0)
     setLongFetchWarning(false)
     setFetchProgressMessage(null)
+    setIsPaginated(false)
+    setPaginatedProgress({ currentPage: 0, totalPages: 0, activitiesFetched: 0, totalActivities: 0 })
     toast.info('Fetch cancelled')
   }, [stopProgressSimulation])
 
@@ -577,6 +586,8 @@ export default function BulkImportSourceStep({
     setFetchStatus('fetching')
     setFetchError(null)
     setEstimatedTime(null)
+    setIsPaginated(false)
+    setPaginatedProgress({ currentPage: 0, totalPages: 0, activitiesFetched: 0, totalActivities: 0 })
 
     try {
       const params = new URLSearchParams()
@@ -603,27 +614,22 @@ export default function BulkImportSourceStep({
         params.set('hierarchy', selectedHierarchy.toString())
       }
 
-      // Step 1: Quick count query to get estimated time
+      // Step 1: Quick count query to get estimated time and pagination decision
       const countParams = new URLSearchParams(params)
       countParams.set('count_only', 'true')
       const countUrl = `/api/iati/fetch-org-activities?${countParams.toString()}`
 
+      let usePagination = false
+      let countData: any = null
       try {
         const countResponse = await apiFetch(countUrl, { signal })
         if (countResponse.ok) {
-          const countData = await countResponse.json()
+          countData = await countResponse.json()
           setEstimatedTime({ count: countData.count, seconds: countData.estimatedSeconds })
-          // Start progress simulation with the actual estimated time
-          startProgressSimulation(countData.estimatedSeconds)
-        } else {
-          // Count failed, start with default estimate
-          startProgressSimulation()
+          usePagination = countData.usePagination === true
         }
       } catch (countErr) {
-        // Check if aborted
         if (signal.aborted) throw countErr
-        // Count failed, start with default estimate
-        startProgressSimulation()
       }
 
       // Check if aborted before starting main fetch
@@ -631,61 +637,213 @@ export default function BulkImportSourceStep({
         throw new DOMException('Aborted', 'AbortError')
       }
 
-      // Step 2: Full fetch
-      const url = `/api/iati/fetch-org-activities${params.toString() ? '?' + params.toString() : ''}`
+      // Step 2: Choose fetch strategy based on activity count
+      if (usePagination && countData) {
+        // --- PAGINATED FLOW for large orgs (>5000 activities) ---
+        const totalPages = countData.totalPages || Math.ceil(countData.count / 1000)
+        const totalActivities = countData.count
 
-      const response = await apiFetch(url, { signal })
-      const data = await response.json()
+        setIsPaginated(true)
+        setPaginatedProgress({ currentPage: 0, totalPages, activitiesFetched: 0, totalActivities })
+        paginatedAbortRef.current = false
 
-      if (!response.ok) {
-        stopProgressSimulation(false)
-        setFetchStatus('error')
-        setFetchError(data.error || 'Failed to fetch activities')
-        return
+        // Start elapsed timer
+        fetchStartTimeRef.current = Date.now()
+        if (elapsedIntervalRef.current) clearInterval(elapsedIntervalRef.current)
+        setElapsedSeconds(0)
+        elapsedIntervalRef.current = setInterval(() => {
+          setElapsedSeconds(Math.floor((Date.now() - fetchStartTimeRef.current) / 1000))
+        }, 1000)
+
+        const allActivities: ParsedActivity[] = []
+        let orgScopeResult: any = null
+        const RATE_LIMIT_DELAY = 14000
+
+        for (let page = 0; page < totalPages; page++) {
+          // Check for abort
+          if (signal.aborted || paginatedAbortRef.current) {
+            throw new DOMException('Aborted', 'AbortError')
+          }
+
+          // Build page request params
+          const pageParams = new URLSearchParams(params)
+          pageParams.set('page', page.toString())
+
+          let retries = 0
+          const MAX_RETRIES = 3
+          let pageSuccess = false
+
+          while (retries <= MAX_RETRIES && !pageSuccess) {
+            try {
+              const pageResponse = await apiFetch(`/api/iati/fetch-org-activities/page?${pageParams.toString()}`, { signal })
+
+              if (pageResponse.status === 429) {
+                // Rate limited — wait and retry
+                retries++
+                if (retries > MAX_RETRIES) {
+                  console.warn(`[Paginated Fetch] Page ${page} rate limited after ${MAX_RETRIES} retries, skipping`)
+                  break
+                }
+                const waitTime = 15000 + (retries * 5000)
+                console.log(`[Paginated Fetch] Rate limited on page ${page}, retry ${retries}/${MAX_RETRIES}, waiting ${waitTime / 1000}s...`)
+                await new Promise(r => setTimeout(r, waitTime))
+                continue
+              }
+
+              let pageData: any
+              try {
+                pageData = await pageResponse.json()
+              } catch {
+                console.warn(`[Paginated Fetch] Page ${page} returned non-JSON (status ${pageResponse.status})`)
+                break
+              }
+
+              if (!pageResponse.ok) {
+                console.warn(`[Paginated Fetch] Page ${page} error:`, pageData.error)
+                break
+              }
+
+              // Accumulate activities
+              const pageActivities: ParsedActivity[] = pageData.activities || []
+              allActivities.push(...pageActivities)
+              if (!orgScopeResult) orgScopeResult = pageData.orgScope
+
+              // Update progress
+              setPaginatedProgress({
+                currentPage: page + 1,
+                totalPages,
+                activitiesFetched: allActivities.length,
+                totalActivities,
+              })
+
+              pageSuccess = true
+            } catch (pageErr) {
+              if (pageErr instanceof DOMException && pageErr.name === 'AbortError') throw pageErr
+              retries++
+              if (retries > MAX_RETRIES) {
+                console.warn(`[Paginated Fetch] Page ${page} failed after ${MAX_RETRIES} retries:`, pageErr)
+                break
+              }
+              await new Promise(r => setTimeout(r, 5000))
+            }
+          }
+
+          // Rate limit delay between pages
+          if (page < totalPages - 1 && pageSuccess) {
+            await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY))
+          }
+        }
+
+        // Stop elapsed timer
+        if (elapsedIntervalRef.current) {
+          clearInterval(elapsedIntervalRef.current)
+          elapsedIntervalRef.current = null
+        }
+        setFetchDuration(Math.floor((Date.now() - fetchStartTimeRef.current) / 1000))
+
+        // Finalize
+        setDatastoreActivities(allActivities)
+        setDatastoreTotal(allActivities.length)
+        setFetchedAt(new Date().toISOString())
+        setWasCached(false)
+        setFetchStatus('success')
+        if (orgScopeResult) {
+          setOrgScopeData({
+            reportingOrgRef: orgScopeResult.reportingOrgRef || '',
+            organizationName: orgScopeResult.organizationName || '',
+          })
+        }
+
+        setSelectedCountry(selectedCountry || homeCountry || '')
+        setSelectedHierarchy(selectedHierarchy)
+
+        const meta: BulkImportMeta = {
+          sourceMode: 'datastore',
+          reportingOrgRef: orgScopeResult?.reportingOrgRef || orgIatiId || '',
+          reportingOrgName: orgScopeResult?.organizationName || orgName,
+          activityCount: allActivities.length,
+          fetchedAt: new Date().toISOString(),
+          organizationId: targetOrgId || orgScopeResult?.organizationId,
+        }
+        onActivitiesReady(allActivities, meta)
+
+        if (allActivities.length < totalActivities) {
+          toast.warning(`Fetched ${allActivities.length.toLocaleString()} of ${totalActivities.toLocaleString()} activities (some pages failed)`)
+        }
+      } else {
+        // --- SINGLE-REQUEST FLOW for small orgs (≤5000 activities) ---
+        if (countData) {
+          startProgressSimulation(countData.estimatedSeconds)
+        } else {
+          startProgressSimulation()
+        }
+
+        const url = `/api/iati/fetch-org-activities${params.toString() ? '?' + params.toString() : ''}`
+        const response = await apiFetch(url, { signal })
+
+        // Handle non-JSON responses (e.g. Vercel 504 timeout returns HTML)
+        let data: any
+        try {
+          data = await response.json()
+        } catch {
+          stopProgressSimulation(false)
+          setFetchStatus('error')
+          if (response.status === 504) {
+            setFetchError('The request timed out. This organisation may have too many activities. Try narrowing your filters (country, date range, or hierarchy) to reduce the result set.')
+          } else {
+            setFetchError(`Server returned ${response.status}. Please try again.`)
+          }
+          return
+        }
+
+        if (!response.ok) {
+          stopProgressSimulation(false)
+          setFetchStatus('error')
+          setFetchError(data.error || 'Failed to fetch activities')
+          return
+        }
+
+        stopProgressSimulation(true)
+
+        const activities: ParsedActivity[] = data.activities || []
+        setDatastoreActivities(activities)
+        setDatastoreTotal(data.total || activities.length)
+        setFetchedAt(data.fetchedAt || new Date().toISOString())
+        setWasCached(data.cached || false)
+        setFetchStatus('success')
+        setOrgScopeData({
+          reportingOrgRef: data.orgScope?.reportingOrgRef || '',
+          organizationName: data.orgScope?.organizationName || '',
+        })
+
+        setSelectedCountry(selectedCountry || homeCountry || '')
+        setSelectedHierarchy(selectedHierarchy)
+
+        const meta: BulkImportMeta = {
+          sourceMode: 'datastore',
+          reportingOrgRef: data.orgScope?.reportingOrgRef || orgIatiId || '',
+          reportingOrgName: data.orgScope?.organizationName || orgName,
+          activityCount: activities.length,
+          fetchedAt: data.fetchedAt,
+          organizationId: targetOrgId || data.orgScope?.organizationId,
+        }
+        onActivitiesReady(activities, meta)
       }
-
-      stopProgressSimulation(true)
-
-      const activities: ParsedActivity[] = data.activities || []
-      setDatastoreActivities(activities)
-      setDatastoreTotal(data.total || activities.length)
-      setFetchedAt(data.fetchedAt || new Date().toISOString())
-      setWasCached(data.cached || false)
-      setFetchStatus('success')
-      setOrgScopeData({
-        reportingOrgRef: data.orgScope?.reportingOrgRef || '',
-        organizationName: data.orgScope?.organizationName || '',
-      })
-
-      // Country/hierarchy filters are already applied at the API level (Solr query),
-      // so we don't need to re-filter here. Just pass activities through.
-      // The selectedCountry/selectedHierarchy state is used for the UI display.
-      setSelectedCountry(selectedCountry || homeCountry || '')
-      setSelectedHierarchy(selectedHierarchy)
-
-      // Notify parent with fetched activities (already filtered by API)
-      // For super users importing for another org, include the organizationId
-      // targetOrgId is already defined above for the API request
-      const meta: BulkImportMeta = {
-        sourceMode: 'datastore',
-        reportingOrgRef: data.orgScope?.reportingOrgRef || orgIatiId || '',
-        reportingOrgName: data.orgScope?.organizationName || orgName,
-        activityCount: activities.length,
-        fetchedAt: data.fetchedAt,
-        organizationId: targetOrgId || data.orgScope?.organizationId,
-      }
-      onActivitiesReady(activities, meta)
     } catch (err) {
       // Don't show error if the fetch was cancelled
       if (err instanceof DOMException && err.name === 'AbortError') {
-        // Already handled by cancelFetch
         return
       }
       stopProgressSimulation(false)
+      if (elapsedIntervalRef.current) {
+        clearInterval(elapsedIntervalRef.current)
+        elapsedIntervalRef.current = null
+      }
       setFetchStatus('error')
       setFetchError(err instanceof Error ? err.message : 'Failed to fetch activities')
     } finally {
       abortControllerRef.current = null
+      paginatedAbortRef.current = false
     }
   }, [homeCountry, orgIatiId, orgName, onActivitiesReady, startProgressSimulation, stopProgressSimulation, selectedOrgId, isSuperUser, user?.organizationId, selectedCountry, countryFilterMode, selectedHierarchy, dateFilterEnabled, dateRangeStart, dateRangeEnd])
 
@@ -1100,88 +1258,142 @@ export default function BulkImportSourceStep({
             <Card>
               <CardContent className="p-8">
                 <div className="flex flex-col items-center gap-6">
-                  <div className="text-center">
-                    <p className="font-medium text-lg mb-1">
-                      Fetching activities published by {orgName}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {fetchPhase === 'connecting' && 'Connecting to IATI Registry...'}
-                      {fetchPhase === 'fetching' && 'Downloading activity data from IATI Datastore...'}
-                      {fetchPhase === 'enriching' && 'Enriching with sector percentages...'}
-                      {fetchPhase === 'processing' && 'Processing and validating data...'}
-                    </p>
-                    {estimatedTime && (
-                      <p className="text-sm text-gray-400 mt-2">
-                        {estimatedTime.count.toLocaleString()} activities found — estimated time: ~{
-                          estimatedTime.seconds < 60
-                            ? `${estimatedTime.seconds} seconds`
-                            : estimatedTime.seconds < 120
-                              ? '1-2 minutes'
-                              : `${Math.ceil(estimatedTime.seconds / 60)} minutes`
-                        }
-                      </p>
-                    )}
-                    {/* Elapsed timer */}
-                    <p className="text-sm text-gray-500 mt-2">
-                      {Math.floor(elapsedSeconds / 60)}:{Math.floor(elapsedSeconds % 60).toString().padStart(2, '0')}.{Math.floor((elapsedSeconds % 1) * 10)} elapsed
-                    </p>
-                  </div>
+                  {isPaginated ? (
+                    <>
+                      {/* --- PAGINATED PROGRESS UI --- */}
+                      <div className="text-center">
+                        <p className="font-medium text-lg mb-1">
+                          Fetching activities published by {orgName}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {paginatedProgress.currentPage === 0
+                            ? 'Starting paginated download...'
+                            : `Downloading page ${paginatedProgress.currentPage} of ${paginatedProgress.totalPages}...`}
+                        </p>
+                        <p className="text-sm text-gray-400 mt-2">
+                          {paginatedProgress.activitiesFetched.toLocaleString()} of {paginatedProgress.totalActivities.toLocaleString()} activities downloaded
+                        </p>
+                        <p className="text-sm text-gray-500 mt-2">
+                          {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')} elapsed
+                          {paginatedProgress.currentPage > 0 && paginatedProgress.currentPage < paginatedProgress.totalPages && (
+                            <span className="text-gray-400 ml-2">
+                              — ~{(() => {
+                                const remainingPages = paginatedProgress.totalPages - paginatedProgress.currentPage
+                                const remainingSec = remainingPages * 14
+                                return remainingSec < 60
+                                  ? `${remainingSec}s remaining`
+                                  : `${Math.ceil(remainingSec / 60)}m remaining`
+                              })()}
+                            </span>
+                          )}
+                        </p>
+                      </div>
 
-                  {/* Progress bar */}
-                  <div className="w-full max-w-md">
-                    <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`absolute top-0 left-0 h-full rounded-full transition-all duration-300 ease-out ${longFetchWarning ? 'bg-amber-500' : 'bg-gray-800'}`}
-                        style={{ width: `${fetchProgress}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-2 text-xs text-gray-500">
-                      <span>{Math.round(fetchProgress)}%</span>
-                      <span className="flex items-center gap-1.5">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        {fetchPhase === 'connecting' && 'Step 1 of 4'}
-                        {fetchPhase === 'fetching' && 'Step 2 of 4'}
-                        {fetchPhase === 'enriching' && 'Step 3 of 4'}
-                        {fetchPhase === 'processing' && 'Step 4 of 4'}
-                      </span>
-                    </div>
-                    {fetchProgressMessage && (
-                      <p className="mt-2 text-xs text-amber-600 text-center">
-                        {fetchProgressMessage}
-                      </p>
-                    )}
-                  </div>
+                      {/* Real progress bar */}
+                      <div className="w-full max-w-md">
+                        <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out bg-gray-800"
+                            style={{ width: `${paginatedProgress.totalPages > 0 ? (paginatedProgress.currentPage / paginatedProgress.totalPages) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between mt-2 text-xs text-gray-500">
+                          <span>{paginatedProgress.totalPages > 0 ? Math.round((paginatedProgress.currentPage / paginatedProgress.totalPages) * 100) : 0}%</span>
+                          <span className="flex items-center gap-1.5">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Page {paginatedProgress.currentPage} of {paginatedProgress.totalPages}
+                          </span>
+                        </div>
+                      </div>
 
-                  {/* Phase indicators */}
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className={`flex items-center gap-1 ${fetchPhase === 'connecting' ? 'text-gray-900 font-medium' : fetchProgress >= 5 ? 'text-green-600' : 'text-gray-400'}`}>
-                      {fetchProgress >= 5 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
-                      Connecting
-                    </div>
-                    <div className="w-4 h-px bg-gray-300" />
-                    <div className={`flex items-center gap-1 ${fetchPhase === 'fetching' ? 'text-gray-900 font-medium' : fetchProgress >= 80 ? 'text-green-600' : 'text-gray-400'}`}>
-                      {fetchProgress >= 80 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
-                      Fetching
-                    </div>
-                    <div className="w-4 h-px bg-gray-300" />
-                    <div className={`flex items-center gap-1 ${fetchPhase === 'enriching' ? 'text-gray-900 font-medium' : fetchProgress >= 95 ? 'text-green-600' : 'text-gray-400'}`}>
-                      {fetchProgress >= 95 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
-                      Enriching
-                    </div>
-                    <div className="w-4 h-px bg-gray-300" />
-                    <div className={`flex items-center gap-1 ${fetchPhase === 'processing' ? 'text-gray-900 font-medium' : fetchProgress >= 100 ? 'text-green-600' : 'text-gray-400'}`}>
-                      {fetchProgress >= 100 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
-                      Processing
-                    </div>
-                  </div>
+                      <LoadingTextRoller orgName={orgName} />
+                    </>
+                  ) : (
+                    <>
+                      {/* --- SIMULATED PROGRESS UI (small orgs) --- */}
+                      <div className="text-center">
+                        <p className="font-medium text-lg mb-1">
+                          Fetching activities published by {orgName}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {fetchPhase === 'connecting' && 'Connecting to IATI Registry...'}
+                          {fetchPhase === 'fetching' && 'Downloading activity data from IATI Datastore...'}
+                          {fetchPhase === 'enriching' && 'Enriching with sector percentages...'}
+                          {fetchPhase === 'processing' && 'Processing and validating data...'}
+                        </p>
+                        {estimatedTime && (
+                          <p className="text-sm text-gray-400 mt-2">
+                            {estimatedTime.count.toLocaleString()} activities found — estimated time: ~{
+                              estimatedTime.seconds < 60
+                                ? `${estimatedTime.seconds} seconds`
+                                : estimatedTime.seconds < 120
+                                  ? '1-2 minutes'
+                                  : `${Math.ceil(estimatedTime.seconds / 60)} minutes`
+                            }
+                          </p>
+                        )}
+                        <p className="text-sm text-gray-500 mt-2">
+                          {Math.floor(elapsedSeconds / 60)}:{Math.floor(elapsedSeconds % 60).toString().padStart(2, '0')}.{Math.floor((elapsedSeconds % 1) * 10)} elapsed
+                        </p>
+                      </div>
 
-                  <LoadingTextRoller orgName={orgName} />
+                      {/* Simulated progress bar */}
+                      <div className="w-full max-w-md">
+                        <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`absolute top-0 left-0 h-full rounded-full transition-all duration-300 ease-out ${longFetchWarning ? 'bg-amber-500' : 'bg-gray-800'}`}
+                            style={{ width: `${fetchProgress}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between mt-2 text-xs text-gray-500">
+                          <span>{Math.round(fetchProgress)}%</span>
+                          <span className="flex items-center gap-1.5">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            {fetchPhase === 'connecting' && 'Step 1 of 4'}
+                            {fetchPhase === 'fetching' && 'Step 2 of 4'}
+                            {fetchPhase === 'enriching' && 'Step 3 of 4'}
+                            {fetchPhase === 'processing' && 'Step 4 of 4'}
+                          </span>
+                        </div>
+                        {fetchProgressMessage && (
+                          <p className="mt-2 text-xs text-amber-600 text-center">
+                            {fetchProgressMessage}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Phase indicators */}
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className={`flex items-center gap-1 ${fetchPhase === 'connecting' ? 'text-gray-900 font-medium' : fetchProgress >= 5 ? 'text-green-600' : 'text-gray-400'}`}>
+                          {fetchProgress >= 5 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
+                          Connecting
+                        </div>
+                        <div className="w-4 h-px bg-gray-300" />
+                        <div className={`flex items-center gap-1 ${fetchPhase === 'fetching' ? 'text-gray-900 font-medium' : fetchProgress >= 80 ? 'text-green-600' : 'text-gray-400'}`}>
+                          {fetchProgress >= 80 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
+                          Fetching
+                        </div>
+                        <div className="w-4 h-px bg-gray-300" />
+                        <div className={`flex items-center gap-1 ${fetchPhase === 'enriching' ? 'text-gray-900 font-medium' : fetchProgress >= 95 ? 'text-green-600' : 'text-gray-400'}`}>
+                          {fetchProgress >= 95 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
+                          Enriching
+                        </div>
+                        <div className="w-4 h-px bg-gray-300" />
+                        <div className={`flex items-center gap-1 ${fetchPhase === 'processing' ? 'text-gray-900 font-medium' : fetchProgress >= 100 ? 'text-green-600' : 'text-gray-400'}`}>
+                          {fetchProgress >= 100 ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-3 w-3 rounded-full border border-current inline-block" />}
+                          Processing
+                        </div>
+                      </div>
+
+                      <LoadingTextRoller orgName={orgName} />
+                    </>
+                  )}
 
                   {/* Info message */}
                   <div className="mt-6 p-4 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-700 max-w-md text-center">
                     <p className="font-medium">You can navigate away from this screen</p>
                     <p className="text-gray-500 mt-1">
-                      Just don't close this browser tab. Come back when you're ready — the fetch will continue in the background.
+                      Just don&apos;t close this browser tab. Come back when you&apos;re ready — the fetch will continue in the background.
                     </p>
                   </div>
 

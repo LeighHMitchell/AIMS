@@ -2,36 +2,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
 import { resolveUserOrgScope, resolveOrgScopeById } from '@/lib/iati/org-scope'
 import { mapDatastoreDocToParsedActivity } from '@/lib/iati/datastore-mapper'
+import {
+  type DatastoreFilters,
+  buildSolrFilterQuery,
+  parseFiltersFromParams,
+  getDatastoreCount,
+  markExistingActivities,
+  IATI_DATASTORE_BASE,
+  DATASTORE_PAGE_SIZE,
+  DATASTORE_FIELDS,
+} from '@/lib/iati/datastore-helpers'
 import crypto from 'crypto'
 import type { ParsedActivity } from '@/components/iati/bulk-import/types'
 import { USER_ROLES } from '@/types/user'
 
-// IATI Datastore is the PRIMARY source (has everything except sector percentages)
-const IATI_DATASTORE_BASE = 'https://api.iatistandard.org/datastore/activity/select'
 // D-portal is used ONLY for sector percentages (not available in Datastore)
 const DPORTAL_BASE = 'https://d-portal.org/q.json'
 
 const IATI_API_KEY = process.env.IATI_API_KEY || process.env.NEXT_PUBLIC_IATI_API_KEY
 const CACHE_TTL_HOURS = 1
 
-/** Filters applied at the IATI Datastore level for performance */
-interface DatastoreFilters {
-  /** ISO country code (e.g., "MM" for Myanmar) */
-  country?: string
-  /**
-   * How to match country:
-   * - 'activity': Only activity-level recipient_country_code (default)
-   * - 'transaction': Only transaction-level recipient_country_code
-   * - 'both': Either activity OR transaction level
-   */
-  countryFilterMode?: 'activity' | 'transaction' | 'both'
-  /** Start of date range (ISO date string, e.g., "2021-01-01") */
-  dateStart?: string
-  /** End of date range (ISO date string, e.g., "2028-12-31") */
-  dateEnd?: string
-  /** Activity hierarchy level (1 = parent, 2 = sub-activity) */
-  hierarchy?: number
-}
+/** Threshold above which the frontend should use paginated fetching */
+const PAGINATION_THRESHOLD = 5000
 
 export const dynamic = 'force-dynamic'
 // Large organizations can take several minutes due to IATI Datastore rate limiting
@@ -143,30 +135,23 @@ export async function GET(request: NextRequest) {
     const countOnly = searchParams.get('count_only') === 'true'
 
     // Pre-fetch filters (applied at Datastore level for performance)
-    const countryFilterModeParam = searchParams.get('country_filter_mode')
-    const filterOptions: DatastoreFilters = {
-      country: searchParams.get('country') || undefined,
-      countryFilterMode: (countryFilterModeParam === 'activity' || countryFilterModeParam === 'transaction' || countryFilterModeParam === 'both')
-        ? countryFilterModeParam
-        : 'both', // Default to 'both' to capture all Myanmar-related activities
-      dateStart: searchParams.get('date_start') || undefined,
-      dateEnd: searchParams.get('date_end') || undefined,
-      hierarchy: searchParams.get('hierarchy') ? parseInt(searchParams.get('hierarchy')!, 10) : undefined,
-    }
+    const filterOptions = parseFiltersFromParams(searchParams)
 
     // Quick count query - just return total activities without fetching data
     if (countOnly) {
-      const count = await getActivityCount(orgScope.allRefs, filterOptions)
+      const count = await getDatastoreCount(orgScope.allRefs, filterOptions, IATI_API_KEY!)
       // Estimate breakdown:
       // - 15s per 1000 activities for IATI Datastore (13s rate limit delay + API time)
       // - 10s per 1000 activities for d-portal sector enrichment
       // - 5s per 1000 activities for d-portal hierarchy enrichment
       // - 20s overhead for initial setup, database checks, cache writes
-      const pagesNeeded = Math.ceil(count / 1000)
+      const pagesNeeded = Math.ceil(count / DATASTORE_PAGE_SIZE)
       const estimatedSeconds = (pagesNeeded * 30) + 20 // 30s per page + 20s overhead
       return NextResponse.json({
         count,
         estimatedSeconds,
+        usePagination: count > PAGINATION_THRESHOLD,
+        totalPages: pagesNeeded,
         filters: filterOptions,
         orgScope: {
           organizationId: orgScope.organizationId,
@@ -186,35 +171,41 @@ export async function GET(request: NextRequest) {
 
     // 3. Check cache (unless force_refresh or filters applied)
     if (!forceRefresh && !hasFilters) {
-      const { data: cached } = await supabase
-        .from('iati_datastore_cache')
-        .select('response_data, total_activities, fetched_at')
-        .eq('organization_id', orgScope.organizationId)
-        .eq('query_hash', queryHash)
-        .gt('expires_at', new Date().toISOString())
-        .order('fetched_at', { ascending: false })
-        .limit(1)
-        .single()
+      try {
+        const { data: cached, error: cacheError } = await supabase
+          .from('iati_datastore_cache')
+          .select('response_data, total_activities, fetched_at')
+          .eq('organization_id', orgScope.organizationId)
+          .eq('query_hash', queryHash)
+          .gt('expires_at', new Date().toISOString())
+          .order('fetched_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
 
-      if (cached) {
-        const cachedActivities: ParsedActivity[] = cached.response_data?.activities || []
-        const activitiesWithMatches = await markExistingActivities(
-          supabase,
-          cachedActivities
-        )
+        if (cacheError) {
+          console.warn('[Fetch Org Activities] Cache lookup error (skipping cache):', cacheError.message)
+        } else if (cached) {
+          const cachedActivities: ParsedActivity[] = cached.response_data?.activities || []
+          const activitiesWithMatches = await markExistingActivities(
+            supabase,
+            cachedActivities
+          )
 
-        return NextResponse.json({
-          activities: activitiesWithMatches,
-          total: cached.total_activities,
-          orgScope: {
-            organizationId: orgScope.organizationId,
-            organizationName: orgScope.organizationName,
-            reportingOrgRef: orgScope.reportingOrgRef,
-            allRefs: orgScope.allRefs,
-          },
-          fetchedAt: cached.fetched_at,
-          cached: true,
-        })
+          return NextResponse.json({
+            activities: activitiesWithMatches,
+            total: cached.total_activities,
+            orgScope: {
+              organizationId: orgScope.organizationId,
+              organizationName: orgScope.organizationName,
+              reportingOrgRef: orgScope.reportingOrgRef,
+              allRefs: orgScope.allRefs,
+            },
+            fetchedAt: cached.fetched_at,
+            cached: true,
+          })
+        }
+      } catch (cacheErr) {
+        console.warn('[Fetch Org Activities] Cache query threw (skipping cache):', cacheErr)
       }
     }
 
@@ -249,29 +240,41 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 6. Check local DB for existing matches
-    const activitiesWithMatches = await markExistingActivities(supabase, activities)
+    // 6. Check local DB for existing matches (non-critical — fall back to unmarked if it fails)
+    let activitiesWithMatches: ParsedActivity[]
+    try {
+      activitiesWithMatches = await markExistingActivities(supabase, activities)
+    } catch (matchErr) {
+      console.warn('[Fetch Org Activities] markExistingActivities threw (returning unmarked):', matchErr)
+      activitiesWithMatches = activities
+    }
 
-    // 7. Cache the result
+    // 7. Cache the result (non-critical — don't let cache errors crash the response)
     const fetchedAt = new Date().toISOString()
     const expiresAt = new Date(Date.now() + CACHE_TTL_HOURS * 60 * 60 * 1000).toISOString()
 
-    // Delete old cache entries for this org+query
-    await supabase
-      .from('iati_datastore_cache')
-      .delete()
-      .eq('organization_id', orgScope.organizationId)
-      .eq('query_hash', queryHash)
+    try {
+      // Delete old cache entries for this org+query
+      const { error: deleteErr } = await supabase
+        .from('iati_datastore_cache')
+        .delete()
+        .eq('organization_id', orgScope.organizationId)
+        .eq('query_hash', queryHash)
+      if (deleteErr) console.warn('[Fetch Org Activities] Cache delete error:', deleteErr.message)
 
-    // Cache the aggregated activities
-    await supabase.from('iati_datastore_cache').insert({
-      organization_id: orgScope.organizationId,
-      query_hash: queryHash,
-      total_activities: activities.length,
-      response_data: { activities },
-      fetched_at: fetchedAt,
-      expires_at: expiresAt,
-    })
+      // Cache the aggregated activities
+      const { error: insertErr } = await supabase.from('iati_datastore_cache').insert({
+        organization_id: orgScope.organizationId,
+        query_hash: queryHash,
+        total_activities: activities.length,
+        response_data: { activities },
+        fetched_at: fetchedAt,
+        expires_at: expiresAt,
+      })
+      if (insertErr) console.warn('[Fetch Org Activities] Cache insert error:', insertErr.message)
+    } catch (cacheErr) {
+      console.warn('[Fetch Org Activities] Cache write threw (non-critical):', cacheErr)
+    }
 
     // 8. Return
     return NextResponse.json({
@@ -288,6 +291,11 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[Fetch Org Activities] Error:', error)
+    console.error('[Fetch Org Activities] Error type:', error instanceof Error ? error.constructor.name : typeof error)
+    if (error instanceof Error) {
+      console.error('[Fetch Org Activities] Error message:', error.message)
+      console.error('[Fetch Org Activities] Error stack:', error.stack?.substring(0, 500))
+    }
 
     // Check for various network/timeout errors
     if (error instanceof Error) {
@@ -295,6 +303,16 @@ export async function GET(request: NextRequest) {
       const errorCause = (error as any).cause
       const causeCode = errorCause?.code || ''
       const causeName = errorCause?.name || ''
+
+      // PostgREST / Supabase errors (invalid type casting, pattern mismatch)
+      if (errorMessage.includes('did not match the expected pattern') ||
+          errorMessage.includes('invalid input syntax')) {
+        console.error('[Fetch Org Activities] Supabase/PostgREST type error — likely a UUID/type mismatch in a database query')
+        return NextResponse.json(
+          { error: 'A database query failed due to a type mismatch. Please try again or contact support.' },
+          { status: 500 }
+        )
+      }
 
       // Connection timeout
       if (error.name === 'AbortError' ||
@@ -342,257 +360,28 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * Build Solr filter query (fq) parameters for IATI Datastore filters.
- */
-function buildSolrFilterQuery(filters: DatastoreFilters): string[] {
-  const fq: string[] = []
-
-  // Country filter based on mode:
-  // - 'activity': Only activity-level recipient_country_code
-  // - 'transaction': Only transaction-level transaction_recipient_country_code
-  // - 'both': Either activity OR transaction level (captures all related activities)
-  if (filters.country) {
-    const mode = filters.countryFilterMode || 'both'
-    const code = filters.country
-
-    if (mode === 'activity') {
-      fq.push(`recipient_country_code:${code}`)
-    } else if (mode === 'transaction') {
-      fq.push(`transaction_recipient_country_code:${code}`)
-    } else {
-      // 'both' - use OR to capture activities with country at either level
-      fq.push(`(recipient_country_code:${code} OR transaction_recipient_country_code:${code})`)
-    }
-  }
-
-  // Hierarchy filter
-  if (filters.hierarchy != null) {
-    fq.push(`hierarchy:${filters.hierarchy}`)
-  }
-
-  // Date range filter: activity has at least one date within the range
-  // IATI date types: 1=planned start, 2=actual start, 3=planned end, 4=actual end
-  // We check if ANY activity date falls within the range
-  if (filters.dateStart || filters.dateEnd) {
-    const start = filters.dateStart ? `${filters.dateStart}T00:00:00Z` : '*'
-    const end = filters.dateEnd ? `${filters.dateEnd}T23:59:59Z` : '*'
-    // Filter activities where any activity_date is within range
-    fq.push(`activity_date_iso_date:[${start} TO ${end}]`)
-  }
-
-  return fq
-}
-
-/**
- * Quick count query - returns just the total number of activities (no data).
- * Uses rows=0 which is very fast.
- */
-async function getActivityCount(orgRefs: string[], filters: DatastoreFilters = {}): Promise<number> {
-  const refQuery = orgRefs.map(ref => `"${ref}"`).join(' OR ')
-  const fqParams = buildSolrFilterQuery(filters)
-  const fqString = fqParams.length > 0 ? `&${fqParams.map(f => `fq=${encodeURIComponent(f)}`).join('&')}` : ''
-
-  const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})${fqString}&rows=0&wt=json`
-
-  console.log('[Fetch Org Activities] Count query:', url.substring(0, 250) + (url.length > 250 ? '...' : ''))
-
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-      'User-Agent': 'AIMS-IATI-Import/1.0',
-      'Ocp-Apim-Subscription-Key': IATI_API_KEY!,
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`IATI Datastore returned ${response.status}`)
-  }
-
-  const data = await response.json()
-  return data.response?.numFound || 0
-}
+// buildSolrFilterQuery, getDatastoreCount, and markExistingActivities
+// are now imported from @/lib/iati/datastore-helpers
 
 /**
  * Fetch activities from IATI Datastore for the given org refs with optional filters.
  * Returns ParsedActivity[] with all data EXCEPT sector percentages.
  */
 async function fetchFromDatastore(orgRefs: string[], filters: DatastoreFilters = {}): Promise<ParsedActivity[]> {
-  // IATI Datastore has a hard limit of 1000 rows per request
-  const PAGE_SIZE = 1000
+  const PAGE_SIZE = DATASTORE_PAGE_SIZE
   const MAX_RETRIES = 10
   const activities: ParsedActivity[] = []
 
-  // Build Solr query for all org refs
   const refQuery = orgRefs.map(ref => `"${ref}"`).join(' OR ')
+  const fqParams = buildSolrFilterQuery(filters)
+  const fqString = fqParams.length > 0 ? `&${fqParams.map(f => `fq=${encodeURIComponent(f)}`).join('&')}` : ''
 
   let start = 0
   let total = Infinity
   let retryCount = 0
 
   while (start < total) {
-    // Request all fields we need (Datastore has everything except sector_percentage)
-    const fields = [
-      'iati_identifier',
-      'title_narrative',
-      'description_narrative',
-      'activity_status_code',
-      'hierarchy',
-      'default_currency',
-      // Dates
-      'activity_date_type',
-      'activity_date_iso_date',
-      // Countries (with percentages!)
-      'recipient_country_code',
-      'recipient_country_percentage',
-      // Sectors (no percentages in Datastore)
-      'sector_code',
-      'sector_vocabulary',
-      'sector_narrative',
-      // Transactions
-      'transaction_transaction_type_code',
-      'transaction_transaction_date_iso_date',
-      'transaction_value',
-      'transaction_value_currency',
-      'transaction_value_value_date',
-      'transaction_description_narrative',
-      'transaction_provider_org_narrative',
-      'transaction_provider_org_ref',
-      'transaction_receiver_org_narrative',
-      'transaction_receiver_org_ref',
-      // Participating orgs
-      'participating_org_ref',
-      'participating_org_narrative',
-      'participating_org_role',
-      'participating_org_type',
-      // Budgets
-      'budget_value',
-      'budget_value_currency',
-      'budget_period_start_iso_date',
-      'budget_period_end_iso_date',
-      'budget_type',
-      'budget_status',
-      'budget_value_value_date',
-      // Locations
-      'location_point_pos',
-      'location_name_narrative',
-      'location_description_narrative',
-      'location_reach_code',
-      'location_exactness_code',
-      'location_location_class_code',
-      'location_feature_designation_code',
-      // DAC/CRS classification
-      'collaboration_type_code',
-      'default_aid_type_code',
-      'default_finance_type_code',
-      'default_flow_type_code',
-      'default_tied_status_code',
-      // Contacts (contact-info)
-      'contact_info_type',
-      'contact_info_organisation_narrative',
-      'contact_info_department_narrative',
-      'contact_info_person_name_narrative',
-      'contact_info_job_title_narrative',
-      'contact_info_telephone',
-      'contact_info_email',
-      'contact_info_website',
-      'contact_info_mailing_address_narrative',
-      // Documents (document-link)
-      'document_link_url',
-      'document_link_format',
-      'document_link_title_narrative',
-      'document_link_description_narrative',
-      'document_link_category_code',
-      'document_link_language_code',
-      'document_link_document_date_iso_date',
-      // Note: capital_spend and planned_disbursement fields are NOT indexed in IATI Datastore
-      // They would need to be fetched from d-portal or raw XML if needed
-      // Reporting org
-      'reporting_org_ref',
-      'reporting_org_narrative',
-      // Humanitarian flag
-      'humanitarian',
-      // Activity scope & language
-      'activity_scope_code',
-      'default_lang',
-      // Policy markers
-      'policy_marker_code',
-      'policy_marker_vocabulary',
-      'policy_marker_significance',
-      'policy_marker_narrative',
-      // Humanitarian scope
-      'humanitarian_scope_type',
-      'humanitarian_scope_vocabulary',
-      'humanitarian_scope_code',
-      'humanitarian_scope_narrative',
-      // Tags (including SDGs)
-      'tag_code',
-      'tag_vocabulary',
-      'tag_narrative',
-      // Related activities
-      'related_activity_ref',
-      'related_activity_type',
-      // Other identifiers
-      'other_identifier_ref',
-      'other_identifier_type',
-      'other_identifier_owner_org_ref',
-      'other_identifier_owner_org_narrative',
-      // Conditions
-      'conditions_attached',
-      'condition_type',
-      'condition_narrative',
-      // Recipient regions
-      'recipient_region_code',
-      'recipient_region_vocabulary',
-      'recipient_region_percentage',
-      // Country budget items
-      'country_budget_items_vocabulary',
-      'country_budget_items_budget_item_code',
-      'country_budget_items_budget_item_percentage',
-      'country_budget_items_budget_item_description_narrative',
-      // Transaction-level classification overrides
-      'transaction_aid_type_code',
-      'transaction_finance_type_code',
-      'transaction_flow_type_code',
-      'transaction_tied_status_code',
-      // Transaction-level geography
-      'transaction_recipient_country_code',
-      'transaction_recipient_region_code',
-      // FSS (Forward Spending Survey)
-      'fss_extraction_date',
-      'fss_priority',
-      'fss_phaseout_year',
-      'fss_forecast_year',
-      'fss_forecast_value',
-      'fss_forecast_currency',
-      'fss_forecast_value_date',
-      // CRS additional data
-      'crs_add_other_flags_code',
-      'crs_add_other_flags_significance',
-      'crs_add_loan_terms_rate_1',
-      'crs_add_loan_terms_rate_2',
-      'crs_add_repayment_type_code',
-      'crs_add_repayment_plan_code',
-      'crs_add_commitment_date_iso_date',
-      'crs_add_repayment_first_date_iso_date',
-      'crs_add_repayment_final_date_iso_date',
-      'crs_add_loan_status_year',
-      'crs_add_loan_status_currency',
-      'crs_add_loan_status_value_date',
-      'crs_add_loan_status_interest_received',
-      'crs_add_loan_status_principal_outstanding',
-      'crs_add_loan_status_principal_arrears',
-      'crs_add_loan_status_interest_arrears',
-      // Last updated (for change detection)
-      'last_updated_datetime',
-    ].join(',')
-
-    // Build filter query parameters
-    const fqParams = buildSolrFilterQuery(filters)
-    const fqString = fqParams.length > 0 ? `&${fqParams.map(f => `fq=${encodeURIComponent(f)}`).join('&')}` : ''
-
-    const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})${fqString}&rows=${PAGE_SIZE}&start=${start}&wt=json&fl=${encodeURIComponent(fields)}`
+    const url = `${IATI_DATASTORE_BASE}?q=reporting_org_ref:(${encodeURIComponent(refQuery)})${fqString}&rows=${PAGE_SIZE}&start=${start}&wt=json&fl=${encodeURIComponent(DATASTORE_FIELDS)}`
 
     if (start === 0) {
       console.log('[Fetch Org Activities] Datastore query:', url.substring(0, 300) + '...')
@@ -840,36 +629,4 @@ async function enrichWithHierarchy(
   console.log(`[Fetch Org Activities] Enriched ${enrichedCount} activities with hierarchy`)
 }
 
-/**
- * Mark which activities already exist in the local database.
- */
-async function markExistingActivities(
-  supabase: any,
-  activities: ParsedActivity[]
-): Promise<ParsedActivity[]> {
-  if (activities.length === 0) return activities
-
-  const iatiIds = activities
-    .map(a => a.iatiIdentifier)
-    .filter(Boolean)
-
-  if (iatiIds.length === 0) return activities
-
-  const { data: existing } = await supabase
-    .from('activities')
-    .select('id, iati_identifier')
-    .in('iati_identifier', iatiIds)
-
-  const existingMap = new Map<string, string>()
-  if (existing) {
-    for (const row of existing) {
-      if (row.iati_identifier) existingMap.set(row.iati_identifier, row.id)
-    }
-  }
-
-  return activities.map(a => ({
-    ...a,
-    matched: existingMap.has(a.iatiIdentifier),
-    matchedActivityId: existingMap.get(a.iatiIdentifier) || undefined,
-  }))
-}
+// markExistingActivities is now imported from @/lib/iati/datastore-helpers
