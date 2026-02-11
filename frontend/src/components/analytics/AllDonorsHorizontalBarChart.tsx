@@ -13,7 +13,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { DollarSign, Wallet, Calendar, Download, FileImage, Table as TableIcon, AlertCircle, CalendarIcon, RotateCcw, Filter, Check, Search } from 'lucide-react'
+import { DollarSign, Wallet, Calendar, Download, FileImage, Table as TableIcon, AlertCircle, CalendarIcon, RotateCcw, SlidersHorizontal, Check, Search } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
 import {
@@ -1130,7 +1130,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                   size="sm"
                   className="h-8 gap-1"
                 >
-                  <Filter className="h-4 w-4" />
+                  <SlidersHorizontal className="h-4 w-4" />
                   {selectedSectors.size > 0 && (
                     <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
                       {selectedSectors.size}

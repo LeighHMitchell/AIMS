@@ -12,7 +12,7 @@ import {
   Building2, 
   Activity,
   Download,
-  Filter,
+  SlidersHorizontal,
   DollarSign,
   PieChart,
   ArrowUpRight,
@@ -134,7 +134,7 @@ const FilterPanel: React.FC<{
   return (
     <Card className="p-4">
       <div className="flex items-center gap-2 mb-4">
-        <Filter className="h-4 w-4" />
+        <SlidersHorizontal className="h-4 w-4" />
         <h3 className="font-semibold">Filters</h3>
       </div>
       

@@ -14,7 +14,7 @@ import {
   Target, 
   Building2,
   Calendar as CalendarIcon,
-  Filter,
+  SlidersHorizontal,
   Download,
   RefreshCw,
   TrendingUp,
@@ -247,7 +247,7 @@ export default function AidEffectivenessDashboard() {
         <Card className="bg-white border-slate-200">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-slate-600" />
+              <SlidersHorizontal className="h-5 w-5 text-slate-600" />
               <CardTitle className="text-lg">Filters</CardTitle>
             </div>
           </CardHeader>

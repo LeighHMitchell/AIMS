@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { MultiSelectFilter, MultiSelectOption } from '@/components/ui/multi-select-filter'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Calendar, Building2, Activity, Layers, Filter, RefreshCw, ChevronRight } from 'lucide-react'
+import { Calendar, Building2, Activity, Layers, SlidersHorizontal, RefreshCw, ChevronRight } from 'lucide-react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 
@@ -172,7 +172,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
           <button className="flex items-center justify-between w-full p-4 text-left hover:bg-muted/50 transition-colors rounded-lg">
             <h3 className="text-sm font-medium flex items-center gap-2">
               <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
-              <Filter className="h-4 w-4" />
+              <SlidersHorizontal className="h-4 w-4" />
               Filters
               {hasActiveFilters && (
                 <span className="text-xs text-muted-foreground font-normal">(active)</span>

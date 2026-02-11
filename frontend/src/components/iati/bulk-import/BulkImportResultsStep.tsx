@@ -282,10 +282,6 @@ export default function BulkImportResultsStep({
             View Imported Activities
           </Button>
         )}
-        <Button variant="outline" onClick={downloadReport}>
-          <Download className="h-4 w-4 mr-2" />
-          Download Import Report
-        </Button>
         <Button variant="outline" onClick={onStartNew}>
           <Plus className="h-4 w-4 mr-2" />
           Start New Import

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { UsersIcon, PlusIcon, SearchIcon, FilterIcon, NetworkIcon, Users, UserCheck, Calendar } from 'lucide-react'
+import { UsersIcon, PlusIcon, SearchIcon, SlidersHorizontal, NetworkIcon, Users, UserCheck, Calendar } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 

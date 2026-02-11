@@ -220,6 +220,7 @@ export default function BulkImportWizard() {
               activities={state.parsedActivities}
               selectedIds={state.selectedActivityIds}
               onSelectionChange={handleSelectionChange}
+              filterCountry={state.meta?.filterCountry}
             />
           )}
           {state.step === 'rules' && (

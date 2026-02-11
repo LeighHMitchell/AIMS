@@ -14,7 +14,7 @@ import {
   TableRow,
   getSortIcon,
 } from '@/components/ui/table';
-import { Search, Filter } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   Select,
@@ -169,7 +169,7 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-full sm:w-48">
-                <Filter className="h-4 w-4 mr-2" />
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>

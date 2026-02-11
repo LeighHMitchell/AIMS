@@ -17,6 +17,8 @@ export interface BulkImportMeta {
   fetchedAt?: string
   /** For super users: import on behalf of this organization */
   organizationId?: string
+  /** Country filter used when fetching (e.g. 'MM') — used for National/Regional classification */
+  filterCountry?: string
 }
 
 export interface ImportRules {

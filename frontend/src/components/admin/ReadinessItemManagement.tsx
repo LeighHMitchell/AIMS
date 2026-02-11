@@ -42,7 +42,7 @@ import {
   Loader2,
   AlertCircle,
   ChevronLeft,
-  Filter
+  SlidersHorizontal
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -349,7 +349,7 @@ export function ReadinessItemManagement({
                     <TableCell>
                       {hasConditions(item.applicable_conditions) ? (
                         <Badge variant="outline" className="gap-1">
-                          <Filter className="h-3 w-3" />
+                          <SlidersHorizontal className="h-3 w-3" />
                           Conditional
                         </Badge>
                       ) : (

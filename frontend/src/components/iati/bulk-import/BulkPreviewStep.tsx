@@ -52,6 +52,45 @@ interface BulkPreviewStepProps {
   activities: ParsedActivity[]
   selectedIds: Set<string>
   onSelectionChange: (ids: Set<string>) => void
+  /** Country filter used during fetch (e.g. 'MM') — for National/Regional classification */
+  filterCountry?: string
+}
+
+/** Classify an activity as National, Regional, or Unknown based on recipient countries/regions/transactions */
+function classifyScope(activity: ParsedActivity, filterCountry?: string): 'National' | 'Regional' | 'Unknown' {
+  const countries = activity.recipientCountries || []
+  const regions = activity.recipientRegions || []
+  const transactions = activity.transactions || []
+
+  // Any recipient regions → Regional
+  if (regions.length > 0) return 'Regional'
+
+  // Multiple different recipient countries → Regional
+  if (countries.length > 1) return 'Regional'
+
+  // Check if transactions have multiple distinct countries or any regions
+  const txnCountries = new Set<string>()
+  let hasTransactionRegion = false
+  for (let i = 0; i < transactions.length; i++) {
+    if (transactions[i].recipientCountryCode) txnCountries.add(transactions[i].recipientCountryCode!)
+    if (transactions[i].recipientRegionCode) hasTransactionRegion = true
+  }
+  if (hasTransactionRegion) return 'Regional'
+  if (txnCountries.size > 1) return 'Regional'
+
+  // No data at all (no activity-level countries/regions, no transaction-level countries)
+  if (countries.length === 0 && txnCountries.size === 0) return 'Unknown'
+
+  // Single country — check against filter
+  const singleCountry = countries.length === 1 ? countries[0].code : (txnCountries.size === 1 ? Array.from(txnCountries)[0] : null)
+  if (singleCountry) {
+    if (filterCountry) {
+      return singleCountry === filterCountry ? 'National' : 'Regional'
+    }
+    return 'National'
+  }
+
+  return 'Unknown'
 }
 
 type FilterStatus = 'all' | 'valid' | 'warnings' | 'errors'
@@ -75,6 +114,8 @@ const AID_TYPE_OPTIONS: Record<string, string> = {
   // Core contributions
   'B01': 'Core support to NGOs, other private bodies, PPPs and research institutes',
   'B02': 'Core contributions to multilateral institutions',
+  'B021': 'Core contributions to multilateral institutions (assessed)',
+  'B022': 'Core contributions to multilateral institutions (voluntary)',
   'B03': 'Contributions to specific-purpose programmes and funds managed by implementing partners',
   'B031': 'Contributions to multi-donor/multi-entity funding mechanisms',
   'B032': 'Contributions to specific-purpose programmes and funds managed by implementing partners',
@@ -117,6 +158,7 @@ export default function BulkPreviewStep({
   activities,
   selectedIds,
   onSelectionChange,
+  filterCountry,
 }: BulkPreviewStepProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
@@ -134,6 +176,7 @@ export default function BulkPreviewStep({
   const [transactionFilter, setTransactionFilter] = useState<'all' | 'has' | 'none'>('all')
   const [budgetFilter, setBudgetFilter] = useState<'all' | 'has' | 'none'>('all')
   const [plannedDisbursementFilter, setPlannedDisbursementFilter] = useState<'all' | 'has' | 'none'>('all')
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'National' | 'Regional' | 'Unknown'>('all')
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -145,8 +188,9 @@ export default function BulkPreviewStep({
     if (transactionFilter !== 'all') count++
     if (budgetFilter !== 'all') count++
     if (plannedDisbursementFilter !== 'all') count++
+    if (scopeFilter !== 'all') count++
     return count
-  }, [activityStatusFilter, hierarchyFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter])
+  }, [activityStatusFilter, hierarchyFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter, scopeFilter])
 
   // Get unique values from activities for filter options with counts
   const availableOptions = useMemo(() => {
@@ -195,6 +239,7 @@ export default function BulkPreviewStep({
     setTransactionFilter('all')
     setBudgetFilter('all')
     setPlannedDisbursementFilter('all')
+    setScopeFilter('all')
   }
 
   const filteredActivities = useMemo(() => {
@@ -263,6 +308,11 @@ export default function BulkPreviewStep({
       result = result.filter(a => !a.plannedDisbursements || a.plannedDisbursements.length === 0)
     }
 
+    // Scope filter (National/Regional/Unknown)
+    if (scopeFilter !== 'all') {
+      result = result.filter(a => classifyScope(a, filterCountry) === scopeFilter)
+    }
+
     // Sort
     result.sort((a, b) => {
       let cmp = 0
@@ -283,7 +333,7 @@ export default function BulkPreviewStep({
     })
 
     return result
-  }, [activities, searchQuery, filterStatus, activityStatusFilter, hierarchyFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter, sortField, sortAsc])
+  }, [activities, searchQuery, filterStatus, activityStatusFilter, hierarchyFilter, aidTypeFilter, financeTypeFilter, transactionFilter, budgetFilter, plannedDisbursementFilter, scopeFilter, filterCountry, sortField, sortAsc])
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -319,17 +369,19 @@ export default function BulkPreviewStep({
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Search by IATI ID or title..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Filter controls */}
       <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search by IATI ID or title..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
         <Button
           variant={showFilters ? 'default' : 'outline'}
           size="sm"
@@ -462,11 +514,11 @@ export default function BulkPreviewStep({
                       />
                       <Label
                         htmlFor={`aid-${code}`}
-                        className="flex flex-wrap items-baseline gap-1 text-sm cursor-pointer font-normal leading-snug"
+                        className="text-sm cursor-pointer font-normal leading-snug"
                       >
-                        <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-xs text-gray-500 shrink-0">{code}</span>
-                        <span className="break-words">{AID_TYPE_OPTIONS[code] || code}</span>
-                        <span className="text-gray-400 shrink-0">({count})</span>
+                        <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-xs text-gray-500">{code}</span>{' '}
+                        {AID_TYPE_OPTIONS[code] || code}{' '}
+                        <span className="text-gray-400">({count})</span>
                       </Label>
                     </div>
                   ))}
@@ -568,6 +620,33 @@ export default function BulkPreviewStep({
                 </div>
               </div>
 
+              {/* Scope (National/Regional) */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Scope
+                </Label>
+                <div className="flex flex-col gap-2">
+                  {(['all', 'National', 'Regional', 'Unknown'] as const).map(opt => (
+                    <div key={opt} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`scope-${opt}`}
+                        checked={scopeFilter === opt}
+                        onCheckedChange={() => {
+                          setScopeFilter(scopeFilter === opt ? 'all' : opt)
+                        }}
+                      />
+                      <Label
+                        htmlFor={`scope-${opt}`}
+                        className="text-sm cursor-pointer font-normal"
+                      >
+                        {opt === 'all' ? 'All Activities' : opt}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Planned Disbursements */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium flex items-center gap-2">
@@ -635,7 +714,7 @@ export default function BulkPreviewStep({
       <Card>
         <CardContent className="p-0">
           {/* Table Header */}
-          <div className="grid grid-cols-[40px_1fr_200px_100px_120px_80px] gap-2 px-4 py-3 border-b bg-gray-50 text-xs font-medium text-gray-500 uppercase">
+          <div className="grid grid-cols-[40px_1fr_200px_80px_100px_120px_80px] gap-2 px-4 py-3 border-b bg-gray-50 text-xs font-medium text-gray-500 uppercase">
             <div />
             <button className="text-left hover:text-gray-700" onClick={() => toggleSort('id')}>
               Activity Title and IATI Identifier {sortField === 'id' && (sortAsc ? '↑' : '↓')}
@@ -643,11 +722,12 @@ export default function BulkPreviewStep({
             <button className="text-left hover:text-gray-700" onClick={() => toggleSort('title')}>
               Planned Start/End Dates
             </button>
+            <div className="text-center">Scope</div>
             <button className="text-right hover:text-gray-700" onClick={() => toggleSort('transactions')}>
               Transactions {sortField === 'transactions' && (sortAsc ? '↑' : '↓')}
             </button>
             <button className="text-right hover:text-gray-700 w-full" onClick={() => toggleSort('budget')}>
-              Budget {sortField === 'budget' && (sortAsc ? '↑' : '↓')}
+              Budgets {sortField === 'budget' && (sortAsc ? '↑' : '↓')}
             </button>
             <button className="text-center hover:text-gray-700" onClick={() => toggleSort('status')}>
               Status {sortField === 'status' && (sortAsc ? '↑' : '↓')}
@@ -666,7 +746,7 @@ export default function BulkPreviewStep({
 
                 return (
                   <div key={activity.iatiIdentifier} className="border-b last:border-b-0">
-                    <div className="grid grid-cols-[40px_1fr_200px_100px_120px_80px] gap-2 px-4 py-3 items-center hover:bg-gray-50">
+                    <div className="grid grid-cols-[40px_1fr_200px_80px_100px_120px_80px] gap-2 px-4 py-3 items-center hover:bg-gray-50">
                       <Checkbox
                         checked={selectedIds.has(activity.iatiIdentifier)}
                         onCheckedChange={() => toggleSelection(activity.iatiIdentifier)}
@@ -738,13 +818,14 @@ export default function BulkPreviewStep({
                           )
                         })()}
                       </div>
+                      <div className="text-center text-xs text-gray-600">
+                        {classifyScope(activity, filterCountry) === 'Unknown' ? '-' : classifyScope(activity, filterCountry)}
+                      </div>
                       <div className="text-right text-sm">
                         {(activity.transactions || []).length}
                       </div>
-                      <div className="text-right text-sm font-medium">
-                        {totalBudget(activity) > 0
-                          ? `$${totalBudget(activity).toLocaleString()}`
-                          : '-'}
+                      <div className="text-right text-sm">
+                        {(activity.budgets || []).length || '-'}
                       </div>
                       <div className="text-center">
                         {hasErrors ? (
@@ -830,12 +911,6 @@ export default function BulkPreviewStep({
                                   <Hash className="h-3 w-3" /> Other Identifiers
                                 </span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
-                                    <tr className="text-left text-gray-500">
-                                      <th className="font-medium py-1">Type</th>
-                                      <th className="font-medium py-1">Reference</th>
-                                    </tr>
-                                  </thead>
                                   <tbody>
                                     {activity.otherIdentifiers.map((oi, i) => {
                                       const oiTypeNames: Record<string, string> = {
@@ -873,12 +948,6 @@ export default function BulkPreviewStep({
                               <div>
                                 <span className="font-medium text-gray-700 text-xs uppercase">Classification</span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
-                                    <tr className="text-left text-gray-500">
-                                      <th className="font-medium py-1">Type</th>
-                                      <th className="font-medium py-1">Value</th>
-                                    </tr>
-                                  </thead>
                                   <tbody>
                                     {activity.collaborationType && (
                                       <tr className="border-t border-gray-100">
@@ -1095,13 +1164,6 @@ export default function BulkPreviewStep({
                               <div>
                                 <span className="font-medium text-gray-700 text-xs uppercase">Organizations</span>
                                 <table className="mt-1 w-full text-xs">
-                                  <thead>
-                                    <tr className="text-left text-gray-500">
-                                      <th className="font-medium py-1">Role</th>
-                                      <th className="font-medium py-1">Type</th>
-                                      <th className="font-medium py-1">Name</th>
-                                    </tr>
-                                  </thead>
                                   <tbody>
                                     {activity.participatingOrgs.map((org, i) => {
                                       const roleNames: Record<string, string> = {
@@ -1279,6 +1341,8 @@ export default function BulkPreviewStep({
                                   <thead>
                                     <tr className="text-left text-gray-500">
                                       <th className="font-medium py-1">Type</th>
+                                      <th className="font-medium py-1 text-center">Country</th>
+                                      <th className="font-medium py-1 text-center">Region</th>
                                       <th className="font-medium py-1 text-right">Amount</th>
                                     </tr>
                                   </thead>
@@ -1302,22 +1366,16 @@ export default function BulkPreviewStep({
                                       return (
                                         <tr key={i} className="border-t border-gray-100">
                                           <td className="py-1 text-gray-600">
-                                            <div>
-                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{tx.type}</span>
-                                              {txTypeNames[tx.type] || tx.type}
-                                            </div>
-                                            {(tx.aidType || tx.financeType || tx.flowType || tx.tiedStatus || tx.recipientCountryCode || tx.recipientRegionCode) && (
-                                              <div className="flex flex-wrap gap-1 mt-0.5">
-                                                {tx.aidType && <span className="bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-mono text-[10px]">Aid: {tx.aidType}</span>}
-                                                {tx.financeType && <span className="bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-mono text-[10px]">Fin: {tx.financeType}</span>}
-                                                {tx.flowType && <span className="bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-mono text-[10px]">Flow: {tx.flowType}</span>}
-                                                {tx.tiedStatus && <span className="bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-mono text-[10px]">Tied: {tx.tiedStatus}</span>}
-                                                {tx.recipientCountryCode && <span className="bg-green-50 text-green-600 px-1 py-0.5 rounded font-mono text-[10px]">Country: {tx.recipientCountryCode}</span>}
-                                                {tx.recipientRegionCode && <span className="bg-green-50 text-green-600 px-1 py-0.5 rounded font-mono text-[10px]">Region: {tx.recipientRegionCode}</span>}
-                                              </div>
-                                            )}
+                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{tx.type}</span>
+                                            {txTypeNames[tx.type] || tx.type}
                                           </td>
-                                          <td className="py-1 text-right font-medium align-top">{tx.currency} {tx.value?.toLocaleString()}</td>
+                                          <td className="py-1 text-center">
+                                            {tx.recipientCountryCode ? <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-600">{tx.recipientCountryCode}</span> : <span className="text-gray-300">-</span>}
+                                          </td>
+                                          <td className="py-1 text-center">
+                                            {tx.recipientRegionCode ? <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-600">{tx.recipientRegionCode}</span> : <span className="text-gray-300">-</span>}
+                                          </td>
+                                          <td className="py-1 text-right font-medium"><span className="text-xs text-gray-400 mr-0.5">{tx.currency}</span>{tx.value?.toLocaleString()}</td>
                                         </tr>
                                       )
                                     })}
@@ -1605,8 +1663,8 @@ export default function BulkPreviewStep({
                           (activity.policyMarkers && activity.policyMarkers.length > 0) ||
                           (activity.humanitarianScopes && activity.humanitarianScopes.length > 0) ||
                           (activity.tags && activity.tags.length > 0)) && (
-                          <div className="grid grid-cols-3 gap-6 mt-4 pt-4 border-t">
-                            {/* Column 1: Flags & Scope */}
+                          <div className="grid grid-cols-2 gap-6 mt-4 pt-4 border-t">
+                            {/* Column 1: Flags, Scope & Policy Markers */}
                             <div className="space-y-3">
                               {activity.humanitarian && (
                                 <div>
@@ -1643,55 +1701,48 @@ export default function BulkPreviewStep({
                                   </p>
                                 </div>
                               )}
+
+                              {activity.policyMarkers && activity.policyMarkers.length > 0 && (
+                                <div>
+                                  <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
+                                    <Shield className="h-3 w-3" /> Policy Markers
+                                  </span>
+                                  <table className="mt-1 w-full text-xs">
+                                    <tbody>
+                                      {activity.policyMarkers.map((pm, i) => {
+                                        const markerNames: Record<string, string> = {
+                                          '1': 'Gender Equality', '2': 'Aid to Environment',
+                                          '3': 'PD/GG', '4': 'Trade Development',
+                                          '5': 'Biodiversity', '6': 'Climate Mitigation',
+                                          '7': 'Climate Adaptation', '8': 'Desertification',
+                                          '9': 'Disability', '10': 'Nutrition',
+                                        }
+                                        const sigNames: Record<number, string> = {
+                                          0: 'Not targeted', 1: 'Significant', 2: 'Principal', 3: 'Explicit primary',
+                                        }
+                                        return (
+                                          <tr key={i} className="border-t border-gray-100">
+                                            <td className="py-1 text-gray-600">
+                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{pm.code}</span>
+                                              {pm.narrative || markerNames[pm.code] || ''}
+                                            </td>
+                                            <td className="py-1 text-right">
+                                              {pm.significance != null ? (
+                                                <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600" title={sigNames[pm.significance] || ''}>
+                                                  {sigNames[pm.significance] || pm.significance}
+                                                </span>
+                                              ) : '-'}
+                                            </td>
+                                          </tr>
+                                        )
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
                             </div>
 
-                            {/* Column 2: Policy Markers */}
-                            {activity.policyMarkers && activity.policyMarkers.length > 0 && (
-                              <div>
-                                <span className="font-medium text-gray-700 text-xs uppercase flex items-center gap-1">
-                                  <Shield className="h-3 w-3" /> Policy Markers
-                                </span>
-                                <table className="mt-1 w-full text-xs">
-                                  <thead>
-                                    <tr className="text-left text-gray-500">
-                                      <th className="font-medium py-1">Marker</th>
-                                      <th className="font-medium py-1 text-right">Significance</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {activity.policyMarkers.map((pm, i) => {
-                                      const markerNames: Record<string, string> = {
-                                        '1': 'Gender Equality', '2': 'Aid to Environment',
-                                        '3': 'PD/GG', '4': 'Trade Development',
-                                        '5': 'Biodiversity', '6': 'Climate Mitigation',
-                                        '7': 'Climate Adaptation', '8': 'Desertification',
-                                        '9': 'Disability', '10': 'Nutrition',
-                                      }
-                                      const sigNames: Record<number, string> = {
-                                        0: 'Not targeted', 1: 'Significant', 2: 'Principal', 3: 'Explicit primary',
-                                      }
-                                      return (
-                                        <tr key={i} className="border-t border-gray-100">
-                                          <td className="py-1 text-gray-600">
-                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{pm.code}</span>
-                                            {pm.narrative || markerNames[pm.code] || ''}
-                                          </td>
-                                          <td className="py-1 text-right">
-                                            {pm.significance != null ? (
-                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600" title={sigNames[pm.significance] || ''}>
-                                                {sigNames[pm.significance] || pm.significance}
-                                              </span>
-                                            ) : '-'}
-                                          </td>
-                                        </tr>
-                                      )
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
-
-                            {/* Column 3: Humanitarian Scope + Tags */}
+                            {/* Column 2: Humanitarian Scope + Tags */}
                             <div className="space-y-3">
                               {activity.humanitarianScopes && activity.humanitarianScopes.length > 0 && (
                                 <div>

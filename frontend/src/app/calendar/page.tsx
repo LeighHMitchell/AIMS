@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { Calendar, Clock, MapPin, Plus, Users, Filter, History } from 'lucide-react'
+import { Calendar, Clock, MapPin, Plus, Users, SlidersHorizontal, History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -233,7 +233,7 @@ export default function CalendarPage() {
         <div className="flex items-center gap-2">
           <Select value={filter} onValueChange={(value: 'all' | 'meeting' | 'deadline' | 'workshop' | 'conference' | 'other') => setFilter(value)}>
             <SelectTrigger className="w-[140px]">
-              <Filter className="h-4 w-4" />
+              <SlidersHorizontal className="h-4 w-4" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

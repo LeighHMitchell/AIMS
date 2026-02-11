@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
       // - Hierarchy comes directly from Datastore (no d-portal call)
       // - 5s overhead for initial setup, database checks, cache writes
       const pagesNeeded = Math.ceil(count / DATASTORE_PAGE_SIZE)
-      const estimatedSeconds = (pagesNeeded * 15) + 5 // 15s per page + 5s overhead
+      const estimatedSeconds = (pagesNeeded * 60) + 10 // ~60s per page (fetch + mapping + enrichment) + 10s overhead
       return NextResponse.json({
         count,
         estimatedSeconds,

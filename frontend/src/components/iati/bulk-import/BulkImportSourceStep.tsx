@@ -16,7 +16,7 @@ import {
   Database,
   Building2,
   ExternalLink,
-  Filter,
+  SlidersHorizontal,
   ChevronsUpDown,
   X,
 } from 'lucide-react'
@@ -766,6 +766,7 @@ export default function BulkImportSourceStep({
           activityCount: allActivities.length,
           fetchedAt: new Date().toISOString(),
           organizationId: targetOrgId || orgScopeResult?.organizationId,
+          filterCountry: selectedCountry || undefined,
         }
         onActivitiesReady(allActivities, meta)
 
@@ -828,6 +829,7 @@ export default function BulkImportSourceStep({
           activityCount: activities.length,
           fetchedAt: data.fetchedAt,
           organizationId: targetOrgId || data.orgScope?.organizationId,
+          filterCountry: selectedCountry || undefined,
         }
         onActivitiesReady(activities, meta)
       }
@@ -1025,7 +1027,7 @@ export default function BulkImportSourceStep({
                   {/* Pre-fetch filters */}
                   <div className="border rounded-lg p-4 bg-white space-y-4">
                     <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Filter className="h-4 w-4" />
+                      <SlidersHorizontal className="h-4 w-4" />
                       Pre-Fetch Filters
                     </div>
 
@@ -1204,7 +1206,6 @@ export default function BulkImportSourceStep({
                           <DatePicker
                             value={dateRangeStart}
                             onChange={(value) => { setDateRangeStart(value); setDateFilterEnabled(true) }}
-                            disabled={!dateFilterEnabled}
                             placeholder="Start"
                             className={`h-9 w-32 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
                           />
@@ -1212,7 +1213,6 @@ export default function BulkImportSourceStep({
                           <DatePicker
                             value={dateRangeEnd}
                             onChange={(value) => { setDateRangeEnd(value); setDateFilterEnabled(true) }}
-                            disabled={!dateFilterEnabled}
                             placeholder="End"
                             className={`h-9 w-32 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
                           />

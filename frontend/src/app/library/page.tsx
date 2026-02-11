@@ -23,7 +23,7 @@ import {
   Plus,
   Download,
   Trash2,
-  Filter,
+  SlidersHorizontal,
   X,
   ChevronLeft,
   ChevronRight,
@@ -481,7 +481,7 @@ export default function LibraryPage() {
                     onClick={() => setShowFilters(!showFilters)}
                     className="relative"
                   >
-                    <Filter className="h-4 w-4 mr-2" />
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
                     Filters
                     {activeFilterCount > 0 && (
                       <Badge variant="default" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">

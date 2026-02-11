@@ -30,6 +30,7 @@ import {
   Undo2,
   Clock,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   Database,
   AlertTriangle,
@@ -39,12 +40,15 @@ import {
   SkipForward,
   RefreshCw,
   Plus,
+  Download,
+  Trash2,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { IATIImportSkeleton } from '@/components/skeletons'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { apiFetch } from '@/lib/api-fetch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import BulkImportWizard from '@/components/iati/bulk-import/BulkImportWizard'
 
 interface ImportSummary {
@@ -97,9 +101,12 @@ interface ImportState {
 }
 
 /**
- * Enhanced History Tab with drill-down, filters, search, and detailed stats.
+ * Enhanced History Tab with drill-down, filters, search, pagination, CSV export, and delete.
  */
 function HistoryTab() {
+  const { user } = useUser()
+  const isSuperUser = user?.role === 'super_user'
+
   const [historyData, setHistoryData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -108,9 +115,20 @@ function HistoryTab() {
   const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null)
   const [batchItems, setBatchItems] = useState<any[]>([])
   const [loadingItems, setLoadingItems] = useState(false)
+  const [deletingBatchId, setDeletingBatchId] = useState<string | null>(null)
+  const [exportingBatchId, setExportingBatchId] = useState<string | null>(null)
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageLimit, setPageLimit] = useState(20)
+  const [totalCount, setTotalCount] = useState(0)
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageLimit))
 
   useEffect(() => {
-    const timeout = setTimeout(() => setDebouncedSearch(searchQuery), 300)
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+      setCurrentPage(1) // Reset to page 1 on search change
+    }, 300)
     return () => clearTimeout(timeout)
   }, [searchQuery])
 
@@ -123,10 +141,23 @@ function HistoryTab() {
       const params = new URLSearchParams()
       if (statusFilter !== 'all') params.set('status', statusFilter)
       if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
+      params.set('page', String(currentPage))
+      params.set('limit', String(pageLimit))
       const response = await apiFetch(`/api/iati/history?${params.toString()}`)
       if (response.ok) {
-        const data = await response.json()
-        setHistoryData(Array.isArray(data) ? data : [])
+        const result = await response.json()
+        // Handle new paginated response format
+        if (result.data && result.pagination) {
+          setHistoryData(result.data)
+          setTotalCount(result.pagination.total)
+        } else if (Array.isArray(result)) {
+          // Backward compat
+          setHistoryData(result)
+          setTotalCount(result.length)
+        } else {
+          setHistoryData([])
+          setTotalCount(0)
+        }
       } else {
         const errData = await response.json().catch(() => ({}))
         console.error('Failed to fetch import history:', errData)
@@ -138,11 +169,22 @@ function HistoryTab() {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, debouncedSearch])
+  }, [statusFilter, debouncedSearch, currentPage, pageLimit])
 
   useEffect(() => {
     fetchHistory()
   }, [fetchHistory])
+
+  // Reset to page 1 when filter changes
+  const handleStatusFilter = (status: string) => {
+    setStatusFilter(status)
+    setCurrentPage(1)
+  }
+
+  const handlePageLimitChange = (newLimit: number) => {
+    setPageLimit(newLimit)
+    setCurrentPage(1)
+  }
 
   const fetchBatchItems = async (batchId: string) => {
     if (expandedBatchId === batchId) {
@@ -162,6 +204,60 @@ function HistoryTab() {
       console.error('Failed to fetch batch items:', error)
     } finally {
       setLoadingItems(false)
+    }
+  }
+
+  const exportBatchCsv = async (batchId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setExportingBatchId(batchId)
+    try {
+      const response = await apiFetch(`/api/iati/history?batchId=${batchId}&format=csv`)
+      if (response.ok) {
+        const blob = await response.blob()
+        const disposition = response.headers.get('Content-Disposition')
+        const filenameMatch = disposition?.match(/filename="?([^"]+)"?/)
+        const filename = filenameMatch?.[1] || `import-${batchId.substring(0, 8)}.csv`
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(url)
+      } else {
+        toast.error('Failed to export CSV')
+      }
+    } catch {
+      toast.error('Failed to export CSV')
+    } finally {
+      setExportingBatchId(null)
+    }
+  }
+
+  const deleteBatch = async (batchId: string, batchName: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!confirm(`Delete import "${batchName}"? This removes the import history record only — imported activities are not affected.`)) return
+    setDeletingBatchId(batchId)
+    try {
+      const res = await apiFetch('/api/iati/history', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batchId })
+      })
+      if (res.ok) {
+        toast.success('Import history deleted')
+        if (expandedBatchId === batchId) {
+          setExpandedBatchId(null)
+          setBatchItems([])
+        }
+        fetchHistory()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || 'Failed to delete')
+      }
+    } catch {
+      toast.error('Failed to delete import history')
+    } finally {
+      setDeletingBatchId(null)
     }
   }
 
@@ -190,6 +286,9 @@ function HistoryTab() {
     }
   }
 
+  const startIndex = (currentPage - 1) * pageLimit
+  const endIndex = startIndex + historyData.length
+
   return (
     <Card>
       <CardHeader>
@@ -216,7 +315,7 @@ function HistoryTab() {
                 key={status}
                 variant={statusFilter === status ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setStatusFilter(status)}
+                onClick={() => handleStatusFilter(status)}
               >
                 {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
               </Button>
@@ -282,13 +381,45 @@ function HistoryTab() {
                         )}
                       </div>
                     </div>
-                    <div className="shrink-0 ml-3 flex items-center">
+                    <div className="shrink-0 ml-3 flex items-center gap-1">
                       {getStatusBadge(record.status)}
+                      {/* Export CSV */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 ml-1"
+                        title="Export CSV"
+                        disabled={exportingBatchId === record.id}
+                        onClick={(e) => exportBatchCsv(record.id, e)}
+                      >
+                        {exportingBatchId === record.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                      </Button>
+                      {/* Delete (super user only) */}
+                      {isSuperUser && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                          title="Delete import history"
+                          disabled={deletingBatchId === record.id}
+                          onClick={(e) => deleteBatch(record.id, record.reportingOrgName || record.fileName, e)}
+                        >
+                          {deletingBatchId === record.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
                       {record.status === 'importing' && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           onClick={async (e) => {
                             e.stopPropagation()
                             if (!confirm('Cancel this import? Items already imported will remain.')) return
@@ -382,6 +513,101 @@ function HistoryTab() {
             })
           )}
         </div>
+
+        {/* Pagination */}
+        {!loading && totalCount > 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mt-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {Math.min(startIndex + 1, totalCount)} to {Math.min(endIndex, totalCount)} of {totalCount} imports
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Per page:</label>
+                <Select
+                  value={pageLimit.toString()}
+                  onValueChange={(value) => handlePageLimitChange(Number(value))}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

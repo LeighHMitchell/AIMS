@@ -30,7 +30,7 @@ import {
   ResponsiveContainer,
   TooltipProps,
 } from 'recharts'
-import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon, CalendarIcon, Filter, Check, Search } from 'lucide-react'
+import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon, CalendarIcon, SlidersHorizontal, Check, Search } from 'lucide-react'
 import { LoadingText } from '@/components/ui/loading-text'
 import html2canvas from 'html2canvas'
 import { apiFetch } from '@/lib/api-fetch';
@@ -1122,7 +1122,7 @@ export function SectorDisbursementOverTime({
                     size="sm"
                     className="h-8 gap-1"
                   >
-                    <Filter className="h-4 w-4" />
+                    <SlidersHorizontal className="h-4 w-4" />
                     Filter
                     {visibleItemData.length < aggregatedData.length && (
                       <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
@@ -1273,7 +1273,7 @@ export function SectorDisbursementOverTime({
           {viewMode === 'area' ? (
             visibleItemData.length === 0 ? (
               <div className="h-80 flex flex-col items-center justify-center text-slate-500 gap-2">
-                <Filter className="h-8 w-8 text-slate-300" />
+                <SlidersHorizontal className="h-8 w-8 text-slate-300" />
                 <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
                 <p className="text-xs text-slate-400">Use the Filter button to select items to compare</p>
               </div>
@@ -1318,7 +1318,7 @@ export function SectorDisbursementOverTime({
           ) : viewMode === 'line' ? (
             visibleItemData.length === 0 ? (
               <div className="h-80 flex flex-col items-center justify-center text-slate-500 gap-2">
-                <Filter className="h-8 w-8 text-slate-300" />
+                <SlidersHorizontal className="h-8 w-8 text-slate-300" />
                 <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
                 <p className="text-xs text-slate-400">Use the Filter button to select items to compare</p>
               </div>
@@ -1364,7 +1364,7 @@ export function SectorDisbursementOverTime({
             /* Table View */
             visibleItemData.length === 0 ? (
               <div className="h-80 flex flex-col items-center justify-center text-slate-500 gap-2">
-                <Filter className="h-8 w-8 text-slate-300" />
+                <SlidersHorizontal className="h-8 w-8 text-slate-300" />
                 <p>No {aggregationLevel === 'group' ? 'sector categories' : aggregationLevel === 'category' ? 'sectors' : 'sub-sectors'} selected</p>
                 <p className="text-xs text-slate-400">Use the Filter button to select items to compare</p>
               </div>

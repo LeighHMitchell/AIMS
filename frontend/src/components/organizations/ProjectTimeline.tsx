@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Calendar, Activity, Download, Filter } from 'lucide-react'
+import { Calendar, Activity, Download, SlidersHorizontal } from 'lucide-react'
 import { format, parseISO, differenceInDays, min, max } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -241,7 +241,7 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
                   Filter
                 </Button>
               </DropdownMenuTrigger>

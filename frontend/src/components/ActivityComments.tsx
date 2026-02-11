@@ -27,7 +27,7 @@ import {
   Download,
   AlertCircle,
   HelpCircle,
-  Filter,
+  SlidersHorizontal,
   SortAsc,
   Clock,
   RefreshCw,
@@ -1012,7 +1012,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
             <div className="flex items-center gap-2">
               <Select value={filterType} onValueChange={(v: any) => setFilterType(v)}>
                 <SelectTrigger className="w-32">
-                  <Filter className="h-3 w-3 mr-1" />
+                  <SlidersHorizontal className="h-3 w-3 mr-1" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

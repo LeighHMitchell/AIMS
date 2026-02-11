@@ -140,6 +140,7 @@ export function SidebarNav({
         { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true, underDevelopment: true },
         { name: "Portfolios", href: "/partners", show: true, underDevelopment: true },
         { name: "Reports", href: "/reports", show: true, isNew: true },
+        { name: "SDGs", href: "/sdgs", show: true, isNew: true },
       ]
     },
     {

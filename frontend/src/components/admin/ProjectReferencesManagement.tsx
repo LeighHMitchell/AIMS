@@ -45,7 +45,7 @@ import {
   Trash2,
   AlertCircle,
   Search,
-  Filter,
+  SlidersHorizontal,
   Upload,
   Download,
   ExternalLink,
@@ -452,7 +452,7 @@ export function ProjectReferencesManagement() {
                 onValueChange={(value) => setFilterType(value as ReferenceType | "all")}
               >
                 <SelectTrigger className="w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
                 <SelectContent>

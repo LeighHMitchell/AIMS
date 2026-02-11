@@ -48,7 +48,7 @@ import {
   FolderTree,
   AlertCircle,
   Search,
-  Filter,
+  SlidersHorizontal,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -584,7 +584,7 @@ export function BudgetClassificationsManagement() {
                 }
               >
                 <SelectTrigger className="w-[220px]">
-                  <Filter className="h-4 w-4 mr-2" />
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
                 <SelectContent>

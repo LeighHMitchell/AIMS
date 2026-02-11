@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import * as d3 from 'd3'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, Filter, Search, Check } from 'lucide-react'
+import { AlertCircle, SlidersHorizontal, Search, Check } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -632,7 +632,7 @@ export function AidEcosystemSolarSystem({
           <DropdownMenu open={isFilterOpen} onOpenChange={handleFilterOpenChange}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 gap-1 border">
-                <Filter className="h-4 w-4" />
+                <SlidersHorizontal className="h-4 w-4" />
                 Filter
                 {(isFilterOpen ? pendingSectors.size : visibleSectors.size) > 0 && (
                   <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">

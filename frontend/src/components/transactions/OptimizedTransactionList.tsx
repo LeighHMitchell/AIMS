@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Filter, RefreshCw, DollarSign, Calendar } from 'lucide-react';
+import { Search, SlidersHorizontal, RefreshCw, DollarSign, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Transaction {

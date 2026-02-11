@@ -28,7 +28,7 @@ import {
   FileSpreadsheet, 
   FileImage, 
   File,
-  Filter,
+  SlidersHorizontal,
   FolderOpen
 } from 'lucide-react';
 
@@ -336,7 +336,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
 
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-[200px]">
-            <Filter className="h-4 w-4 mr-2" />
+            <SlidersHorizontal className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
