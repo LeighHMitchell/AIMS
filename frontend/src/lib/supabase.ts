@@ -97,15 +97,10 @@ export function getSupabaseAdmin() {
     return null
   }
   
-  // TEMPORARY FIX: Create fresh client on each request to avoid stale cache
-  // TODO: Investigate why singleton was caching queries
-  return createAdminClient()
-  
-  // Original singleton code (disabled for now):
-  // if (!_supabaseAdmin) {
-  //   _supabaseAdmin = createAdminClient()
-  // }
-  // return _supabaseAdmin
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createAdminClient()
+  }
+  return _supabaseAdmin
 }
 
 // Get database client (Supabase or local fallback)

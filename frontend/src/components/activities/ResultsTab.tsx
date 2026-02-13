@@ -746,7 +746,7 @@ export function ResultsTab({
 
       {/* Main Content - Simple List */}
       {displayResults.length === 0 && !showDummyData ? (
-        <div className="bg-gray-50 rounded-lg p-8 text-center">
+        <div className="bg-gray-50 rounded-lg border border-gray-200 p-8 text-center">
               <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h4 className="text-lg font-medium text-gray-900 mb-2">No results yet</h4>
               <p className="text-gray-600 mb-4">

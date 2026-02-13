@@ -1,6 +1,5 @@
 "use client";
 
-import { Menu } from 'bloom-menu';
 import {
   MoreVertical,
   PencilLine,
@@ -9,6 +8,14 @@ import {
   UserX,
   ExternalLink,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface TransactionActionMenuProps {
   transactionId: string;
@@ -21,10 +28,6 @@ interface TransactionActionMenuProps {
   onReject?: () => void;
   onViewSourceActivity?: () => void;
 }
-
-const itemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors";
-const successItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer transition-colors";
-const dangerItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors";
 
 export function TransactionActionMenu({
   transactionId,
@@ -48,70 +51,61 @@ export function TransactionActionMenu({
   }
 
   return (
-    <Menu.Root direction="bottom" anchor="end">
-      <Menu.Container
-        buttonSize={32}
-        menuWidth={200}
-        menuRadius={12}
-        className="bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black/5 dark:ring-white/10 relative z-[9999]"
-      >
-        <Menu.Trigger>
-          <div className="flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors">
-            <MoreVertical className="h-4 w-4" />
-          </div>
-        </Menu.Trigger>
-        <Menu.Content className="p-1.5">
-          {/* Accept/Reject actions for linked transactions */}
-          {showAcceptReject && (
-            <>
-              {onAccept && (
-                <Menu.Item className={successItemClass} onSelect={onAccept}>
-                  <CheckCircle className="h-4 w-4" />
-                  Accept Transaction
-                </Menu.Item>
-              )}
-              {onReject && (
-                <Menu.Item className={dangerItemClass} onSelect={onReject}>
-                  <UserX className="h-4 w-4" />
-                  Reject Transaction
-                </Menu.Item>
-              )}
-            </>
-          )}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="icon" className="h-8 w-8">
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        {/* Accept/Reject actions for linked transactions */}
+        {showAcceptReject && (
+          <>
+            {onAccept && (
+              <DropdownMenuItem onClick={onAccept} className="text-green-600 focus:text-green-600">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Accept Transaction
+              </DropdownMenuItem>
+            )}
+            {onReject && (
+              <DropdownMenuItem onClick={onReject} className="text-red-600 focus:text-red-600">
+                <UserX className="h-4 w-4 mr-2" />
+                Reject Transaction
+              </DropdownMenuItem>
+            )}
+          </>
+        )}
 
-          {/* Standard edit action */}
-          {showEdit && (
-            <>
-              {showAcceptReject && (
-                <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-              )}
-              <Menu.Item className={itemClass} onSelect={onEdit}>
-                <PencilLine className="h-4 w-4" />
-                Edit
-              </Menu.Item>
-            </>
-          )}
+        {/* Standard edit action */}
+        {showEdit && (
+          <>
+            {showAcceptReject && <DropdownMenuSeparator />}
+            <DropdownMenuItem onClick={onEdit}>
+              <PencilLine className="h-4 w-4 mr-2" />
+              Edit
+            </DropdownMenuItem>
+          </>
+        )}
 
-          {/* View source activity for linked transactions */}
-          {showViewSource && (
-            <Menu.Item className={itemClass} onSelect={onViewSourceActivity}>
-              <ExternalLink className="h-4 w-4" />
-              View Source Activity
-            </Menu.Item>
-          )}
+        {/* View source activity for linked transactions */}
+        {showViewSource && (
+          <DropdownMenuItem onClick={onViewSourceActivity}>
+            <ExternalLink className="h-4 w-4 mr-2" />
+            View Source Activity
+          </DropdownMenuItem>
+        )}
 
-          {/* Delete action */}
-          {showDelete && (
-            <>
-              <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-              <Menu.Item className={dangerItemClass} onSelect={onDelete}>
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </Menu.Item>
-            </>
-          )}
-        </Menu.Content>
-      </Menu.Container>
-    </Menu.Root>
+        {/* Delete action */}
+        {showDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

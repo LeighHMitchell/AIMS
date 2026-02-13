@@ -310,33 +310,35 @@ export function FundingDeliveryGroup({
             ref={financesRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pb-16"
           >
-            <SectionHeader
-              id="finances"
-              title={getSectionLabel('finances')}
-              helpText={getSectionHelpText('finances')}
-              showDivider={false}
-            />
             {isSectionActive('finances') || activeSections.has('finances') ? (
-              <EnhancedFinancesSection
-                activityId={activityId || "new"}
-                general={general}
-                transactions={transactions}
-                onTransactionsChange={setTransactions}
-                onRefreshNeeded={refreshTransactions}
-                initialTransactionId={initialTransactionId}
-                onDefaultsChange={(field, value) => {
-                  if (field === 'defaultFlowType') {
-                    setGeneral((g: any) => ({ ...g, defaultFlowType: value }))
-                  } else if (field === 'defaultTiedStatus') {
-                    setGeneral((g: any) => ({ ...g, defaultTiedStatus: value }))
-                  } else {
-                    setGeneral((g: any) => ({ ...g, [field]: value }))
-                  }
-                }}
-                disabled={false}
-                geographyLevel={geographyLevel || 'activity'}
-                activitySectors={activitySectors}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="finances"
+                  title={getSectionLabel('finances')}
+                  helpText={getSectionHelpText('finances')}
+                  showDivider={false}
+                />
+                <EnhancedFinancesSection
+                  activityId={activityId || "new"}
+                  general={general}
+                  transactions={transactions}
+                  onTransactionsChange={setTransactions}
+                  onRefreshNeeded={refreshTransactions}
+                  initialTransactionId={initialTransactionId}
+                  onDefaultsChange={(field, value) => {
+                    if (field === 'defaultFlowType') {
+                      setGeneral((g: any) => ({ ...g, defaultFlowType: value }))
+                    } else if (field === 'defaultTiedStatus') {
+                      setGeneral((g: any) => ({ ...g, defaultTiedStatus: value }))
+                    } else {
+                      setGeneral((g: any) => ({ ...g, [field]: value }))
+                    }
+                  }}
+                  disabled={false}
+                  geographyLevel={geographyLevel || 'activity'}
+                  activitySectors={activitySectors}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="finances" />
             )}
@@ -348,21 +350,23 @@ export function FundingDeliveryGroup({
             ref={plannedDisbursementsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="planned-disbursements"
-              title={getSectionLabel('planned-disbursements')}
-              helpText={getSectionHelpText('planned-disbursements')}
-              showDivider={false}
-            />
             {isSectionActive('planned-disbursements') || activeSections.has('planned-disbursements') ? (
-              <PlannedDisbursementsTab
-                activityId={activityId}
-                startDate={general.plannedStartDate || general.actualStartDate || ""}
-                endDate={general.plannedEndDate || general.actualEndDate || ""}
-                defaultCurrency={general.defaultCurrency || "USD"}
-                readOnly={!permissions?.canEditActivity}
-                onDisbursementsChange={onDisbursementsChange}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="planned-disbursements"
+                  title={getSectionLabel('planned-disbursements')}
+                  helpText={getSectionHelpText('planned-disbursements')}
+                  showDivider={false}
+                />
+                <PlannedDisbursementsTab
+                  activityId={activityId}
+                  startDate={general.plannedStartDate || general.actualStartDate || ""}
+                  endDate={general.plannedEndDate || general.actualEndDate || ""}
+                  defaultCurrency={general.defaultCurrency || "USD"}
+                  readOnly={!permissions?.canEditActivity}
+                  onDisbursementsChange={onDisbursementsChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="planned-disbursements" />
             )}
@@ -374,20 +378,22 @@ export function FundingDeliveryGroup({
             ref={budgetsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="budgets"
-              title={getSectionLabel('budgets')}
-              helpText={getSectionHelpText('budgets')}
-              showDivider={false}
-            />
             {isSectionActive('budgets') || activeSections.has('budgets') ? (
-              <ActivityBudgetsTab
-                activityId={activityId}
-                startDate={general.plannedStartDate || general.actualStartDate || ""}
-                endDate={general.plannedEndDate || general.actualEndDate || ""}
-                defaultCurrency={general.defaultCurrency || "USD"}
-                onBudgetsChange={onBudgetsChange}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="budgets"
+                  title={getSectionLabel('budgets')}
+                  helpText={getSectionHelpText('budgets')}
+                  showDivider={false}
+                />
+                <ActivityBudgetsTab
+                  activityId={activityId}
+                  startDate={general.plannedStartDate || general.actualStartDate || ""}
+                  endDate={general.plannedEndDate || general.actualEndDate || ""}
+                  defaultCurrency={general.defaultCurrency || "USD"}
+                  onBudgetsChange={onBudgetsChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="budgets" />
             )}
@@ -399,18 +405,20 @@ export function FundingDeliveryGroup({
             ref={forwardSpendRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="forward-spending-survey"
-              title={getSectionLabel('forward-spending-survey')}
-              helpText={getSectionHelpText('forward-spending-survey')}
-              showDivider={false}
-            />
             {isSectionActive('forward-spending-survey') || activeSections.has('forward-spending-survey') ? (
-              <ForwardSpendingSurveyTab
-                activityId={activityId}
-                readOnly={!permissions?.canEditActivity}
-                onFssChange={onFssChange}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="forward-spending-survey"
+                  title={getSectionLabel('forward-spending-survey')}
+                  helpText={getSectionHelpText('forward-spending-survey')}
+                  showDivider={false}
+                />
+                <ForwardSpendingSurveyTab
+                  activityId={activityId}
+                  readOnly={!permissions?.canEditActivity}
+                  onFssChange={onFssChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="forward-spending-survey" />
             )}
@@ -422,19 +430,21 @@ export function FundingDeliveryGroup({
             ref={resultsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="results"
-              title={getSectionLabel('results')}
-              helpText={getSectionHelpText('results')}
-              showDivider={false}
-            />
             {isSectionActive('results') || activeSections.has('results') ? (
-              <ResultsTab
-                activityId={activityId}
-                readOnly={!permissions?.canEditActivity}
-                onResultsChange={onResultsChange}
-                defaultLanguage="en"
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="results"
+                  title={getSectionLabel('results')}
+                  helpText={getSectionHelpText('results')}
+                  showDivider={false}
+                />
+                <ResultsTab
+                  activityId={activityId}
+                  readOnly={!permissions?.canEditActivity}
+                  onResultsChange={onResultsChange}
+                  defaultLanguage="en"
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="results" />
             )}
@@ -446,18 +456,20 @@ export function FundingDeliveryGroup({
             ref={capitalSpendRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="capital-spend"
-              title={getSectionLabel('capital-spend')}
-              helpText={getSectionHelpText('capital-spend')}
-              showDivider={false}
-            />
             {isSectionActive('capital-spend') || activeSections.has('capital-spend') ? (
-              <CapitalSpendTab
-                activityId={activityId}
-                readOnly={!permissions?.canEditActivity}
-                onCapitalSpendChange={onCapitalSpendChange}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="capital-spend"
+                  title={getSectionLabel('capital-spend')}
+                  helpText={getSectionHelpText('capital-spend')}
+                  showDivider={false}
+                />
+                <CapitalSpendTab
+                  activityId={activityId}
+                  readOnly={!permissions?.canEditActivity}
+                  onCapitalSpendChange={onCapitalSpendChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="capital-spend" />
             )}
@@ -469,20 +481,22 @@ export function FundingDeliveryGroup({
             ref={financingTermsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="financing-terms"
-              title={getSectionLabel('financing-terms')}
-              helpText={getSectionHelpText('financing-terms')}
-              showDivider={false}
-            />
             {isSectionActive('financing-terms') || activeSections.has('financing-terms') ? (
-              <FinancingTermsTab
-                activityId={activityId}
-                readOnly={!permissions?.canEditActivity}
-                onFinancingTermsChange={(hasData) => {
-                  onFinancingTermsChange(hasData)
-                }}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="financing-terms"
+                  title={getSectionLabel('financing-terms')}
+                  helpText={getSectionHelpText('financing-terms')}
+                  showDivider={false}
+                />
+                <FinancingTermsTab
+                  activityId={activityId}
+                  readOnly={!permissions?.canEditActivity}
+                  onFinancingTermsChange={(hasData) => {
+                    onFinancingTermsChange(hasData)
+                  }}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="financing-terms" />
             )}

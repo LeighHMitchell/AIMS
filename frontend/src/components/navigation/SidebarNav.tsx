@@ -112,6 +112,8 @@ export function SidebarNav({
     '/rolodex': sidebarCounts.rolodex,
     '/library': sidebarCounts.documents,
     '/faq': sidebarCounts.faqs,
+    '/sectors': sidebarCounts.sectors,
+    '/policy-markers': sidebarCounts.policyMarkers,
   }
 
   if (isLoading) {
@@ -141,6 +143,8 @@ export function SidebarNav({
         { name: "Portfolios", href: "/partners", show: true, underDevelopment: true },
         { name: "Reports", href: "/reports", show: true, isNew: true },
         { name: "SDGs", href: "/sdgs", show: true, isNew: true },
+        { name: "Sectors", href: "/sectors", show: true, isNew: true },
+        { name: "Policy Markers", href: "/policy-markers", show: true, isNew: true },
       ]
     },
     {

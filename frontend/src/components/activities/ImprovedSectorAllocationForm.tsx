@@ -1128,7 +1128,7 @@ export default function ImprovedSectorAllocationForm({
                             variant="default" 
                             size="sm"
                             onClick={distributeEqually}
-                            className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                            className="text-xs bg-gray-900 hover:bg-gray-800 text-white"
                             disabled={isLocked}
                           >
                             <Sparkles className="h-3 w-3 mr-1" />

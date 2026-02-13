@@ -293,18 +293,20 @@ export function StrategicAlignmentGroup({
             ref={sdgRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pb-16"
           >
-            <SectionHeader
-              id="sdg"
-              title={getSectionLabel('sdg')}
-              helpText={getSectionHelpText('sdg')}
-              showDivider={false}
-            />
             {isSectionActive('sdg') || activeSections.has('sdg') ? (
-              <SDGAlignmentSection
-                sdgMappings={sdgMappings}
-                onUpdate={onSdgMappingsChange}
-                activityId={activityId}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="sdg"
+                  title={getSectionLabel('sdg')}
+                  helpText={getSectionHelpText('sdg')}
+                  showDivider={false}
+                />
+                <SDGAlignmentSection
+                  sdgMappings={sdgMappings}
+                  onUpdate={onSdgMappingsChange}
+                  activityId={activityId}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="sdg" />
             )}
@@ -316,25 +318,27 @@ export function StrategicAlignmentGroup({
             ref={countryBudgetRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="country-budget"
-              title={getSectionLabel('country-budget')}
-              helpText={getSectionHelpText('country-budget')}
-              showDivider={false}
-            />
             {isSectionActive('country-budget') || activeSections.has('country-budget') ? (
-              <BudgetMappingTab
-                activityId={activityId}
-                userId={userId}
-                budgetStatus={general.budgetStatus}
-                onBudgetPercentage={general.onBudgetPercentage}
-                budgetStatusNotes={general.budgetStatusNotes}
-                onActivityChange={(field, value) => {
-                  setGeneral((g: any) => ({ ...g, [field]: value }))
-                }}
-                onDataChange={onCountryBudgetItemsChange}
-                totalBudgetUSD={totalBudgetUSD}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="country-budget"
+                  title={getSectionLabel('country-budget')}
+                  helpText={getSectionHelpText('country-budget')}
+                  showDivider={false}
+                />
+                <BudgetMappingTab
+                  activityId={activityId}
+                  userId={userId}
+                  budgetStatus={general.budgetStatus}
+                  onBudgetPercentage={general.onBudgetPercentage}
+                  budgetStatusNotes={general.budgetStatusNotes}
+                  onActivityChange={(field, value) => {
+                    setGeneral((g: any) => ({ ...g, [field]: value }))
+                  }}
+                  onDataChange={onCountryBudgetItemsChange}
+                  totalBudgetUSD={totalBudgetUSD}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="country-budget" />
             )}
@@ -346,18 +350,20 @@ export function StrategicAlignmentGroup({
             ref={tagsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="tags"
-              title={getSectionLabel('tags')}
-              helpText={getSectionHelpText('tags')}
-              showDivider={false}
-            />
             {isSectionActive('tags') || activeSections.has('tags') ? (
-              <TagsSection
-                activityId={activityId}
-                tags={tags}
-                onChange={onTagsChange}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="tags"
+                  title={getSectionLabel('tags')}
+                  helpText={getSectionHelpText('tags')}
+                  showDivider={false}
+                />
+                <TagsSection
+                  activityId={activityId}
+                  tags={tags}
+                  onChange={onTagsChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="tags" />
             )}
@@ -369,19 +375,21 @@ export function StrategicAlignmentGroup({
             ref={workingGroupsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="working_groups"
-              title={getSectionLabel('working_groups')}
-              helpText={getSectionHelpText('working_groups')}
-              showDivider={false}
-            />
             {isSectionActive('working_groups') || activeSections.has('working_groups') ? (
-              <WorkingGroupsSection
-                activityId={activityId}
-                workingGroups={workingGroups}
-                onChange={onWorkingGroupsChange}
-                setHasUnsavedChanges={setHasUnsavedChanges}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="working_groups"
+                  title={getSectionLabel('working_groups')}
+                  helpText={getSectionHelpText('working_groups')}
+                  showDivider={false}
+                />
+                <WorkingGroupsSection
+                  activityId={activityId}
+                  workingGroups={workingGroups}
+                  onChange={onWorkingGroupsChange}
+                  setHasUnsavedChanges={setHasUnsavedChanges}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="working_groups" />
             )}
@@ -393,19 +401,21 @@ export function StrategicAlignmentGroup({
             ref={policyMarkersRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="policy_markers"
-              title={getSectionLabel('policy_markers')}
-              helpText={getSectionHelpText('policy_markers')}
-              showDivider={false}
-            />
             {isSectionActive('policy_markers') || activeSections.has('policy_markers') ? (
-              <PolicyMarkersSectionIATIWithCustom
-                activityId={activityId}
-                policyMarkers={policyMarkers}
-                onChange={onPolicyMarkersChange}
-                setHasUnsavedChanges={setHasUnsavedChanges}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="policy_markers"
+                  title={getSectionLabel('policy_markers')}
+                  helpText={getSectionHelpText('policy_markers')}
+                  showDivider={false}
+                />
+                <PolicyMarkersSectionIATIWithCustom
+                  activityId={activityId}
+                  policyMarkers={policyMarkers}
+                  onChange={onPolicyMarkersChange}
+                  setHasUnsavedChanges={setHasUnsavedChanges}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="policy_markers" />
             )}

@@ -812,7 +812,12 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-8 min-h-[800px]">
       {/* Section Heading */}
-      <h2 className="text-2xl font-semibold text-gray-900">General</h2>
+      <div className="flex items-center gap-3">
+        <h2 className="text-3xl font-semibold text-gray-900">General</h2>
+        <HelpTextTooltip content="This tab brings together the core details that define the activity, including its identifiers, title, description, imagery, collaboration type, status, and dates. Completing this section establishes the basic profile of the activity and provides a clear reference point for all other information entered elsewhere.">
+          <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+        </HelpTextTooltip>
+      </div>
 
       {/* Banner and Icon Upload */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
@@ -1195,45 +1200,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </div>
           {iatiIdentifierAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {iatiIdentifierAutosave.state.error.message}</p>}
         </div>
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={uuidAutosave.state.isSaving}
-            isSaved={uuidAutosave.state.isPersistentlySaved || !!general.uuid}
-            hasValue={!!general.uuid}
-            className="text-gray-700"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">
-                Universally Unique Identifier
-              </span>
-              <Lock className="h-3 w-3 text-gray-400" />
-              <HelpTextTooltip>
-                This field is auto-generated and locked. Every activity has a Universally Unique Identifier (UUID) that is assigned automatically by the system. It cannot be edited to ensure consistency across the application.
-              </HelpTextTooltip>
-            </div>
-          </LabelSaveIndicator>
-          <div className="relative">
-            <Input
-              id="uuid"
-              type="text"
-              value={general.uuid || ''}
-              readOnly
-              tabIndex={general.id ? 5 : -1}
-              className="bg-gray-50 cursor-not-allowed pr-10 truncate"
-              placeholder={general.uuid ? general.uuid : "Auto-generated when activity is created"}
-            />
-            {general.uuid && (
-              <button
-                onClick={() => handleCopy(general.uuid, 'UUID')}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
-                title="Copy full UUID"
-              >
-                <Copy className="w-4 h-4 text-gray-500 hover:text-gray-700" />
-              </button>
-            )}
-          </div>
-          {uuidAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {uuidAutosave.state.error.message}</p>}
-        </div>
+        {/* UUID field hidden */}
       </div>
 
       {/* Other Identifier Types - below Activity Identifier */}
@@ -1270,26 +1237,44 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 >
                   {identifier.label || `Other Identifier ${index + 1}`}
                 </LabelSaveIndicator>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    value={identifier.code || ''}
-                    readOnly
-                    className="bg-gray-50 cursor-pointer pr-14"
-                    onClick={() => {
-                      setEditingIdentifierIndex(index);
-                      setOtherIdentifierForm({
-                        label: identifier.label || '',
-                        code: identifier.code || '',
-                        type: identifier.type || '',
-                        ownerOrgNarrative: identifier.ownerOrg?.narrative || '',
-                        ownerOrgRef: identifier.ownerOrg?.ref || ''
-                      });
-                      setShowIdentifierTypeDropdown(false);
-                      setShowOtherIdentifierModal(true);
-                    }}
-                  />
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-0.5">
+                <div
+                  className="relative bg-gray-50 border border-input rounded-md px-3 py-2 pr-14 cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => {
+                    setEditingIdentifierIndex(index);
+                    setOtherIdentifierForm({
+                      label: identifier.label || '',
+                      code: identifier.code || '',
+                      type: identifier.type || '',
+                      ownerOrgNarrative: identifier.ownerOrg?.narrative || '',
+                      ownerOrgRef: identifier.ownerOrg?.ref || ''
+                    });
+                    setShowIdentifierTypeDropdown(false);
+                    setShowOtherIdentifierModal(true);
+                  }}
+                >
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="text-sm text-gray-900 truncate pr-2">{identifier.code || ''}</div>
+                      </TooltipTrigger>
+                      {(identifier.type || identifier.ownerOrg?.narrative || identifier.ownerOrg?.ref) && (
+                        <TooltipContent side="bottom" align="start" className="max-w-xs">
+                          <div className="space-y-1 text-xs">
+                            {(identifier.ownerOrg?.narrative || identifier.ownerOrg?.ref) && (
+                              <div className="flex items-center gap-1.5">
+                                {identifier.ownerOrg?.ref && <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded">{identifier.ownerOrg.ref}</span>}
+                                {identifier.ownerOrg?.narrative && <span>{identifier.ownerOrg.narrative}</span>}
+                              </div>
+                            )}
+                            {identifier.type && (
+                              <div><span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded">{identifier.type}</span> {OTHER_IDENTIFIER_TYPES.find(t => t.code === identifier.type)?.name}</div>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                  <div className="absolute right-2 top-2 flex items-center gap-0.5">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1305,7 +1290,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         setShowIdentifierTypeDropdown(false);
                         setShowOtherIdentifierModal(true);
                       }}
-                      className="p-1 hover:bg-gray-100 rounded"
+                      className="p-1 hover:bg-gray-200 rounded"
                       title="Edit identifier"
                     >
                       <Pencil className="w-3.5 h-3.5 text-gray-500 hover:text-gray-700" />
@@ -1318,35 +1303,13 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         setGeneral((g: any) => ({ ...g, otherIdentifiers: updatedIdentifiers }));
                         otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
                       }}
-                      className="p-1 hover:bg-gray-100 rounded"
+                      className="p-1 hover:bg-gray-200 rounded"
                       title="Delete identifier"
                     >
                       <X className="w-3.5 h-3.5 text-gray-500 hover:text-red-600" />
                     </button>
                   </div>
                 </div>
-                {(identifier.type || identifier.ownerOrg?.narrative || identifier.ownerOrg?.ref) && (
-                  <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                    {identifier.type && (
-                      <>
-                        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{identifier.type}</span>
-                        <span className="text-xs text-gray-500">{OTHER_IDENTIFIER_TYPES.find(t => t.code === identifier.type)?.name}</span>
-                      </>
-                    )}
-                    {identifier.ownerOrg?.narrative && (
-                      <>
-                        <span className="text-xs text-gray-400">·</span>
-                        <span className="text-xs text-gray-500">{identifier.ownerOrg.narrative}</span>
-                      </>
-                    )}
-                    {identifier.ownerOrg?.ref && (
-                      <>
-                        <span className="text-xs text-gray-400">·</span>
-                        <span className="text-xs text-gray-500">{identifier.ownerOrg.ref}</span>
-                      </>
-                    )}
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -2411,7 +2374,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <div className="relative">
                     <Input
                       type="text"
-                      value={customDate.date ? new Date(customDate.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+                      value={customDate.date ? format(new Date(customDate.date), 'dd MMM yyyy') : ''}
                       readOnly
                       className="bg-gray-50 cursor-pointer pr-14"
                       placeholder="No date set"
@@ -2807,7 +2770,17 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
 
   switch (section) {
     case "metadata":
-      return <MetadataTab activityId={general.id} />;
+      return (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-gray-900">Metadata</h2>
+            <HelpTextTooltip content="View and manage administrative details about this activity record, including creation and modification history, reporting organisation, status, and technical identifiers.">
+              <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+            </HelpTextTooltip>
+          </div>
+          <MetadataTab activityId={general.id} />
+        </div>
+      );
     // Note: general, sectors, humanitarian, country-region, and locations
     // are now handled by ActivityOverviewGroup above
     case "iati":
@@ -2833,7 +2806,13 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     case "xml-import":
       console.log('🔥 ACTIVITY EDITOR: Rendering IATI Import section for activityId:', general.id);
       return (
-        <div className="bg-white rounded-lg p-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-gray-900">Import Single Activity</h2>
+            <HelpTextTooltip content={getSectionHelpText('xml-import')}>
+              <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+            </HelpTextTooltip>
+          </div>
           <IatiImportTab
             activityId={general.id || ''}
             onNavigateToGeneral={async () => {
@@ -2847,12 +2826,32 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     // Note: organisations, contacts, focal_points, linked_activities are now handled by StakeholdersGroup above
     // Note: finances, budgets, planned-disbursements, forward-spending-survey, results, capital-spend, financing-terms, conditions are now handled by FundingDeliveryGroup above
     case "government":
-      return <GovernmentInputsSectionEnhanced 
-        governmentInputs={governmentInputs} 
-        onChange={setGovernmentInputs} 
-      />;
+      return (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-gray-900">Government Inputs</h2>
+            <HelpTextTooltip content="Record government involvement, budget classification, national plan alignment, and other inputs from the recipient government that relate to this activity.">
+              <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+            </HelpTextTooltip>
+          </div>
+          <GovernmentInputsSectionEnhanced
+            governmentInputs={governmentInputs}
+            onChange={setGovernmentInputs}
+          />
+        </div>
+      );
     case "readiness_checklist":
-      return <ReadinessChecklistTab activityId={general.id} />;
+      return (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-3xl font-semibold text-gray-900">Government Readiness Checklist</h2>
+            <HelpTextTooltip content={getSectionHelpText('readiness_checklist')}>
+              <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+            </HelpTextTooltip>
+          </div>
+          <ReadinessChecklistTab activityId={general.id} />
+        </div>
+      );
     // Note: sdg, country-budget, tags, working_groups, policy_markers are now handled by StrategicAlignmentGroup above
     // Note: documents, aid_effectiveness are now handled by SupportingInfoGroup above
     default:
@@ -5340,7 +5339,11 @@ function NewActivityPageContent() {
                !isFundingDeliverySection(activeSection) &&
                !isStrategicAlignmentSection(activeSection) &&
                !isSupportingInfoSection(activeSection) &&
-               activeSection !== 'iati' && (
+               activeSection !== 'iati' &&
+               activeSection !== 'metadata' &&
+               activeSection !== 'government' &&
+               activeSection !== 'readiness_checklist' &&
+               activeSection !== 'xml-import' && (
                 <div className="flex items-center gap-3 mb-6">
                   <h2 className="text-2xl font-semibold">{getSectionLabel(activeSection)}</h2>
                   <HelpTextTooltip content={getSectionHelpText(activeSection)}>

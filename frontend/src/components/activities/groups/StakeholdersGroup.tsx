@@ -286,18 +286,20 @@ export function StakeholdersGroup({
             ref={contactsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="contacts"
-              title={getSectionLabel('contacts')}
-              helpText={getSectionHelpText('contacts')}
-              showDivider={false}
-            />
             {isSectionActive('contacts') || activeSections.has('contacts') ? (
-              <ContactsTab
-                activityId={activityId}
-                readOnly={!permissions?.canEditActivity}
-                onContactsChange={onContactsChange}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="contacts"
+                  title={getSectionLabel('contacts')}
+                  helpText={getSectionHelpText('contacts')}
+                  showDivider={false}
+                />
+                <ContactsTab
+                  activityId={activityId}
+                  readOnly={!permissions?.canEditActivity}
+                  onContactsChange={onContactsChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="contacts" />
             )}
@@ -309,17 +311,19 @@ export function StakeholdersGroup({
             ref={focalPointsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="focal_points"
-              title={getSectionLabel('focal_points')}
-              helpText={getSectionHelpText('focal_points')}
-              showDivider={false}
-            />
             {isSectionActive('focal_points') || activeSections.has('focal_points') ? (
-              <FocalPointsTab
-                activityId={activityId}
-                onFocalPointsChange={onFocalPointsChange}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="focal_points"
+                  title={getSectionLabel('focal_points')}
+                  helpText={getSectionHelpText('focal_points')}
+                  showDivider={false}
+                />
+                <FocalPointsTab
+                  activityId={activityId}
+                  onFocalPointsChange={onFocalPointsChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="focal_points" />
             )}
@@ -331,19 +335,21 @@ export function StakeholdersGroup({
             ref={linkedActivitiesRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="linked_activities"
-              title={getSectionLabel('linked_activities')}
-              helpText={getSectionHelpText('linked_activities')}
-              showDivider={false}
-            />
             {isSectionActive('linked_activities') || activeSections.has('linked_activities') ? (
-              <LinkedActivitiesEditorTab
-                activityId={activityId}
-                currentUserId={currentUserId}
-                canEdit={permissions?.canEditActivity ?? true}
-                onCountChange={onLinkedActivitiesCountChange}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="linked_activities"
+                  title={getSectionLabel('linked_activities')}
+                  helpText={getSectionHelpText('linked_activities')}
+                  showDivider={false}
+                />
+                <LinkedActivitiesEditorTab
+                  activityId={activityId}
+                  currentUserId={currentUserId}
+                  canEdit={permissions?.canEditActivity ?? true}
+                  onCountChange={onLinkedActivitiesCountChange}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="linked_activities" />
             )}

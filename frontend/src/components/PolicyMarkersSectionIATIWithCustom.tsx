@@ -808,7 +808,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           {!readOnly && (
             <Dialog open={showAddCustomDialog} onOpenChange={setShowAddCustomDialog}>
               <DialogTrigger asChild>
-                <Button size="sm" className="text-xs bg-blue-600 hover:bg-blue-700 text-white">
+                <Button size="sm" className="text-xs bg-gray-900 hover:bg-gray-800 text-white">
                   <Plus className="h-3 w-3 mr-1" />
                   Add Custom Policy Marker
                 </Button>

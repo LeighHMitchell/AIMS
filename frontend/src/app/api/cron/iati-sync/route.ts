@@ -113,28 +113,21 @@ export async function GET(request: NextRequest) {
     countMap.set(id, {})
   }
 
-  // Fetch counts for each child table using head:true COUNT queries
-  // This avoids reading actual rows — just counts via index, much less disk IO
+  // Fetch counts for each child table using a single batched query per table
+  // Instead of N individual COUNT queries, fetch activity_id column and count in JS
   await Promise.all(
     countTables.map(async ({ table, key }) => {
       try {
-        // Use individual count queries per activity (head:true = no row data transferred)
-        // Process in batches of 20 concurrent queries to avoid overwhelming the DB
-        for (let i = 0; i < activityIds.length; i += 20) {
-          const batch = activityIds.slice(i, i + 20)
-          const results = await Promise.all(
-            batch.map(async (activityId) => {
-              const { count } = await supabase
-                .from(table)
-                .select('*', { count: 'exact', head: true })
-                .eq('activity_id', activityId)
-              return { activityId, count: count || 0 }
-            })
-          )
-          for (const { activityId, count } of results) {
-            if (count > 0) {
-              const entry = countMap.get(activityId)
-              if (entry) entry[key] = count
+        const { data: rows } = await supabase
+          .from(table)
+          .select('activity_id')
+          .in('activity_id', activityIds)
+
+        if (rows) {
+          for (const row of rows) {
+            const entry = countMap.get(row.activity_id)
+            if (entry) {
+              entry[key] = (entry[key] || 0) + 1
             }
           }
         }

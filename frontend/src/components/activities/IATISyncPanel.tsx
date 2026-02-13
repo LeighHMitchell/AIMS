@@ -32,10 +32,12 @@ import {
   Clock,
   History,
   Zap,
-  XCircle
+  XCircle,
+  HelpCircle
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { FIELD_MAPPINGS } from '@/lib/iati-field-mapper';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 
 // Sync field groups that match the cron route's hasFieldChanged() keys
 const SYNC_FIELD_GROUPS: Record<string, string> = {
@@ -485,9 +487,11 @@ export function IATISyncPanel({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-            <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              <CardTitle>IATI Link</CardTitle>
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-3xl font-semibold text-gray-900">IATI Link</CardTitle>
+              <HelpTextTooltip content="This tab controls synchronisation with the IATI Registry and Datastore. Enabling sync ensures that updates made to the activity in this system are reflected in your published IATI file, maintaining consistency between internal records and the official public dataset.">
+                <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+              </HelpTextTooltip>
             </div>
             <CardDescription>
               Synchronize this activity with the IATI Datastore to ensure data consistency

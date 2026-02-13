@@ -1570,7 +1570,7 @@ export default function PlannedDisbursementsTab({
               {!readOnly && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button disabled={isReadOnly} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Button disabled={isReadOnly} className="bg-gray-900 hover:bg-gray-800 text-white">
                       <Plus className="h-4 w-4 mr-1" />
                       Add Planned Disbursement
                     </Button>

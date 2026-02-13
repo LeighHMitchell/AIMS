@@ -1,722 +1,646 @@
 "use client"
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  ArrowLeft,
-  Download,
-  Globe,
-  Activity,
-  Building2,
-  DollarSign,
-  MapPin,
-  TrendingUp,
-  PieChart,
-  BarChart3,
-  ExternalLink,
-  AlertCircle,
-  Sparkles,
-  Leaf,
-  Shield,
-  Handshake,
-  TreePine,
-  Wind,
-  Waves,
-  MountainSnow,
-  Baby,
-  Heart,
-  Droplets,
-  Wrench
-} from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend } from 'recharts'
-import { format } from 'date-fns'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  ArrowLeft, Download, AlertCircle, LayoutGrid, List, ExternalLink, MapPin,
+} from 'lucide-react'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
+  Cell, PieChart as RechartsPieChart, Pie, Legend, AreaChart, Area,
+} from 'recharts'
+import { apiFetch } from '@/lib/api-fetch'
+import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
+import { exportChartToCSV } from '@/lib/chart-export'
+import { getIconForMarker, getSignificanceLabel, MARKER_TYPE_COLORS, MARKER_TYPE_BADGE_CLASSES, getMarkerTypeLabel } from '@/lib/policy-marker-utils'
+import { SDGDonorRankings } from '@/components/sdgs/SDGDonorRankings'
+import { SDGMetricCards } from '@/components/sdgs/SDGMetricCards'
+import { SignificanceDistribution } from '@/components/policy-markers/SignificanceDistribution'
+import Flag from 'react-world-flags'
 
+const SDGGeographyMap = dynamic(
+  () => import('@/components/sdgs/SDGGeographyMap').then(mod => ({ default: mod.SDGGeographyMap })),
+  { ssr: false }
+)
+
+// ---- Types ----
 interface PolicyMarkerData {
   marker: {
-    id: string
-    uuid: string
-    code: string
-    name: string
-    description: string
-    marker_type: 'environmental' | 'social_governance' | 'other' | 'custom'
-    vocabulary: string
-    vocabulary_uri?: string
-    iati_code?: string
-    is_iati_standard: boolean
+    id: string; uuid: string; code: string; name: string; description: string;
+    marker_type: string; vocabulary: string; vocabulary_uri?: string;
+    iati_code?: string; is_iati_standard: boolean;
   }
   metrics: {
-    totalActivities: number
-    totalOrganizations: number
-    totalTransactions: number
-    totalValue: number
-    commitments: number
-    disbursements: number
-    expenditures: number
-    inflows: number
+    totalActivities: number; totalOrganizations: number; totalTransactions: number; totalValue: number;
+    commitments: number; disbursements: number; expenditures: number; inflows: number;
+    activeActivities: number; pipelineActivities: number; closedActivities: number;
   }
   activities: Array<{
-    id: string
-    title_narrative: string
-    iati_identifier?: string
-    activity_status?: string
-    totalValue: number
-    commitments: number
-    disbursements: number
-    transactionCount: number
-    significance: number
-    rationale?: string | null
+    id: string; title_narrative: string; iati_identifier?: string; activity_status?: string;
+    totalValue: number; commitments: number; disbursements: number; transactionCount: number;
+    significance: number; rationale?: string | null;
   }>
   organizations: Array<{
-    id: string
-    name: string
-    acronym?: string
-    logo?: string
-    totalValue: number
-    activityCount: number
+    id: string; name: string; acronym?: string; logo?: string; totalValue: number;
+    totalCommitted: number; totalDisbursed: number; activityCount: number; contributionTypes: string[];
   }>
-  transactionsByYear: Array<{
-    year: number
-    commitments: number
-    disbursements: number
-    expenditures: number
-    inflows: number
-    total: number
-  }>
-  transactionsByType: Array<{
-    type: string
-    value: number
-    label: string
-  }>
-  geographicDistribution: Array<{
-    countryCode: string
-    value: number
-  }>
+  transactionsByYear: Array<{ year: number; commitments: number; disbursements: number; expenditures: number; inflows: number; total: number }>
+  transactionsByType: Array<{ type: string; value: number; label: string }>
+  geographicDistribution: Array<{ countryCode: string; countryName: string; lat: number | null; lng: number | null; value: number; commitments: number; disbursements: number; activityCount: number }>
+  significanceDistribution: Array<{ significance: number; label: string; count: number; totalValue: number }>
+  yoyStats: { currentYearCommitments: number; currentYearDisbursements: number; currentYearExpenditures: number; previousYearCommitments: number; previousYearDisbursements: number; previousYearExpenditures: number; commitmentChange: number; disbursementChange: number; expenditureChange: number }
+  donorRankings: Array<{ id: string; name: string; acronym: string | null; logo: string | null; orgType: string | null; totalCommitted: number; totalDisbursed: number; activityCount: number }>
+  activityStatusBreakdown: Array<{ status: string; statusLabel: string; count: number; totalValue: number }>
 }
 
-// Helper function to get icon for policy marker
-const getIconForMarker = (iatiCode?: string) => {
-  if (!iatiCode) return Wrench;
-  
-  switch (iatiCode) {
-    case '1': return Sparkles; // Gender Equality
-    case '2': return Leaf; // Aid to Environment
-    case '3': return Shield; // Good Governance
-    case '4': return Handshake; // Trade Development
-    case '5': return TreePine; // Biodiversity
-    case '6': return Wind; // Climate Mitigation
-    case '7': return Waves; // Climate Adaptation
-    case '8': return MountainSnow; // Desertification
-    case '9': return Baby; // RMNCH
-    case '10': return AlertCircle; // Disaster Risk Reduction
-    case '11': return Heart; // Disability
-    case '12': return Droplets; // Nutrition
-    default: return Wrench;
-  }
-};
+// ---- Helpers ----
+function formatCurrencyShort(value: number): string {
+  if (value === null || value === undefined || isNaN(value)) return '$0'
+  const abs = Math.abs(value)
+  const sign = value < 0 ? '-' : ''
+  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`
+  return `${sign}$${abs.toFixed(0)}`
+}
 
-// Helper function to get significance label
-const getSignificanceLabel = (significance: number, isRMNCH: boolean = false): string => {
-  if (isRMNCH) {
-    switch (significance) {
-      case 0: return "Negligible or no funding";
-      case 1: return "At least a quarter of funding";
-      case 2: return "Half of the funding";
-      case 3: return "Most funding targeted";
-      case 4: return "Explicit primary objective";
-      default: return "Unknown";
-    }
-  } else {
-    switch (significance) {
-      case 0: return "Not targeted";
-      case 1: return "Significant objective";
-      case 2: return "Principal objective";
-      case 3: return "Most funding targeted";
-      case 4: return "Explicit primary objective";
-      default: return "Unknown";
-    }
-  }
-};
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat('en-US').format(value)
+}
 
+function getStatusLabel(status?: string): string {
+  const labels: Record<string, string> = { '1': 'Pipeline', '2': 'Implementation', '3': 'Completion', '4': 'Closed', '5': 'Cancelled', '6': 'Suspended' }
+  return labels[status || ''] || 'Unknown'
+}
+
+function getStatusVariant(status?: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+  if (status === '2') return 'default'
+  if (status === '4') return 'secondary'
+  if (status === '5') return 'destructive'
+  return 'outline'
+}
+
+function markerPalette(base: string): string[] {
+  return [base, `${base}CC`, `${base}99`, `${base}66`, `${base}40`]
+}
+
+// ---- Component ----
 export default function PolicyMarkerProfilePage() {
   const params = useParams()
   const router = useRouter()
-  const [markerData, setMarkerData] = useState<PolicyMarkerData | null>(null)
+  const [data, setData] = useState<PolicyMarkerData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  useEffect(() => {
-    const fetchMarkerData = async () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-      
-      abortControllerRef.current = new AbortController()
-      setLoading(true)
-      setError(null)
-      
-      try {
-        const markerId = params.id
-        if (!markerId) {
-          throw new Error('Invalid policy marker ID')
-        }
+  const [activityView, setActivityView] = useState<'card' | 'table'>('card')
+  const [activityStatusFilter, setActivityStatusFilter] = useState<string>('all')
+  const [activitySort, setActivitySort] = useState<string>('value')
+  const [activityPage, setActivityPage] = useState(1)
+  const [orgRoleFilter, setOrgRoleFilter] = useState<string>('all')
+  const [orgSort, setOrgSort] = useState<string>('value')
 
-        const response = await fetch(`/api/policy-markers/${markerId}`, {
-          signal: abortControllerRef.current.signal
-        })
-        
+  useEffect(() => {
+    const fetchData = async () => {
+      if (abortControllerRef.current) abortControllerRef.current.abort()
+      abortControllerRef.current = new AbortController()
+      setLoading(true); setError(null)
+      try {
+        const id = params?.id
+        if (!id) throw new Error('Invalid policy marker ID')
+        const response = await apiFetch(`/api/policy-markers/${id}`, { signal: abortControllerRef.current.signal })
         if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('Policy marker not found')
-          }
+          if (response.status === 404) throw new Error('Policy marker not found')
           throw new Error('Failed to fetch policy marker data')
         }
-        
-        const data = await response.json()
-        setMarkerData(data)
+        setData(await response.json())
+        setLoading(false)
       } catch (err: any) {
-        if (err.name === 'AbortError') {
-          return
-        }
-        console.error('[Policy Marker Profile] Error fetching data:', err)
+        if (err.name === 'AbortError') return
         setError(err.message || 'Failed to load policy marker profile')
-      } finally {
         setLoading(false)
       }
     }
+    fetchData()
+    return () => { abortControllerRef.current?.abort() }
+  }, [params?.id])
 
-    fetchMarkerData()
+  useEffect(() => { setActivityPage(1) }, [activityStatusFilter, activitySort])
 
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-    }
-  }, [params.id])
+  const themeColor = useMemo(() => data ? (MARKER_TYPE_COLORS[data.marker.marker_type] || '#64748B') : '#64748B', [data])
+  const palette = useMemo(() => markerPalette(themeColor), [themeColor])
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value)
-  }
+  const filteredActivities = useMemo(() => {
+    if (!data) return []
+    let acts = [...data.activities]
+    if (activityStatusFilter !== 'all') acts = acts.filter(a => a.activity_status === activityStatusFilter)
+    if (activitySort === 'value') acts.sort((a, b) => b.totalValue - a.totalValue)
+    else if (activitySort === 'committed') acts.sort((a, b) => b.commitments - a.commitments)
+    else if (activitySort === 'disbursed') acts.sort((a, b) => b.disbursements - a.disbursements)
+    else if (activitySort === 'title') acts.sort((a, b) => (a.title_narrative || '').localeCompare(b.title_narrative || ''))
+    else if (activitySort === 'significance') acts.sort((a, b) => b.significance - a.significance)
+    return acts
+  }, [data, activityStatusFilter, activitySort])
 
-  const formatNumber = (value: number) => {
-    return new Intl.NumberFormat('en-US').format(value)
-  }
+  const filteredOrgs = useMemo(() => {
+    if (!data) return []
+    let orgs = [...data.organizations]
+    if (orgRoleFilter !== 'all') orgs = orgs.filter(o => o.contributionTypes.includes(orgRoleFilter))
+    if (orgSort === 'value') orgs.sort((a, b) => b.totalValue - a.totalValue)
+    else if (orgSort === 'activities') orgs.sort((a, b) => b.activityCount - a.activityCount)
+    else if (orgSort === 'name') orgs.sort((a, b) => a.name.localeCompare(b.name))
+    return orgs
+  }, [data, orgRoleFilter, orgSort])
+
+  const CARDS_PER_PAGE = 12; const ROWS_PER_PAGE = 20
+  const itemsPerPage = activityView === 'card' ? CARDS_PER_PAGE : ROWS_PER_PAGE
+  const paginatedActivities = filteredActivities.slice((activityPage - 1) * itemsPerPage, activityPage * itemsPerPage)
+  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage)
 
   if (loading) {
     return (
       <MainLayout>
-        <div className="min-h-screen">
-          <div className="w-full p-6">
-            <div className="flex items-center gap-4 mb-6">
-              <Skeleton className="h-10 w-32" />
-            </div>
-            <Card className="mb-6">
-              <CardContent className="p-8">
-                <Skeleton className="h-32 w-full mb-4" />
-                <Skeleton className="h-8 w-64 mb-2" />
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-3/4" />
-              </CardContent>
-            </Card>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              {[1, 2, 3, 4].map(i => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <Skeleton className="h-20 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
+        <div className="min-h-screen"><div className="w-full p-6">
+          <Skeleton className="h-10 w-32 mb-4" />
+          <Skeleton className="h-32 w-full rounded-xl mb-6" />
+          <div className="flex gap-4 mb-8">{[1,2,3,4,5,6].map(i => <Skeleton key={i} className="flex-1 h-24 rounded-lg" />)}</div>
+          <div className="grid grid-cols-4 gap-4 mb-8">{[1,2,3,4].map(i => <Skeleton key={i} className="h-56 rounded-lg" />)}</div>
+        </div></div>
       </MainLayout>
     )
   }
 
-  if (error || !markerData) {
+  if (error || !data) {
     return (
       <MainLayout>
-        <div className="min-h-screen">
-          <div className="w-full p-6">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">Error Loading Policy Marker Profile</h2>
-                <p className="text-slate-600 mb-4">{error || 'Failed to load policy marker profile data'}</p>
-                <Button onClick={() => router.push('/activities')}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Activities
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        <div className="min-h-screen"><div className="w-full p-6">
+          <Card><CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">Error Loading Policy Marker</h2>
+            <p className="text-slate-600 mb-4">{error || 'Failed to load'}</p>
+            <Button onClick={() => router.push('/policy-markers')}><ArrowLeft className="h-4 w-4 mr-2" />Back to Policy Markers</Button>
+          </CardContent></Card>
+        </div></div>
       </MainLayout>
     )
   }
 
-  const { marker, metrics, activities, organizations, transactionsByYear, transactionsByType, geographicDistribution } = markerData
-
-  // Chart colors
-  const chartColors = [
-    '#1e40af', // blue-800
-    '#3b82f6', // blue-500
-    '#0f172a', // slate-900
-    '#475569', // slate-600
-    '#64748b', // slate-500
-    '#334155', // slate-700
-  ]
-
+  const { marker, metrics, activities, organizations, transactionsByYear, transactionsByType, geographicDistribution, significanceDistribution, yoyStats, donorRankings } = data
   const IconComponent = getIconForMarker(marker.iati_code)
   const isRMNCH = marker.iati_code === '9'
-  const markerTypeColors = {
-    environmental: 'bg-green-100 text-green-800 border-green-300',
-    social_governance: 'bg-blue-100 text-blue-800 border-blue-300',
-    other: 'bg-purple-100 text-purple-800 border-purple-300',
-    custom: 'bg-slate-100 text-slate-800 border-slate-300'
-  }
+  const badgeClass = MARKER_TYPE_BADGE_CLASSES[marker.marker_type] || MARKER_TYPE_BADGE_CLASSES.other
 
   return (
     <MainLayout>
       <div className="min-h-screen">
         <div className="w-full p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.push('/activities')}
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Activities
+          {/* Back button */}
+          <div className="flex items-center justify-between mb-4">
+            <Button variant="ghost" size="sm" onClick={() => router.push('/policy-markers')} className="text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+              <ArrowLeft className="h-4 w-4 mr-1.5" />Policy Markers
             </Button>
-            
-            <div className="flex gap-2">
-              <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
-                <Download className="h-4 w-4 mr-2" />
-                Export Profile
-              </Button>
-            </div>
           </div>
 
-          {/* Policy Marker Header Card */}
-          <Card className="mb-6 border-0 shadow-sm overflow-hidden">
-            <CardContent className="p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Marker Icon and Info - Columns 1-3 */}
-                <div className="lg:col-span-3">
-                  <div className="flex items-start gap-4">
-                    {/* Marker Icon */}
-                    <div className="flex-shrink-0">
-                      <div className="w-24 h-24 rounded-lg bg-slate-100 border-2 border-slate-200 flex items-center justify-center shadow-md">
-                        <IconComponent className="w-12 h-12 text-slate-600" />
-                      </div>
-                    </div>
-
-                    {/* Marker Info */}
-                    <div className="flex-1">
-                      <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                        {marker.name}
-                      </h1>
-                      
-                      <p className="text-slate-600 leading-relaxed mb-4">
-                        {marker.description}
-                      </p>
-
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono border border-slate-200">
-                          {marker.is_iati_standard ? marker.iati_code || marker.code : marker.code}
-                        </code>
-                        <Badge className={markerTypeColors[marker.marker_type]}>
-                          {marker.marker_type === 'social_governance' ? 'Social & Governance' : 
-                           marker.marker_type === 'environmental' ? 'Environmental' :
-                           marker.marker_type === 'custom' ? 'Custom' : 'Other'}
-                        </Badge>
-                        {marker.is_iati_standard && (
-                          <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700">
-                            IATI Standard
-                          </Badge>
-                        )}
-                        {marker.vocabulary && marker.vocabulary !== '1' && (
-                          <Badge variant="outline" className="border-slate-300 text-slate-700">
-                            Vocabulary: {marker.vocabulary}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+          {/* Hero Banner */}
+          <Card className="mb-6 border-0 shadow-sm overflow-hidden" style={{ borderTop: `4px solid ${themeColor}` }}>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-lg flex items-center justify-center shadow-md flex-shrink-0" style={{ backgroundColor: `${themeColor}15`, border: `2px solid ${themeColor}40` }}>
+                  <IconComponent className="w-8 h-8" style={{ color: themeColor }} />
                 </div>
-
-                {/* Quick Stats - Column 4 */}
-                <div className="lg:col-span-1">
-                  <div className="bg-slate-50 p-4 rounded-lg space-y-3">
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 mb-1">Activities</p>
-                      <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.totalActivities)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 mb-1">Organizations</p>
-                      <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.totalOrganizations)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-500 mb-1">Total Value</p>
-                      <p className="text-xl font-bold text-slate-900">{formatCurrency(metrics.totalValue)}</p>
-                    </div>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl font-bold text-slate-900 mb-1">{marker.name}</h1>
+                  <p className="text-sm text-slate-600 leading-relaxed mb-3">{marker.description}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono border border-slate-200">
+                      {marker.is_iati_standard ? marker.iati_code || marker.code : marker.code}
+                    </code>
+                    <Badge className={badgeClass}>{getMarkerTypeLabel(marker.marker_type)}</Badge>
+                    {marker.is_iati_standard && <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700">IATI Standard</Badge>}
+                    {marker.vocabulary && marker.vocabulary !== '1' && (
+                      <Badge variant="outline" className="border-slate-300 text-slate-700">Vocabulary: {marker.vocabulary}</Badge>
+                    )}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Key Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Total Transactions</p>
-                    <p className="text-2xl font-bold text-slate-900">{formatNumber(metrics.totalTransactions)}</p>
+          {/* Metric Cards */}
+          <SDGMetricCards metrics={metrics} yoyStats={yoyStats} donorCount={donorRankings.length} sdgColor={themeColor} />
+
+          {/* Mini Chart Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {/* Funding Trends */}
+            <Card className="border-slate-200">
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-slate-600">Funding Trends</CardTitle></CardHeader>
+              <CardContent className="px-1 pb-2">
+                {transactionsByYear.length > 0 ? (
+                  <div className="h-36 -mx-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={transactionsByYear} margin={{ top: 0, right: 5, left: 0, bottom: 5 }}>
+                        <defs>
+                          <linearGradient id="pmGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={themeColor} stopOpacity={0.3} />
+                            <stop offset="95%" stopColor={themeColor} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
+                        <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
+                          <div className={TOOLTIP_CLASSES}>
+                            <p className="font-medium text-xs text-slate-900 mb-1">{payload[0]?.payload?.year}</p>
+                            {payload.map((e: any, i: number) => <p key={i} className="text-xs text-slate-600">{e.name}: {formatCurrencyShort(e.value)}</p>)}
+                          </div>
+                        ) : null} />
+                        <Area type="monotone" dataKey="commitments" stackId="1" stroke={themeColor} strokeWidth={2} fill="url(#pmGrad)" name="Commitments" />
+                        <Area type="monotone" dataKey="disbursements" stackId="1" stroke={`${themeColor}99`} strokeWidth={1.5} fill={`${themeColor}33`} name="Disbursements" />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   </div>
-                  <Activity className="h-8 w-8 text-slate-400" />
-                </div>
+                ) : <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No data</div>}
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Total Value</p>
-                    <p className="text-2xl font-bold text-slate-900">{formatCurrency(metrics.totalValue)}</p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-slate-400" />
-                </div>
+            {/* Significance Distribution mini */}
+            <Card className="border-slate-200">
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-slate-600">Significance Distribution</CardTitle></CardHeader>
+              <CardContent className="px-1 pb-2">
+                <SignificanceDistribution distribution={significanceDistribution} themeColor={themeColor} compact />
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Commitments</p>
-                    <p className="text-2xl font-bold text-slate-900">{formatCurrency(metrics.commitments)}</p>
+            {/* Top Donors mini */}
+            <Card className="border-slate-200">
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-slate-600">Top Donors</CardTitle></CardHeader>
+              <CardContent className="px-1 pb-2">
+                {donorRankings.length > 0 ? (
+                  <div className="h-36 -mx-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={donorRankings.slice(0, 5).map(d => ({ name: d.acronym || d.name.substring(0, 12), value: d.totalDisbursed, fullName: d.name }))} layout="vertical" margin={{ top: 0, right: 5, left: 0, bottom: 0 }}>
+                        <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
+                        <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} width={65} />
+                        <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
+                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-slate-900">{payload[0]?.payload?.fullName}</p><p className="text-xs text-slate-600">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p></div>
+                        ) : null} />
+                        <Bar dataKey="value" fill={themeColor} radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-slate-400" />
-                </div>
+                ) : <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No donor data</div>}
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Disbursements</p>
-                    <p className="text-2xl font-bold text-slate-900">{formatCurrency(metrics.disbursements)}</p>
+            {/* Geographic Spread mini */}
+            <Card className="border-slate-200">
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-slate-600">Geographic Spread</CardTitle></CardHeader>
+              <CardContent className="px-1 pb-2">
+                {geographicDistribution.length > 0 ? (
+                  <div className="h-36 -mx-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={geographicDistribution.slice(0, 5).map(g => ({ name: g.countryCode, value: g.value, fullName: g.countryName }))} layout="vertical" margin={{ top: 0, right: 5, left: 0, bottom: 0 }}>
+                        <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
+                        <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} width={30} />
+                        <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
+                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-slate-900">{payload[0]?.payload?.fullName}</p><p className="text-xs text-slate-600">{formatCurrencyShort(payload[0]?.value as number)}</p></div>
+                        ) : null} />
+                        <Bar dataKey="value" fill={themeColor} radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  <BarChart3 className="h-8 w-8 text-slate-400" />
-                </div>
+                ) : <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No geo data</div>}
               </CardContent>
             </Card>
           </div>
 
-          {/* Tabs */}
+          {/* ============ TABS ============ */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsList className="grid w-full grid-cols-7 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="significance">Significance</TabsTrigger>
               <TabsTrigger value="financials">Financials</TabsTrigger>
               <TabsTrigger value="activities">Activities</TabsTrigger>
+              <TabsTrigger value="donors">Donors</TabsTrigger>
               <TabsTrigger value="organizations">Organizations</TabsTrigger>
               <TabsTrigger value="geography">Geography</TabsTrigger>
             </TabsList>
 
-            {/* Overview Tab */}
+            {/* Overview */}
             <TabsContent value="overview" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <p className="text-sm font-medium text-slate-600 mb-2">Aligned Activities</p>
-                      <p className="text-3xl font-bold text-slate-900">{formatNumber(metrics.totalActivities)}</p>
-                      <p className="text-xs text-slate-500 mt-1">activities using this policy marker</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-600 mb-2">Organizations Involved</p>
-                      <p className="text-3xl font-bold text-slate-900">{formatNumber(metrics.totalOrganizations)}</p>
-                      <p className="text-xs text-slate-500 mt-1">organizations working with this marker</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-600 mb-2">Total Financial Value</p>
-                      <p className="text-3xl font-bold text-slate-900">{formatCurrency(metrics.totalValue)}</p>
-                      <p className="text-xs text-slate-500 mt-1">across all transactions</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <Card><CardHeader><CardTitle className="text-sm">Summary</CardTitle></CardHeader><CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div><p className="text-xs font-medium text-slate-600 mb-1">Aligned Activities</p><p className="text-3xl font-bold text-slate-900">{formatNumber(metrics.totalActivities)}</p><p className="text-xs text-slate-500 mt-0.5">using this policy marker</p></div>
+                  <div><p className="text-xs font-medium text-slate-600 mb-1">Organizations</p><p className="text-3xl font-bold text-slate-900">{formatNumber(metrics.totalOrganizations)}</p><p className="text-xs text-slate-500 mt-0.5">involved</p></div>
+                  <div><p className="text-xs font-medium text-slate-600 mb-1">Total Financial Value</p><p className="text-3xl font-bold text-slate-900">{formatCurrencyShort(metrics.totalValue)}</p><p className="text-xs text-slate-500 mt-0.5">across all transactions</p></div>
+                </div>
+              </CardContent></Card>
 
+              {/* Significance pie */}
+              {significanceDistribution.length > 0 && (
+                <Card><CardHeader><CardTitle className="text-sm">Significance Overview</CardTitle></CardHeader><CardContent>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie data={significanceDistribution} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={40} outerRadius={75} label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}>
+                          {significanceDistribution.map((_, index) => <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />)}
+                        </Pie>
+                        <RechartsTooltip formatter={(value: number) => `${value} activities`} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent></Card>
+              )}
+
+              {/* Top 5 Activities */}
               {activities.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Top Activities</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {activities.slice(0, 5).map((activity) => (
-                        <Link
-                          key={activity.id}
-                          href={`/activities/${activity.id}`}
-                          className="flex items-start justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-slate-900">
-                                {activity.title_narrative || 'Untitled Activity'}
-                              </h3>
-                              {activity.significance > 0 && (
-                                <Badge variant="outline" className="text-xs">
-                                  {getSignificanceLabel(activity.significance, isRMNCH)}
-                                </Badge>
-                              )}
-                            </div>
-                            {activity.iati_identifier && (
-                              <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{activity.iati_identifier}</code>
-                            )}
-                            {activity.rationale && (
-                              <p className="text-xs text-slate-600 mt-1 italic">{activity.rationale}</p>
-                            )}
+                <Card><CardHeader><CardTitle className="text-sm">Top Activities</CardTitle></CardHeader><CardContent>
+                  <div className="space-y-2">
+                    {activities.slice(0, 5).map(activity => (
+                      <Link key={activity.id} href={`/activities/${activity.id}`} className="flex items-start justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm text-slate-900 truncate">{activity.title_narrative || 'Untitled Activity'}</h3>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {activity.iati_identifier && <code className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1 py-0.5 rounded">{activity.iati_identifier}</code>}
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">{getSignificanceLabel(activity.significance, isRMNCH)}</Badge>
                           </div>
-                          <div className="text-right ml-4">
-                            <p className="font-semibold text-slate-900">{formatCurrency(activity.totalValue)}</p>
-                            <p className="text-xs text-slate-500">{formatNumber(activity.transactionCount)} transactions</p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                        </div>
+                        <div className="text-right ml-3 flex-shrink-0">
+                          <p className="text-sm font-semibold text-slate-900">{formatCurrencyShort(activity.totalValue)}</p>
+                          <p className="text-[10px] text-slate-500">{activity.transactionCount} tx</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent></Card>
+              )}
+
+              {/* Transaction Type Donut */}
+              {transactionsByType.length > 0 && (
+                <Card><CardHeader><CardTitle className="text-sm">Transaction Types</CardTitle></CardHeader><CardContent>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie data={transactionsByType} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={40} outerRadius={75} label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}>
+                          {transactionsByType.map((_, index) => <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />)}
+                        </Pie>
+                        <RechartsTooltip formatter={(value: number) => formatCurrencyShort(value)} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent></Card>
               )}
             </TabsContent>
 
-            {/* Financials Tab */}
+            {/* Significance Tab */}
+            <TabsContent value="significance" className="space-y-6">
+              <Card><CardHeader><CardTitle className="text-sm">Significance Breakdown</CardTitle></CardHeader><CardContent>
+                <SignificanceDistribution distribution={significanceDistribution} themeColor={themeColor} />
+              </CardContent></Card>
+            </TabsContent>
+
+            {/* Financials */}
             <TabsContent value="financials" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Transaction Types</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {transactionsByType.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={300}>
+                <Card><CardHeader><CardTitle className="text-sm">Financial Trends</CardTitle></CardHeader><CardContent>
+                  {transactionsByYear.length > 0 ? (
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={transactionsByYear} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                          <defs>
+                            <linearGradient id="pmFinGradC" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={themeColor} stopOpacity={0.3} /><stop offset="95%" stopColor={themeColor} stopOpacity={0} /></linearGradient>
+                            <linearGradient id="pmFinGradD" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={`${themeColor}99`} stopOpacity={0.3} /><stop offset="95%" stopColor={`${themeColor}99`} stopOpacity={0} /></linearGradient>
+                          </defs>
+                          <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} />
+                          <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
+                          <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
+                            <div className={TOOLTIP_CLASSES}>
+                              <p className="font-medium text-xs text-slate-900 mb-1">{payload[0]?.payload?.year}</p>
+                              {payload.map((e: any, i: number) => <p key={i} className="text-xs text-slate-600"><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: e.stroke || e.fill }} />{e.name}: {formatCurrencyShort(e.value)}</p>)}
+                            </div>
+                          ) : null} />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                          <Area type="monotone" dataKey="commitments" name="Commitments" stroke={themeColor} strokeWidth={2} fill="url(#pmFinGradC)" />
+                          <Area type="monotone" dataKey="disbursements" name="Disbursements" stroke={`${themeColor}99`} strokeWidth={2} fill="url(#pmFinGradD)" />
+                          <Area type="monotone" dataKey="expenditures" name="Expenditures" stroke={`${themeColor}55`} strokeWidth={1.5} fill="none" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : <div className="h-72 flex items-center justify-center text-slate-400 text-sm">No time-series data</div>}
+                </CardContent></Card>
+
+                <Card><CardHeader><CardTitle className="text-sm">Transaction Type Breakdown</CardTitle></CardHeader><CardContent>
+                  {transactionsByType.length > 0 ? (
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
-                          <Pie
-                            data={transactionsByType}
-                            dataKey="value"
-                            nameKey="label"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}
-                          >
-                            {transactionsByType.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
-                            ))}
+                          <Pie data={transactionsByType} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={50} outerRadius={90} label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}>
+                            {transactionsByType.map((_, index) => <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />)}
                           </Pie>
-                          <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
-                          <Legend />
+                          <RechartsTooltip formatter={(value: number) => formatCurrencyShort(value)} />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
                         </RechartsPieChart>
                       </ResponsiveContainer>
-                    ) : (
-                      <p className="text-slate-500 text-center py-8">No transaction data available</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Financial Trends</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {transactionsByYear.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={transactionsByYear}>
-                          <XAxis dataKey="year" />
-                          <YAxis />
-                          <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
-                          <Legend />
-                          <Bar dataKey="commitments" stackId="a" fill={chartColors[0]} name="Commitments" />
-                          <Bar dataKey="disbursements" stackId="a" fill={chartColors[1]} name="Disbursements" />
-                          <Bar dataKey="expenditures" stackId="a" fill={chartColors[2]} name="Expenditures" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <p className="text-slate-500 text-center py-8">No time-series data available</p>
-                    )}
-                  </CardContent>
-                </Card>
+                    </div>
+                  ) : <div className="h-72 flex items-center justify-center text-slate-400 text-sm">No transaction data</div>}
+                </CardContent></Card>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Financial Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-sm text-slate-600 mb-1">Commitments</p>
-                      <p className="text-xl font-bold text-slate-900">{formatCurrency(metrics.commitments)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 mb-1">Disbursements</p>
-                      <p className="text-xl font-bold text-slate-900">{formatCurrency(metrics.disbursements)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 mb-1">Expenditures</p>
-                      <p className="text-xl font-bold text-slate-900">{formatCurrency(metrics.expenditures)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 mb-1">Inflows</p>
-                      <p className="text-xl font-bold text-slate-900">{formatCurrency(metrics.inflows)}</p>
-                    </div>
+              <Card><CardHeader><CardTitle className="text-sm">Financial Summary</CardTitle></CardHeader><CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div><p className="text-xs text-slate-600 mb-1">Commitments</p><p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.commitments)}</p></div>
+                  <div><p className="text-xs text-slate-600 mb-1">Disbursements</p><p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.disbursements)}</p></div>
+                  <div><p className="text-xs text-slate-600 mb-1">Expenditures</p><p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.expenditures)}</p></div>
+                  <div><p className="text-xs text-slate-600 mb-1">Inflows</p><p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.inflows)}</p></div>
+                </div>
+              </CardContent></Card>
+            </TabsContent>
+
+            {/* Activities */}
+            <TabsContent value="activities" className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  {[
+                    { key: 'all', label: 'All', count: activities.length },
+                    { key: '1', label: 'Pipeline', count: activities.filter(a => a.activity_status === '1').length },
+                    { key: '2', label: 'Active', count: activities.filter(a => a.activity_status === '2').length },
+                    { key: '4', label: 'Closed', count: activities.filter(a => a.activity_status === '4' || a.activity_status === '3').length },
+                  ].map(f => (
+                    <button key={f.key} onClick={() => setActivityStatusFilter(f.key)} className={`text-xs px-2.5 py-1 rounded-md transition-colors ${activityStatusFilter === f.key ? 'text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} style={activityStatusFilter === f.key ? { backgroundColor: themeColor } : undefined}>
+                      {f.label} ({f.count})
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <select value={activitySort} onChange={e => setActivitySort(e.target.value)} className="text-xs border border-slate-200 rounded-md px-2 py-1 text-slate-600">
+                    <option value="value">Sort by Value</option><option value="committed">Sort by Committed</option><option value="disbursed">Sort by Disbursed</option><option value="significance">Sort by Significance</option><option value="title">Sort by Title</option>
+                  </select>
+                  <div className="flex border border-slate-200 rounded-md overflow-hidden">
+                    <button onClick={() => setActivityView('card')} className={`p-1.5 ${activityView === 'card' ? 'bg-slate-100' : 'bg-white'}`}><LayoutGrid className="h-3.5 w-3.5 text-slate-600" /></button>
+                    <button onClick={() => setActivityView('table')} className={`p-1.5 ${activityView === 'table' ? 'bg-slate-100' : 'bg-white'}`}><List className="h-3.5 w-3.5 text-slate-600" /></button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-500">{filteredActivities.length} activit{filteredActivities.length === 1 ? 'y' : 'ies'}</p>
+
+              {activityView === 'card' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedActivities.map(activity => (
+                    <Link key={activity.id} href={`/activities/${activity.id}`}>
+                      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">Sig {activity.significance}</Badge>
+                          </div>
+                          <h3 className="font-medium text-sm text-slate-900 line-clamp-2 mb-2">{activity.title_narrative || 'Untitled Activity'}</h3>
+                          {activity.iati_identifier && <code className="text-[10px] font-mono text-slate-400 block mb-2 truncate">{activity.iati_identifier}</code>}
+                          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                            <div><p className="text-[10px] text-slate-500">Committed</p><p className="text-xs font-semibold text-slate-900">{formatCurrencyShort(activity.commitments)}</p></div>
+                            <div><p className="text-[10px] text-slate-500">Disbursed</p><p className="text-xs font-semibold text-slate-900">{formatCurrencyShort(activity.disbursements)}</p></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <Card><CardContent className="p-0"><div className="overflow-x-auto">
+                  <table className="w-full text-xs"><thead><tr className="border-b border-slate-200 bg-slate-50">
+                    <th className="text-left py-2.5 px-3 text-slate-600 font-medium">Title</th>
+                    <th className="text-center py-2.5 px-3 text-slate-600 font-medium">Status</th>
+                    <th className="text-center py-2.5 px-3 text-slate-600 font-medium">Significance</th>
+                    <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Committed</th>
+                    <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Disbursed</th>
+                  </tr></thead><tbody>
+                    {paginatedActivities.map(activity => (
+                      <tr key={activity.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-2 px-3"><Link href={`/activities/${activity.id}`} className="font-medium text-slate-900 hover:underline">{(activity.title_narrative || 'Untitled').substring(0, 60)}</Link></td>
+                        <td className="py-2 px-3 text-center"><Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge></td>
+                        <td className="py-2 px-3 text-center"><Badge variant="outline" className="text-[10px] px-1.5 py-0">{getSignificanceLabel(activity.significance, isRMNCH)}</Badge></td>
+                        <td className="py-2 px-3 text-right text-slate-900">{formatCurrencyShort(activity.commitments)}</td>
+                        <td className="py-2 px-3 text-right text-slate-900">{formatCurrencyShort(activity.disbursements)}</td>
+                      </tr>
+                    ))}
+                  </tbody></table>
+                </div></CardContent></Card>
+              )}
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2">
+                  <Button variant="outline" size="sm" disabled={activityPage <= 1} onClick={() => setActivityPage(p => p - 1)} className="text-xs h-7">Previous</Button>
+                  <span className="text-xs text-slate-500">Page {activityPage} of {totalPages}</span>
+                  <Button variant="outline" size="sm" disabled={activityPage >= totalPages} onClick={() => setActivityPage(p => p + 1)} className="text-xs h-7">Next</Button>
+                </div>
+              )}
             </TabsContent>
 
-            {/* Activities Tab */}
-            <TabsContent value="activities" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Aligned Activities ({activities.length})</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {activities.length > 0 ? (
-                    <div className="space-y-3">
-                      {activities.map((activity) => (
-                        <Link
-                          key={activity.id}
-                          href={`/activities/${activity.id}`}
-                          className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-slate-900">
-                                {activity.title_narrative || 'Untitled Activity'}
-                              </h3>
-                              {activity.significance > 0 && (
-                                <Badge variant="outline" className="text-xs">
-                                  {getSignificanceLabel(activity.significance, isRMNCH)}
-                                </Badge>
-                              )}
+            {/* Donors */}
+            <TabsContent value="donors" className="space-y-6">
+              <Card><CardHeader><CardTitle className="text-sm">Donor Landscape</CardTitle></CardHeader><CardContent>
+                <SDGDonorRankings donors={donorRankings} sdgColor={themeColor} />
+              </CardContent></Card>
+            </TabsContent>
+
+            {/* Organizations */}
+            <TabsContent value="organizations" className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1">
+                  {['all', 'funding', 'implementing', 'accountable'].map(role => (
+                    <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-xs px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} style={orgRoleFilter === role ? { backgroundColor: themeColor } : undefined}>
+                      {role === 'all' ? 'All' : role}
+                    </button>
+                  ))}
+                </div>
+                <select value={orgSort} onChange={e => setOrgSort(e.target.value)} className="text-xs border border-slate-200 rounded-md px-2 py-1 text-slate-600">
+                  <option value="value">Sort by Value</option><option value="activities">Sort by Activities</option><option value="name">Sort by Name</option>
+                </select>
+              </div>
+              <p className="text-xs text-slate-500">{filteredOrgs.length} organization{filteredOrgs.length !== 1 ? 's' : ''}</p>
+              {filteredOrgs.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredOrgs.map(org => (
+                    <Link key={org.id} href={`/organizations/${org.id}`}>
+                      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer"><CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          {org.logo ? <img src={org.logo} alt={org.name} className="w-10 h-10 rounded object-cover flex-shrink-0" /> : (
+                            <div className="w-10 h-10 rounded flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: `${themeColor}CC` }}>
+                              {(org.acronym || org.name).substring(0, 2).toUpperCase()}
                             </div>
-                            {activity.iati_identifier && (
-                              <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{activity.iati_identifier}</code>
-                            )}
-                            {activity.rationale && (
-                              <p className="text-xs text-slate-600 mt-1 italic">{activity.rationale}</p>
-                            )}
-                          </div>
-                          <div className="text-right ml-4">
-                            <p className="font-semibold text-slate-900">{formatCurrency(activity.totalValue)}</p>
-                            <p className="text-xs text-slate-500">
-                              {formatCurrency(activity.commitments)} committed, {formatCurrency(activity.disbursements)} disbursed
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-slate-500 text-center py-8">No activities using this policy marker</p>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Organizations Tab */}
-            <TabsContent value="organizations" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Participating Organizations ({organizations.length})</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {organizations.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {organizations.map((org) => (
-                        <Link
-                          key={org.id}
-                          href={`/organizations/${org.id}`}
-                          className="flex items-start gap-3 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                        >
-                          {org.logo && (
-                            <img
-                              src={org.logo}
-                              alt={org.name}
-                              className="w-12 h-12 rounded object-cover flex-shrink-0"
-                            />
                           )}
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-slate-900 truncate">
-                              {org.name}
-                            </h3>
-                            {org.acronym && (
-                              <p className="text-xs text-slate-500">{org.acronym}</p>
+                            <h3 className="font-medium text-sm text-slate-900 truncate">{org.name}</h3>
+                            {org.acronym && <p className="text-[10px] text-slate-500">{org.acronym}</p>}
+                            <div className="flex items-center gap-3 mt-1.5">
+                              <span className="text-xs font-semibold text-slate-900">{formatCurrencyShort(org.totalValue)}</span>
+                              <span className="text-[10px] text-slate-400">{org.activityCount} activit{org.activityCount === 1 ? 'y' : 'ies'}</span>
+                            </div>
+                            {org.contributionTypes.length > 0 && (
+                              <div className="flex gap-1 mt-1">
+                                {org.contributionTypes.map(ct => <span key={ct} className="text-[9px] px-1 py-0.5 rounded capitalize" style={{ backgroundColor: `${themeColor}15`, color: themeColor }}>{ct}</span>)}
+                              </div>
                             )}
-                            <p className="text-sm font-medium text-slate-900 mt-2">
-                              {formatCurrency(org.totalValue)}
-                            </p>
-                            <p className="text-xs text-slate-500">{org.activityCount} activities</p>
                           </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-slate-500 text-center py-8">No organizations found</p>
-                  )}
-                </CardContent>
-              </Card>
+                        </div>
+                      </CardContent></Card>
+                    </Link>
+                  ))}
+                </div>
+              ) : <Card><CardContent className="p-8 text-center"><p className="text-slate-500 text-sm">No organizations found</p></CardContent></Card>}
             </TabsContent>
 
-            {/* Geography Tab */}
+            {/* Geography */}
             <TabsContent value="geography" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Geographic Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {geographicDistribution.length > 0 ? (
-                    <div className="space-y-3">
-                      {geographicDistribution.map((item) => (
-                        <div
-                          key={item.countryCode}
-                          className="flex items-center justify-between p-4 border border-slate-200 rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <MapPin className="h-5 w-5 text-slate-400" />
-                            <span className="font-medium text-slate-900">{item.countryCode}</span>
-                          </div>
-                          <span className="font-semibold text-slate-900">{formatCurrency(item.value)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-slate-500 text-center py-8">No geographic data available</p>
-                  )}
-                </CardContent>
-              </Card>
+              <Card><CardHeader><CardTitle className="text-sm">Activity Locations</CardTitle></CardHeader><CardContent>
+                <SDGGeographyMap locations={geographicDistribution} sdgColor={themeColor} />
+              </CardContent></Card>
+
+              {geographicDistribution.length > 0 && (
+                <Card><CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm">Country Rankings</CardTitle>
+                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => {
+                      exportChartToCSV(geographicDistribution.map((g, i) => ({ Rank: i + 1, Country: g.countryName, Code: g.countryCode, Activities: g.activityCount, Committed: g.commitments, Disbursed: g.disbursements, Total: g.value })), `Policy Marker ${marker.name} Countries`)
+                    }}><Download className="h-3 w-3 mr-1" />CSV</Button>
+                  </div>
+                </CardHeader><CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead><tr className="border-b border-slate-200 bg-slate-50">
+                        <th className="text-left py-2.5 px-3 text-slate-600 font-medium w-8">#</th>
+                        <th className="text-left py-2.5 px-3 text-slate-600 font-medium">Country</th>
+                        <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Activities</th>
+                        <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Committed</th>
+                        <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Disbursed</th>
+                        <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Total</th>
+                      </tr></thead>
+                      <tbody>
+                        {geographicDistribution.map((g, i) => (
+                          <tr key={g.countryCode} className="border-b border-slate-100 hover:bg-slate-50">
+                            <td className="py-2 px-3 text-slate-400">{i + 1}</td>
+                            <td className="py-2 px-3"><div className="flex items-center gap-2"><Flag code={g.countryCode} className="w-5 h-3 object-cover rounded-sm" fallback={<MapPin className="w-3 h-3 text-slate-400" />} /><span className="text-slate-900">{g.countryName}</span><span className="text-slate-400">({g.countryCode})</span></div></td>
+                            <td className="py-2 px-3 text-right">{g.activityCount}</td>
+                            <td className="py-2 px-3 text-right text-slate-900">{formatCurrencyShort(g.commitments)}</td>
+                            <td className="py-2 px-3 text-right text-slate-900">{formatCurrencyShort(g.disbursements)}</td>
+                            <td className="py-2 px-3 text-right font-medium text-slate-900">{formatCurrencyShort(g.value)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent></Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>
@@ -724,14 +648,3 @@ export default function PolicyMarkerProfilePage() {
     </MainLayout>
   )
 }
-
-
-
-
-
-
-
-
-
-
-

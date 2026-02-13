@@ -148,13 +148,6 @@ export function GovernmentInputsSectionEnhanced({
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Building className="h-6 w-6 text-gray-600" />
-            <div>
-            <h2 className="text-xl font-semibold text-gray-900">Government Inputs & Alignment</h2>
-            <p className="text-sm text-gray-600">Track government involvement, budget classification, and national alignment</p>
-            </div>
-          </div>
           
         <Tabs defaultValue="budget-finance" className="w-full">
           <TabsList className="grid w-full grid-cols-4 bg-gray-100">

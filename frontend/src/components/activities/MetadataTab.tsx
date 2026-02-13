@@ -395,7 +395,6 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-gray-900">Administration</h2>
         <Button variant="outline" size="sm" onClick={fetchMetadata}>
           <RefreshCw className="h-4 w-4 mr-1" />
           Refresh

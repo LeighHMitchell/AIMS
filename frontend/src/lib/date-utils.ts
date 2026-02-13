@@ -215,7 +215,7 @@ export const formatActivityDate = (dateString: string | undefined): string => {
   if (!dateString) return '';
   const date = parseISO(dateString);
   if (!isValid(date)) return '';
-  return format(date, 'MMM dd, yyyy');
+  return format(date, 'dd MMM yyyy');
 };
 
 export const formatDateRange = (

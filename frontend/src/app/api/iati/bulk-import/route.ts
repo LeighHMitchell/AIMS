@@ -370,6 +370,34 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Pre-fetch all policy markers into a Map keyed by iati_code
+      let policyMarkerCache = new Map<string, string>();
+      {
+        const { data: allMarkers } = await (supabaseAdmin || supabase)
+          .from('policy_markers')
+          .select('id, iati_code');
+        if (allMarkers) {
+          for (const m of allMarkers) {
+            if (m.iati_code) policyMarkerCache.set(String(m.iati_code), m.id);
+          }
+        }
+        console.log(`[Bulk Import] Policy marker cache ready: ${policyMarkerCache.size} entries`);
+      }
+
+      // Pre-fetch all tags into a Map keyed by "code|vocabulary"
+      let tagCache = new Map<string, string>();
+      {
+        const { data: allTags } = await (supabaseAdmin || supabase)
+          .from('tags')
+          .select('id, code, vocabulary');
+        if (allTags) {
+          for (const t of allTags) {
+            if (t.code) tagCache.set(`${t.code}|${t.vocabulary || '99'}`, t.id);
+          }
+        }
+        console.log(`[Bulk Import] Tag cache ready: ${tagCache.size} entries`);
+      }
+
       // Process each activity atomically
       let createdCount = 0;
       let updatedCount = 0;
@@ -421,16 +449,18 @@ export async function POST(request: NextRequest) {
               .update({ action: 'skip', status: 'skipped', activity_id: existingActivity.id })
               .eq('batch_id', batchId)
               .eq('iati_identifier', iatiId);
-            // Update batch counts incrementally
-            await supabase
-              .from('iati_import_batches')
-              .update({
-                created_count: createdCount,
-                updated_count: updatedCount,
-                skipped_count: skippedCount,
-                failed_count: failedCount,
-              })
-              .eq('id', batchId);
+            // Update batch counts every 10 activities to reduce disk IO
+            if ((activityIndex + 1) % 10 === 0 || activityIndex === selectedActivities.length - 1) {
+              await supabase
+                .from('iati_import_batches')
+                .update({
+                  created_count: createdCount,
+                  updated_count: updatedCount,
+                  skipped_count: skippedCount,
+                  failed_count: failedCount,
+                })
+                .eq('id', batchId);
+            }
             continue;
           } else if (importRules.activityMatching === 'update_existing') {
             // Update existing
@@ -865,28 +895,17 @@ export async function POST(request: NextRequest) {
           const pmRecords: any[] = [];
 
           for (const pm of activity.policyMarkers) {
-            try {
-              // Look up the policy marker in our system by IATI code
-              const { data: marker } = await supabase
-                .from('policy_markers')
-                .select('id')
-                .eq('iati_code', pm.code)
-                .limit(1)
-                .single();
-
-              if (marker) {
-                pmRecords.push({
-                  activity_id: activityDbId,
-                  policy_marker_id: marker.id,
-                  significance: pm.significance ?? 0,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                });
-              } else {
-                console.warn(`[Bulk Import] Policy marker not found for code ${pm.code}, skipping`);
-              }
-            } catch (pmErr) {
-              console.error(`[Bulk Import] Policy marker lookup error for ${iatiId}:`, pmErr);
+            const markerId = policyMarkerCache.get(String(pm.code));
+            if (markerId) {
+              pmRecords.push({
+                activity_id: activityDbId,
+                policy_marker_id: markerId,
+                significance: pm.significance ?? 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              });
+            } else {
+              console.warn(`[Bulk Import] Policy marker not found for code ${pm.code}, skipping`);
             }
           }
 
@@ -923,23 +942,14 @@ export async function POST(request: NextRequest) {
 
           for (const tag of activity.tags) {
             try {
-              // Try to find existing tag by code + vocabulary
               const tagName = tag.narrative || tag.code;
               const tagVocab = tag.vocabulary || '99';
+              const tagCacheKey = `${tag.code}|${tagVocab}`;
 
-              let tagId: string | null = null;
-              const { data: existingTag } = await supabase
-                .from('tags')
-                .select('id')
-                .eq('code', tag.code)
-                .eq('vocabulary', tagVocab)
-                .limit(1)
-                .single();
+              let tagId = tagCache.get(tagCacheKey) || null;
 
-              if (existingTag) {
-                tagId = existingTag.id;
-              } else {
-                // Create the tag
+              if (!tagId) {
+                // Tag not in cache — create it and add to cache
                 const { data: newTag } = await supabase
                   .from('tags')
                   .insert({
@@ -952,6 +962,7 @@ export async function POST(request: NextRequest) {
                   .single();
 
                 tagId = newTag?.id || null;
+                if (tagId) tagCache.set(tagCacheKey, tagId);
               }
 
               if (tagId) {
@@ -1021,16 +1032,18 @@ export async function POST(request: NextRequest) {
           .eq('batch_id', batchId)
           .eq('iati_identifier', iatiId);
 
-        // Update batch counts incrementally so polling shows progress
-        await supabase
-          .from('iati_import_batches')
-          .update({
-            created_count: createdCount,
-            updated_count: updatedCount,
-            skipped_count: skippedCount,
-            failed_count: failedCount,
-          })
-          .eq('id', batchId);
+        // Update batch counts every 10 activities to reduce disk IO
+        if ((activityIndex + 1) % 10 === 0 || activityIndex === selectedActivities.length - 1) {
+          await supabase
+            .from('iati_import_batches')
+            .update({
+              created_count: createdCount,
+              updated_count: updatedCount,
+              skipped_count: skippedCount,
+              failed_count: failedCount,
+            })
+            .eq('id', batchId);
+        }
       } catch (error) {
         console.error(`[Bulk Import] Failed to import activity ${iatiId}:`, error);
         failedCount++;
@@ -1045,16 +1058,18 @@ export async function POST(request: NextRequest) {
           .eq('batch_id', batchId)
           .eq('iati_identifier', iatiId);
 
-        // Update batch counts incrementally on failure too
-        await supabase
-          .from('iati_import_batches')
-          .update({
-            created_count: createdCount,
-            updated_count: updatedCount,
-            skipped_count: skippedCount,
-            failed_count: failedCount,
-          })
-          .eq('id', batchId);
+        // Update batch counts every 10 activities to reduce disk IO
+        if ((activityIndex + 1) % 10 === 0 || activityIndex === selectedActivities.length - 1) {
+          await supabase
+            .from('iati_import_batches')
+            .update({
+              created_count: createdCount,
+              updated_count: updatedCount,
+              skipped_count: skippedCount,
+              failed_count: failedCount,
+            })
+            .eq('id', batchId);
+        }
       }
     }
 

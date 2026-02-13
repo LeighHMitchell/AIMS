@@ -336,11 +336,6 @@ export default function SDGAlignmentSection({
                           selected={isSelected}
                           className="w-full h-full rounded-md"
                         />
-                        {isSelected && (
-                          <div className="absolute -top-2 -right-2 bg-primary rounded-full p-1 shadow-md z-10">
-                            <Check className="h-3 w-3 text-white" />
-                          </div>
-                        )}
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">

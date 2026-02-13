@@ -226,7 +226,7 @@ export default function OrganisationsSection({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-2xl font-semibold text-gray-900">Participating Organisations</CardTitle>
+              <CardTitle className="text-3xl font-semibold text-gray-900">Participating Organisations</CardTitle>
             </div>
             <div className="h-9 w-40 bg-gray-200 animate-pulse rounded-md" />
           </div>
@@ -290,7 +290,7 @@ export default function OrganisationsSection({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-2xl font-semibold text-gray-900">Participating Organisations</CardTitle>
+              <CardTitle className="text-3xl font-semibold text-gray-900">Participating Organisations</CardTitle>
               <HelpTextTooltip content={getSectionHelpText('organisations')}>
                 <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
               </HelpTextTooltip>

@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { MeasureType, DashboardData, RankedItem, FundingByType } from '@/types/national-priorities';
 
+// In-memory cache for dashboard results (keyed by query params)
+const dashboardCache = new Map<string, { data: any; timestamp: number }>();
+const DASHBOARD_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const DASHBOARD_CACHE_MAX_ENTRIES = 20;
+
 /**
  * GET /api/analytics/dashboard
  * Returns all summary data for the Dashboard
@@ -19,6 +24,17 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('dateTo');
     const topN = parseInt(searchParams.get('topN') || '5');
     const organizationId = searchParams.get('organizationId');
+
+    // Check in-memory cache
+    const cacheKey = `${measure}|${dateFrom || ''}|${dateTo || ''}|${topN}|${organizationId || ''}`;
+    const cached = dashboardCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < DASHBOARD_CACHE_TTL_MS) {
+      return NextResponse.json(cached.data, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      });
+    }
 
     // If organizationId provided, get activity IDs where org is reporting org
     let orgActivityIds: string[] | null = null;
@@ -876,13 +892,26 @@ export async function GET(request: NextRequest) {
       grandTotal,
     };
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       data,
       measure,
       dateRange: {
         from: dateFrom || 'all',
         to: dateTo || 'all',
+      },
+    };
+
+    // Store in cache (evict oldest if at capacity)
+    if (dashboardCache.size >= DASHBOARD_CACHE_MAX_ENTRIES) {
+      const oldestKey = dashboardCache.keys().next().value;
+      if (oldestKey) dashboardCache.delete(oldestKey);
+    }
+    dashboardCache.set(cacheKey, { data: responseData, timestamp: Date.now() });
+
+    return NextResponse.json(responseData, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
       },
     });
 

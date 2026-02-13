@@ -1,74 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { getSectorInfo, getAllSectorCodes, getChildCodes, getSectorLevel } from '@/lib/sector-hierarchy';
 import { COUNTRY_COORDINATES } from '@/data/country-coordinates';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   try {
-    const { id } = await params;
+    const { code } = await params;
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection not initialized' }, { status: 500 });
     }
 
-    const markerId = id;
-    if (!markerId) {
-      return NextResponse.json({ error: 'Policy marker ID is required' }, { status: 400 });
+    // Resolve sector metadata
+    const sectorInfo = getSectorInfo(code);
+    if (!sectorInfo) {
+      return NextResponse.json({ error: 'Sector not found' }, { status: 404 });
     }
 
-    // Get policy marker details - try by UUID first, then by ID
-    const { data: markerByUuid, error: uuidError } = await supabase
-      .from('policy_markers')
-      .select('*')
-      .eq('uuid', markerId)
-      .eq('is_active', true)
-      .single();
+    // Get all 5-digit codes that belong under this code
+    const sectorCodes = getAllSectorCodes(code);
 
-    let marker = markerByUuid;
+    // Query activity_sectors for matching activities
+    const { data: activitySectors, error: sectorsError } = await supabase
+      .from('activity_sectors')
+      .select('activity_id, sector_code, percentage')
+      .in('sector_code', sectorCodes);
 
-    if (!marker && uuidError?.code === 'PGRST116') {
-      const { data: markerById, error: idError } = await supabase
-        .from('policy_markers')
-        .select('*')
-        .eq('id', markerId)
-        .eq('is_active', true)
-        .single();
-
-      if (idError) {
-        console.error('[Policy Marker API] Error fetching marker:', idError);
-        return NextResponse.json({ error: 'Policy marker not found' }, { status: 404 });
-      }
-      marker = markerById;
-    } else if (uuidError && uuidError.code !== 'PGRST116') {
-      console.error('[Policy Marker API] Error fetching marker:', uuidError);
-      return NextResponse.json({ error: 'Failed to fetch policy marker' }, { status: 500 });
+    if (sectorsError) {
+      console.error('[Sector API] Error fetching activity sectors:', sectorsError);
+      return NextResponse.json({ error: 'Failed to fetch sector data' }, { status: 500 });
     }
 
-    if (!marker) {
-      return NextResponse.json({ error: 'Policy marker not found' }, { status: 404 });
-    }
-
-    // Get all activities that use this policy marker
-    // policy_marker_id may store uuid (from IATI import) or integer id (from bulk import) — match both
-    const { data: activityMarkers, error: activityMarkersError } = await supabase
-      .from('activity_policy_markers')
-      .select('activity_id, significance, rationale')
-      .or(`policy_marker_id.eq.${marker.uuid},policy_marker_id.eq.${marker.id}`);
-
-    if (activityMarkersError) {
-      console.error('[Policy Marker API] Error fetching activity markers:', activityMarkersError);
-    }
-
-    const activityIds = (activityMarkers || []).map((am: any) => am.activity_id).filter(Boolean);
+    const activityIds = (activitySectors || []).map((s: any) => s.activity_id).filter(Boolean);
 
     const emptyResponse = {
-      marker,
+      sector: sectorInfo,
+      hierarchy: buildHierarchy(code, sectorInfo),
       metrics: {
         totalActivities: 0, totalOrganizations: 0, totalTransactions: 0, totalValue: 0,
         commitments: 0, disbursements: 0, expenditures: 0, inflows: 0,
@@ -79,7 +53,7 @@ export async function GET(
       transactionsByYear: [],
       transactionsByType: [],
       geographicDistribution: [],
-      significanceDistribution: [],
+      subSectorBreakdown: [],
       yoyStats: {
         currentYearCommitments: 0, currentYearDisbursements: 0, currentYearExpenditures: 0,
         previousYearCommitments: 0, previousYearDisbursements: 0, previousYearExpenditures: 0,
@@ -94,6 +68,13 @@ export async function GET(
     }
 
     const uniqueActivityIds = Array.from(new Set(activityIds));
+
+    // Build activity -> percentage map
+    const activityPercentMap = new Map<string, number>();
+    (activitySectors || []).forEach((s: any) => {
+      const existing = activityPercentMap.get(s.activity_id) || 0;
+      activityPercentMap.set(s.activity_id, Math.max(existing, s.percentage || 100));
+    });
 
     // Fetch data in parallel
     const [txResult, actResult, orgResult, locResult] = await Promise.all([
@@ -119,7 +100,7 @@ export async function GET(
     const activities = actResult.data || [];
     const orgContributors = orgResult.data || [];
 
-    if (txResult.error) console.error('[Policy Marker API] tx error:', txResult.error);
+    if (txResult.error) console.error('[Sector API] tx error:', txResult.error);
 
     // ---- PROCESS TRANSACTIONS ----
     const transactionsByYearMap = new Map<number, { commitments: number; disbursements: number; expenditures: number; inflows: number }>();
@@ -127,10 +108,22 @@ export async function GET(
     const geographicMap = new Map<string, { totalValue: number; commitments: number; disbursements: number; activityIds: Set<string> }>();
     const organizationMap = new Map<string, { organization: any; totalValue: number; totalCommitted: number; totalDisbursed: number; activityIds: Set<string>; contributionTypes: Set<string> }>();
 
+    // Sub-sector breakdown: map child code -> stats
+    const subSectorMap = new Map<string, { activityIds: Set<string>; commitments: number; disbursements: number; totalValue: number }>();
+
     let totalValue = 0, totalCommitments = 0, totalDisbursements = 0, totalExpenditures = 0, totalInflows = 0;
 
+    // Build per-activity sub-sector mapping
+    const activitySubSectorMap = new Map<string, string>();
+    (activitySectors || []).forEach((s: any) => {
+      activitySubSectorMap.set(s.activity_id, s.sector_code);
+    });
+
     transactions.forEach(tx => {
+      const sectorPct = activityPercentMap.get(tx.activity_id) || 100;
+      const allocationMultiplier = sectorPct / 100;
       const baseValue = tx.value_usd || tx.value || 0;
+      const allocatedValue = baseValue * allocationMultiplier;
       const year = tx.transaction_date ? new Date(tx.transaction_date).getFullYear() : null;
 
       const isCommitment = tx.transaction_type === '2' || tx.transaction_type === '11';
@@ -143,14 +136,14 @@ export async function GET(
           transactionsByYearMap.set(year, { commitments: 0, disbursements: 0, expenditures: 0, inflows: 0 });
         }
         const yd = transactionsByYearMap.get(year)!;
-        if (isCommitment) { yd.commitments += baseValue; totalCommitments += baseValue; }
-        else if (isDisbursement) { yd.disbursements += baseValue; totalDisbursements += baseValue; }
-        else if (isExpenditure) { yd.expenditures += baseValue; totalExpenditures += baseValue; }
-        else if (isInflow) { yd.inflows += baseValue; totalInflows += baseValue; }
+        if (isCommitment) { yd.commitments += allocatedValue; totalCommitments += allocatedValue; }
+        else if (isDisbursement) { yd.disbursements += allocatedValue; totalDisbursements += allocatedValue; }
+        else if (isExpenditure) { yd.expenditures += allocatedValue; totalExpenditures += allocatedValue; }
+        else if (isInflow) { yd.inflows += allocatedValue; totalInflows += allocatedValue; }
       }
 
       const txTypeLabel = tx.transaction_type || 'unknown';
-      transactionsByTypeMap.set(txTypeLabel, (transactionsByTypeMap.get(txTypeLabel) || 0) + baseValue);
+      transactionsByTypeMap.set(txTypeLabel, (transactionsByTypeMap.get(txTypeLabel) || 0) + allocatedValue);
 
       const countryCode = tx.recipient_country_code;
       if (countryCode) {
@@ -158,31 +151,43 @@ export async function GET(
           geographicMap.set(countryCode, { totalValue: 0, commitments: 0, disbursements: 0, activityIds: new Set() });
         }
         const gd = geographicMap.get(countryCode)!;
-        gd.totalValue += baseValue;
-        if (isCommitment) gd.commitments += baseValue;
-        if (isDisbursement) gd.disbursements += baseValue;
+        gd.totalValue += allocatedValue;
+        if (isCommitment) gd.commitments += allocatedValue;
+        if (isDisbursement) gd.disbursements += allocatedValue;
         gd.activityIds.add(tx.activity_id);
       }
 
+      // Organization aggregation
       if (tx.provider_org_id) {
         if (!organizationMap.has(tx.provider_org_id)) {
           organizationMap.set(tx.provider_org_id, { organization: null, totalValue: 0, totalCommitted: 0, totalDisbursed: 0, activityIds: new Set(), contributionTypes: new Set() });
         }
         const od = organizationMap.get(tx.provider_org_id)!;
-        od.totalValue += baseValue;
-        if (isCommitment) od.totalCommitted += baseValue;
-        if (isDisbursement) od.totalDisbursed += baseValue;
+        od.totalValue += allocatedValue;
+        if (isCommitment) od.totalCommitted += allocatedValue;
+        if (isDisbursement) od.totalDisbursed += allocatedValue;
         od.activityIds.add(tx.activity_id);
       }
       if (tx.receiver_org_id) {
         if (!organizationMap.has(tx.receiver_org_id)) {
           organizationMap.set(tx.receiver_org_id, { organization: null, totalValue: 0, totalCommitted: 0, totalDisbursed: 0, activityIds: new Set(), contributionTypes: new Set() });
         }
-        organizationMap.get(tx.receiver_org_id)!.totalValue += baseValue;
+        organizationMap.get(tx.receiver_org_id)!.totalValue += allocatedValue;
         organizationMap.get(tx.receiver_org_id)!.activityIds.add(tx.activity_id);
       }
 
-      totalValue += baseValue;
+      // Sub-sector breakdown
+      const subCode = activitySubSectorMap.get(tx.activity_id) || 'general';
+      if (!subSectorMap.has(subCode)) {
+        subSectorMap.set(subCode, { activityIds: new Set(), commitments: 0, disbursements: 0, totalValue: 0 });
+      }
+      const sd = subSectorMap.get(subCode)!;
+      sd.totalValue += allocatedValue;
+      if (isCommitment) sd.commitments += allocatedValue;
+      if (isDisbursement) sd.disbursements += allocatedValue;
+      sd.activityIds.add(tx.activity_id);
+
+      totalValue += allocatedValue;
     });
 
     // Fill organization data from contributors
@@ -207,42 +212,6 @@ export async function GET(
       }
     });
 
-    // ---- SIGNIFICANCE DISTRIBUTION ----
-    const sigMap = new Map<number, { count: number; activityIds: Set<string>; totalValue: number }>();
-    (activityMarkers || []).forEach((am: any) => {
-      const sig = am.significance ?? 0;
-      if (!sigMap.has(sig)) sigMap.set(sig, { count: 0, activityIds: new Set(), totalValue: 0 });
-      const sd = sigMap.get(sig)!;
-      sd.count++;
-      sd.activityIds.add(am.activity_id);
-    });
-
-    // Add totalValue per significance from transactions
-    (activityMarkers || []).forEach((am: any) => {
-      const sig = am.significance ?? 0;
-      const actTx = transactions.filter(tx => tx.activity_id === am.activity_id);
-      let actValue = 0;
-      actTx.forEach(tx => { actValue += tx.value_usd || tx.value || 0; });
-      if (sigMap.has(sig)) sigMap.get(sig)!.totalValue += actValue;
-    });
-
-    const significanceLabels: Record<number, string> = {
-      0: 'Not targeted',
-      1: 'Significant objective',
-      2: 'Principal objective',
-      3: 'Most funding targeted',
-      4: 'Explicit primary objective',
-    };
-
-    const significanceDistribution = Array.from(sigMap.entries())
-      .map(([significance, data]) => ({
-        significance,
-        label: significanceLabels[significance] || `Level ${significance}`,
-        count: data.count,
-        totalValue: data.totalValue,
-      }))
-      .sort((a, b) => a.significance - b.significance);
-
     // ---- ACTIVITY STATUS BREAKDOWN ----
     const statusMap = new Map<string, { count: number; totalValue: number }>();
     let activeCount = 0, pipelineCount = 0, closedCount = 0;
@@ -256,14 +225,14 @@ export async function GET(
       else if (['3', '4', '5', '6'].includes(status)) closedCount++;
     });
 
-    // Build activities list with transaction summaries and significance
     const activitiesWithTx = activities.map(act => {
       const actTx = transactions.filter(tx => tx.activity_id === act.id);
-      const actMarker = activityMarkers?.find((am: any) => am.activity_id === act.id);
-
+      const pct = activityPercentMap.get(act.id) || 100;
+      const mult = pct / 100;
       let actValue = 0, actCommitments = 0, actDisbursements = 0;
+
       actTx.forEach(tx => {
-        const v = tx.value_usd || tx.value || 0;
+        const v = (tx.value_usd || tx.value || 0) * mult;
         actValue += v;
         if (tx.transaction_type === '2' || tx.transaction_type === '11') actCommitments += v;
         else if (tx.transaction_type === '3') actDisbursements += v;
@@ -274,12 +243,11 @@ export async function GET(
 
       return {
         ...act,
+        sectorPercentage: pct,
         totalValue: actValue,
         commitments: actCommitments,
         disbursements: actDisbursements,
         transactionCount: actTx.length,
-        significance: actMarker?.significance || 0,
-        rationale: actMarker?.rationale || null,
       };
     }).sort((a, b) => b.totalValue - a.totalValue);
 
@@ -300,6 +268,38 @@ export async function GET(
       disbursementChange: cy.disbursements - py.disbursements,
       expenditureChange: cy.expenditures - py.expenditures,
     };
+
+    // ---- SUB-SECTOR BREAKDOWN ----
+    const childCodes = getChildCodes(code);
+    const level = getSectorLevel(code);
+
+    const subSectorBreakdown = childCodes.map(childCode => {
+      const childInfo = getSectorInfo(childCode);
+      // For groups, children are categories; for categories, children are 5-digit sectors
+      // Aggregate all 5-digit codes under this child
+      const childSectorCodes = level === 'group' ? getAllSectorCodes(childCode) : [childCode];
+
+      let agg = { activityIds: new Set<string>(), commitments: 0, disbursements: 0, totalValue: 0 };
+      childSectorCodes.forEach(sc => {
+        const d = subSectorMap.get(sc);
+        if (d) {
+          d.activityIds.forEach(id => agg.activityIds.add(id));
+          agg.commitments += d.commitments;
+          agg.disbursements += d.disbursements;
+          agg.totalValue += d.totalValue;
+        }
+      });
+
+      return {
+        code: childCode,
+        name: childInfo?.name || childCode,
+        level: childInfo?.level || 'sector',
+        activityCount: agg.activityIds.size,
+        commitments: agg.commitments,
+        disbursements: agg.disbursements,
+        totalValue: agg.totalValue,
+      };
+    }).sort((a, b) => b.totalValue - a.totalValue);
 
     // ---- DONOR RANKINGS ----
     const donorRankings = Array.from(organizationMap.values())
@@ -343,7 +343,6 @@ export async function GET(
       }))
       .sort((a, b) => b.totalValue - a.totalValue);
 
-    // Enhanced geographic distribution
     const geographicDistribution = Array.from(geographicMap.entries())
       .map(([countryCode, data]) => {
         const coords = COUNTRY_COORDINATES[countryCode];
@@ -365,7 +364,8 @@ export async function GET(
       .sort((a, b) => b.count - a.count);
 
     return NextResponse.json({
-      marker,
+      sector: sectorInfo,
+      hierarchy: buildHierarchy(code, sectorInfo),
       metrics: {
         totalActivities: uniqueActivityIds.length,
         totalOrganizations: organizations.length,
@@ -384,15 +384,23 @@ export async function GET(
       transactionsByYear,
       transactionsByType,
       geographicDistribution,
-      significanceDistribution,
+      subSectorBreakdown,
       yoyStats,
       donorRankings,
       activityStatusBreakdown,
     });
   } catch (error: any) {
-    console.error('[Policy Marker API] Unexpected error:', error);
+    console.error('[Sector API] Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
   }
+}
+
+function buildHierarchy(code: string, info: any) {
+  const hierarchy: any = {};
+  if (info.groupCode) hierarchy.group = { code: info.groupCode, name: info.groupName };
+  if (info.categoryCode) hierarchy.category = { code: info.categoryCode, name: info.categoryName };
+  if (info.level === 'sector') hierarchy.sector = { code: info.code, name: info.name };
+  return hierarchy;
 }
 
 function getTransactionTypeLabel(type: string): string {

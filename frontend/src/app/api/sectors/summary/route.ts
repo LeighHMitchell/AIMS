@@ -1,70 +1,122 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
+import { buildSectorTree, getSectorInfo } from '@/lib/sector-hierarchy';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  console.log('[API] GET /api/sectors/summary - Starting request')
-  
-  const searchParams = request.nextUrl.searchParams
-  const status = searchParams.get('status')
-  const donor = searchParams.get('donor')
-  const donorGroup = searchParams.get('donorGroup')
-  const donorType = searchParams.get('donorType')
-  const partnerClass = searchParams.get('partnerClass')
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database connection not initialized' }, { status: 500 });
+    }
 
-    // For now, return sample summary data
-    // In production, this would aggregate data from the database
-    
-    // Try to get organizations for top donor name
-    let topDonorName = 'World Bank'
-    try {
-      const { data: organizations } = await supabase
-        .from('aid_organizations')
-        .select('name')
-        .limit(1)
-      
-      if (organizations && organizations.length > 0) {
-        topDonorName = organizations[0].name
+    // Get all activity_sectors with counts
+    const { data: sectorRows, error: sectorError } = await supabase
+      .from('activity_sectors')
+      .select('activity_id, sector_code, percentage');
+
+    if (sectorError) {
+      console.error('[Sectors Summary] Error:', sectorError);
+      return NextResponse.json({ error: 'Failed to fetch sector data' }, { status: 500 });
+    }
+
+    // Aggregate by sector_code
+    const sectorStats = new Map<string, { activityIds: Set<string>; totalPercentage: number }>();
+    (sectorRows || []).forEach((row: any) => {
+      const code = row.sector_code;
+      if (!code) return;
+      if (!sectorStats.has(code)) {
+        sectorStats.set(code, { activityIds: new Set(), totalPercentage: 0 });
       }
-    } catch (err) {
-      console.log('Error fetching top donor:', err)
+      const stat = sectorStats.get(code)!;
+      stat.activityIds.add(row.activity_id);
+      stat.totalPercentage += row.percentage || 100;
+    });
+
+    // Get transaction totals per activity for financial aggregation
+    const allActivityIds = new Set<string>();
+    sectorRows?.forEach((r: any) => { if (r.activity_id) allActivityIds.add(r.activity_id); });
+
+    let txByActivity = new Map<string, { commitments: number; disbursements: number; total: number }>();
+
+    if (allActivityIds.size > 0) {
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('activity_id, transaction_type, value_usd, value')
+        .in('activity_id', Array.from(allActivityIds));
+
+      (transactions || []).forEach((tx: any) => {
+        if (!txByActivity.has(tx.activity_id)) {
+          txByActivity.set(tx.activity_id, { commitments: 0, disbursements: 0, total: 0 });
+        }
+        const v = tx.value_usd || tx.value || 0;
+        const d = txByActivity.get(tx.activity_id)!;
+        d.total += v;
+        if (tx.transaction_type === '2' || tx.transaction_type === '11') d.commitments += v;
+        else if (tx.transaction_type === '3') d.disbursements += v;
+      });
     }
 
-    // Calculate summary statistics
-    const summaryData = {
-      total_funding: 45800000 + Math.floor(Math.random() * 10000000),
-      top_sector_name: ['Education', 'Health', 'Infrastructure'][Math.floor(Math.random() * 3)],
-      top_sector_value: 12700000 + Math.floor(Math.random() * 5000000),
-      top_donor_name: topDonorName,
-      top_donor_value: 8500000 + Math.floor(Math.random() * 3000000),
-      active_projects: 142 + Math.floor(Math.random() * 50),
-      sectors_count: 5 + Math.floor(Math.random() * 3),
-      year_over_year_change: Math.floor(Math.random() * 20) - 5 // -5 to +15
-    }
+    // Build the tree with stats
+    const tree = buildSectorTree();
 
-    console.log('[API] Successfully generated sector summary data:', summaryData)
-    return NextResponse.json(summaryData)
-    
-  } catch (error) {
-    console.error('[API] Error fetching sector summary:', error)
-    
-    // Return default sample data if there's an error
-    const defaultSummary = {
-      total_funding: 45800000,
-      top_sector_name: 'Education',
-      top_sector_value: 12700000,
-      top_donor_name: 'World Bank',
-      top_donor_value: 8500000,
-      active_projects: 142,
-      sectors_count: 5,
-      year_over_year_change: 13
-    }
-    
-    return NextResponse.json(defaultSummary)
+    // Aggregate stats up through the tree
+    const groupsWithStats = tree.map(group => {
+      let groupActivityIds = new Set<string>();
+      let groupTotalValue = 0;
+
+      const categories = (group.children || []).map(cat => {
+        let catActivityIds = new Set<string>();
+        let catTotalValue = 0;
+
+        const sectors = (cat.children || []).map(sector => {
+          const stats = sectorStats.get(sector.code);
+          const activityCount = stats?.activityIds.size || 0;
+          let totalValue = 0;
+
+          if (stats) {
+            stats.activityIds.forEach(aid => {
+              const txData = txByActivity.get(aid);
+              if (txData) {
+                const pct = (stats.totalPercentage / stats.activityIds.size) / 100;
+                totalValue += txData.total * Math.min(pct, 1);
+              }
+              catActivityIds.add(aid);
+              groupActivityIds.add(aid);
+            });
+          }
+
+          catTotalValue += totalValue;
+          return { code: sector.code, name: sector.name, activityCount, totalValue };
+        });
+
+        groupTotalValue += catTotalValue;
+        return { code: cat.code, name: cat.name, activityCount: catActivityIds.size, totalValue: catTotalValue, sectors };
+      });
+
+      return { code: group.code, name: group.name, activityCount: groupActivityIds.size, totalValue: groupTotalValue, categories };
+    });
+
+    // Calculate totals
+    const totalActivities = allActivityIds.size;
+    let totalFunding = 0;
+    txByActivity.forEach(v => { totalFunding += v.total; });
+    const activeSectors = Array.from(sectorStats.values()).filter(s => s.activityIds.size > 0).length;
+
+    return NextResponse.json({
+      groups: groupsWithStats,
+      totals: {
+        totalActivities,
+        totalFunding,
+        activeSectors,
+        totalSectorCodes: sectorStats.size,
+      },
+    });
+  } catch (error: any) {
+    console.error('[Sectors Summary] Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
   }
-} 
+}

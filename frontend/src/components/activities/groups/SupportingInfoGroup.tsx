@@ -244,22 +244,24 @@ export function SupportingInfoGroup({
             ref={documentsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="documents"
-              title={getSectionLabel('documents')}
-              helpText={getSectionHelpText('documents')}
-              showDivider={false}
-            />
             {isSectionActive('documents') || activeSections.has('documents') ? (
-              <DocumentsAndImagesTabInline
-                documents={documents}
-                onChange={(newDocuments) => {
-                  onDocumentsChange(newDocuments)
-                  documentsAutosave.saveNow(newDocuments)
-                }}
-                activityId={activityId}
-                locale="en"
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="documents"
+                  title={getSectionLabel('documents')}
+                  helpText={getSectionHelpText('documents')}
+                  showDivider={false}
+                />
+                <DocumentsAndImagesTabInline
+                  documents={documents}
+                  onChange={(newDocuments) => {
+                    onDocumentsChange(newDocuments)
+                    documentsAutosave.saveNow(newDocuments)
+                  }}
+                  activityId={activityId}
+                  locale="en"
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="documents" />
             )}
@@ -271,17 +273,19 @@ export function SupportingInfoGroup({
             ref={aidEffectivenessRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
           >
-            <SectionHeader
-              id="aid_effectiveness"
-              title={getSectionLabel('aid_effectiveness')}
-              helpText={getSectionHelpText('aid_effectiveness')}
-              showDivider={false}
-            />
             {isSectionActive('aid_effectiveness') || activeSections.has('aid_effectiveness') ? (
-              <AidEffectivenessForm
-                general={general}
-                onUpdate={setGeneral}
-              />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <SectionHeader
+                  id="aid_effectiveness"
+                  title={getSectionLabel('aid_effectiveness')}
+                  helpText={getSectionHelpText('aid_effectiveness')}
+                  showDivider={false}
+                />
+                <AidEffectivenessForm
+                  general={general}
+                  onUpdate={setGeneral}
+                />
+              </div>
             ) : (
               <SectionSkeleton sectionId="aid_effectiveness" />
             )}

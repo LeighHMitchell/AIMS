@@ -1648,7 +1648,7 @@ export default function ActivityBudgetsTab({
               {!readOnly && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Button className="bg-gray-900 hover:bg-gray-800 text-white">
                       <Plus className="h-4 w-4 mr-1" />
                       Add Budget
                       <ChevronDown className="h-4 w-4 ml-1" />
@@ -1973,7 +1973,7 @@ export default function ActivityBudgetsTab({
 
 
           {/* Budget table */}
-          <div className="w-full">
+          <div className="rounded-md border w-full">
             <Table aria-label="Budgets table" className="w-full">
               <TableHeader className="bg-muted/50 border-b border-border/70">
                 <TableRow>
