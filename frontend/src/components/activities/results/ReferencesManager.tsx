@@ -105,7 +105,7 @@ export function ReferencesManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Result Vocabulary *</Label>
+            <Label className="text-xs text-gray-700">Result Vocabulary <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Select
               value={formData.vocabulary}
               onValueChange={(value) => setFormData(prev => ({ ...prev, vocabulary: value }))}
@@ -124,7 +124,7 @@ export function ReferencesManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Code *</Label>
+            <Label className="text-xs text-gray-700">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               value={formData.code}
               onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}

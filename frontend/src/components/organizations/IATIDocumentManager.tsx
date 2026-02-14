@@ -717,7 +717,7 @@ export function IATIDocumentManager({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Document URL *</Label>
+                    <Label>Document URL <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                     <Input
                       type="url"
                       placeholder="https://example.org/document.pdf"
@@ -751,7 +751,7 @@ export function IATIDocumentManager({
               {/* Titles */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Titles *</h4>
+                  <h4 className="font-medium">Titles <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></h4>
                   <Button variant="outline" size="sm" onClick={addTitle}>
                     <Plus className="h-3 w-3 mr-1" />
                     Add Title

@@ -455,7 +455,7 @@ export function DocumentFormEnhanced({
               <div className="space-y-4">
                 {/* Title */}
                 <div>
-                  <Label>Title <span className="text-red-500">*</span></Label>
+                  <Label>Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                   <Input
                     value={formData.title[0]?.text || ''}
                     onChange={(e) => updateNarrative('title', 0, { text: e.target.value })}

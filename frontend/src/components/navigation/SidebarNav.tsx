@@ -145,6 +145,7 @@ export function SidebarNav({
         { name: "SDGs", href: "/sdgs", show: true, isNew: true },
         { name: "Sectors", href: "/sectors", show: true, isNew: true },
         { name: "Policy Markers", href: "/policy-markers", show: true, isNew: true },
+        { name: "Working Groups", href: "/working-groups", show: true, isNew: true },
       ]
     },
     {

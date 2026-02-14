@@ -312,7 +312,7 @@ export function DocumentForm({
                 <div>
                   <Label>
                     Title
-                    <span className="text-red-500 ml-1">*</span>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                   </Label>
                   <div className="space-y-2 mt-2">
                     {formData.title.map((narrative, index) => (

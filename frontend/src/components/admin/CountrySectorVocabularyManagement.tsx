@@ -770,7 +770,7 @@ export function CountrySectorVocabularyManagement() {
             <div className="space-y-4 py-4">
               {/* Vocabulary Type - most important field */}
               <div className="space-y-2">
-                <Label htmlFor="vocab-type">Vocabulary Type *</Label>
+                <Label htmlFor="vocab-type">Vocabulary Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Select
                   value={vocabForm.vocabularyType}
                   onValueChange={(value) => setVocabForm({ ...vocabForm, vocabularyType: value as VocabularyType })}
@@ -798,7 +798,7 @@ export function CountrySectorVocabularyManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="vocab-code">Code *</Label>
+                  <Label htmlFor="vocab-code">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                   <Input
                     id="vocab-code"
                     placeholder="e.g., TNG"
@@ -822,7 +822,7 @@ export function CountrySectorVocabularyManagement() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="vocab-name">Name *</Label>
+                <Label htmlFor="vocab-name">Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Input
                   id="vocab-name"
                   placeholder="e.g., Tonga National Sector Classification"
@@ -896,7 +896,7 @@ export function CountrySectorVocabularyManagement() {
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="sector-code">Code *</Label>
+                  <Label htmlFor="sector-code">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                   <Input
                     id="sector-code"
                     placeholder="e.g., AGR-01"
@@ -922,7 +922,7 @@ export function CountrySectorVocabularyManagement() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sector-name">Name *</Label>
+                <Label htmlFor="sector-name">Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Input
                   id="sector-name"
                   placeholder="e.g., Agricultural Development"

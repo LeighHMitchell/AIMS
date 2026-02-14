@@ -1219,7 +1219,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     {searchResults.length > 0 && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-96 overflow-auto z-50">
                         {/* Result count header */}
-                        <div className="sticky top-0 bg-gray-50 px-4 py-2 border-b text-xs text-gray-600 font-medium">
+                        <div className="sticky top-0 bg-surface-muted px-4 py-2 border-b text-xs text-gray-600 font-medium">
                           Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
                         </div>
                         
@@ -1656,7 +1656,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     <div className="space-y-2">
                       <Label htmlFor="location_id_code" className="flex items-center gap-2">
                         Location ID Code
-                        {watch('location_id_vocabulary') && <span className="text-red-500">*</span>}
+                        {watch('location_id_vocabulary') && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />}
                         <HelpTextTooltip content="The actual identifier from the chosen vocabulary (e.g., GeoNames ID or OSM ID)." />
                       </Label>
                       <div className="flex gap-2">
@@ -1716,7 +1716,7 @@ const autoPopulateIatiFields = useCallback((params: {
                     <div className="space-y-2">
                       <Label htmlFor="admin_code" className="flex items-center gap-2">
                         Administrative Code
-                        {watch('admin_level') && <span className="text-red-500">*</span>}
+                        {watch('admin_level') && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />}
                         <HelpTextTooltip content="The code from the chosen vocabulary identifying the specific administrative unit." />
                       </Label>
                       <div className="flex gap-2">

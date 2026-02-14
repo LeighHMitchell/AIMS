@@ -137,7 +137,7 @@ export function ReadinessStageSignoff({
 
             <div className="space-y-2">
               <Label htmlFor="signature-title">
-                Your Title / Position <span className="text-red-500">*</span>
+                Your Title / Position <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </Label>
               <Input
                 id="signature-title"

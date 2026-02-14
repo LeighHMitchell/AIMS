@@ -6,18 +6,10 @@ import { Check, ChevronsUpDown, Building2, X, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { isLegacyOrgType } from "@/lib/org-type-mappings";
 import { IATI_COUNTRIES } from "@/data/iati-countries";
 
@@ -156,7 +148,7 @@ export function OrganizationCombobox({
   const getOrgDetailsLineStyled = (org: Organization) => {
     const iatiRef = org.iati_org_id || org.iati_identifier
     const orgTypeCode = org.Organisation_Type_Code  // This contains the code like "40"
-    const orgTypeText = org.Organisation_Type_Name || org.type  // This contains the text like "Multilateral"
+    const orgTypeText = org.Organisation_Type_Name  // This contains the text like "Multilateral"
     
     return (
       <div className="flex items-center gap-2 flex-wrap">
@@ -244,7 +236,7 @@ export function OrganizationCombobox({
             if (selected) {
               const iatiRef = selected.iati_org_id || selected.iati_identifier
               const orgTypeCode = selected.Organisation_Type_Code
-              const orgTypeName = selected.Organisation_Type_Name || selected.type
+              const orgTypeName = selected.Organisation_Type_Name
 
               return (
                 <div className="flex items-start gap-3 text-left w-full min-w-0 py-0.5">
@@ -363,7 +355,7 @@ export function OrganizationCombobox({
         sideOffset={4}
         className="p-0 w-[600px]"
       >
-        <Command>
+        <div className="flex flex-col">
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <input
@@ -374,101 +366,105 @@ export function OrganizationCombobox({
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <CommandList>
+          <div className="max-h-[300px] overflow-y-auto">
             {search && filteredOrgs.length === 0 && (
-              <CommandEmpty>No organization found.</CommandEmpty>
+              <div className="py-6 text-center text-sm text-muted-foreground">No organization found.</div>
             )}
-            {filteredOrgs.length > 0 && (
-              <ScrollArea className="max-h-60 overflow-y-auto">
-                <CommandGroup>
-                  {filteredOrgs.map(org => {
-                    const iatiRef = org.iati_org_id || org.iati_identifier
-                    const orgTypeCode = org.Organisation_Type_Code
-                    const orgTypeName = org.Organisation_Type_Name || org.type
+            {filteredOrgs.map(org => {
+              const iatiRef = org.iati_org_id || org.iati_identifier
+              const orgTypeCode = org.Organisation_Type_Code
+              const orgTypeName = org.Organisation_Type_Name
 
-                    return (
-                      <CommandItem
-                        key={org.id}
-                        onSelect={() => handleSelect(org.id)}
-                        className="py-2.5"
-                      >
-                        <div className="flex items-start gap-3 w-full">
-                          {/* Organization logo */}
-                          {org.logo ? (
-                            <div className="w-8 h-8 flex-shrink-0 mt-0.5">
-                              <Image
-                                src={org.logo}
-                                alt={`${org.name} logo`}
-                                width={32}
-                                height={32}
-                                className="rounded-sm object-contain"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none'
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-sm mt-0.5">
-                              <Building2 className="h-5 w-5 text-gray-400" />
-                            </div>
-                          )}
+              return (
+                <div
+                  key={org.id}
+                  role="option"
+                  onClick={() => handleSelect(org.id)}
+                  className={cn(
+                    "pl-6 pr-3 py-3 w-full text-left cursor-pointer transition-colors flex items-start gap-2 hover:bg-accent/50 focus:bg-accent focus:outline-none",
+                    value === org.id && "bg-accent"
+                  )}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4 mt-1 flex-shrink-0",
+                      value === org.id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <div className="flex items-start gap-3 w-full">
+                    {/* Organization logo */}
+                    {org.logo ? (
+                      <div className="w-8 h-8 flex-shrink-0 mt-0.5">
+                        <Image
+                          src={org.logo}
+                          alt={`${org.name} logo`}
+                          width={32}
+                          height={32}
+                          className="rounded-sm object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none'
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-sm mt-0.5">
+                        <Building2 className="h-5 w-5 text-gray-400" />
+                      </div>
+                    )}
 
-                          {/* Organization details - two line layout */}
-                          <div className="min-w-0 flex-1">
-                            {/* Line 1: Name and acronym */}
-                            <div className="font-medium text-gray-900 text-sm">
-                              {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
-                            </div>
+                    {/* Organization details - two line layout */}
+                    <div className="min-w-0 flex-1">
+                      {/* Line 1: Name and acronym */}
+                      <div className="font-medium text-gray-900 text-sm">
+                        {org.name}{org.acronym && org.acronym !== org.name ? ` (${org.acronym})` : ''}
+                      </div>
 
-                            {/* Line 2: ID, Type, Country with flag */}
-                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              {/* IATI ID or internal ID */}
-                              <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                                {iatiRef || `ID: ${org.id.substring(0, 8)}...`}
-                              </span>
+                      {/* Line 2: ID, Type, Country with flag */}
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        {/* IATI ID or internal ID */}
+                        <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                          {iatiRef || `ID: ${org.id.substring(0, 8)}...`}
+                        </span>
 
-                              {/* Organization Type */}
-                              {(orgTypeCode || orgTypeName) && (
-                                <>
-                                  <span className="text-gray-300">·</span>
-                                  {orgTypeCode && (
-                                    <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{orgTypeCode}</span>
-                                  )}
-                                  {orgTypeName && (
-                                    <span className="text-xs text-gray-500">{orgTypeName}</span>
-                                  )}
-                                </>
+                        {/* Organization Type */}
+                        {(orgTypeCode || orgTypeName) && (
+                          <>
+                            <span className="text-gray-300">·</span>
+                            {orgTypeCode && (
+                              <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{orgTypeCode}</span>
+                            )}
+                            {orgTypeName && (
+                              <span className="text-xs text-gray-500">{orgTypeName}</span>
+                            )}
+                          </>
+                        )}
+
+                        {/* Country with flag */}
+                        {org.country && (
+                          <>
+                            <span className="text-gray-300">·</span>
+                            <span className="flex items-center gap-1 text-xs text-gray-500">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              {getCountryCode(org.country) && (
+                                <img
+                                  src={`https://flagcdn.com/w20/${getCountryCode(org.country)}.png`}
+                                  alt=""
+                                  className="w-4 h-auto rounded-[2px]"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                                />
                               )}
-
-                              {/* Country with flag */}
-                              {org.country && (
-                                <>
-                                  <span className="text-gray-300">·</span>
-                                  <span className="flex items-center gap-1 text-xs text-gray-500">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    {getCountryCode(org.country) && (
-                                      <img
-                                        src={`https://flagcdn.com/w20/${getCountryCode(org.country)}.png`}
-                                        alt=""
-                                        className="w-4 h-auto rounded-[2px]"
-                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                                      />
-                                    )}
-                                    {org.country}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </CommandItem>
-                    )
-                  })}
-                </CommandGroup>
-              </ScrollArea>
-            )}
-          </CommandList>
-        </Command>
+                              {org.country}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
     </div>

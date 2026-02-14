@@ -67,7 +67,7 @@ export function TaskDetailsStep({
       {/* Title */}
       <div className="space-y-2">
         <Label htmlFor="title" className="text-sm font-medium">
-          Task Title <span className="text-destructive">*</span>
+          Task Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
         </Label>
         <Input
           id="title"

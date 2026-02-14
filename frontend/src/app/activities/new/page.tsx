@@ -987,7 +987,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             className="text-gray-700"
           >
             <div className="flex items-center gap-2">
-              Activity Title
+              Activity Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               <HelpTextTooltip>
                 A short, human-readable title that provides a meaningful summary of the activity. It should be clear, descriptive, and consistent with the reporting organisation's titles used in published projects.
               </HelpTextTooltip>
@@ -1357,7 +1357,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Identifier Code</label>
+              <label className="text-sm font-medium text-gray-700">Identifier Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></label>
               <Input
                 type="text"
                 value={otherIdentifierForm.code}
@@ -1429,7 +1429,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Owner Organisation Name</label>
+              <label className="text-sm font-medium text-gray-700">Owner Organisation Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></label>
               <Input
                 type="text"
                 value={otherIdentifierForm.ownerOrgNarrative}
@@ -2809,7 +2809,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-gray-900">Import Single Activity</h2>
-            <HelpTextTooltip content={getSectionHelpText('xml-import')}>
+            <HelpTextTooltip content="Import activity data from an IATI-compliant XML file. You can review and select which fields to import.">
               <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
             </HelpTextTooltip>
           </div>
@@ -2845,7 +2845,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-3xl font-semibold text-gray-900">Government Readiness Checklist</h2>
-            <HelpTextTooltip content={getSectionHelpText('readiness_checklist')}>
+            <HelpTextTooltip content="Track preparatory milestones and ensure project readiness before validation. Complete each checklist item by uploading supporting documents and marking the status. All required items must be completed before signing off each stage.">
               <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
             </HelpTextTooltip>
           </div>

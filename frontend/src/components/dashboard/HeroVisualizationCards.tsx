@@ -254,13 +254,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             </CardTitle>
             <p className="text-lg font-bold text-slate-900">{formatCurrency(totalBudget)}</p>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="h-24">
+          <CardContent className="pt-0 pb-3">
+            <div className="h-32">
               {data?.budgetTrend && data.budgetTrend.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.budgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                    <XAxis 
-                      dataKey="year" 
+                  <BarChart data={data.budgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                    <XAxis
+                      dataKey="year"
                       tick={{ fontSize: 10, fill: '#64748b' }}
                       axisLine={false}
                       tickLine={false}
@@ -299,13 +299,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             </CardTitle>
             <p className="text-lg font-bold text-slate-900">{formatCurrency(totalPlanned)}</p>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="h-24">
+          <CardContent className="pt-0 pb-3">
+            <div className="h-32">
               {data?.plannedBudgetTrend && data.plannedBudgetTrend.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.plannedBudgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                    <XAxis 
-                      dataKey="year" 
+                  <BarChart data={data.plannedBudgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                    <XAxis
+                      dataKey="year"
                       tick={{ fontSize: 10, fill: '#64748b' }}
                       axisLine={false}
                       tickLine={false}
@@ -315,11 +315,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       labelFormatter={(label) => `Year ${label}`}
                       contentStyle={{ fontSize: 12 }}
                     />
-                    <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                      {data.plannedBudgetTrend.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
-                      ))}
-                    </Bar>
+                    <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#4c5568" />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -348,21 +344,21 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
             </CardTitle>
             <p className="text-lg font-bold text-slate-900">{totalTransactions.toLocaleString()} total</p>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="h-24">
+          <CardContent className="pt-0 pb-3">
+            <div className="h-32">
               {data?.transactionTrend && data.transactionTrend.length > 0 ? (
                 (() => {
                   const uniqueTypes = getUniqueTransactionTypes(data.transactionTrend);
                   const hasTypeData = uniqueTypes.length > 0;
-                  const lineChartData = hasTypeData 
+                  const lineChartData = hasTypeData
                     ? transformDataForLineChart(data.transactionTrend, uniqueTypes)
                     : data.transactionTrend;
-                  
+
                   return (
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={lineChartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                        <XAxis 
-                          dataKey="month" 
+                      <LineChart data={lineChartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                        <XAxis
+                          dataKey="month"
                           tick={{ fontSize: 10, fill: '#64748b' }}
                           axisLine={false}
                           tickLine={false}

@@ -739,7 +739,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Activity Title */}
-                <FieldWrapper section="basic_info" field="title" label="Activity Title *">
+                <FieldWrapper section="basic_info" field="title" label={<>Activity Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></>}>
                   <div className="space-y-1">
                     <Input
                       type="text"
@@ -787,7 +787,10 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       <SelectContent>
                         {ACTIVITY_STATUSES.map((status) => (
                           <SelectItem key={status.value} value={status.value}>
-                            {status.label}
+                            <span className="flex items-center gap-2">
+                              <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{status.value}</span>
+                              {status.label}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -868,6 +871,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                         />
                         <SaveIndicator fieldName="planned_start_date" />
                       </div>
+                      {formData.planned_start_date && (
                       <div className="space-y-1">
                         <label className="text-xs text-gray-600">Description/Context (optional)</label>
                         <Textarea
@@ -884,6 +888,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                         />
                         <SaveIndicator fieldName="planned_start_description" />
                       </div>
+                      )}
                     </div>
                   </FieldWrapper>
 
@@ -902,6 +907,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                         />
                         <SaveIndicator fieldName="planned_end_date" />
                       </div>
+                      {formData.planned_end_date && (
                       <div className="space-y-1">
                         <label className="text-xs text-gray-600">Description/Context (optional)</label>
                         <Textarea
@@ -918,10 +924,14 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                         />
                         <SaveIndicator fieldName="planned_end_description" />
                       </div>
+                      )}
                     </div>
                   </FieldWrapper>
 
                   {/* Actual Start Date */}
+                  {(() => {
+                    const actualStartDisabled = saving.actual_start_date || formData.activity_status === '1';
+                    return (
                   <FieldWrapper section="dates" field="actual_start" label="Actual Start Date">
                     <div className="space-y-3">
                       <div className="space-y-1">
@@ -931,11 +941,12 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                             handleFieldChange('actual_start_date', value);
                             handleFieldBlur('actual_start_date', value);
                           }}
-                          disabled={saving.actual_start_date}
+                          disabled={actualStartDisabled}
                           placeholder="Select actual start date"
                         />
                         <SaveIndicator fieldName="actual_start_date" />
                       </div>
+                      {!actualStartDisabled && formData.actual_start_date && (
                       <div className="space-y-1">
                         <label className="text-xs text-gray-600">Description/Context (optional)</label>
                         <Textarea
@@ -952,10 +963,16 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                         />
                         <SaveIndicator fieldName="actual_start_description" />
                       </div>
+                      )}
                     </div>
                   </FieldWrapper>
+                    );
+                  })()}
 
                   {/* Actual End Date */}
+                  {(() => {
+                    const actualEndDisabled = saving.actual_end_date || formData.activity_status === '1';
+                    return (
                   <FieldWrapper section="dates" field="actual_end" label="Actual End Date">
                     <div className="space-y-3">
                       <div className="space-y-1">
@@ -965,11 +982,12 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                             handleFieldChange('actual_end_date', value);
                             handleFieldBlur('actual_end_date', value);
                           }}
-                          disabled={saving.actual_end_date}
+                          disabled={actualEndDisabled}
                           placeholder="Select actual end date"
                         />
                         <SaveIndicator fieldName="actual_end_date" />
                       </div>
+                      {!actualEndDisabled && formData.actual_end_date && (
                       <div className="space-y-1">
                         <label className="text-xs text-gray-600">Description/Context (optional)</label>
                         <Textarea
@@ -986,8 +1004,11 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                         />
                         <SaveIndicator fieldName="actual_end_description" />
                       </div>
+                      )}
                     </div>
                   </FieldWrapper>
+                    );
+                  })()}
                 </div>
 
                 {/* Other Identifiers Section (IATI-compliant) */}
@@ -1037,7 +1058,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                                 {/* Identifier Code (Required) */}
                                 <div className="space-y-1">
                                   <label className="text-sm font-medium text-gray-700">
-                                    Identifier Code <span className="text-red-500">*</span>
+                                    Identifier Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                                   </label>
                                   <Input
                                     type="text"
@@ -1068,7 +1089,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                                 {/* Owner Organisation Name (Required) */}
                                 <div className="space-y-1">
                                   <label className="text-sm font-medium text-gray-700">
-                                    Owner Organisation Name <span className="text-red-500">*</span>
+                                    Owner Organisation Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                                   </label>
                                   <Input
                                     type="text"

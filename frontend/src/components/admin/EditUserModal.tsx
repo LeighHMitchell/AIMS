@@ -364,7 +364,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                 </Select>
               </div>
               <div>
-                <Label htmlFor="firstName">First Name *</Label>
+                <Label htmlFor="firstName">First Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Input
                   id="firstName"
                   value={form.firstName}
@@ -415,7 +415,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="role">User Role *</Label>
+                <Label htmlFor="role">User Role <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Select value={form.role} onValueChange={(value) => handleFormChange("role", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select user role" />
@@ -511,7 +511,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="email">Primary Email *</Label>
+                <Label htmlFor="email">Primary Email <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Input
                   id="email"
                   type="email"

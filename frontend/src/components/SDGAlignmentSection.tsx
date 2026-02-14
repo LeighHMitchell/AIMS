@@ -36,12 +36,10 @@ import {
   CheckCircle,
   X,
   Target,
-  ChevronRight,
   Sparkles,
   Zap,
   Circle,
   Loader2,
-  ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SDG_GOALS, SDG_TARGETS, getTargetsForGoal } from "@/data/sdg-targets";
@@ -185,7 +183,7 @@ export default function SDGAlignmentSection({
 
     if (selectedGoalIds.includes(goalId)) {
       // Remove goal and all its mappings
-      setMappings(mappings.filter(m => m.sdgGoal !== goalId));
+      setMappings(prev => prev.filter(m => m.sdgGoal !== goalId));
     } else {
       // Add goal with default mapping
       const newMapping: SDGMapping = {
@@ -194,7 +192,7 @@ export default function SDGAlignmentSection({
         alignmentStrength: 'primary',
         notes: ''
       };
-      setMappings([...mappings, newMapping]);
+      setMappings(prev => [...prev, newMapping]);
     }
   };
 
@@ -202,30 +200,31 @@ export default function SDGAlignmentSection({
     if (!canEdit) return;
     setHasUserEdited(true);
 
-    const exists = mappings.find(m => m.sdgGoal === goalId && m.sdgTarget === targetId);
-    if (!exists) {
+    setMappings(prev => {
+      const exists = prev.find(m => m.sdgGoal === goalId && m.sdgTarget === targetId);
+      if (exists) return prev;
       const newMapping: SDGMapping = {
         sdgGoal: goalId,
         sdgTarget: targetId,
         alignmentStrength: 'secondary',
         notes: ''
       };
-      setMappings([...mappings, newMapping]);
-    }
+      return [...prev, newMapping];
+    });
     setTargetPopoverOpen({ ...targetPopoverOpen, [goalId]: false });
   };
 
   const removeTarget = (goalId: number, targetId: string) => {
     if (!canEdit) return;
     setHasUserEdited(true);
-    setMappings(mappings.filter(m => !(m.sdgGoal === goalId && m.sdgTarget === targetId)));
+    setMappings(prev => prev.filter(m => !(m.sdgGoal === goalId && m.sdgTarget === targetId)));
   };
 
   const updateAlignmentStrength = (goalId: number, strength: AlignmentStrength) => {
     if (!canEdit) return;
     setHasUserEdited(true);
 
-    setMappings(mappings.map(m =>
+    setMappings(prev => prev.map(m =>
       m.sdgGoal === goalId && m.sdgTarget === ''
         ? { ...m, alignmentStrength: strength }
         : m
@@ -236,7 +235,7 @@ export default function SDGAlignmentSection({
     if (!canEdit) return;
     setHasUserEdited(true);
 
-    setMappings(mappings.map(m =>
+    setMappings(prev => prev.map(m =>
       m.sdgGoal === goalId && m.sdgTarget === ''
         ? { ...m, notes }
         : m
@@ -414,7 +413,9 @@ export default function SDGAlignmentSection({
                           disabled={!canEdit}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select alignment strength" />
+                            <span>
+                              {ALIGNMENT_OPTIONS.find(o => o.value === (goalMapping?.alignmentStrength || 'primary'))?.label || 'Select alignment strength'}
+                            </span>
                           </SelectTrigger>
                           <SelectContent>
                             {ALIGNMENT_OPTIONS.map(option => (
@@ -444,15 +445,36 @@ export default function SDGAlignmentSection({
                               variant="outline"
                               role="combobox"
                               aria-expanded={targetPopoverOpen[goalId]}
-                              className="w-full justify-between font-normal"
+                              className="w-full justify-start font-normal h-auto min-h-10 py-2"
                               disabled={!canEdit}
                             >
-                              <span className="text-muted-foreground">
-                                {selectedTargets.length > 0
-                                  ? `${selectedTargets.length} target${selectedTargets.length !== 1 ? 's' : ''} selected`
-                                  : 'Search and add targets...'}
-                              </span>
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              {selectedTargets.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {selectedTargets.map(mapping => (
+                                    <Badge
+                                      key={mapping.sdgTarget}
+                                      variant="secondary"
+                                      className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium"
+                                    >
+                                      {mapping.sdgTarget}
+                                      {canEdit && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            removeTarget(goalId, mapping.sdgTarget);
+                                          }}
+                                          className="ml-0.5 hover:bg-black/10 rounded-full p-0.5"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      )}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">Search and add targets...</span>
+                              )}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-[500px] p-0" align="start">
@@ -505,7 +527,6 @@ export default function SDGAlignmentSection({
                                   className="flex items-start justify-between gap-2 p-2.5 bg-gray-50 rounded-md text-sm"
                                 >
                                   <div className="flex items-start gap-2 min-w-0 flex-1">
-                                    <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
                                     <div className="min-w-0">
                                       <span className="font-medium">Target {target.id}:</span>{' '}
                                       <span className="text-gray-600">{target.description}</span>

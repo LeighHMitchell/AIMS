@@ -300,7 +300,7 @@ export function DocumentCardInline({
                 {isEditing ? (
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="title-0" className="text-sm font-medium">Title *</Label>
+                      <Label htmlFor="title-0" className="text-sm font-medium">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                       <Input
                         id="title-0"
                         value={formData.title[0]?.text || ''}
@@ -310,7 +310,7 @@ export function DocumentCardInline({
                       />
                     </div>
                     <div>
-                      <Label htmlFor="url" className="text-sm font-medium">URL *</Label>
+                      <Label htmlFor="url" className="text-sm font-medium">URL <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                       <Input
                         id="url"
                         type="url"

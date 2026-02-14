@@ -880,7 +880,7 @@ export default function ProfilePage() {
                           </Select>
                         </div>
                         <div className="md:col-span-3">
-                              <Label htmlFor="firstName" className="text-xs">First Name *</Label>
+                              <Label htmlFor="firstName" className="text-xs">First Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                           <Input
                             id="firstName"
                             value={formData.firstName}
@@ -900,7 +900,7 @@ export default function ProfilePage() {
                           />
                         </div>
                         <div className="md:col-span-2">
-                              <Label htmlFor="lastName" className="text-xs">Last Name *</Label>
+                              <Label htmlFor="lastName" className="text-xs">Last Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                           <Input
                             id="lastName"
                             value={formData.lastName}

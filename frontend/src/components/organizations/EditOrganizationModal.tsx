@@ -727,7 +727,7 @@ export function EditOrganizationModal({
               {/* Name (Required) */}
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">
-                  Name <span className="text-red-500">*</span>
+                  Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <Input
                   id="name"
@@ -741,7 +741,7 @@ export function EditOrganizationModal({
               {/* Acronym / Short Name (Required) */}
               <div className="space-y-2">
                 <Label htmlFor="acronym" className="text-sm font-medium">
-                  Acronym / Short Name <span className="text-red-500">*</span>
+                  Acronym / Short Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <Input
                   id="acronym"
@@ -755,7 +755,7 @@ export function EditOrganizationModal({
               {/* Location Represented */}
               <div className="space-y-2">
                 <Label htmlFor="country_represented" className="text-sm font-medium">
-                  Location Represented <span className="text-red-500">*</span>
+                  Location Represented <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <Select
                   key={`country-${organization?.id || 'new'}`}
@@ -911,7 +911,7 @@ export function EditOrganizationModal({
               {/* Organisation Type (Required) */}
               <div className="space-y-2">
                 <Label htmlFor="Organisation_Type_Code" className="text-sm font-medium">
-                  Organisation Type <span className="text-red-500">*</span>
+                  Organisation Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <Select 
                   value={formData.Organisation_Type_Code || ''} 

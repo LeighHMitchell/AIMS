@@ -371,7 +371,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
 
           <TabsContent value="url" className="mt-4 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="url">Document URL *</Label>
+              <Label htmlFor="url">Document URL <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Input
                 id="url"
                 type="url"
@@ -403,7 +403,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
         <div className="space-y-4 mt-6 pt-6 border-t">
           {/* Title - full width */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               id="title"
               placeholder="Enter document title"

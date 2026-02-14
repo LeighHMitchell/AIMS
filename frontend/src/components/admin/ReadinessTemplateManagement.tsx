@@ -339,7 +339,7 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Code *</Label>
+                <Label htmlFor="code">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Input
                   id="code"
                   value={formData.code}
@@ -349,7 +349,7 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="stage_order">Stage Order *</Label>
+                <Label htmlFor="stage_order">Stage Order <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Input
                   id="stage_order"
                   type="number"
@@ -361,7 +361,7 @@ export function ReadinessTemplateManagement({ onSelectTemplate }: ReadinessTempl
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Input
                 id="name"
                 value={formData.name}

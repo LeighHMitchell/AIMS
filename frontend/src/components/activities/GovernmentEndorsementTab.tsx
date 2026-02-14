@@ -794,7 +794,7 @@ export default function GovernmentEndorsementTab({
             </div>
 
             <div className="space-y-2">
-              <Label>Code *</Label>
+              <Label>Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Input
                 value={refFormData.code}
                 onChange={(e) => handleRefFormChange('code', e.target.value)}

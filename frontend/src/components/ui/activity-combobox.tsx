@@ -5,13 +5,6 @@ import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command';
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -166,24 +159,24 @@ export function ActivityCombobox({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              'w-full justify-between font-normal h-10 px-4 py-2 text-base border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900',
+              'w-full justify-between font-normal h-auto min-h-[40px] px-4 py-2 text-base border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 hover:text-gray-900 whitespace-normal',
               !value && 'text-muted-foreground',
               className
             )}
             disabled={disabled}
           >
-          <div className="flex items-center gap-2 overflow-hidden flex-1">
+          <div className="flex items-start gap-2 flex-1 min-w-0">
             {selectedActivity ? (
               <>
                 {selectedActivity.icon && (
-                  <img 
-                    src={selectedActivity.icon} 
-                    alt="" 
+                  <img
+                    src={selectedActivity.icon}
+                    alt=""
                     className="w-6 h-6 rounded flex-shrink-0 mt-0.5"
                   />
                 )}
-                <div className="flex-1 min-w-0 text-left">
-                  <span className="font-normal text-sm inline">
+                <div className="flex-1 min-w-0 text-left break-words">
+                  <span className="font-normal text-sm">
                     {getActivityTitle(selectedActivity)}
                     {selectedActivity.acronym && (
                       <span className="text-gray-500 ml-1">
@@ -191,7 +184,7 @@ export function ActivityCombobox({
                       </span>
                     )}
                     {selectedActivity.iati_identifier && (
-                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600 ml-2">
+                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
                         {selectedActivity.iati_identifier}
                       </span>
                     )}
@@ -226,7 +219,7 @@ export function ActivityCombobox({
         className="p-0 w-[600px]"
         align="start"
       >
-        <Command shouldFilter={false}>
+        <div className="flex flex-col">
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <input
@@ -237,69 +230,68 @@ export function ActivityCombobox({
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          {searchQuery && (
-            <CommandEmpty>
-              {loading ? 'Searching...' : 'No activities found.'}
-            </CommandEmpty>
-          )}
-          <CommandGroup className="max-h-[300px] overflow-auto">
+          <div className="max-h-[300px] overflow-y-auto">
+            {activities.length === 0 && (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                {loading ? 'Searching...' : searchQuery ? 'No activities found.' : 'Loading...'}
+              </div>
+            )}
             {activities.map((activity) => {
               const title = getActivityTitle(activity);
-              const orgName = activity.created_by_org_name || activity.created_by_org_acronym || 'Unknown Org';
-              
+
               return (
-                <CommandItem
+                <div
                   key={activity.id}
-                  value={activity.id}
-                  onSelect={() => {
-                    console.log('[ActivityCombobox] Selected activity:', activity.id, activity.title_narrative || activity.title);
+                  role="option"
+                  onClick={() => {
                     onValueChange(activity.id);
                     setOpen(false);
                   }}
-                  className="cursor-pointer"
+                  className={cn(
+                    "px-3 py-2.5 cursor-pointer transition-colors hover:bg-accent/50 flex items-center gap-2 w-full",
+                    value === activity.id && "bg-accent"
+                  )}
                 >
-                  <div className="flex items-center gap-2 w-full">
-                    <Check
-                      className={cn(
-                        'h-4 w-4 shrink-0',
-                        value === activity.id ? 'opacity-100' : 'opacity-0'
-                      )}
-                    />
-                    <div className="flex items-start gap-2 flex-1 min-w-0">
-                      {activity.icon && (
-                        <img 
-                          src={activity.icon} 
-                          alt="" 
-                          className="w-6 h-6 rounded mt-0.5 flex-shrink-0"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <span className="font-normal text-sm inline">
-                          {title}
-                          {activity.acronym && (
-                            <span className="text-gray-500 ml-1">
-                              ({activity.acronym})
-                            </span>
-                          )}
-                          {activity.iati_identifier && (
-                            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600 ml-2">
-                              {activity.iati_identifier}
-                            </span>
-                          )}
-                          {(activity.created_by_org_name || activity.created_by_org_acronym) && (
-                            <span className="text-xs text-gray-400 ml-2">
-                              {activity.created_by_org_acronym || activity.created_by_org_name}
-                            </span>
-                          )}
-                        </span>
-                      </div>
+                  <Check
+                    className={cn(
+                      'h-4 w-4 shrink-0',
+                      value === activity.id ? 'opacity-100' : 'opacity-0'
+                    )}
+                  />
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    {activity.icon && (
+                      <img
+                        src={activity.icon}
+                        alt=""
+                        className="w-6 h-6 rounded mt-0.5 flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <span className="font-normal text-sm inline">
+                        {title}
+                        {activity.acronym && (
+                          <span className="text-gray-500 ml-1">
+                            ({activity.acronym})
+                          </span>
+                        )}
+                        {activity.iati_identifier && (
+                          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600 ml-2">
+                            {activity.iati_identifier}
+                          </span>
+                        )}
+                        {(activity.created_by_org_name || activity.created_by_org_acronym) && (
+                          <span className="text-xs text-gray-400 ml-2">
+                            {activity.created_by_org_acronym || activity.created_by_org_name}
+                          </span>
+                        )}
+                      </span>
                     </div>
                   </div>
-                </CommandItem>
+                </div>
               );
             })}
-          </CommandGroup>
-        </Command>
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
     </div>

@@ -477,7 +477,7 @@ export default function ForwardSpendingSurveyTab({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="extraction_date">
-                Extraction Date <span className="text-red-500">*</span>
+                Extraction Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </Label>
               <Input
                 id="extraction_date"
@@ -612,7 +612,7 @@ export default function ForwardSpendingSurveyTab({
             ) : (
               <div className="rounded-md border">
                 <Table>
-                  <TableHeader className="bg-muted/50 border-b border-border/70">
+                  <TableHeader className="bg-surface-muted border-b border-border/70">
                     <TableRow>
                       <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 w-1/5">Year</TableHead>
                       <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 text-right w-1/5">Amount</TableHead>
@@ -744,7 +744,7 @@ export default function ForwardSpendingSurveyTab({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="forecast_year">
-                  Forecast Year <span className="text-red-500">*</span>
+                  Forecast Year <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <Select
                   value={modalForecast?.forecast_year?.toString() || ''}
@@ -771,7 +771,7 @@ export default function ForwardSpendingSurveyTab({
 
               <div className="space-y-2">
                 <Label htmlFor="amount">
-                  Amount <span className="text-red-500">*</span>
+                  Amount <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <Input
                   id="amount"
@@ -791,7 +791,7 @@ export default function ForwardSpendingSurveyTab({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="currency">
-                  Currency <span className="text-red-500">*</span>
+                  Currency <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <Select
                   value={modalForecast?.currency || 'USD'}
@@ -815,7 +815,7 @@ export default function ForwardSpendingSurveyTab({
 
               <div className="space-y-2">
                 <Label htmlFor="value_date">
-                  Value Date <span className="text-red-500">*</span>
+                  Value Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <Input
                   id="value_date"

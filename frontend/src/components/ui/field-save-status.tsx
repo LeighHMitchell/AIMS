@@ -112,7 +112,7 @@ export function LabelWithSaveStatus({
     >
       <span>
         {children}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />}
       </span>
       <FieldSaveStatus 
         status={status}

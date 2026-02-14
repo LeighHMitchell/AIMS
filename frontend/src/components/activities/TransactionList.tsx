@@ -99,11 +99,12 @@ const TRANSACTION_TYPE_DEFINITIONS: Record<string, string> = {
 };
 
 // Column configuration for the activity transaction list
-type ActivityTransactionColumnId = 
-  | 'transactionDate' | 'transactionType' | 'financeType' | 'organizations' 
+type ActivityTransactionColumnId =
+  | 'transactionDate' | 'transactionType' | 'financeType' | 'organizations'
   | 'amount' | 'valueDate' | 'usdValue'
-  | 'aidType' | 'flowType' | 'tiedStatus' | 'currency' 
-  | 'description' | 'disbursementChannel' | 'humanitarian';
+  | 'aidType' | 'flowType' | 'tiedStatus' | 'currency'
+  | 'description' | 'disbursementChannel' | 'humanitarian'
+;
 
 interface ActivityTransactionColumnConfig {
   id: ActivityTransactionColumnId;
@@ -1538,7 +1539,7 @@ export default function TransactionList({
             <div className={hideSummaryCards ? "w-full" : "rounded-md border"}>
               <div className="overflow-x-auto">
               <Table className={hideSummaryCards ? "w-full" : "table-fixed min-w-max"}>
-                <TableHeader className="bg-muted/50 border-b border-border/70">
+                <TableHeader className="bg-surface-muted border-b border-border/70">
                   <TableRow>
                     {/* Expand/collapse column - always visible */}
                     <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '40px', maxWidth: '40px' }}></TableHead>
@@ -1661,6 +1662,7 @@ export default function TransactionList({
                         Channel
                       </TableHead>
                     )}
+
                   </TableRow>
               </TableHeader>
               <TableBody>
@@ -2096,8 +2098,9 @@ export default function TransactionList({
                           )}
                         </TableCell>
                       )}
+
                     </TableRow>
-                    
+
                     {/* Expandable Detail Row */}
                     {isExpanded && (
                       <TableRow className="bg-muted/20 animate-in fade-in-from-top-2 duration-200">
@@ -2240,15 +2243,6 @@ export default function TransactionList({
                                     </Button>
                                   </div>
                                 )}
-                                {transaction.provider_org_activity_id && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground min-w-[160px]">Provider Activity:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.provider_org_activity_id}</span>
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.provider_org_activity_id!)}>
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                )}
                                 {transaction.receiver_org_name && (
                                   <div className="flex items-start gap-2">
                                     <span className="text-muted-foreground min-w-[160px]">Receiver Organisation:</span>
@@ -2291,15 +2285,6 @@ export default function TransactionList({
                                     <span className="text-muted-foreground min-w-[160px]">Receiver Reference:</span>
                                     <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.receiver_org_ref}</span>
                                     <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.receiver_org_ref!)}>
-                                      <Copy className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                )}
-                                {transaction.receiver_org_activity_id && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground min-w-[160px]">Receiver Activity:</span>
-                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{transaction.receiver_org_activity_id}</span>
-                                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 flex-shrink-0" onClick={() => navigator.clipboard.writeText(transaction.receiver_org_activity_id!)}>
                                       <Copy className="h-3 w-3" />
                                     </Button>
                                   </div>

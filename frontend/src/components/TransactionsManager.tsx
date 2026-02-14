@@ -69,13 +69,14 @@ const DISBURSEMENT_CHANNELS: Record<string, string> = {
 
 // Column configuration for the activity editor transaction manager
 // This is a subset of TransactionTable columns relevant to the activity context
-type ActivityEditorColumnId = 
+type ActivityEditorColumnId =
   | 'checkbox' | 'actions'
-  | 'transactionDate' | 'transactionType' | 'organizations' 
+  | 'transactionDate' | 'transactionType' | 'organizations'
   | 'amount' | 'valueDate' | 'usdValue' | 'financeType'
   | 'activityId' | 'iatiIdentifier' | 'reportingOrg'
   | 'currency' | 'linkedStatus' | 'acceptanceStatus'
-  | 'aidType' | 'flowType' | 'tiedStatus' | 'humanitarian';
+  | 'aidType' | 'flowType' | 'tiedStatus' | 'humanitarian'
+  | 'providerActivity' | 'receiverActivity';
 
 interface ActivityEditorColumnConfig {
   id: ActivityEditorColumnId;
@@ -104,6 +105,8 @@ const ACTIVITY_EDITOR_COLUMN_CONFIGS: ActivityEditorColumnConfig[] = [
   { id: 'activityId', label: 'Activity ID', group: 'activityContext', defaultVisible: false },
   { id: 'iatiIdentifier', label: 'IATI Identifier', group: 'activityContext', defaultVisible: false },
   { id: 'reportingOrg', label: 'Reporting Org', group: 'activityContext', defaultVisible: false },
+  { id: 'providerActivity', label: 'Provider Activity', group: 'activityContext', defaultVisible: false },
+  { id: 'receiverActivity', label: 'Receiver Activity', group: 'activityContext', defaultVisible: false },
   
   // Classification columns (optional)
   { id: 'currency', label: 'Currency', group: 'classification', defaultVisible: false },

@@ -9041,7 +9041,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         {/* Table */}
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-surface-muted">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center w-20">
                   Import
@@ -9139,7 +9139,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
         {/* Policy markers table */}
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-surface-muted">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                   Import
@@ -9516,7 +9516,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                       {/* Search Filters */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <Label htmlFor="iati-title">Activity Title or IATI Identifier *</Label>
+                          <Label htmlFor="iati-title">Activity Title or IATI Identifier <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                           <Input
                             id="iati-title"
                             placeholder="e.g., Health Project or 44000-P156634"
@@ -10100,7 +10100,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
               {/* Field Selection Table */}
               <div className="border rounded-lg overflow-hidden">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-surface-muted">
                     <tr>
                       <th className="text-left px-4 py-2 font-medium text-gray-700 w-12">Import</th>
                       <th className="text-left px-4 py-2 font-medium text-gray-700">Field</th>
@@ -11032,7 +11032,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
           {/* Refinement table */}
           <div className="border rounded-lg overflow-hidden">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-surface-muted">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                     Original (3-digit)

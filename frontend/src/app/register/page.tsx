@@ -236,7 +236,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email <span className="text-red-500">*</span>
+                Email <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </label>
               <Input
                 id="email"
@@ -251,7 +251,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium text-gray-700">
-                Password <span className="text-red-500">*</span>
+                Password <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </label>
               <Input
                 id="password"
@@ -267,7 +267,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
-                Confirm Password <span className="text-red-500">*</span>
+                Confirm Password <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </label>
               <Input
                 id="confirmPassword"

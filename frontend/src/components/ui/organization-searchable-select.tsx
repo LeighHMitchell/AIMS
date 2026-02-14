@@ -8,12 +8,14 @@ import Image from "next/image";
 import Flag from "react-world-flags";
 import { getOrganizationTypeName } from "@/data/iati-organization-types";
 import { getCountryCode } from "@/lib/country-utils";
+import { isLegacyOrgType } from "@/lib/org-type-mappings";
 
 export interface Organization {
   id: string;
   name: string;
   acronym?: string;
   iati_org_id?: string;
+  iati_identifier?: string;
   logo?: string;
   country?: string;
   organisation_type?: string;
@@ -34,6 +36,8 @@ interface OrganizationSearchableSelectProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   forceDirection?: 'up' | 'down' | 'auto';
+  fallbackRef?: string;
+  onLegacyTypeDetected?: (org: Organization) => void;
 }
 
 export function OrganizationSearchableSelect({
@@ -49,6 +53,8 @@ export function OrganizationSearchableSelect({
   open: externalOpen,
   onOpenChange: externalOnOpenChange,
   forceDirection = 'auto',
+  fallbackRef,
+  onLegacyTypeDetected,
 }: OrganizationSearchableSelectProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -83,6 +89,16 @@ export function OrganizationSearchableSelect({
   const handleSelect = (organizationId: string) => {
     onValueChange(organizationId);
     setOpen(false);
+
+    if (onLegacyTypeDetected) {
+      const org = organizations.find(o => o.id === organizationId);
+      if (org) {
+        const orgTypeCode = org.Organisation_Type_Code || org.organisation_type;
+        if (isLegacyOrgType(orgTypeCode)) {
+          onLegacyTypeDetected(org);
+        }
+      }
+    }
   };
 
   const handleClear = (e: React.MouseEvent) => {
@@ -145,7 +161,7 @@ export function OrganizationSearchableSelect({
               )}
               {orgTypeName && (
                 <span className="text-xs text-muted-foreground">
-                  {orgTypeName}
+                  {orgTypeCode && <span className="font-mono bg-gray-200 px-1 py-0.5 rounded text-gray-700">{orgTypeCode}</span>}{' '}{orgTypeName}
                 </span>
               )}
               {orgTypeName && org.country && (
@@ -183,6 +199,11 @@ export function OrganizationSearchableSelect({
           <span className="truncate">
             {selectedOrganization ? (
               renderOrganizationDisplay(selectedOrganization, true)
+            ) : fallbackRef ? (
+              <span className="flex flex-col min-w-0 text-left leading-relaxed">
+                <span className="truncate font-medium text-yellow-600">{fallbackRef}</span>
+                <span className="text-sm text-yellow-500 truncate mt-0.5">Organization not found in list</span>
+              </span>
             ) : (
               placeholder
             )}

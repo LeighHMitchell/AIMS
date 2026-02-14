@@ -78,7 +78,12 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
   const [allContacts, setAllContacts] = useState<RolodexPerson[]>([])
   const [searchingPeople, setSearchingPeople] = useState(false)
   const [contactsLoaded, setContactsLoaded] = useState(false)
-  
+
+  // Working group meeting state
+  const [workingGroups, setWorkingGroups] = useState<{ id: string; label: string; code: string }[]>([])
+  const [selectedWorkingGroupId, setSelectedWorkingGroupId] = useState<string>('')
+  const [wgLoaded, setWgLoaded] = useState(false)
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -113,6 +118,19 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
   const [pendingDocuments, setPendingDocuments] = useState<PendingDocument[]>([])
   const [documentType, setDocumentType] = useState<'agenda' | 'minutes' | 'background' | 'presentation' | 'handout' | 'other'>('agenda')
   const [uploadingDocuments, setUploadingDocuments] = useState(false)
+
+  // Load working groups when needed
+  useEffect(() => {
+    if (isOpen && !wgLoaded) {
+      apiFetch('/api/working-groups')
+        .then(res => res.ok ? res.json() : [])
+        .then(data => {
+          setWorkingGroups(Array.isArray(data) ? data.map((wg: any) => ({ id: wg.id, label: wg.label, code: wg.code })) : [])
+          setWgLoaded(true)
+        })
+        .catch(() => setWgLoaded(true))
+    }
+  }, [isOpen, wgLoaded])
 
   // Initialize date if selectedDate is provided
   useEffect(() => {
@@ -446,9 +464,34 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
         setUploadingDocuments(false)
       }
 
-      toast.success('Event created successfully! It will be reviewed for approval.')
+      // If this is a working group meeting, also create the WG meeting record
+      if (formData.type === 'meeting' && selectedWorkingGroupId && result.event?.id) {
+        try {
+          await apiFetch(`/api/working-groups/${selectedWorkingGroupId}/meetings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: formData.title,
+              meeting_date: selectedDateValue,
+              start_time: startTime || null,
+              end_time: endTime || null,
+              location: formData.location || null,
+              agenda: formData.description || null,
+            }),
+          })
+        } catch (wgErr) {
+          console.error('[EventCreateModal] Failed to create WG meeting record:', wgErr)
+        }
+      }
+
+      toast.success(
+        selectedWorkingGroupId
+          ? 'Working group meeting created and added to calendar!'
+          : 'Event created successfully! It will be reviewed for approval.'
+      )
 
       // Reset form
+      setSelectedWorkingGroupId('')
       setFormData({
         title: '',
         description: '',
@@ -517,7 +560,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                 <Input
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Event title"
+                  placeholder="Event title *"
                   className="text-xl font-semibold border-0 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 mb-1"
                 />
                 {formData.start && (
@@ -538,7 +581,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Calendar className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-sm font-medium text-[#4c5568]">Date</Label>
+                <Label className="text-sm font-medium text-[#4c5568]">Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               </div>
               <div className="flex-1">
                 <DatePicker
@@ -605,6 +648,37 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                 </Select>
               </div>
             </div>
+
+            {/* Working Group Selector - shown for meetings */}
+            {formData.type === 'meeting' && (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 w-32 flex-shrink-0">
+                  <Users className="h-4 w-4 text-[#4c5568]" />
+                  <Label className="text-sm font-medium text-[#4c5568]">Working Group</Label>
+                </div>
+                <div className="flex-1">
+                  <Select
+                    value={selectedWorkingGroupId || 'none'}
+                    onValueChange={(val) => setSelectedWorkingGroupId(val === 'none' ? '' : val)}
+                  >
+                    <SelectTrigger className="w-full rounded-lg">
+                      <SelectValue placeholder="No working group (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No working group (general meeting)</SelectItem>
+                      {workingGroups.map((wg) => (
+                        <SelectItem key={wg.id} value={wg.id}>
+                          {wg.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Link this meeting to a working group to track it there too
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Color */}
             <div className="flex items-center gap-4">

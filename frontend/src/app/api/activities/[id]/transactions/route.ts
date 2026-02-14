@@ -62,6 +62,18 @@ export async function GET(
           acronym,
           logo,
           type
+        ),
+        provider_activity:activities!provider_activity_uuid (
+          id,
+          title_narrative,
+          acronym,
+          iati_identifier
+        ),
+        receiver_activity:activities!receiver_activity_uuid (
+          id,
+          title_narrative,
+          acronym,
+          iati_identifier
         )
       `)
       .eq('activity_id', activityId)
@@ -144,6 +156,18 @@ export async function GET(
                   acronym,
                   logo,
                   type
+                ),
+                provider_activity:activities!provider_activity_uuid (
+                  id,
+                  title_narrative,
+                  acronym,
+                  iati_identifier
+                ),
+                receiver_activity:activities!receiver_activity_uuid (
+                  id,
+                  title_narrative,
+                  acronym,
+                  iati_identifier
                 )
               `)
               .in('activity_id', Array.from(linkedActivityIds))

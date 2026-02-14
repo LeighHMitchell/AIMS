@@ -127,13 +127,21 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
     const [position, setPosition] = React.useState<'bottom' | 'top'>(forcePosition || 'bottom')
     const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0 })
     const [mounted, setMounted] = React.useState(false)
-    
+    const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null)
+
     if (!context) throw new Error("PopoverContent must be used within Popover")
 
-    // Handle SSR
+    // Handle SSR and detect if inside a dialog
     React.useEffect(() => {
       setMounted(true)
     }, [])
+
+    // Detect if trigger is inside a Radix Dialog and set portal target accordingly
+    React.useEffect(() => {
+      if (!context.triggerRef.current) return
+      const dialogContent = context.triggerRef.current.closest('[role="dialog"]') as HTMLElement | null
+      setPortalTarget(dialogContent || null)
+    }, [context.triggerRef, context.open])
 
     // Combine refs
     const combinedRef = React.useCallback((node: HTMLDivElement | null) => {
@@ -155,7 +163,6 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
 
         const rect = trigger.getBoundingClientRect()
         const viewportHeight = window.innerHeight
-        const scrollY = window.scrollY
 
         // Calculate if content would overflow at bottom
         const contentHeight = contentRef.current?.offsetHeight || 350 // estimate
@@ -164,12 +171,10 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
 
         let top: number
         if (shouldFlip && !forcePosition) {
-          // Position above
-          top = rect.top + scrollY - contentHeight - sideOffset
+          top = rect.top - contentHeight - sideOffset
           setPosition('top')
         } else {
-          // Position below
-          top = rect.bottom + scrollY + sideOffset
+          top = rect.bottom + sideOffset
           setPosition('bottom')
         }
 
@@ -180,6 +185,14 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
           left = rect.right
         } else {
           left = rect.left + rect.width / 2
+        }
+
+        // If inside a dialog, adjust coords relative to the dialog element
+        // (CSS transform on dialog creates a new containing block for fixed positioning)
+        if (portalTarget) {
+          const dialogRect = portalTarget.getBoundingClientRect()
+          top = top - dialogRect.top
+          left = left - dialogRect.left
         }
 
         setCoords({ top, left, width: rect.width })
@@ -195,7 +208,7 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
         window.removeEventListener('resize', updatePosition)
         window.removeEventListener('scroll', updatePosition, true)
       }
-    }, [context.open, context.triggerRef, align, sideOffset, collisionPadding, forcePosition, usePortal])
+    }, [context.open, context.triggerRef, align, sideOffset, collisionPadding, forcePosition, usePortal, portalTarget])
 
     // Handle outside clicks
     React.useEffect(() => {
@@ -265,7 +278,9 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
         />
       )
 
-      return createPortal(content, document.body)
+      // Portal into the dialog element if inside a dialog (keeps focus within dialog's scope),
+      // otherwise portal to document.body
+      return createPortal(content, portalTarget || document.body)
     }
 
     // Fallback to non-portal rendering (for SSR or when usePortal is false)

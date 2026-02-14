@@ -583,7 +583,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                       <div className="space-y-5">
                         <div className="space-y-2">
                           <Label htmlFor="activity-title">
-                            Activity Title <span className="text-destructive">*</span>
+                            Activity Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                           </Label>
                           <Input
                             id="activity-title"
@@ -626,7 +626,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
 
                         <div className="space-y-2">
                           <Label>
-                            Activity Status <span className="text-destructive">*</span>
+                            Activity Status <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                           </Label>
                           <SelectIATI
                             groups={ACTIVITY_STATUS_GROUPS}
@@ -649,7 +649,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                       <div className="space-y-5">
                         <div className="space-y-2">
                           <Label>
-                            Country <span className="text-destructive">*</span>
+                            Country <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                           </Label>
                           <SelectIATI
                             groups={countryGroups}

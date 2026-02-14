@@ -203,7 +203,7 @@ export function NewsletterSection() {
                             </div>
                           </div>
                           <div className="mc-field-group">
-                            <label htmlFor="mce-EMAIL">Email Address *</label>
+                            <label htmlFor="mce-EMAIL">Email Address <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></label>
                             <input
                               type="email"
                               name="EMAIL"

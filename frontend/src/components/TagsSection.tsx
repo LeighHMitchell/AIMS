@@ -211,7 +211,6 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
     
     setInputValue('');
     setSearchQuery('');
-    setOpen(false);
   };
 
 
@@ -256,8 +255,8 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
     <TooltipProvider>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
         {/* Tag Input */}
-        <div className="space-y-2">
-          <div className="relative">
+        <div className="flex gap-2 items-start">
+          <div className="relative flex-1">
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger className="w-full">
                 <Input
@@ -300,8 +299,8 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                             ))}
                           </CommandGroup>
                         ) : null}
-                        
-                        {inputValue.trim() && !availableTags.some(t => 
+
+                        {inputValue.trim() && !availableTags.some(t =>
                           t.name.toLowerCase() === inputValue.toLowerCase().trim()
                         ) && (
                           <CommandGroup>
@@ -324,15 +323,13 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
               </PopoverContent>
             </Popover>
           </div>
-
-          <div className="flex gap-2 mt-6">
-            <Button
-              onClick={() => inputValue.trim() && addTag(inputValue)}
-              disabled={!inputValue.trim()}
-            >
-              Add Tag
-            </Button>
-          </div>
+          <Button
+            onClick={() => inputValue.trim() && addTag(inputValue)}
+            disabled={!inputValue.trim()}
+            className="shrink-0"
+          >
+            Add Tag
+          </Button>
         </div>
 
         {/* Selected Tags */}

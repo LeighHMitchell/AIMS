@@ -330,7 +330,7 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Group Name *</Label>
+            <Label htmlFor="name">Group Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               id="name"
               value={formData.name}

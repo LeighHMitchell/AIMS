@@ -255,7 +255,7 @@ export default function LocationEditor({
               {/* Location Name */}
               <div>
                 <Label htmlFor={`name-${location.id}`}>
-                  Location Name <span className="text-red-500">*</span>
+                  Location Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <Input
                   id={`name-${location.id}`}
@@ -269,7 +269,7 @@ export default function LocationEditor({
               {/* Country */}
               <div>
                 <Label htmlFor={`country-${location.id}`}>
-                  Country <span className="text-red-500">*</span>
+                  Country <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </Label>
                 <EnhancedSearchableSelect
                   value={location.country || ''}

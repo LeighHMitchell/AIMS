@@ -658,7 +658,7 @@ export function BudgetClassificationsManagement() {
           ) : (
             <div className="border rounded-lg">
               {/* Sticky Header */}
-              <div className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm border-b">
+              <div className="sticky top-0 z-10 bg-surface-muted border-b">
                 <div className="flex items-center gap-4 py-3 px-3 text-sm font-medium text-muted-foreground">
                   <div className="w-5 flex-shrink-0" /> {/* Spacer for expand icon */}
                   <button
@@ -773,7 +773,7 @@ export function BudgetClassificationsManagement() {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Code *</Label>
+                <Label htmlFor="code">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Input
                   id="code"
                   value={formData.code}
@@ -784,7 +784,7 @@ export function BudgetClassificationsManagement() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="classificationType">Type *</Label>
+                <Label htmlFor="classificationType">Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Select
                   value={formData.classificationType}
                   onValueChange={(value) =>
@@ -817,7 +817,7 @@ export function BudgetClassificationsManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Input
                 id="name"
                 value={formData.name}

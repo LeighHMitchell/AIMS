@@ -147,7 +147,7 @@ export function DocumentLinksManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">URL *</Label>
+            <Label className="text-xs text-gray-700">URL <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               type="url"
               value={formData.url}
@@ -159,7 +159,7 @@ export function DocumentLinksManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Title *</Label>
+            <Label className="text-xs text-gray-700">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}

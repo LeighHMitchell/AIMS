@@ -1197,14 +1197,6 @@ export function TransactionTable({
                             )}
                           </OrganizationHoverCard>
                         </div>
-                        {transaction.provider_org_activity_id && activityDetails[transaction.provider_org_activity_id] && (
-                          <div className="text-xs text-gray-500 ml-5">
-                            <span>{activityDetails[transaction.provider_org_activity_id]?.title || activityDetails[transaction.provider_org_activity_id]?.acronym}</span>
-                            {activityDetails[transaction.provider_org_activity_id]?.iati_identifier && (
-                              <span className="ml-1 font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activityDetails[transaction.provider_org_activity_id]?.iati_identifier}</span>
-                            )}
-                          </div>
-                        )}
                       </div>
                       <span className="text-muted-foreground mt-1">→</span>
                       <div className="flex flex-col gap-0.5">
@@ -1230,14 +1222,6 @@ export function TransactionTable({
                             )}
                           </OrganizationHoverCard>
                         </div>
-                        {transaction.receiver_org_activity_id && activityDetails[transaction.receiver_org_activity_id] && (
-                          <div className="text-xs text-gray-500 ml-5">
-                            <span>{activityDetails[transaction.receiver_org_activity_id]?.title || activityDetails[transaction.receiver_org_activity_id]?.acronym}</span>
-                            {activityDetails[transaction.receiver_org_activity_id]?.iati_identifier && (
-                              <span className="ml-1 font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activityDetails[transaction.receiver_org_activity_id]?.iati_identifier}</span>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -1245,42 +1229,64 @@ export function TransactionTable({
                 )}
                 
                 {/* Provider Activity */}
-                {isColumnVisible('providerActivity') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {transaction.provider_org_activity_id ? (
-                      <Link 
-                        href={`/activities/${transaction.provider_org_activity_id}`}
-                        className="text-xs text-blue-600 hover:underline"
+                {isColumnVisible('providerActivity') && (() => {
+                  const pa = (transaction as any).provider_activity;
+                  const paId = pa?.id || transaction.provider_org_activity_id;
+                  const details = pa || (transaction.provider_org_activity_id ? activityDetails[transaction.provider_org_activity_id] : null);
+                  return (
+                  <td className="py-3 px-4" style={{ maxWidth: '260px' }}>
+                    {paId || transaction.provider_org_activity_id ? (
+                      <Link
+                        href={`/activities/${paId || transaction.provider_org_activity_id}`}
+                        className="text-xs hover:underline break-words block"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {activityDetails[transaction.provider_org_activity_id]?.acronym || 
-                         activityDetails[transaction.provider_org_activity_id]?.title || 
-                         transaction.provider_org_activity_id.slice(0, 8) + '...'}
+                        <div className="space-y-0.5">
+                          {(details?.acronym) && (
+                            <div className="font-medium">{details.acronym}</div>
+                          )}
+                          {(details?.title_narrative || details?.title) && (
+                            <div className="text-muted-foreground">{details.title_narrative || details.title}</div>
+                          )}
+                          <div className="font-mono text-muted-foreground">{details?.iati_identifier || transaction.provider_org_activity_id}</div>
+                        </div>
                       </Link>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
                   </td>
-                )}
-                
+                  );
+                })()}
+
                 {/* Receiver Activity */}
-                {isColumnVisible('receiverActivity') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {transaction.receiver_org_activity_id ? (
-                      <Link 
-                        href={`/activities/${transaction.receiver_org_activity_id}`}
-                        className="text-xs text-blue-600 hover:underline"
+                {isColumnVisible('receiverActivity') && (() => {
+                  const ra = (transaction as any).receiver_activity;
+                  const raId = ra?.id || transaction.receiver_org_activity_id;
+                  const details = ra || (transaction.receiver_org_activity_id ? activityDetails[transaction.receiver_org_activity_id] : null);
+                  return (
+                  <td className="py-3 px-4" style={{ maxWidth: '260px' }}>
+                    {raId || transaction.receiver_org_activity_id ? (
+                      <Link
+                        href={`/activities/${raId || transaction.receiver_org_activity_id}`}
+                        className="text-xs hover:underline break-words block"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {activityDetails[transaction.receiver_org_activity_id]?.acronym || 
-                         activityDetails[transaction.receiver_org_activity_id]?.title || 
-                         transaction.receiver_org_activity_id.slice(0, 8) + '...'}
+                        <div className="space-y-0.5">
+                          {(details?.acronym) && (
+                            <div className="font-medium">{details.acronym}</div>
+                          )}
+                          {(details?.title_narrative || details?.title) && (
+                            <div className="text-muted-foreground">{details.title_narrative || details.title}</div>
+                          )}
+                          <div className="font-mono text-muted-foreground">{details?.iati_identifier || transaction.receiver_org_activity_id}</div>
+                        </div>
                       </Link>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
                   </td>
-                )}
+                  );
+                })()}
                 
                 {/* Amount */}
                 {isColumnVisible('amount') && (

@@ -267,7 +267,7 @@ export function StrategyForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               id="title"
               value={title}
@@ -280,7 +280,7 @@ export function StrategyForm({
           {/* Document Type & Status */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Document Type *</Label>
+              <Label>Document Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Select value={documentType} onValueChange={setDocumentType}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type..." />
@@ -296,7 +296,7 @@ export function StrategyForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Status *</Label>
+              <Label>Status <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status..." />

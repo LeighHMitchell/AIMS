@@ -680,7 +680,7 @@ export default function UserManagement() {
                     {/* Users Table */}
                     <div className="border rounded-lg overflow-hidden overflow-x-auto">
                       <table className="w-full min-w-[1000px] table-auto">
-                        <thead className="bg-muted/50">
+                        <thead className="bg-surface-muted">
                           <tr>
                             <th className="text-left p-4 font-medium w-80">
                               <button

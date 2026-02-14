@@ -140,7 +140,7 @@ export function DimensionsManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Dimension Name *</Label>
+            <Label className="text-xs text-gray-700">Dimension Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value, useTemplate: false }))}
@@ -151,7 +151,7 @@ export function DimensionsManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Value *</Label>
+            <Label className="text-xs text-gray-700">Value <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             {formData.useTemplate && formData.name && DIMENSION_TEMPLATES[formData.name as keyof typeof DIMENSION_TEMPLATES] ? (
               <Select
                 value={formData.value}

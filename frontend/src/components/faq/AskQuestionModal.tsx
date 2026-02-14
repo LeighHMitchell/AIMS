@@ -99,7 +99,7 @@ export function AskQuestionModal({ isOpen, onClose }: AskQuestionModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="question">Your Question <span className="text-red-500">*</span></Label>
+            <Label htmlFor="question">Your Question <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Textarea
               id="question"
               value={question}

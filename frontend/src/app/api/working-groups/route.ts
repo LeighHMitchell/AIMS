@@ -107,7 +107,10 @@ export async function POST(request: Request) {
         label: body.label,
         sector_code: body.sector_code || null,
         description: body.description || null,
-        is_active: body.is_active !== false // Default to true
+        is_active: body.is_active !== false,
+        group_type: body.group_type || null,
+        banner: body.banner || null,
+        icon_url: body.icon_url || null,
       }])
       .select()
       .single();

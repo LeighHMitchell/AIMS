@@ -86,7 +86,7 @@ export function CreateActivityModal({ isOpen, onClose }: CreateActivityModalProp
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="activity-title">Activity Title *</Label>
+            <Label htmlFor="activity-title">Activity Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               id="activity-title"
               value={title}

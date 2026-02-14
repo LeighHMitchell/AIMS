@@ -141,7 +141,7 @@ export function CreateTaskModal({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               id="title"
               tabIndex={1}
@@ -250,7 +250,7 @@ export function CreateTaskModal({
 
           {/* Assignees */}
           <div className="space-y-2">
-            <Label>Assign To *</Label>
+            <Label>Assign To <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <UserPicker
               userId={userId}
               selectedAssignees={assignees}

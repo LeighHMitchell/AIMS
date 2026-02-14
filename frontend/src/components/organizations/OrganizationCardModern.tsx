@@ -138,10 +138,16 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
             transition={{ delay: 0.2 }}
           >
             <h2 className="text-lg font-bold text-white mb-1 line-clamp-2 transition-colors">
-              {organization.name}
-              {organization.acronym && (
-                <span className="ml-1">({organization.acronym})</span>
-              )}
+              <Link
+                href={orgUrl}
+                className="relative z-10 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {organization.name}
+                {organization.acronym && (
+                  <span className="ml-1">({organization.acronym})</span>
+                )}
+              </Link>
             </h2>
             <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
               {(organization.country_represented || organization.country) && (

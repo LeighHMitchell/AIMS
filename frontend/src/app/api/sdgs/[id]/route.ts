@@ -317,6 +317,43 @@ export async function GET(
       }
     });
 
+    // ---- FILL GEOGRAPHIC DATA FROM ACTIVITY_LOCATIONS ----
+    // If transactions don't have recipient_country_code, use activity_locations
+    if (geographicMap.size === 0 && locations) {
+      // Build activity total value map for proportional geo distribution
+      const actValueMap = new Map<string, { totalValue: number; commitments: number; disbursements: number }>();
+      (transactions || []).forEach(tx => {
+        const mapping = sdgMappings?.find((m: any) => m.activity_id === tx.activity_id);
+        const mult = (mapping?.contribution_percent || 100) / 100;
+        const v = (tx.value_usd || tx.value || 0) * mult;
+        if (!actValueMap.has(tx.activity_id)) {
+          actValueMap.set(tx.activity_id, { totalValue: 0, commitments: 0, disbursements: 0 });
+        }
+        const d = actValueMap.get(tx.activity_id)!;
+        d.totalValue += v;
+        if (tx.transaction_type === '2' || tx.transaction_type === '11') d.commitments += v;
+        else if (tx.transaction_type === '3') d.disbursements += v;
+      });
+
+      (locations || []).forEach((loc: any) => {
+        const cc = loc.country_code;
+        if (!cc) return;
+        if (!geographicMap.has(cc)) {
+          geographicMap.set(cc, { totalValue: 0, commitments: 0, disbursements: 0, activityIds: new Set() });
+        }
+        const gd = geographicMap.get(cc)!;
+        if (!gd.activityIds.has(loc.activity_id)) {
+          gd.activityIds.add(loc.activity_id);
+          const vals = actValueMap.get(loc.activity_id);
+          if (vals) {
+            gd.totalValue += vals.totalValue;
+            gd.commitments += vals.commitments;
+            gd.disbursements += vals.disbursements;
+          }
+        }
+      });
+    }
+
     // ---- ACTIVITY STATUS BREAKDOWN ----
     const statusMap = new Map<string, { count: number; totalValue: number }>();
     let activeCount = 0;
@@ -420,15 +457,10 @@ export async function GET(
     }
 
     // ---- DONOR RANKINGS ----
+    // Include any org with financial activity or that appears as a contributor
     const donorRankings = Array.from(organizationMap.values())
       .filter(org => org.organization !== null)
-      .filter(org => {
-        // Include orgs with funding/extending roles or that have committed/disbursed
-        return org.contributionTypes.has('funding') ||
-          org.contributionTypes.has('extending') ||
-          org.totalCommitted > 0 ||
-          org.totalDisbursed > 0;
-      })
+      .filter(org => org.totalValue > 0 || org.activityIds.size > 0)
       .map(org => ({
         id: org.organization.id,
         name: org.organization.name,
@@ -439,7 +471,7 @@ export async function GET(
         totalDisbursed: org.totalDisbursed,
         activityCount: org.activityIds.size,
       }))
-      .sort((a, b) => b.totalDisbursed - a.totalDisbursed);
+      .sort((a, b) => (b.totalDisbursed + b.totalCommitted) - (a.totalDisbursed + a.totalCommitted));
 
     // ---- CONVERT MAPS TO ARRAYS ----
     const transactionsByYear = Array.from(transactionsByYearMap.entries())

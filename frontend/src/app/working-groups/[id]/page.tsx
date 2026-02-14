@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { 
-  ArrowLeft, 
-  Edit, 
-  Users, 
-  FileText, 
+import {
+  ArrowLeft,
+  Edit,
+  Users,
+  FileText,
   Calendar,
   Plus,
   MoreVertical,
@@ -20,7 +20,9 @@ import {
   Building,
   UserPlus,
   Trash2,
-  Download
+  Download,
+  Clock,
+  MapPin,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -30,18 +32,37 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { apiFetch } from '@/lib/api-fetch';
+import { apiFetch } from '@/lib/api-fetch'
 
 interface WorkingGroupMember {
   id: string
-  person_id: string
   person_name: string
   person_email?: string
   person_organization?: string
-  role: 'chair' | 'secretary' | 'member' | 'observer'
+  role: string
   is_active: boolean
   joined_on: string
+}
+
+interface WorkingGroupMeeting {
+  id: string
+  title: string
+  meeting_date: string
+  start_time?: string
+  end_time?: string
+  location?: string
+  status: string
 }
 
 interface WorkingGroupDocument {
@@ -66,7 +87,7 @@ interface WorkingGroupDetails {
   id: string
   code: string
   label: string
-  slug: string
+  slug?: string
   sector_code?: string
   description?: string
   is_active: boolean
@@ -74,8 +95,49 @@ interface WorkingGroupDetails {
   created_at: string
   updated_at: string
   members: WorkingGroupMember[]
+  meetings: WorkingGroupMeeting[]
   documents: WorkingGroupDocument[]
   activities: LinkedActivity[]
+}
+
+const getRoleBadgeColor = (role: string) => {
+  switch (role) {
+    case 'chair': return 'bg-purple-100 text-purple-800'
+    case 'co_chair': return 'bg-indigo-100 text-indigo-800'
+    case 'deputy_chair': return 'bg-violet-100 text-violet-800'
+    case 'secretariat': return 'bg-blue-100 text-blue-800'
+    case 'member': return 'bg-green-100 text-green-800'
+    case 'observer': return 'bg-gray-100 text-gray-800'
+    default: return 'bg-gray-100 text-gray-800'
+  }
+}
+
+const getRoleLabel = (role: string) => {
+  const labels: Record<string, string> = {
+    chair: 'Chair', co_chair: 'Co-Chair', deputy_chair: 'Deputy Chair',
+    secretariat: 'Secretariat', member: 'Member', observer: 'Observer',
+  }
+  return labels[role] || role
+}
+
+const getStatusBadgeColor = (status: string) => {
+  switch (status) {
+    case 'scheduled': return 'bg-blue-100 text-blue-800'
+    case 'completed': return 'bg-green-100 text-green-800'
+    case 'cancelled': return 'bg-red-100 text-red-800'
+    default: return 'bg-gray-100 text-gray-800'
+  }
+}
+
+const getDocumentTypeIcon = (type: string) => {
+  switch (type) {
+    case 'terms_of_reference': return '📋'
+    case 'minutes': return '📝'
+    case 'report': return '📊'
+    case 'presentation': return '📽️'
+    case 'photo': return '📷'
+    default: return '📄'
+  }
 }
 
 export default function WorkingGroupProfilePage() {
@@ -85,6 +147,8 @@ export default function WorkingGroupProfilePage() {
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [editedDescription, setEditedDescription] = useState('')
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (params?.id) {
@@ -97,18 +161,18 @@ export default function WorkingGroupProfilePage() {
       const groupId = Array.isArray(id) ? id[0] : id
       const response = await apiFetch(`/api/working-groups/${groupId}`)
       if (!response.ok) throw new Error('Failed to fetch working group')
-      
+
       const data = await response.json()
-      
-      // Use actual data from API with empty defaults for missing fields
+
       const workingGroupData: WorkingGroupDetails = {
         ...data,
         status: data.status || (data.is_active ? 'active' : 'inactive'),
         members: data.members || [],
+        meetings: data.meetings || [],
         documents: data.documents || [],
         activities: data.activities || []
       }
-      
+
       setWorkingGroup(workingGroupData)
       setEditedDescription(data.description || '')
     } catch (error) {
@@ -125,7 +189,6 @@ export default function WorkingGroupProfilePage() {
     try {
       const response = await apiFetch(`/api/working-groups/${workingGroup.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description: editedDescription }),
       })
 
@@ -135,32 +198,35 @@ export default function WorkingGroupProfilePage() {
       }
 
       toast.success('Description updated successfully')
-      setWorkingGroup({
-        ...workingGroup,
-        description: editedDescription
-      })
+      setWorkingGroup({ ...workingGroup, description: editedDescription })
       setIsEditing(false)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to update description')
     }
   }
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'chair': return 'bg-purple-100 text-purple-800'
-      case 'secretary': return 'bg-blue-100 text-blue-800'
-      case 'member': return 'bg-green-100 text-green-800'
-      case 'observer': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
+  const handleDelete = async () => {
+    if (!workingGroup) return
 
-  const getDocumentTypeIcon = (type: string) => {
-    switch (type) {
-      case 'tor': return '📋'
-      case 'minutes': return '📝'
-      case 'report': return '📊'
-      default: return '📄'
+    setIsDeleting(true)
+    try {
+      const response = await apiFetch(`/api/working-groups/${workingGroup.id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok || response.status === 204) {
+        toast.success(`"${workingGroup.label}" was deleted successfully`)
+        router.push('/working-groups')
+      } else {
+        const data = await response.json()
+        toast.error(data.error || 'Failed to delete working group')
+      }
+    } catch (error) {
+      console.error('Error deleting:', error)
+      toast.error('Failed to delete working group')
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteDialog(false)
     }
   }
 
@@ -193,13 +259,13 @@ export default function WorkingGroupProfilePage() {
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => router.back()}
+            onClick={() => router.push('/working-groups')}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Back to Working Groups
           </Button>
-          
+
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-3">
@@ -215,7 +281,7 @@ export default function WorkingGroupProfilePage() {
                 </Badge>
               )}
             </div>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="h-8 w-8">
@@ -223,15 +289,18 @@ export default function WorkingGroupProfilePage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push(`/working-groups/${workingGroup.id}/edit`)}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Details
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push(`/working-groups/${workingGroup.id}/edit?section=members`)}>
                   <Users className="h-4 w-4 mr-2" />
                   Manage Members
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-red-600">
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete Group
                 </DropdownMenuItem>
@@ -288,8 +357,12 @@ export default function WorkingGroupProfilePage() {
               <Users className="h-4 w-4" />
               Members ({workingGroup.members.length})
             </TabsTrigger>
-            <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="meetings" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Calendar className="h-4 w-4" />
+              Meetings ({workingGroup.meetings.length})
+            </TabsTrigger>
+            <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <FileText className="h-4 w-4" />
               Activities ({workingGroup.activities.length})
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
@@ -304,7 +377,11 @@ export default function WorkingGroupProfilePage() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Members</CardTitle>
-                  <Button size="sm" className="gap-2">
+                  <Button
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => router.push(`/working-groups/${workingGroup.id}/edit?section=members`)}
+                  >
                     <UserPlus className="h-4 w-4" />
                     Add Member
                   </Button>
@@ -325,7 +402,7 @@ export default function WorkingGroupProfilePage() {
                           <div className="flex items-center gap-3">
                             <h4 className="font-medium">{member.person_name}</h4>
                             <Badge className={getRoleBadgeColor(member.role)}>
-                              {member.role}
+                              {getRoleLabel(member.role)}
                             </Badge>
                           </div>
                           <div className="mt-1 space-y-1">
@@ -341,23 +418,76 @@ export default function WorkingGroupProfilePage() {
                                 {member.person_email}
                               </div>
                             )}
-                            <p className="text-xs text-gray-500">
-                              Joined {format(new Date(member.joined_on), 'MMM d, yyyy')}
-                            </p>
+                            {member.joined_on && (
+                              <p className="text-xs text-gray-500">
+                                Joined {format(new Date(member.joined_on), 'MMM d, yyyy')}
+                              </p>
+                            )}
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-8 w-8">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>View Profile</DropdownMenuItem>
-                            <DropdownMenuItem>Change Role</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">Remove</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Meetings Tab */}
+          <TabsContent value="meetings">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Meetings</CardTitle>
+                  <Button
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => router.push(`/working-groups/${workingGroup.id}/edit?section=meetings`)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Schedule Meeting
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {workingGroup.meetings.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <Calendar className="h-12 w-12 text-gray-300 mb-3" />
+                      <p className="text-sm text-muted-foreground">No meetings scheduled</p>
+                      <p className="text-xs text-muted-foreground mt-1">Schedule meetings to coordinate with working group members</p>
+                    </div>
+                  ) : (
+                    workingGroup.meetings.map((meeting) => (
+                      <div key={meeting.id} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center gap-3">
+                              <h4 className="font-medium">{meeting.title}</h4>
+                              <Badge className={getStatusBadgeColor(meeting.status)}>
+                                {meeting.status}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3.5 w-3.5" />
+                                {format(new Date(meeting.meeting_date), 'MMM d, yyyy')}
+                              </div>
+                              {meeting.start_time && (
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3.5 w-3.5" />
+                                  {meeting.start_time}{meeting.end_time ? ` - ${meeting.end_time}` : ''}
+                                </div>
+                              )}
+                              {meeting.location && (
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  {meeting.location}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ))
                   )}
@@ -382,8 +512,8 @@ export default function WorkingGroupProfilePage() {
                     </div>
                   ) : (
                     workingGroup.activities.map((activity) => (
-                      <div 
-                        key={activity.id} 
+                      <div
+                        key={activity.id}
                         className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
                         onClick={() => router.push(`/activities/${activity.id}`)}
                       >
@@ -391,7 +521,8 @@ export default function WorkingGroupProfilePage() {
                           <div>
                             <h4 className="font-medium">{activity.title}</h4>
                             <p className="text-sm text-gray-600 mt-1">
-                              {activity.iati_id} • {activity.partner_name}
+                              {activity.iati_id && <span>{activity.iati_id} &middot; </span>}
+                              {activity.partner_name}
                             </p>
                           </div>
                           <Badge variant="outline">
@@ -412,7 +543,11 @@ export default function WorkingGroupProfilePage() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Documents</CardTitle>
-                  <Button size="sm" className="gap-2">
+                  <Button
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => router.push(`/working-groups/${workingGroup.id}/edit?section=documents`)}
+                  >
                     <Plus className="h-4 w-4" />
                     Upload Document
                   </Button>
@@ -445,7 +580,11 @@ export default function WorkingGroupProfilePage() {
                               </div>
                             </div>
                           </div>
-                          <Button variant="ghost" size="icon">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => window.open(doc.file_url, '_blank')}
+                          >
                             <Download className="h-4 w-4" />
                           </Button>
                         </div>
@@ -458,6 +597,29 @@ export default function WorkingGroupProfilePage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Working Group</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{workingGroup.label}&quot;? This action cannot be undone.
+              All members, meetings, and documents will be removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   )
 }

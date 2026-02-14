@@ -459,7 +459,7 @@ export function HumanitarianTab({
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="scope-type">Type *</Label>
+                    <Label htmlFor="scope-type">Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                     <HumanitarianTypeSelect
                       value={editingScope.type}
                       onValueChange={(value) => setEditingScope({ ...editingScope, type: value as '1' | '2' })}
@@ -468,7 +468,7 @@ export function HumanitarianTab({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="scope-vocabulary">Vocabulary *</Label>
+                    <Label htmlFor="scope-vocabulary">Vocabulary <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                     <HumanitarianVocabularySelect
                       value={editingScope.vocabulary}
                       onValueChange={(value) => {
@@ -483,7 +483,7 @@ export function HumanitarianTab({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="scope-code">Code *</Label>
+                    <Label htmlFor="scope-code">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                     {editingScope.vocabulary === '98' ? (
                       <EmergencySearchableSelect
                         value={editingScope.code}
@@ -518,7 +518,7 @@ export function HumanitarianTab({
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>Response Description * (at least one required)</Label>
+                    <Label>Response Description <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /> (at least one required)</Label>
                     <Button onClick={addNarrative} variant="outline" size="sm">
                       <Plus className="h-4 w-4 mr-2" />
                       Add Language

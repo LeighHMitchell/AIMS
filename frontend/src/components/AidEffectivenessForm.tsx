@@ -549,7 +549,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               value={formData.implementingPartner}
               onValueChange={(value) => updateField('implementingPartner', value)}
               placeholder="Select implementing partner..."
-              className="max-w-md"
+              className="max-w-xl"
             />
             {user?.organizationId && formData.implementingPartner === user.organizationId && (
               <p className="text-xs text-gray-500">Pre-filled with your organization</p>
@@ -783,7 +783,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-gray-600">First Name *</Label>
+                    <Label className="text-xs text-gray-600">First Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                     <Input
                       value={formData.editingContact.firstName || ""}
                       onChange={(e) => updateField('editingContact', {
@@ -795,7 +795,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-gray-600">Last Name *</Label>
+                    <Label className="text-xs text-gray-600">Last Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                     <Input
                       value={formData.editingContact.lastName || ""}
                       onChange={(e) => updateField('editingContact', {

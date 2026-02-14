@@ -7,15 +7,25 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { UsersIcon, PlusIcon, SearchIcon, SlidersHorizontal, NetworkIcon, Users, UserCheck, Calendar } from 'lucide-react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { PlusIcon, SearchIcon, NetworkIcon, Users, UserCheck, Calendar, LayoutGrid, List, Pencil } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { useUserRole } from '@/hooks/useUserRole'
 
 interface WorkingGroup {
   id: string
   code: string
   label: string
   sector_code?: string
+  group_type?: string
   description?: string
   is_active: boolean
   status: string
@@ -27,16 +37,27 @@ interface WorkingGroup {
   }
 }
 
+const GROUP_TYPE_LABELS: Record<string, string> = {
+  technical: 'Technical WG',
+  development_partner: 'Development Partner WG',
+  government: 'Government WG',
+  joint: 'Joint WG',
+  issue_specific: 'Issue-Specific WG',
+  coordination: 'Coordination Group',
+  thematic: 'Thematic WG',
+  sub_working_group: 'Sub-Working Group',
+}
+
 export default function WorkingGroupsPage() {
   const router = useRouter()
+  const { isSuperUser } = useUserRole()
   const [workingGroups, setWorkingGroups] = useState<WorkingGroup[]>([])
   const [filteredGroups, setFilteredGroups] = useState<WorkingGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedSector, setSelectedSector] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
 
-  // Fetch working groups
   useEffect(() => {
     fetchWorkingGroups()
   }, [])
@@ -45,10 +66,9 @@ export default function WorkingGroupsPage() {
     try {
       const response = await fetch('/api/working-groups')
       if (!response.ok) throw new Error('Failed to fetch working groups')
-      
+
       const data = await response.json()
-      
-      // Transform data - use actual counts from API if available
+
       const transformedData = data.map((wg: any) => ({
         ...wg,
         status: wg.status || (wg.is_active ? 'active' : 'inactive'),
@@ -56,7 +76,7 @@ export default function WorkingGroupsPage() {
         activities_count: wg.activities_count || 0,
         lead_person: wg.lead_person || null
       }))
-      
+
       setWorkingGroups(transformedData)
       setFilteredGroups(transformedData)
     } catch (error) {
@@ -67,40 +87,29 @@ export default function WorkingGroupsPage() {
     }
   }
 
-  // Filter working groups based on search and filters
   useEffect(() => {
     let filtered = workingGroups
 
-    // Search filter
     if (searchQuery) {
-      filtered = filtered.filter(wg => 
+      filtered = filtered.filter(wg =>
         wg.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
         wg.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
         wg.description?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
 
-    // Sector filter
-    if (selectedSector !== 'all') {
-      filtered = filtered.filter(wg => wg.sector_code === selectedSector)
-    }
-
-    // Status filter
     if (selectedStatus !== 'all') {
       filtered = filtered.filter(wg => wg.status === selectedStatus)
     }
 
     setFilteredGroups(filtered)
-  }, [searchQuery, selectedSector, selectedStatus, workingGroups])
-
-  // Get unique sectors
-  const sectors = Array.from(new Set(workingGroups.filter(wg => wg.sector_code).map(wg => wg.sector_code)))
+  }, [searchQuery, selectedStatus, workingGroups])
 
   if (loading) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
         </div>
       </MainLayout>
     )
@@ -117,70 +126,70 @@ export default function WorkingGroupsPage() {
               Technical and Sector Working Groups for coordination and collaboration
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => router.push('/working-groups/new')}>
             <PlusIcon className="h-5 w-5" />
             New Working Group
           </Button>
         </div>
 
-        {/* Summary Cards */}
+        {/* Summary Cards - Monochrome */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Groups</p>
-                  <p className="text-2xl font-bold">{workingGroups.length}</p>
+                  <p className="text-sm text-gray-500">Total Groups</p>
+                  <p className="text-2xl font-bold text-gray-900">{workingGroups.length}</p>
                 </div>
-                <NetworkIcon className="h-8 w-8 text-blue-500" />
+                <NetworkIcon className="h-8 w-8 text-gray-400" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Active Groups</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-sm text-gray-500">Active Groups</p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {workingGroups.filter(wg => wg.status === 'active').length}
                   </p>
                 </div>
-                <UserCheck className="h-8 w-8 text-green-500" />
+                <UserCheck className="h-8 w-8 text-gray-400" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Members</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-sm text-gray-500">Total Members</p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {workingGroups.reduce((sum, wg) => sum + (wg.member_count || 0), 0)}
                   </p>
                 </div>
-                <Users className="h-8 w-8 text-purple-500" />
+                <Users className="h-8 w-8 text-gray-400" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Linked Activities</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-sm text-gray-500">Linked Activities</p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {workingGroups.reduce((sum, wg) => sum + (wg.activities_count || 0), 0)}
                   </p>
                 </div>
-                <Calendar className="h-8 w-8 text-orange-500" />
+                <Calendar className="h-8 w-8 text-gray-400" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
+        {/* Filters + View Toggle */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1">
             <div className="relative">
@@ -193,21 +202,7 @@ export default function WorkingGroupsPage() {
               />
             </div>
           </div>
-          
-          <Select value={selectedSector} onValueChange={setSelectedSector}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="All Sectors" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sectors</SelectItem>
-              {sectors.map(sector => (
-                <SelectItem key={sector} value={sector!}>
-                  Sector {sector}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
+
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="All Status" />
@@ -218,72 +213,169 @@ export default function WorkingGroupsPage() {
               <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
           </Select>
+
+          <div className="flex border rounded-md">
+            <Button
+              variant={viewMode === 'card' ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-r-none"
+              onClick={() => setViewMode('card')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-l-none"
+              onClick={() => setViewMode('table')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
-        {/* Working Groups Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGroups.map((wg) => (
-            <Card 
-              key={wg.id} 
-              className="hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => router.push(`/working-groups/${wg.id}`)}
-            >
-              <CardHeader className="pb-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg font-semibold line-clamp-2">
-                      {wg.label}
-                    </CardTitle>
-                    <p className="text-sm text-gray-500 mt-1">{wg.code}</p>
-                  </div>
-                  <Badge 
-                    variant={wg.status === 'active' ? 'default' : 'secondary'}
-                    className="ml-2"
-                  >
-                    {wg.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                {wg.description && (
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                    {wg.description}
-                  </p>
-                )}
-                
-                {wg.lead_person && (
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-500">Chair</p>
-                    <p className="text-sm font-medium">{wg.lead_person.name}</p>
-                    <p className="text-xs text-gray-500">{wg.lead_person.organization}</p>
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{wg.member_count || 0} members</span>
+        {/* Card View */}
+        {viewMode === 'card' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredGroups.map((wg) => (
+              <Card
+                key={wg.id}
+                className="hover:shadow-lg transition-shadow cursor-pointer relative group"
+                onClick={() => router.push(`/working-groups/${wg.id}`)}
+              >
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg font-semibold line-clamp-2">
+                        {wg.label}
+                      </CardTitle>
+                      <p className="text-sm text-gray-500 mt-1">{wg.code}</p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{wg.activities_count || 0} activities</span>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={wg.status === 'active' ? 'default' : 'secondary'}
+                        className="ml-2"
+                      >
+                        {wg.status}
+                      </Badge>
                     </div>
                   </div>
-                </div>
-                
-                {wg.sector_code && (
-                  <div className="mt-3">
-                    <Badge variant="outline" className="text-xs">
-                      Sector {wg.sector_code}
+                  {wg.group_type && (
+                    <Badge variant="outline" className="text-xs mt-2 w-fit">
+                      {GROUP_TYPE_LABELS[wg.group_type] || wg.group_type}
                     </Badge>
+                  )}
+                </CardHeader>
+
+                <CardContent>
+                  {wg.description && (
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                      {wg.description}
+                    </p>
+                  )}
+
+                  {wg.lead_person && (
+                    <div className="mb-4">
+                      <p className="text-xs text-gray-500">Chair</p>
+                      <p className="text-sm font-medium">{wg.lead_person.name}</p>
+                      <p className="text-xs text-gray-500">{wg.lead_person.organization}</p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <Users className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-600">{wg.member_count || 0} members</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-600">{wg.activities_count || 0} activities</span>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+
+                  {/* Edit button for super users */}
+                  {isSuperUser() && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/working-groups/${wg.id}/edit`)
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Table View */}
+        {viewMode === 'table' && (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Members</TableHead>
+                  <TableHead className="text-right">Activities</TableHead>
+                  {isSuperUser() && <TableHead className="w-[60px]" />}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredGroups.map((wg) => (
+                  <TableRow
+                    key={wg.id}
+                    className="cursor-pointer"
+                    onClick={() => router.push(`/working-groups/${wg.id}`)}
+                  >
+                    <TableCell className="font-medium">{wg.label}</TableCell>
+                    <TableCell className="text-gray-500 font-mono text-sm">{wg.code}</TableCell>
+                    <TableCell>
+                      {wg.group_type ? (
+                        <Badge variant="outline" className="text-xs">
+                          {GROUP_TYPE_LABELS[wg.group_type] || wg.group_type}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={wg.status === 'active' ? 'default' : 'secondary'}>
+                        {wg.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{wg.member_count || 0}</TableCell>
+                    <TableCell className="text-right">{wg.activities_count || 0}</TableCell>
+                    {isSuperUser() && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            router.push(`/working-groups/${wg.id}/edit`)
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )}
 
         {filteredGroups.length === 0 && (
           <div className="text-center py-12">
@@ -293,4 +385,4 @@ export default function WorkingGroupsPage() {
       </div>
     </MainLayout>
   )
-} 
+}

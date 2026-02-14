@@ -161,7 +161,7 @@ export function EditTaskModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="edit-title">Title *</Label>
+            <Label htmlFor="edit-title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               id="edit-title"
               value={title}
@@ -275,7 +275,7 @@ export function EditTaskModal({
 
           {/* Assignees */}
           <div className="space-y-2">
-            <Label>Assign To *</Label>
+            <Label>Assign To <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <UserPicker
               userId={userId}
               selectedAssignees={assignees}

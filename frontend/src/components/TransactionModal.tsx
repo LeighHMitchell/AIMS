@@ -35,9 +35,8 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { OrganizationSearchableSelect } from "@/components/ui/organization-searchable-select";
-import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { ActivityCombobox } from "@/components/ui/activity-combobox";
-import { type Organization } from "@/components/ui/organization-combobox";
+import { type Organization } from "@/components/ui/organization-searchable-select";
 import { usePartners } from "@/hooks/usePartners";
 import { useIATIReferenceValues } from "@/hooks/useIATIReferenceValues";
 import { useUser } from "@/hooks/useUser";
@@ -490,8 +489,8 @@ export default function TransactionModal({
       iati_org_id: partner.iatiOrgId,
       iati_identifier: partner.iatiOrgId,
       type: partner.type,
-      Organisation_Type_Code: partner.type,
-      Organisation_Type_Name: partner.typeName,
+      Organisation_Type_Code: (partner as any).Organisation_Type_Code || '',
+      Organisation_Type_Name: (partner as any).Organisation_Type_Name || '',
       country: partner.countryRepresented,
       logo: partner.logo // Include logo field for displaying organization logos
     }));
@@ -1781,7 +1780,7 @@ export default function TransactionModal({
                 >
                   Provider Organization
                 </LabelWithInfoAndSave>
-                <OrganizationCombobox
+                <OrganizationSearchableSelect
                   value={formData.provider_org_id || ''}
                   onValueChange={(orgId) => {
                     const org = organizations.find(o => o.id === orgId);
@@ -1985,7 +1984,7 @@ export default function TransactionModal({
                 >
                   Receiver Organization
                 </LabelWithInfoAndSave>
-                <OrganizationCombobox
+                <OrganizationSearchableSelect
                   value={formData.receiver_org_id || ''}
                   onValueChange={(orgId) => {
                     const org = organizations.find(o => o.id === orgId);

@@ -327,7 +327,7 @@ export default function ActivityLocationEditor({
       {/* Activity Scope Selector */}
       <div className="space-y-2">
         <Label htmlFor="activityScope" className="text-sm font-medium">
-          Activity Scope <span className="text-red-500">*</span>
+          Activity Scope <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
         </Label>
         <Select value={scope} onValueChange={onScopeChange}>
           <SelectTrigger id="activityScope">
@@ -395,7 +395,7 @@ export default function ActivityLocationEditor({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="country" className="text-sm font-medium">
-              Country <span className="text-red-500">*</span>
+              Country <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
             </Label>
             <Select value={selectedCountry} onValueChange={setSelectedCountry}>
               <SelectTrigger id="country">
@@ -437,7 +437,7 @@ export default function ActivityLocationEditor({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium">
-              Select Multiple Admin Areas <span className="text-red-500">*</span>
+              Select Multiple Admin Areas <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
             </Label>
             <MultiSelect
               options={MYANMAR_REGIONS}
@@ -476,7 +476,7 @@ export default function ActivityLocationEditor({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="singleRegion" className="text-sm font-medium">
-              Select Admin Area <span className="text-red-500">*</span>
+              Select Admin Area <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
             </Label>
             <Select value={selectedRegion} onValueChange={setSelectedRegion}>
               <SelectTrigger id="singleRegion">
@@ -520,7 +520,7 @@ export default function ActivityLocationEditor({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="region7" className="text-sm font-medium">
-                State/Region <span className="text-red-500">*</span>
+                State/Region <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </Label>
               <Select value={selectedRegion} onValueChange={setSelectedRegion}>
                 <SelectTrigger id="region7">
@@ -538,7 +538,7 @@ export default function ActivityLocationEditor({
 
             <div className="space-y-2">
               <Label htmlFor="township" className="text-sm font-medium">
-                Township <span className="text-red-500">*</span>
+                Township <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </Label>
               <Select 
                 value={selectedTownship} 
@@ -659,7 +659,7 @@ export default function ActivityLocationEditor({
 
             <div className="space-y-2">
               <Label htmlFor="category" className="text-sm font-medium">
-                Location Category <span className="text-red-500">*</span>
+                Location Category <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </Label>
               <Select 
                 value={singleLocation.category} 

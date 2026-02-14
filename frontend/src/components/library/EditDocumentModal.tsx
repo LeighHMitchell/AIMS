@@ -233,7 +233,7 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
         <div className="space-y-4 mt-4">
           {/* Title - full width */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <Input
               id="title"
               placeholder="Enter document title"

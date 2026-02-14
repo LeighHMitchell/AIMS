@@ -1018,7 +1018,7 @@ function ContactFormDialog({
           {/* Contact Type */}
           <div>
             <Label htmlFor="type">
-              Contact Type <span className="text-red-500">*</span>
+              Contact Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
             </Label>
             <Popover open={contactTypeOpen} onOpenChange={setContactTypeOpen}>
               <PopoverTrigger asChild>
@@ -1104,7 +1104,7 @@ function ContactFormDialog({
 
             <div className="col-span-5">
               <Label htmlFor="firstName">
-                First Name <span className="text-red-500">*</span>
+                First Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </Label>
               <Input
                 id="firstName"
@@ -1117,7 +1117,7 @@ function ContactFormDialog({
 
             <div className="col-span-5">
               <Label htmlFor="lastName">
-                Last Name <span className="text-red-500">*</span>
+                Last Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </Label>
               <Input
                 id="lastName"

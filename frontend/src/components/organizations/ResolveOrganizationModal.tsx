@@ -300,7 +300,7 @@ export function ResolveOrganizationModal({
                           {resolution?.action === 'create' && (
                             <div className="mt-2 space-y-2 bg-gray-50 p-3 rounded border">
                               <div>
-                                <Label htmlFor={`${key}-name`} className="text-xs">Name *</Label>
+                                <Label htmlFor={`${key}-name`} className="text-xs">Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                                 <Input
                                   id={`${key}-name`}
                                   value={resolution.newOrgData?.name || ''}

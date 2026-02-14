@@ -109,7 +109,7 @@ export function LinkExternalActivityModal({
           {/* IATI Identifier */}
           <div className="space-y-2">
             <Label htmlFor="external-iati-id">
-              IATI Identifier <span className="text-red-500">*</span>
+              IATI Identifier <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
             </Label>
             <Input
               id="external-iati-id"
@@ -141,7 +141,7 @@ export function LinkExternalActivityModal({
           {/* Relationship Type */}
           <div className="space-y-2">
             <Label htmlFor="relationship-type">
-              Relationship Type <span className="text-red-500">*</span>
+              Relationship Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
             </Label>
             <div className="w-full">
               <EnhancedSearchableSelect

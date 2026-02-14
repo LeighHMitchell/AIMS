@@ -1911,7 +1911,7 @@ const router = useRouter();
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden fade-in">
           <div className="overflow-x-auto">
             <table className="w-full table-auto border-collapse activities-table">
-              <thead className="bg-muted/50 border-b border-border">
+              <thead className="bg-surface-muted border-b border-border">
                 <tr>
                   {/* Checkbox column - always visible */}
                   <th className="h-12 px-4 py-3 text-center align-middle w-[50px]">
@@ -2613,7 +2613,7 @@ const router = useRouter();
                             {/* Activity Title and Details */}
                             <div className="space-y-1 pr-2 flex-1 min-w-0">
                               <h3
-                                className="font-medium text-foreground leading-tight line-clamp-2"
+                                className="group/title font-medium text-foreground leading-tight line-clamp-2"
                                 title={activity.title}
                               >
                                 {activity.title}
@@ -2645,7 +2645,7 @@ const router = useRouter();
                                       : activity.title;
                                     copyToClipboard(textToCopy, 'title', activity.id);
                                   }}
-                                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                                  className="ml-1 opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-gray-700"
                                   title={activity.acronym ? "Copy Activity Title and Acronym" : "Copy Activity Title"}
                                 >
                                   {copiedId === `${activity.id}-title` ? (
@@ -2658,7 +2658,7 @@ const router = useRouter();
                             {(activity.partnerId || activity.iatiIdentifier) && (
                               <div className="text-xs text-muted-foreground flex items-center gap-1 text-left overflow-hidden">
                                 {activity.partnerId && (
-                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                  <div className="group/pid flex items-center gap-1 flex-shrink-0">
                                     <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate max-w-[200px]">{activity.partnerId}</span>
                                     <button
                                       onClick={(e) => {
@@ -2666,7 +2666,7 @@ const router = useRouter();
                                         e.preventDefault();
                                         copyToClipboard(activity.partnerId!, 'partnerId', activity.id);
                                       }}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
+                                      className="opacity-0 group-hover/pid:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
                                       title="Copy Activity ID"
                                     >
                                       {copiedId === `${activity.id}-partnerId` ? (
@@ -2679,7 +2679,7 @@ const router = useRouter();
                                 )}
 
                                 {activity.iatiIdentifier && (
-                                  <div className={`flex items-center gap-1 flex-shrink min-w-0 ${activity.partnerId ? 'ml-2' : ''}`}>
+                                  <div className={`group/iati flex items-center gap-1 flex-shrink min-w-0 ${activity.partnerId ? 'ml-2' : ''}`}>
                                     <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate">{activity.iatiIdentifier}</span>
                                     <button
                                       onClick={(e) => {
@@ -2687,7 +2687,7 @@ const router = useRouter();
                                         e.preventDefault();
                                         copyToClipboard(activity.iatiIdentifier!, 'iatiIdentifier', activity.id);
                                       }}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
+                                      className="opacity-0 group-hover/iati:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
                                       title="Copy IATI Identifier"
                                     >
                                       {copiedId === `${activity.id}-iatiIdentifier` ? (

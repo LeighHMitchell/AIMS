@@ -821,7 +821,7 @@ export function DomesticBudgetManagement() {
           <div className="space-y-4 py-4">
             {/* Classification - Searchable Combobox */}
             <div className="space-y-2">
-              <Label htmlFor="classification">Classification *</Label>
+              <Label htmlFor="classification">Classification <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Popover open={classificationOpen} onOpenChange={setClassificationOpen}>
                 <PopoverTrigger
                   className={cn(
@@ -953,7 +953,7 @@ export function DomesticBudgetManagement() {
             {/* Budget Amount, Currency, and Value Date in a row */}
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="budgetAmount">Budget Amount *</Label>
+                <Label htmlFor="budgetAmount">Budget Amount <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Input
                   id="budgetAmount"
                   type="number"
@@ -971,7 +971,7 @@ export function DomesticBudgetManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency *</Label>
+                <Label htmlFor="currency">Currency <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Select
                   value={formData.currency}
                   onValueChange={(value) =>
@@ -992,7 +992,7 @@ export function DomesticBudgetManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="valueDate">Value Date *</Label>
+                <Label htmlFor="valueDate">Value Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
@@ -1011,7 +1011,7 @@ export function DomesticBudgetManagement() {
             {/* Fiscal Year and Expenditure Amount */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fiscalYear">Fiscal Year *</Label>
+                <Label htmlFor="fiscalYear">Fiscal Year <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
                 <Select
                   value={formData.fiscalYear.toString()}
                   onValueChange={(value) =>

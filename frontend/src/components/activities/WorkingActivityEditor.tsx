@@ -388,7 +388,10 @@ export function WorkingActivityEditor({ activityId, userId }: WorkingActivityEdi
                   <SelectContent>
                     {ACTIVITY_STATUSES.map((status) => (
                       <SelectItem key={status.value} value={status.value}>
-                        {status.label}
+                        <span className="flex items-center gap-2">
+                          <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{status.value}</span>
+                          {status.label}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
