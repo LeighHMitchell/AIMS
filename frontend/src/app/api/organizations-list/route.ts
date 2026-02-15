@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
         reporting_org_ref,
         website,
         name_aliases,
+        residency_status,
         logo,
         banner,
         created_at,
@@ -256,6 +257,7 @@ export async function GET(request: NextRequest) {
       reporting_org_ref: string | null;
       website: string | null;
       name_aliases: string[] | null;
+      residency_status: string | null;
       logo: string | null;
       banner: string | null;
       created_at: string;
@@ -277,6 +279,7 @@ export async function GET(request: NextRequest) {
         reporting_org_ref: org.reporting_org_ref,
         website: org.website,
         name_aliases: org.name_aliases,
+        residency_status: org.residency_status,
         logo: org.logo,
         banner: org.banner,
         created_at: org.created_at,

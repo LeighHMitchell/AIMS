@@ -307,66 +307,70 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
           </Button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {members.map((member) => (
-            <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <h4 className="font-medium">{member.person_name}</h4>
-                  <Badge className={getRoleBadgeColor(member.role)}>
-                    {getRoleLabel(member.role)}
-                  </Badge>
-                  {!member.is_active && (
-                    <Badge variant="secondary">Inactive</Badge>
-                  )}
-                </div>
-                <div className="mt-1 space-y-1">
-                  {member.person_organization && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Building className="h-4 w-4" />
-                      {member.person_organization}
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b">
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Name</th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Organization</th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Email</th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Role</th>
+                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Joined</th>
+                <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {members.map((member) => (
+                <tr key={member.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900">{member.person_name}</span>
+                      {!member.is_active && (
+                        <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                      )}
                     </div>
-                  )}
-                  {member.person_email && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Mail className="h-4 w-4" />
-                      {member.person_email}
-                    </div>
-                  )}
-                  {member.joined_on && (
-                    <p className="text-xs text-gray-500">
-                      Joined {format(new Date(member.joined_on), 'MMM d, yyyy')}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-8 w-8">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {ROLE_OPTIONS.map((role) => (
-                    <DropdownMenuItem
-                      key={role.value}
-                      onClick={() => handleRoleChange(member.id, role.value)}
-                      disabled={member.role === role.value}
-                    >
-                      Set as {role.label}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuItem
-                    className="text-red-600"
-                    onClick={() => setMemberToDelete(member)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Remove
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ))}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{member.person_organization || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{member.person_email || '—'}</td>
+                  <td className="px-4 py-3">
+                    <Badge className={getRoleBadgeColor(member.role)}>
+                      {getRoleLabel(member.role)}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {member.joined_on ? format(new Date(member.joined_on), 'MMM d, yyyy') : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {ROLE_OPTIONS.map((role) => (
+                          <DropdownMenuItem
+                            key={role.value}
+                            onClick={() => handleRoleChange(member.id, role.value)}
+                            disabled={member.role === role.value}
+                          >
+                            Set as {role.label}
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => setMemberToDelete(member)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Remove
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

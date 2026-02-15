@@ -140,7 +140,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
             <div className="text-sm font-medium text-gray-700 mb-1">Successfully Imported ({section.details.length})</div>
             <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
               <table className="w-full text-xs">
-                <thead className="bg-gray-100 sticky top-0">
+                <thead className="bg-surface-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Details</th>
@@ -172,7 +172,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
             <div className="text-sm font-medium text-gray-700 mb-1">Imported Items ({section.list.length})</div>
             <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
               <table className="w-full text-xs">
-                <thead className="bg-gray-100 sticky top-0">
+                <thead className="bg-surface-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Name</th>
@@ -210,7 +210,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
             <div className="text-sm font-medium text-gray-700 mb-1">Failed ({section.failures.length})</div>
             <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
               <table className="w-full text-xs">
-                <thead className="bg-gray-100 sticky top-0">
+                <thead className="bg-surface-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Item</th>
@@ -241,7 +241,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
             <div className="text-sm font-medium text-gray-700 mb-1">Warnings ({section.warnings.length})</div>
             <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
               <table className="w-full text-xs">
-                <thead className="bg-gray-100 sticky top-0">
+                <thead className="bg-surface-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Warning</th>
@@ -266,7 +266,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
             <div className="text-sm font-medium text-gray-700 mb-1">Matching Details ({section.matchingDetails.length})</div>
             <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
               <table className="w-full text-xs">
-                <thead className="bg-gray-100 sticky top-0">
+                <thead className="bg-surface-muted sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Code</th>

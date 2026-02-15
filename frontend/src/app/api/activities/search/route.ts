@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('activities')
       .select(`
-        id, 
+        id,
         title_narrative,
         acronym,
         other_identifier,
@@ -32,7 +32,12 @@ export async function GET(request: NextRequest) {
         activity_status,
         created_by_org_name,
         created_by_org_acronym,
-        icon
+        icon,
+        recipient_countries,
+        reporting_org:organizations!reporting_org_id (
+          id, name, acronym, logo, country,
+          type, Organisation_Type_Code, Organisation_Type_Name
+        )
       `)
       .order('created_at', { ascending: false })
       .limit(limit);

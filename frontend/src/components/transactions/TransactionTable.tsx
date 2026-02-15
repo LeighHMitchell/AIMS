@@ -50,6 +50,10 @@ import { OrganizationHoverCard } from "@/components/ui/organization-hover-card";
 import { TIED_STATUS_LABELS } from "@/types/transaction";
 import { TransactionColumnId } from "@/app/transactions/page";
 import { TransactionActionMenu } from "@/components/transactions/TransactionActionMenu";
+import { SortableTableHeader } from "@/components/ui/sortable-table-header";
+import { DndColumnProvider } from "@/components/ui/dnd-column-provider";
+import { useColumnOrder } from "@/hooks/use-column-order";
+import { transactionColumns, TRANSACTION_COLUMN_ORDER_LOCALSTORAGE_KEY } from "@/app/transactions/columns";
 
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -344,6 +348,17 @@ export function TransactionTable({
   const [loadingActivities, setLoadingActivities] = useState<Set<string>>(new Set());
   const fetchedActivitiesRef = useRef<Set<string>>(new Set());
 
+  const { getOrderedVisibleColumns, handleReorder } = useColumnOrder<TransactionColumnId>({
+    storageKey: TRANSACTION_COLUMN_ORDER_LOCALSTORAGE_KEY,
+    columns: transactionColumns,
+  });
+
+  // Get draggable columns (exclude always-visible checkbox/actions)
+  const draggableColumnIds = visibleColumns
+    ? visibleColumns.filter((id) => id !== 'checkbox' && id !== 'actions')
+    : [];
+  const orderedDraggableColumns = getOrderedVisibleColumns(draggableColumnIds);
+
   // Helper function to check if a column is visible
   const isColumnVisible = (columnId: TransactionColumnId): boolean => {
     if (!visibleColumns) return true; // Show all if not provided (backward compat)
@@ -613,8 +628,8 @@ export function TransactionTable({
       <Table>
         <TableHeader>
           <TableRow>
-            {/* Checkbox - always visible */}
-            <TableHead className="w-10 text-center">
+            {/* Checkbox - always visible, locked first */}
+            <th className="h-12 px-4 text-center align-middle w-10">
               {onSelectAll && selectedIds && (
                 <div className="flex items-center justify-center" key={`select-all-wrapper-${transactions.length}`}>
                   <Checkbox
@@ -628,232 +643,75 @@ export function TransactionTable({
                   />
                 </div>
               )}
-            </TableHead>
-            
-            {/* Activity */}
-            {isColumnVisible('activity') && variant === "full" && (
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/80 transition-colors"
-                onClick={() => onSort("activity")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Activity</span>
-                  {getSortIcon("activity", sortField, sortOrder)}
-                </div>
-              </TableHead>
-            )}
-            
-            {/* Activity ID */}
-            {isColumnVisible('activityId') && (
-              <TableHead>
-                Activity ID
-              </TableHead>
-            )}
-            
-            {/* IATI Identifier */}
-            {isColumnVisible('iatiIdentifier') && (
-              <TableHead>
-                IATI Identifier
-              </TableHead>
-            )}
-            
-            {/* Reporting Org */}
-            {isColumnVisible('reportingOrg') && (
-              <TableHead>
-                Reporting Org
-              </TableHead>
-            )}
-            
-            {/* Transaction Date */}
-            {isColumnVisible('transactionDate') && (
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/80 transition-colors"
-                onClick={() => onSort("transaction_date")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Date</span>
-                  {getSortIcon("transaction_date", sortField, sortOrder)}
-                </div>
-              </TableHead>
-            )}
-            
-            {/* Transaction Type */}
-            {isColumnVisible('transactionType') && (
-              <TableHead
-                className="cursor-pointer hover:bg-muted/80 transition-colors"
-                onClick={() => onSort("transaction_type")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Type</span>
-                  {getSortIcon("transaction_type", sortField, sortOrder)}
-                </div>
-              </TableHead>
-            )}
-            
-            {/* Linked Status */}
-            {isColumnVisible('linkedStatus') && (
-              <TableHead className="text-center">
-                Linked
-              </TableHead>
-            )}
-            
-            {/* Acceptance Status */}
-            {isColumnVisible('acceptanceStatus') && (
-              <TableHead className="text-center">
-                Acceptance
-              </TableHead>
-            )}
-
-            {/* Provider → Receiver */}
-            {isColumnVisible('organizations') && (
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/80 transition-colors"
-                onClick={() => onSort("provider_org_name")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Provider → Receiver</span>
-                  {getSortIcon("provider_org_name", sortField, sortOrder)}
-                </div>
-              </TableHead>
-            )}
-            
-            {/* Provider Activity */}
-            {isColumnVisible('providerActivity') && (
-              <TableHead>
-                Provider Activity
-              </TableHead>
-            )}
-            
-            {/* Receiver Activity */}
-            {isColumnVisible('receiverActivity') && (
-              <TableHead>
-                Receiver Activity
-              </TableHead>
-            )}
-            
-            {/* Amount */}
-            {isColumnVisible('amount') && (
-              <TableHead
-                className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
-                onClick={() => onSort("value")}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>Amount</span>
-                  {getSortIcon("value", sortField, sortOrder)}
-                </div>
-              </TableHead>
-            )}
-            
-            {/* Currency */}
-            {isColumnVisible('currency') && (
-              <TableHead className="text-center">
-                Currency
-              </TableHead>
-            )}
-            
-            {/* Value Date */}
-            {isColumnVisible('valueDate') && (
-              <TableHead
-                className="cursor-pointer hover:bg-muted/80 transition-colors"
-                onClick={() => onSort("value_date")}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Value Date</span>
-                  {getSortIcon("value_date", sortField, sortOrder)}
-                </div>
-              </TableHead>
-            )}
-            
-            {/* USD Value */}
-            {isColumnVisible('usdValue') && (
-              <TableHead
-                className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
-                onClick={() => onSort("value_usd")}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>USD Value</span>
-                  {getSortIcon("value_usd", sortField, sortOrder)}
-                </div>
-              </TableHead>
-            )}
-            
-            {/* Finance Type - shown in both compact and full variants */}
-            {isColumnVisible('financeType') && (
-              <TableHead className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("finance_type")}>
-                <div className="flex items-center gap-1">
-                  <span>Finance Type</span>
-                  {getSortIcon("finance_type", sortField, sortOrder)}
-                </div>
-              </TableHead>
-            )}
-            
-            {/* Aid Type */}
-            {isColumnVisible('aidType') && (
-              <TableHead>
-                Aid Type
-              </TableHead>
-            )}
-            
-            {/* Flow Type */}
-            {isColumnVisible('flowType') && (
-              <TableHead>
-                Flow Type
-              </TableHead>
-            )}
-            
-            {/* Tied Status */}
-            {isColumnVisible('tiedStatus') && (
-              <TableHead>
-                Tied Status
-              </TableHead>
-            )}
-            
-            {/* Humanitarian */}
-            {isColumnVisible('humanitarian') && (
-              <TableHead className="text-center">
-                Humanitarian
-              </TableHead>
-            )}
-            
-            {/* Description */}
-            {isColumnVisible('description') && (
-              <TableHead>
-                Description
-              </TableHead>
-            )}
-            
-            {/* Disbursement Channel */}
-            {isColumnVisible('disbursementChannel') && (
-              <TableHead>
-                Channel
-              </TableHead>
-            )}
-            
-            {/* Validated Status */}
-            {isColumnVisible('validatedStatus') && (
-              <TableHead className="text-center">
-                Validated
-              </TableHead>
-            )}
-            
-            {/* Transaction UUID */}
-            {isColumnVisible('transactionUuid') && (
-              <TableHead>
-                UUID
-              </TableHead>
-            )}
-            
-            {/* Transaction Reference */}
-            {isColumnVisible('transactionReference') && (
-              <TableHead>
-                Reference
-              </TableHead>
-            )}
-
-            {/* Actions - always visible */}
-            <TableHead className="text-right">
+            </th>
+            <DndColumnProvider items={orderedDraggableColumns} onReorder={handleReorder}>
+              {orderedDraggableColumns.map((colId) => {
+                const txHeaderMap: Record<string, React.ReactNode> = {
+                  activity: variant === "full" ? (
+                    <SortableTableHeader key="activity" id="activity" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("activity")}>
+                      <div className="flex items-center gap-1"><span>Activity</span>{getSortIcon("activity", sortField, sortOrder)}</div>
+                    </SortableTableHeader>
+                  ) : null,
+                  activityId: <SortableTableHeader key="activityId" id="activityId">Activity ID</SortableTableHeader>,
+                  iatiIdentifier: <SortableTableHeader key="iatiIdentifier" id="iatiIdentifier">IATI Identifier</SortableTableHeader>,
+                  reportingOrg: <SortableTableHeader key="reportingOrg" id="reportingOrg">Reporting Org</SortableTableHeader>,
+                  transactionDate: (
+                    <SortableTableHeader key="transactionDate" id="transactionDate" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("transaction_date")}>
+                      <div className="flex items-center gap-1"><span>Date</span>{getSortIcon("transaction_date", sortField, sortOrder)}</div>
+                    </SortableTableHeader>
+                  ),
+                  transactionType: (
+                    <SortableTableHeader key="transactionType" id="transactionType" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("transaction_type")}>
+                      <div className="flex items-center gap-1"><span>Type</span>{getSortIcon("transaction_type", sortField, sortOrder)}</div>
+                    </SortableTableHeader>
+                  ),
+                  linkedStatus: <SortableTableHeader key="linkedStatus" id="linkedStatus" className="text-center">Linked</SortableTableHeader>,
+                  acceptanceStatus: <SortableTableHeader key="acceptanceStatus" id="acceptanceStatus" className="text-center">Acceptance</SortableTableHeader>,
+                  organizations: (
+                    <SortableTableHeader key="organizations" id="organizations" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("provider_org_name")}>
+                      <div className="flex items-center gap-1"><span>Provider → Receiver</span>{getSortIcon("provider_org_name", sortField, sortOrder)}</div>
+                    </SortableTableHeader>
+                  ),
+                  providerActivity: <SortableTableHeader key="providerActivity" id="providerActivity">Provider Activity</SortableTableHeader>,
+                  receiverActivity: <SortableTableHeader key="receiverActivity" id="receiverActivity">Receiver Activity</SortableTableHeader>,
+                  amount: (
+                    <SortableTableHeader key="amount" id="amount" className="text-right cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("value")}>
+                      <div className="flex items-center justify-end gap-1"><span>Amount</span>{getSortIcon("value", sortField, sortOrder)}</div>
+                    </SortableTableHeader>
+                  ),
+                  currency: <SortableTableHeader key="currency" id="currency" className="text-center">Currency</SortableTableHeader>,
+                  valueDate: (
+                    <SortableTableHeader key="valueDate" id="valueDate" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("value_date")}>
+                      <div className="flex items-center gap-1"><span>Value Date</span>{getSortIcon("value_date", sortField, sortOrder)}</div>
+                    </SortableTableHeader>
+                  ),
+                  usdValue: (
+                    <SortableTableHeader key="usdValue" id="usdValue" className="text-right cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("value_usd")}>
+                      <div className="flex items-center justify-end gap-1"><span>USD Value</span>{getSortIcon("value_usd", sortField, sortOrder)}</div>
+                    </SortableTableHeader>
+                  ),
+                  financeType: (
+                    <SortableTableHeader key="financeType" id="financeType" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("finance_type")}>
+                      <div className="flex items-center gap-1"><span>Finance Type</span>{getSortIcon("finance_type", sortField, sortOrder)}</div>
+                    </SortableTableHeader>
+                  ),
+                  aidType: <SortableTableHeader key="aidType" id="aidType">Aid Type</SortableTableHeader>,
+                  flowType: <SortableTableHeader key="flowType" id="flowType">Flow Type</SortableTableHeader>,
+                  tiedStatus: <SortableTableHeader key="tiedStatus" id="tiedStatus">Tied Status</SortableTableHeader>,
+                  humanitarian: <SortableTableHeader key="humanitarian" id="humanitarian" className="text-center">Humanitarian</SortableTableHeader>,
+                  description: <SortableTableHeader key="description" id="description">Description</SortableTableHeader>,
+                  disbursementChannel: <SortableTableHeader key="disbursementChannel" id="disbursementChannel">Channel</SortableTableHeader>,
+                  validatedStatus: <SortableTableHeader key="validatedStatus" id="validatedStatus" className="text-center">Validated</SortableTableHeader>,
+                  transactionUuid: <SortableTableHeader key="transactionUuid" id="transactionUuid">UUID</SortableTableHeader>,
+                  transactionReference: <SortableTableHeader key="transactionReference" id="transactionReference">Reference</SortableTableHeader>,
+                };
+                return txHeaderMap[colId] || null;
+              })}
+            </DndColumnProvider>
+            {/* Actions - always visible, locked last */}
+            <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground">
               Actions
-            </TableHead>
+            </th>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -1008,538 +866,189 @@ export function TransactionTable({
                   )}
                 </td>
             
-                {/* Activity */}
-                {isColumnVisible('activity') && variant === "full" && (
-                  <td className="py-3 px-4">
-                    <div 
-                      className="space-y-0.5 cursor-pointer hover:opacity-75 group"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (transaction.activity_id) {
-                          window.location.href = `/activities/${transaction.activity_id}`;
-                        }
-                      }}
-                    >
-                      <div className="flex items-start gap-1">
-                        <div className="text-sm font-medium text-foreground line-clamp-2 flex-1">
-                          {transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const activityTitle = transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity';
-                                    copyToClipboard(activityTitle, 'title', transaction.uuid || transaction.id);
-                                  }}
-                                >
-                                  {copiedId === `${transaction.uuid || transaction.id}-title` ? (
-                                    <Check className="h-3 w-3 text-green-500" />
-                                  ) : (
-                                    <Copy className="h-3 w-3" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="right">
-                                <p className="text-sm">Copy activity title</p>
-                              </TooltipContent>
-                            </Tooltip>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                )}
-                
-                {/* Activity ID */}
-                {isColumnVisible('activityId') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="text-xs font-mono text-muted-foreground">
-                      {transaction.activity_id || '—'}
-                    </span>
-                  </td>
-                )}
-                
-                {/* IATI Identifier */}
-                {isColumnVisible('iatiIdentifier') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {transaction.activity?.iati_identifier ? (
-                      <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                        {transaction.activity.iati_identifier}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Reporting Org */}
-                {isColumnVisible('reportingOrg') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="text-sm">
-                      {transaction.activity?.created_by_org_acronym || transaction.activity?.created_by_org_name || '—'}
-                    </span>
-                  </td>
-                )}
-                
-                {/* Transaction Date */}
-                {isColumnVisible('transactionDate') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {formatTransactionDate(transaction.transaction_date)}
-                  </td>
-                )}
-                
-                {/* Transaction Type */}
-                {isColumnVisible('transactionType') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="text-sm font-medium text-foreground">
-                          {TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </td>
-                )}
-                
-                {/* Linked Status */}
-                {isColumnVisible('linkedStatus') && (
-                  <td className="py-3 px-4 text-center whitespace-nowrap">
-                    {transaction.transaction_source === 'linked' ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs bg-orange-50 border-orange-200 text-orange-700 px-1 cursor-help">
-                            <Link2 className="h-3 w-3" />
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-sm">Linked Transaction</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Acceptance Status */}
-                {isColumnVisible('acceptanceStatus') && (
-                  <td className="py-3 px-4 text-center whitespace-nowrap">
-                    {transaction.acceptance_status === 'pending' && transaction.transaction_source === 'linked' ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200 text-yellow-700 px-1 cursor-help">
-                            <Clock className="h-3 w-3" />
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-sm">Pending Acceptance</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : transaction.acceptance_status === 'accepted' ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs bg-green-50 border-green-200 text-green-700 px-1 cursor-help">
-                            <CheckCircle className="h-3 w-3" />
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-sm">Accepted Transaction</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : transaction.acceptance_status === 'rejected' ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs bg-red-50 border-red-200 text-red-700 px-1 cursor-help">
-                            <UserX className="h-3 w-3" />
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-sm">Rejected Transaction</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-
-                {/* Provider → Receiver */}
-                {isColumnVisible('organizations') && (
-                  <td className="py-3 px-4">
-                  <div className="text-sm font-medium text-foreground">
-                    <div className="flex items-start gap-2">
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1">
-                          <OrganizationLogo 
-                            logo={provider.logo || transaction.provider_org_logo}
-                            name={providerDisplay}
-                            size="sm"
-                          />
-                          <OrganizationHoverCard organization={provider} side="top" align="start">
-                            {provider.id ? (
-                              <Link 
-                                href={`/organizations/${provider.id}`}
-                                className="text-sm hover:text-gray-700 transition-colors cursor-pointer"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {providerDisplay}
-                              </Link>
-                            ) : (
-                              <span className="text-sm cursor-default">
-                                {providerDisplay}
-                              </span>
-                            )}
-                          </OrganizationHoverCard>
-                        </div>
-                      </div>
-                      <span className="text-muted-foreground mt-1">→</span>
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1">
-                          <OrganizationLogo 
-                            logo={receiver.logo || transaction.receiver_org_logo}
-                            name={receiverDisplay}
-                            size="sm"
-                          />
-                          <OrganizationHoverCard organization={receiver} side="top" align="start">
-                            {receiver.id ? (
-                              <Link 
-                                href={`/organizations/${receiver.id}`}
-                                className="text-sm hover:text-gray-700 transition-colors cursor-pointer"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {receiverDisplay}
-                              </Link>
-                            ) : (
-                              <span className="text-sm cursor-default">
-                                {receiverDisplay}
-                              </span>
-                            )}
-                          </OrganizationHoverCard>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                )}
-                
-                {/* Provider Activity */}
-                {isColumnVisible('providerActivity') && (() => {
+                {/* Ordered draggable columns */}
+                {orderedDraggableColumns.map((colId) => {
                   const pa = (transaction as any).provider_activity;
                   const paId = pa?.id || transaction.provider_org_activity_id;
-                  const details = pa || (transaction.provider_org_activity_id ? activityDetails[transaction.provider_org_activity_id] : null);
-                  return (
-                  <td className="py-3 px-4" style={{ maxWidth: '260px' }}>
-                    {paId || transaction.provider_org_activity_id ? (
-                      <Link
-                        href={`/activities/${paId || transaction.provider_org_activity_id}`}
-                        className="text-xs hover:underline break-words block"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="space-y-0.5">
-                          {(details?.acronym) && (
-                            <div className="font-medium">{details.acronym}</div>
-                          )}
-                          {(details?.title_narrative || details?.title) && (
-                            <div className="text-muted-foreground">{details.title_narrative || details.title}</div>
-                          )}
-                          <div className="font-mono text-muted-foreground">{details?.iati_identifier || transaction.provider_org_activity_id}</div>
-                        </div>
-                      </Link>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  );
-                })()}
-
-                {/* Receiver Activity */}
-                {isColumnVisible('receiverActivity') && (() => {
+                  const paDetails = pa || (transaction.provider_org_activity_id ? activityDetails[transaction.provider_org_activity_id] : null);
                   const ra = (transaction as any).receiver_activity;
                   const raId = ra?.id || transaction.receiver_org_activity_id;
-                  const details = ra || (transaction.receiver_org_activity_id ? activityDetails[transaction.receiver_org_activity_id] : null);
-                  return (
-                  <td className="py-3 px-4" style={{ maxWidth: '260px' }}>
-                    {raId || transaction.receiver_org_activity_id ? (
-                      <Link
-                        href={`/activities/${raId || transaction.receiver_org_activity_id}`}
-                        className="text-xs hover:underline break-words block"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="space-y-0.5">
-                          {(details?.acronym) && (
-                            <div className="font-medium">{details.acronym}</div>
-                          )}
-                          {(details?.title_narrative || details?.title) && (
-                            <div className="text-muted-foreground">{details.title_narrative || details.title}</div>
-                          )}
-                          <div className="font-mono text-muted-foreground">{details?.iati_identifier || transaction.receiver_org_activity_id}</div>
+                  const raDetails = ra || (transaction.receiver_org_activity_id ? activityDetails[transaction.receiver_org_activity_id] : null);
+
+                  const txCellMap: Record<string, React.ReactNode> = {
+                    activity: variant === "full" ? (
+                      <td key="activity" className="py-3 px-4">
+                        <div className="space-y-0.5 cursor-pointer hover:opacity-75 group" onClick={(e) => { e.stopPropagation(); if (transaction.activity_id) { window.location.href = `/activities/${transaction.activity_id}`; } }}>
+                          <div className="flex items-start gap-1">
+                            <div className="text-sm font-medium text-foreground line-clamp-2 flex-1">
+                              {transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity'}
+                              <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-3 w-3 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 inline-flex items-center justify-center align-text-top" onClick={(e) => { e.stopPropagation(); copyToClipboard(transaction.activityTitle || transaction.activity?.title || transaction.activity?.title_narrative || 'Untitled Activity', 'title', transaction.uuid || transaction.id); }}>{copiedId === `${transaction.uuid || transaction.id}-title` ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}</Button></TooltipTrigger><TooltipContent side="right"><p className="text-sm">Copy activity title</p></TooltipContent></Tooltip>
+                            </div>
+                          </div>
                         </div>
-                      </Link>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  );
-                })()}
-                
-                {/* Amount */}
-                {isColumnVisible('amount') && (
-                  <td className="py-3 px-4 text-right whitespace-nowrap">
-                    {transaction.value != null && transaction.currency ? (
-                      <div className="font-medium">
-                        <span className="text-muted-foreground text-xs">{transaction.currency.toUpperCase()}</span>{' '}
-                        {new Intl.NumberFormat("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }).format(transaction.value)}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Currency */}
-                {isColumnVisible('currency') && (
-                  <td className="py-3 px-4 text-center whitespace-nowrap">
-                    <span className="text-sm font-medium">{transaction.currency?.toUpperCase() || '—'}</span>
-                  </td>
-                )}
-                
-                {/* Value Date */}
-                {isColumnVisible('valueDate') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {formatTransactionDate(transaction.value_date || transaction.transaction_date)}
-                  </td>
-                )}
-                
-                {/* USD Value */}
-                {isColumnVisible('usdValue') && (
-                  <td className="py-3 px-4 text-right whitespace-nowrap">
-                    <div className="flex items-center justify-end gap-1">
-                      {usdValues[transactionId]?.loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                      ) : usdValues[transactionId]?.usd != null ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="font-medium cursor-help">
-                                {formatCurrency(usdValues[transactionId].usd!, 'USD')}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <div>
-                                <div>Original: {formatCurrency(transaction.value, transaction.currency)}</div>
-                                <div>Rate: {usdValues[transactionId].rate}</div>
-                                <div>Date: {usdValues[transactionId].date}</div>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </div>
-                  </td>
-                )}
-                
-                {/* Finance Type - shown in both compact and full variants, inherited values in gray */}
-                {isColumnVisible('financeType') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {(transaction.finance_type || transaction.effective_finance_type) ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className={`text-sm font-medium cursor-help ${transaction.finance_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>
-                              {FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || transaction.effective_finance_type || transaction.finance_type}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side="right">
-                            <p className="text-sm">
-                              {transaction.finance_type_inherited 
-                                ? `Inherited from activity's default finance type (code ${transaction.effective_finance_type} – ${FINANCE_TYPE_LABELS[transaction.effective_finance_type || '']?.full || 'Unknown'})`
-                                : `${transaction.finance_type} – ${FINANCE_TYPE_LABELS[transaction.finance_type || '']?.full || 'Unknown'}`
-                              }
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                    ) : (
-                      <span className="text-sm font-normal text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Aid Type */}
-                {isColumnVisible('aidType') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {(transaction.aid_type || transaction.effective_aid_type) ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className={`text-sm font-medium cursor-help ${transaction.aid_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>
-                            {AID_TYPE_LABELS[transaction.effective_aid_type || transaction.aid_type]?.short || transaction.effective_aid_type || transaction.aid_type}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p className="text-sm">
-                            {transaction.aid_type_inherited 
-                              ? `Inherited from activity's default aid type`
-                              : AID_TYPE_LABELS[transaction.aid_type || '']?.full || transaction.aid_type
-                            }
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Flow Type */}
-                {isColumnVisible('flowType') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {(transaction.flow_type || transaction.effective_flow_type) ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className={`text-sm font-medium cursor-help ${transaction.flow_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>
-                            {FLOW_TYPE_LABELS[transaction.effective_flow_type || transaction.flow_type] || transaction.effective_flow_type || transaction.flow_type}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p className="text-sm">
-                            {transaction.flow_type_inherited 
-                              ? `Inherited from activity's default flow type`
-                              : FLOW_TYPE_LABELS[transaction.flow_type || ''] || transaction.flow_type
-                            }
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Tied Status */}
-                {isColumnVisible('tiedStatus') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {(transaction.tied_status || transaction.effective_tied_status) ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className={`text-sm font-medium cursor-help ${transaction.tied_status_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>
-                            {TIED_STATUS_LABELS[(transaction.effective_tied_status || transaction.tied_status) as keyof typeof TIED_STATUS_LABELS] || transaction.effective_tied_status || transaction.tied_status}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p className="text-sm">
-                            {transaction.tied_status_inherited 
-                              ? `Inherited from activity's default tied status`
-                              : TIED_STATUS_LABELS[transaction.tied_status as keyof typeof TIED_STATUS_LABELS] || transaction.tied_status
-                            }
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Humanitarian */}
-                {isColumnVisible('humanitarian') && (
-                  <td className="py-3 px-4 text-center whitespace-nowrap">
-                    {transaction.is_humanitarian ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Heart className="h-4 w-4 text-red-500 fill-red-500 inline" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-sm">Humanitarian</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Description */}
-                {isColumnVisible('description') && (
-                  <td className="py-3 px-4 max-w-[200px]">
-                    {transaction.description ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="text-sm text-muted-foreground line-clamp-2 cursor-help">
-                            {transaction.description}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="left" className="max-w-[300px]">
-                          <p className="text-sm">{transaction.description}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Disbursement Channel */}
-                {isColumnVisible('disbursementChannel') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {transaction.disbursement_channel ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="text-sm font-medium cursor-help">
-                            {DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.short || transaction.disbursement_channel}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <p className="text-sm">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.full || transaction.disbursement_channel}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Validated Status */}
-                {isColumnVisible('validatedStatus') && (
-                  <td className="py-3 px-4 text-center whitespace-nowrap">
-                    {transaction.validated_by ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <CheckCircle className="h-4 w-4 text-green-500 inline" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-sm">Validated by {transaction.validated_by}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                )}
-                
-                {/* Transaction UUID */}
-                {isColumnVisible('transactionUuid') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="text-xs font-mono text-muted-foreground">
-                      {(transaction.uuid || transaction.id).slice(0, 8)}...
-                    </span>
-                  </td>
-                )}
-                
-                {/* Transaction Reference */}
-                {isColumnVisible('transactionReference') && (
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="text-xs text-muted-foreground">
-                      {transaction.transaction_reference || '—'}
-                    </span>
-                  </td>
-                )}
+                      </td>
+                    ) : null,
+                    activityId: (
+                      <td key="activityId" className="py-3 px-4 whitespace-nowrap"><span className="text-xs font-mono text-muted-foreground">{transaction.activity_id || '—'}</span></td>
+                    ),
+                    iatiIdentifier: (
+                      <td key="iatiIdentifier" className="py-3 px-4 whitespace-nowrap">{transaction.activity?.iati_identifier ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{transaction.activity.iati_identifier}</span> : <span className="text-muted-foreground">—</span>}</td>
+                    ),
+                    reportingOrg: (
+                      <td key="reportingOrg" className="py-3 px-4 whitespace-nowrap"><span className="text-sm">{transaction.activity?.created_by_org_acronym || transaction.activity?.created_by_org_name || '—'}</span></td>
+                    ),
+                    transactionDate: (
+                      <td key="transactionDate" className="py-3 px-4 whitespace-nowrap">{formatTransactionDate(transaction.transaction_date)}</td>
+                    ),
+                    transactionType: (
+                      <td key="transactionType" className="py-3 px-4 whitespace-nowrap">
+                        <Tooltip><TooltipTrigger asChild><span className="text-sm font-medium text-foreground">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{TRANSACTION_TYPE_LABELS[transaction.transaction_type] || 'Unknown Type'}</p><p className="text-xs text-muted-foreground mt-1">Code: {transaction.transaction_type}</p></TooltipContent></Tooltip>
+                      </td>
+                    ),
+                    linkedStatus: (
+                      <td key="linkedStatus" className="py-3 px-4 text-center whitespace-nowrap">
+                        {transaction.transaction_source === 'linked' ? (
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-orange-50 border-orange-200 text-orange-700 px-1 cursor-help"><Link2 className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Linked Transaction</p></TooltipContent></Tooltip>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    acceptanceStatus: (
+                      <td key="acceptanceStatus" className="py-3 px-4 text-center whitespace-nowrap">
+                        {transaction.acceptance_status === 'pending' && transaction.transaction_source === 'linked' ? (
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200 text-yellow-700 px-1 cursor-help"><Clock className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Pending Acceptance</p></TooltipContent></Tooltip>
+                        ) : transaction.acceptance_status === 'accepted' ? (
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-green-50 border-green-200 text-green-700 px-1 cursor-help"><CheckCircle className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Accepted Transaction</p></TooltipContent></Tooltip>
+                        ) : transaction.acceptance_status === 'rejected' ? (
+                          <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-red-50 border-red-200 text-red-700 px-1 cursor-help"><UserX className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Rejected Transaction</p></TooltipContent></Tooltip>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    organizations: (
+                      <td key="organizations" className="py-3 px-4">
+                        <div className="text-sm font-medium text-foreground">
+                          <div className="flex items-start gap-2">
+                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={provider.logo || transaction.provider_org_logo} name={providerDisplay} size="sm" /><OrganizationHoverCard organization={provider} side="top" align="start">{provider.id ? <Link href={`/organizations/${provider.id}`} className="text-sm hover:text-gray-700 transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{providerDisplay}</Link> : <span className="text-sm cursor-default">{providerDisplay}</span>}</OrganizationHoverCard></div></div>
+                            <span className="text-muted-foreground mt-1">→</span>
+                            <div className="flex flex-col gap-0.5"><div className="flex items-center gap-1"><OrganizationLogo logo={receiver.logo || transaction.receiver_org_logo} name={receiverDisplay} size="sm" /><OrganizationHoverCard organization={receiver} side="top" align="start">{receiver.id ? <Link href={`/organizations/${receiver.id}`} className="text-sm hover:text-gray-700 transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{receiverDisplay}</Link> : <span className="text-sm cursor-default">{receiverDisplay}</span>}</OrganizationHoverCard></div></div>
+                          </div>
+                        </div>
+                      </td>
+                    ),
+                    providerActivity: (
+                      <td key="providerActivity" className="py-3 px-4" style={{ maxWidth: '260px' }}>
+                        {paId || transaction.provider_org_activity_id ? (
+                          <Link href={`/activities/${paId || transaction.provider_org_activity_id}`} className="text-xs hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
+                            <div className="space-y-0.5">
+                              {paDetails?.acronym && <div className="font-medium">{paDetails.acronym}</div>}
+                              {(paDetails?.title_narrative || paDetails?.title) && <div className="text-muted-foreground">{paDetails.title_narrative || paDetails.title}</div>}
+                              <div className="font-mono text-muted-foreground">{paDetails?.iati_identifier || transaction.provider_org_activity_id}</div>
+                            </div>
+                          </Link>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    receiverActivity: (
+                      <td key="receiverActivity" className="py-3 px-4" style={{ maxWidth: '260px' }}>
+                        {raId || transaction.receiver_org_activity_id ? (
+                          <Link href={`/activities/${raId || transaction.receiver_org_activity_id}`} className="text-xs hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
+                            <div className="space-y-0.5">
+                              {raDetails?.acronym && <div className="font-medium">{raDetails.acronym}</div>}
+                              {(raDetails?.title_narrative || raDetails?.title) && <div className="text-muted-foreground">{raDetails.title_narrative || raDetails.title}</div>}
+                              <div className="font-mono text-muted-foreground">{raDetails?.iati_identifier || transaction.receiver_org_activity_id}</div>
+                            </div>
+                          </Link>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    amount: (
+                      <td key="amount" className="py-3 px-4 text-right whitespace-nowrap">
+                        {transaction.value != null && transaction.currency ? (
+                          <div className="font-medium"><span className="text-muted-foreground text-xs">{transaction.currency.toUpperCase()}</span>{' '}{new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(transaction.value)}</div>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    currency: (
+                      <td key="currency" className="py-3 px-4 text-center whitespace-nowrap"><span className="text-sm font-medium">{transaction.currency?.toUpperCase() || '—'}</span></td>
+                    ),
+                    valueDate: (
+                      <td key="valueDate" className="py-3 px-4 whitespace-nowrap">{formatTransactionDate(transaction.value_date || transaction.transaction_date)}</td>
+                    ),
+                    usdValue: (
+                      <td key="usdValue" className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          {usdValues[transactionId]?.loading ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                          ) : usdValues[transactionId]?.usd != null ? (
+                            <Tooltip><TooltipTrigger asChild><span className="font-medium cursor-help">{formatCurrency(usdValues[transactionId].usd!, 'USD')}</span></TooltipTrigger><TooltipContent><div><div>Original: {formatCurrency(transaction.value, transaction.currency)}</div><div>Rate: {usdValues[transactionId].rate}</div><div>Date: {usdValues[transactionId].date}</div></div></TooltipContent></Tooltip>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </div>
+                      </td>
+                    ),
+                    financeType: (
+                      <td key="financeType" className="py-3 px-4 whitespace-nowrap">
+                        {(transaction.finance_type || transaction.effective_finance_type) ? (
+                          <Tooltip><TooltipTrigger asChild><span className={`text-sm font-medium cursor-help ${transaction.finance_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>{FINANCE_TYPE_LABELS[transaction.effective_finance_type || transaction.finance_type]?.full || transaction.effective_finance_type || transaction.finance_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.finance_type_inherited ? `Inherited from activity's default finance type (code ${transaction.effective_finance_type} – ${FINANCE_TYPE_LABELS[transaction.effective_finance_type || '']?.full || 'Unknown'})` : `${transaction.finance_type} – ${FINANCE_TYPE_LABELS[transaction.finance_type || '']?.full || 'Unknown'}`}</p></TooltipContent></Tooltip>
+                        ) : <span className="text-sm font-normal text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    aidType: (
+                      <td key="aidType" className="py-3 px-4 whitespace-nowrap">
+                        {(transaction.aid_type || transaction.effective_aid_type) ? (
+                          <Tooltip><TooltipTrigger asChild><span className={`text-sm font-medium cursor-help ${transaction.aid_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>{AID_TYPE_LABELS[transaction.effective_aid_type || transaction.aid_type]?.short || transaction.effective_aid_type || transaction.aid_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.aid_type_inherited ? `Inherited from activity's default aid type` : AID_TYPE_LABELS[transaction.aid_type || '']?.full || transaction.aid_type}</p></TooltipContent></Tooltip>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    flowType: (
+                      <td key="flowType" className="py-3 px-4 whitespace-nowrap">
+                        {(transaction.flow_type || transaction.effective_flow_type) ? (
+                          <Tooltip><TooltipTrigger asChild><span className={`text-sm font-medium cursor-help ${transaction.flow_type_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>{FLOW_TYPE_LABELS[transaction.effective_flow_type || transaction.flow_type] || transaction.effective_flow_type || transaction.flow_type}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.flow_type_inherited ? `Inherited from activity's default flow type` : FLOW_TYPE_LABELS[transaction.flow_type || ''] || transaction.flow_type}</p></TooltipContent></Tooltip>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    tiedStatus: (
+                      <td key="tiedStatus" className="py-3 px-4 whitespace-nowrap">
+                        {(transaction.tied_status || transaction.effective_tied_status) ? (
+                          <Tooltip><TooltipTrigger asChild><span className={`text-sm font-medium cursor-help ${transaction.tied_status_inherited ? 'text-gray-400 opacity-70' : 'text-foreground'}`}>{TIED_STATUS_LABELS[(transaction.effective_tied_status || transaction.tied_status) as keyof typeof TIED_STATUS_LABELS] || transaction.effective_tied_status || transaction.tied_status}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{transaction.tied_status_inherited ? `Inherited from activity's default tied status` : TIED_STATUS_LABELS[transaction.tied_status as keyof typeof TIED_STATUS_LABELS] || transaction.tied_status}</p></TooltipContent></Tooltip>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    humanitarian: (
+                      <td key="humanitarian" className="py-3 px-4 text-center whitespace-nowrap">
+                        {transaction.is_humanitarian ? (
+                          <Tooltip><TooltipTrigger asChild><Heart className="h-4 w-4 text-red-500 fill-red-500 inline" /></TooltipTrigger><TooltipContent><p className="text-sm">Humanitarian</p></TooltipContent></Tooltip>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    description: (
+                      <td key="description" className="py-3 px-4 max-w-[200px]">
+                        {transaction.description ? (
+                          <Tooltip><TooltipTrigger asChild><span className="text-sm text-muted-foreground line-clamp-2 cursor-help">{transaction.description}</span></TooltipTrigger><TooltipContent side="left" className="max-w-[300px]"><p className="text-sm">{transaction.description}</p></TooltipContent></Tooltip>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    disbursementChannel: (
+                      <td key="disbursementChannel" className="py-3 px-4 whitespace-nowrap">
+                        {transaction.disbursement_channel ? (
+                          <Tooltip><TooltipTrigger asChild><span className="text-sm font-medium cursor-help">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.short || transaction.disbursement_channel}</span></TooltipTrigger><TooltipContent side="right"><p className="text-sm">{DISBURSEMENT_CHANNEL_LABELS[transaction.disbursement_channel]?.full || transaction.disbursement_channel}</p></TooltipContent></Tooltip>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    validatedStatus: (
+                      <td key="validatedStatus" className="py-3 px-4 text-center whitespace-nowrap">
+                        {transaction.validated_by ? (
+                          <Tooltip><TooltipTrigger asChild><CheckCircle className="h-4 w-4 text-green-500 inline" /></TooltipTrigger><TooltipContent><p className="text-sm">Validated by {transaction.validated_by}</p></TooltipContent></Tooltip>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    transactionUuid: (
+                      <td key="transactionUuid" className="py-3 px-4 whitespace-nowrap"><span className="text-xs font-mono text-muted-foreground">{(transaction.uuid || transaction.id).slice(0, 8)}...</span></td>
+                    ),
+                    transactionReference: (
+                      <td key="transactionReference" className="py-3 px-4 whitespace-nowrap"><span className="text-xs text-muted-foreground">{transaction.transaction_reference || '—'}</span></td>
+                    ),
+                  };
+                  return txCellMap[colId] || null;
+                })}
 
               {/* Actions - always visible */}
               <td className="py-3 px-4 text-right">

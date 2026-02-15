@@ -153,12 +153,12 @@ export default function BuildHistoryPage() {
                           <h4 className="text-sm font-medium text-foreground">Changes in this release:</h4>
                           <ul className="space-y-2">
                             {release.changes.map((change, changeIndex) => (
-                              <li 
+                              <li
                                 key={changeIndex}
                                 className="flex items-start gap-3 text-sm text-muted-foreground"
                               >
                                 <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                                <span>{change}</span>
+                                <span dangerouslySetInnerHTML={{ __html: change }} />
                               </li>
                             ))}
                           </ul>

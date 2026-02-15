@@ -19,8 +19,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { 
-  Grid3X3, 
-  List, 
+  LayoutGrid,
+  Table as TableIcon,
   Mail, 
   Phone, 
   Globe, 
@@ -573,7 +573,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
             onClick={() => setViewMode('grid')}
             className="rounded-r-none"
           >
-            <Grid3X3 className="h-4 w-4" />
+            <LayoutGrid className="h-4 w-4" />
           </Button>
           <Button
             variant={viewMode === 'table' ? 'default' : 'ghost'}
@@ -581,7 +581,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
             onClick={() => setViewMode('table')}
             className="rounded-l-none"
           >
-            <List className="h-4 w-4" />
+            <TableIcon className="h-4 w-4" />
           </Button>
         </div>
       </div>

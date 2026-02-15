@@ -107,7 +107,13 @@ export default function WorkingGroupEditorNavigation({
         {workingGroup && workingGroup.label && (
           <div className="pb-4 border-b border-gray-200">
             <h2 className="text-lg font-bold text-slate-900 group leading-tight">
-              {workingGroup.label}
+              <button
+                onClick={() => router.push(`/working-groups/${workingGroup.id}`)}
+                className="text-left hover:text-blue-700 hover:underline transition-colors"
+                title="View Working Group profile"
+              >
+                {workingGroup.label}
+              </button>
               {' '}
               <button
                 onClick={() => copyToClipboard(workingGroup.label || '', 'wgName')}

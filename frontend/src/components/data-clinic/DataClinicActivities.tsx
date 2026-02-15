@@ -505,7 +505,7 @@ export function DataClinicActivities() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-muted/50 border-b border-border">
+              <thead className="bg-surface-muted border-b border-border">
                 <tr>
                   {isSuperUser && (
                     <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground">

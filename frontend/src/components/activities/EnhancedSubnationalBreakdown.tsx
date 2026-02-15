@@ -707,7 +707,7 @@ export function EnhancedSubnationalBreakdown({
             {entries.length > 0 ? (
               <div className="border rounded-lg overflow-hidden">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-surface-muted">
                     <tr>
                       <th className="text-left px-3 py-2 font-medium text-sm text-gray-700">Administrative Unit</th>
                       <th className="px-3 py-2">

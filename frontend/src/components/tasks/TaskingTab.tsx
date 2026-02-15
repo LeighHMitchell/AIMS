@@ -22,7 +22,7 @@ import {
   PlayCircle,
   RefreshCw,
   LayoutGrid,
-  List,
+  Table as TableIcon,
   Archive,
   BarChart3,
   UserCheck,
@@ -454,7 +454,7 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
                   className="rounded-l-none"
                   onClick={() => setViewMode('table')}
                 >
-                  <List className="h-4 w-4" />
+                  <TableIcon className="h-4 w-4" />
                 </Button>
               </div>
             )}

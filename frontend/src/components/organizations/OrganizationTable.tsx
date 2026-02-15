@@ -43,6 +43,7 @@ type Organization = {
   totalTransactionCount?: number;
   totalBudgeted?: number;
   totalDisbursed?: number;
+  residency_status?: string;
   logo?: string;
   tags?: string[];
   created_at: string;
@@ -56,7 +57,7 @@ type OrganizationType = {
   sort_order: number;
 };
 
-type SortField = 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'providerReceiver' | 'funding' | 'created_at';
+type SortField = 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'providerReceiver' | 'funding' | 'residency' | 'created_at';
 type SortOrder = 'asc' | 'desc';
 
 interface OrganizationTableProps {
@@ -210,6 +211,15 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 <div className="flex items-center gap-1">
                   <span>Location</span>
                   {getSortIcon('location', sortField, sortOrder)}
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/80 transition-colors w-[8%]"
+                onClick={() => onSort('residency')}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Residency</span>
+                  {getSortIcon('residency', sortField, sortOrder)}
                 </div>
               </TableHead>
               <TableHead
@@ -371,6 +381,13 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                       </div>
                     ) : (
                       '-'
+                    )}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-foreground">
+                    {org.residency_status ? (
+                      <span>{org.residency_status === 'resident' ? 'Resident' : 'Non-Resident'}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-foreground text-center">

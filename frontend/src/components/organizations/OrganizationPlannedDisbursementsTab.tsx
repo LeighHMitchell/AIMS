@@ -405,7 +405,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
       <Card>
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-muted/50 border-b border-border/70">
+            <TableHeader className="bg-surface-muted border-b border-border/70">
               <TableRow>
                 <TableHead
                   className="text-sm font-medium py-3 px-4 cursor-pointer hover:bg-muted/30"

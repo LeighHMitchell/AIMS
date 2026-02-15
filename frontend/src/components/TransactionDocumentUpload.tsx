@@ -295,54 +295,68 @@ export function TransactionDocumentUpload({
       </Card>
 
       {/* External Document Links Section */}
-      <div className="rounded-lg border bg-white p-6 mb-6">
-        <h2 className="font-semibold text-lg mb-2">Add External Document Links</h2>
-        <div className="mb-2">
-          <label className="block font-medium mb-1">URL</label>
-          <input
-            type="url"
-            className="w-full border rounded px-3 py-2 mb-2"
-            placeholder="https://example.com/doc.pdf"
-            value={externalUrl}
-            onChange={e => setExternalUrl(e.target.value)}
-          />
-          <label className="block font-medium mb-1">Description (optional)</label>
-          <input
-            type="text"
-            className="w-full border rounded px-3 py-2 mb-2"
-            placeholder="Invoice, contract, etc."
-            value={urlDescription}
-            onChange={e => setUrlDescription(e.target.value)}
-          />
-          <button
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-slate-700">
+            Add External Document Links
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="external-url">URL</Label>
+            <Input
+              id="external-url"
+              type="url"
+              placeholder="https://example.com/doc.pdf"
+              value={externalUrl}
+              onChange={e => setExternalUrl(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="url-description">
+              Description
+              <span className="text-gray-500 text-xs ml-2">(optional)</span>
+            </Label>
+            <Input
+              id="url-description"
+              type="text"
+              placeholder="Invoice, contract, etc."
+              value={urlDescription}
+              onChange={e => setUrlDescription(e.target.value)}
+            />
+          </div>
+          <Button
             type="button"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            variant="outline"
+            size="sm"
             onClick={handleAddExternalLink}
           >
+            <ExternalLink className="h-4 w-4 mr-2" />
             Add Link
-          </button>
-        </div>
-        {externalLinks.length > 0 && (
-          <ul className="mt-4 space-y-2">
-            {externalLinks.map((link, idx) => (
-              <li key={idx} className="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
-                <div>
-                  <span className="font-mono text-sm text-blue-700">{link.url}</span>
-                  {link.description && <span className="ml-2 text-gray-600 text-sm">{link.description}</span>}
+          </Button>
+          {externalLinks.length > 0 && (
+            <div className="space-y-2 mt-3">
+              {externalLinks.map((link, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono text-sm text-blue-700 truncate">{link.url}</p>
+                    {link.description && <p className="text-xs text-muted-foreground mt-0.5">{link.description}</p>}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveExternalLink(idx)}
+                    aria-label="Remove link"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                <button
-                  type="button"
-                  className="ml-2 text-red-500 hover:text-red-700"
-                  onClick={() => handleRemoveExternalLink(idx)}
-                  aria-label="Remove link"
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Documents List */}
       {documents.length > 0 && (

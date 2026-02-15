@@ -485,7 +485,7 @@ export function DataClinicTransactions() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="border-b bg-gray-50">
+              <thead className="border-b bg-surface-muted">
                 <tr>
                   {isSuperUser && (
                     <th className="p-4 text-left">

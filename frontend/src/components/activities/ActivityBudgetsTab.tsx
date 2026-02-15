@@ -1975,7 +1975,7 @@ export default function ActivityBudgetsTab({
           {/* Budget table */}
           <div className="rounded-md border w-full">
             <Table aria-label="Budgets table" className="w-full">
-              <TableHeader className="bg-muted/50 border-b border-border/70">
+              <TableHeader className="bg-surface-muted border-b border-border/70">
                 <TableRow>
                   <TableHead className="py-3 px-2 whitespace-nowrap" style={{ width: '50px' }}></TableHead>
                   {!readOnly && (

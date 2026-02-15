@@ -29,7 +29,9 @@ export function TransactionTypeSummaryCards({
     transactions.forEach(transaction => {
       const type = transaction.transaction_type || '';
       const typeName = TRANSACTION_TYPE_LABELS[type] || 'Unknown';
-      const usdValue = transaction.usd_value || 0;
+      const usdValue = transaction.value_usd
+        || (transaction.currency === 'USD' && transaction.value ? Number(transaction.value) : 0)
+        || 0;
 
       if (!summaryMap.has(type)) {
         summaryMap.set(type, {

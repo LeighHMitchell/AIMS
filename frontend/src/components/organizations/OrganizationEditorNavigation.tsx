@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Lock, Copy, Check, Trash2 } from "lucide-react"
 import { StableTabCompletionIndicator } from "@/utils/stable-tab-completion"
@@ -125,8 +126,20 @@ export default function OrganizationEditorNavigation({
         {organization && organization.name && (
           <div className="pb-4 border-b border-gray-200">
             <h2 className="text-lg font-bold text-slate-900 group leading-tight">
-              {organization.name}
-              {organization.acronym && <span className="text-slate-600"> ({organization.acronym})</span>}{' '}
+              {organization.id ? (
+                <Link
+                  href={`/organizations/${organization.id}`}
+                  className="hover:text-blue-700 hover:underline transition-colors"
+                >
+                  {organization.name}
+                  {organization.acronym && <span className="text-slate-600"> ({organization.acronym})</span>}
+                </Link>
+              ) : (
+                <>
+                  {organization.name}
+                  {organization.acronym && <span className="text-slate-600"> ({organization.acronym})</span>}
+                </>
+              )}{' '}
               <button
                 onClick={() => copyToClipboard(organization.name || '', 'orgName')}
                 className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"

@@ -37,7 +37,6 @@ import {
   Mail,
   Phone,
   LayoutGrid,
-  List,
   Table as TableIcon,
   User,
   MoreVertical,
@@ -158,6 +157,7 @@ interface Organization {
   default_language?: string
   secondary_reporter?: boolean
   active_project_count?: number
+  residency_status?: string
   twitter?: string
   facebook?: string
   linkedin?: string
@@ -185,6 +185,10 @@ interface Activity {
   iati_identifier?: string
   default_modality?: string
   defaultFinanceType?: string
+  default_finance_type?: string
+  disbursements?: number
+  commitments?: number
+  expenditures?: number
   logo?: string
 }
 
@@ -193,6 +197,7 @@ interface Transaction {
   transaction_type: string
   transaction_date: string
   value: number
+  value_usd?: number
   currency: string
   description?: string
   provider_org_name?: string
@@ -491,58 +496,16 @@ export default function OrganizationProfilePage() {
           if (activitiesResponse.ok) {
             const activitiesData = await activitiesResponse.json()
             
-            // Fetch budgets and transactions for each activity
-            const activitiesWithBudgets = await Promise.all(
-              (activitiesData || []).map(async (activity: Activity) => {
-                let totalPlannedBudgetUSD = 0
-                let totalDisbursed = 0
-
-                // Fetch budgets
-                try {
-                  const budgetResponse = await apiFetch(`/api/activities/${activity.id}/budgets`, {
-                    signal: abortControllerRef.current?.signal
-                  })
-
-                  if (budgetResponse.ok) {
-                    const budgets = await budgetResponse.json()
-                    // Sum all budget USD values
-                    totalPlannedBudgetUSD = budgets.reduce((sum: number, budget: any) => {
-                      // Use usd_value if available, otherwise use value if currency is USD
-                      const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
-                      return sum + (usdValue || 0)
-                    }, 0)
-                  }
-                } catch (budgetErr) {
-                  console.warn(`Failed to fetch budgets for activity ${activity.id}:`, budgetErr)
-                }
-
-                // Fetch transactions to calculate disbursements (exclude linked to show only org's reported data)
-                try {
-                  const transactionsResponse = await apiFetch(`/api/activities/${activity.id}/transactions?includeLinked=false`, {
-                    signal: abortControllerRef.current?.signal
-                  })
-
-                  if (transactionsResponse.ok) {
-                    const transactions = await transactionsResponse.json()
-                    // Sum disbursement transactions (type 3 = Disbursement)
-                    totalDisbursed = (transactions || [])
-                      .filter((t: any) => t.transaction_type === '3' || t.transaction_type === 3)
-                      .reduce((sum: number, t: any) => {
-                        const value = t.usd_value || t.value || 0
-                        return sum + value
-                      }, 0)
-                  }
-                } catch (transErr) {
-                  console.warn(`Failed to fetch transactions for activity ${activity.id}:`, transErr)
-                }
-
-                return {
-                  ...activity,
-                  totalPlannedBudgetUSD,
-                  total_disbursed: totalDisbursed
-                }
-              })
-            )
+            // Map activities using pre-computed values from the API
+            // The /api/activities endpoint already returns disbursements, commitments,
+            // totalPlannedBudgetUSD, default_finance_type etc. per activity
+            const activitiesWithBudgets = (activitiesData || []).map((activity: any) => ({
+              ...activity,
+              title: activity.title || activity.title_narrative,
+              defaultFinanceType: activity.default_finance_type,
+              total_disbursed: activity.disbursements || 0,
+              // totalPlannedBudgetUSD is already provided by the API
+            }))
 
             setActivities(activitiesWithBudgets)
             
@@ -755,50 +718,102 @@ export default function OrganizationProfilePage() {
               console.warn('Failed to fetch partner organizations:', partnerErr)
             }
             
-            // Calculate budgets by year from published activities where org is reporting org
-            const budgetsByYearMap = new Map<number, number>()
+            // Fetch org-level financial data in parallel (budgets, planned disbursements, transactions)
+            // These use the same efficient endpoints as the tabs
+            const orgFinancialPromise = Promise.all([
+              // Org budgets
+              apiFetch(`/api/organizations/${params.id}/budgets`, {
+                signal: abortControllerRef.current?.signal
+              }).then(async (res) => {
+                if (!res.ok) return
+                const budgets = await res.json()
+                const budgetsByYearMap = new Map<number, number>()
 
-            for (const activity of activitiesWithBudgets) {
-              // Only include budgets from published activities
-              if (activity.publication_status !== 'published') continue
-
-              try {
-                const budgetResponse = await apiFetch(`/api/activities/${activity.id}/budgets`, {
-                  signal: abortControllerRef.current?.signal
-                })
-
-                if (budgetResponse.ok) {
-                  const budgets = await budgetResponse.json()
-
-                  for (const budget of budgets) {
-                    if (!budget.value || !budget.currency) continue
-
-                    // Extract year from period_start
-                    let year = new Date().getFullYear()
-                    if (budget.period_start) {
-                      year = new Date(budget.period_start).getFullYear()
-                    }
-
-                    // Use usd_value if available, otherwise use value if currency is USD
-                    const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
-
-                    if (usdValue) {
-                      const currentAmount = budgetsByYearMap.get(year) || 0
-                      budgetsByYearMap.set(year, currentAmount + usdValue)
-                    }
+                for (const budget of budgets) {
+                  if (!budget.period_start) continue
+                  const year = new Date(budget.period_start).getFullYear()
+                  const usdValue = budget.usd_value || (budget.currency === 'USD' ? budget.value : 0)
+                  if (usdValue) {
+                    const currentAmount = budgetsByYearMap.get(year) || 0
+                    budgetsByYearMap.set(year, currentAmount + usdValue)
                   }
                 }
-              } catch (budgetErr) {
-                console.warn(`Failed to fetch budgets for year calculation for activity ${activity.id}:`, budgetErr)
-              }
-            }
 
-            // Convert map to array and sort by year
-            const budgetsByYearArray = Array.from(budgetsByYearMap.entries())
-              .map(([year, amount]) => ({ year, amount }))
-              .sort((a, b) => a.year - b.year)
+                const budgetsByYearArray = Array.from(budgetsByYearMap.entries())
+                  .map(([year, amount]) => ({ year, amount }))
+                  .sort((a, b) => a.year - b.year)
+                setBudgetsByYear(budgetsByYearArray)
+              }).catch(err => {
+                if (err instanceof Error && err.name === 'AbortError') return
+                console.warn('Failed to fetch org budgets:', err)
+              }),
 
-            setBudgetsByYear(budgetsByYearArray)
+              // Org planned disbursements
+              apiFetch(`/api/organizations/${params.id}/planned-disbursements`, {
+                signal: abortControllerRef.current?.signal
+              }).then(async (res) => {
+                if (!res.ok) return
+                const plannedDisbursements = await res.json()
+                const pdByYearMap = new Map<number, number>()
+
+                for (const pd of plannedDisbursements) {
+                  if (!pd.period_start) continue
+                  const usdAmount = pd.usd_amount || pd.amount || 0
+                  if (!usdAmount) continue
+                  const year = new Date(pd.period_start).getFullYear()
+                  const currentAmount = pdByYearMap.get(year) || 0
+                  pdByYearMap.set(year, currentAmount + usdAmount)
+                }
+
+                const pdArray = Array.from(pdByYearMap.entries())
+                  .map(([year, amount]) => ({ year, amount }))
+                  .sort((a, b) => a.year - b.year)
+                setPlannedDisbursementsByYear(pdArray)
+              }).catch(err => {
+                if (err instanceof Error && err.name === 'AbortError') return
+                console.warn('Failed to fetch org planned disbursements:', err)
+              }),
+
+              // Org transactions (for hero cards + disbursements by year chart)
+              apiFetch(`/api/organizations/${params.id}/transactions`, {
+                signal: abortControllerRef.current?.signal
+              }).then(async (res) => {
+                if (!res.ok) return
+                const orgTransactions = await res.json()
+
+                // Set transactions state for hero cards (calculateTotals reads from this)
+                setTransactions(orgTransactions)
+
+                // Build disbursements by year for chart
+                const disbByYearMap = new Map<number, { disbursements: number; expenditures: number }>()
+                for (const txn of orgTransactions) {
+                  if (!txn.transaction_date) continue
+                  const year = new Date(txn.transaction_date).getFullYear()
+                  if (!disbByYearMap.has(year)) {
+                    disbByYearMap.set(year, { disbursements: 0, expenditures: 0 })
+                  }
+                  const yearData = disbByYearMap.get(year)!
+                  const usdValue = txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)
+                  if (txn.transaction_type === '3') {
+                    yearData.disbursements += usdValue
+                  } else if (txn.transaction_type === '4') {
+                    yearData.expenditures += usdValue
+                  }
+                }
+
+                const disbArray = Array.from(disbByYearMap.entries())
+                  .map(([year, data]) => ({
+                    year,
+                    disbursements: data.disbursements,
+                    expenditures: data.expenditures
+                  }))
+                  .sort((a, b) => a.year - b.year)
+                setDisbursementsByYear(disbArray)
+              }).catch(err => {
+                if (err instanceof Error && err.name === 'AbortError') return
+                console.warn('Failed to fetch org transactions:', err)
+              })
+            ])
             
             // Fetch and aggregate sector allocations for all published activities
             const sectorMap = new Map<string, { code: string; name: string; totalPercentage: number; activityCount: number }>()
@@ -863,147 +878,9 @@ export default function OrganizationProfilePage() {
             
             console.log(`[OrgProfile] Aggregated ${aggregatedSectors.length} unique sectors from ${sectorMap.size} entries`)
             setSectorAllocations(aggregatedSectors)
-            
-            // Fetch planned disbursements from all activities
-            const plannedDisbursementsByYearMap = new Map<number, number>()
-            
-            console.log(`[OrgProfile] Fetching planned disbursements for ${activitiesWithBudgets.length} activities`)
-            
-            for (const activity of activitiesWithBudgets) {
-              try {
-                const pdResponse = await apiFetch(`/api/activities/${activity.id}/planned-disbursements`, {
-                  signal: abortControllerRef.current?.signal
-                })
-                
-                if (pdResponse.ok) {
-                  const plannedDisbursements = await pdResponse.json()
-                  const activityTitle = activity.title || activity.title_narrative || 'Untitled'
-                  console.log(`[OrgProfile] Activity ${activity.id} (${activityTitle}) has ${plannedDisbursements.length} planned disbursements`)
-                  
-                  if (plannedDisbursements.length > 0) {
-                    console.log(`[OrgProfile] Sample planned disbursement:`, plannedDisbursements[0])
-                  }
-                  
-                  for (const pd of plannedDisbursements) {
-                    if (!pd.period_start) {
-                      console.warn(`[OrgProfile] Planned disbursement missing period_start:`, pd)
-                      continue
-                    }
-                    
-                    // Try different field names for the USD amount
-                    const usdAmount = pd.usd_value || pd.value_usd || pd.usd_amount || pd.amount
-                    
-                    if (!usdAmount) {
-                      console.warn(`[OrgProfile] Planned disbursement missing USD amount:`, pd)
-                      continue
-                    }
-                    
-                    const year = new Date(pd.period_start).getFullYear()
-                    const currentAmount = plannedDisbursementsByYearMap.get(year) || 0
-                    plannedDisbursementsByYearMap.set(year, currentAmount + usdAmount)
-                    
-                    console.log(`[OrgProfile] Added planned disbursement: Year ${year}, Amount ${usdAmount}`)
-                  }
-                }
-              } catch (pdErr) {
-                if (pdErr instanceof Error && pdErr.name === 'AbortError') {
-                  console.log('[OrgProfile] Planned disbursements request aborted')
-                  return
-                }
-                console.warn(`Failed to fetch planned disbursements for activity ${activity.id}:`, pdErr)
-              }
-            }
-            
-            // Convert planned disbursements to array
-            const plannedDisbursementsArray = Array.from(plannedDisbursementsByYearMap.entries())
-              .map(([year, amount]) => ({ year, amount }))
-              .sort((a, b) => a.year - b.year)
-            
-            console.log(`[OrgProfile] Planned disbursements by year:`, plannedDisbursementsArray)
-            setPlannedDisbursementsByYear(plannedDisbursementsArray)
 
-            try {
-              // Fetch transactions from all activities
-              const allTransactions: any[] = []
-              const disbursementsByYearMap = new Map<number, { disbursements: number; expenditures: number }>()
-
-              // Filter to only published activities for consistency with organization transactions API
-              const publishedActivities = activitiesWithBudgets.filter(a => a.publication_status === 'published')
-              console.log(`[OrgProfile] Fetching transactions for ${publishedActivities.length} published activities (of ${activitiesWithBudgets.length} total)`)
-
-              for (const activity of publishedActivities) {
-                try {
-                  // Exclude linked transactions to show only org's directly reported data
-                  const txnResponse = await apiFetch(`/api/activities/${activity.id}/transactions?includeLinked=false`, {
-                    signal: abortControllerRef.current?.signal
-                  })
-
-                  if (txnResponse.ok) {
-                    const activityTransactions = await txnResponse.json()
-                    console.log(`[OrgProfile] Activity ${activity.id} has ${activityTransactions.length} transactions`)
-                    // Add activity info to each transaction
-                    const transactionsWithActivity = activityTransactions.map((txn: any) => ({
-                      ...txn,
-                      activity_id: activity.id,
-                      activity_title: activity.title || activity.title_narrative
-                    }))
-                    allTransactions.push(...transactionsWithActivity)
-
-                    // Aggregate disbursements and expenditures by year
-                    for (const txn of activityTransactions) {
-                      if (!txn.transaction_date || !txn.value) continue
-
-                      const year = new Date(txn.transaction_date).getFullYear()
-
-                      if (!disbursementsByYearMap.has(year)) {
-                        disbursementsByYearMap.set(year, { disbursements: 0, expenditures: 0 })
-                      }
-
-                      const yearData = disbursementsByYearMap.get(year)!
-
-                      // Type 3 = Disbursement, Type 4 = Expenditure
-                      // Use value_usd for consistency, fallback to value if USD or 0
-                      const usdValue = txn.value_usd || (txn.currency === 'USD' ? txn.value : 0)
-                      if (txn.transaction_type === '3') {
-                        console.log(`[OrgProfile] Found disbursement: Year ${year}, Amount USD ${usdValue}`)
-                        yearData.disbursements += usdValue
-                      } else if (txn.transaction_type === '4') {
-                        console.log(`[OrgProfile] Found expenditure: Year ${year}, Amount USD ${usdValue}`)
-                        yearData.expenditures += usdValue
-                      }
-                    }
-                  }
-                } catch (txnErr) {
-                  if (txnErr instanceof Error && txnErr.name === 'AbortError') {
-                    console.log('[OrgProfile] Transactions request aborted')
-                    return
-                  }
-                  console.warn(`Failed to fetch transactions for activity ${activity.id}:`, txnErr)
-                }
-              }
-
-              console.log(`[OrgProfile] Total transactions fetched: ${allTransactions.length}`)
-              console.log(`[OrgProfile] Disbursements by year:`, Array.from(disbursementsByYearMap.entries()))
-
-              setTransactions(allTransactions)
-
-              // Convert to array and sort by year
-              const disbursementsArray = Array.from(disbursementsByYearMap.entries())
-                .map(([year, data]) => ({
-                  year,
-                  disbursements: data.disbursements,
-                  expenditures: data.expenditures
-                }))
-                .sort((a, b) => a.year - b.year)
-
-              setDisbursementsByYear(disbursementsArray)
-            } catch (err) {
-              if (err instanceof Error && err.name === 'AbortError') {
-                console.log('[OrgProfile] Transactions request aborted')
-                return
-              }
-              console.warn('Failed to fetch transactions:', err)
-            }
+            // Wait for org-level financial fetches to complete
+            await orgFinancialPromise
 
             // Fetch subnational allocation data for map
             try {
@@ -1543,6 +1420,11 @@ export default function OrganizationProfilePage() {
                         <Badge className={getTypeColor(organization.organisation_type)}>
                           {organization.organisation_type}
                         </Badge>
+                        {organization.residency_status && (
+                          <Badge variant="outline" className={organization.residency_status === 'resident' ? 'border-teal-300 bg-teal-50 text-teal-700' : 'border-amber-300 bg-amber-50 text-amber-700'}>
+                            {organization.residency_status === 'resident' ? 'Resident' : 'Non-Resident'}
+                          </Badge>
+                        )}
                         {organization.iati_org_id && (
                           <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700">
                             Reporting to IATI
@@ -4287,7 +4169,7 @@ export default function OrganizationProfilePage() {
                               onClick={() => setDocumentsViewMode('table')}
                               className={`px-3 py-1.5 text-sm ${documentsViewMode === 'table' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'} rounded-r-md transition-colors`}
                             >
-                              <List className="h-4 w-4" />
+                              <TableIcon className="h-4 w-4" />
                             </button>
                           </div>
                         </div>

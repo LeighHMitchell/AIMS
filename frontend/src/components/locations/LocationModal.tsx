@@ -1123,14 +1123,16 @@ const autoPopulateIatiFields = useCallback((params: {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-7xl max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
             {location?.id ? 'Edit Location' : 'Add Location'}
           </DialogTitle>
         </DialogHeader>
 
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Map Section */}
           <div className="space-y-4">
@@ -1268,7 +1270,6 @@ const autoPopulateIatiFields = useCallback((params: {
 
           {/* Form Section */}
           <div className="space-y-4">
-            <form onSubmit={handleSubmit(onSubmit)}>
             <Tabs defaultValue="general" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="general">General</TabsTrigger>
@@ -1762,8 +1763,10 @@ const autoPopulateIatiFields = useCallback((params: {
               </TabsContent>
             </Tabs>
 
-            {/* Form Actions */}
-            <div className="flex items-center justify-between pt-6 border-t">
+          </div>
+        </div>
+        </div>
+        <DialogFooter className="px-6 py-4 border-t flex-shrink-0 sm:justify-between">
           <div className="flex gap-2">
             {location?.id && onDelete && (
               <Button
@@ -1777,7 +1780,6 @@ const autoPopulateIatiFields = useCallback((params: {
               </Button>
             )}
           </div>
-
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
@@ -1786,7 +1788,7 @@ const autoPopulateIatiFields = useCallback((params: {
               type="submit"
               disabled={isSaving}
               onClick={() => {
-                console.log('[LocationModal] 🖱️ Submit button clicked!');
+                console.log('[LocationModal] Submit button clicked!');
                 console.log('[LocationModal] Current form errors:', errors);
                 console.log('[LocationModal] Form values:', watch());
                 console.log('[LocationModal] Is form valid:', isValid);
@@ -1801,10 +1803,8 @@ const autoPopulateIatiFields = useCallback((params: {
               {location?.id ? 'Update' : 'Save'} Location
             </Button>
           </div>
-            </div>
-            </form>
-          </div>
-        </div>
+        </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

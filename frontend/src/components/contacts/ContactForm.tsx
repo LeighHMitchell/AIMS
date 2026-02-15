@@ -259,8 +259,8 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
           <DialogTitle className="text-gray-900">
             {contact?.id ? 'Edit Contact' : 'Add New Contact'}
           </DialogTitle>
@@ -271,7 +271,8 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
           </DialogDescription>
         </DialogHeader>
 
-        <form id="contact-form" onSubmit={handleSubmit} className="space-y-4 py-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <form id="contact-form" onSubmit={handleSubmit} className="space-y-4">
           {/* Profile Photo Upload */}
           <div>
             <Label>Profile Photo</Label>
@@ -588,8 +589,9 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
       </div>
 
         </form>
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>

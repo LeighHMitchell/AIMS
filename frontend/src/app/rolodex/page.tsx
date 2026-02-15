@@ -24,8 +24,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
-  Grid3X3,
-  Table,
+  LayoutGrid,
+  Table as TableIcon,
   RefreshCw,
   Download,
   Users,
@@ -251,7 +251,7 @@ export default function RolodexPage() {
         {/* Table Skeleton */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <table className="w-full table-auto border-collapse">
-            <thead className="bg-muted/50 border-b border-border">
+            <thead className="bg-surface-muted border-b border-border">
               <tr>
                 <th className="h-12 px-4 py-3 w-[60px]"><Skeleton className="h-4 w-8" /></th>
                 <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-20" /></th>
@@ -317,7 +317,7 @@ export default function RolodexPage() {
                 className="rounded-r-none"
                 title="Grid view"
               >
-                <Grid3X3 className="h-4 w-4" />
+                <LayoutGrid className="h-4 w-4" />
               </Button>
               <Button
                 variant={viewMode === 'table' ? 'default' : 'ghost'}
@@ -326,7 +326,7 @@ export default function RolodexPage() {
                 className="rounded-l-none"
                 title="Table view"
               >
-                <Table className="h-4 w-4" />
+                <TableIcon className="h-4 w-4" />
               </Button>
             </div>
             <TooltipProvider>
@@ -417,7 +417,7 @@ export default function RolodexPage() {
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full table-auto border-collapse">
-                    <thead className="bg-muted/50 border-b border-border">
+                    <thead className="bg-surface-muted border-b border-border">
                       <tr>
                         <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[60px]"></th>
                         <th 

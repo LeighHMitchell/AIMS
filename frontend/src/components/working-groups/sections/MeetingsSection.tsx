@@ -25,7 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Calendar, Clock, MapPin, Plus, ChevronDown, ChevronUp, Trash2, FileText } from 'lucide-react'
+import { Calendar, Plus, Trash2, FileText, Upload, Download, Pencil, X, Loader2 } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -43,12 +43,407 @@ interface Meeting {
   created_at: string
 }
 
+interface MeetingDocument {
+  id: string
+  title: string
+  file_url: string
+  document_type: string
+  uploaded_at: string
+}
+
 const STATUS_COLORS: Record<string, string> = {
   scheduled: 'bg-blue-100 text-blue-800',
   completed: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
 }
 
+const DOC_TYPE_OPTIONS = [
+  { value: 'agenda', label: 'Agenda' },
+  { value: 'minutes', label: 'Minutes' },
+  { value: 'presentation', label: 'Presentation' },
+  { value: 'report', label: 'Report' },
+  { value: 'other', label: 'Other' },
+]
+
+// ---------- Edit Meeting Modal ----------
+interface EditMeetingModalProps {
+  meeting: Meeting
+  workingGroupId: string
+  open: boolean
+  onClose: () => void
+  onSaved: () => void
+  onDelete: (meeting: Meeting) => void
+}
+
+function EditMeetingModal({
+  meeting,
+  workingGroupId,
+  open,
+  onClose,
+  onSaved,
+  onDelete,
+}: EditMeetingModalProps) {
+  const [title, setTitle] = useState(meeting.title)
+  const [meetingDate, setMeetingDate] = useState(meeting.meeting_date)
+  const [startTime, setStartTime] = useState(meeting.start_time || '')
+  const [endTime, setEndTime] = useState(meeting.end_time || '')
+  const [location, setLocation] = useState(meeting.location || '')
+  const [status, setStatus] = useState(meeting.status)
+  const [agenda, setAgenda] = useState(meeting.agenda || '')
+  const [minutes, setMinutes] = useState(meeting.minutes || '')
+  const [saving, setSaving] = useState(false)
+
+  // Documents
+  const [docs, setDocs] = useState<MeetingDocument[]>([])
+  const [loadingDocs, setLoadingDocs] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [uploadDocType, setUploadDocType] = useState('agenda')
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  // Reset form when meeting changes
+  useEffect(() => {
+    setTitle(meeting.title)
+    setMeetingDate(meeting.meeting_date)
+    setStartTime(meeting.start_time || '')
+    setEndTime(meeting.end_time || '')
+    setLocation(meeting.location || '')
+    setStatus(meeting.status)
+    setAgenda(meeting.agenda || '')
+    setMinutes(meeting.minutes || '')
+  }, [meeting])
+
+  // Fetch documents when modal opens
+  useEffect(() => {
+    if (!open) return
+    const fetchDocs = async () => {
+      setLoadingDocs(true)
+      try {
+        const res = await apiFetch(`/api/working-groups/${workingGroupId}/documents?meeting_id=${meeting.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setDocs(data)
+        }
+      } catch (error) {
+        console.error('Error fetching meeting docs:', error)
+      } finally {
+        setLoadingDocs(false)
+      }
+    }
+    fetchDocs()
+  }, [open, workingGroupId, meeting.id])
+
+  const handleSave = async () => {
+    if (!title.trim() || !meetingDate) {
+      toast.error('Title and date are required')
+      return
+    }
+    setSaving(true)
+    try {
+      const res = await apiFetch(`/api/working-groups/${workingGroupId}/meetings/${meeting.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: title.trim(),
+          meeting_date: meetingDate,
+          start_time: startTime || null,
+          end_time: endTime || null,
+          location: location.trim() || null,
+          status,
+          agenda: agenda.trim() || null,
+          minutes: minutes.trim() || null,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to save meeting')
+      toast.success('Meeting updated')
+      onSaved()
+      onClose()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save meeting')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleUploadDoc = async (file: File) => {
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('title', file.name)
+      formData.append('document_type', uploadDocType)
+      formData.append('meeting_id', meeting.id)
+
+      const res = await fetch(`/api/working-groups/${workingGroupId}/documents`, {
+        method: 'POST',
+        body: formData,
+      })
+      if (!res.ok) throw new Error('Upload failed')
+      const newDoc = await res.json()
+      toast.success('Document uploaded')
+      setDocs(prev => [...prev, newDoc])
+    } catch {
+      toast.error('Failed to upload document')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeleteDoc = async (docId: string) => {
+    try {
+      const res = await apiFetch(`/api/working-groups/${workingGroupId}/documents`, {
+        method: 'DELETE',
+        body: JSON.stringify({ document_id: docId }),
+      })
+      if (!res.ok && res.status !== 204) throw new Error('Delete failed')
+      toast.success('Document removed')
+      setDocs(prev => prev.filter(d => d.id !== docId))
+    } catch {
+      toast.error('Failed to remove document')
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
+      <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Meeting</DialogTitle>
+          <DialogDescription>Update meeting details, agenda, minutes, and documents</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-5 py-4">
+          {/* Title */}
+          <div className="space-y-2">
+            <Label>Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Meeting title" />
+          </div>
+
+          {/* Date + Status */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Input type="date" value={meetingDate} onChange={(e) => setMeetingDate(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as Meeting['status'])}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Start/End Time */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Start Time</Label>
+              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>End Time</Label>
+              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="space-y-2">
+            <Label>Location</Label>
+            <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Meeting room or virtual link" />
+          </div>
+
+          {/* Agenda */}
+          <div className="space-y-2">
+            <Label>Agenda</Label>
+            <Textarea
+              value={agenda}
+              onChange={(e) => setAgenda(e.target.value)}
+              placeholder="Meeting agenda items..."
+              rows={4}
+            />
+          </div>
+
+          {/* Minutes */}
+          <div className="space-y-2">
+            <Label>Minutes</Label>
+            <Textarea
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+              placeholder="Meeting minutes..."
+              rows={6}
+            />
+          </div>
+
+          {/* Documents */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Documents</Label>
+              <div className="flex items-center gap-2">
+                <Select value={uploadDocType} onValueChange={setUploadDocType}>
+                  <SelectTrigger className="w-[130px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DOC_TYPE_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-1" />
+                  )}
+                  Upload
+                </Button>
+              </div>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleUploadDoc(file)
+              }}
+            />
+
+            {loadingDocs ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading documents...
+              </div>
+            ) : docs.length === 0 ? (
+              <p className="text-sm text-gray-400 italic py-2">No documents attached</p>
+            ) : (
+              <div className="space-y-1">
+                {docs.map(doc => (
+                  <div key={doc.id} className="flex items-center justify-between bg-gray-50 border rounded px-3 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span className="text-sm text-gray-800 truncate">{doc.title}</span>
+                      <Badge variant="secondary" className="text-xs flex-shrink-0">{doc.document_type}</Badge>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <a
+                        href={doc.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                        title="Download"
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                      <button
+                        onClick={() => handleDeleteDoc(doc.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        title="Remove"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter className="flex items-center justify-between sm:justify-between">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={() => {
+              onClose()
+              onDelete(meeting)
+            }}
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            Delete
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={handleSave} disabled={saving || !title.trim() || !meetingDate}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ---------- Meetings Table ----------
+interface MeetingsTableProps {
+  meetings: Meeting[]
+  workingGroupId: string
+  onEdit: (meeting: Meeting) => void
+}
+
+function MeetingsTable({ meetings, workingGroupId, onEdit }: MeetingsTableProps) {
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <table className="w-full">
+        <thead>
+          <tr className="bg-gray-50 border-b">
+            <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Title</th>
+            <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Date</th>
+            <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Time</th>
+            <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Location</th>
+            <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Status</th>
+            <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {meetings.map((meeting) => (
+            <tr key={meeting.id} className="hover:bg-gray-50">
+              <td className="px-4 py-3 text-sm font-medium text-gray-900">{meeting.title}</td>
+              <td className="px-4 py-3 text-sm text-gray-600">
+                {format(new Date(meeting.meeting_date), 'MMM d, yyyy')}
+              </td>
+              <td className="px-4 py-3 text-sm text-gray-600">
+                {meeting.start_time
+                  ? `${meeting.start_time}${meeting.end_time ? ` – ${meeting.end_time}` : ''}`
+                  : '—'}
+              </td>
+              <td className="px-4 py-3 text-sm text-gray-600">{meeting.location || '—'}</td>
+              <td className="px-4 py-3">
+                <Badge className={STATUS_COLORS[meeting.status] || STATUS_COLORS.scheduled}>
+                  {meeting.status}
+                </Badge>
+              </td>
+              <td className="px-4 py-3 text-right">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(meeting)}
+                  className="text-gray-600 hover:text-blue-700"
+                >
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ---------- Main Section ----------
 interface MeetingsSectionProps {
   workingGroupId: string
 }
@@ -57,11 +452,9 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
   const [meetings, setMeetings] = useState<Meeting[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const [expandedMeeting, setExpandedMeeting] = useState<string | null>(null)
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null)
   const [meetingToDelete, setMeetingToDelete] = useState<Meeting | null>(null)
   const [saving, setSaving] = useState(false)
-  const [editingMinutes, setEditingMinutes] = useState<string | null>(null)
-  const [minutesText, setMinutesText] = useState('')
 
   // New meeting form
   const [newTitle, setNewTitle] = useState('')
@@ -130,35 +523,6 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
     }
   }
 
-  const handleStatusChange = async (meetingId: string, newStatus: string) => {
-    try {
-      const res = await apiFetch(`/api/working-groups/${workingGroupId}/meetings/${meetingId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: newStatus }),
-      })
-      if (!res.ok) throw new Error('Failed to update status')
-      toast.success('Status updated')
-      fetchMeetings()
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update status')
-    }
-  }
-
-  const handleSaveMinutes = async (meetingId: string) => {
-    try {
-      const res = await apiFetch(`/api/working-groups/${workingGroupId}/meetings/${meetingId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ minutes: minutesText }),
-      })
-      if (!res.ok) throw new Error('Failed to save minutes')
-      toast.success('Minutes saved')
-      setEditingMinutes(null)
-      fetchMeetings()
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to save minutes')
-    }
-  }
-
   const handleDeleteMeeting = async () => {
     if (!meetingToDelete) return
     try {
@@ -202,135 +566,61 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
           </Button>
         </div>
       ) : (
-        <div className="space-y-4">
-          {meetings.map((meeting) => {
-            const isExpanded = expandedMeeting === meeting.id
+        <div className="space-y-8">
+          {(() => {
+            const today = new Date().toISOString().split('T')[0]
+            const upcoming = meetings.filter(m => m.meeting_date >= today && m.status !== 'cancelled')
+            const past = meetings.filter(m => m.meeting_date < today || m.status === 'cancelled')
+
             return (
-              <div key={meeting.id} className="border rounded-lg overflow-hidden">
-                {/* Meeting Header */}
-                <div
-                  className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => setExpandedMeeting(isExpanded ? null : meeting.id)}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <h4 className="font-medium">{meeting.title}</h4>
-                      <Badge className={STATUS_COLORS[meeting.status] || STATUS_COLORS.scheduled}>
-                        {meeting.status}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {format(new Date(meeting.meeting_date), 'MMM d, yyyy')}
-                      </div>
-                      {meeting.start_time && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          {meeting.start_time}{meeting.end_time ? ` - ${meeting.end_time}` : ''}
-                        </div>
-                      )}
-                      {meeting.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {meeting.location}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </div>
+              <>
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    Upcoming Meetings
+                    {upcoming.length > 0 && <span className="ml-2 text-gray-400 font-normal">({upcoming.length})</span>}
+                  </h3>
+                  {upcoming.length === 0 ? (
+                    <p className="text-sm text-gray-400 italic py-4 text-center border rounded-lg">No upcoming meetings</p>
+                  ) : (
+                    <MeetingsTable
+                      meetings={upcoming}
+                      workingGroupId={workingGroupId}
+                      onEdit={setEditingMeeting}
+                    />
+                  )}
                 </div>
 
-                {/* Expanded Content */}
-                {isExpanded && (
-                  <div className="border-t p-4 space-y-4 bg-gray-50">
-                    {/* Status change & Delete */}
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={meeting.status}
-                        onValueChange={(val) => handleStatusChange(meeting.id, val)}
-                      >
-                        <SelectTrigger className="w-[160px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="scheduled">Scheduled</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 ml-auto"
-                        onClick={(e) => { e.stopPropagation(); setMeetingToDelete(meeting) }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
-                    </div>
-
-                    {/* Agenda */}
-                    {meeting.agenda && (
-                      <div>
-                        <Label className="text-sm font-medium">Agenda</Label>
-                        <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap bg-white p-3 rounded border">
-                          {meeting.agenda}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Minutes */}
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm font-medium">Minutes</Label>
-                        {editingMinutes !== meeting.id && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditingMinutes(meeting.id)
-                              setMinutesText(meeting.minutes || '')
-                            }}
-                          >
-                            <FileText className="h-4 w-4 mr-1" />
-                            {meeting.minutes ? 'Edit Minutes' : 'Add Minutes'}
-                          </Button>
-                        )}
-                      </div>
-                      {editingMinutes === meeting.id ? (
-                        <div className="space-y-2 mt-2">
-                          <Textarea
-                            value={minutesText}
-                            onChange={(e) => setMinutesText(e.target.value)}
-                            rows={8}
-                            placeholder="Enter meeting minutes..."
-                          />
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => handleSaveMinutes(meeting.id)}>
-                              Save Minutes
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingMinutes(null)}>
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      ) : meeting.minutes ? (
-                        <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap bg-white p-3 rounded border">
-                          {meeting.minutes}
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-sm text-gray-400 italic">No minutes recorded</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    Past Meetings
+                    {past.length > 0 && <span className="ml-2 text-gray-400 font-normal">({past.length})</span>}
+                  </h3>
+                  {past.length === 0 ? (
+                    <p className="text-sm text-gray-400 italic py-4 text-center border rounded-lg">No past meetings</p>
+                  ) : (
+                    <MeetingsTable
+                      meetings={past}
+                      workingGroupId={workingGroupId}
+                      onEdit={setEditingMeeting}
+                    />
+                  )}
+                </div>
+              </>
             )
-          })}
+          })()}
         </div>
+      )}
+
+      {/* Edit Meeting Modal */}
+      {editingMeeting && (
+        <EditMeetingModal
+          meeting={editingMeeting}
+          workingGroupId={workingGroupId}
+          open={!!editingMeeting}
+          onClose={() => setEditingMeeting(null)}
+          onSaved={fetchMeetings}
+          onDelete={(m) => setMeetingToDelete(m)}
+        />
       )}
 
       {/* Add Meeting Dialog */}

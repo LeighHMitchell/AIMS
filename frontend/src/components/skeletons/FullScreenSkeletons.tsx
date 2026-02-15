@@ -162,7 +162,7 @@ export function TransactionsListSkeleton() {
         <Card>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-surface-muted border-b">
                 <tr>
                   {['Activity', 'Date', 'Type', 'Status', 'Provider → Receiver', 'Value', 'Aid Type', 'Flow Type', 'Finance Type', 'Actions'].map((header) => (
                     <th key={header} className="px-4 py-3 text-left">
@@ -457,7 +457,7 @@ export function UserManagementSkeleton() {
         <Card>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-surface-muted border-b">
                 <tr>
                   {['User', 'Email', 'Role', 'Organization', 'Status', 'Last Active', 'Permissions', 'Actions'].map((header) => (
                     <th key={header} className="px-4 py-3 text-left">

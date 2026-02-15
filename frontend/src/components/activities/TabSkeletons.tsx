@@ -223,7 +223,7 @@ export function TransactionsSkeleton() {
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-muted/50 border-b border-border/70">
+            <thead className="bg-surface-muted border-b border-border/70">
               <tr>
                 {/* Expand */}
                 <th className="py-3 px-2 w-10"></th>
@@ -352,7 +352,7 @@ export function BudgetsSkeleton() {
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-muted/50 border-b border-border/70">
+            <thead className="bg-surface-muted border-b border-border/70">
               <tr>
                 {/* Expand */}
                 <th className="py-3 px-2 w-12"></th>
@@ -465,7 +465,7 @@ export function PlannedDisbursementsSkeleton() {
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-muted/50 border-b border-border/70">
+            <thead className="bg-surface-muted border-b border-border/70">
               <tr>
                 {/* Expand */}
                 <th className="py-3 px-2 w-10"></th>

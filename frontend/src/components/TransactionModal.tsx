@@ -1467,7 +1467,7 @@ export default function TransactionModal({
                     isSaved={transactionTypeAutosave.isSaved}
                     hasValue={!!formData.transaction_type}
                   >
-                    Transaction Type
+                    Transaction Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                   </LabelWithInfoAndSave>
                   <Popover open={transactionTypePopoverOpen} onOpenChange={setTransactionTypePopoverOpen}>
                     <PopoverTrigger asChild className="w-full">
@@ -1626,7 +1626,7 @@ export default function TransactionModal({
                     isSaved={valueAutosave.isSaved}
                     hasValue={!!formData.value && formData.value > 0}
                   >
-                    Transaction Value
+                    Transaction Value <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                   </LabelWithInfoAndSave>
                   <Input
                     type="text"
@@ -1670,7 +1670,7 @@ export default function TransactionModal({
                     isSaved={currencyAutosave.isSaved || hasDefaultValue('currency', formData.currency)}
                     hasValue={!!formData.currency}
                   >
-                    Currency
+                    Currency <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                   </LabelWithInfoAndSave>
                   <CurrencySelector
                     value={formData.currency || undefined}
@@ -1695,7 +1695,7 @@ export default function TransactionModal({
                       isSaved={transactionDateAutosave.isSaved}
                       hasValue={!!formData.transaction_date}
                     >
-                      Transaction Date
+                      Transaction Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                     </LabelWithInfoAndSave>
                   </div>
                   <Input
@@ -1778,7 +1778,7 @@ export default function TransactionModal({
                   isSaved={providerOrgAutosave.isSaved}
                   hasValue={!!formData.provider_org_id}
                 >
-                  Provider Organization
+                  Provider Organization <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </LabelWithInfoAndSave>
                 <OrganizationSearchableSelect
                   value={formData.provider_org_id || ''}
@@ -1982,7 +1982,7 @@ export default function TransactionModal({
                   isSaved={receiverOrgAutosave.isSaved}
                   hasValue={!!formData.receiver_org_id}
                 >
-                  Receiver Organization
+                  Receiver Organization <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
                 </LabelWithInfoAndSave>
                 <OrganizationSearchableSelect
                   value={formData.receiver_org_id || ''}

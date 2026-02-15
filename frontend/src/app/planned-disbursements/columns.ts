@@ -48,3 +48,8 @@ export const defaultVisiblePlannedDisbursementColumns: PlannedDisbursementColumn
  * localStorage key for persisting column visibility
  */
 export const PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY = "aims_planned_disbursement_table_visible_columns";
+
+/**
+ * localStorage key for persisting column order
+ */
+export const PLANNED_DISBURSEMENT_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_planned_disbursement_table_column_order";

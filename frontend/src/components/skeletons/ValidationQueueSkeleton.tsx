@@ -83,7 +83,7 @@ export function ValidationTableSkeleton() {
     <Card className="bg-white">
       <CardContent className="p-0">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-surface-muted border-b">
             <tr>
               <th className="text-left p-4">
                 <Skeleton variant="text" width="100px" height="0.875rem" />

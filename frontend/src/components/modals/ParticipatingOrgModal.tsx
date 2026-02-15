@@ -232,7 +232,7 @@ export function ParticipatingOrgModal({
           {/* Organization Selection */}
           <div className="space-y-2">
             <Label htmlFor="organization" className="flex items-center gap-2">
-              Organization
+              Organization <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 align-middle" aria-hidden="true" />
               <HelpTextTooltip content="Select an existing organization from your database." />
             </Label>
             <OrganizationCombobox
@@ -254,7 +254,7 @@ export function ParticipatingOrgModal({
           {/* Role Selection */}
           <div className="space-y-2">
             <Label htmlFor="role" className="flex items-center gap-2">
-              Organization Role
+              Organization Role <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 align-middle" aria-hidden="true" />
               <HelpTextTooltip content="The role of the organization in this activity according to IATI standard: Funding (provides funds), Accountable (legal responsibility), Extending (manages on behalf of funder), or Implementing (physically carries out)." />
             </Label>
             <EnhancedSearchableSelect

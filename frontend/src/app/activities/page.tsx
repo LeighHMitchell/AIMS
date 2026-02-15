@@ -57,7 +57,7 @@ import { toast } from "sonner";
 import { formatReportedBy, formatSubmittedBy } from "@/utils/format-helpers";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import {
-  Plus, Download, Edit2, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
+  Plus, Download, Edit2, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, LayoutGrid, TableIcon, Search, MoreVertical, Edit,
   PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
   FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown, ChevronUp, Heart,
   Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck
@@ -112,7 +112,11 @@ import {
   defaultVisibleActivityColumns,
   columnDescriptions,
   ACTIVITY_COLUMNS_LOCALSTORAGE_KEY,
+  ACTIVITY_COLUMN_ORDER_LOCALSTORAGE_KEY,
 } from "./columns";
+import { SortableTableHeader } from "@/components/ui/sortable-table-header";
+import { DndColumnProvider } from "@/components/ui/dnd-column-provider";
+import { useColumnOrder } from "@/hooks/use-column-order";
 import { apiFetch } from '@/lib/api-fetch';
 
 // Dynamically import SectorHierarchyFilter to avoid hydration issues
@@ -569,6 +573,15 @@ function ActivitiesPageContent() {
   
   // Column visibility state with localStorage persistence
   const [visibleColumns, setVisibleColumns] = useState<ActivityColumnId[]>(defaultVisibleActivityColumns);
+
+  const { getOrderedVisibleColumns, handleReorder: handleColumnReorder } = useColumnOrder<ActivityColumnId>({
+    storageKey: ACTIVITY_COLUMN_ORDER_LOCALSTORAGE_KEY,
+    columns: activityColumns,
+  });
+
+  // Get draggable columns (exclude always-visible checkbox/actions)
+  const draggableColumnIds = visibleColumns.filter((id) => id !== 'checkbox' && id !== 'actions');
+  const orderedDraggableColumns = getOrderedVisibleColumns(draggableColumnIds);
 
   // User's saved default columns from profile (used as reset target)
   const [userDefaultColumns, setUserDefaultColumns] = useState<ActivityColumnId[] | null>(null);
@@ -1870,7 +1883,7 @@ const router = useRouter();
             onClick={() => setViewMode('card')}
             className="rounded-l-none h-9"
           >
-            <Grid3X3 className="h-4 w-4" />
+            <LayoutGrid className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -1925,600 +1938,609 @@ const router = useRouter();
                     </div>
                   </th>
                   
-                  {/* Activity Title */}
-                  {visibleColumns.includes('title') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[250px]"
-                      onClick={() => handleSort('title')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="title">Activity Title</ColumnHeaderText>
-                        {getSortIcon('title')}
-                      </div>
-                    </th>
-                  )}
-                  
-                  {/* Activity Status */}
-                  {visibleColumns.includes('activityStatus') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors w-[120px]"
-                      onClick={() => handleSort('activityStatus')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="activityStatus">Activity Status</ColumnHeaderText>
-                        {getSortIcon('activityStatus')}
-                      </div>
-                    </th>
-                  )}
-                  
-                  {/* Publication Status */}
-                  {visibleColumns.includes('publicationStatus') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
-                      <ColumnHeaderText columnId="publicationStatus">Publication Status</ColumnHeaderText>
-                    </th>
-                  )}
-                  
-                  {/* Reported By */}
-                  {visibleColumns.includes('reportedBy') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[140px]"
-                      onClick={() => handleSort('createdBy')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="reportedBy">Reported by</ColumnHeaderText>
-                        {getSortIcon('createdBy')}
-                      </div>
-                    </th>
-                  )}
-                  
-                  {/* Total Budgeted */}
-                  {visibleColumns.includes('totalBudgeted') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[120px]"
-                      onClick={() => handleSort('commitments')}
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        <ColumnHeaderText columnId="totalBudgeted">Total Budgeted</ColumnHeaderText>
-                        {getSortIcon('commitments')}
-                      </div>
-                    </th>
-                  )}
-                  
-                  {/* Total Planned Disbursements */}
-                  {visibleColumns.includes('totalPlannedDisbursement') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
-                      onClick={() => handleSort('plannedDisbursements')}
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        <ColumnHeaderText columnId="totalPlannedDisbursement">Total Planned Disbursements</ColumnHeaderText>
-                        {getSortIcon('plannedDisbursements')}
-                      </div>
-                    </th>
-                  )}
-                  
-                  {/* Last Edited */}
-                  {visibleColumns.includes('lastEdited') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
-                      onClick={() => handleSort('updatedAt')}
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        <ColumnHeaderText columnId="lastEdited">Last Edited</ColumnHeaderText>
-                        {getSortIcon('updatedAt')}
-                      </div>
-                    </th>
-                  )}
-                  
-                  {/* Modality & Classification */}
-                  {visibleColumns.includes('modalityClassification') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[120px]">
-                      <ColumnHeaderText columnId="modalityClassification">Modality & Classification</ColumnHeaderText>
-                    </th>
-                  )}
+                  {/* Draggable column headers */}
+                  <DndColumnProvider items={orderedDraggableColumns} onReorder={handleColumnReorder}>
+                    {orderedDraggableColumns.map((colId) => {
+                      const actHeaderMap: Record<string, React.ReactNode> = {
+                        title: (
+                          <SortableTableHeader
+                            key="title"
+                            id="title"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[250px]"
+                            onClick={() => handleSort('title')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="title">Activity Title</ColumnHeaderText>
+                              {getSortIcon('title')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        activityStatus: (
+                          <SortableTableHeader
+                            key="activityStatus"
+                            id="activityStatus"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors w-[120px]"
+                            onClick={() => handleSort('activityStatus')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="activityStatus">Activity Status</ColumnHeaderText>
+                              {getSortIcon('activityStatus')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        publicationStatus: (
+                          <SortableTableHeader
+                            key="publicationStatus"
+                            id="publicationStatus"
+                            className="py-3 text-center w-[120px]"
+                          >
+                            <ColumnHeaderText columnId="publicationStatus">Publication Status</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        reportedBy: (
+                          <SortableTableHeader
+                            key="reportedBy"
+                            id="reportedBy"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[140px]"
+                            onClick={() => handleSort('createdBy')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="reportedBy">Reported by</ColumnHeaderText>
+                              {getSortIcon('createdBy')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        totalBudgeted: (
+                          <SortableTableHeader
+                            key="totalBudgeted"
+                            id="totalBudgeted"
+                            className="py-3 text-right cursor-pointer hover:bg-muted/80 transition-colors min-w-[120px]"
+                            onClick={() => handleSort('commitments')}
+                          >
+                            <div className="flex items-center justify-end gap-1">
+                              <ColumnHeaderText columnId="totalBudgeted">Total Budgeted</ColumnHeaderText>
+                              {getSortIcon('commitments')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        totalPlannedDisbursement: (
+                          <SortableTableHeader
+                            key="totalPlannedDisbursement"
+                            id="totalPlannedDisbursement"
+                            className="py-3 text-right cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
+                            onClick={() => handleSort('plannedDisbursements')}
+                          >
+                            <div className="flex items-center justify-end gap-1">
+                              <ColumnHeaderText columnId="totalPlannedDisbursement">Total Planned Disbursements</ColumnHeaderText>
+                              {getSortIcon('plannedDisbursements')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        lastEdited: (
+                          <SortableTableHeader
+                            key="lastEdited"
+                            id="lastEdited"
+                            className="py-3 text-right cursor-pointer hover:bg-muted/80 transition-colors min-w-[100px]"
+                            onClick={() => handleSort('updatedAt')}
+                          >
+                            <div className="flex items-center justify-end gap-1">
+                              <ColumnHeaderText columnId="lastEdited">Last Edited</ColumnHeaderText>
+                              {getSortIcon('updatedAt')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        modalityClassification: (
+                          <SortableTableHeader
+                            key="modalityClassification"
+                            id="modalityClassification"
+                            className="py-3 text-center w-[120px]"
+                          >
+                            <ColumnHeaderText columnId="modalityClassification">Modality & Classification</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        sectorCategories: (
+                          <SortableTableHeader
+                            key="sectorCategories"
+                            id="sectorCategories"
+                            className="py-3 text-center min-w-[160px]"
+                          >
+                            <ColumnHeaderText columnId="sectorCategories">Sector Categories</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        sectors: (
+                          <SortableTableHeader
+                            key="sectors"
+                            id="sectors"
+                            className="py-3 text-center min-w-[160px]"
+                          >
+                            <ColumnHeaderText columnId="sectors">Sectors</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        subSectors: (
+                          <SortableTableHeader
+                            key="subSectors"
+                            id="subSectors"
+                            className="py-3 text-center min-w-[180px]"
+                          >
+                            <ColumnHeaderText columnId="subSectors">Sub-sectors</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        locations: (
+                          <SortableTableHeader
+                            key="locations"
+                            id="locations"
+                            className="py-3 text-center min-w-[160px]"
+                          >
+                            <div className="flex items-center justify-center gap-2">
+                              <ColumnHeaderText columnId="locations">Locations</ColumnHeaderText>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLocationDisplayMode(prev => prev === 'percentage' ? 'usd' : 'percentage');
+                                }}
+                                className="text-xs px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 transition-colors"
+                                title={`Switch to ${locationDisplayMode === 'percentage' ? 'USD' : 'percentage'} view`}
+                              >
+                                {locationDisplayMode === 'percentage' ? '%' : '$'}
+                              </button>
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        recipientCountries: (
+                          <SortableTableHeader
+                            key="recipientCountries"
+                            id="recipientCountries"
+                            className="py-3 text-center min-w-[160px]"
+                          >
+                            <ColumnHeaderText columnId="recipientCountries">Country/Region</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        aidType: (
+                          <SortableTableHeader key="aidType" id="aidType" className="py-3 min-w-[150px]">
+                            <ColumnHeaderText columnId="aidType">Default Aid Type</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        defaultFinanceType: (
+                          <SortableTableHeader key="defaultFinanceType" id="defaultFinanceType" className="py-3 min-w-[150px]">
+                            <ColumnHeaderText columnId="defaultFinanceType">Default Finance Type</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        defaultFlowType: (
+                          <SortableTableHeader key="defaultFlowType" id="defaultFlowType" className="py-3 min-w-[150px]">
+                            <ColumnHeaderText columnId="defaultFlowType">Default Flow Type</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        defaultTiedStatus: (
+                          <SortableTableHeader key="defaultTiedStatus" id="defaultTiedStatus" className="py-3 min-w-[130px]">
+                            <ColumnHeaderText columnId="defaultTiedStatus">Default Tied Status</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        defaultModality: (
+                          <SortableTableHeader key="defaultModality" id="defaultModality" className="py-3 min-w-[130px]">
+                            <ColumnHeaderText columnId="defaultModality">Default Modality</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        humanitarian: (
+                          <SortableTableHeader key="humanitarian" id="humanitarian" className="py-3 text-center w-[100px]">
+                            <ColumnHeaderText columnId="humanitarian">Humanitarian</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalIncomingCommitments: (
+                          <SortableTableHeader key="totalIncomingCommitments" id="totalIncomingCommitments" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalIncomingCommitments">Incoming Commitments</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalCommitments: (
+                          <SortableTableHeader key="totalCommitments" id="totalCommitments" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalCommitments">Outgoing Commitments</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalDisbursements: (
+                          <SortableTableHeader key="totalDisbursements" id="totalDisbursements" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalDisbursements">Disbursements</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalExpenditures: (
+                          <SortableTableHeader key="totalExpenditures" id="totalExpenditures" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalExpenditures">Expenditures</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalInterestRepayment: (
+                          <SortableTableHeader key="totalInterestRepayment" id="totalInterestRepayment" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalInterestRepayment">Interest Payment</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalLoanRepayment: (
+                          <SortableTableHeader key="totalLoanRepayment" id="totalLoanRepayment" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalLoanRepayment">Loan Repayment</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalReimbursement: (
+                          <SortableTableHeader key="totalReimbursement" id="totalReimbursement" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalReimbursement">Reimbursement</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalPurchaseOfEquity: (
+                          <SortableTableHeader key="totalPurchaseOfEquity" id="totalPurchaseOfEquity" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalPurchaseOfEquity">Purchase of Equity</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalSaleOfEquity: (
+                          <SortableTableHeader key="totalSaleOfEquity" id="totalSaleOfEquity" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalSaleOfEquity">Sale of Equity</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalCreditGuarantee: (
+                          <SortableTableHeader key="totalCreditGuarantee" id="totalCreditGuarantee" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalCreditGuarantee">Credit Guarantee</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalIncomingFunds: (
+                          <SortableTableHeader key="totalIncomingFunds" id="totalIncomingFunds" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalIncomingFunds">Incoming Funds</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalCommitmentCancellation: (
+                          <SortableTableHeader key="totalCommitmentCancellation" id="totalCommitmentCancellation" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalCommitmentCancellation">Commitment Cancellation</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalOutgoingPledge: (
+                          <SortableTableHeader key="totalOutgoingPledge" id="totalOutgoingPledge" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalOutgoingPledge">Outgoing Pledge</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalIncomingPledge: (
+                          <SortableTableHeader key="totalIncomingPledge" id="totalIncomingPledge" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="totalIncomingPledge">Incoming Pledge</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        flowTypeODATotal: (
+                          <SortableTableHeader key="flowTypeODATotal" id="flowTypeODATotal" className="py-3 text-right min-w-[120px]">
+                            ODA Total
+                          </SortableTableHeader>
+                        ),
+                        flowTypeOOFTotal: (
+                          <SortableTableHeader key="flowTypeOOFTotal" id="flowTypeOOFTotal" className="py-3 text-right min-w-[120px]">
+                            OOF Total
+                          </SortableTableHeader>
+                        ),
+                        flowTypeNonExportOOFTotal: (
+                          <SortableTableHeader key="flowTypeNonExportOOFTotal" id="flowTypeNonExportOOFTotal" className="py-3 text-right min-w-[120px]">
+                            Non-export OOF
+                          </SortableTableHeader>
+                        ),
+                        flowTypeExportCreditsTotal: (
+                          <SortableTableHeader key="flowTypeExportCreditsTotal" id="flowTypeExportCreditsTotal" className="py-3 text-right min-w-[120px]">
+                            Export Credits
+                          </SortableTableHeader>
+                        ),
+                        flowTypePrivateGrantsTotal: (
+                          <SortableTableHeader key="flowTypePrivateGrantsTotal" id="flowTypePrivateGrantsTotal" className="py-3 text-right min-w-[120px]">
+                            Private Grants
+                          </SortableTableHeader>
+                        ),
+                        flowTypePrivateMarketTotal: (
+                          <SortableTableHeader key="flowTypePrivateMarketTotal" id="flowTypePrivateMarketTotal" className="py-3 text-right min-w-[120px]">
+                            Private Market
+                          </SortableTableHeader>
+                        ),
+                        flowTypePrivateFDITotal: (
+                          <SortableTableHeader key="flowTypePrivateFDITotal" id="flowTypePrivateFDITotal" className="py-3 text-right min-w-[120px]">
+                            Private FDI
+                          </SortableTableHeader>
+                        ),
+                        flowTypeOtherPrivateTotal: (
+                          <SortableTableHeader key="flowTypeOtherPrivateTotal" id="flowTypeOtherPrivateTotal" className="py-3 text-right min-w-[120px]">
+                            Other Private
+                          </SortableTableHeader>
+                        ),
+                        flowTypeNonFlowTotal: (
+                          <SortableTableHeader key="flowTypeNonFlowTotal" id="flowTypeNonFlowTotal" className="py-3 text-right min-w-[120px]">
+                            Non-flow
+                          </SortableTableHeader>
+                        ),
+                        flowTypeOtherTotal: (
+                          <SortableTableHeader key="flowTypeOtherTotal" id="flowTypeOtherTotal" className="py-3 text-right min-w-[120px]">
+                            Other Flows
+                          </SortableTableHeader>
+                        ),
+                        isPublished: (
+                          <SortableTableHeader key="isPublished" id="isPublished" className="py-3 w-[100px]">
+                            <ColumnHeaderText columnId="isPublished">Published</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        isValidated: (
+                          <SortableTableHeader key="isValidated" id="isValidated" className="py-3 w-[100px]">
+                            <ColumnHeaderText columnId="isValidated">Validated</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        iatiSyncStatus: (
+                          <SortableTableHeader key="iatiSyncStatus" id="iatiSyncStatus" className="py-3 min-w-[120px]">
+                            <ColumnHeaderText columnId="iatiSyncStatus">IATI Synced</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        fundingOrganisations: (
+                          <SortableTableHeader key="fundingOrganisations" id="fundingOrganisations" className="py-3 min-w-[180px]">
+                            <ColumnHeaderText columnId="fundingOrganisations">Funding Organisations</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        extendingOrganisations: (
+                          <SortableTableHeader key="extendingOrganisations" id="extendingOrganisations" className="py-3 min-w-[180px]">
+                            <ColumnHeaderText columnId="extendingOrganisations">Extending Organisations</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        implementingOrganisations: (
+                          <SortableTableHeader key="implementingOrganisations" id="implementingOrganisations" className="py-3 min-w-[180px]">
+                            <ColumnHeaderText columnId="implementingOrganisations">Implementing Organisations</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        accountableOrganisations: (
+                          <SortableTableHeader key="accountableOrganisations" id="accountableOrganisations" className="py-3 min-w-[180px]">
+                            <ColumnHeaderText columnId="accountableOrganisations">Accountable Organisations</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        sdgs: (
+                          <SortableTableHeader key="sdgs" id="sdgs" className="py-3 min-w-[120px]">
+                            <ColumnHeaderText columnId="sdgs">SDGs</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        policyMarkers: (
+                          <SortableTableHeader key="policyMarkers" id="policyMarkers" className="py-3 min-w-[140px]">
+                            <ColumnHeaderText columnId="policyMarkers">Policy Markers</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        createdByName: (
+                          <SortableTableHeader key="createdByName" id="createdByName" className="py-3 min-w-[150px]">
+                            <ColumnHeaderText columnId="createdByName">Created By</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        createdAt: (
+                          <SortableTableHeader key="createdAt" id="createdAt" className="py-3 min-w-[160px]">
+                            <ColumnHeaderText columnId="createdAt">Created Date & Time</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        createdByDepartment: (
+                          <SortableTableHeader key="createdByDepartment" id="createdByDepartment" className="py-3 min-w-[150px]">
+                            <ColumnHeaderText columnId="createdByDepartment">Creator's Department</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        importedFromIrt: (
+                          <SortableTableHeader key="importedFromIrt" id="importedFromIrt" className="py-3 text-center min-w-[140px]">
+                            <ColumnHeaderText columnId="importedFromIrt">Imported from IRT</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        budgetStatus: (
+                          <SortableTableHeader key="budgetStatus" id="budgetStatus" className="py-3 text-center min-w-[130px]">
+                            <ColumnHeaderText columnId="budgetStatus">Budget Status</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        capitalSpendPercent: (
+                          <SortableTableHeader key="capitalSpendPercent" id="capitalSpendPercent" className="py-3 text-right min-w-[100px]">
+                            <ColumnHeaderText columnId="capitalSpendPercent">Capital Spend %</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        capitalSpendTotalBudget: (
+                          <SortableTableHeader key="capitalSpendTotalBudget" id="capitalSpendTotalBudget" className="py-3 text-right min-w-[180px]">
+                            <ColumnHeaderText columnId="capitalSpendTotalBudget">Capital Spend - Total Budget</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        capitalSpendPlannedDisbursements: (
+                          <SortableTableHeader key="capitalSpendPlannedDisbursements" id="capitalSpendPlannedDisbursements" className="py-3 text-right min-w-[200px]">
+                            <ColumnHeaderText columnId="capitalSpendPlannedDisbursements">Capital Spend - Planned Disb.</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        capitalSpendCommitments: (
+                          <SortableTableHeader key="capitalSpendCommitments" id="capitalSpendCommitments" className="py-3 text-right min-w-[180px]">
+                            <ColumnHeaderText columnId="capitalSpendCommitments">Capital Spend - Commitments</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        capitalSpendDisbursements: (
+                          <SortableTableHeader key="capitalSpendDisbursements" id="capitalSpendDisbursements" className="py-3 text-right min-w-[180px]">
+                            <ColumnHeaderText columnId="capitalSpendDisbursements">Capital Spend - Disbursements</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        voteScore: (
+                          <SortableTableHeader key="voteScore" id="voteScore" className="py-3 text-center min-w-[80px]">
+                            <div className="flex items-center justify-center gap-1">
+                              <ArrowUpDown className="h-4 w-4" />
+                              <ColumnHeaderText columnId="voteScore">Score</ColumnHeaderText>
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        upvotes: (
+                          <SortableTableHeader key="upvotes" id="upvotes" className="py-3 text-center min-w-[80px]">
+                            <div className="flex items-center justify-center gap-1">
+                              <ChevronUp className="h-4 w-4 text-primary" />
+                              <ColumnHeaderText columnId="upvotes">Upvotes</ColumnHeaderText>
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        downvotes: (
+                          <SortableTableHeader key="downvotes" id="downvotes" className="py-3 text-center min-w-[80px]">
+                            <div className="flex items-center justify-center gap-1">
+                              <ChevronDown className="h-4 w-4 text-red-500" />
+                              <ColumnHeaderText columnId="downvotes">Downvotes</ColumnHeaderText>
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        descriptionGeneral: (
+                          <SortableTableHeader key="descriptionGeneral" id="descriptionGeneral" className="py-3 min-w-[200px]">
+                            <ColumnHeaderText columnId="descriptionGeneral">Activity Description – General</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        descriptionObjectives: (
+                          <SortableTableHeader key="descriptionObjectives" id="descriptionObjectives" className="py-3 min-w-[200px]">
+                            <ColumnHeaderText columnId="descriptionObjectives">Activity Description – Objectives</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        descriptionTargetGroups: (
+                          <SortableTableHeader key="descriptionTargetGroups" id="descriptionTargetGroups" className="py-3 min-w-[200px]">
+                            <ColumnHeaderText columnId="descriptionTargetGroups">Activity Description – Target Groups</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        descriptionOther: (
+                          <SortableTableHeader key="descriptionOther" id="descriptionOther" className="py-3 min-w-[200px]">
+                            <ColumnHeaderText columnId="descriptionOther">Activity Description – Other</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        timeElapsed: (
+                          <SortableTableHeader key="timeElapsed" id="timeElapsed" className="py-3 min-w-[140px]">
+                            <ColumnHeaderText columnId="timeElapsed">Time Elapsed</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        committedSpentPercent: (
+                          <SortableTableHeader key="committedSpentPercent" id="committedSpentPercent" className="py-3 min-w-[140px]">
+                            <ColumnHeaderText columnId="committedSpentPercent">% Committed Spent</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        budgetSpentPercent: (
+                          <SortableTableHeader key="budgetSpentPercent" id="budgetSpentPercent" className="py-3 min-w-[140px]">
+                            <ColumnHeaderText columnId="budgetSpentPercent">% Budget Spent</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        budgetShare: (
+                          <SortableTableHeader key="budgetShare" id="budgetShare" className="py-3 text-right min-w-[100px]">
+                            <ColumnHeaderText columnId="budgetShare">Budget Share</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        plannedDisbursementShare: (
+                          <SortableTableHeader key="plannedDisbursementShare" id="plannedDisbursementShare" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="plannedDisbursementShare">Planned Disb. Share</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        commitmentShare: (
+                          <SortableTableHeader key="commitmentShare" id="commitmentShare" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="commitmentShare">Commitment Share</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        disbursementShare: (
+                          <SortableTableHeader key="disbursementShare" id="disbursementShare" className="py-3 text-right min-w-[120px]">
+                            <ColumnHeaderText columnId="disbursementShare">Disbursement Share</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
+                        totalExpectedLength: (
+                          <SortableTableHeader
+                            key="totalExpectedLength"
+                            id="totalExpectedLength"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
+                            onClick={() => handleSort('totalExpectedLength')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="totalExpectedLength">Total Expected Length</ColumnHeaderText>
+                              {getSortIcon('totalExpectedLength')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        implementationToDate: (
+                          <SortableTableHeader
+                            key="implementationToDate"
+                            id="implementationToDate"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
+                            onClick={() => handleSort('implementationToDate')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="implementationToDate">Implementation to Date</ColumnHeaderText>
+                              {getSortIcon('implementationToDate')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        remainingDuration: (
+                          <SortableTableHeader
+                            key="remainingDuration"
+                            id="remainingDuration"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
+                            onClick={() => handleSort('remainingDuration')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="remainingDuration">Remaining Duration</ColumnHeaderText>
+                              {getSortIcon('remainingDuration')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        actualLength: (
+                          <SortableTableHeader
+                            key="actualLength"
+                            id="actualLength"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
+                            onClick={() => handleSort('actualLength')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="actualLength">Actual Length</ColumnHeaderText>
+                              {getSortIcon('actualLength')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        durationBand: (
+                          <SortableTableHeader
+                            key="durationBand"
+                            id="durationBand"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[180px]"
+                            onClick={() => handleSort('durationBand')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="durationBand">Duration Band</ColumnHeaderText>
+                              {getSortIcon('durationBand')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        plannedStartDate: (
+                          <SortableTableHeader
+                            key="plannedStartDate"
+                            id="plannedStartDate"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
+                            onClick={() => handleSort('plannedStartDate')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="plannedStartDate">Planned Start</ColumnHeaderText>
+                              {getSortIcon('plannedStartDate')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        plannedEndDate: (
+                          <SortableTableHeader
+                            key="plannedEndDate"
+                            id="plannedEndDate"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
+                            onClick={() => handleSort('plannedEndDate')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="plannedEndDate">Planned End</ColumnHeaderText>
+                              {getSortIcon('plannedEndDate')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        actualStartDate: (
+                          <SortableTableHeader
+                            key="actualStartDate"
+                            id="actualStartDate"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
+                            onClick={() => handleSort('actualStartDate')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="actualStartDate">Actual Start</ColumnHeaderText>
+                              {getSortIcon('actualStartDate')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                        actualEndDate: (
+                          <SortableTableHeader
+                            key="actualEndDate"
+                            id="actualEndDate"
+                            className="py-3 cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
+                            onClick={() => handleSort('actualEndDate')}
+                          >
+                            <div className="flex items-center gap-1">
+                              <ColumnHeaderText columnId="actualEndDate">Actual End</ColumnHeaderText>
+                              {getSortIcon('actualEndDate')}
+                            </div>
+                          </SortableTableHeader>
+                        ),
+                      };
+                      return actHeaderMap[colId] || null;
+                    })}
+                  </DndColumnProvider>
 
-                  {/* Sector Categories */}
-                  {visibleColumns.includes('sectorCategories') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
-                      <ColumnHeaderText columnId="sectorCategories">Sector Categories</ColumnHeaderText>
-                    </th>
-                  )}
-
-                  {/* Sectors */}
-                  {visibleColumns.includes('sectors') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
-                      <ColumnHeaderText columnId="sectors">Sectors</ColumnHeaderText>
-                    </th>
-                  )}
-
-                  {/* Sub-sectors */}
-                  {visibleColumns.includes('subSectors') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      <ColumnHeaderText columnId="subSectors">Sub-sectors</ColumnHeaderText>
-                    </th>
-                  )}
-
-                  {/* Locations */}
-                  {visibleColumns.includes('locations') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
-                      <div className="flex items-center justify-center gap-2">
-                        <ColumnHeaderText columnId="locations">Locations</ColumnHeaderText>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLocationDisplayMode(prev => prev === 'percentage' ? 'usd' : 'percentage');
-                          }}
-                          className="text-xs px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 transition-colors"
-                          title={`Switch to ${locationDisplayMode === 'percentage' ? 'USD' : 'percentage'} view`}
-                        >
-                          {locationDisplayMode === 'percentage' ? '%' : '$'}
-                        </button>
-                      </div>
-                    </th>
-                  )}
-
-                  {/* Country/Region Column */}
-                  {visibleColumns.includes('recipientCountries') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
-                      <ColumnHeaderText columnId="recipientCountries">Country/Region</ColumnHeaderText>
-                    </th>
-                  )}
-
-                  {/* Optional Activity Defaults Columns */}
-                  {visibleColumns.includes('aidType') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
-                      <ColumnHeaderText columnId="aidType">Default Aid Type</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('defaultFinanceType') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
-                      <ColumnHeaderText columnId="defaultFinanceType">Default Finance Type</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('defaultFlowType') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
-                      <ColumnHeaderText columnId="defaultFlowType">Default Flow Type</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('defaultTiedStatus') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[130px]">
-                      <ColumnHeaderText columnId="defaultTiedStatus">Default Tied Status</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('defaultModality') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[130px]">
-                      <ColumnHeaderText columnId="defaultModality">Default Modality</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('humanitarian') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground w-[100px]">
-                      <ColumnHeaderText columnId="humanitarian">Humanitarian</ColumnHeaderText>
-                    </th>
-                  )}
-                  
-                  {/* Transaction Type Total Columns */}
-                  {visibleColumns.includes('totalIncomingCommitments') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalIncomingCommitments">Incoming Commitments</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalCommitments') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalCommitments">Outgoing Commitments</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalDisbursements') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalDisbursements">Disbursements</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalExpenditures') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalExpenditures">Expenditures</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalInterestRepayment') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalInterestRepayment">Interest Payment</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalLoanRepayment') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalLoanRepayment">Loan Repayment</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalReimbursement') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalReimbursement">Reimbursement</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalPurchaseOfEquity') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalPurchaseOfEquity">Purchase of Equity</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalSaleOfEquity') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalSaleOfEquity">Sale of Equity</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalCreditGuarantee') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalCreditGuarantee">Credit Guarantee</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalIncomingFunds') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalIncomingFunds">Incoming Funds</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalCommitmentCancellation') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalCommitmentCancellation">Commitment Cancellation</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalOutgoingPledge') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalOutgoingPledge">Outgoing Pledge</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('totalIncomingPledge') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="totalIncomingPledge">Incoming Pledge</ColumnHeaderText>
-                    </th>
-                  )}
-                  
-                  {/* Flow Type Total Columns */}
-                  {visibleColumns.includes('flowTypeODATotal') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      ODA Total
-                    </th>
-                  )}
-                  {visibleColumns.includes('flowTypeOOFTotal') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      OOF Total
-                    </th>
-                  )}
-                  {visibleColumns.includes('flowTypeNonExportOOFTotal') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Non-export OOF
-                    </th>
-                  )}
-                  {visibleColumns.includes('flowTypeExportCreditsTotal') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Export Credits
-                    </th>
-                  )}
-                  {visibleColumns.includes('flowTypePrivateGrantsTotal') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Private Grants
-                    </th>
-                  )}
-                  {visibleColumns.includes('flowTypePrivateMarketTotal') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Private Market
-                    </th>
-                  )}
-                  {visibleColumns.includes('flowTypePrivateFDITotal') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Private FDI
-                    </th>
-                  )}
-                  {visibleColumns.includes('flowTypeOtherPrivateTotal') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Other Private
-                    </th>
-                  )}
-                  {visibleColumns.includes('flowTypeNonFlowTotal') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Non-flow
-                    </th>
-                  )}
-                  {visibleColumns.includes('flowTypeOtherTotal') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      Other Flows
-                    </th>
-                  )}
-                  
-                  {/* Publication Status Columns */}
-                  {visibleColumns.includes('isPublished') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px]">
-                      <ColumnHeaderText columnId="isPublished">Published</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('isValidated') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[100px]">
-                      <ColumnHeaderText columnId="isValidated">Validated</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('iatiSyncStatus') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="iatiSyncStatus">IATI Synced</ColumnHeaderText>
-                    </th>
-                  )}
-                  
-                  {/* Participating Organisation Columns */}
-                  {visibleColumns.includes('fundingOrganisations') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      <ColumnHeaderText columnId="fundingOrganisations">Funding Organisations</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('extendingOrganisations') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      <ColumnHeaderText columnId="extendingOrganisations">Extending Organisations</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('implementingOrganisations') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      <ColumnHeaderText columnId="implementingOrganisations">Implementing Organisations</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('accountableOrganisations') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      <ColumnHeaderText columnId="accountableOrganisations">Accountable Organisations</ColumnHeaderText>
-                    </th>
-                  )}
-                  
-                  {/* SDG Column */}
-                  {visibleColumns.includes('sdgs') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="sdgs">SDGs</ColumnHeaderText>
-                    </th>
-                  )}
-
-                  {/* Policy Markers Column */}
-                  {visibleColumns.includes('policyMarkers') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
-                      <ColumnHeaderText columnId="policyMarkers">Policy Markers</ColumnHeaderText>
-                    </th>
-                  )}
-
-                  {/* Metadata Columns */}
-                  {visibleColumns.includes('createdByName') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
-                      <ColumnHeaderText columnId="createdByName">Created By</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('createdAt') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[160px]">
-                      <ColumnHeaderText columnId="createdAt">Created Date & Time</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('createdByDepartment') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[150px]">
-                      <ColumnHeaderText columnId="createdByDepartment">Creator's Department</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('importedFromIrt') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
-                      <ColumnHeaderText columnId="importedFromIrt">Imported from IRT</ColumnHeaderText>
-                    </th>
-                  )}
-
-                  {/* Budget Status Column */}
-                  {visibleColumns.includes('budgetStatus') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[130px]">
-                      <ColumnHeaderText columnId="budgetStatus">Budget Status</ColumnHeaderText>
-                    </th>
-                  )}
-
-                  {/* Capital Spend Header Cells */}
-                  {visibleColumns.includes('capitalSpendPercent') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[100px]">
-                      <ColumnHeaderText columnId="capitalSpendPercent">Capital Spend %</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('capitalSpendTotalBudget') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      <ColumnHeaderText columnId="capitalSpendTotalBudget">Capital Spend - Total Budget</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('capitalSpendPlannedDisbursements') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
-                      <ColumnHeaderText columnId="capitalSpendPlannedDisbursements">Capital Spend - Planned Disb.</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('capitalSpendCommitments') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      <ColumnHeaderText columnId="capitalSpendCommitments">Capital Spend - Commitments</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('capitalSpendDisbursements') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[180px]">
-                      <ColumnHeaderText columnId="capitalSpendDisbursements">Capital Spend - Disbursements</ColumnHeaderText>
-                    </th>
-                  )}
-
-                  {/* Engagement Columns */}
-                  {visibleColumns.includes('voteScore') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[80px]">
-                      <div className="flex items-center justify-center gap-1">
-                        <ArrowUpDown className="h-4 w-4" />
-                        <ColumnHeaderText columnId="voteScore">Score</ColumnHeaderText>
-                      </div>
-                    </th>
-                  )}
-                  {visibleColumns.includes('upvotes') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[80px]">
-                      <div className="flex items-center justify-center gap-1">
-                        <ChevronUp className="h-4 w-4 text-primary" />
-                        <ColumnHeaderText columnId="upvotes">Upvotes</ColumnHeaderText>
-                      </div>
-                    </th>
-                  )}
-                  {visibleColumns.includes('downvotes') && (
-                    <th className="h-12 px-4 py-3 text-center align-middle text-sm font-medium text-muted-foreground min-w-[80px]">
-                      <div className="flex items-center justify-center gap-1">
-                        <ChevronDown className="h-4 w-4 text-red-500" />
-                        <ColumnHeaderText columnId="downvotes">Downvotes</ColumnHeaderText>
-                      </div>
-                    </th>
-                  )}
-
-                  {/* Description Columns */}
-                  {visibleColumns.includes('descriptionGeneral') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
-                      <ColumnHeaderText columnId="descriptionGeneral">Activity Description – General</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('descriptionObjectives') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
-                      <ColumnHeaderText columnId="descriptionObjectives">Activity Description – Objectives</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('descriptionTargetGroups') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
-                      <ColumnHeaderText columnId="descriptionTargetGroups">Activity Description – Target Groups</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('descriptionOther') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[200px]">
-                      <ColumnHeaderText columnId="descriptionOther">Activity Description – Other</ColumnHeaderText>
-                    </th>
-                  )}
-                  
-                  {/* Progress & Metrics columns */}
-                  {visibleColumns.includes('timeElapsed') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
-                      <ColumnHeaderText columnId="timeElapsed">Time Elapsed</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('committedSpentPercent') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
-                      <ColumnHeaderText columnId="committedSpentPercent">% Committed Spent</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('budgetSpentPercent') && (
-                    <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground min-w-[140px]">
-                      <ColumnHeaderText columnId="budgetSpentPercent">% Budget Spent</ColumnHeaderText>
-                    </th>
-                  )}
-                  
-                  {/* Portfolio Share columns */}
-                  {visibleColumns.includes('budgetShare') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[100px]">
-                      <ColumnHeaderText columnId="budgetShare">Budget Share</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('plannedDisbursementShare') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="plannedDisbursementShare">Planned Disb. Share</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('commitmentShare') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="commitmentShare">Commitment Share</ColumnHeaderText>
-                    </th>
-                  )}
-                  {visibleColumns.includes('disbursementShare') && (
-                    <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground min-w-[120px]">
-                      <ColumnHeaderText columnId="disbursementShare">Disbursement Share</ColumnHeaderText>
-                    </th>
-                  )}
-                  
-                  {/* Duration columns */}
-                  {visibleColumns.includes('totalExpectedLength') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
-                      onClick={() => handleSort('totalExpectedLength')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="totalExpectedLength">Total Expected Length</ColumnHeaderText>
-                        {getSortIcon('totalExpectedLength')}
-                      </div>
-                    </th>
-                  )}
-                  {visibleColumns.includes('implementationToDate') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
-                      onClick={() => handleSort('implementationToDate')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="implementationToDate">Implementation to Date</ColumnHeaderText>
-                        {getSortIcon('implementationToDate')}
-                      </div>
-                    </th>
-                  )}
-                  {visibleColumns.includes('remainingDuration') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
-                      onClick={() => handleSort('remainingDuration')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="remainingDuration">Remaining Duration</ColumnHeaderText>
-                        {getSortIcon('remainingDuration')}
-                      </div>
-                    </th>
-                  )}
-                  {visibleColumns.includes('actualLength') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[160px]"
-                      onClick={() => handleSort('actualLength')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="actualLength">Actual Length</ColumnHeaderText>
-                        {getSortIcon('actualLength')}
-                      </div>
-                    </th>
-                  )}
-                  {visibleColumns.includes('durationBand') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[180px]"
-                      onClick={() => handleSort('durationBand')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="durationBand">Duration Band</ColumnHeaderText>
-                        {getSortIcon('durationBand')}
-                      </div>
-                    </th>
-                  )}
-                  
-                  {/* Date columns */}
-                  {visibleColumns.includes('plannedStartDate') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
-                      onClick={() => handleSort('plannedStartDate')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="plannedStartDate">Planned Start</ColumnHeaderText>
-                        {getSortIcon('plannedStartDate')}
-                      </div>
-                    </th>
-                  )}
-                  {visibleColumns.includes('plannedEndDate') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
-                      onClick={() => handleSort('plannedEndDate')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="plannedEndDate">Planned End</ColumnHeaderText>
-                        {getSortIcon('plannedEndDate')}
-                      </div>
-                    </th>
-                  )}
-                  {visibleColumns.includes('actualStartDate') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
-                      onClick={() => handleSort('actualStartDate')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="actualStartDate">Actual Start</ColumnHeaderText>
-                        {getSortIcon('actualStartDate')}
-                      </div>
-                    </th>
-                  )}
-                  {visibleColumns.includes('actualEndDate') && (
-                    <th 
-                      className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[130px]"
-                      onClick={() => handleSort('actualEndDate')}
-                    >
-                      <div className="flex items-center gap-1">
-                        <ColumnHeaderText columnId="actualEndDate">Actual End</ColumnHeaderText>
-                        {getSortIcon('actualEndDate')}
-                      </div>
-                    </th>
-                  )}
-                  
                   {/* Actions column - always visible */}
                   <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[80px]">
                     <ColumnHeaderText columnId="actions">Actions</ColumnHeaderText>
@@ -2553,9 +2575,11 @@ const router = useRouter();
                         </div>
                       </td>
                       
-                      {/* Activity Title cell */}
-                      {visibleColumns.includes('title') && (
-                      <td className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
+                      {/* Draggable body cells */}
+                      {orderedDraggableColumns.map((colId) => {
+                        const actCellMap: Record<string, React.ReactNode> = {
+                          title: (
+<td key="title" className="px-4 py-2 text-sm text-foreground whitespace-normal break-words leading-tight">
                         <a 
                           href={`/activities/${activity.id}`}
                           className="cursor-pointer block"
@@ -2704,18 +2728,14 @@ const router = useRouter();
                           </div>
                         </a>
                       </td>
-                      )}
-
-                      {/* Activity Status cell */}
-                      {visibleColumns.includes('activityStatus') && (
-                      <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          activityStatus: (
+<td key="activityStatus" className="px-4 py-2 text-sm text-foreground text-left">
                         {getActivityStatusLabel(activityStatus)}
                       </td>
-                      )}
-                      
-                      {/* Publication Status cell */}
-                      {visibleColumns.includes('publicationStatus') && (
-                      <td className="px-4 py-2 text-sm text-foreground">
+                          ),
+                          publicationStatus: (
+<td key="publicationStatus" className="px-4 py-2 text-sm text-foreground">
                         <div className="flex items-center justify-center">
                           <TooltipProvider>
                             <Tooltip>
@@ -2746,11 +2766,9 @@ const router = useRouter();
                           </TooltipProvider>
                         </div>
                       </td>
-                      )}
-                      
-                      {/* Reported By cell */}
-                      {visibleColumns.includes('reportedBy') && (
-                      <td className="px-4 py-2 text-sm text-foreground text-left" style={{textAlign: 'left'}}>
+                          ),
+                          reportedBy: (
+<td key="reportedBy" className="px-4 py-2 text-sm text-foreground text-left" style={{textAlign: 'left'}}>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -2817,11 +2835,9 @@ const router = useRouter();
                           </Tooltip>
                         </TooltipProvider>
                       </td>
-                      )}
-                      
-                      {/* Total Budgeted cell */}
-                      {visibleColumns.includes('totalBudgeted') && (
-                      <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
+                          ),
+                          totalBudgeted: (
+<td key="totalBudgeted" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -2835,11 +2851,9 @@ const router = useRouter();
                           </Tooltip>
                         </TooltipProvider>
                       </td>
-                      )}
-                      
-                      {/* Total Planned Disbursements cell */}
-                      {visibleColumns.includes('totalPlannedDisbursement') && (
-                      <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
+                          ),
+                          totalPlannedDisbursement: (
+<td key="totalPlannedDisbursement" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap font-medium">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -2853,18 +2867,14 @@ const router = useRouter();
                           </Tooltip>
                         </TooltipProvider>
                       </td>
-                      )}
-                      
-                      {/* Last Edited cell */}
-                      {visibleColumns.includes('lastEdited') && (
-                      <td className="px-4 py-2 text-sm text-foreground whitespace-nowrap text-right">
+                          ),
+                          lastEdited: (
+<td key="lastEdited" className="px-4 py-2 text-sm text-foreground whitespace-nowrap text-right">
                         {format(new Date(activity.updatedAt), "dd MMM yyyy")}
                       </td>
-                      )}
-                      
-                      {/* Modality & Classification cell */}
-                      {visibleColumns.includes('modalityClassification') && (
-                      <td className="px-4 py-2 text-sm text-foreground text-center">
+                          ),
+                          modalityClassification: (
+<td key="modalityClassification" className="px-4 py-2 text-sm text-foreground text-center">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
@@ -2897,32 +2907,24 @@ const router = useRouter();
                           </Tooltip>
                         </TooltipProvider>
                       </td>
-                      )}
-
-                      {/* Sector Categories cell */}
-                      {visibleColumns.includes('sectorCategories') && (
-                        <td className="px-4 py-2 text-sm text-foreground">
+                          ),
+                          sectorCategories: (
+<td key="sectorCategories" className="px-4 py-2 text-sm text-foreground">
                           <SectorMiniBar sectors={activity.sectors} level="category" height={14} />
                         </td>
-                      )}
-
-                      {/* Sectors cell */}
-                      {visibleColumns.includes('sectors') && (
-                        <td className="px-4 py-2 text-sm text-foreground">
+                          ),
+                          sectors: (
+<td key="sectors" className="px-4 py-2 text-sm text-foreground">
                           <SectorMiniBar sectors={activity.sectors} level="sector" height={14} />
                         </td>
-                      )}
-
-                      {/* Sub-sectors cell */}
-                      {visibleColumns.includes('subSectors') && (
-                        <td className="px-4 py-2 text-sm text-foreground">
+                          ),
+                          subSectors: (
+<td key="subSectors" className="px-4 py-2 text-sm text-foreground">
                           <SectorMiniBar sectors={activity.sectors} level="subsector" height={14} />
                         </td>
-                      )}
-
-                      {/* Locations cell */}
-                      {visibleColumns.includes('locations') && (
-                        <td className="px-4 py-2 text-sm text-foreground">
+                          ),
+                          locations: (
+<td key="locations" className="px-4 py-2 text-sm text-foreground">
                           <LocationMiniBar 
                             locations={activity.locations?.broad_coverage_locations as LocationData[] | undefined}
                             displayMode={locationDisplayMode}
@@ -2930,11 +2932,9 @@ const router = useRouter();
                             height={14}
                           />
                         </td>
-                      )}
-
-                      {/* Country/Region cell */}
-                      {visibleColumns.includes('recipientCountries') && (
-                        <td className="px-4 py-2 text-sm text-foreground">
+                          ),
+                          recipientCountries: (
+<td key="recipientCountries" className="px-4 py-2 text-sm text-foreground">
                           <div className="flex flex-col gap-0.5">
                             {activity.recipient_countries && activity.recipient_countries.length > 0 ? (
                               activity.recipient_countries.slice(0, 3).map((rc, idx) => (
@@ -2960,11 +2960,9 @@ const router = useRouter();
                             )}
                           </div>
                         </td>
-                      )}
-
-                      {/* Optional Activity Default Columns */}
-                      {visibleColumns.includes('aidType') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          aidType: (
+<td key="aidType" className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.default_aid_type ? (
                             <CodelistTooltip
                               type="aid_type"
@@ -2975,9 +2973,9 @@ const router = useRouter();
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                      )}
-                      {visibleColumns.includes('defaultFinanceType') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          defaultFinanceType: (
+<td key="defaultFinanceType" className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.default_finance_type ? (
                             <CodelistTooltip
                               type="finance_type"
@@ -2988,9 +2986,9 @@ const router = useRouter();
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                      )}
-                      {visibleColumns.includes('defaultFlowType') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          defaultFlowType: (
+<td key="defaultFlowType" className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.default_flow_type ? (
                             <CodelistTooltip
                               type="flow_type"
@@ -3001,9 +2999,9 @@ const router = useRouter();
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                      )}
-                      {visibleColumns.includes('defaultTiedStatus') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          defaultTiedStatus: (
+<td key="defaultTiedStatus" className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.default_tied_status ? (
                             <CodelistTooltip
                               type="tied_status"
@@ -3014,166 +3012,158 @@ const router = useRouter();
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                      )}
-                      {visibleColumns.includes('defaultModality') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          defaultModality: (
+<td key="defaultModality" className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.default_aid_modality ? MODALITY_LABELS[activity.default_aid_modality] || activity.default_aid_modality : <span className="text-muted-foreground">—</span>}
                         </td>
-                      )}
-                      {visibleColumns.includes('humanitarian') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          humanitarian: (
+<td key="humanitarian" className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.humanitarian ? (
                             <span>Humanitarian Activity</span>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                      )}
-
-                      {/* Transaction Type Total Columns */}
-                      {visibleColumns.includes('totalIncomingCommitments') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalIncomingCommitments: (
+<td key="totalIncomingCommitments" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.incomingCommitments || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalCommitments') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalCommitments: (
+<td key="totalCommitments" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.commitments || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalDisbursements') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalDisbursements: (
+<td key="totalDisbursements" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.disbursements || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalExpenditures') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalExpenditures: (
+<td key="totalExpenditures" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.expenditures || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalInterestRepayment') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalInterestRepayment: (
+<td key="totalInterestRepayment" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.interestRepayment || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalLoanRepayment') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalLoanRepayment: (
+<td key="totalLoanRepayment" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.loanRepayment || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalReimbursement') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalReimbursement: (
+<td key="totalReimbursement" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.reimbursement || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalPurchaseOfEquity') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalPurchaseOfEquity: (
+<td key="totalPurchaseOfEquity" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.purchaseOfEquity || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalSaleOfEquity') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalSaleOfEquity: (
+<td key="totalSaleOfEquity" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.saleOfEquity || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalCreditGuarantee') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalCreditGuarantee: (
+<td key="totalCreditGuarantee" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.creditGuarantee || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalIncomingFunds') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalIncomingFunds: (
+<td key="totalIncomingFunds" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.incomingFunds || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalCommitmentCancellation') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalCommitmentCancellation: (
+<td key="totalCommitmentCancellation" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.commitmentCancellation || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalOutgoingPledge') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalOutgoingPledge: (
+<td key="totalOutgoingPledge" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.outgoingPledge || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('totalIncomingPledge') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          totalIncomingPledge: (
+<td key="totalIncomingPledge" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.incomingPledge || 0)}
                         </td>
-                      )}
-                      
-                      {/* Flow Type Total Columns */}
-                      {visibleColumns.includes('flowTypeODATotal') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          flowTypeODATotal: (
+<td key="flowTypeODATotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeODA || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('flowTypeOOFTotal') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          flowTypeOOFTotal: (
+<td key="flowTypeOOFTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeOOF || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('flowTypeNonExportOOFTotal') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          flowTypeNonExportOOFTotal: (
+<td key="flowTypeNonExportOOFTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeNonExportOOF || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('flowTypeExportCreditsTotal') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          flowTypeExportCreditsTotal: (
+<td key="flowTypeExportCreditsTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeExportCredits || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('flowTypePrivateGrantsTotal') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          flowTypePrivateGrantsTotal: (
+<td key="flowTypePrivateGrantsTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypePrivateGrants || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('flowTypePrivateMarketTotal') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          flowTypePrivateMarketTotal: (
+<td key="flowTypePrivateMarketTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypePrivateMarket || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('flowTypePrivateFDITotal') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          flowTypePrivateFDITotal: (
+<td key="flowTypePrivateFDITotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypePrivateFDI || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('flowTypeOtherPrivateTotal') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          flowTypeOtherPrivateTotal: (
+<td key="flowTypeOtherPrivateTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeOtherPrivate || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('flowTypeNonFlowTotal') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          flowTypeNonFlowTotal: (
+<td key="flowTypeNonFlowTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeNonFlow || 0)}
                         </td>
-                      )}
-                      {visibleColumns.includes('flowTypeOtherTotal') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          flowTypeOtherTotal: (
+<td key="flowTypeOtherTotal" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <span className="text-muted-foreground">USD</span> {formatCurrency(activity.flowTypeOther || 0)}
                         </td>
-                      )}
-                      
-                      {/* Publication Status Cells */}
-                      {visibleColumns.includes('isPublished') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          isPublished: (
+<td key="isPublished" className="px-4 py-2 text-sm text-foreground text-left">
                           {publicationStatus === 'published' ? 'Yes' : 'No'}
                         </td>
-                      )}
-                      {visibleColumns.includes('isValidated') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          isValidated: (
+<td key="isValidated" className="px-4 py-2 text-sm text-foreground text-left">
                           {submissionStatus === 'validated' ? 'Yes' : submissionStatus === 'rejected' ? 'Rejected' : 'Pending'}
                         </td>
-                      )}
-                      {visibleColumns.includes('iatiSyncStatus') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          iatiSyncStatus: (
+<td key="iatiSyncStatus" className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.autoSync && activity.syncStatus === 'live' ? 'Synced' : activity.autoSync && activity.syncStatus === 'pending' ? 'Pending' : activity.autoSync && activity.syncStatus === 'error' ? 'Error' : 'Not synced'}
                         </td>
-                      )}
-                      
-                      {/* Participating Organisation Columns */}
-                      {visibleColumns.includes('fundingOrganisations') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          fundingOrganisations: (
+<td key="fundingOrganisations" className="px-4 py-2 text-sm text-foreground text-left">
                           <OrganizationAvatarGroup
                             organizations={activity.fundingOrgs || []}
                             maxDisplay={3}
@@ -3182,9 +3172,9 @@ const router = useRouter();
                             showAcronym={true}
                           />
                         </td>
-                      )}
-                      {visibleColumns.includes('extendingOrganisations') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          extendingOrganisations: (
+<td key="extendingOrganisations" className="px-4 py-2 text-sm text-foreground text-left">
                           <OrganizationAvatarGroup
                             organizations={activity.extendingOrgs || []}
                             maxDisplay={3}
@@ -3193,9 +3183,9 @@ const router = useRouter();
                             showAcronym={true}
                           />
                         </td>
-                      )}
-                      {visibleColumns.includes('implementingOrganisations') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          implementingOrganisations: (
+<td key="implementingOrganisations" className="px-4 py-2 text-sm text-foreground text-left">
                           <OrganizationAvatarGroup
                             organizations={activity.implementingOrgs || []}
                             maxDisplay={3}
@@ -3204,9 +3194,9 @@ const router = useRouter();
                             showAcronym={true}
                           />
                         </td>
-                      )}
-                      {visibleColumns.includes('accountableOrganisations') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          accountableOrganisations: (
+<td key="accountableOrganisations" className="px-4 py-2 text-sm text-foreground text-left">
                           <OrganizationAvatarGroup
                             organizations={activity.accountableOrgs || []}
                             maxDisplay={3}
@@ -3215,38 +3205,32 @@ const router = useRouter();
                             showAcronym={true}
                           />
                         </td>
-                      )}
-                      
-                      {/* SDG Column */}
-                      {visibleColumns.includes('sdgs') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          sdgs: (
+<td key="sdgs" className="px-4 py-2 text-sm text-foreground text-left">
                           <SDGAvatarGroup
                             sdgMappings={activity.sdgMappings || []}
                             maxDisplay={3}
                             size="sm"
                           />
                         </td>
-                      )}
-
-                      {/* Policy Markers Column */}
-                      {visibleColumns.includes('policyMarkers') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          policyMarkers: (
+<td key="policyMarkers" className="px-4 py-2 text-sm text-foreground text-left">
                           <PolicyMarkerAvatarGroup
                             policyMarkers={activity.policyMarkers || []}
                             maxDisplay={3}
                             size="sm"
                           />
                         </td>
-                      )}
-
-                      {/* Metadata Columns */}
-                      {visibleColumns.includes('createdByName') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          createdByName: (
+<td key="createdByName" className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.creatorProfile?.name || '—'}
                         </td>
-                      )}
-                      {visibleColumns.includes('createdAt') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          createdAt: (
+<td key="createdAt" className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.createdAt ? (
                             <span title={new Date(activity.createdAt).toLocaleString()}>
                               {new Date(activity.createdAt).toLocaleDateString('en-GB', {
@@ -3263,14 +3247,14 @@ const router = useRouter();
                             </span>
                           ) : '—'}
                         </td>
-                      )}
-                      {visibleColumns.includes('createdByDepartment') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          createdByDepartment: (
+<td key="createdByDepartment" className="px-4 py-2 text-sm text-foreground text-left">
                           {activity.creatorProfile?.department || '—'}
                         </td>
-                      )}
-                      {visibleColumns.includes('importedFromIrt') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                          ),
+                          importedFromIrt: (
+<td key="importedFromIrt" className="px-4 py-2 text-sm text-foreground text-center">
                           {activity.createdVia === 'import' ? (
                             <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800">
                               <DatabaseZap className="h-3 w-3 mr-1" />
@@ -3282,11 +3266,9 @@ const router = useRouter();
                             <span className="text-muted-foreground">Manual</span>
                           )}
                         </td>
-                      )}
-
-                      {/* Budget Status Cell */}
-                      {visibleColumns.includes('budgetStatus') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-center">
+                          ),
+                          budgetStatus: (
+<td key="budgetStatus" className="px-4 py-2 text-sm text-foreground text-center">
                           {(() => {
                             const status = activity.budgetStatus || 'unknown';
                             const statusLabel = getBudgetStatusLabel(status);
@@ -3315,11 +3297,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-
-                      {/* Capital Spend Cells */}
-                      {visibleColumns.includes('capitalSpendPercent') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          capitalSpendPercent: (
+<td key="capitalSpendPercent" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3338,9 +3318,9 @@ const router = useRouter();
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                      )}
-                      {visibleColumns.includes('capitalSpendTotalBudget') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          capitalSpendTotalBudget: (
+<td key="capitalSpendTotalBudget" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3359,9 +3339,9 @@ const router = useRouter();
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                      )}
-                      {visibleColumns.includes('capitalSpendPlannedDisbursements') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          capitalSpendPlannedDisbursements: (
+<td key="capitalSpendPlannedDisbursements" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3380,9 +3360,9 @@ const router = useRouter();
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                      )}
-                      {visibleColumns.includes('capitalSpendCommitments') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          capitalSpendCommitments: (
+<td key="capitalSpendCommitments" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3401,9 +3381,9 @@ const router = useRouter();
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                      )}
-                      {visibleColumns.includes('capitalSpendDisbursements') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          capitalSpendDisbursements: (
+<td key="capitalSpendDisbursements" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3422,20 +3402,18 @@ const router = useRouter();
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                      )}
-
-                      {/* Engagement Cells */}
-                      {visibleColumns.includes('voteScore') && (
-                        <td className="px-4 py-2 text-sm text-center">
+                          ),
+                          voteScore: (
+<td key="voteScore" className="px-4 py-2 text-sm text-center">
                           <div className="flex items-center justify-center gap-1">
                             <span className={`font-medium ${(activity.vote_score || 0) > 0 ? 'text-primary' : (activity.vote_score || 0) < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
                               {(activity.vote_score || 0) > 0 ? '+' : ''}{activity.vote_score || 0}
                             </span>
                           </div>
                         </td>
-                      )}
-                      {visibleColumns.includes('upvotes') && (
-                        <td className="px-4 py-2 text-sm text-center">
+                          ),
+                          upvotes: (
+<td key="upvotes" className="px-4 py-2 text-sm text-center">
                           <div className="flex items-center justify-center gap-1">
                             <ChevronUp className="h-4 w-4 text-primary" />
                             <span className={(activity.upvote_count || 0) > 0 ? 'font-medium text-primary' : 'text-muted-foreground'}>
@@ -3443,9 +3421,9 @@ const router = useRouter();
                             </span>
                           </div>
                         </td>
-                      )}
-                      {visibleColumns.includes('downvotes') && (
-                        <td className="px-4 py-2 text-sm text-center">
+                          ),
+                          downvotes: (
+<td key="downvotes" className="px-4 py-2 text-sm text-center">
                           <div className="flex items-center justify-center gap-1">
                             <ChevronDown className="h-4 w-4 text-red-500" />
                             <span className={(activity.downvote_count || 0) > 0 ? 'font-medium text-red-500' : 'text-muted-foreground'}>
@@ -3453,11 +3431,9 @@ const router = useRouter();
                             </span>
                           </div>
                         </td>
-                      )}
-
-                      {/* Description Cells */}
-                      {visibleColumns.includes('descriptionGeneral') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          descriptionGeneral: (
+<td key="descriptionGeneral" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const truncated = truncateDescription(activity.description_general);
                             return (
@@ -3479,9 +3455,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-                      {visibleColumns.includes('descriptionObjectives') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          descriptionObjectives: (
+<td key="descriptionObjectives" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const truncated = truncateDescription(activity.description_objectives);
                             return (
@@ -3503,9 +3479,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-                      {visibleColumns.includes('descriptionTargetGroups') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          descriptionTargetGroups: (
+<td key="descriptionTargetGroups" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const truncated = truncateDescription(activity.description_target_groups);
                             return (
@@ -3527,9 +3503,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-                      {visibleColumns.includes('descriptionOther') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          descriptionOther: (
+<td key="descriptionOther" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const truncated = truncateDescription(activity.description_other);
                             return (
@@ -3551,11 +3527,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-                      
-                      {/* Progress & Metrics cells */}
-                      {visibleColumns.includes('timeElapsed') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          timeElapsed: (
+<td key="timeElapsed" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const percent = calculateTimeElapsedPercent(activity);
                             if (percent === null) return <span className="text-muted-foreground">—</span>;
@@ -3594,10 +3568,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-                      
-                      {visibleColumns.includes('committedSpentPercent') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          committedSpentPercent: (
+<td key="committedSpentPercent" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const percent = calculateCommittedSpentPercent(activity);
                             if (percent === null) return <span className="text-muted-foreground">—</span>;
@@ -3636,10 +3609,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-                      
-                      {visibleColumns.includes('budgetSpentPercent') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          budgetSpentPercent: (
+<td key="budgetSpentPercent" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const percent = calculateBudgetSpentPercent(activity);
                             if (percent === null) return <span className="text-muted-foreground">—</span>;
@@ -3678,11 +3650,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-
-                      {/* Portfolio Share Cells */}
-                      {visibleColumns.includes('budgetShare') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          budgetShare: (
+<td key="budgetShare" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3702,9 +3672,9 @@ const router = useRouter();
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                      )}
-                      {visibleColumns.includes('plannedDisbursementShare') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          plannedDisbursementShare: (
+<td key="plannedDisbursementShare" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3724,9 +3694,9 @@ const router = useRouter();
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                      )}
-                      {visibleColumns.includes('commitmentShare') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          commitmentShare: (
+<td key="commitmentShare" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3746,9 +3716,9 @@ const router = useRouter();
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                      )}
-                      {visibleColumns.includes('disbursementShare') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
+                          ),
+                          disbursementShare: (
+<td key="disbursementShare" className="px-4 py-2 text-sm text-foreground text-right whitespace-nowrap">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -3768,11 +3738,9 @@ const router = useRouter();
                             </Tooltip>
                           </TooltipProvider>
                         </td>
-                      )}
-
-                      {/* Duration Cells */}
-                      {visibleColumns.includes('totalExpectedLength') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          totalExpectedLength: (
+<td key="totalExpectedLength" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const duration = calculateDurationDetailed(
                               activity.plannedStartDate,
@@ -3793,10 +3761,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-
-                      {visibleColumns.includes('implementationToDate') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          implementationToDate: (
+<td key="implementationToDate" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const duration = calculateImplementationToDate(activity.actualStartDate);
                             const percent = calculateImplementationPercent(activity.actualStartDate, activity.plannedEndDate);
@@ -3821,10 +3788,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-
-                      {visibleColumns.includes('remainingDuration') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          remainingDuration: (
+<td key="remainingDuration" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const duration = calculateRemainingDuration(activity.plannedEndDate);
                             const percent = calculateRemainingPercent(activity.plannedStartDate, activity.plannedEndDate);
@@ -3850,10 +3816,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-
-                      {visibleColumns.includes('actualLength') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          actualLength: (
+<td key="actualLength" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const duration = calculateDurationDetailed(
                               activity.actualStartDate,
@@ -3874,10 +3839,9 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-
-                      {visibleColumns.includes('durationBand') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left">
+                          ),
+                          durationBand: (
+<td key="durationBand" className="px-4 py-2 text-sm text-foreground text-left">
                           {(() => {
                             const duration = calculateDurationDetailed(
                               activity.plannedStartDate,
@@ -3902,30 +3866,31 @@ const router = useRouter();
                             );
                           })()}
                         </td>
-                      )}
-                      
-                      {/* Date columns */}
-                      {visibleColumns.includes('plannedStartDate') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+                          ),
+                          plannedStartDate: (
+<td key="plannedStartDate" className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
                           {activity.plannedStartDate ? formatDateLong(activity.plannedStartDate) : <span className="text-muted-foreground">—</span>}
                         </td>
-                      )}
-                      {visibleColumns.includes('plannedEndDate') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+                          ),
+                          plannedEndDate: (
+<td key="plannedEndDate" className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
                           {activity.plannedEndDate ? formatDateLong(activity.plannedEndDate) : <span className="text-muted-foreground">—</span>}
                         </td>
-                      )}
-                      {visibleColumns.includes('actualStartDate') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+                          ),
+                          actualStartDate: (
+<td key="actualStartDate" className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
                           {activity.actualStartDate ? formatDateLong(activity.actualStartDate) : <span className="text-muted-foreground">—</span>}
                         </td>
-                      )}
-                      {visibleColumns.includes('actualEndDate') && (
-                        <td className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
+                          ),
+                          actualEndDate: (
+<td key="actualEndDate" className="px-4 py-2 text-sm text-foreground text-left whitespace-nowrap">
                           {activity.actualEndDate ? formatDateLong(activity.actualEndDate) : <span className="text-muted-foreground">—</span>}
                         </td>
-                      )}
-                      
+                          ),
+                        };
+                        return actCellMap[colId] || null;
+                      })}
+
                       {/* Actions cell - always visible */}
                       <td className="px-4 py-2 text-sm text-foreground text-right">
                         <div className="flex items-center justify-end">

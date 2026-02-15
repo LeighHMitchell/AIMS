@@ -211,6 +211,7 @@ export interface Organization {
   country?: string
   country_represented?: string
   cooperation_modality?: string
+  residency_status?: string
   iati_org_id?: string
   reporting_org_ref?: string
   reporting_org_type?: string
@@ -343,8 +344,14 @@ export function OrganizationFormContent({
     enabled: !!organizationId,
     showToast: true
   })
-  const defaultLanguageAutosave = useOrganizationAutosave('default_language', { 
-    organizationId, 
+  const defaultLanguageAutosave = useOrganizationAutosave('default_language', {
+    organizationId,
+    debounceMs: 500,
+    enabled: !!organizationId,
+    showToast: true
+  })
+  const residencyStatusAutosave = useOrganizationAutosave('residency_status', {
+    organizationId,
     debounceMs: 500,
     enabled: !!organizationId,
     showToast: true
@@ -433,6 +440,7 @@ export function OrganizationFormContent({
         country_represented: organization.country_represented || organization.country || '',
         Organisation_Type_Code: organization.Organisation_Type_Code || organization.organisation_type || '',
         cooperation_modality: organization.cooperation_modality || '',
+        residency_status: organization.residency_status || '',
         description: organization.description || '',
         logo: organization.logo || '',
         logo_scale: organization.logo_scale ?? 100,
@@ -469,6 +477,7 @@ export function OrganizationFormContent({
         country_represented: '',
         Organisation_Type_Code: '',
         cooperation_modality: '',
+        residency_status: '',
         description: '',
         logo: '',
         logo_scale: 100,
@@ -526,6 +535,7 @@ export function OrganizationFormContent({
         iati_org_id: iatiOrgIdAutosave,
         default_currency: defaultCurrencyAutosave,
         default_language: defaultLanguageAutosave,
+        residency_status: residencyStatusAutosave,
         website: websiteAutosave,
         email: emailAutosave,
         phone: phoneAutosave,
@@ -1032,6 +1042,53 @@ export function OrganizationFormContent({
                   ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Residency Status */}
+          <div className="space-y-2">
+            <LabelSaveIndicator
+              isSaving={residencyStatusAutosave.state.isSaving}
+              isSaved={!!residencyStatusAutosave.state.lastSaved}
+              hasValue={!!formData.residency_status}
+            >
+              Residency Status
+            </LabelSaveIndicator>
+            <Select
+              value={formData.residency_status || ''}
+              onValueChange={(value) => handleInputChange('residency_status', value)}
+            >
+              <SelectTrigger className="[&>span]:line-clamp-none [&>span]:whitespace-nowrap">
+                <SelectValue placeholder="Select residency status">
+                  {formData.residency_status && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        {formData.residency_status === 'resident' ? '1' : '2'}
+                      </span>
+                      <span className="font-medium text-foreground">
+                        {formData.residency_status === 'resident' ? 'Resident' : 'Non-Resident'}
+                      </span>
+                    </div>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="resident">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
+                    <span className="font-medium text-foreground">Resident</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="non-resident">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">2</span>
+                    <span className="font-medium text-foreground">Non-Resident</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Whether this organisation is resident within the country
+            </p>
           </div>
 
         </div>

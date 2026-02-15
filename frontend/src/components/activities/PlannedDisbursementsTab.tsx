@@ -1770,7 +1770,7 @@ export default function PlannedDisbursementsTab({
             <>
               <div className={hideSummaryCards ? "w-full" : "rounded-md border w-full"}>
                 <Table aria-label="Planned disbursements table" className="w-full">
-                  <TableHeader className="bg-muted/50 border-b border-border/70">
+                  <TableHeader className="bg-surface-muted border-b border-border/70">
                     <TableRow>
                       <TableHead className="py-3 px-2 w-10"></TableHead>
                       {!readOnly && (

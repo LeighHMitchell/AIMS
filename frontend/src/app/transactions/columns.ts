@@ -110,3 +110,8 @@ export const defaultVisibleTransactionColumns: TransactionColumnId[] = transacti
  * localStorage key for persisting column visibility
  */
 export const TRANSACTION_COLUMNS_LOCALSTORAGE_KEY = "aims_transaction_list_visible_columns";
+
+/**
+ * localStorage key for persisting column order
+ */
+export const TRANSACTION_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_transaction_list_column_order";

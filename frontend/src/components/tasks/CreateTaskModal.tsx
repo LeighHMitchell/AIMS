@@ -130,15 +130,16 @@ export function CreateTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
           <DialogTitle>Create New Task</DialogTitle>
           <DialogDescription>
             Create a task and assign it to users. They will be notified and can track the task in their dashboard.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
@@ -258,7 +259,8 @@ export function CreateTaskModal({
             />
           </div>
 
-          <DialogFooter>
+          </div>
+          <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
             <Button
               type="button"
               variant="outline"

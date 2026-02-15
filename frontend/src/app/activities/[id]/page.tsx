@@ -400,6 +400,7 @@ export default function ActivityDetailPage() {
   const [partnershipsSortField, setPartnershipsSortField] = useState<string>('organization')
   const [partnershipsSortDirection, setPartnershipsSortDirection] = useState<'asc' | 'desc'>('asc')
   const [hiddenRoles, setHiddenRoles] = useState<Set<number>>(new Set())
+  const [viewCount, setViewCount] = useState<number | null>(null)
 
   // Copy to clipboard function
   const copyToClipboard = (text: string, type: 'activityId' | 'iatiIdentifier' | 'activityTitle') => {
@@ -559,6 +560,17 @@ export default function ActivityDetailPage() {
       fetchGovernmentEndorsement();
     }
   }, [params?.id])
+
+  // Record unique view for this activity
+  useEffect(() => {
+    if (!params?.id || !user?.id) return;
+    apiFetch(`/api/activities/${params.id}/views`, { method: 'POST' })
+      .then(res => res.ok ? res.json() : null)
+      .then((data: any) => {
+        if (data?.viewCount != null) setViewCount(data.viewCount);
+      })
+      .catch(() => {/* non-fatal */});
+  }, [params?.id, user?.id])
 
   // Lazy load tab-specific data when tab is first visited
   useEffect(() => {
@@ -1581,6 +1593,21 @@ export default function ActivityDetailPage() {
                   variant="horizontal"
                 />
               </div>
+              {viewCount != null && viewCount > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-300 px-4 h-10 text-sm text-slate-600">
+                        <Eye className="h-4 w-4" />
+                        <span className="font-medium tabular-nums">{viewCount}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{viewCount} unique viewer{viewCount !== 1 ? 's' : ''}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               <Link
                 href={`/activities/new?id=${activity?.id}`}
                 className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -3639,7 +3666,7 @@ export default function ActivityDetailPage() {
                     <CardContent className="p-6 pt-0">
                         <div className="rounded-md border overflow-x-auto">
                           <Table className="table-fixed">
-                            <TableHeader className="bg-muted/50 border-b border-border/70">
+                            <TableHeader className="bg-surface-muted border-b border-border/70">
                               <TableRow>
                                 <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap" style={{ width: '35%' }}>Organization</TableHead>
                                 <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap" style={{ width: '20%' }}>Role</TableHead>
@@ -3734,7 +3761,7 @@ export default function ActivityDetailPage() {
                     <CardContent className="p-6 pt-0">
                         <div className="rounded-md border overflow-x-auto">
                           <Table className="table-fixed">
-                            <TableHeader className="bg-muted/50 border-b border-border/70">
+                            <TableHeader className="bg-surface-muted border-b border-border/70">
                               <TableRow>
                                 <TableHead
                                   className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap cursor-pointer hover:bg-muted/30 transition-colors"

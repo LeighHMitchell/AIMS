@@ -823,6 +823,11 @@ table td:has(div:contains("AA-AAA")) {
   text-align: left !important;
 }
 
+/* Show drag grip handle on column header hover */
+.sortable-th:hover .grip-handle {
+  opacity: 1;
+}
+
 /* Debug overlay for test marker - temporarily disabled */
 .leaflet-container.debug-mode::after {
   content: "🎯 Looking for red pin at center" !important;

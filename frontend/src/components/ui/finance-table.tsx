@@ -134,7 +134,7 @@ export function FinanceTable({
   return (
     <div className="overflow-x-auto">
       <Table className={cn("w-full", className)}>
-        <TableHeader className="bg-muted/50 border-b border-border">
+        <TableHeader className="bg-surface-muted border-b border-border">
           <TableRow>
             {columns.map((column, index) => (
               <TableHead 

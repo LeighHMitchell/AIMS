@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     if (reportingOrgIds.size > 0) {
       const { data: organizationsData, error: orgsError } = await supabase
         .from('organizations')
-        .select('id, name, acronym, iati_org_id')
+        .select('id, name, acronym, iati_org_id, logo')
         .in('id', Array.from(reportingOrgIds));
 
       if (orgsError) {

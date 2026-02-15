@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -176,15 +176,33 @@ export function WorkingGroupEditor({
 
   const sectionOrder = ['general', 'members', 'meetings', 'documents', 'activities']
 
+  const sectionLabels: Record<string, string> = {
+    general: 'General',
+    members: 'Members',
+    meetings: 'Meetings',
+    documents: 'Documents',
+    activities: 'Activities',
+  }
+
+  const currentIndex = sectionOrder.indexOf(activeSection)
+  const isFirstSection = currentIndex <= 0
+  const isLastSection = currentIndex >= sectionOrder.length - 1
+  const nextSectionId = !isLastSection ? sectionOrder[currentIndex + 1] : null
+  const prevSectionId = !isFirstSection ? sectionOrder[currentIndex - 1] : null
+
+  const handleSectionNav = useCallback((sectionId: string) => {
+    setActiveSection(sectionId)
+    const id = workingGroupId || workingGroup?.id
+    router.replace(`/working-groups/${id}/edit?section=${sectionId}`, { scroll: false })
+  }, [workingGroupId, workingGroup, router])
+
   const handleNextSection = useCallback(() => {
-    const currentIndex = sectionOrder.indexOf(activeSection)
-    if (currentIndex < sectionOrder.length - 1) {
-      const nextSection = sectionOrder[currentIndex + 1]
-      setActiveSection(nextSection)
-      const id = workingGroupId || workingGroup?.id
-      router.replace(`/working-groups/${id}/edit?section=${nextSection}`, { scroll: false })
-    }
-  }, [activeSection, workingGroupId, workingGroup, router])
+    if (nextSectionId) handleSectionNav(nextSectionId)
+  }, [nextSectionId, handleSectionNav])
+
+  const handlePreviousSection = useCallback(() => {
+    if (prevSectionId) handleSectionNav(prevSectionId)
+  }, [prevSectionId, handleSectionNav])
 
   const renderSectionContent = () => {
     const currentId = workingGroupId || workingGroup?.id
@@ -207,7 +225,6 @@ export function WorkingGroupEditor({
               workingGroupId={currentId}
               isCreating={isCreating && !workingGroupCreated}
               onSave={handleSave}
-              onNextSection={handleNextSection}
             />
           </div>
         )
@@ -264,7 +281,35 @@ export function WorkingGroupEditor({
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {renderSectionContent()}
+        <div className="flex-1 overflow-hidden">
+          {renderSectionContent()}
+        </div>
+
+        {/* Fixed footer with Back/Next navigation — matches Activity Editor */}
+        {workingGroupCreated && (
+          <footer className="border-t bg-white px-8 py-4">
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                variant="outline"
+                className="px-6 py-3 text-base font-semibold"
+                onClick={handlePreviousSection}
+                disabled={isFirstSection}
+              >
+                <ArrowLeft className="mr-2 h-5 w-5" />
+                Back
+              </Button>
+              <Button
+                variant="default"
+                className="px-6 py-3 text-base font-semibold min-w-[140px]"
+                onClick={handleNextSection}
+                disabled={isLastSection}
+              >
+                {nextSectionId ? sectionLabels[nextSectionId] : 'Next'}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </footer>
+        )}
       </div>
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

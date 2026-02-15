@@ -11,6 +11,21 @@ import {
 } from '@/components/ui/popover';
 import { apiFetch } from '@/lib/api-fetch';
 
+interface ReportingOrg {
+  id: string;
+  name?: string;
+  acronym?: string;
+  logo?: string;
+  country?: string;
+  type?: string;
+  Organisation_Type_Code?: string;
+  Organisation_Type_Name?: string;
+}
+
+interface RecipientCountry {
+  country?: { code?: string; name?: string };
+}
+
 interface Activity {
   id: string;
   title_narrative?: string;
@@ -20,6 +35,8 @@ interface Activity {
   created_by_org_name?: string;
   created_by_org_acronym?: string;
   icon?: string;
+  reporting_org?: ReportingOrg | null;
+  recipient_countries?: RecipientCountry[] | null;
 }
 
 interface ActivityComboboxProps {
@@ -31,6 +48,61 @@ interface ActivityComboboxProps {
   fallbackIatiId?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+}
+
+/** Convert a 2-letter country code to its flag emoji */
+function countryCodeToFlag(code: string): string {
+  const upper = code.toUpperCase();
+  const offset = 0x1F1E6 - 65; // 'A' = 65
+  return String.fromCodePoint(upper.charCodeAt(0) + offset, upper.charCodeAt(1) + offset);
+}
+
+function getFirstRecipientCountry(countries?: RecipientCountry[] | null): { code: string; name: string } | null {
+  if (!countries || countries.length === 0) return null;
+  const first = countries[0];
+  if (first?.country?.code && first?.country?.name) {
+    return { code: first.country.code, name: first.country.name };
+  }
+  return null;
+}
+
+function ReportingOrgLine({ org, recipientCountries }: { org?: ReportingOrg | null; recipientCountries?: RecipientCountry[] | null }) {
+  if (!org) return null;
+
+  const typeCode = org.Organisation_Type_Code || org.type;
+  const typeName = org.Organisation_Type_Name;
+  const country = getFirstRecipientCountry(recipientCountries);
+
+  return (
+    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+      {org.logo && (
+        <img
+          src={org.logo}
+          alt=""
+          className="w-4 h-4 rounded flex-shrink-0"
+        />
+      )}
+      {org.name && (
+        <span className="text-xs text-gray-500">{org.name}</span>
+      )}
+      {org.acronym && (
+        <span className="text-xs text-gray-500">({org.acronym})</span>
+      )}
+      {typeCode && (
+        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1 py-0.5 rounded">
+          {typeCode}
+        </span>
+      )}
+      {typeName && (
+        <span className="text-xs text-gray-400">{typeName}</span>
+      )}
+      {country && (
+        <span className="text-xs text-gray-500">
+          {countryCodeToFlag(country.code)} {country.name}
+        </span>
+      )}
+    </div>
+  );
 }
 
 export function ActivityCombobox({
@@ -101,21 +173,19 @@ export function ActivityCombobox({
     fetchSelectedActivity();
   }, [value, activities]);
 
-  // Fetch activities based on search query
+  // Fetch activities — always use the search endpoint for consistent data shape
   React.useEffect(() => {
     const fetchActivities = async () => {
       setLoading(true);
       try {
-        const url = searchQuery 
+        const url = searchQuery
           ? `/api/activities/search?q=${encodeURIComponent(searchQuery)}&limit=50`
-          : `/api/activities?limit=50`;
-        
+          : `/api/activities/search?limit=50`;
+
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch activities');
-        
+
         const data = await response.json();
-        
-        // Handle both search API response and regular activities list
         const activityList = data.activities || data;
         setActivities(activityList);
       } catch (error) {
@@ -136,12 +206,6 @@ export function ActivityCombobox({
 
   const getActivityTitle = (activity: Activity) => {
     return activity.title_narrative || activity.title || 'Untitled Activity';
-  };
-
-  const getActivityDisplayName = (activity: Activity) => {
-    const title = getActivityTitle(activity);
-    const acronym = activity.acronym;
-    return acronym ? `${title} (${acronym})` : title;
   };
 
   const handleClear = (e: React.MouseEvent) => {
@@ -189,6 +253,10 @@ export function ActivityCombobox({
                       </span>
                     )}
                   </span>
+                  <ReportingOrgLine
+                    org={selectedActivity.reporting_org}
+                    recipientCountries={selectedActivity.recipient_countries}
+                  />
                 </div>
               </>
             ) : fallbackIatiId ? (
@@ -248,44 +316,34 @@ export function ActivityCombobox({
                     setOpen(false);
                   }}
                   className={cn(
-                    "px-3 py-2.5 cursor-pointer transition-colors hover:bg-accent/50 flex items-center gap-2 w-full",
+                    "px-3 py-2.5 cursor-pointer transition-colors hover:bg-accent/50 flex items-start gap-2 w-full",
                     value === activity.id && "bg-accent"
                   )}
                 >
                   <Check
                     className={cn(
-                      'h-4 w-4 shrink-0',
+                      'h-4 w-4 shrink-0 mt-0.5',
                       value === activity.id ? 'opacity-100' : 'opacity-0'
                     )}
                   />
-                  <div className="flex items-start gap-2 flex-1 min-w-0">
-                    {activity.icon && (
-                      <img
-                        src={activity.icon}
-                        alt=""
-                        className="w-6 h-6 rounded mt-0.5 flex-shrink-0"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <span className="font-normal text-sm inline">
-                        {title}
-                        {activity.acronym && (
-                          <span className="text-gray-500 ml-1">
-                            ({activity.acronym})
-                          </span>
-                        )}
-                        {activity.iati_identifier && (
-                          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600 ml-2">
-                            {activity.iati_identifier}
-                          </span>
-                        )}
-                        {(activity.created_by_org_name || activity.created_by_org_acronym) && (
-                          <span className="text-xs text-gray-400 ml-2">
-                            {activity.created_by_org_acronym || activity.created_by_org_name}
-                          </span>
-                        )}
-                      </span>
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-normal text-sm">
+                      {title}
+                      {activity.acronym && (
+                        <span className="text-gray-500 ml-1">
+                          ({activity.acronym})
+                        </span>
+                      )}
+                      {activity.iati_identifier && (
+                        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
+                          {activity.iati_identifier}
+                        </span>
+                      )}
+                    </span>
+                    <ReportingOrgLine
+                      org={activity.reporting_org}
+                      recipientCountries={activity.recipient_countries}
+                    />
                   </div>
                 </div>
               );
@@ -297,4 +355,3 @@ export function ActivityCombobox({
     </div>
   );
 }
-

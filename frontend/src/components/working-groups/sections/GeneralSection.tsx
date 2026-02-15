@@ -29,7 +29,6 @@ interface GeneralSectionProps {
   workingGroupId?: string
   isCreating: boolean
   onSave: (data: Partial<WorkingGroup>) => Promise<void>
-  onNextSection: () => void
 }
 
 export default function GeneralSection({
@@ -37,7 +36,6 @@ export default function GeneralSection({
   workingGroupId,
   isCreating,
   onSave,
-  onNextSection
 }: GeneralSectionProps) {
   const [label, setLabel] = useState(workingGroup?.label || '')
   const [code, setCode] = useState(workingGroup?.code || '')
@@ -141,126 +139,16 @@ export default function GeneralSection({
   }, [label, code, description, groupType, isActive, onSave])
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="w-full space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-gray-900">General Information</h2>
         <p className="text-sm text-gray-500 mt-1">Basic details about this working group</p>
       </div>
 
-      <div className="space-y-4">
-        {/* Label */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={labelAutosave.state.isSaving}
-            isSaved={!!labelAutosave.state.lastSaved}
-            hasValue={!!label}
-          >
-            Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
-          </LabelSaveIndicator>
-          <Input
-            value={label}
-            onChange={(e) => {
-              setLabel(e.target.value)
-              if (!isCreating) labelAutosave.triggerSave(e.target.value)
-            }}
-            placeholder="e.g. Health Sector Working Group"
-          />
-        </div>
-
-        {/* Code */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={codeAutosave.state.isSaving}
-            isSaved={!!codeAutosave.state.lastSaved}
-            hasValue={!!code}
-          >
-            Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
-          </LabelSaveIndicator>
-          <Input
-            value={code}
-            onChange={(e) => {
-              setCode(e.target.value)
-              if (!isCreating) codeAutosave.triggerSave(e.target.value)
-            }}
-            placeholder="e.g. TWG-HEALTH"
-          />
-          <p className="text-xs text-gray-500">Unique identifier code for this working group</p>
-        </div>
-
-        {/* Group Type */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={groupTypeAutosave.state.isSaving}
-            isSaved={!!groupTypeAutosave.state.lastSaved}
-            hasValue={!!groupType}
-          >
-            Working Group Type
-          </LabelSaveIndicator>
-          <Select
-            value={groupType || 'none'}
-            onValueChange={(val) => {
-              const newVal = val === 'none' ? '' : val
-              setGroupType(newVal)
-              if (!isCreating) groupTypeAutosave.triggerSave(newVal || null)
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select type..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No type selected</SelectItem>
-              {GROUP_TYPE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Description */}
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={descAutosave.state.isSaving}
-            isSaved={!!descAutosave.state.lastSaved}
-            hasValue={!!description}
-          >
-            Description / Mandate
-          </LabelSaveIndicator>
-          <Textarea
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value)
-              if (!isCreating) descAutosave.triggerSave(e.target.value)
-            }}
-            placeholder="Purpose and mandate of this working group..."
-            rows={5}
-          />
-        </div>
-
-        {/* Active Status */}
-        <div className="flex items-center justify-between border rounded-lg p-4">
-          <div>
-            <LabelSaveIndicator
-              isSaving={activeAutosave.state.isSaving}
-              isSaved={!!activeAutosave.state.lastSaved}
-              hasValue={true}
-            >
-              Active Status
-            </LabelSaveIndicator>
-            <p className="text-xs text-gray-500 mt-1">Whether this working group is currently active</p>
-          </div>
-          <Switch
-            checked={isActive}
-            onCheckedChange={(checked) => {
-              setIsActive(checked)
-              if (!isCreating) activeAutosave.triggerSave(checked)
-            }}
-          />
-        </div>
-
-        {/* Banner Image */}
-        {!isCreating && workingGroupId && (
+      {/* Row 1: Banner Image + Icon/Logo */}
+      {!isCreating && workingGroupId && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
+          {/* Banner Image */}
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={bannerAutosave.state.isSaving}
@@ -308,10 +196,8 @@ export default function GeneralSection({
               }}
             />
           </div>
-        )}
 
-        {/* Icon/Logo */}
-        {!isCreating && workingGroupId && (
+          {/* Icon/Logo */}
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={iconAutosave.state.isSaving}
@@ -320,45 +206,35 @@ export default function GeneralSection({
             >
               Icon / Logo
             </LabelSaveIndicator>
-            <div className="flex items-center gap-4">
-              {iconUrl ? (
-                <div className="relative">
-                  <img
-                    src={iconUrl}
-                    alt="Icon"
-                    className="h-16 w-16 object-cover rounded-lg border"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute -top-2 -right-2 h-5 w-5"
-                    onClick={() => {
-                      setIconUrl('')
-                      iconAutosave.triggerSave(null)
-                    }}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ) : (
-                <div
-                  className="flex flex-col items-center justify-center h-16 w-16 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"
-                  onClick={() => iconInputRef.current?.click()}
-                >
-                  <ImageIcon className="h-5 w-5 text-gray-400" />
-                </div>
-              )}
-              <div>
+            {iconUrl ? (
+              <div className="relative">
+                <img
+                  src={iconUrl}
+                  alt="Icon"
+                  className="w-full h-32 object-contain rounded-lg border bg-gray-50"
+                />
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => iconInputRef.current?.click()}
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-7 w-7"
+                  onClick={() => {
+                    setIconUrl('')
+                    iconAutosave.triggerSave(null)
+                  }}
                 >
-                  {iconUrl ? 'Change' : 'Upload'} Icon
+                  <X className="h-4 w-4" />
                 </Button>
-                <p className="text-xs text-gray-500 mt-1">Square image recommended</p>
               </div>
-            </div>
+            ) : (
+              <div
+                className="flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"
+                onClick={() => iconInputRef.current?.click()}
+              >
+                <ImageIcon className="h-6 w-6 text-gray-400 mb-1" />
+                <p className="text-sm text-gray-500">Upload icon / logo</p>
+                <p className="text-xs text-gray-400 mt-0.5">Square image recommended</p>
+              </div>
+            )}
             <input
               ref={iconInputRef}
               type="file"
@@ -370,25 +246,130 @@ export default function GeneralSection({
               }}
             />
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Create / Next buttons */}
-        {isCreating ? (
-          <Button
-            onClick={handleCreate}
-            disabled={creating || !label.trim() || !code.trim()}
-            className="w-full"
+      {/* Row 2: Name + Code */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
+        <div className="space-y-2">
+          <LabelSaveIndicator
+            isSaving={labelAutosave.state.isSaving}
+            isSaved={!!labelAutosave.state.lastSaved}
+            hasValue={!!label}
           >
-            {creating ? 'Creating...' : 'Create Working Group'}
-          </Button>
-        ) : (
-          <div className="flex justify-end pt-4">
-            <Button onClick={onNextSection} variant="outline">
-              Next: Members
-            </Button>
-          </div>
-        )}
+            Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+          </LabelSaveIndicator>
+          <Input
+            value={label}
+            onChange={(e) => {
+              setLabel(e.target.value)
+              if (!isCreating) labelAutosave.triggerSave(e.target.value)
+            }}
+            placeholder="e.g. Health Sector Working Group"
+          />
+        </div>
+        <div className="space-y-2">
+          <LabelSaveIndicator
+            isSaving={codeAutosave.state.isSaving}
+            isSaved={!!codeAutosave.state.lastSaved}
+            hasValue={!!code}
+          >
+            Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+          </LabelSaveIndicator>
+          <Input
+            value={code}
+            onChange={(e) => {
+              setCode(e.target.value)
+              if (!isCreating) codeAutosave.triggerSave(e.target.value)
+            }}
+            placeholder="e.g. TWG-HEALTH"
+          />
+          <p className="text-xs text-gray-500">Unique identifier code for this working group</p>
+        </div>
       </div>
+
+      {/* Row 3: Description / Mandate — full width */}
+      <div className="space-y-2">
+        <LabelSaveIndicator
+          isSaving={descAutosave.state.isSaving}
+          isSaved={!!descAutosave.state.lastSaved}
+          hasValue={!!description}
+        >
+          Description / Mandate
+        </LabelSaveIndicator>
+        <Textarea
+          value={description}
+          onChange={(e) => {
+            setDescription(e.target.value)
+            if (!isCreating) descAutosave.triggerSave(e.target.value)
+          }}
+          placeholder="Purpose and mandate of this working group..."
+          rows={5}
+        />
+      </div>
+
+      {/* Row 4: Working Group Type + Active Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
+        <div className="space-y-2">
+          <LabelSaveIndicator
+            isSaving={groupTypeAutosave.state.isSaving}
+            isSaved={!!groupTypeAutosave.state.lastSaved}
+            hasValue={!!groupType}
+          >
+            Working Group Type
+          </LabelSaveIndicator>
+          <Select
+            value={groupType || 'none'}
+            onValueChange={(val) => {
+              const newVal = val === 'none' ? '' : val
+              setGroupType(newVal)
+              if (!isCreating) groupTypeAutosave.triggerSave(newVal || null)
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select type..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No type selected</SelectItem>
+              {GROUP_TYPE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center justify-between border rounded-lg p-4">
+          <div>
+            <LabelSaveIndicator
+              isSaving={activeAutosave.state.isSaving}
+              isSaved={!!activeAutosave.state.lastSaved}
+              hasValue={true}
+            >
+              Active Status
+            </LabelSaveIndicator>
+            <p className="text-xs text-gray-500 mt-1">Whether this working group is currently active</p>
+          </div>
+          <Switch
+            checked={isActive}
+            onCheckedChange={(checked) => {
+              setIsActive(checked)
+              if (!isCreating) activeAutosave.triggerSave(checked)
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Create button — only shown when creating */}
+      {isCreating && (
+        <Button
+          onClick={handleCreate}
+          disabled={creating || !label.trim() || !code.trim()}
+          className="w-full"
+        >
+          {creating ? 'Creating...' : 'Create Working Group'}
+        </Button>
+      )}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, AlertCircle, Search, X, User as UserIcon, Mail, Phone, Globe, Edit2, Trash2, Upload, ChevronsUpDown, Check, LayoutGrid, List } from 'lucide-react';
+import { Plus, AlertCircle, Search, X, User as UserIcon, Mail, Phone, Globe, Edit2, Trash2, Upload, ChevronsUpDown, Check, LayoutGrid, Table as TableIcon } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -450,7 +450,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
                 )}
                 title="Table view"
               >
-                <List className="h-4 w-4" />
+                <TableIcon className="h-4 w-4" />
               </button>
             </div>
           )}

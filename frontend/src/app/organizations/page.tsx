@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Search, Plus, Edit2, Eye, Trash2, ExternalLink, Globe, MapPin, Users, Activity, DollarSign, Building2, AlertTriangle, Copy, Upload, X, ImageIcon, Info, TableIcon, Grid3X3, Calendar, Mail, Phone, HelpCircle, User, Lock, MoreVertical, Download, FileText, FileSpreadsheet } from 'lucide-react'
+import { Search, Plus, Edit2, Eye, Trash2, ExternalLink, Globe, MapPin, Users, Activity, DollarSign, Building2, AlertTriangle, Copy, Upload, X, ImageIcon, Info, TableIcon, LayoutGrid, Calendar, Mail, Phone, HelpCircle, User, Lock, MoreVertical, Download, FileText, FileSpreadsheet } from 'lucide-react'
 import { exportOrganizationToPDF, exportOrganizationToExcel } from '@/lib/organization-export'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -347,6 +347,7 @@ interface Organization {
   country?: string
   country_represented?: string
   cooperation_modality?: string
+  residency_status?: string
   iati_org_id?: string
   alias_refs?: string[]
   name_aliases?: string[]
@@ -1208,7 +1209,7 @@ function OrganizationsPageContent() {
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
   
   // Sorting state for table view
-  const [sortField, setSortField] = useState<'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'funding' | 'created_at'>('name')
+  const [sortField, setSortField] = useState<'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'providerReceiver' | 'funding' | 'residency' | 'created_at'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   
   // AbortController refs for race condition prevention
@@ -1289,6 +1290,10 @@ function OrganizationsPageContent() {
         case 'funding':
           aValue = a.totalBudgeted || 0
           bValue = b.totalBudgeted || 0
+          break
+        case 'residency':
+          aValue = a.residency_status || ''
+          bValue = b.residency_status || ''
           break
         case 'created_at':
           aValue = new Date(a.created_at).getTime()
@@ -1618,7 +1623,7 @@ function OrganizationsPageContent() {
   }
 
   // Handle table sorting
-  const handleSort = (field: 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'funding' | 'created_at') => {
+  const handleSort = (field: 'name' | 'acronym' | 'type' | 'location' | 'activities' | 'reported' | 'associated' | 'providerReceiver' | 'funding' | 'residency' | 'created_at') => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
@@ -1744,7 +1749,7 @@ function OrganizationsPageContent() {
                   localStorage.setItem('organizationViewMode', 'card')
                 }}
               >
-                <Grid3X3 className="h-4 w-4 mr-2" />
+                <LayoutGrid className="h-4 w-4 mr-2" />
                 Card
               </Button>
               <Button

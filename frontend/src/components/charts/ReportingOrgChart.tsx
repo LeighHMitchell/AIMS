@@ -181,7 +181,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
     <div className="w-full">
       <div className="rounded-md border">
         <Table className="table-fixed w-full">
-          <TableHeader className="bg-muted/50 border-b border-border/70">
+          <TableHeader className="bg-surface-muted border-b border-border/70">
             <TableRow>
               <TableHead
                 className="text-sm font-medium text-foreground/90 py-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors whitespace-nowrap"

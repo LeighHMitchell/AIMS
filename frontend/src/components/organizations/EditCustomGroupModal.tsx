@@ -316,8 +316,8 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             Edit Custom Group
@@ -327,7 +327,8 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
           {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Group Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
@@ -593,7 +594,8 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
             />
           </div>
 
-          <DialogFooter>
+          </div>
+          <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
             <Button
               type="button"
               variant="outline"

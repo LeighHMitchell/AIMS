@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { PlusIcon, SearchIcon, NetworkIcon, Users, UserCheck, Calendar, LayoutGrid, List, Pencil } from 'lucide-react'
+import { PlusIcon, SearchIcon, NetworkIcon, Users, UserCheck, Calendar, LayoutGrid, Table as TableIcon, Pencil } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useUserRole } from '@/hooks/useUserRole'
@@ -229,7 +229,7 @@ export default function WorkingGroupsPage() {
               className="rounded-l-none"
               onClick={() => setViewMode('table')}
             >
-              <List className="h-4 w-4" />
+              <TableIcon className="h-4 w-4" />
             </Button>
           </div>
         </div>

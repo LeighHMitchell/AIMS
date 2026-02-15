@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import {
   Search,
-  Grid3X3,
+  LayoutGrid,
   TableIcon,
   Plus,
   Download,
@@ -498,7 +498,7 @@ export default function LibraryPage() {
                       className="rounded-r-none"
                       onClick={() => setViewMode('card')}
                     >
-                      <Grid3X3 className="h-4 w-4" />
+                      <LayoutGrid className="h-4 w-4" />
                     </Button>
                     <Button
                       variant={viewMode === 'table' ? 'secondary' : 'ghost'}

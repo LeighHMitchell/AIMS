@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  ArrowLeft, Download, AlertCircle, LayoutGrid, List, ExternalLink, MapPin,
+  ArrowLeft, Download, AlertCircle, LayoutGrid, Table as TableIcon, ExternalLink, MapPin,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -481,7 +481,7 @@ export default function SectorProfilePage() {
                   </select>
                   <div className="flex border border-slate-200 rounded-md overflow-hidden">
                     <button onClick={() => setActivityView('card')} className={`p-1.5 ${activityView === 'card' ? 'bg-slate-100' : 'bg-white'}`}><LayoutGrid className="h-3.5 w-3.5 text-slate-600" /></button>
-                    <button onClick={() => setActivityView('table')} className={`p-1.5 ${activityView === 'table' ? 'bg-slate-100' : 'bg-white'}`}><List className="h-3.5 w-3.5 text-slate-600" /></button>
+                    <button onClick={() => setActivityView('table')} className={`p-1.5 ${activityView === 'table' ? 'bg-slate-100' : 'bg-white'}`}><TableIcon className="h-3.5 w-3.5 text-slate-600" /></button>
                   </div>
                 </div>
               </div>

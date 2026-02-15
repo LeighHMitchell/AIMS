@@ -212,14 +212,15 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
           <DialogTitle>Edit Document</DialogTitle>
           <DialogDescription>
             Update the metadata for this document.
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto px-6 py-4">
         {/* Document Info (read-only) */}
         <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
           <FileText className="h-8 w-8 text-muted-foreground flex-shrink-0" />
@@ -339,7 +340,8 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
           </div>
         </div>
 
-        <DialogFooter className="mt-6">
+        </div>
+        <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>

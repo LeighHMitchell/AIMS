@@ -2,6 +2,7 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DISBURSEMENT_CHANNEL_LABELS, DisbursementChannel } from '@/types/transaction';
 import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Shorter labels for the trigger display to prevent clipping
 const DISBURSEMENT_CHANNEL_SHORT_LABELS: Record<DisbursementChannel, string> = {
@@ -50,7 +51,7 @@ export function DisbursementChannelSelect({
         onValueChange={handleValueChange}
         disabled={disabled}
       >
-        <SelectTrigger className={className} id={id}>
+        <SelectTrigger className={cn("text-sm [&>span[data-placeholder]]:text-gray-400", className)} id={id}>
           <SelectValue placeholder={placeholder}>
             {value && DISBURSEMENT_CHANNEL_SHORT_LABELS[value as DisbursementChannel]}
           </SelectValue>

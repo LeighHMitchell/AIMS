@@ -150,15 +150,16 @@ export function EditTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
           <DialogTitle>Edit Task</DialogTitle>
           <DialogDescription>
             Update the task details and assignees.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="edit-title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
@@ -319,7 +320,8 @@ export function EditTaskModal({
             </div>
           )}
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          </div>
+          <DialogFooter className="px-6 py-4 border-t flex-shrink-0 gap-2 sm:gap-0">
             {onDelete && !showDeleteConfirm && (
               <Button
                 type="button"

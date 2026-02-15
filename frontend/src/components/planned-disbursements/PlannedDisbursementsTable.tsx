@@ -24,7 +24,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
   getSortIcon,
@@ -34,12 +33,16 @@ import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { ColumnSelector } from "@/components/ui/column-selector";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { SortableTableHeader } from "@/components/ui/sortable-table-header";
+import { DndColumnProvider } from "@/components/ui/dnd-column-provider";
+import { useColumnOrder } from "@/hooks/use-column-order";
 import {
   PlannedDisbursementColumnId,
   plannedDisbursementColumns,
   plannedDisbursementColumnGroups,
   defaultVisiblePlannedDisbursementColumns,
   PLANNED_DISBURSEMENT_COLUMNS_LOCALSTORAGE_KEY,
+  PLANNED_DISBURSEMENT_COLUMN_ORDER_LOCALSTORAGE_KEY,
 } from "@/app/planned-disbursements/columns";
 
 // Re-export column types for parent components
@@ -146,32 +149,34 @@ export function PlannedDisbursementsTable({
 }: PlannedDisbursementsTableProps) {
   const router = useRouter();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [usdValues, setUsdValues] = useState<Record<string, { 
-    usd: number | null, 
-    rate: number | null, 
-    date: string, 
-    loading: boolean, 
-    error?: string 
+  const [usdValues, setUsdValues] = useState<Record<string, {
+    usd: number | null,
+    rate: number | null,
+    date: string,
+    loading: boolean,
+    error?: string
   }>>({});
-  
-  // Column visibility helper
-  const isColumnVisible = (columnId: PlannedDisbursementColumnId) => {
-    return visibleColumns.includes(columnId);
-  };
-  
+
+  const { getOrderedVisibleColumns, handleReorder } = useColumnOrder<PlannedDisbursementColumnId>({
+    storageKey: PLANNED_DISBURSEMENT_COLUMN_ORDER_LOCALSTORAGE_KEY,
+    columns: plannedDisbursementColumns,
+  });
+
+  const orderedVisibleColumns = getOrderedVisibleColumns(visibleColumns);
+
   // Calculate colspan for expanded row
   const visibleColumnCount = visibleColumns.length + 2; // +2 for checkbox and actions columns
 
   // Read stored USD values from database (no real-time conversion)
   useEffect(() => {
     const newUsdValues: Record<string, { usd: number|null, rate: number|null, date: string, loading: boolean, error?: string }> = {};
-    
+
     for (const disbursement of disbursements) {
       const disbursementId = disbursement.id;
-      
+
       // Use amount (database field) or value (legacy/API field) - prefer amount
       const amountValue = disbursement.amount ?? disbursement.value;
-      
+
       // Check if disbursement already has USD value stored
       const existingUsdValue = disbursement.usd_amount ?? disbursement.value_usd;
       if (existingUsdValue != null && !isNaN(existingUsdValue)) {
@@ -183,7 +188,7 @@ export function PlannedDisbursementsTable({
         };
         continue;
       }
-      
+
       // If currency is already USD, just use the value
       if (disbursement.currency === 'USD' && amountValue != null && !isNaN(amountValue)) {
         newUsdValues[disbursementId] = {
@@ -194,18 +199,18 @@ export function PlannedDisbursementsTable({
         };
         continue;
       }
-      
+
       // Missing data or unconverted - show as not converted (no real-time API call)
       const isUnconvertible = (disbursement as any).usd_convertible === false;
-      newUsdValues[disbursementId] = { 
-        usd: null, 
-        rate: null, 
-        date: disbursement.value_date || disbursement.period_start || '', 
+      newUsdValues[disbursementId] = {
+        usd: null,
+        rate: null,
+        date: disbursement.value_date || disbursement.period_start || '',
         loading: false,
         error: isUnconvertible ? 'Not converted' : undefined
       };
     }
-    
+
     setUsdValues(newUsdValues);
   }, [disbursements]);
 
@@ -285,13 +290,125 @@ export function PlannedDisbursementsTable({
     );
   }
 
+  // Build header map
+  const headerMap: Record<PlannedDisbursementColumnId, React.ReactNode> = {
+    activity: (
+      <SortableTableHeader
+        key="activity"
+        id="activity"
+        className="cursor-pointer hover:bg-muted/80 transition-colors"
+        onClick={() => onSort("activity")}
+      >
+        <div className="flex items-center gap-1">
+          <span>Activity</span>
+          {getSortIcon("activity", sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    periodStart: (
+      <SortableTableHeader
+        key="periodStart"
+        id="periodStart"
+        className="cursor-pointer hover:bg-muted/80 transition-colors"
+        onClick={() => onSort("period_start")}
+      >
+        <div className="flex items-center gap-1">
+          <span>Start Date</span>
+          {getSortIcon("period_start", sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    periodEnd: (
+      <SortableTableHeader
+        key="periodEnd"
+        id="periodEnd"
+        className="cursor-pointer hover:bg-muted/80 transition-colors"
+        onClick={() => onSort("period_end")}
+      >
+        <div className="flex items-center gap-1">
+          <span>End Date</span>
+          {getSortIcon("period_end", sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    type: (
+      <SortableTableHeader
+        key="type"
+        id="type"
+        className="cursor-pointer hover:bg-muted/80 transition-colors"
+        onClick={() => onSort("type")}
+      >
+        <div className="flex items-center gap-1">
+          <span>Type</span>
+          {getSortIcon("type", sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    providerReceiver: (
+      <SortableTableHeader
+        key="providerReceiver"
+        id="providerReceiver"
+      >
+        Provider → Receiver
+      </SortableTableHeader>
+    ),
+    amount: (
+      <SortableTableHeader
+        key="amount"
+        id="amount"
+        className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
+        onClick={() => onSort("value")}
+      >
+        <div className="flex items-center justify-end gap-1">
+          <span>Amount</span>
+          {getSortIcon("value", sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    valueDate: (
+      <SortableTableHeader
+        key="valueDate"
+        id="valueDate"
+        className="cursor-pointer hover:bg-muted/80 transition-colors"
+        onClick={() => onSort("value_date")}
+      >
+        <div className="flex items-center gap-1">
+          <span>Value Date</span>
+          {getSortIcon("value_date", sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    valueUsd: (
+      <SortableTableHeader
+        key="valueUsd"
+        id="valueUsd"
+        className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
+        onClick={() => onSort("value_usd")}
+      >
+        <div className="flex items-center justify-end gap-1">
+          <span>USD Value</span>
+          {getSortIcon("value_usd", sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    notes: (
+      <SortableTableHeader
+        key="notes"
+        id="notes"
+        className="text-center w-10"
+      >
+        Notes
+      </SortableTableHeader>
+    ),
+  };
+
   return (
     <TooltipProvider>
       <div>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10 text-center">
+              <th className="h-12 px-4 text-center align-middle w-10">
                 {onSelectAll && selectedIds && (
                   <div className="flex items-center justify-center" key={`select-all-wrapper-${disbursements.length}`}>
                     <Checkbox
@@ -305,97 +422,13 @@ export function PlannedDisbursementsTable({
                     />
                   </div>
                 )}
-              </TableHead>
-              {isColumnVisible('activity') && (
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/80 transition-colors"
-                  onClick={() => onSort("activity")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Activity</span>
-                    {getSortIcon("activity", sortField, sortOrder)}
-                  </div>
-                </TableHead>
-              )}
-              {isColumnVisible('periodStart') && (
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/80 transition-colors"
-                  onClick={() => onSort("period_start")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Start Date</span>
-                    {getSortIcon("period_start", sortField, sortOrder)}
-                  </div>
-                </TableHead>
-              )}
-              {isColumnVisible('periodEnd') && (
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/80 transition-colors"
-                  onClick={() => onSort("period_end")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>End Date</span>
-                    {getSortIcon("period_end", sortField, sortOrder)}
-                  </div>
-                </TableHead>
-              )}
-              {isColumnVisible('type') && (
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/80 transition-colors"
-                  onClick={() => onSort("type")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Type</span>
-                    {getSortIcon("type", sortField, sortOrder)}
-                  </div>
-                </TableHead>
-              )}
-              {isColumnVisible('providerReceiver') && (
-                <TableHead>
-                  Provider → Receiver
-                </TableHead>
-              )}
-              {isColumnVisible('amount') && (
-                <TableHead
-                  className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
-                  onClick={() => onSort("value")}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    <span>Amount</span>
-                    {getSortIcon("value", sortField, sortOrder)}
-                  </div>
-                </TableHead>
-              )}
-              {isColumnVisible('valueDate') && (
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/80 transition-colors"
-                  onClick={() => onSort("value_date")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Value Date</span>
-                    {getSortIcon("value_date", sortField, sortOrder)}
-                  </div>
-                </TableHead>
-              )}
-              {isColumnVisible('valueUsd') && (
-                <TableHead
-                  className="text-right cursor-pointer hover:bg-muted/80 transition-colors"
-                  onClick={() => onSort("value_usd")}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    <span>USD Value</span>
-                    {getSortIcon("value_usd", sortField, sortOrder)}
-                  </div>
-                </TableHead>
-              )}
-              {isColumnVisible('notes') && (
-                <TableHead className="text-center w-10">
-                  Notes
-                </TableHead>
-              )}
-              <TableHead className="text-right">
+              </th>
+              <DndColumnProvider items={orderedVisibleColumns} onReorder={handleReorder}>
+                {orderedVisibleColumns.map((colId) => headerMap[colId])}
+              </DndColumnProvider>
+              <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground">
                 Actions
-              </TableHead>
+              </th>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -405,6 +438,195 @@ export function PlannedDisbursementsTable({
               const isSelected = selectedIds?.has(disbursementId) || false;
               const activityTitle = disbursement.activity?.title_narrative || disbursement.activity?.title || 'Untitled Activity';
               const hasNotes = !!(disbursement.notes || disbursement.description);
+
+              // Build cell map
+              const cellMap: Record<PlannedDisbursementColumnId, React.ReactNode> = {
+                activity: (
+                  <td key="activity" className="py-3 px-4">
+                    <div className="space-y-0.5">
+                      <div className="text-sm font-medium text-foreground line-clamp-2">
+                        {activityTitle}
+                      </div>
+                      {disbursement.activity?.iati_identifier && (
+                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
+                          {disbursement.activity.iati_identifier}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                ),
+                periodStart: (
+                  <td key="periodStart" className="py-3 px-4 whitespace-nowrap">
+                    {formatDate(disbursement.period_start)}
+                  </td>
+                ),
+                periodEnd: (
+                  <td key="periodEnd" className="py-3 px-4 whitespace-nowrap">
+                    {formatDate(disbursement.period_end)}
+                  </td>
+                ),
+                type: (
+                  <td key="type" className="py-3 px-4 whitespace-nowrap">
+                    {disbursement.type ? (
+                      <Badge variant="outline" className="bg-muted/50">
+                        {getDisbursementTypeLabel(disbursement.type)}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </td>
+                ),
+                providerReceiver: (
+                  <td key="providerReceiver" className="py-3 px-4">
+                    {(() => {
+                      const providerDisplay = disbursement.provider_org_acronym || disbursement.provider_org_name || '—';
+                      const receiverDisplay = disbursement.receiver_org_acronym || disbursement.receiver_org_name || '—';
+
+                      return (
+                        <div className="text-sm font-medium text-foreground">
+                          <div className="flex items-start gap-2">
+                            {/* Provider */}
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-1">
+                                <OrganizationLogo
+                                  logo={(disbursement as any).provider_org_logo}
+                                  name={providerDisplay}
+                                  size="sm"
+                                />
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-sm">
+                                      {providerDisplay}
+                                    </span>
+                                  </TooltipTrigger>
+                                  {disbursement.provider_org_ref && (
+                                    <TooltipContent side="top">
+                                      <p className="text-xs">{disbursement.provider_org_ref}</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </div>
+                              {disbursement.provider_activity && (
+                                <div className="text-xs text-muted-foreground ml-5">
+                                  {disbursement.provider_activity.title_narrative || disbursement.provider_activity.title}
+                                </div>
+                              )}
+                            </div>
+
+                            <span className="text-muted-foreground mt-1">→</span>
+
+                            {/* Receiver */}
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-1">
+                                <OrganizationLogo
+                                  logo={(disbursement as any).receiver_org_logo}
+                                  name={receiverDisplay}
+                                  size="sm"
+                                />
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-sm">
+                                      {receiverDisplay}
+                                    </span>
+                                  </TooltipTrigger>
+                                  {disbursement.receiver_org_ref && (
+                                    <TooltipContent side="top">
+                                      <p className="text-xs">{disbursement.receiver_org_ref}</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </div>
+                              {disbursement.receiver_activity && (
+                                <div className="text-xs text-muted-foreground ml-5">
+                                  {disbursement.receiver_activity.title_narrative || disbursement.receiver_activity.title}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </td>
+                ),
+                amount: (
+                  <td key="amount" className="py-3 px-4 text-right whitespace-nowrap">
+                    {(() => {
+                      // Use amount (database field) or value (legacy/API field) - prefer amount
+                      const amountValue = disbursement.amount ?? disbursement.value;
+
+                      if (amountValue != null && disbursement.currency) {
+                        return (
+                          <div className="font-medium">
+                            <span className="text-muted-foreground text-xs">{disbursement.currency.toUpperCase()}</span>{' '}
+                            {new Intl.NumberFormat("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }).format(amountValue)}
+                          </div>
+                        );
+                      }
+                      return <span className="text-muted-foreground">—</span>;
+                    })()}
+                  </td>
+                ),
+                valueDate: (
+                  <td key="valueDate" className="py-3 px-4 whitespace-nowrap">
+                    {formatDate(disbursement.value_date)}
+                  </td>
+                ),
+                valueUsd: (
+                  <td key="valueUsd" className="py-3 px-4 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1">
+                      {usdValues[disbursement.id]?.loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                      ) : usdValues[disbursement.id]?.usd != null ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="font-medium cursor-help">
+                                {formatCurrency(usdValues[disbursement.id].usd!, 'USD')}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div>
+                                <div>Original: {disbursement.amount ?? disbursement.value} {disbursement.currency}</div>
+                                {usdValues[disbursement.id].rate && (
+                                  <div>Rate: {usdValues[disbursement.id].rate}</div>
+                                )}
+                                {usdValues[disbursement.id].date && (
+                                  <div>Date: {usdValues[disbursement.id].date}</div>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </div>
+                  </td>
+                ),
+                notes: (
+                  <td key="notes" className="py-3 px-4 text-center">
+                    {hasNotes && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="inline-flex items-center justify-center">
+                              <NotepadText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-md text-left">
+                          <p className="text-xs whitespace-pre-wrap break-words text-left">
+                            {disbursement.notes || disbursement.description || 'Has notes'}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  </td>
+                ),
+              };
 
               return (
                 <React.Fragment key={disbursement.id}>
@@ -444,208 +666,7 @@ export function PlannedDisbursementsTable({
                       )}
                     </td>
 
-                    {/* Activity */}
-                    {isColumnVisible('activity') && (
-                      <td className="py-3 px-4">
-                        <div className="space-y-0.5">
-                          <div className="text-sm font-medium text-foreground line-clamp-2">
-                            {activityTitle}
-                          </div>
-                          {disbursement.activity?.iati_identifier && (
-                            <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
-                              {disbursement.activity.iati_identifier}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    )}
-
-                    {/* Start Date */}
-                    {isColumnVisible('periodStart') && (
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        {formatDate(disbursement.period_start)}
-                      </td>
-                    )}
-
-                    {/* End Date */}
-                    {isColumnVisible('periodEnd') && (
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        {formatDate(disbursement.period_end)}
-                      </td>
-                    )}
-
-                    {/* Type */}
-                    {isColumnVisible('type') && (
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        {disbursement.type ? (
-                          <Badge variant="outline" className="bg-muted/50">
-                            {getDisbursementTypeLabel(disbursement.type)}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
-                        )}
-                      </td>
-                    )}
-
-                    {/* Provider / Receiver */}
-                    {isColumnVisible('providerReceiver') && (
-                      <td className="py-3 px-4">
-                        {(() => {
-                          const providerDisplay = disbursement.provider_org_acronym || disbursement.provider_org_name || '—';
-                          const receiverDisplay = disbursement.receiver_org_acronym || disbursement.receiver_org_name || '—';
-
-                          return (
-                            <div className="text-sm font-medium text-foreground">
-                              <div className="flex items-start gap-2">
-                                {/* Provider */}
-                                <div className="flex flex-col gap-0.5">
-                                  <div className="flex items-center gap-1">
-                                    <OrganizationLogo
-                                      logo={disbursement.provider_org_logo}
-                                      name={providerDisplay}
-                                      size="sm"
-                                    />
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="text-sm">
-                                          {providerDisplay}
-                                        </span>
-                                      </TooltipTrigger>
-                                      {disbursement.provider_org_ref && (
-                                        <TooltipContent side="top">
-                                          <p className="text-xs">{disbursement.provider_org_ref}</p>
-                                        </TooltipContent>
-                                      )}
-                                    </Tooltip>
-                                  </div>
-                                  {disbursement.provider_activity && (
-                                    <div className="text-xs text-muted-foreground ml-5">
-                                      {disbursement.provider_activity.title_narrative || disbursement.provider_activity.title}
-                                    </div>
-                                  )}
-                                </div>
-
-                                <span className="text-muted-foreground mt-1">→</span>
-
-                                {/* Receiver */}
-                                <div className="flex flex-col gap-0.5">
-                                  <div className="flex items-center gap-1">
-                                    <OrganizationLogo
-                                      logo={disbursement.receiver_org_logo}
-                                      name={receiverDisplay}
-                                      size="sm"
-                                    />
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="text-sm">
-                                          {receiverDisplay}
-                                        </span>
-                                      </TooltipTrigger>
-                                      {disbursement.receiver_org_ref && (
-                                        <TooltipContent side="top">
-                                          <p className="text-xs">{disbursement.receiver_org_ref}</p>
-                                        </TooltipContent>
-                                      )}
-                                    </Tooltip>
-                                  </div>
-                                  {disbursement.receiver_activity && (
-                                    <div className="text-xs text-muted-foreground ml-5">
-                                      {disbursement.receiver_activity.title_narrative || disbursement.receiver_activity.title}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </td>
-                    )}
-
-                    {/* Amount */}
-                    {isColumnVisible('amount') && (
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        {(() => {
-                          // Use amount (database field) or value (legacy/API field) - prefer amount
-                          const amountValue = disbursement.amount ?? disbursement.value;
-                          
-                          if (amountValue != null && disbursement.currency) {
-                            return (
-                              <div className="font-medium">
-                                <span className="text-muted-foreground text-xs">{disbursement.currency.toUpperCase()}</span>{' '}
-                                {new Intl.NumberFormat("en-US", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                }).format(amountValue)}
-                              </div>
-                            );
-                          }
-                          return <span className="text-muted-foreground">—</span>;
-                        })()}
-                      </td>
-                    )}
-
-                    {/* Value Date */}
-                    {isColumnVisible('valueDate') && (
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        {formatDate(disbursement.value_date)}
-                      </td>
-                    )}
-
-                    {/* USD Value */}
-                    {isColumnVisible('valueUsd') && (
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1">
-                          {usdValues[disbursement.id]?.loading ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                          ) : usdValues[disbursement.id]?.usd != null ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="font-medium cursor-help">
-                                    {formatCurrency(usdValues[disbursement.id].usd!, 'USD')}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div>
-                                    <div>Original: {disbursement.amount ?? disbursement.value} {disbursement.currency}</div>
-                                    {usdValues[disbursement.id].rate && (
-                                      <div>Rate: {usdValues[disbursement.id].rate}</div>
-                                    )}
-                                    {usdValues[disbursement.id].date && (
-                                      <div>Date: {usdValues[disbursement.id].date}</div>
-                                    )}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </div>
-                      </td>
-                    )}
-
-                    {/* Notes Icon */}
-                    {isColumnVisible('notes') && (
-                      <td className="py-3 px-4 text-center">
-                        {hasNotes && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="inline-flex items-center justify-center">
-                                  <NotepadText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-md text-left">
-                              <p className="text-xs whitespace-pre-wrap break-words text-left">
-                                {disbursement.notes || disbursement.description || 'Has notes'}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                      </td>
-                    )}
+                    {orderedVisibleColumns.map((colId) => cellMap[colId])}
 
                     {/* Actions */}
                     <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>

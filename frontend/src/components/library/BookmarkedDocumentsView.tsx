@@ -16,7 +16,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
-  Grid3X3,
+  LayoutGrid,
   TableIcon,
   RefreshCw,
 } from 'lucide-react';
@@ -191,7 +191,7 @@ export function BookmarkedDocumentsView({
               className="rounded-r-none"
               onClick={() => setViewMode('card')}
             >
-              <Grid3X3 className="h-4 w-4" />
+              <LayoutGrid className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'table' ? 'secondary' : 'ghost'}

@@ -250,6 +250,11 @@ export const defaultVisibleActivityColumns: ActivityColumnId[] = activityColumns
 export const ACTIVITY_COLUMNS_LOCALSTORAGE_KEY = "aims_activity_list_visible_columns";
 
 /**
+ * localStorage key for persisting column order
+ */
+export const ACTIVITY_COLUMN_ORDER_LOCALSTORAGE_KEY = "aims_activity_list_column_order";
+
+/**
  * Column descriptions lookup map for tooltips
  */
 export const columnDescriptions: Record<ActivityColumnId, string> = Object.fromEntries(

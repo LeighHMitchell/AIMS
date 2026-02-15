@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Link2, Plus, X, ExternalLink } from 'lucide-react';
+import { Search, Link2, Plus, X, ExternalLink, LayoutGrid, Table as TableIcon } from 'lucide-react';
 import ActivityCard from './ActivityCard';
 import LinkedActivityModal from './LinkedActivityModal';
 import { apiFetch } from '@/lib/api-fetch';
@@ -286,7 +286,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
               </h3>
               <div className="bg-white rounded-lg shadow overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-surface-muted">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Activity Title
@@ -486,23 +486,25 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode('card')}
-            className={`px-3 py-1 rounded ${
-              viewMode === 'card' 
-                ? 'bg-blue-600 text-white' 
+            className={`px-3 py-1.5 rounded-l-md flex items-center gap-1 ${
+              viewMode === 'card'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-700'
             }`}
           >
-            Card View
+            <LayoutGrid className="h-4 w-4" />
+            Card
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`px-3 py-1 rounded ${
-              viewMode === 'list' 
-                ? 'bg-blue-600 text-white' 
+            className={`px-3 py-1.5 rounded-r-md flex items-center gap-1 ${
+              viewMode === 'list'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-700'
             }`}
           >
-            List View
+            <TableIcon className="h-4 w-4" />
+            Table
           </button>
         </div>
       </div>

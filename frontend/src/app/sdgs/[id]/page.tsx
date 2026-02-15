@@ -15,7 +15,7 @@ import {
   Download,
   AlertCircle,
   LayoutGrid,
-  List,
+  Table as TableIcon,
   ExternalLink,
   MapPin,
 } from 'lucide-react'
@@ -847,7 +847,7 @@ export default function SDGProfilePage() {
                       onClick={() => setActivityView('table')}
                       className={`p-1.5 ${activityView === 'table' ? 'bg-slate-100' : 'bg-white'}`}
                     >
-                      <List className="h-3.5 w-3.5 text-slate-600" />
+                      <TableIcon className="h-3.5 w-3.5 text-slate-600" />
                     </button>
                   </div>
                 </div>

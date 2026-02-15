@@ -291,14 +291,15 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
           <DialogTitle>Add Document to Library</DialogTitle>
           <DialogDescription>
             Upload a file or add an external URL to the document library.
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto px-6 py-4">
         <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as 'upload' | 'url')}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="upload">
@@ -509,7 +510,8 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
           </div>
         </div>
 
-        <DialogFooter className="mt-6">
+        </div>
+        <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
