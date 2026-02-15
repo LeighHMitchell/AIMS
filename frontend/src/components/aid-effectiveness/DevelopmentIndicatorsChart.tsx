@@ -46,8 +46,8 @@ interface DevelopmentIndicatorsChartProps {
   refreshKey: number
 }
 
-const INDICATOR_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444']
-const OUTCOME_COLORS = ['#dc2626', '#ea580c', '#ca8a04', '#16a34a', '#059669']
+const INDICATOR_COLORS = ['#0f172a', '#334155', '#475569', '#64748b', '#94a3b8']
+const OUTCOME_COLORS = ['#0f172a', '#334155', '#475569', '#64748b', '#94a3b8']
 
 export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: DevelopmentIndicatorsChartProps) {
   const [indicators, setIndicators] = useState<DevelopmentIndicatorData[]>([])
@@ -99,10 +99,10 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
       return (
         <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
           <p className="font-semibold text-slate-900">{data.indicatorName}</p>
-          <p className="text-sm text-green-600">
+          <p className="text-sm text-slate-800">
             Yes: {data.yes_count} ({data.yes_percentage}%)
           </p>
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-slate-500">
             No: {data.no_count} ({100 - data.yes_percentage}%)
           </p>
           <p className="text-xs text-slate-500 mt-1">
@@ -146,41 +146,41 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
       {/* Summary Statistics */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-800">Most Adopted</p>
-                  <p className="text-lg font-bold text-green-900">{summary.most_adopted?.indicatorName}</p>
-                  <p className="text-sm text-green-700">{summary.most_adopted?.yes_percentage}% compliance</p>
+                  <p className="text-sm font-medium text-slate-600">Most Adopted</p>
+                  <p className="text-lg font-bold text-slate-900">{summary.most_adopted?.indicatorName}</p>
+                  <p className="text-sm text-slate-500">{summary.most_adopted?.yes_percentage}% compliance</p>
                 </div>
-                <CheckCircle2 className="h-6 w-6 text-green-600" />
+                <CheckCircle2 className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-red-800">Least Adopted</p>
-                  <p className="text-lg font-bold text-red-900">{summary.least_adopted?.indicatorName}</p>
-                  <p className="text-sm text-red-700">{summary.least_adopted?.yes_percentage}% compliance</p>
+                  <p className="text-sm font-medium text-slate-600">Least Adopted</p>
+                  <p className="text-lg font-bold text-slate-900">{summary.least_adopted?.indicatorName}</p>
+                  <p className="text-sm text-slate-500">{summary.least_adopted?.yes_percentage}% compliance</p>
                 </div>
-                <XCircle className="h-6 w-6 text-red-600" />
+                <XCircle className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-800">Average Compliance</p>
-                  <p className="text-lg font-bold text-blue-900">{summary.avg_yes_percentage}%</p>
-                  <p className="text-sm text-blue-700">Across all indicators</p>
+                  <p className="text-sm font-medium text-slate-600">Average Compliance</p>
+                  <p className="text-lg font-bold text-slate-900">{summary.avg_yes_percentage}%</p>
+                  <p className="text-sm text-slate-500">Across all indicators</p>
                 </div>
-                <Target className="h-6 w-6 text-blue-600" />
+                <Target className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
@@ -192,7 +192,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
         <Card className="bg-white border-slate-200">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-blue-600" />
+              <BarChart3 className="h-5 w-5 text-slate-500" />
               Development Effectiveness Indicators
             </CardTitle>
           </CardHeader>
@@ -236,7 +236,7 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
         <Card className="bg-white border-slate-200">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
-              <Target className="h-5 w-5 text-purple-600" />
+              <Target className="h-5 w-5 text-slate-500" />
               Outcome Indicators Distribution
             </CardTitle>
           </CardHeader>
@@ -282,12 +282,12 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
                 <div className="flex-1">
                   <h4 className="font-medium text-slate-900">{indicator.indicatorName}</h4>
                   <div className="flex items-center gap-4 mt-2 text-sm">
-                    <div className="flex items-center gap-1 text-green-600">
-                      <CheckCircle2 className="h-4 w-4" />
+                    <div className="flex items-center gap-1 text-slate-800">
+                      <CheckCircle2 className="h-4 w-4 text-slate-500" />
                       <span>{indicator.yes_count} Yes ({indicator.yes_percentage}%)</span>
                     </div>
-                    <div className="flex items-center gap-1 text-red-600">
-                      <XCircle className="h-4 w-4" />
+                    <div className="flex items-center gap-1 text-slate-500">
+                      <XCircle className="h-4 w-4 text-slate-400" />
                       <span>{indicator.no_count} No ({100 - indicator.yes_percentage}%)</span>
                     </div>
                   </div>
@@ -296,9 +296,9 @@ export function DevelopmentIndicatorsChart({ dateRange, filters, refreshKey }: D
                   <Badge 
                     variant={indicator.yes_percentage >= 70 ? "default" : indicator.yes_percentage >= 50 ? "secondary" : "destructive"}
                     className={
-                      indicator.yes_percentage >= 70 ? "bg-green-100 text-green-800" :
-                      indicator.yes_percentage >= 50 ? "bg-yellow-100 text-yellow-800" :
-                      "bg-red-100 text-red-800"
+                      indicator.yes_percentage >= 70 ? "bg-slate-200 text-slate-800" :
+                      indicator.yes_percentage >= 50 ? "bg-slate-100 text-slate-700" :
+                      "bg-slate-100 text-slate-500"
                     }
                   >
                     {indicator.yes_percentage >= 70 ? 'Excellent' : 

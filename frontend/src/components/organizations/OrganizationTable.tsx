@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -20,11 +20,18 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
   getSortIcon,
 } from "@/components/ui/table";
+import { SortableTableHeader } from "@/components/ui/sortable-table-header";
+import { DndColumnProvider } from "@/components/ui/dnd-column-provider";
+import { useColumnOrder } from "@/hooks/use-column-order";
+import {
+  organizationColumns,
+  OrganizationColumnId,
+  ORGANIZATION_COLUMN_ORDER_LOCALSTORAGE_KEY,
+} from "@/app/organizations/columns";
 
 type Organization = {
   id: string;
@@ -122,28 +129,28 @@ const getOrganizationTypeLabel = (
 const getTypeInlineColors = (typeCode: string | undefined): string => {
   if (!typeCode) return 'bg-[#f1f4f8] text-[#7b95a7]'; // Platinum / Cool Steel
   const code = parseInt(typeCode);
-  
+
   // Government (10, 11, 15) - Pale Slate bg, Blue Slate text (solid, official)
   if (code === 10 || code === 11 || code === 15) return 'bg-[#cfd0d5] text-[#4c5568]';
-  
+
   // NGO (21, 22, 23, 24) - Platinum bg, Blue Slate text (clean)
   if (code >= 21 && code <= 24) return 'bg-[#f1f4f8] text-[#4c5568]';
-  
+
   // Partnership (30) - Platinum bg, Cool Steel text (collaborative)
   if (code === 30) return 'bg-[#f1f4f8] text-[#7b95a7]';
-  
+
   // Multilateral (40) - Pale Slate bg, Blue Slate text (prominent)
   if (code === 40) return 'bg-[#cfd0d5] text-[#4c5568]';
-  
+
   // Foundation (60) - Platinum bg, Cool Steel text (gentle)
   if (code === 60) return 'bg-[#f1f4f8] text-[#7b95a7]';
-  
+
   // Private Sector (70, 71, 72, 73) - Pale Slate bg, Blue Slate text (business-like)
   if (code >= 70 && code <= 73) return 'bg-[#cfd0d5] text-[#4c5568]';
-  
+
   // Academic (80) - Pale Slate bg, Cool Steel text (scholarly)
   if (code === 80) return 'bg-[#cfd0d5] text-[#7b95a7]';
-  
+
   // Other (90) and unknown - Platinum bg, Cool Steel text (neutral)
   return 'bg-[#f1f4f8] text-[#7b95a7]';
 };
@@ -162,6 +169,13 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
   const router = useRouter();
   const { isBookmarked, toggleBookmark } = useOrganizationBookmarks();
 
+  const { getOrderedVisibleColumns, handleReorder } = useColumnOrder<OrganizationColumnId>({
+    storageKey: ORGANIZATION_COLUMN_ORDER_LOCALSTORAGE_KEY,
+    columns: organizationColumns,
+  });
+
+  const allColumnIds = useMemo(() => organizationColumns.map((c) => c.id), []);
+  const orderedColumns = getOrderedVisibleColumns(allColumnIds);
 
   const handleRowClick = (orgId: string, e: React.MouseEvent) => {
     // Don't navigate if clicking on action buttons
@@ -180,100 +194,136 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
     );
   }
 
+  // Build header map
+  const headerMap: Record<OrganizationColumnId, React.ReactNode> = {
+    name: (
+      <SortableTableHeader
+        key="name"
+        id="name"
+        className="cursor-pointer hover:bg-muted/80 transition-colors w-[28%]"
+        onClick={() => onSort('name')}
+      >
+        <div className="flex items-center gap-1">
+          <span>Organization Name</span>
+          {getSortIcon('name', sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    type: (
+      <SortableTableHeader
+        key="type"
+        id="type"
+        className="cursor-pointer hover:bg-muted/80 transition-colors w-[13%]"
+        onClick={() => onSort('type')}
+      >
+        <div className="flex items-center gap-1">
+          <span>Type</span>
+          {getSortIcon('type', sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    location: (
+      <SortableTableHeader
+        key="location"
+        id="location"
+        className="cursor-pointer hover:bg-muted/80 transition-colors w-[12%]"
+        onClick={() => onSort('location')}
+      >
+        <div className="flex items-center gap-1">
+          <span>Location</span>
+          {getSortIcon('location', sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    residency: (
+      <SortableTableHeader
+        key="residency"
+        id="residency"
+        className="cursor-pointer hover:bg-muted/80 transition-colors w-[8%]"
+        onClick={() => onSort('residency')}
+      >
+        <div className="flex items-center gap-1">
+          <span>Residency</span>
+          {getSortIcon('residency', sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    reported: (
+      <SortableTableHeader
+        key="reported"
+        id="reported"
+        className="text-center cursor-pointer hover:bg-muted/80 transition-colors w-[7%]"
+        onClick={() => onSort('reported')}
+      >
+        <div className="flex items-center justify-center gap-1">
+          <span>Reported</span>
+          {getSortIcon('reported', sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    associated: (
+      <SortableTableHeader
+        key="associated"
+        id="associated"
+        className="text-center cursor-pointer hover:bg-muted/80 transition-colors w-[9%]"
+        onClick={() => onSort('providerReceiver')}
+      >
+        <div className="flex items-center justify-center gap-1">
+          <span>Provider/Receiver</span>
+          {getSortIcon('providerReceiver', sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    funding: (
+      <SortableTableHeader
+        key="funding"
+        id="funding"
+        className="text-right cursor-pointer hover:bg-muted/80 transition-colors w-[13%]"
+        onClick={() => onSort('funding')}
+      >
+        <div className="flex items-center justify-end gap-1">
+          <span>Funding</span>
+          {getSortIcon('funding', sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+    created_at: (
+      <SortableTableHeader
+        key="created_at"
+        id="created_at"
+        className="cursor-pointer hover:bg-muted/80 transition-colors w-[12%]"
+        onClick={() => onSort('created_at')}
+      >
+        <div className="flex items-center gap-1">
+          <span>Date Created</span>
+          {getSortIcon('created_at', sortField, sortOrder)}
+        </div>
+      </SortableTableHeader>
+    ),
+  };
+
   return (
     <div className="bg-white rounded-md shadow-sm border border-gray-200">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/80 transition-colors w-[28%]"
-                onClick={() => onSort('name')}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Organization Name</span>
-                  {getSortIcon('name', sortField, sortOrder)}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/80 transition-colors w-[13%]"
-                onClick={() => onSort('type')}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Type</span>
-                  {getSortIcon('type', sortField, sortOrder)}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/80 transition-colors w-[12%]"
-                onClick={() => onSort('location')}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Location</span>
-                  {getSortIcon('location', sortField, sortOrder)}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/80 transition-colors w-[8%]"
-                onClick={() => onSort('residency')}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Residency</span>
-                  {getSortIcon('residency', sortField, sortOrder)}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-center cursor-pointer hover:bg-muted/80 transition-colors w-[7%]"
-                onClick={() => onSort('reported')}
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>Reported</span>
-                  {getSortIcon('reported', sortField, sortOrder)}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-center cursor-pointer hover:bg-muted/80 transition-colors w-[9%]"
-                onClick={() => onSort('providerReceiver')}
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <span>Provider/Receiver</span>
-                  {getSortIcon('providerReceiver', sortField, sortOrder)}
-                </div>
-              </TableHead>
-              <TableHead
-                className="text-right cursor-pointer hover:bg-muted/80 transition-colors w-[13%]"
-                onClick={() => onSort('funding')}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>Funding</span>
-                  {getSortIcon('funding', sortField, sortOrder)}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/80 transition-colors w-[12%]"
-                onClick={() => onSort('created_at')}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Date Created</span>
-                  {getSortIcon('created_at', sortField, sortOrder)}
-                </div>
-              </TableHead>
-              <TableHead className="text-right w-[13%]">
+              <DndColumnProvider items={orderedColumns} onReorder={handleReorder}>
+                {orderedColumns.map((colId) => headerMap[colId])}
+              </DndColumnProvider>
+              <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground w-[13%]">
                 Actions
-              </TableHead>
+              </th>
             </TableRow>
           </TableHeader>
           <TableBody>
             {organizations.map((org) => {
               const typeLabel = getOrganizationTypeLabel(org.Organisation_Type_Code, availableTypes);
 
-              return (
-                <TableRow
-                  key={org.id}
-                  className="group hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={(e) => handleRowClick(org.id, e)}
-                >
-                  <TableCell className="px-4 py-3 text-sm text-foreground">
+              // Build cell map
+              const cellMap: Record<OrganizationColumnId, React.ReactNode> = {
+                name: (
+                  <TableCell key="name" className="px-4 py-3 text-sm text-foreground">
                     <div className="flex items-start gap-3">
                       {/* Logo */}
                       <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
@@ -291,7 +341,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                           <Building2 className="h-8 w-8 text-gray-400" />
                         )}
                       </div>
-                      
+
                       {/* Name, Acronym, and IATI ID */}
                       <div className="flex-1 min-w-0">
                         <TooltipProvider>
@@ -349,12 +399,16 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-foreground">
+                ),
+                type: (
+                  <TableCell key="type" className="px-4 py-3 text-sm text-foreground">
                     <span className="text-sm text-gray-700">
                       {typeLabel}
                     </span>
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-foreground">
+                ),
+                location: (
+                  <TableCell key="location" className="px-4 py-3 text-sm text-foreground">
                     {org.country_represented ? (
                       <div className="flex items-start gap-2">
                         {org.country_represented === 'United Nations' ? (
@@ -383,19 +437,25 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                       '-'
                     )}
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-foreground">
+                ),
+                residency: (
+                  <TableCell key="residency" className="px-4 py-3 text-sm text-foreground">
                     {org.residency_status ? (
                       <span>{org.residency_status === 'resident' ? 'Resident' : 'Non-Resident'}</span>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-foreground text-center">
+                ),
+                reported: (
+                  <TableCell key="reported" className="px-4 py-3 text-sm text-foreground text-center">
                     <span className="font-medium">
                       {org.reportedActivities ?? org.activeProjects ?? 0}
                     </span>
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-foreground text-center">
+                ),
+                associated: (
+                  <TableCell key="associated" className="px-4 py-3 text-sm text-foreground text-center">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -418,7 +478,9 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                       </Tooltip>
                     </TooltipProvider>
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-foreground text-right font-medium">
+                ),
+                funding: (
+                  <TableCell key="funding" className="px-4 py-3 text-sm text-foreground text-right font-medium">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -434,11 +496,23 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                       </Tooltip>
                     </TooltipProvider>
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-foreground">
+                ),
+                created_at: (
+                  <TableCell key="created_at" className="px-4 py-3 text-sm text-foreground">
                     <span className="text-muted-foreground">
                       {formatDate(org.created_at)}
                     </span>
                   </TableCell>
+                ),
+              };
+
+              return (
+                <TableRow
+                  key={org.id}
+                  className="group hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={(e) => handleRowClick(org.id, e)}
+                >
+                  {orderedColumns.map((colId) => cellMap[colId])}
                   <TableCell className="px-4 py-3 text-sm text-foreground text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end">
                       <OrganizationActionMenu
@@ -462,4 +536,3 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
     </div>
   );
 };
-

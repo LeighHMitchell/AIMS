@@ -43,12 +43,12 @@ interface ImplementingPartnersChartProps {
 }
 
 const PARTNER_TYPE_COLORS = {
-  'Government': '#3b82f6',
-  'NGO': '#10b981',
-  'Private Sector': '#8b5cf6',
-  'International Organization': '#f59e0b',
-  'Academic Institution': '#06b6d4',
-  'Unknown': '#64748b'
+  'Government': '#0f172a',
+  'NGO': '#334155',
+  'Private Sector': '#475569',
+  'International Organization': '#64748b',
+  'Academic Institution': '#94a3b8',
+  'Unknown': '#cbd5e1'
 }
 
 export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: ImplementingPartnersChartProps) {
@@ -104,9 +104,9 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
             <p>Activities: {data.activity_count}</p>
             <p>Budget: ${(data.total_budget / 1000000).toFixed(1)}M</p>
             <p>Avg Outcome Indicators: {data.avg_outcome_indicators}</p>
-            <p className="text-blue-600">Gov Systems Usage: {data.gov_systems_usage_rate}%</p>
-            <p className="text-green-600">GPEDC Compliance: {data.gpedc_compliance_rate}%</p>
-            <p className="text-orange-600">Untied Aid: {100 - data.tied_aid_percentage}%</p>
+            <p className="text-slate-700">Gov Systems Usage: {data.gov_systems_usage_rate}%</p>
+            <p className="text-slate-700">GPEDC Compliance: {data.gpedc_compliance_rate}%</p>
+            <p className="text-slate-700">Untied Aid: {100 - data.tied_aid_percentage}%</p>
           </div>
         </div>
       )
@@ -167,7 +167,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
       {/* Controls */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-blue-600" />
+          <Users className="h-5 w-5 text-slate-500" />
           <h3 className="text-lg font-semibold text-slate-900">Implementing Partners Analysis</h3>
         </div>
         
@@ -202,51 +202,51 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
       {/* Summary Statistics */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-800">Total Partners</p>
-                  <p className="text-2xl font-bold text-blue-900">{summary.total_partners}</p>
+                  <p className="text-sm font-medium text-slate-600">Total Partners</p>
+                  <p className="text-2xl font-bold text-slate-900">{summary.total_partners}</p>
                 </div>
-                <Users className="h-6 w-6 text-blue-600" />
+                <Users className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-800">Avg Compliance</p>
-                  <p className="text-2xl font-bold text-green-900">{summary.avg_compliance_rate}%</p>
+                  <p className="text-sm font-medium text-slate-600">Avg Compliance</p>
+                  <p className="text-2xl font-bold text-slate-900">{summary.avg_compliance_rate}%</p>
                 </div>
-                <Target className="h-6 w-6 text-green-600" />
+                <Target className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-purple-800">Avg Gov Systems</p>
-                  <p className="text-2xl font-bold text-purple-900">{summary.avg_gov_systems_usage}%</p>
+                  <p className="text-sm font-medium text-slate-600">Avg Gov Systems</p>
+                  <p className="text-2xl font-bold text-slate-900">{summary.avg_gov_systems_usage}%</p>
                 </div>
-                <Building2 className="h-6 w-6 text-purple-600" />
+                <Building2 className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-orange-800">Most Active</p>
-                  <p className="text-sm font-bold text-orange-900">{summary.most_active?.partner_name}</p>
-                  <p className="text-xs text-orange-700">{summary.most_active?.activity_count} activities</p>
+                  <p className="text-sm font-medium text-slate-600">Most Active</p>
+                  <p className="text-sm font-bold text-slate-900">{summary.most_active?.partner_name}</p>
+                  <p className="text-xs text-slate-500">{summary.most_active?.activity_count} activities</p>
                 </div>
-                <TrendingUp className="h-6 w-6 text-orange-600" />
+                <TrendingUp className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
@@ -342,8 +342,8 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
                         <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
                           <p className="font-semibold text-slate-900">{data.partner_name}</p>
                           <p className="text-xs text-slate-600 mb-1">{data.partner_type}</p>
-                          <p className="text-sm text-blue-600">Gov Systems: {data.x}%</p>
-                          <p className="text-sm text-green-600">GPEDC Compliance: {data.y}%</p>
+                          <p className="text-sm text-slate-700">Gov Systems: {data.x}%</p>
+                          <p className="text-sm text-slate-700">GPEDC Compliance: {data.y}%</p>
                           <p className="text-xs text-slate-500">Activities: {data.z}</p>
                         </div>
                       )
@@ -353,7 +353,7 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
                 />
                 <Scatter 
                   data={scatterData} 
-                  fill="#3b82f6"
+                  fill="#475569"
                 >
                   {scatterData.map((entry, index) => (
                     <Cell 
@@ -443,18 +443,18 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
                 <div className="flex items-center gap-4">
                   <div className="text-center">
                     <p className="text-sm text-slate-600">Gov Systems</p>
-                    <p className="text-lg font-bold text-blue-600">{partner.gov_systems_usage_rate}%</p>
+                    <p className="text-lg font-bold text-slate-700">{partner.gov_systems_usage_rate}%</p>
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-slate-600">GPEDC</p>
-                    <p className="text-lg font-bold text-green-600">{partner.gpedc_compliance_rate}%</p>
+                    <p className="text-lg font-bold text-slate-700">{partner.gpedc_compliance_rate}%</p>
                   </div>
                   <Badge 
                     variant={partner.gpedc_compliance_rate >= 80 ? "default" : partner.gpedc_compliance_rate >= 60 ? "secondary" : "destructive"}
                     className={
-                      partner.gpedc_compliance_rate >= 80 ? "bg-green-100 text-green-800" :
-                      partner.gpedc_compliance_rate >= 60 ? "bg-yellow-100 text-yellow-800" :
-                      "bg-red-100 text-red-800"
+                      partner.gpedc_compliance_rate >= 80 ? "bg-slate-200 text-slate-800" :
+                      partner.gpedc_compliance_rate >= 60 ? "bg-slate-100 text-slate-700" :
+                      "bg-slate-100 text-slate-500"
                     }
                   >
                     {partner.gpedc_compliance_rate >= 80 ? 'Excellent' : 
@@ -469,26 +469,26 @@ export function ImplementingPartnersChart({ dateRange, filters, refreshKey }: Im
 
       {/* Top Performers */}
       {summary && summary.best_performer && (
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
           <CardHeader>
-            <CardTitle className="text-lg font-medium text-green-800 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
+            <CardTitle className="text-lg font-medium text-slate-800 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-slate-500" />
               Top Performer
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-green-900">{summary.best_performer.partner_name}</p>
-                <p className="text-sm text-green-700">{summary.best_performer.partner_type}</p>
-                <div className="flex items-center gap-4 mt-2 text-sm text-green-600">
+                <p className="font-semibold text-slate-900">{summary.best_performer.partner_name}</p>
+                <p className="text-sm text-slate-600">{summary.best_performer.partner_type}</p>
+                <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
                   <span>GPEDC: {summary.best_performer.gpedc_compliance_rate}%</span>
                   <span>Gov Systems: {summary.best_performer.gov_systems_usage_rate}%</span>
                   <span>Activities: {summary.best_performer.activity_count}</span>
                 </div>
               </div>
               <div className="text-right">
-                <Badge className="bg-green-200 text-green-800">Excellence</Badge>
+                <Badge className="bg-slate-200 text-slate-800">Excellence</Badge>
               </div>
             </div>
           </CardContent>

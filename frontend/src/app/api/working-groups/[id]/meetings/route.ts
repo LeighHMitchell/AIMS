@@ -66,6 +66,8 @@ export async function POST(
         start_time: body.start_time || null,
         end_time: body.end_time || null,
         location: body.location || null,
+        latitude: body.latitude ?? null,
+        longitude: body.longitude ?? null,
         agenda: body.agenda || null,
         status: 'scheduled',
         created_by: user?.id || null,

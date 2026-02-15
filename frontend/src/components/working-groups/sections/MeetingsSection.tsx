@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,10 +26,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Calendar, Plus, Trash2, FileText, Upload, Download, Pencil, X, Loader2 } from 'lucide-react'
+import { Calendar, Plus, Trash2, FileText, Upload, Download, Pencil, X, Loader2, MapPin } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+
+// Dynamic import LocationPicker (uses MapLibre GL which needs window)
+const LocationPicker = dynamic(
+  () => import('./LocationPicker'),
+  { ssr: false, loading: () => <div className="h-[280px] bg-gray-100 rounded-lg animate-pulse" /> }
+)
 
 interface Meeting {
   id: string
@@ -37,6 +44,8 @@ interface Meeting {
   start_time?: string
   end_time?: string
   location?: string
+  latitude?: number | null
+  longitude?: number | null
   agenda?: string
   minutes?: string
   status: 'scheduled' | 'completed' | 'cancelled'
@@ -49,12 +58,6 @@ interface MeetingDocument {
   file_url: string
   document_type: string
   uploaded_at: string
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  scheduled: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
 }
 
 const DOC_TYPE_OPTIONS = [
@@ -88,9 +91,10 @@ function EditMeetingModal({
   const [startTime, setStartTime] = useState(meeting.start_time || '')
   const [endTime, setEndTime] = useState(meeting.end_time || '')
   const [location, setLocation] = useState(meeting.location || '')
+  const [latitude, setLatitude] = useState<number | null>(meeting.latitude ?? null)
+  const [longitude, setLongitude] = useState<number | null>(meeting.longitude ?? null)
   const [status, setStatus] = useState(meeting.status)
   const [agenda, setAgenda] = useState(meeting.agenda || '')
-  const [minutes, setMinutes] = useState(meeting.minutes || '')
   const [saving, setSaving] = useState(false)
 
   // Documents
@@ -107,9 +111,10 @@ function EditMeetingModal({
     setStartTime(meeting.start_time || '')
     setEndTime(meeting.end_time || '')
     setLocation(meeting.location || '')
+    setLatitude(meeting.latitude ?? null)
+    setLongitude(meeting.longitude ?? null)
     setStatus(meeting.status)
     setAgenda(meeting.agenda || '')
-    setMinutes(meeting.minutes || '')
   }, [meeting])
 
   // Fetch documents when modal opens
@@ -147,9 +152,10 @@ function EditMeetingModal({
           start_time: startTime || null,
           end_time: endTime || null,
           location: location.trim() || null,
+          latitude: latitude,
+          longitude: longitude,
           status,
           agenda: agenda.trim() || null,
-          minutes: minutes.trim() || null,
         }),
       })
       if (!res.ok) throw new Error('Failed to save meeting')
@@ -204,13 +210,13 @@ function EditMeetingModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
-      <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden p-0">
+        <DialogHeader className="sticky top-0 bg-white z-10 px-6 pt-6 pb-4 border-b">
           <DialogTitle>Edit Meeting</DialogTitle>
-          <DialogDescription>Update meeting details, agenda, minutes, and documents</DialogDescription>
+          <DialogDescription>Update meeting details, location, and documents</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 py-4">
+        <div className="space-y-5 px-6 py-4 overflow-y-auto flex-1">
           {/* Title */}
           <div className="space-y-2">
             <Label>Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
@@ -250,31 +256,24 @@ function EditMeetingModal({
             </div>
           </div>
 
-          {/* Location */}
-          <div className="space-y-2">
-            <Label>Location</Label>
-            <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Meeting room or virtual link" />
-          </div>
+          {/* Location with Map */}
+          <LocationPicker
+            location={location}
+            setLocation={setLocation}
+            latitude={latitude}
+            longitude={longitude}
+            setLatitude={setLatitude}
+            setLongitude={setLongitude}
+          />
 
-          {/* Agenda */}
+          {/* Description */}
           <div className="space-y-2">
-            <Label>Agenda</Label>
+            <Label>Description</Label>
             <Textarea
               value={agenda}
               onChange={(e) => setAgenda(e.target.value)}
-              placeholder="Meeting agenda items..."
+              placeholder="Meeting description..."
               rows={4}
-            />
-          </div>
-
-          {/* Minutes */}
-          <div className="space-y-2">
-            <Label>Minutes</Label>
-            <Textarea
-              value={minutes}
-              onChange={(e) => setMinutes(e.target.value)}
-              placeholder="Meeting minutes..."
-              rows={6}
             />
           </div>
 
@@ -360,7 +359,7 @@ function EditMeetingModal({
           </div>
         </div>
 
-        <DialogFooter className="flex items-center justify-between sm:justify-between">
+        <DialogFooter className="sticky bottom-0 bg-white z-10 px-6 py-4 border-t flex items-center justify-between sm:justify-between">
           <Button
             variant="outline"
             size="sm"
@@ -418,12 +417,15 @@ function MeetingsTable({ meetings, workingGroupId, onEdit }: MeetingsTableProps)
                   ? `${meeting.start_time}${meeting.end_time ? ` – ${meeting.end_time}` : ''}`
                   : '—'}
               </td>
-              <td className="px-4 py-3 text-sm text-gray-600">{meeting.location || '—'}</td>
-              <td className="px-4 py-3">
-                <Badge className={STATUS_COLORS[meeting.status] || STATUS_COLORS.scheduled}>
-                  {meeting.status}
-                </Badge>
+              <td className="px-4 py-3 text-sm text-gray-600">
+                <div className="flex items-center gap-1">
+                  {meeting.latitude && meeting.longitude && (
+                    <MapPin className="h-3 w-3 text-blue-500 flex-shrink-0" />
+                  )}
+                  <span className="truncate max-w-[200px]">{meeting.location || '—'}</span>
+                </div>
               </td>
+              <td className="px-4 py-3 text-sm text-gray-600 capitalize">{meeting.status}</td>
               <td className="px-4 py-3 text-right">
                 <Button
                   variant="ghost"
@@ -462,6 +464,8 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
   const [newStartTime, setNewStartTime] = useState('')
   const [newEndTime, setNewEndTime] = useState('')
   const [newLocation, setNewLocation] = useState('')
+  const [newLatitude, setNewLatitude] = useState<number | null>(null)
+  const [newLongitude, setNewLongitude] = useState<number | null>(null)
   const [newAgenda, setNewAgenda] = useState('')
 
   const fetchMeetings = useCallback(async () => {
@@ -498,6 +502,8 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
           start_time: newStartTime || null,
           end_time: newEndTime || null,
           location: newLocation.trim() || null,
+          latitude: newLatitude,
+          longitude: newLongitude,
           agenda: newAgenda.trim() || null,
         }),
       })
@@ -514,6 +520,8 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
       setNewStartTime('')
       setNewEndTime('')
       setNewLocation('')
+      setNewLatitude(null)
+      setNewLongitude(null)
       setNewAgenda('')
       fetchMeetings()
     } catch (error: any) {
@@ -625,12 +633,12 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
 
       {/* Add Meeting Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden p-0">
+          <DialogHeader className="sticky top-0 bg-white z-10 px-6 pt-6 pb-4 border-b">
             <DialogTitle>Schedule Meeting</DialogTitle>
             <DialogDescription>Create a new meeting for this working group</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 px-6 py-4 overflow-y-auto flex-1">
             <div className="space-y-2">
               <Label>Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
               <Input
@@ -665,25 +673,28 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
                 />
               </div>
             </div>
+
+            {/* Location with Map */}
+            <LocationPicker
+              location={newLocation}
+              setLocation={setNewLocation}
+              latitude={newLatitude}
+              longitude={newLongitude}
+              setLatitude={setNewLatitude}
+              setLongitude={setNewLongitude}
+            />
+
             <div className="space-y-2">
-              <Label>Location</Label>
-              <Input
-                value={newLocation}
-                onChange={(e) => setNewLocation(e.target.value)}
-                placeholder="Meeting room or virtual link"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Agenda</Label>
+              <Label>Description</Label>
               <Textarea
                 value={newAgenda}
                 onChange={(e) => setNewAgenda(e.target.value)}
-                placeholder="Meeting agenda items..."
+                placeholder="Meeting description..."
                 rows={4}
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 bg-white z-10 px-6 py-4 border-t">
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
             <Button onClick={handleAddMeeting} disabled={saving || !newTitle.trim() || !newDate}>
               {saving ? 'Creating...' : 'Create Meeting'}

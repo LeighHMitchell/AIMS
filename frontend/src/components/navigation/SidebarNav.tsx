@@ -76,6 +76,8 @@ export function SidebarNav({
   const router = useRouter()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "EXPLORE": true,
+    "PROFILES": true,
+    "ADVANCED": true,
     "FINANCES": true,
     "ACTIVITIES": true,
     "ACTORS": true,
@@ -136,16 +138,10 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Analytics", href: "/analytics-dashboard", show: true },
-        { name: "Transparency Index", href: "/transparency-index", show: true, underDevelopment: true },
         { name: "Atlas", href: "/atlas", show: true, isNew: true },
         { name: "Search", href: "/search", show: true },
-        { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true, underDevelopment: true },
         { name: "Portfolios", href: "/partners", show: true, underDevelopment: true },
         { name: "Reports", href: "/reports", show: true, isNew: true },
-        { name: "SDGs", href: "/sdgs", show: true, isNew: true },
-        { name: "Sectors", href: "/sectors", show: true, isNew: true },
-        { name: "Policy Markers", href: "/policy-markers", show: true, isNew: true },
-        { name: "Working Groups", href: "/working-groups", show: true, isNew: true },
       ]
     },
     {
@@ -179,6 +175,18 @@ export function SidebarNav({
       ]
     },
     {
+      label: "PROFILES",
+      icon: BarChart3,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "SDGs", href: "/sdgs", show: true, isNew: true },
+        { name: "Sectors", href: "/sectors", show: true, isNew: true },
+        { name: "Policy Markers", href: "/policy-markers", show: true, isNew: true },
+        { name: "Working Groups", href: "/working-groups", show: true, isNew: true },
+      ]
+    },
+    {
       label: "OPERATIONS",
       icon: Stack3Icon,
       isAnimated: true,
@@ -188,6 +196,16 @@ export function SidebarNav({
         { name: "Data Clinic", href: "/data-clinic", show: true, underDevelopment: true },
         { name: "Library", href: "/library", show: true, isNew: true },
         { name: "Build History", href: "/build-history", show: true, isNew: true },
+      ]
+    },
+    {
+      label: "ADVANCED",
+      icon: Shield,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "Transparency Index", href: "/transparency-index", show: true, underDevelopment: true },
+        { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true, underDevelopment: true },
       ]
     },
     {

@@ -92,12 +92,6 @@ export default function WorkingGroupEditorNavigation({
         { id: "documents", label: "Documents & Media" },
       ]
     },
-    {
-      title: "Connections",
-      sections: [
-        { id: "activities", label: "Activities" },
-      ]
-    }
   ]
 
   return (

@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
+import { apiFetch } from '@/lib/api-fetch'
 
 interface GovernmentSystemData {
   system: string
@@ -37,10 +38,10 @@ interface GovernmentSystemsChartProps {
 }
 
 const SYSTEM_COLORS = {
-  budget: '#3b82f6',      // Blue
-  financial: '#10b981',   // Green
-  audit: '#f59e0b',       // Orange
-  procurement: '#8b5cf6'  // Purple
+  budget: '#1e293b',      // Slate 800
+  financial: '#334155',   // Slate 700
+  audit: '#64748b',       // Slate 500
+  procurement: '#94a3b8'  // Slate 400
 }
 
 export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: GovernmentSystemsChartProps) {
@@ -65,7 +66,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
         implementingPartner: filters.implementingPartner
       })
 
-      const response = await fetch(`/api/aid-effectiveness/government-systems?${params}`)
+      const response = await apiFetch(`/api/aid-effectiveness/government-systems?${params}`)
       
       if (response.ok) {
         const result = await response.json()
@@ -124,28 +125,15 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-800">Highest Usage</p>
-                  <p className="text-lg font-bold text-blue-900">{summary.highest_usage?.systemName}</p>
-                  <p className="text-sm text-blue-700">{summary.highest_usage?.usage_percentage}% adoption</p>
+                  <p className="text-sm font-medium text-slate-600">Highest Usage</p>
+                  <p className="text-lg font-bold text-slate-900">{summary.highest_usage?.systemName}</p>
+                  <p className="text-sm text-slate-500">{summary.highest_usage?.usage_percentage}% adoption</p>
                 </div>
-                <TrendingUp className="h-6 w-6 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-orange-800">Lowest Usage</p>
-                  <p className="text-lg font-bold text-orange-900">{summary.lowest_usage?.systemName}</p>
-                  <p className="text-sm text-orange-700">{summary.lowest_usage?.usage_percentage}% adoption</p>
-                </div>
-                <TrendingDown className="h-6 w-6 text-orange-600" />
+                <TrendingUp className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
@@ -154,11 +142,24 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-800">Average Usage</p>
-                  <p className="text-lg font-bold text-slate-900">{summary.average_usage}%</p>
-                  <p className="text-sm text-slate-700">Across all systems</p>
+                  <p className="text-sm font-medium text-slate-600">Lowest Usage</p>
+                  <p className="text-lg font-bold text-slate-900">{summary.lowest_usage?.systemName}</p>
+                  <p className="text-sm text-slate-500">{summary.lowest_usage?.usage_percentage}% adoption</p>
                 </div>
-                <Building2 className="h-6 w-6 text-slate-600" />
+                <TrendingDown className="h-6 w-6 text-slate-400" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Average Usage</p>
+                  <p className="text-lg font-bold text-slate-900">{summary.average_usage}%</p>
+                  <p className="text-sm text-slate-500">Across all systems</p>
+                </div>
+                <Building2 className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
@@ -223,7 +224,7 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
                   <span className="text-2xl font-bold text-slate-900">{system.usage_percentage}%</span>
                   <Badge 
                     variant={system.usage_percentage >= 50 ? "default" : "secondary"}
-                    className={system.usage_percentage >= 50 ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}
+                    className={system.usage_percentage >= 50 ? "bg-slate-200 text-slate-800" : "bg-slate-100 text-slate-600"}
                   >
                     {system.usage_percentage >= 50 ? 'Good' : 'Needs Improvement'}
                   </Badge>
@@ -247,9 +248,9 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
       </div>
 
       {/* Key Insights */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200">
         <CardHeader>
-          <CardTitle className="text-lg font-medium text-blue-900 flex items-center gap-2">
+          <CardTitle className="text-lg font-medium text-slate-900 flex items-center gap-2">
             <Building2 className="h-5 w-5" />
             Key Insights
           </CardTitle>
@@ -257,24 +258,24 @@ export function GovernmentSystemsChart({ dateRange, filters, refreshKey }: Gover
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <h4 className="font-semibold text-blue-900 mb-2">Strong Performance</h4>
-              <ul className="space-y-1 text-blue-800">
+              <h4 className="font-semibold text-slate-900 mb-2">Strong Performance</h4>
+              <ul className="space-y-1 text-slate-700">
                 {data.filter(s => s.usage_percentage >= 70).map(system => (
                   <li key={system.system}>• {system.systemName}: {system.usage_percentage}%</li>
                 ))}
                 {data.filter(s => s.usage_percentage >= 70).length === 0 && (
-                  <li className="text-blue-600">No systems with 70%+ usage</li>
+                  <li className="text-slate-500">No systems with 70%+ usage</li>
                 )}
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-blue-900 mb-2">Improvement Needed</h4>
-              <ul className="space-y-1 text-blue-800">
+              <h4 className="font-semibold text-slate-900 mb-2">Improvement Needed</h4>
+              <ul className="space-y-1 text-slate-700">
                 {data.filter(s => s.usage_percentage < 50).map(system => (
                   <li key={system.system}>• {system.systemName}: {system.usage_percentage}%</li>
                 ))}
                 {data.filter(s => s.usage_percentage < 50).length === 0 && (
-                  <li className="text-blue-600">All systems have 50%+ usage</li>
+                  <li className="text-slate-500">All systems have 50%+ usage</li>
                 )}
               </ul>
             </div>

@@ -68,6 +68,8 @@ export async function PUT(
     if (body.start_time !== undefined) updateData.start_time = body.start_time;
     if (body.end_time !== undefined) updateData.end_time = body.end_time;
     if (body.location !== undefined) updateData.location = body.location;
+    if (body.latitude !== undefined) updateData.latitude = body.latitude;
+    if (body.longitude !== undefined) updateData.longitude = body.longitude;
     if (body.agenda !== undefined) updateData.agenda = body.agenda;
     if (body.minutes !== undefined) updateData.minutes = body.minutes;
     if (body.status !== undefined) updateData.status = body.status;

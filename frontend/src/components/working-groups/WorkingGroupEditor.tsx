@@ -19,7 +19,6 @@ import GeneralSection from './sections/GeneralSection'
 import MembersSection from './sections/MembersSection'
 import MeetingsSection from './sections/MeetingsSection'
 import DocumentsSection from './sections/DocumentsSection'
-import ActivitiesSection from './sections/ActivitiesSection'
 
 export interface WorkingGroup {
   id?: string
@@ -174,14 +173,13 @@ export function WorkingGroupEditor({
     }
   }, [workingGroupId, workingGroup, router])
 
-  const sectionOrder = ['general', 'members', 'meetings', 'documents', 'activities']
+  const sectionOrder = ['general', 'members', 'meetings', 'documents']
 
   const sectionLabels: Record<string, string> = {
     general: 'General',
     members: 'Members',
     meetings: 'Meetings',
     documents: 'Documents',
-    activities: 'Activities',
   }
 
   const currentIndex = sectionOrder.indexOf(activeSection)
@@ -206,7 +204,7 @@ export function WorkingGroupEditor({
 
   const renderSectionContent = () => {
     const currentId = workingGroupId || workingGroup?.id
-    const needsWG = ['members', 'meetings', 'documents', 'activities'].includes(activeSection)
+    const needsWG = ['members', 'meetings', 'documents'].includes(activeSection)
 
     if (needsWG && !currentId && !workingGroupCreated) {
       return (
@@ -247,15 +245,6 @@ export function WorkingGroupEditor({
         return currentId ? (
           <div className="h-full overflow-y-auto p-6">
             <DocumentsSection workingGroupId={currentId} />
-          </div>
-        ) : null
-
-      case 'activities':
-        return currentId ? (
-          <div className="h-full overflow-y-auto p-6">
-            <ActivitiesSection
-              activities={workingGroup?.activities || []}
-            />
           </div>
         ) : null
 

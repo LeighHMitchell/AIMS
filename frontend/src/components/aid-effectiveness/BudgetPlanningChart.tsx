@@ -21,6 +21,7 @@ import {
   Cell,
   Legend
 } from 'recharts'
+import { apiFetch } from '@/lib/api-fetch'
 
 interface BudgetPlanningData {
   category: string
@@ -44,10 +45,10 @@ interface BudgetPlanningChartProps {
 }
 
 const TRANSPARENCY_COLORS = {
-  both: '#10b981',      // Green
-  annual: '#3b82f6',    // Blue  
-  forward: '#8b5cf6',   // Purple
-  none: '#ef4444'       // Red
+  both: '#1e293b',      // Slate 800
+  annual: '#475569',    // Slate 600
+  forward: '#94a3b8',   // Slate 400
+  none: '#cbd5e1'       // Slate 300
 }
 
 export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPlanningChartProps) {
@@ -74,7 +75,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
         groupBy
       })
 
-      const response = await fetch(`/api/aid-effectiveness/budget-planning?${params}`)
+      const response = await apiFetch(`/api/aid-effectiveness/budget-planning?${params}`)
       
       if (response.ok) {
         const result = await response.json()
@@ -100,10 +101,10 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
           <p className="font-semibold text-slate-900">{data.category}</p>
           <p className="text-sm text-slate-600 mb-2">Transparency Score: {data.transparency_score}%</p>
           <div className="space-y-1 text-xs">
-            <p className="text-green-600">Both Shared: {data.both_shared}</p>
-            <p className="text-blue-600">Annual Only: {data.annual_budget_shared}</p>
-            <p className="text-purple-600">Forward Only: {data.forward_plan_shared}</p>
-            <p className="text-red-600">None Shared: {data.none_shared}</p>
+            <p className="text-slate-900">Both Shared: {data.both_shared}</p>
+            <p className="text-slate-700">Annual Only: {data.annual_budget_shared}</p>
+            <p className="text-slate-500">Forward Only: {data.forward_plan_shared}</p>
+            <p className="text-slate-400">None Shared: {data.none_shared}</p>
           </div>
           <p className="text-xs text-slate-500 mt-1">Total: {data.total_activities} activities</p>
         </div>
@@ -163,7 +164,7 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-indigo-600" />
+          <FileText className="h-5 w-5 text-slate-500" />
           <h3 className="text-lg font-semibold text-slate-900">Budget Planning & Transparency</h3>
         </div>
         
@@ -183,51 +184,51 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
       {/* Summary Statistics */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-indigo-800">Transparency Score</p>
-                  <p className="text-2xl font-bold text-indigo-900">{summary.overall_transparency_score}%</p>
+                  <p className="text-sm font-medium text-slate-600">Transparency Score</p>
+                  <p className="text-2xl font-bold text-slate-900">{summary.overall_transparency_score}%</p>
                 </div>
-                <Eye className="h-6 w-6 text-indigo-600" />
+                <Eye className="h-6 w-6 text-slate-400" />
               </div>
-              <Progress value={summary.overall_transparency_score} className="mt-2 bg-indigo-200 [&>div]:bg-indigo-600" />
+              <Progress value={summary.overall_transparency_score} className="mt-2 bg-slate-200 [&>div]:bg-slate-700" />
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-800">Annual Budget</p>
-                  <p className="text-2xl font-bold text-blue-900">{summary.annual_budget_percentage}%</p>
+                  <p className="text-sm font-medium text-slate-600">Annual Budget</p>
+                  <p className="text-2xl font-bold text-slate-900">{summary.annual_budget_percentage}%</p>
                 </div>
-                <Calendar className="h-6 w-6 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-800">Forward Plan</p>
-                  <p className="text-2xl font-bold text-purple-900">{summary.forward_plan_percentage}%</p>
-                </div>
-                <TrendingUp className="h-6 w-6 text-purple-600" />
+                <Calendar className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-800">Both Shared</p>
-                  <p className="text-2xl font-bold text-green-900">{summary.both_shared_percentage}%</p>
+                  <p className="text-sm font-medium text-slate-600">Forward Plan</p>
+                  <p className="text-2xl font-bold text-slate-900">{summary.forward_plan_percentage}%</p>
                 </div>
-                <FileText className="h-6 w-6 text-green-600" />
+                <TrendingUp className="h-6 w-6 text-slate-400" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Both Shared</p>
+                  <p className="text-2xl font-bold text-slate-900">{summary.both_shared_percentage}%</p>
+                </div>
+                <FileText className="h-6 w-6 text-slate-400" />
               </div>
             </CardContent>
           </Card>
@@ -323,10 +324,10 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
                   <div className="flex-1">
                     <h4 className="font-medium text-slate-900">{item.category}</h4>
                     <div className="flex items-center gap-4 mt-2 text-sm">
-                      <span className="text-green-600">Both: {item.both_shared}</span>
-                      <span className="text-blue-600">Annual: {item.annual_budget_shared}</span>
-                      <span className="text-purple-600">Forward: {item.forward_plan_shared}</span>
-                      <span className="text-red-600">None: {item.none_shared}</span>
+                      <span className="text-slate-900">Both: {item.both_shared}</span>
+                      <span className="text-slate-700">Annual: {item.annual_budget_shared}</span>
+                      <span className="text-slate-500">Forward: {item.forward_plan_shared}</span>
+                      <span className="text-slate-400">None: {item.none_shared}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -337,9 +338,9 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
                     <Badge 
                       variant={item.transparency_score >= 80 ? "default" : item.transparency_score >= 60 ? "secondary" : "destructive"}
                       className={
-                        item.transparency_score >= 80 ? "bg-green-100 text-green-800" :
-                        item.transparency_score >= 60 ? "bg-yellow-100 text-yellow-800" :
-                        "bg-red-100 text-red-800"
+                        item.transparency_score >= 80 ? "bg-slate-200 text-slate-800" :
+                        item.transparency_score >= 60 ? "bg-slate-100 text-slate-700" :
+                        "bg-slate-100 text-slate-500"
                       }
                     >
                       {item.transparency_score >= 80 ? 'Excellent' : 
@@ -356,42 +357,42 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
       {/* Performance Insights */}
       {summary && summary.best_performer && summary.needs_improvement && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-green-800 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
+              <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-slate-500" />
                 Best Transparency
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-semibold text-green-900">{summary.best_performer.category}</p>
-              <p className="text-sm text-green-700">
+              <p className="font-semibold text-slate-900">{summary.best_performer.category}</p>
+              <p className="text-sm text-slate-600">
                 {summary.best_performer.transparency_score}% transparency score
               </p>
               <div className="flex items-center gap-2 mt-2">
-                <div className="text-xs text-green-600">
-                  Both: {summary.best_performer.both_shared} | 
-                  Annual: {summary.best_performer.annual_budget_shared} | 
+                <div className="text-xs text-slate-500">
+                  Both: {summary.best_performer.both_shared} |
+                  Annual: {summary.best_performer.annual_budget_shared} |
                   Forward: {summary.best_performer.forward_plan_shared}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-red-800 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
+              <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-slate-500" />
                 Needs Improvement
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-semibold text-red-900">{summary.needs_improvement.category}</p>
-              <p className="text-sm text-red-700">
+              <p className="font-semibold text-slate-900">{summary.needs_improvement.category}</p>
+              <p className="text-sm text-slate-600">
                 {summary.needs_improvement.transparency_score}% transparency score
               </p>
               <div className="flex items-center gap-2 mt-2">
-                <div className="text-xs text-red-600">
+                <div className="text-xs text-slate-500">
                   None shared: {summary.needs_improvement.none_shared} activities
                 </div>
               </div>
@@ -401,18 +402,18 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
       )}
 
       {/* Key Recommendations */}
-      <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
+      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200">
         <CardHeader>
-          <CardTitle className="text-lg font-medium text-indigo-900 flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+          <CardTitle className="text-lg font-medium text-slate-900 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-slate-500" />
             Key Recommendations
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <h4 className="font-semibold text-indigo-900 mb-2">Transparency Best Practices</h4>
-              <ul className="space-y-1 text-indigo-800">
+              <h4 className="font-semibold text-slate-900 mb-2">Transparency Best Practices</h4>
+              <ul className="space-y-1 text-slate-700">
                 <li>• Share both annual budgets and forward spending plans</li>
                 <li>• Provide detailed, disaggregated budget information</li>
                 <li>• Update budget information regularly and proactively</li>
@@ -420,8 +421,8 @@ export function BudgetPlanningChart({ dateRange, filters, refreshKey }: BudgetPl
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-indigo-900 mb-2">Areas for Improvement</h4>
-              <ul className="space-y-1 text-indigo-800">
+              <h4 className="font-semibold text-slate-900 mb-2">Areas for Improvement</h4>
+              <ul className="space-y-1 text-slate-700">
                 {summary && summary.overall_transparency_score < 70 && (
                   <li>• Overall transparency score below 70% target</li>
                 )}

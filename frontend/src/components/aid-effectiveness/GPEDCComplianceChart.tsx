@@ -47,11 +47,11 @@ interface GPEDCComplianceChartProps {
 }
 
 const PRINCIPLE_COLORS = {
-  'Ownership': '#3b82f6',
-  'Alignment': '#10b981', 
-  'Harmonisation': '#f59e0b',
-  'Results': '#8b5cf6',
-  'Accountability': '#ef4444'
+  'Ownership': '#0f172a',
+  'Alignment': '#334155',
+  'Harmonisation': '#475569',
+  'Results': '#64748b',
+  'Accountability': '#94a3b8'
 }
 
 const PRINCIPLE_ICONS = {
@@ -115,8 +115,8 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
           <p className="font-semibold text-slate-900">{data.indicatorName}</p>
           <p className="text-xs text-slate-600 mb-2">{data.description}</p>
           <div className="space-y-1 text-sm">
-            <p className="text-green-600">Compliant: {data.compliant_count} ({data.compliance_percentage}%)</p>
-            <p className="text-red-600">Non-compliant: {data.non_compliant_count} ({100 - data.compliance_percentage}%)</p>
+            <p className="text-slate-800">Compliant: {data.compliant_count} ({data.compliance_percentage}%)</p>
+            <p className="text-slate-500">Non-compliant: {data.non_compliant_count} ({100 - data.compliance_percentage}%)</p>
           </div>
         </div>
       )
@@ -168,12 +168,12 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
                 tick={{ fontSize: 10, fill: '#64748b' }}
                 tickFormatter={(value) => `${value}%`}
               />
-              <Radar 
-                name="Compliance" 
-                dataKey="compliance" 
-                stroke="#3b82f6" 
-                fill="#3b82f6" 
-                fillOpacity={0.3}
+              <Radar
+                name="Compliance"
+                dataKey="compliance"
+                stroke="#334155"
+                fill="#334155"
+                fillOpacity={0.2}
                 strokeWidth={2}
               />
               <Tooltip 
@@ -187,41 +187,41 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
         {/* Summary Cards */}
         {summary && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-green-800">Overall Compliance</p>
-                    <p className="text-2xl font-bold text-green-900">{summary.overall_compliance}%</p>
+                    <p className="text-sm font-medium text-slate-600">Overall Compliance</p>
+                    <p className="text-2xl font-bold text-slate-900">{summary.overall_compliance}%</p>
                   </div>
-                  <Shield className="h-6 w-6 text-green-600" />
+                  <Shield className="h-6 w-6 text-slate-400" />
                 </div>
-                <Progress value={summary.overall_compliance} className="mt-2 bg-green-200 [&>div]:bg-green-600" />
+                <Progress value={summary.overall_compliance} className="mt-2 bg-slate-200 [&>div]:bg-slate-700" />
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-800">Best Indicator</p>
-                    <p className="text-sm font-bold text-blue-900">{summary.best_indicator?.indicatorName}</p>
-                    <p className="text-sm text-blue-700">{summary.best_indicator?.compliance_percentage}%</p>
+                    <p className="text-sm font-medium text-slate-600">Best Indicator</p>
+                    <p className="text-sm font-bold text-slate-900">{summary.best_indicator?.indicatorName}</p>
+                    <p className="text-sm text-slate-500">{summary.best_indicator?.compliance_percentage}%</p>
                   </div>
-                  <CheckCircle2 className="h-6 w-6 text-blue-600" />
+                  <CheckCircle2 className="h-6 w-6 text-slate-400" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-orange-800">Needs Focus</p>
-                    <p className="text-sm font-bold text-orange-900">{summary.worst_indicator?.indicatorName}</p>
-                    <p className="text-sm text-orange-700">{summary.worst_indicator?.compliance_percentage}%</p>
+                    <p className="text-sm font-medium text-slate-600">Needs Focus</p>
+                    <p className="text-sm font-bold text-slate-900">{summary.worst_indicator?.indicatorName}</p>
+                    <p className="text-sm text-slate-500">{summary.worst_indicator?.compliance_percentage}%</p>
                   </div>
-                  <AlertCircle className="h-6 w-6 text-orange-600" />
+                  <AlertCircle className="h-6 w-6 text-slate-400" />
                 </div>
               </CardContent>
             </Card>
@@ -335,10 +335,10 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
                       <h4 className="font-medium text-slate-900">{indicator.indicatorName}</h4>
                       <p className="text-sm text-slate-600 mb-2">{indicator.description}</p>
                       <div className="flex items-center gap-4 text-sm">
-                        <span className="text-green-600">
+                        <span className="text-slate-800">
                           ✓ {indicator.compliant_count} compliant
                         </span>
-                        <span className="text-red-600">
+                        <span className="text-slate-500">
                           ✗ {indicator.non_compliant_count} non-compliant
                         </span>
                       </div>
@@ -352,9 +352,9 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
                     <Badge 
                       variant={indicator.compliance_percentage >= 80 ? "default" : indicator.compliance_percentage >= 60 ? "secondary" : "destructive"}
                       className={
-                        indicator.compliance_percentage >= 80 ? "bg-green-100 text-green-800" :
-                        indicator.compliance_percentage >= 60 ? "bg-yellow-100 text-yellow-800" :
-                        "bg-red-100 text-red-800"
+                        indicator.compliance_percentage >= 80 ? "bg-slate-200 text-slate-800" :
+                        indicator.compliance_percentage >= 60 ? "bg-slate-100 text-slate-700" :
+                        "bg-slate-100 text-slate-500"
                       }
                     >
                       {indicator.compliance_percentage >= 80 ? 'Excellent' : 
@@ -390,7 +390,7 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
                       <span className="text-2xl font-bold text-slate-900">{principle.overall_compliance}%</span>
                       <Badge 
                         variant={principle.overall_compliance >= 70 ? "default" : "secondary"}
-                        className={principle.overall_compliance >= 70 ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}
+                        className={principle.overall_compliance >= 70 ? "bg-slate-200 text-slate-800" : "bg-slate-100 text-slate-600"}
                       >
                         {principle.overall_compliance >= 70 ? 'Strong' : 'Developing'}
                       </Badge>
@@ -421,42 +421,42 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
       )}
 
       {/* Key Insights and Recommendations */}
-      <Card className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
+      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200">
         <CardHeader>
-          <CardTitle className="text-lg font-medium text-orange-900 flex items-center gap-2">
-            <Shield className="h-5 w-5" />
+          <CardTitle className="text-lg font-medium text-slate-900 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-slate-500" />
             GPEDC Compliance Insights
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
             <div>
-              <h4 className="font-semibold text-orange-900 mb-3">Strengths</h4>
-              <ul className="space-y-2 text-orange-800">
+              <h4 className="font-semibold text-slate-900 mb-3">Strengths</h4>
+              <ul className="space-y-2 text-slate-700">
                 {data.filter(i => i.compliance_percentage >= 70).map(indicator => (
                   <li key={indicator.indicator} className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <CheckCircle2 className="h-4 w-4 text-slate-500" />
                     <span>{indicator.indicatorName}: {indicator.compliance_percentage}%</span>
                   </li>
                 ))}
                 {data.filter(i => i.compliance_percentage >= 70).length === 0 && (
-                  <li className="text-orange-600">No indicators with 70%+ compliance</li>
+                  <li className="text-slate-500">No indicators with 70%+ compliance</li>
                 )}
               </ul>
             </div>
-            
+
             <div>
-              <h4 className="font-semibold text-orange-900 mb-3">Priority Areas</h4>
-              <ul className="space-y-2 text-orange-800">
+              <h4 className="font-semibold text-slate-900 mb-3">Priority Areas</h4>
+              <ul className="space-y-2 text-slate-700">
                 {data.filter(i => i.compliance_percentage < 60).map(indicator => (
                   <li key={indicator.indicator} className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <AlertCircle className="h-4 w-4 text-slate-400" />
                     <span>{indicator.indicatorName}: {indicator.compliance_percentage}%</span>
                   </li>
                 ))}
                 {data.filter(i => i.compliance_percentage < 60).length === 0 && (
-                  <li className="text-orange-600 flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <li className="text-slate-500 flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-slate-500" />
                     All indicators above 60% compliance
                   </li>
                 )}
@@ -466,8 +466,8 @@ export function GPEDCComplianceChart({ dateRange, filters, refreshKey, detailed 
 
           {summary && (
             <div className="mt-6 p-4 bg-white/50 rounded-lg">
-              <h4 className="font-semibold text-orange-900 mb-2">Overall Assessment</h4>
-              <p className="text-sm text-orange-800">
+              <h4 className="font-semibold text-slate-900 mb-2">Overall Assessment</h4>
+              <p className="text-sm text-slate-700">
                 {summary.overall_compliance >= 80 ? 
                   "Excellent GPEDC compliance across all principles. Continue current practices and share best practices with other organizations." :
                   summary.overall_compliance >= 60 ?
