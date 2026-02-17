@@ -219,6 +219,18 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     }
   }, [general.customDates]);
 
+  // Auto-collapse actual date narrative sections when the date fields become disabled
+  // (e.g. when status changes from Implementation → Pipeline)
+  useEffect(() => {
+    const dateStatus = getDateFieldStatus();
+    if (!dateStatus.actualStartDate) {
+      setShowActualStartDescription(false);
+    }
+    if (!dateStatus.actualEndDate) {
+      setShowActualEndDescription(false);
+    }
+  }, [getDateFieldStatus]);
+
   // Initialize tracking refs with current data on first load
   useEffect(() => {
     lastSavedDescriptionRef.current = general.description || '';
@@ -2219,7 +2231,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               <button
                 type="button"
                 onClick={() => setShowActualStartDescription(!showActualStartDescription)}
-                className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                className={`flex items-center gap-2 text-xs transition-colors ${
+                  fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
                 disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
               >
                 <ChevronDown className={`h-3 w-3 transition-transform ${showActualStartDescription ? 'rotate-180' : ''}`} />
@@ -2299,7 +2315,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 <button
                   type="button"
                   onClick={() => setShowActualEndDescription(!showActualEndDescription)}
-                  className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                  className={`flex items-center gap-2 text-xs transition-colors ${
+                    fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
                   disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
                 >
                   <ChevronDown className={`h-3 w-3 transition-transform ${showActualEndDescription ? 'rotate-180' : ''}`} />
@@ -2314,7 +2334,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   <button
                     type="button"
                     onClick={() => setShowActualEndDescription(!showActualEndDescription)}
-                    className="hover:text-gray-800 transition-colors"
+                    className={`transition-colors ${
+                      fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'hover:text-gray-800'
+                    }`}
                     disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
                   >
                     {general.actualEndDescription ? 'Edit context' : 'Add context'}

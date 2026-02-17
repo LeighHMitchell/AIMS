@@ -156,14 +156,14 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
     }
   }, [activityId]);
 
-  // Real-time polling for new comments and notifications
+  // Polling for new comments and notifications (60s to reduce Disk IO)
   useEffect(() => {
     const interval = setInterval(() => {
       fetchComments(false); // Silent refresh
       if (user) {
         fetchNotifications();
       }
-    }, 30000); // Poll every 30 seconds
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [activityId, user]);

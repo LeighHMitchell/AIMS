@@ -484,14 +484,14 @@ export function CommentsDrawer({
     }
   }, [open, activityId, activeTab, selectedSection]);
 
-  // Auto-refresh every 30 seconds when drawer is open
+  // Auto-refresh every 60 seconds when drawer is open (reduced from 30s to save Disk IO)
   useEffect(() => {
     if (!open || !activityId || activityId === '' || activityId === 'new') return;
 
     const interval = setInterval(() => {
       fetchComments();
       fetchUnreadCount();
-    }, 30000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [open, activityId, activeTab, selectedSection]);

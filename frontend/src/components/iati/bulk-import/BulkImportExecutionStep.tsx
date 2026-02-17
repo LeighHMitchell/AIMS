@@ -155,7 +155,7 @@ export default function BulkImportExecutionStep({
 
     // Continue polling
     if (!pollRef.current) {
-      pollRef.current = setInterval(() => pollBatchStatus(id), 2000)
+      pollRef.current = setInterval(() => pollBatchStatus(id), 5000)
     }
   }, [onComplete])
 

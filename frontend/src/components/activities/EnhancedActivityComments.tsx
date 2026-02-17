@@ -152,15 +152,15 @@ export function EnhancedActivityComments({
     }
   }, [activityId, searchTerm, selectedContextSection, filterType, activeTab]);
 
-  // Poll for updates every 30 seconds
+  // Poll for updates every 60 seconds (reduced from 30s to save Disk IO)
   useEffect(() => {
     const interval = setInterval(() => {
-      if (activityId && Date.now() - lastPollTime > 30000) {
+      if (activityId && Date.now() - lastPollTime > 60000) {
         fetchComments();
         fetchNotifications();
         setLastPollTime(Date.now());
       }
-    }, 30000);
+    }, 60000);
     
     return () => clearInterval(interval);
   }, [activityId, lastPollTime]);

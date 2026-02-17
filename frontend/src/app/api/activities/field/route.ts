@@ -670,6 +670,14 @@ export async function POST(request: Request) {
         break;
 
       case 'actualStartDescription':
+        // Prevent saving a narrative without a corresponding actual start date
+        if (body.value && !existingActivity.actual_start_date) {
+          clearTimeout(timeoutId);
+          return NextResponse.json(
+            { error: 'Cannot save narrative without a corresponding actual start date' },
+            { status: 400 }
+          );
+        }
         oldValue = existingActivity.actual_start_description;
         newValue = body.value;
         updateData.actual_start_description = body.value || null;
@@ -682,6 +690,14 @@ export async function POST(request: Request) {
         break;
 
       case 'actualEndDescription':
+        // Prevent saving a narrative without a corresponding actual end date
+        if (body.value && !existingActivity.actual_end_date) {
+          clearTimeout(timeoutId);
+          return NextResponse.json(
+            { error: 'Cannot save narrative without a corresponding actual end date' },
+            { status: 400 }
+          );
+        }
         oldValue = existingActivity.actual_end_description;
         newValue = body.value;
         updateData.actual_end_description = body.value || null;

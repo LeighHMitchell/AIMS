@@ -5,21 +5,31 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { AnalyticsSkeleton } from '@/components/ui/skeleton-loader'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Shield, Target, Building2, SlidersHorizontal, RefreshCw,
   CheckCircle2, Users, BarChart3, Globe, Handshake,
-  Eye, Heart, Calendar
+  Eye, Heart, Calendar, HelpCircle, ChevronDown, CalendarIcon
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts'
+import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
+import { SectorHierarchyFilter, SectorFilterSelection } from '@/components/maps/SectorHierarchyFilter'
+import { format } from 'date-fns'
 
 // --- Types ---
 
@@ -79,11 +89,22 @@ interface ActivityRow {
   planned_start_date: string | null
   activity_status: string | null
   general_info: any
+  reporting_org_id: string | null
+}
+
+interface ReportingOrg {
+  id: string
+  name: string
+  acronym: string | null
+  logo: string | null
 }
 
 // --- Constants ---
 
-const AVAILABLE_YEARS = Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i)
+const AVAILABLE_YEARS = Array.from(
+  { length: new Date().getFullYear() - 2008 + 4 },
+  (_, i) => 2008 + i
+)
 const SLATE_PALETTE = ['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1']
 
 // --- Helpers ---
@@ -91,6 +112,30 @@ const SLATE_PALETTE = ['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#
 const toBool = (val: any): boolean => val === true
 const pct = (count: number, total: number): number =>
   total === 0 ? 0 : Math.round((count / total) * 100)
+
+// Help tooltip descriptions for each chart
+const CHART_HELP: Record<string, string> = {
+  overallScore: 'The overall aid effectiveness score is the average percentage of "Yes" answers across all GPEDC boolean indicators. A higher score indicates stronger alignment with the Global Partnership for Effective Development Co-operation (GPEDC) principles.',
+  gpedcCompliant: 'Activities scoring 60% or above on all GPEDC boolean indicators are considered "GPEDC Compliant." This threshold reflects the minimum level of alignment with internationally agreed development effectiveness standards.',
+  govOwnership: 'Measures alignment with GPEDC Indicator 1 — the extent to which development co-operation is aligned with national priorities, uses government frameworks, and supports national institutions and capacity development.',
+  untiedAid: 'Reflects GPEDC Indicator 10 — aid tying status. Untied aid allows recipient countries to procure goods and services from any source, improving value for money and local ownership.',
+  avgOutcomes: 'The average number of government-defined outcome indicators per activity. More outcome indicators suggest stronger results measurement and alignment with national monitoring frameworks.',
+  sectionRadar: 'A radar/spider chart showing compliance scores across all 7 GPEDC sections. Each axis represents a section; the shaded area shows the portfolio\'s current compliance profile. Larger area = better overall compliance.',
+  tiedAid: 'Distribution of activities by aid tying status (GPEDC Indicator 10). Untied aid is preferred as it gives partner countries freedom to procure from any source, promoting local markets and competitive pricing.',
+  sectionBars: 'Bar chart comparing average compliance rates across all 7 GPEDC sections. Identifies which dimensions of development effectiveness are strongest and which need improvement.',
+  partners: 'Distribution of activities by implementing partner. Shows which organizations are responsible for delivery, important for understanding capacity and coordination.',
+  ownership: 'Government Ownership & Strategic Alignment (GPEDC Indicator 1): Measures whether activities are approved by government, included in national plans, linked to results frameworks, implemented by national institutions, and support public sector capacity.',
+  countrySystems: 'Use of Country Public Financial & Procurement Systems (GPEDC Indicator 5a): Tracks whether development funds flow through national treasury, use government budget execution, financial reporting, audit procedures, and procurement systems.',
+  govWhyNot: 'When donors do not use government systems, this chart shows the stated reasons. Understanding these barriers is key to the GPEDC agenda of strengthening and using country systems.',
+  outcomeIndicators: 'Distribution of the number of government-defined outcome indicators per activity. Activities with more indicators typically have stronger results frameworks aligned with national M&E systems.',
+  predictability: 'Predictability & Aid Characteristics (GPEDC Indicators 5b, 6, 10): Measures whether annual budgets and forward plans are shared, whether multi-year financing agreements exist, and aid tying status.',
+  transparency: 'Transparency & Timely Reporting (GPEDC Indicator 4): Tracks whether annual financial reports, evaluation reports, and performance data are publicly available and regularly updated.',
+  accountability: 'Mutual Accountability (GPEDC Indicator 7): Assesses whether joint annual reviews occur, mutual accountability frameworks are in place, and corrective actions are documented.',
+  civilSociety: 'Civil Society & Private Sector Engagement (GPEDC Indicators 2 & 3): Measures consultation with civil society, CSO involvement in implementation, core funding to CSOs, and public-private dialogue.',
+  gender: 'Gender Equality & Inclusion (GPEDC Indicator 8): Tracks whether gender objectives are integrated into activities, gender-specific budget allocations exist, and gender-disaggregated indicators are used.',
+  complianceRadar: 'Full GPEDC compliance radar showing scores across all 7 indicator categories. This provides a comprehensive view of the portfolio\'s alignment with GPEDC monitoring indicators.',
+  allSections: 'Breakdown of compliance scores for all 7 GPEDC sections with progress bars and percentage ratings. Sections scoring 70%+ are rated "Excellent", 50-69% "Good", and below 50% "Needs Improvement".',
+}
 
 // All boolean indicator fields grouped by section
 const SECTION_FIELDS: Record<string, { label: string; fields: { key: keyof AidEffectivenessData; label: string }[] }> = {
@@ -165,67 +210,202 @@ const SECTION_FIELDS: Record<string, { label: string; fields: { key: keyof AidEf
   },
 }
 
+// --- Help Tooltip ---
+
+function HelpTooltip({ helpKey }: { helpKey: string }) {
+  const text = CHART_HELP[helpKey]
+  if (!text) return null
+  return (
+    <TooltipProvider>
+      <UITooltip delayDuration={200}>
+        <TooltipTrigger asChild>
+          <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help shrink-0" />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+          {text}
+        </TooltipContent>
+      </UITooltip>
+    </TooltipProvider>
+  )
+}
+
 // --- Main Component ---
 
 export default function AidEffectivenessDashboard() {
   const [loading, setLoading] = useState(true)
   const [rawActivities, setRawActivities] = useState<ActivityRow[]>([])
   const [orgMap, setOrgMap] = useState<Map<string, string>>(new Map())
-  const [selectedYear, setSelectedYear] = useState<string>('all')
-  const [filters, setFilters] = useState({
-    donor: 'all',
-    sector: 'all',
-    country: 'all',
-    implementingPartner: 'all'
+
+  // Year / calendar state
+  const [calendarType, setCalendarType] = useState<string>('')
+  const [selectedYears, setSelectedYears] = useState<number[]>([])
+  const [customYears, setCustomYears] = useState<CustomYear[]>([])
+  const [customYearsLoading, setCustomYearsLoading] = useState(true)
+
+  // Reporting org filter
+  const [reportingOrgs, setReportingOrgs] = useState<ReportingOrg[]>([])
+  const [selectedReportingOrg, setSelectedReportingOrg] = useState<string>('all')
+
+  // Sector filter
+  const [sectorSelection, setSectorSelection] = useState<SectorFilterSelection>({
+    sectorCategories: [],
+    sectors: [],
+    subSectors: [],
   })
-
-  const [donors, setDonors] = useState<Array<{ id: string; name: string }>>([])
-  const [sectors, setSectors] = useState<Array<{ code: string; name: string }>>([])
-  const [countries, setCountries] = useState<Array<{ code: string; name: string }>>([])
-  const [partnerOptions, setPartnerOptions] = useState<Array<{ id: string; name: string }>>([])
-
-  const [donorActivityIds, setDonorActivityIds] = useState<Set<string> | null>(null)
   const [sectorActivityIds, setSectorActivityIds] = useState<Set<string> | null>(null)
-  const [countryActivityIds, setCountryActivityIds] = useState<Set<string> | null>(null)
+  const [reportingOrgActivityIds, setReportingOrgActivityIds] = useState<Set<string> | null>(null)
+
+  // Effective date range from year selection
+  const effectiveDateRange = useMemo(() => {
+    const customYear = customYears.find(cy => cy.id === calendarType)
+    if (customYear && selectedYears.length > 0) {
+      const sortedYears = [...selectedYears].sort((a, b) => a - b)
+      const firstYearRange = getCustomYearRange(customYear, sortedYears[0])
+      const lastYearRange = getCustomYearRange(customYear, sortedYears[sortedYears.length - 1])
+      return { from: firstYearRange.start, to: lastYearRange.end }
+    }
+    return null
+  }, [customYears, selectedYears, calendarType])
+
+  const handleYearClick = (year: number, shiftKey: boolean) => {
+    if (shiftKey && selectedYears.length === 1) {
+      const start = Math.min(selectedYears[0], year)
+      const end = Math.max(selectedYears[0], year)
+      setSelectedYears([start, end])
+    } else if (selectedYears.length === 0) {
+      setSelectedYears([year])
+    } else if (selectedYears.length === 1) {
+      if (selectedYears[0] === year) {
+        setSelectedYears([])
+      } else {
+        const start = Math.min(selectedYears[0], year)
+        const end = Math.max(selectedYears[0], year)
+        setSelectedYears([start, end])
+      }
+    } else {
+      setSelectedYears([year])
+    }
+  }
+
+  const isYearInRange = (year: number) => {
+    if (selectedYears.length < 2) return false
+    const minYear = Math.min(...selectedYears)
+    const maxYear = Math.max(...selectedYears)
+    return year > minYear && year < maxYear
+  }
+
+  const getYearLabel = (year: number) => {
+    const customYear = customYears.find(cy => cy.id === calendarType)
+    if (customYear) return getCustomYearLabel(customYear, year)
+    return `${year}`
+  }
 
   useEffect(() => { fetchData() }, [])
-  useEffect(() => { fetchFilterLookups() }, [filters.donor, filters.sector, filters.country])
+
+  // Fetch custom years
+  useEffect(() => {
+    const fetchCustomYears = async () => {
+      try {
+        const response = await fetch('/api/custom-years')
+        if (response.ok) {
+          const result = await response.json()
+          const years = result.data || []
+          setCustomYears(years)
+          let selectedCalendar: CustomYear | undefined
+          if (result.defaultId) {
+            selectedCalendar = years.find((cy: CustomYear) => cy.id === result.defaultId)
+          }
+          if (!selectedCalendar && years.length > 0) {
+            selectedCalendar = years[0]
+          }
+          if (selectedCalendar) {
+            setCalendarType(selectedCalendar.id)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch custom years:', err)
+      } finally {
+        setCustomYearsLoading(false)
+      }
+    }
+    fetchCustomYears()
+  }, [])
+
+  // Fetch sector activity IDs when sector filter changes
+  useEffect(() => {
+    const fetchSectorActivityIds = async () => {
+      const allCodes = [
+        ...sectorSelection.sectorCategories,
+        ...sectorSelection.sectors,
+        ...sectorSelection.subSectors,
+      ]
+      if (allCodes.length === 0) {
+        setSectorActivityIds(null)
+        return
+      }
+      try {
+        const { data } = await supabase.from('sectors').select('activity_id, code')
+        if (data) {
+          const matchingIds = new Set<string>()
+          data.forEach((row: any) => {
+            const code = row.code || ''
+            // Match exact code, or prefix match for categories/groups
+            const matches = allCodes.some(filterCode => code.startsWith(filterCode))
+            if (matches) matchingIds.add(row.activity_id)
+          })
+          setSectorActivityIds(matchingIds)
+        }
+      } catch (err) {
+        console.warn('Sector filter lookup error:', err)
+      }
+    }
+    fetchSectorActivityIds()
+  }, [sectorSelection])
+
+  // Fetch reporting org activity IDs
+  useEffect(() => {
+    if (selectedReportingOrg === 'all') {
+      setReportingOrgActivityIds(null)
+      return
+    }
+    const fetchOrgActivityIds = async () => {
+      try {
+        const { data } = await supabase.from('activities').select('id').eq('reporting_org_id', selectedReportingOrg)
+        setReportingOrgActivityIds(new Set((data || []).map((d: any) => d.id)))
+      } catch (err) {
+        console.warn('Reporting org filter error:', err)
+        setReportingOrgActivityIds(null)
+      }
+    }
+    fetchOrgActivityIds()
+  }, [selectedReportingOrg])
 
   const fetchData = async () => {
     try {
       setLoading(true)
       const { data: activities, error } = await supabase
         .from('activities')
-        .select('id, title_narrative, general_info, planned_start_date, activity_status')
+        .select('id, title_narrative, general_info, planned_start_date, activity_status, reporting_org_id')
       if (error) throw error
 
       const withAE = (activities || []).filter((a: any) => a.general_info?.aidEffectiveness)
       setRawActivities(withAE)
 
-      const { data: orgs } = await supabase.from('organizations').select('id, name, acronym')
+      const { data: orgs } = await supabase.from('organizations').select('id, name, acronym, logo')
       const map = new Map<string, string>()
       ;(orgs || []).forEach((o: any) => map.set(o.id, o.acronym || o.name))
       setOrgMap(map)
 
-      const [donorRes, sectorRes, countryRes] = await Promise.all([
-        supabase.from('organizations').select('id, name, acronym').eq('type', 'donor').order('name'),
-        supabase.from('sectors').select('code, name').order('name'),
-        supabase.from('countries').select('code, name').order('name')
-      ])
-
-      setDonors((donorRes.data || []).map((d: any) => ({ id: d.id, name: d.acronym || d.name })))
-
-      const sectorMap = new Map<string, string>()
-      ;(sectorRes.data || []).forEach((s: any) => { if (!sectorMap.has(s.code)) sectorMap.set(s.code, s.name) })
-      setSectors(Array.from(sectorMap.entries()).map(([code, name]) => ({ code, name })))
-      setCountries(countryRes.data || [])
-
-      const partnerIds = new Set<string>()
-      withAE.forEach((a: any) => { const pid = a.general_info?.aidEffectiveness?.implementingPartner; if (pid) partnerIds.add(pid) })
-      const partnerOpts: Array<{ id: string; name: string }> = []
-      partnerIds.forEach(id => { const name = map.get(id); if (name) partnerOpts.push({ id, name }) })
-      partnerOpts.sort((a, b) => a.name.localeCompare(b.name))
-      setPartnerOptions(partnerOpts)
+      // Build reporting orgs list from activities that have aid effectiveness data
+      const reportingOrgIds = new Set<string>()
+      withAE.forEach((a: any) => { if (a.reporting_org_id) reportingOrgIds.add(a.reporting_org_id) })
+      const reportingOrgList: ReportingOrg[] = []
+      reportingOrgIds.forEach(id => {
+        const org = (orgs || []).find((o: any) => o.id === id)
+        if (org) reportingOrgList.push({ id: org.id, name: org.name, acronym: org.acronym, logo: org.logo })
+      })
+      reportingOrgList.sort((a, b) => (a.acronym || a.name).localeCompare(b.acronym || b.name))
+      setReportingOrgs(reportingOrgList)
     } catch (error) {
       console.error('Error fetching data:', error)
       toast.error('Failed to load dashboard data')
@@ -234,37 +414,20 @@ export default function AidEffectivenessDashboard() {
     }
   }
 
-  const fetchFilterLookups = async () => {
-    try {
-      if (filters.donor !== 'all') {
-        const { data } = await supabase.from('participating_orgs').select('activity_id').eq('org_id', filters.donor)
-        setDonorActivityIds(new Set((data || []).map((d: any) => d.activity_id)))
-      } else { setDonorActivityIds(null) }
-      if (filters.sector !== 'all') {
-        const { data } = await supabase.from('sectors').select('activity_id').eq('code', filters.sector)
-        setSectorActivityIds(new Set((data || []).map((d: any) => d.activity_id)))
-      } else { setSectorActivityIds(null) }
-      if (filters.country !== 'all') {
-        const { data } = await supabase.from('recipient_countries').select('activity_id').eq('code', filters.country)
-        setCountryActivityIds(new Set((data || []).map((d: any) => d.activity_id)))
-      } else { setCountryActivityIds(null) }
-    } catch (error) { console.warn('Filter lookup error:', error) }
-  }
-
   const filteredActivities = useMemo(() => {
     return rawActivities.filter(a => {
       const ae = a.general_info?.aidEffectiveness as AidEffectivenessData
       if (!ae) return false
-      if (selectedYear !== 'all' && a.planned_start_date) {
-        if (new Date(a.planned_start_date).getFullYear() !== parseInt(selectedYear)) return false
+      // Year filter via date range
+      if (effectiveDateRange && a.planned_start_date) {
+        const d = new Date(a.planned_start_date)
+        if (d < effectiveDateRange.from || d > effectiveDateRange.to) return false
       }
-      if (filters.implementingPartner !== 'all' && ae.implementingPartner !== filters.implementingPartner) return false
-      if (donorActivityIds && !donorActivityIds.has(a.id)) return false
+      if (reportingOrgActivityIds && !reportingOrgActivityIds.has(a.id)) return false
       if (sectorActivityIds && !sectorActivityIds.has(a.id)) return false
-      if (countryActivityIds && !countryActivityIds.has(a.id)) return false
       return true
     })
-  }, [rawActivities, selectedYear, filters, donorActivityIds, sectorActivityIds, countryActivityIds])
+  }, [rawActivities, effectiveDateRange, reportingOrgActivityIds, sectorActivityIds])
 
   // Compute all metrics
   const metrics = useMemo(() => {
@@ -360,7 +523,11 @@ export default function AidEffectivenessDashboard() {
 
   const handleRefresh = () => { fetchData(); toast.success('Dashboard refreshed') }
 
-  if (loading) {
+  const hasSectorFilter = sectorSelection.sectorCategories.length > 0 ||
+    sectorSelection.sectors.length > 0 ||
+    sectorSelection.subSectors.length > 0
+
+  if (loading || customYearsLoading) {
     return <MainLayout><AnalyticsSkeleton /></MainLayout>
   }
 
@@ -382,7 +549,7 @@ export default function AidEffectivenessDashboard() {
         </div>
 
         {/* Filters */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-surface-muted border-0">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="h-5 w-5 text-slate-600" />
@@ -390,57 +557,184 @@ export default function AidEffectivenessDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Year</label>
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger><SelectValue placeholder="All Years" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Years</SelectItem>
-                    {AVAILABLE_YEARS.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            <div className="flex items-start gap-4 flex-wrap">
+              {/* Calendar Type + Year Range Selector */}
+              {customYears.length > 0 && (
+                <>
+                  <div className="min-w-[180px]">
+                    <label className="text-sm font-medium text-slate-700 mb-2 block">Calendar</label>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-9 gap-1 bg-white">
+                          {customYears.find(cy => cy.id === calendarType)?.name || 'Select calendar'}
+                          <ChevronDown className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {customYears.map(cy => (
+                          <DropdownMenuItem
+                            key={cy.id}
+                            className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                            onClick={() => setCalendarType(cy.id)}
+                          >
+                            {cy.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  <div className="min-w-[200px]">
+                    <label className="text-sm font-medium text-slate-700 mb-2 block">Year Range</label>
+                    <div className="flex flex-col gap-1">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-9 gap-1 bg-white">
+                            <CalendarIcon className="h-4 w-4" />
+                            {selectedYears.length === 0
+                              ? 'All Years'
+                              : selectedYears.length === 1
+                                ? getYearLabel(selectedYears[0])
+                                : `${getYearLabel(Math.min(...selectedYears))} – ${getYearLabel(Math.max(...selectedYears))}`}
+                            <ChevronDown className="h-4 w-4 opacity-50" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="p-3 w-auto">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                          </div>
+                          <button
+                            onClick={() => setSelectedYears([])}
+                            className={`w-full mb-2 px-2 py-1.5 text-xs font-medium rounded transition-colors ${
+                              selectedYears.length === 0
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-slate-600 hover:bg-slate-100 border border-slate-200'
+                            }`}
+                          >
+                            All Years
+                          </button>
+                          <div className="grid grid-cols-3 gap-1">
+                            {AVAILABLE_YEARS.map((year) => {
+                              const isStartOrEnd = selectedYears.length > 0 &&
+                                (year === Math.min(...selectedYears) || year === Math.max(...selectedYears))
+                              const inRange = isYearInRange(year)
+                              return (
+                                <button
+                                  key={year}
+                                  onClick={(e) => handleYearClick(year, e.shiftKey)}
+                                  className={`
+                                    px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
+                                    ${isStartOrEnd
+                                      ? 'bg-primary text-primary-foreground'
+                                      : inRange
+                                        ? 'bg-primary/20 text-primary'
+                                        : 'text-slate-600 hover:bg-slate-100'
+                                    }
+                                  `}
+                                >
+                                  {getYearLabel(year)}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <p className="text-[10px] text-slate-400 mt-2 text-center">
+                            Click start year, then click end year
+                          </p>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      {effectiveDateRange && (
+                        <span className="text-xs text-slate-500">
+                          {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Reporting Organisation */}
+              <div className="min-w-[320px]">
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Reporting Organisation</label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 gap-2 bg-white w-full justify-between">
+                      {selectedReportingOrg === 'all' ? (
+                        <span>All Organisations</span>
+                      ) : (
+                        <span className="flex items-center gap-2 truncate">
+                          {(() => {
+                            const org = reportingOrgs.find(o => o.id === selectedReportingOrg)
+                            if (!org) return 'All Organisations'
+                            return (
+                              <>
+                                <Avatar className="h-5 w-5 shrink-0">
+                                  {org.logo ? <AvatarImage src={org.logo} alt={org.name} /> : null}
+                                  <AvatarFallback className="text-[8px] bg-slate-200">{(org.acronym || org.name).substring(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <span className="truncate">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
+                                <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded shrink-0">{org.id.substring(0, 8)}</span>
+                              </>
+                            )
+                          })()}
+                        </span>
+                      )}
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-[420px] max-h-[300px] overflow-auto">
+                    <DropdownMenuItem
+                      className={selectedReportingOrg === 'all' ? 'bg-slate-100 font-medium' : ''}
+                      onClick={() => setSelectedReportingOrg('all')}
+                    >
+                      All Organisations
+                    </DropdownMenuItem>
+                    {reportingOrgs.map(org => (
+                      <DropdownMenuItem
+                        key={org.id}
+                        className={selectedReportingOrg === org.id ? 'bg-slate-100 font-medium' : ''}
+                        onClick={() => setSelectedReportingOrg(org.id)}
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <Avatar className="h-6 w-6 shrink-0">
+                            {org.logo ? <AvatarImage src={org.logo} alt={org.name} /> : null}
+                            <AvatarFallback className="text-[9px] bg-slate-200">{(org.acronym || org.name).substring(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm truncate">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
+                          <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded shrink-0 ml-auto">{org.id.substring(0, 8)}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Donor</label>
-                <Select value={filters.donor} onValueChange={v => setFilters(p => ({ ...p, donor: v }))}>
-                  <SelectTrigger><SelectValue placeholder="All Donors" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Donors</SelectItem>
-                    {donors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
+
+              {/* Sector Filter */}
+              <div className="min-w-[200px]">
                 <label className="text-sm font-medium text-slate-700 mb-2 block">Sector</label>
-                <Select value={filters.sector} onValueChange={v => setFilters(p => ({ ...p, sector: v }))}>
-                  <SelectTrigger><SelectValue placeholder="All Sectors" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sectors</SelectItem>
-                    {sectors.map(s => <SelectItem key={s.code} value={s.code}>{s.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <SectorHierarchyFilter
+                  selected={sectorSelection}
+                  onChange={setSectorSelection}
+                  className="bg-white"
+                />
               </div>
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Country</label>
-                <Select value={filters.country} onValueChange={v => setFilters(p => ({ ...p, country: v }))}>
-                  <SelectTrigger><SelectValue placeholder="All Countries" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Countries</SelectItem>
-                    {countries.map(c => <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Partner</label>
-                <Select value={filters.implementingPartner} onValueChange={v => setFilters(p => ({ ...p, implementingPartner: v }))}>
-                  <SelectTrigger><SelectValue placeholder="All Partners" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Partners</SelectItem>
-                    {partnerOptions.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+
+              {/* Clear Filters */}
+              {(selectedYears.length > 0 || selectedReportingOrg !== 'all' || hasSectorFilter) && (
+                <div className="pt-7">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 text-slate-500"
+                    onClick={() => {
+                      setSelectedYears([])
+                      setSelectedReportingOrg('all')
+                      setSectorSelection({ sectorCategories: [], sectors: [], subSectors: [] })
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -449,11 +743,13 @@ export default function AidEffectivenessDashboard() {
           <>
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+              <Card className="bg-surface-muted border-0">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Overall Score</p>
+                      <p className="text-sm font-medium text-slate-600 flex items-center gap-1">
+                        Overall Score <HelpTooltip helpKey="overallScore" />
+                      </p>
                       <p className="text-3xl font-bold text-slate-900">{metrics.overallScore}%</p>
                     </div>
                     <Shield className="h-7 w-7 text-slate-400" />
@@ -462,11 +758,13 @@ export default function AidEffectivenessDashboard() {
                   <p className="text-xs text-slate-500 mt-1">{metrics.total} activities assessed</p>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+              <Card className="bg-surface-muted border-0">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600">GPEDC Compliant</p>
+                      <p className="text-sm font-medium text-slate-600 flex items-center gap-1">
+                        GPEDC Compliant <HelpTooltip helpKey="gpedcCompliant" />
+                      </p>
                       <p className="text-3xl font-bold text-slate-900">{metrics.complianceRate}%</p>
                     </div>
                     <CheckCircle2 className="h-7 w-7 text-slate-400" />
@@ -475,11 +773,13 @@ export default function AidEffectivenessDashboard() {
                   <p className="text-xs text-slate-500 mt-1">{metrics.gpedcCompliant} of {metrics.total} (60%+ threshold)</p>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+              <Card className="bg-surface-muted border-0">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Gov Ownership</p>
+                      <p className="text-sm font-medium text-slate-600 flex items-center gap-1">
+                        Gov Ownership <HelpTooltip helpKey="govOwnership" />
+                      </p>
                       <p className="text-3xl font-bold text-slate-900">{metrics.sectionScores.ownership}%</p>
                     </div>
                     <Building2 className="h-7 w-7 text-slate-400" />
@@ -488,11 +788,13 @@ export default function AidEffectivenessDashboard() {
                   <p className="text-xs text-slate-500 mt-1">GPEDC Indicator 1</p>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+              <Card className="bg-surface-muted border-0">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Untied Aid</p>
+                      <p className="text-sm font-medium text-slate-600 flex items-center gap-1">
+                        Untied Aid <HelpTooltip helpKey="untiedAid" />
+                      </p>
                       <p className="text-3xl font-bold text-slate-900">{metrics.tiedAid[0].pct}%</p>
                     </div>
                     <Handshake className="h-7 w-7 text-slate-400" />
@@ -501,11 +803,13 @@ export default function AidEffectivenessDashboard() {
                   <p className="text-xs text-slate-500 mt-1">GPEDC Indicator 10</p>
                 </CardContent>
               </Card>
-              <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+              <Card className="bg-surface-muted border-0">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Avg Outcomes</p>
+                      <p className="text-sm font-medium text-slate-600 flex items-center gap-1">
+                        Avg Outcomes <HelpTooltip helpKey="avgOutcomes" />
+                      </p>
                       <p className="text-3xl font-bold text-slate-900">{metrics.avgOutcome}</p>
                     </div>
                     <Target className="h-7 w-7 text-slate-400" />
@@ -516,97 +820,13 @@ export default function AidEffectivenessDashboard() {
             </div>
 
             {/* Tabs */}
-            <Tabs defaultValue="overview" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
+            <Tabs defaultValue="ownership" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="ownership">Ownership & Systems</TabsTrigger>
                 <TabsTrigger value="transparency">Transparency & Accountability</TabsTrigger>
                 <TabsTrigger value="engagement">Engagement & Gender</TabsTrigger>
                 <TabsTrigger value="compliance">GPEDC Compliance</TabsTrigger>
               </TabsList>
-
-              {/* ===== Overview Tab ===== */}
-              <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Section Scores Radar */}
-                  <Card className="bg-white border-slate-200">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-slate-500" />
-                        GPEDC Section Scores
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={380}>
-                        <RadarChart cx="50%" cy="50%" outerRadius="65%" data={metrics.radarData}>
-                          <PolarGrid stroke="#e2e8f0" />
-                          <PolarAngleAxis dataKey="section" tick={{ fontSize: 10, fill: '#64748b' }} />
-                          <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                          <Radar name="Score %" dataKey="value" stroke="#334155" fill="#334155" fillOpacity={0.3} />
-                          <Tooltip formatter={(v: any) => [`${v}%`, 'Score']} />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-
-                  {/* Tied Aid Pie */}
-                  <Card className="bg-white border-slate-200">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
-                        <Globe className="h-5 w-5 text-slate-500" />
-                        Aid Tying Status
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={380}>
-                        <PieChart>
-                          <Pie data={metrics.tiedAid} cx="50%" cy="50%" innerRadius={70} outerRadius={130} paddingAngle={2} dataKey="value" nameKey="name">
-                            {metrics.tiedAid.map((_, i) => <Cell key={`t-${i}`} fill={SLATE_PALETTE[i * 2]} />)}
-                          </Pie>
-                          <Tooltip formatter={(v: any, _: any, props: any) => [`${v} activities (${props.payload.pct}%)`, props.payload.name]} />
-                          <Legend formatter={(_: any, entry: any) => `${entry?.payload?.name || ''} (${entry?.payload?.pct || 0}%)`} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Section Score Bars */}
-                <Card className="bg-white border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-slate-500" />
-                      Section Performance
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={metrics.radarData} margin={{ bottom: 60 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                        <XAxis dataKey="section" stroke="#64748b" fontSize={10} angle={-25} textAnchor="end" height={80} />
-                        <YAxis domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} stroke="#64748b" fontSize={12} />
-                        <Tooltip formatter={(v: any) => [`${v}%`, 'Score']} />
-                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                          {metrics.radarData.map((_, i) => <Cell key={`s-${i}`} fill={SLATE_PALETTE[i % SLATE_PALETTE.length]} />)}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Implementing Partners */}
-                <Card className="bg-white border-slate-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
-                      <Users className="h-5 w-5 text-slate-500" />
-                      Implementing Partners
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <PartnerChart partnerCounts={metrics.partnerCounts} orgMap={orgMap} total={metrics.total} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
 
               {/* ===== Ownership & Systems Tab ===== */}
               <TabsContent value="ownership" className="space-y-6">
@@ -617,6 +837,7 @@ export default function AidEffectivenessDashboard() {
                   fields={metrics.fieldCounts.ownership}
                   total={metrics.total}
                   score={metrics.sectionScores.ownership}
+                  helpKey="ownership"
                 />
                 <SectionDetail
                   title="Use of Country Public Financial & Procurement Systems"
@@ -625,6 +846,7 @@ export default function AidEffectivenessDashboard() {
                   fields={metrics.fieldCounts.countrySystems}
                   total={metrics.total}
                   score={metrics.sectionScores.countrySystems}
+                  helpKey="countrySystems"
                 />
                 <GovWhyNotSection activities={filteredActivities} />
 
@@ -634,6 +856,7 @@ export default function AidEffectivenessDashboard() {
                     <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
                       <Target className="h-5 w-5 text-slate-500" />
                       Outcome Indicators Distribution
+                      <HelpTooltip helpKey="outcomeIndicators" />
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -661,7 +884,29 @@ export default function AidEffectivenessDashboard() {
                   fields={metrics.fieldCounts.predictability}
                   total={metrics.total}
                   score={metrics.sectionScores.predictability}
+                  helpKey="predictability"
                 />
+                {/* Tied Aid Pie */}
+                <Card className="bg-white border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
+                      <Globe className="h-5 w-5 text-slate-500" />
+                      Aid Tying Status
+                      <HelpTooltip helpKey="tiedAid" />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie data={metrics.tiedAid} cx="50%" cy="50%" innerRadius={70} outerRadius={130} paddingAngle={2} dataKey="value" nameKey="name">
+                          {metrics.tiedAid.map((_, i) => <Cell key={`t-${i}`} fill={SLATE_PALETTE[i * 2]} />)}
+                        </Pie>
+                        <Tooltip formatter={(v: any, _: any, props: any) => [`${v} activities (${props.payload.pct}%)`, props.payload.name]} />
+                        <Legend formatter={(_: any, entry: any) => `${entry?.payload?.name || ''} (${entry?.payload?.pct || 0}%)`} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
                 <SectionDetail
                   title="Transparency & Timely Reporting"
                   icon={<Eye className="h-5 w-5 text-slate-500" />}
@@ -669,6 +914,7 @@ export default function AidEffectivenessDashboard() {
                   fields={metrics.fieldCounts.transparency}
                   total={metrics.total}
                   score={metrics.sectionScores.transparency}
+                  helpKey="transparency"
                 />
                 <SectionDetail
                   title="Mutual Accountability"
@@ -677,6 +923,7 @@ export default function AidEffectivenessDashboard() {
                   fields={metrics.fieldCounts.accountability}
                   total={metrics.total}
                   score={metrics.sectionScores.accountability}
+                  helpKey="accountability"
                 />
               </TabsContent>
 
@@ -689,6 +936,7 @@ export default function AidEffectivenessDashboard() {
                   fields={metrics.fieldCounts.civilSociety}
                   total={metrics.total}
                   score={metrics.sectionScores.civilSociety}
+                  helpKey="civilSociety"
                 />
                 <SectionDetail
                   title="Gender Equality & Inclusion"
@@ -697,6 +945,7 @@ export default function AidEffectivenessDashboard() {
                   fields={metrics.fieldCounts.gender}
                   total={metrics.total}
                   score={metrics.sectionScores.gender}
+                  helpKey="gender"
                 />
               </TabsContent>
 
@@ -705,7 +954,10 @@ export default function AidEffectivenessDashboard() {
                 {/* Full radar */}
                 <Card className="bg-white border-slate-200">
                   <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700">GPEDC Section Radar</CardTitle>
+                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
+                      GPEDC Section Radar
+                      <HelpTooltip helpKey="complianceRadar" />
+                    </CardTitle>
                     <CardDescription>Compliance across all 7 GPEDC indicator categories</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -722,10 +974,37 @@ export default function AidEffectivenessDashboard() {
                   </CardContent>
                 </Card>
 
+                {/* Section Performance Bars */}
+                <Card className="bg-white border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-slate-500" />
+                      Section Performance
+                      <HelpTooltip helpKey="sectionBars" />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={metrics.radarData} margin={{ bottom: 60 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                        <XAxis dataKey="section" stroke="#64748b" fontSize={10} angle={-25} textAnchor="end" height={80} />
+                        <YAxis domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} stroke="#64748b" fontSize={12} />
+                        <Tooltip formatter={(v: any) => [`${v}%`, 'Score']} />
+                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                          {metrics.radarData.map((_, i) => <Cell key={`s-${i}`} fill={SLATE_PALETTE[i % SLATE_PALETTE.length]} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
                 {/* All sections summary */}
                 <Card className="bg-white border-slate-200">
                   <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700">All Sections Breakdown</CardTitle>
+                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
+                      All Sections Breakdown
+                      <HelpTooltip helpKey="allSections" />
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
@@ -747,6 +1026,20 @@ export default function AidEffectivenessDashboard() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Implementing Partners */}
+                <Card className="bg-white border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
+                      <Users className="h-5 w-5 text-slate-500" />
+                      Implementing Partners
+                      <HelpTooltip helpKey="partners" />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <PartnerChart partnerCounts={metrics.partnerCounts} orgMap={orgMap} total={metrics.total} />
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </>
@@ -766,13 +1059,14 @@ export default function AidEffectivenessDashboard() {
 
 // --- Reusable Section Detail Component ---
 
-function SectionDetail({ title, icon, badge, fields, total, score }: {
+function SectionDetail({ title, icon, badge, fields, total, score, helpKey }: {
   title: string
   icon: React.ReactNode
   badge: string
   fields: { label: string; yes: number; pct: number }[]
   total: number
   score: number
+  helpKey?: string
 }) {
   return (
     <Card className="bg-white border-slate-200">
@@ -781,6 +1075,7 @@ function SectionDetail({ title, icon, badge, fields, total, score }: {
           <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
             {icon}
             {title}
+            {helpKey && <HelpTooltip helpKey={helpKey} />}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">{badge}</Badge>
@@ -859,7 +1154,10 @@ function GovWhyNotSection({ activities }: { activities: ActivityRow[] }) {
   return (
     <Card className="bg-white border-slate-200">
       <CardHeader>
-        <CardTitle className="text-lg font-medium text-slate-700">Reasons for Not Using Government Systems</CardTitle>
+        <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
+          Reasons for Not Using Government Systems
+          <HelpTooltip helpKey="govWhyNot" />
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">

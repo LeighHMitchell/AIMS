@@ -44,17 +44,14 @@ export async function middleware(request: NextRequest) {
       },
     })
 
-    // Race getUser() against a 5s timeout to avoid MIDDLEWARE_INVOCATION_TIMEOUT
-    // on slow edge locations (e.g. Singapore → US Supabase)
+    // Use getSession() instead of getUser() to refresh cookies without
+    // hitting the Supabase auth database on every request.
+    // getSession() validates the JWT locally and only contacts Supabase
+    // when the token needs refreshing, saving significant Disk IO.
     try {
-      await Promise.race([
-        supabase.auth.getUser(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 5000)
-        ),
-      ])
+      await supabase.auth.getSession()
     } catch {
-      // Timeout or Supabase error — proceed without refresh.
+      // Supabase error — proceed without refresh.
       // The client SDK or route handler will retry token refresh.
     }
   }

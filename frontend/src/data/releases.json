@@ -1,6 +1,37 @@
 {
-  "currentVersion": "2.7.0",
+  "currentVersion": "2.8.0",
   "releases": [
+    {
+      "version": "2.8.0",
+      "date": "2026-02-17",
+      "changes": [
+        "<b>Aid Effectiveness Dashboard</b>",
+        "&nbsp;&nbsp;Redesigned filter panel with reporting organisation selector (logos, names, acronyms) and hierarchical sector filter",
+        "&nbsp;&nbsp;Custom fiscal/calendar year support with visual year-range grid selector",
+        "&nbsp;&nbsp;Help tooltips on all 15+ KPI cards and chart sections explaining each metric",
+        "&nbsp;&nbsp;Consolidated from 5 tabs to 4 &mdash; overview content merged into Ownership and Transparency tabs",
+        "&nbsp;&nbsp;KPI card styling unified to <code>bg-surface-muted</code> with borderless design",
+        "<b>Transaction Auto-Defaulting</b>",
+        "&nbsp;&nbsp;Automatic provider/receiver organisation assignment based on IATI 2.03 transaction direction",
+        "&nbsp;&nbsp;Incoming transactions (types 1, 9, 11, 13) auto-fill receiver with your organisation",
+        "&nbsp;&nbsp;Outgoing transactions (types 2&ndash;8, 10, 12) auto-fill provider with your organisation",
+        "&nbsp;&nbsp;&ldquo;Auto-filled&rdquo; badge displayed when org is automatically set; manual changes are preserved",
+        "&nbsp;&nbsp;Provider/receiver cards highlight blue (outgoing) or green (incoming) when matching your org",
+        "<b>Performance &amp; Disk IO Reduction</b>",
+        "&nbsp;&nbsp;Middleware: replaced <code>getUser()</code> with <code>getSession()</code> &mdash; validates JWT locally instead of querying Supabase on every request",
+        "&nbsp;&nbsp;Activity comments polling: 30s &rarr; 60s",
+        "&nbsp;&nbsp;Notification bell polling: 30s &rarr; 120s",
+        "&nbsp;&nbsp;Bulk import status polling: 2s &rarr; 5s",
+        "&nbsp;&nbsp;Comments drawer auto-refresh: 30s &rarr; 60s",
+        "<b>Activity Editor</b>",
+        "&nbsp;&nbsp;Actual date narrative sections auto-collapse when their date field becomes disabled (e.g. status change)",
+        "&nbsp;&nbsp;Disabled date narrative toggle buttons now show gray text with <code>cursor-not-allowed</code>",
+        "&nbsp;&nbsp;API validation: prevents saving actual date narratives without a corresponding date value",
+        "<b>Bug Fixes</b>",
+        "&nbsp;&nbsp;Fixed middleware 5-second timeout race condition that prevented proper token refresh",
+        "&nbsp;&nbsp;Fixed orphaned narrative descriptions being saved without corresponding actual dates"
+      ]
+    },
     {
       "version": "2.7.0",
       "date": "2026-02-15",

@@ -28,15 +28,28 @@ import {
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from "sonner";
-import { 
-  showTransactionSuccess, 
-  showTransactionError, 
-  showValidationError, 
+import {
+  showTransactionSuccess,
+  showTransactionError,
+  showValidationError,
   showFieldSaveSuccess,
-  TRANSACTION_TOAST_IDS 
+  TRANSACTION_TOAST_IDS
 } from '@/lib/toast-manager';
 import { CopyField } from '@/components/ui/copy-field';
 import { apiFetch } from '@/lib/api-fetch';
+import { useUser } from '@/hooks/useUser';
+
+// Transaction direction mapping (IATI 2.03)
+// Incoming: logged-in org is the receiver
+const INCOMING_TRANSACTION_TYPES = ['1', '9', '11', '13'];
+// Outgoing: logged-in org is the provider
+const OUTGOING_TRANSACTION_TYPES = ['2', '3', '4', '5', '6', '7', '8', '10', '12'];
+
+function getTransactionDirection(typeCode: string): 'incoming' | 'outgoing' | null {
+  if (INCOMING_TRANSACTION_TYPES.includes(typeCode)) return 'incoming';
+  if (OUTGOING_TRANSACTION_TYPES.includes(typeCode)) return 'outgoing';
+  return null;
+}
 
 // Common currencies
 const COMMON_CURRENCIES = [
@@ -113,7 +126,15 @@ export default function TransactionForm({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [transactionTypePopoverOpen, setTransactionTypePopoverOpen] = useState(false);
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
-  
+
+  // Get logged-in user's organization for direction-based defaulting
+  const { user } = useUser();
+  const userOrgId = user?.organizationId || '';
+
+  // Track whether provider/receiver were manually changed by the user
+  const [providerManuallySet, setProviderManuallySet] = useState(false);
+  const [receiverManuallySet, setReceiverManuallySet] = useState(false);
+
   // Exchange rate state
   const [exchangeRateManual, setExchangeRateManual] = useState(transaction?.exchange_rate_manual ?? false);
   const [exchangeRateUsed, setExchangeRateUsed] = useState<number | null>(transaction?.exchange_rate_used ?? null);
@@ -308,6 +329,88 @@ export default function TransactionForm({
     }
   }, [transaction, defaultCurrency]);
 
+  // Track what we last successfully defaulted for, to avoid re-running unnecessarily
+  // Format: "typeCode|userOrgId" — changes when either the type or org identity changes
+  const lastDefaultedKeyRef = React.useRef<string | null>(null);
+
+  // Direction-based defaulting of provider/receiver org
+  // Applies when: creating a new transaction, or when transaction type changes
+  useEffect(() => {
+    // Skip for existing transactions on initial load (they already have org data)
+    if (transaction && lastDefaultedKeyRef.current === null) {
+      // Mark as "seen" so future type changes on this transaction still trigger defaults
+      lastDefaultedKeyRef.current = `${formData.transaction_type}|${userOrgId}|existing`;
+      return;
+    }
+
+    // Skip if we don't know the user's org yet
+    if (!userOrgId) return;
+
+    const currentType = formData.transaction_type;
+    const defaultKey = `${currentType}|${userOrgId}`;
+
+    // Skip if we already applied defaults for this exact type + org combination
+    if (lastDefaultedKeyRef.current === defaultKey) return;
+
+    const direction = getTransactionDirection(currentType);
+    if (!direction) return;
+
+    // Check if this is a type change (vs initial load or userOrgId becoming available)
+    const wasTypeChange = lastDefaultedKeyRef.current !== null
+      && !lastDefaultedKeyRef.current.endsWith('|existing')
+      && lastDefaultedKeyRef.current.split('|')[0] !== currentType;
+
+    lastDefaultedKeyRef.current = defaultKey;
+
+    const userOrg = organizations.find(o => o.id === userOrgId);
+
+    if (direction === 'incoming') {
+      // Logged-in org is the receiver
+      if (!receiverManuallySet) {
+        setFormData(prev => ({
+          ...prev,
+          receiver_org_id: userOrgId,
+          receiver_org_name: userOrg ? ((userOrg as any).acronym || userOrg.name || '') : '',
+          receiver_org_ref: userOrg?.iati_org_id || userOrg?.ref || '',
+        }));
+      }
+      // Clear provider only if it was auto-set (not manually chosen)
+      if (!providerManuallySet) {
+        setFormData(prev => ({
+          ...prev,
+          provider_org_id: '',
+          provider_org_name: '',
+          provider_org_ref: '',
+        }));
+      }
+    } else {
+      // Outgoing: logged-in org is the provider
+      if (!providerManuallySet) {
+        setFormData(prev => ({
+          ...prev,
+          provider_org_id: userOrgId,
+          provider_org_name: userOrg ? ((userOrg as any).acronym || userOrg.name || '') : '',
+          provider_org_ref: userOrg?.iati_org_id || userOrg?.ref || '',
+        }));
+      }
+      // Clear receiver only if it was auto-set (not manually chosen)
+      if (!receiverManuallySet) {
+        setFormData(prev => ({
+          ...prev,
+          receiver_org_id: '',
+          receiver_org_name: '',
+          receiver_org_ref: '',
+        }));
+      }
+    }
+
+    // Reset manual flags when type changes so the new defaults can apply next time
+    if (wasTypeChange) {
+      setProviderManuallySet(false);
+      setReceiverManuallySet(false);
+    }
+  }, [formData.transaction_type, userOrgId, transaction, organizations]);
+
   // Add getTransactionPayload helper before handleSubmit
   const getTransactionPayload = (formData: Partial<TransactionFormData>, organizations: any[]) => {
     // List of allowed fields in the DB schema
@@ -446,6 +549,7 @@ export default function TransactionForm({
 
   // Update organization fields when selection changes
   const handleProviderOrgChange = (orgId: string) => {
+    setProviderManuallySet(true);
     const org = organizations.find((o: any) => o.id === orgId);
     setFormData(prev => ({
       ...prev,
@@ -456,6 +560,7 @@ export default function TransactionForm({
   };
 
   const handleReceiverOrgChange = (orgId: string) => {
+    setReceiverManuallySet(true);
     const org = organizations.find((o: any) => o.id === orgId);
     setFormData(prev => ({
       ...prev,
@@ -501,13 +606,17 @@ export default function TransactionForm({
 
   // Get transaction type info for display
   const getTransactionTypeInfo = (type: TransactionType) => {
-    const incomingTypes = ['1', '11', '13']; // Incoming Funds, Incoming Commitment, Incoming Pledge
-    const isIncoming = incomingTypes.includes(type);
+    const direction = getTransactionDirection(type);
+    const isIncoming = direction === 'incoming';
     return {
       label: TRANSACTION_TYPE_LABELS[type],
+      direction,
       isIncoming,
       color: isIncoming ? 'text-green-600' : 'text-blue-600',
-      bgColor: isIncoming ? 'bg-green-50' : 'bg-blue-50'
+      bgColor: isIncoming ? 'bg-green-50' : 'bg-blue-50',
+      hint: isIncoming
+        ? 'Your organisation is receiving these funds.'
+        : 'Your organisation is providing these funds.',
     };
   };
 
@@ -646,9 +755,14 @@ export default function TransactionForm({
                   </Command>
                 </PopoverContent>
               </Popover>
-              <Badge variant="outline" className={`w-fit ${typeInfo.bgColor} ${typeInfo.color}`}>
-                {typeInfo.isIncoming ? 'Incoming' : 'Outgoing'} Transaction
-              </Badge>
+              <div className="flex flex-col gap-1">
+                <Badge variant="outline" className={`w-fit ${typeInfo.bgColor} ${typeInfo.color}`}>
+                  {typeInfo.isIncoming ? 'Incoming' : 'Outgoing'} Transaction
+                </Badge>
+                <span className={`text-xs ${typeInfo.color}`}>
+                  {typeInfo.hint}
+                </span>
+              </div>
             </div>
 
             {/* Transaction Date */}
@@ -881,9 +995,16 @@ export default function TransactionForm({
             </h3>
             
             {/* Provider Organization */}
-            <Card className="border-dashed bg-gray-50">
+            <Card className={`border-dashed ${!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId ? 'bg-blue-50/50 border-blue-200' : 'bg-gray-50'}`}>
               <CardHeader className="pb-3 border-b border-gray-200">
-                <CardTitle className="text-sm">Provider Organization</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  Provider Organization
+                  {!typeInfo.isIncoming && userOrgId && formData.provider_org_id === userOrgId && (
+                    <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-600 font-normal">
+                      Auto-filled
+                    </Badge>
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <OrganizationCombobox
@@ -905,9 +1026,16 @@ export default function TransactionForm({
             </Card>
 
             {/* Receiver Organization */}
-            <Card className="border-dashed bg-gray-50">
+            <Card className={`border-dashed ${typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId ? 'bg-green-50/50 border-green-200' : 'bg-gray-50'}`}>
               <CardHeader className="pb-3 border-b border-gray-200">
-                <CardTitle className="text-sm">Receiver Organization</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  Receiver Organization
+                  {typeInfo.isIncoming && userOrgId && formData.receiver_org_id === userOrgId && (
+                    <Badge variant="outline" className="text-xs bg-green-50 border-green-200 text-green-600 font-normal">
+                      Auto-filled
+                    </Badge>
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <OrganizationCombobox
