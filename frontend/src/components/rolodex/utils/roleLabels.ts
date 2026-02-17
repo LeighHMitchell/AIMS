@@ -7,10 +7,10 @@ export const ROLE_CATEGORIES = {
 export const ROLE_LABELS: Record<string, { label: string; color: string; category: string }> = {
   // System roles - Updated to match Badge variant colors for consistency
   'super_user': { label: 'Super User', color: 'bg-destructive text-destructive-foreground', category: ROLE_CATEGORIES.SYSTEM },
-  'government_partner_tier_1': { label: 'Government Partner tier 1', color: 'bg-green-700 text-white border border-green-800', category: ROLE_CATEGORIES.SYSTEM },
-  'government_partner_tier_2': { label: 'Government partner tier 2', color: 'bg-green-100 text-green-700 border border-green-200', category: ROLE_CATEGORIES.SYSTEM },
-  'development_partner_tier_1': { label: 'Data Submission', color: 'bg-blue-700 text-white border border-blue-800', category: ROLE_CATEGORIES.SYSTEM },
-  'development_partner_tier_2': { label: 'Review & Approval', color: 'bg-blue-100 text-blue-700 border border-blue-200', category: ROLE_CATEGORIES.SYSTEM },
+  'government_partner_tier_1': { label: 'Government Partner - Tier 1', color: 'bg-green-700 text-white border border-green-800', category: ROLE_CATEGORIES.SYSTEM },
+  'government_partner_tier_2': { label: 'Government Partner - Tier 2', color: 'bg-green-100 text-green-700 border border-green-200', category: ROLE_CATEGORIES.SYSTEM },
+  'development_partner_tier_1': { label: 'Development Partner - Tier 1', color: 'bg-blue-700 text-white border border-blue-800', category: ROLE_CATEGORIES.SYSTEM },
+  'development_partner_tier_2': { label: 'Development Partner - Tier 2', color: 'bg-blue-100 text-blue-700 border border-blue-200', category: ROLE_CATEGORIES.SYSTEM },
   'orphan': { label: 'Unassigned User', color: 'text-foreground', category: ROLE_CATEGORIES.SYSTEM },
 
   // Organization roles

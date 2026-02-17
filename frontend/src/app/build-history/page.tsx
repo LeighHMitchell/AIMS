@@ -152,15 +152,18 @@ export default function BuildHistoryPage() {
                         <div className="space-y-2">
                           <h4 className="text-sm font-medium text-foreground">Changes in this release:</h4>
                           <ul className="space-y-2">
-                            {release.changes.map((change, changeIndex) => (
-                              <li
-                                key={changeIndex}
-                                className="flex items-start gap-3 text-sm text-muted-foreground"
-                              >
-                                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                                <span dangerouslySetInnerHTML={{ __html: change }} />
-                              </li>
-                            ))}
+                            {release.changes.map((change, changeIndex) => {
+                              const isHeader = /^<b>.*<\/b>$/.test(change)
+                              return (
+                                <li
+                                  key={changeIndex}
+                                  className={`flex items-start gap-3 text-sm ${isHeader ? 'text-foreground font-medium mt-3 first:mt-0' : 'text-muted-foreground'}`}
+                                >
+                                  {!isHeader && <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />}
+                                  <span dangerouslySetInnerHTML={{ __html: change }} />
+                                </li>
+                              )
+                            })}
                           </ul>
                         </div>
                       </CardContent>

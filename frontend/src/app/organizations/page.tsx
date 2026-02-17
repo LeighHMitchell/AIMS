@@ -1741,21 +1741,9 @@ function OrganizationsPageContent() {
             {/* View Toggle */}
             <div className="flex items-center">
               <Button
-                variant={viewMode === 'card' ? 'default' : 'outline'}
-                size="sm"
-                className="rounded-r-none"
-                onClick={() => {
-                  setViewMode('card')
-                  localStorage.setItem('organizationViewMode', 'card')
-                }}
-              >
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                Card
-              </Button>
-              <Button
                 variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="sm"
-                className="rounded-l-none"
+                className="rounded-r-none"
                 onClick={() => {
                   setViewMode('table')
                   localStorage.setItem('organizationViewMode', 'table')
@@ -1763,6 +1751,18 @@ function OrganizationsPageContent() {
               >
                 <TableIcon className="h-4 w-4 mr-2" />
                 Table
+              </Button>
+              <Button
+                variant={viewMode === 'card' ? 'default' : 'outline'}
+                size="sm"
+                className="rounded-l-none"
+                onClick={() => {
+                  setViewMode('card')
+                  localStorage.setItem('organizationViewMode', 'card')
+                }}
+              >
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Card
               </Button>
             </div>
           </div>

@@ -10,11 +10,9 @@ import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
-  HelpCircle,
   CheckCircle,
   Download,
   Upload,
@@ -197,24 +195,15 @@ const TIED_STATUS_OPTIONS = [
   { value: "tied", label: "Tied", description: "Procurement restricted to donor country" },
 ];
 
-// Helper component for tooltips
-const FieldTooltip: React.FC<{ content: string; children: React.ReactNode }> = ({ content, children }) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="flex items-center gap-1 cursor-help">
-          {children}
-          <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
-        </div>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs">
-        <p className="text-xs">{content}</p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
+// Helper component for field labels with visible description
+const FieldWithDescription: React.FC<{ description: string; children: React.ReactNode }> = ({ description, children }) => (
+  <div className="space-y-1">
+    {children}
+    <p className="text-xs text-slate-500">{description}</p>
+  </div>
 );
 
-// Checkbox field with label
+// Survey-style checkbox question
 const CheckboxField: React.FC<{
   id: string;
   checked?: boolean;
@@ -223,33 +212,22 @@ const CheckboxField: React.FC<{
   tooltip?: string;
   description?: string;
 }> = ({ id, checked, onCheckedChange, label, tooltip, description }) => (
-  <div className="flex items-start space-x-3 p-3 rounded-lg border bg-white hover:bg-gray-50 transition-colors">
+  <div className="flex items-start space-x-3 py-3 border-b border-slate-100 last:border-b-0">
     <Checkbox
       id={id}
       checked={checked ?? false}
       onCheckedChange={onCheckedChange}
-      className="mt-0.5"
+      className="mt-0.5 border-orange-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
     />
-    <div className="flex-1 space-y-1">
-      <div className="flex items-center gap-1">
-        <Label htmlFor={id} className="text-sm font-medium cursor-pointer leading-tight">
-          {label}
-        </Label>
-        {tooltip && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p className="text-xs">{tooltip}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
+    <div className="flex-1 space-y-0.5">
+      <Label htmlFor={id} className="text-sm font-medium cursor-pointer leading-tight text-slate-800">
+        {label}
+      </Label>
+      {tooltip && (
+        <p className="text-xs text-slate-500 leading-relaxed">{tooltip}</p>
+      )}
       {description && (
-        <p className="text-xs text-gray-500">{description}</p>
+        <p className="text-xs text-slate-400 italic">{description}</p>
       )}
     </div>
   </div>
@@ -593,34 +571,38 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
 
   return (
     <div className="bg-white rounded-lg shadow-sm border">
-      {/* Header */}
-      <div className="border-b px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50">
-        <div className="flex items-center justify-between">
+      {/* Header with GPEDC banner */}
+      <div
+        className="border-b px-6 py-5 bg-cover bg-center bg-no-repeat relative overflow-hidden rounded-t-lg"
+        style={{ backgroundImage: 'url(https://www.effectivecooperation.org/sites/default/files/imported/images/Colors_GPEDC.png)' }}
+      >
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Shield className="h-5 w-5 text-orange-600" />
+            <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+              <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Aid Effectiveness</h2>
-              <p className="text-xs text-gray-500">GPEDC Monitoring Framework</p>
+              <h2 className="text-lg font-semibold text-white">Aid Effectiveness</h2>
+              <p className="text-xs text-white/70">GPEDC Monitoring Framework</p>
             </div>
-            <Badge variant="outline" className="bg-white text-orange-700 border-orange-200 text-xs">
+            <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 text-xs">
               GPEDC Compliant
             </Badge>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Progress value={completionPercentage} className="w-24 h-2" />
-              <span className="text-sm font-medium text-gray-600">{completionPercentage}%</span>
+              <Progress value={completionPercentage} className="w-24 h-2 bg-white/20 [&>div]:bg-white" />
+              <span className="text-sm font-medium text-white">{completionPercentage}%</span>
             </div>
             {isSaving ? (
-              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <div className="flex items-center gap-1.5 text-xs text-white/70">
                 <Clock className="h-3.5 w-3.5 animate-spin" />
                 <span>Saving...</span>
               </div>
             ) : lastSaved ? (
-              <div className="flex items-center gap-1.5 text-xs text-green-600">
+              <div className="flex items-center gap-1.5 text-xs text-white">
                 <CheckCircle className="h-3.5 w-3.5" />
                 <span>Saved</span>
               </div>
@@ -633,15 +615,15 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 1: Government Ownership & Strategic Alignment ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Building2 className="h-5 w-5 text-blue-600" />
+            <Building2 className="h-5 w-5 text-slate-500" />
             <h3 className="font-semibold text-gray-900">Government Ownership & Strategic Alignment</h3>
-            <Badge variant="outline" className="text-xs">GPEDC Indicator 1</Badge>
+            <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicator 1</Badge>
           </div>
 
           <div className="space-y-2">
-            <FieldTooltip content={TOOLTIPS.implementingPartner}>
-              <Label className="text-sm font-medium text-gray-700">Implementing Partner</Label>
-            </FieldTooltip>
+            <FieldWithDescription description={TOOLTIPS.implementingPartner}>
+              <Label className="text-sm font-medium text-slate-700">Implementing Partner</Label>
+            </FieldWithDescription>
             <OrganizationCombobox
               organizations={organizations}
               value={formData.implementingPartner}
@@ -654,7 +636,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-0 border rounded-lg px-4 bg-white">
             <CheckboxField
               id="formallyApprovedByGov"
               checked={formData.formallyApprovedByGov}
@@ -723,9 +705,9 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           <div className="space-y-2 max-w-xs">
-            <FieldTooltip content={TOOLTIPS.numOutcomeIndicators}>
-              <Label className="text-sm font-medium text-gray-700">Number of Outcome Indicators</Label>
-            </FieldTooltip>
+            <FieldWithDescription description={TOOLTIPS.numOutcomeIndicators}>
+              <Label className="text-sm font-medium text-slate-700">Number of Outcome Indicators</Label>
+            </FieldWithDescription>
             <Input
               type="number"
               min="0"
@@ -740,12 +722,12 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 2: Use of Country PFM & Procurement Systems ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Globe className="h-5 w-5 text-green-600" />
+            <Globe className="h-5 w-5 text-slate-500" />
             <h3 className="font-semibold text-gray-900">Use of Country Public Financial & Procurement Systems</h3>
-            <Badge variant="outline" className="text-xs">GPEDC Indicator 5a</Badge>
+            <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicator 5a</Badge>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-0 border rounded-lg px-4 bg-white">
             <CheckboxField
               id="fundsViaNationalTreasury"
               checked={formData.fundsViaNationalTreasury}
@@ -809,12 +791,12 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 3: Predictability & Aid Characteristics ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Calendar className="h-5 w-5 text-purple-600" />
+            <Calendar className="h-5 w-5 text-slate-500" />
             <h3 className="font-semibold text-gray-900">Predictability & Aid Characteristics</h3>
-            <Badge variant="outline" className="text-xs">GPEDC Indicators 5b, 6, 10</Badge>
+            <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicators 5b, 6, 10</Badge>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-0 border rounded-lg px-4 bg-white">
             <CheckboxField
               id="annualBudgetShared"
               checked={formData.annualBudgetShared}
@@ -839,9 +821,9 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           <div className="space-y-2 max-w-md">
-            <FieldTooltip content={TOOLTIPS.tiedStatus}>
-              <Label className="text-sm font-medium text-gray-700">Tied Aid Status</Label>
-            </FieldTooltip>
+            <FieldWithDescription description={TOOLTIPS.tiedStatus}>
+              <Label className="text-sm font-medium text-slate-700">Tied Aid Status</Label>
+            </FieldWithDescription>
             <Select
               value={formData.tiedStatus || ""}
               onValueChange={(value) => updateField('tiedStatus', value)}
@@ -866,12 +848,12 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 4: Transparency & Timely Reporting ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Eye className="h-5 w-5 text-cyan-600" />
+            <Eye className="h-5 w-5 text-slate-500" />
             <h3 className="font-semibold text-gray-900">Transparency & Timely Reporting</h3>
-            <Badge variant="outline" className="text-xs">GPEDC Indicator 4</Badge>
+            <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicator 4</Badge>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-0 border rounded-lg px-4 bg-white">
             <CheckboxField
               id="annualFinReportsPublic"
               checked={formData.annualFinReportsPublic}
@@ -925,16 +907,16 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 5: Mutual Accountability ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Handshake className="h-5 w-5 text-amber-600" />
+            <Handshake className="h-5 w-5 text-slate-500" />
             <h3 className="font-semibold text-gray-900">Mutual Accountability</h3>
-            <Badge variant="outline" className="text-xs">GPEDC Indicator 7</Badge>
+            <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicator 7</Badge>
           </div>
 
           <p className="text-xs text-gray-500 italic">
             Note: Indicator 7 is formally country-level. These questions approximate it at activity level.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-0 border rounded-lg px-4 bg-white">
             <CheckboxField
               id="jointAnnualReview"
               checked={formData.jointAnnualReview}
@@ -962,16 +944,16 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 6: Civil Society & Private Sector Engagement ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Users className="h-5 w-5 text-rose-600" />
+            <Users className="h-5 w-5 text-slate-500" />
             <h3 className="font-semibold text-gray-900">Civil Society & Private Sector Engagement</h3>
-            <Badge variant="outline" className="text-xs">GPEDC Indicators 2 & 3</Badge>
+            <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicators 2 & 3</Badge>
           </div>
 
           <p className="text-xs text-gray-500 italic">
             Note: Indicators 2 and 3 are partially systemic, but these are measurable proxies.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-0 border rounded-lg px-4 bg-white">
             <CheckboxField
               id="civilSocietyConsulted"
               checked={formData.civilSocietyConsulted}
@@ -1013,12 +995,12 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 7: Gender Equality & Inclusion ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <Heart className="h-5 w-5 text-pink-600" />
+            <Heart className="h-5 w-5 text-slate-500" />
             <h3 className="font-semibold text-gray-900">Gender Equality & Inclusion</h3>
-            <Badge variant="outline" className="text-xs">GPEDC Indicator 8</Badge>
+            <Badge variant="outline" className="text-xs text-[#F37021] border-[#F37021]/30">GPEDC Indicator 8</Badge>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-0 border rounded-lg px-4 bg-white">
             <CheckboxField
               id="genderObjectivesIntegrated"
               checked={formData.genderObjectivesIntegrated}
@@ -1046,7 +1028,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 8: Contact Details ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <MessageSquare className="h-5 w-5 text-slate-600" />
+            <MessageSquare className="h-5 w-5 text-slate-500" />
             <h3 className="font-semibold text-gray-900">Contacts</h3>
           </div>
 
@@ -1162,7 +1144,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 9: Documents ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <FileText className="h-5 w-5 text-red-600" />
+            <FileText className="h-5 w-5 text-slate-500" />
             <h3 className="font-semibold text-gray-900">Supporting Documentation</h3>
           </div>
 
@@ -1253,14 +1235,14 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         {/* ====== Section 10: Remarks ====== */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b">
-            <FileText className="h-5 w-5 text-gray-600" />
+            <FileText className="h-5 w-5 text-slate-500" />
             <h3 className="font-semibold text-gray-900">Additional Remarks</h3>
           </div>
 
           <div className="space-y-2">
-            <FieldTooltip content={TOOLTIPS.remarks}>
-              <Label className="text-sm font-medium text-gray-700">Additional Notes</Label>
-            </FieldTooltip>
+            <FieldWithDescription description={TOOLTIPS.remarks}>
+              <Label className="text-sm font-medium text-slate-700">Additional Notes</Label>
+            </FieldWithDescription>
             <Textarea
               value={formData.remarks || ""}
               onChange={(e) => updateField('remarks', e.target.value)}

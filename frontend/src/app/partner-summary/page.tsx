@@ -42,16 +42,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
-  Building2, 
-  Users, 
-  DollarSign, 
-  Calendar, 
-  Download, 
-  Search, 
-  ChevronDown, 
-  ChevronUp,
-  Filter,
-  BarChart3,
+  Building2,
+  Download,
+  Search,
+  ChevronDown,
   ExternalLink,
   ExpandIcon,
   Minimize2,
@@ -483,10 +477,6 @@ export default function PartnerSummaryPage() {
 
   if (!data) return null;
 
-  const totalPartners = data.totalCounts.partners;
-  const totalProjects = data.totalCounts.projects;
-  const totalDisbursements = data.totalCounts.totalDisbursements;
-  const visibleGroupsCount = Array.from(groupedPartners.keys()).length;
 
   return (
     <MainLayout>
@@ -506,67 +496,6 @@ export default function PartnerSummaryPage() {
               Export All Partners
             </Button>
           </div>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Development Partners</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalPartners}</div>
-              <p className="text-xs text-muted-foreground">
-                {filteredPartners.length} shown
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Partner Government Entities</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {data.partners.filter(p => p.organizationTypeCode === '10').length}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Government partners
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Groups</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {visibleGroupsCount}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Groups with organizations
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Last Updated</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {format(new Date(data.lastUpdated), 'MMM d')}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {format(new Date(data.lastUpdated), 'yyyy')}
-              </p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Controls */}

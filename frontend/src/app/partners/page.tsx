@@ -15,9 +15,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { 
-  Building2, 
-  Users, 
-  Search, 
+  Building2,
+  Search,
   DollarSign,
   Activity,
   ExternalLink,
@@ -131,6 +130,7 @@ export default function PartnersPage() {
   const [loadingCountries, setLoadingCountries] = useState<Set<string>>(new Set());
   const [expandLevel, setExpandLevel] = useState<0 | 1 | 2>(0); // 0 = collapsed, 1 = orgs expanded, 2 = activities expanded
   const [hideInactiveOrgs, setHideInactiveOrgs] = useState(false); // Hide orgs with no financial activity
+  const transactionType = 'D'; // Disbursements - matches the summary data shown
 
   // Fetch summary data - unified view with actual disbursements + planned disbursements
   const fetchSummaryData = async () => {
@@ -166,10 +166,34 @@ export default function PartnersPage() {
 
       setSummaryData(data);
 
-      // Auto-expand countries
+      // Auto-expand countries and all organizations with their activities
       if (data.predefinedGroups) {
         const countryIds = data.predefinedGroups.map((g: GroupData) => g.id);
         setExpandedCountries(new Set(countryIds));
+
+        // Collect all org IDs and auto-expand them
+        const allOrgs: string[] = [];
+        const orgsWithActivities: string[] = [];
+        data.predefinedGroups.forEach((group: GroupData) => {
+          group.organizations.forEach((org: OrganizationMetrics) => {
+            allOrgs.push(org.id);
+            if (org.activeProjects && org.activeProjects > 0) {
+              orgsWithActivities.push(org.id);
+            }
+          });
+        });
+
+        setExpandedOrgs(new Set(allOrgs));
+        setLoadingOrgs(new Set(orgsWithActivities));
+        setExpandLevel(2);
+
+        // Fetch activities for all orgs with active projects (batched)
+        const batchSize = 5;
+        for (let i = 0; i < orgsWithActivities.length; i += batchSize) {
+          const batch = orgsWithActivities.slice(i, i + batchSize);
+          await Promise.all(batch.map(orgId => fetchOrgActivities(orgId)));
+        }
+        setLoadingOrgs(new Set());
       }
     } catch (err) {
       console.error('Error fetching summary data:', err);
@@ -412,44 +436,6 @@ export default function PartnersPage() {
     
     return filtered;
   };
-
-  // Calculate metrics - now based on countries instead of organization types
-  const bilateralPartnersCount = useMemo(() => {
-    if (!summaryData) return 0;
-    // Count organizations from major bilateral countries
-    const bilateralCountries = ['Germany', 'United States', 'United Kingdom', 'Japan', 'Australia', 'Canada', 'France', 'Denmark'];
-    return summaryData.predefinedGroups
-      .filter((g: GroupData) => {
-        return bilateralCountries.includes(g.name);
-      })
-      .reduce((sum: number, g: GroupData) => sum + g.totalOrganizations, 0);
-  }, [summaryData]);
-
-  const multilateralPartnersCount = useMemo(() => {
-    if (!summaryData) return 0;
-    // Count organizations from global/multilateral countries
-    return summaryData.predefinedGroups
-      .filter((g: GroupData) => {
-        return g.name.includes('Global') || g.name === 'Unknown';
-      })
-      .reduce((sum: number, g: GroupData) => sum + g.totalOrganizations, 0);
-  }, [summaryData]);
-
-  const otherPartnersCount = useMemo(() => {
-    if (!summaryData) return 0;
-    // Count organizations from all other countries
-    const bilateralCountries = ['Germany', 'United States', 'United Kingdom', 'Japan', 'Australia', 'Canada', 'France', 'Denmark'];
-    return summaryData.predefinedGroups
-      .filter((g: GroupData) => {
-        return !bilateralCountries.includes(g.name) && !g.name.includes('Global') && g.name !== 'Unknown';
-      })
-      .reduce((sum: number, g: GroupData) => sum + g.totalOrganizations, 0);
-  }, [summaryData]);
-
-  const customGroupsCount = useMemo(() => {
-    if (!summaryData) return 0;
-    return summaryData.customGroupsCount || 0;
-  }, [summaryData]);
 
   // Export to CSV
   const exportToCSV = () => {
@@ -969,61 +955,6 @@ export default function PartnersPage() {
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Partner Summary</h1>
-          </div>
-
-          {/* Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-white border border-gray-200">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-gray-700">Bilateral Partners</CardTitle>
-                  <Building2 className="h-4 w-4 text-gray-500" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{bilateralPartnersCount}</div>
-                <p className="text-xs text-gray-500 mt-1">{bilateralPartnersCount} shown</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border border-gray-200">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-gray-700">Multilateral Organisations</CardTitle>
-                  <Users className="h-4 w-4 text-gray-500" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{multilateralPartnersCount}</div>
-                <p className="text-xs text-gray-500 mt-1">Multilateral organisations</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border border-gray-200">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-gray-700">Other Partners</CardTitle>
-                  <Users className="h-4 w-4 text-gray-500" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{otherPartnersCount}</div>
-                <p className="text-xs text-gray-500 mt-1">Other partners</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border border-gray-200">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-gray-700">Custom Groups</CardTitle>
-                  <FolderOpen className="h-4 w-4 text-gray-500" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{customGroupsCount}</div>
-                <p className="text-xs text-gray-500 mt-1">Custom groups available</p>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Main Content */}

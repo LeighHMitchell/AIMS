@@ -254,9 +254,10 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
                 {activityProgress.status}
               </Badge>
             </div>
-            <Progress 
-              value={activityProgress.progress} 
+            <Progress
+              value={activityProgress.progress}
               className="h-3 bg-purple-200"
+              style={{ '--progress-foreground': 'white' } as React.CSSProperties}
             />
             <p className="text-2xl font-bold text-purple-900 mt-2">
               {activityProgress.progress}%

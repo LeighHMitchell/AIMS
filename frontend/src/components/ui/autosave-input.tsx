@@ -24,6 +24,7 @@ interface AutosaveInputProps {
   triggerSave?: (value: string) => void;
   saveOnBlur?: boolean;
   alwaysShowSaved?: boolean; // For fields that are always saved (like UUID)
+  endAdornment?: React.ReactNode;
 }
 
 export function AutosaveInput({
@@ -42,7 +43,8 @@ export function AutosaveInput({
   autosaveState,
   triggerSave,
   saveOnBlur = true,
-  alwaysShowSaved = false
+  alwaysShowSaved = false,
+  endAdornment
 }: AutosaveInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [hasValue, setHasValue] = useState(false);
@@ -109,7 +111,7 @@ export function AutosaveInput({
           {helpText}
         </div>
       </LabelSaveIndicator>
-      <div>
+      <div className="relative">
         <Input
           id={id}
           type={type}
@@ -120,8 +122,13 @@ export function AutosaveInput({
           placeholder={placeholder}
           disabled={disabled}
           readOnly={readOnly}
-          className={className}
+          className={endAdornment ? `${className || ''} pr-10`.trim() : className}
         />
+        {endAdornment && (
+          <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+            {endAdornment}
+          </div>
+        )}
         {autosaveState.error && (
           <p className="text-xs text-red-600 mt-1">{autosaveState.error.toString()}</p>
         )}

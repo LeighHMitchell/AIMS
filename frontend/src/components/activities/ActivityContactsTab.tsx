@@ -568,20 +568,20 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
         
         <div className="flex border border-slate-200 rounded-md">
           <Button
-            variant={viewMode === 'grid' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-            className="rounded-r-none"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
             variant={viewMode === 'table' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('table')}
-            className="rounded-l-none"
+            className="rounded-r-none"
           >
             <TableIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+            className="rounded-l-none"
+          >
+            <LayoutGrid className="h-4 w-4" />
           </Button>
         </div>
       </div>

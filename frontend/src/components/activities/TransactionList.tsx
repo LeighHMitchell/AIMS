@@ -39,7 +39,7 @@ import {
   ArrowDown,
   FileClock,
   CheckCircle,
-  Frown,
+  ArrowRightLeft,
   Loader2,
   Eye,
   ChevronDown,
@@ -1519,20 +1519,12 @@ export default function TransactionList({
 
           {/* Transactions Table */}
           {transactions.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Frown className="h-16 w-16 mx-auto mb-4 text-slate-400" />
-              <p>No transactions yet. Create a new activity or open an existing one to add transactions.</p>
-              {!readOnly && (
-                <Button 
-                  onClick={() => setShowForm(true)} 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-4"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add First Transaction
-                </Button>
-              )}
+            <div className="text-center py-12">
+              <ArrowRightLeft className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No transactions</h3>
+              <p className="text-muted-foreground mb-4">
+                Use the button above to add your first transaction.
+              </p>
             </div>
           ) : (
             <>

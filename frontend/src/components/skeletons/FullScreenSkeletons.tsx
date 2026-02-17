@@ -228,29 +228,6 @@ export function PartnerFundingSummarySkeleton() {
           <Skeleton variant="text" width="250px" height="2rem" className="mb-2" />
         </div>
 
-        {/* Metrics Cards - Static, don't change between tabs */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {[
-            'Bilateral Partners',
-            'Multilateral Organisations', 
-            'Other Partners',
-            'Custom Groups'
-          ].map((title, i) => (
-            <Card key={i} className="bg-white border border-gray-200">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <Skeleton variant="text" width="140px" height="0.875rem" />
-                  <Skeleton variant="circular" width="16px" height="16px" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Skeleton variant="text" width="60px" height="2rem" className="mb-1" />
-                <Skeleton variant="text" width="80px" height="0.75rem" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
         {/* Main Content with Tabs */}
         <Tabs defaultValue="type">
           <div className="flex items-center justify-between mb-6">

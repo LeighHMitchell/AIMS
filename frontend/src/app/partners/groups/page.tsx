@@ -28,6 +28,8 @@ interface CustomGroup {
   updated_at: string
   member_count: number
   members: any[]
+  logo?: string
+  banner?: string
 }
 
 // Format date to relative time
@@ -170,14 +172,36 @@ export default function ManageGroupsPage() {
         {filteredGroups.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGroups.map((group) => (
-              <Card key={group.id} className="hover:shadow-lg transition-shadow">
+              <Card key={group.id} className="hover:shadow-lg transition-shadow overflow-hidden">
+                {group.banner && (
+                  <div className="h-24 w-full overflow-hidden">
+                    <img
+                      src={group.banner}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{group.name}</CardTitle>
-                      {group.group_code && (
-                        <p className="text-sm text-gray-500 mt-1">{group.group_code}</p>
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      {group.logo ? (
+                        <img
+                          src={group.logo}
+                          alt={`${group.name} logo`}
+                          className="w-10 h-10 object-contain rounded border bg-white p-0.5 flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
+                          <Users className="h-5 w-5 text-blue-600" />
+                        </div>
                       )}
+                      <div className="min-w-0">
+                        <CardTitle className="text-lg">{group.name}</CardTitle>
+                        {group.group_code && (
+                          <p className="text-sm text-gray-500 mt-1">{group.group_code}</p>
+                        )}
+                      </div>
                     </div>
                     <Badge variant={group.is_public ? "default" : "secondary"}>
                       {group.is_public ? "Public" : "Private"}

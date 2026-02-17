@@ -36,7 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2 } from "lucide-react";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator } from "@/components/ActivityFieldHelpers";
@@ -135,6 +135,26 @@ const formatDateToString = (date: Date | null): string => {
   if (!date) return '';
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
+
+// Acronym generation helper
+const ACRONYM_FILLER_WORDS = new Set([
+  'of', 'the', 'and', 'for', 'in', 'to', 'a', 'an', 'on', 'at', 'by'
+]);
+
+function generateAcronym(title: string): string {
+  return title
+    .split(/\s+/)
+    .filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase()))
+    .map(w => w[0].toUpperCase())
+    .join('');
+}
+
+function getSignificantWordCount(title: string): number {
+  return title
+    .split(/\s+/)
+    .filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase()))
+    .length;
+}
 
 // Separate component for General section to properly use hooks
 function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, clearSavedFormData, isNewActivity }: any) {
@@ -1058,7 +1078,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               )}
             </div>
           </LabelSaveIndicator>
-          <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
+          <div className={`relative ${fieldLockStatus.isLocked ? 'opacity-50' : ''}`}>
             <Input
               id="acronym"
               value={general.acronym || ''}
@@ -1075,10 +1095,36 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 }
               }}
               placeholder="Enter acronym"
-              className="w-full"
+              className={`w-full ${getSignificantWordCount(general.title || '') >= 2 ? 'pr-10' : ''}`}
               disabled={fieldLockStatus.isLocked}
               tabIndex={general.id ? 2 : -1}
             />
+            {!fieldLockStatus.isLocked && getSignificantWordCount(general.title || '') >= 2 && (
+              <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 bg-gray-100 hover:bg-gray-200"
+                        onClick={() => {
+                          const acronym = generateAcronym(general.title || '');
+                          setGeneral((g: any) => ({ ...g, acronym }));
+                          setHasUnsavedChanges(true);
+                          acronymAutosave.triggerFieldSave(acronym);
+                        }}
+                        tabIndex={-1}
+                      >
+                        <Wand2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Generate from title</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -5160,8 +5206,8 @@ function NewActivityPageContent() {
                   {/* Publication Status Badge */}
                   <div className="mt-2 flex items-center gap-2">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 ${
-                      general.publicationStatus === 'published' 
-                        ? 'text-green-600 bg-green-100' 
+                      general.publicationStatus === 'published'
+                        ? 'text-white bg-green-800'
                         : 'text-gray-600 bg-gray-100'
                     }`}>
                       {general.publicationStatus === 'published' 
@@ -5302,7 +5348,7 @@ function NewActivityPageContent() {
                          (!general.title?.trim() || !general.description?.trim() ||
                           !general.activityStatus || !general.plannedStartDate || !general.plannedEndDate)
                        }
-                       className="data-[state=checked]:bg-[#4C5568] scale-125"
+                       className="data-[state=checked]:bg-green-600 scale-125"
                        title="Minimum required for publishing: Activity Title, Description, Activity Status, Planned Start Date, and Planned End Date"
                      />
                      <span className="text-base font-semibold text-gray-700">Published</span>

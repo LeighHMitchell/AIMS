@@ -486,8 +486,8 @@ export default function PolicyMarkerProfilePage() {
                     <option value="value">Sort by Value</option><option value="committed">Sort by Committed</option><option value="disbursed">Sort by Disbursed</option><option value="significance">Sort by Significance</option><option value="title">Sort by Title</option>
                   </select>
                   <div className="flex border border-slate-200 rounded-md overflow-hidden">
-                    <button onClick={() => setActivityView('card')} className={`p-1.5 ${activityView === 'card' ? 'bg-slate-100' : 'bg-white'}`}><LayoutGrid className="h-3.5 w-3.5 text-slate-600" /></button>
                     <button onClick={() => setActivityView('table')} className={`p-1.5 ${activityView === 'table' ? 'bg-slate-100' : 'bg-white'}`}><TableIcon className="h-3.5 w-3.5 text-slate-600" /></button>
+                    <button onClick={() => setActivityView('card')} className={`p-1.5 ${activityView === 'card' ? 'bg-slate-100' : 'bg-white'}`}><LayoutGrid className="h-3.5 w-3.5 text-slate-600" /></button>
                   </div>
                 </div>
               </div>

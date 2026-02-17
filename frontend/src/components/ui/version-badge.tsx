@@ -65,15 +65,18 @@ export function VersionBadge() {
             <h4 className="text-xs font-semibold text-foreground">What's New</h4>
             <ScrollArea className="h-[140px] pr-3">
               <ul className="space-y-1.5">
-                {latestRelease.changes.slice(0, 8).map((change, index) => (
-                  <li
-                    key={index}
-                    className="text-xs text-muted-foreground flex items-start gap-2"
-                  >
-                    <span className="text-primary mt-1.5 h-1 w-1 rounded-full bg-current flex-shrink-0" />
-                    <span dangerouslySetInnerHTML={{ __html: change }} />
-                  </li>
-                ))}
+                {latestRelease.changes.slice(0, 8).map((change, index) => {
+                  const isHeader = /^<b>.*<\/b>$/.test(change)
+                  return (
+                    <li
+                      key={index}
+                      className={`text-xs flex items-start gap-2 ${isHeader ? 'text-foreground font-medium mt-2 first:mt-0' : 'text-muted-foreground'}`}
+                    >
+                      {!isHeader && <span className="text-primary mt-1.5 h-1 w-1 rounded-full bg-current flex-shrink-0" />}
+                      <span dangerouslySetInnerHTML={{ __html: change }} />
+                    </li>
+                  )
+                })}
                 {latestRelease.changes.length > 8 && (
                   <li className="text-xs text-muted-foreground/60 italic pl-3">
                     +{latestRelease.changes.length - 8} more changes...

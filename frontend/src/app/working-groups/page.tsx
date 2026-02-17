@@ -216,20 +216,20 @@ export default function WorkingGroupsPage() {
 
           <div className="flex border rounded-md">
             <Button
-              variant={viewMode === 'card' ? 'default' : 'ghost'}
-              size="sm"
-              className="rounded-r-none"
-              onClick={() => setViewMode('card')}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
               variant={viewMode === 'table' ? 'default' : 'ghost'}
               size="sm"
-              className="rounded-l-none"
+              className="rounded-r-none"
               onClick={() => setViewMode('table')}
             >
               <TableIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'card' ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-l-none"
+              onClick={() => setViewMode('card')}
+            >
+              <LayoutGrid className="h-4 w-4" />
             </Button>
           </div>
         </div>

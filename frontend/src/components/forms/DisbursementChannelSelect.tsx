@@ -51,7 +51,7 @@ export function DisbursementChannelSelect({
         onValueChange={handleValueChange}
         disabled={disabled}
       >
-        <SelectTrigger className={cn("text-sm [&>span[data-placeholder]]:text-gray-400", className)} id={id}>
+        <SelectTrigger className={cn("text-sm", !value && "text-muted-foreground", className)} id={id}>
           <SelectValue placeholder={placeholder}>
             {value && DISBURSEMENT_CHANNEL_SHORT_LABELS[value as DisbursementChannel]}
           </SelectValue>

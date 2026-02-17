@@ -105,7 +105,7 @@ const AVAILABLE_YEARS = Array.from(
   { length: new Date().getFullYear() - 2008 + 4 },
   (_, i) => 2008 + i
 )
-const SLATE_PALETTE = ['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1']
+const GPEDC_BG = 'url(https://www.effectivecooperation.org/sites/default/files/imported/images/Colors_GPEDC.png)'
 
 // --- Helpers ---
 
@@ -212,14 +212,14 @@ const SECTION_FIELDS: Record<string, { label: string; fields: { key: keyof AidEf
 
 // --- Help Tooltip ---
 
-function HelpTooltip({ helpKey }: { helpKey: string }) {
+function HelpTooltip({ helpKey, className }: { helpKey: string; className?: string }) {
   const text = CHART_HELP[helpKey]
   if (!text) return null
   return (
     <TooltipProvider>
       <UITooltip delayDuration={200}>
         <TooltipTrigger asChild>
-          <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help shrink-0" />
+          <HelpCircle className={`h-4 w-4 cursor-help shrink-0 ${className || 'text-slate-400 hover:text-slate-600'}`} />
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
           {text}
@@ -537,9 +537,9 @@ export default function AidEffectivenessDashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-slate-600" />
+            <Shield className="h-8 w-8 text-[#F37021]" />
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Aid Effectiveness Dashboard</h1>
+              <h1 className="text-3xl font-bold text-[#F37021]">Aid Effectiveness Dashboard</h1>
               <p className="text-slate-600">GPEDC Compliance & Development Effectiveness Analytics</p>
             </div>
           </div>
@@ -549,20 +549,21 @@ export default function AidEffectivenessDashboard() {
         </div>
 
         {/* Filters */}
-        <Card className="bg-surface-muted border-0">
-          <CardHeader className="pb-4">
+        <Card className="border-0 overflow-hidden relative bg-cover bg-center bg-no-repeat" style={{ backgroundImage: GPEDC_BG }}>
+          <div className="absolute inset-0 bg-black/10" />
+          <CardHeader className="pb-4 relative z-10">
             <div className="flex items-center gap-2">
-              <SlidersHorizontal className="h-5 w-5 text-slate-600" />
-              <CardTitle className="text-lg">Filters</CardTitle>
+              <SlidersHorizontal className="h-5 w-5 text-white" />
+              <CardTitle className="text-lg text-white">Filters</CardTitle>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative z-10">
             <div className="flex items-start gap-4 flex-wrap">
               {/* Calendar Type + Year Range Selector */}
               {customYears.length > 0 && (
                 <>
                   <div className="min-w-[180px]">
-                    <label className="text-sm font-medium text-slate-700 mb-2 block">Calendar</label>
+                    <label className="text-sm font-medium text-white mb-2 block">Calendar</label>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="h-9 gap-1 bg-white">
@@ -585,7 +586,7 @@ export default function AidEffectivenessDashboard() {
                   </div>
 
                   <div className="min-w-[200px]">
-                    <label className="text-sm font-medium text-slate-700 mb-2 block">Year Range</label>
+                    <label className="text-sm font-medium text-white mb-2 block">Year Range</label>
                     <div className="flex flex-col gap-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -654,7 +655,7 @@ export default function AidEffectivenessDashboard() {
 
               {/* Reporting Organisation */}
               <div className="min-w-[320px]">
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Reporting Organisation</label>
+                <label className="text-sm font-medium text-white mb-2 block">Reporting Organisation</label>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-9 gap-2 bg-white w-full justify-between">
@@ -710,7 +711,7 @@ export default function AidEffectivenessDashboard() {
 
               {/* Sector Filter */}
               <div className="min-w-[200px]">
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Sector</label>
+                <label className="text-sm font-medium text-white mb-2 block">Sector</label>
                 <SectorHierarchyFilter
                   selected={sectorSelection}
                   onChange={setSectorSelection}
@@ -724,7 +725,7 @@ export default function AidEffectivenessDashboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 text-slate-500"
+                    className="h-9 text-white/70 hover:text-white hover:bg-white/10"
                     onClick={() => {
                       setSelectedYears([])
                       setSelectedReportingOrg('all')
@@ -741,80 +742,85 @@ export default function AidEffectivenessDashboard() {
 
         {metrics ? (
           <>
-            {/* KPI Cards */}
+            {/* KPI Cards — each uses a different crop of the GPEDC banner */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <Card className="bg-surface-muted border-0">
-                <CardContent className="p-5">
+              <Card className="border-0 overflow-hidden relative bg-no-repeat" style={{ backgroundImage: GPEDC_BG, backgroundSize: '300%', backgroundPosition: '0% 50%' }}>
+                <div className="absolute inset-0 bg-black/10" />
+                <CardContent className="p-5 relative z-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600 flex items-center gap-1">
-                        Overall Score <HelpTooltip helpKey="overallScore" />
+                      <p className="text-sm font-bold text-white flex items-center gap-1">
+                        Overall Score <HelpTooltip helpKey="overallScore" className="text-white/60 hover:text-white" />
                       </p>
-                      <p className="text-3xl font-bold text-slate-900">{metrics.overallScore}%</p>
+                      <p className="text-3xl font-bold text-white">{metrics.overallScore}%</p>
                     </div>
-                    <Shield className="h-7 w-7 text-slate-400" />
+                    <Shield className="h-7 w-7 text-white/50" />
                   </div>
-                  <Progress value={metrics.overallScore} className="mt-3 bg-slate-200 [&>div]:bg-slate-700" />
-                  <p className="text-xs text-slate-500 mt-1">{metrics.total} activities assessed</p>
+                  <Progress value={metrics.overallScore} className="mt-3 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
+                  <p className="text-xs font-semibold text-white mt-1">{metrics.total} activities assessed</p>
                 </CardContent>
               </Card>
-              <Card className="bg-surface-muted border-0">
-                <CardContent className="p-5">
+              <Card className="border-0 overflow-hidden relative bg-no-repeat" style={{ backgroundImage: GPEDC_BG, backgroundSize: '300%', backgroundPosition: '25% 50%' }}>
+                <div className="absolute inset-0 bg-black/10" />
+                <CardContent className="p-5 relative z-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600 flex items-center gap-1">
-                        GPEDC Compliant <HelpTooltip helpKey="gpedcCompliant" />
+                      <p className="text-sm font-bold text-white flex items-center gap-1">
+                        GPEDC Compliant <HelpTooltip helpKey="gpedcCompliant" className="text-white/60 hover:text-white" />
                       </p>
-                      <p className="text-3xl font-bold text-slate-900">{metrics.complianceRate}%</p>
+                      <p className="text-3xl font-bold text-white">{metrics.complianceRate}%</p>
                     </div>
-                    <CheckCircle2 className="h-7 w-7 text-slate-400" />
+                    <CheckCircle2 className="h-7 w-7 text-white/50" />
                   </div>
-                  <Progress value={metrics.complianceRate} className="mt-3 bg-slate-200 [&>div]:bg-slate-700" />
-                  <p className="text-xs text-slate-500 mt-1">{metrics.gpedcCompliant} of {metrics.total} (60%+ threshold)</p>
+                  <Progress value={metrics.complianceRate} className="mt-3 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
+                  <p className="text-xs font-semibold text-white mt-1">{metrics.gpedcCompliant} of {metrics.total} (60%+ threshold)</p>
                 </CardContent>
               </Card>
-              <Card className="bg-surface-muted border-0">
-                <CardContent className="p-5">
+              <Card className="border-0 overflow-hidden relative bg-no-repeat" style={{ backgroundImage: GPEDC_BG, backgroundSize: '300%', backgroundPosition: '50% 50%' }}>
+                <div className="absolute inset-0 bg-black/10" />
+                <CardContent className="p-5 relative z-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600 flex items-center gap-1">
-                        Gov Ownership <HelpTooltip helpKey="govOwnership" />
+                      <p className="text-sm font-bold text-white flex items-center gap-1">
+                        Gov Ownership <HelpTooltip helpKey="govOwnership" className="text-white/60 hover:text-white" />
                       </p>
-                      <p className="text-3xl font-bold text-slate-900">{metrics.sectionScores.ownership}%</p>
+                      <p className="text-3xl font-bold text-white">{metrics.sectionScores.ownership}%</p>
                     </div>
-                    <Building2 className="h-7 w-7 text-slate-400" />
+                    <Building2 className="h-7 w-7 text-white/50" />
                   </div>
-                  <Progress value={metrics.sectionScores.ownership} className="mt-3 bg-slate-200 [&>div]:bg-slate-700" />
-                  <p className="text-xs text-slate-500 mt-1">GPEDC Indicator 1</p>
+                  <Progress value={metrics.sectionScores.ownership} className="mt-3 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
+                  <p className="text-xs font-semibold text-white mt-1">GPEDC Indicator 1</p>
                 </CardContent>
               </Card>
-              <Card className="bg-surface-muted border-0">
-                <CardContent className="p-5">
+              <Card className="border-0 overflow-hidden relative bg-no-repeat" style={{ backgroundImage: GPEDC_BG, backgroundSize: '300%', backgroundPosition: '75% 50%' }}>
+                <div className="absolute inset-0 bg-black/10" />
+                <CardContent className="p-5 relative z-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600 flex items-center gap-1">
-                        Untied Aid <HelpTooltip helpKey="untiedAid" />
+                      <p className="text-sm font-bold text-white flex items-center gap-1">
+                        Untied Aid <HelpTooltip helpKey="untiedAid" className="text-white/60 hover:text-white" />
                       </p>
-                      <p className="text-3xl font-bold text-slate-900">{metrics.tiedAid[0].pct}%</p>
+                      <p className="text-3xl font-bold text-white">{metrics.tiedAid[0].pct}%</p>
                     </div>
-                    <Handshake className="h-7 w-7 text-slate-400" />
+                    <Handshake className="h-7 w-7 text-white/50" />
                   </div>
-                  <Progress value={metrics.tiedAid[0].pct} className="mt-3 bg-slate-200 [&>div]:bg-slate-700" />
-                  <p className="text-xs text-slate-500 mt-1">GPEDC Indicator 10</p>
+                  <Progress value={metrics.tiedAid[0].pct} className="mt-3 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
+                  <p className="text-xs font-semibold text-white mt-1">GPEDC Indicator 10</p>
                 </CardContent>
               </Card>
-              <Card className="bg-surface-muted border-0">
-                <CardContent className="p-5">
+              <Card className="border-0 overflow-hidden relative bg-no-repeat" style={{ backgroundImage: GPEDC_BG, backgroundSize: '300%', backgroundPosition: '100% 50%' }}>
+                <div className="absolute inset-0 bg-black/10" />
+                <CardContent className="p-5 relative z-10">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600 flex items-center gap-1">
-                        Avg Outcomes <HelpTooltip helpKey="avgOutcomes" />
+                      <p className="text-sm font-bold text-white flex items-center gap-1">
+                        Avg Outcomes <HelpTooltip helpKey="avgOutcomes" className="text-white/60 hover:text-white" />
                       </p>
-                      <p className="text-3xl font-bold text-slate-900">{metrics.avgOutcome}</p>
+                      <p className="text-3xl font-bold text-white">{metrics.avgOutcome}</p>
                     </div>
-                    <Target className="h-7 w-7 text-slate-400" />
+                    <Target className="h-7 w-7 text-white/50" />
                   </div>
-                  <p className="text-xs text-slate-500 mt-4">Indicators per activity</p>
+                  <p className="text-xs font-semibold text-white mt-4">Indicators per activity</p>
                 </CardContent>
               </Card>
             </div>
@@ -829,7 +835,7 @@ export default function AidEffectivenessDashboard() {
               </TabsList>
 
               {/* ===== Ownership & Systems Tab ===== */}
-              <TabsContent value="ownership" className="space-y-6">
+              <TabsContent value="ownership" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SectionDetail
                   title="Government Ownership & Strategic Alignment"
                   icon={<Building2 className="h-5 w-5 text-slate-500" />}
@@ -866,8 +872,8 @@ export default function AidEffectivenessDashboard() {
                         <XAxis dataKey="range" stroke="#64748b" fontSize={12} />
                         <YAxis stroke="#64748b" fontSize={12} />
                         <Tooltip formatter={(v: any, _: any, props: any) => [`${v} activities (${props.payload.pct}%)`, 'Count']} />
-                        <Bar dataKey="count" fill="#475569" radius={[4, 4, 0, 0]}>
-                          {metrics.outcomeDistribution.map((_, i) => <Cell key={`o-${i}`} fill={SLATE_PALETTE[i + 1]} />)}
+                        <Bar dataKey="count" fill="#F37021" radius={[4, 4, 0, 0]}>
+                          {metrics.outcomeDistribution.map((_, i) => <Cell key={`o-${i}`} fill="#F37021" />)}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
@@ -876,7 +882,7 @@ export default function AidEffectivenessDashboard() {
               </TabsContent>
 
               {/* ===== Transparency & Accountability Tab ===== */}
-              <TabsContent value="transparency" className="space-y-6">
+              <TabsContent value="transparency" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SectionDetail
                   title="Predictability & Aid Characteristics"
                   icon={<Calendar className="h-5 w-5 text-slate-500" />}
@@ -899,7 +905,7 @@ export default function AidEffectivenessDashboard() {
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie data={metrics.tiedAid} cx="50%" cy="50%" innerRadius={70} outerRadius={130} paddingAngle={2} dataKey="value" nameKey="name">
-                          {metrics.tiedAid.map((_, i) => <Cell key={`t-${i}`} fill={SLATE_PALETTE[i * 2]} />)}
+                          {metrics.tiedAid.map((_, i) => <Cell key={`t-${i}`} fill="#F37021" />)}
                         </Pie>
                         <Tooltip formatter={(v: any, _: any, props: any) => [`${v} activities (${props.payload.pct}%)`, props.payload.name]} />
                         <Legend formatter={(_: any, entry: any) => `${entry?.payload?.name || ''} (${entry?.payload?.pct || 0}%)`} />
@@ -928,7 +934,7 @@ export default function AidEffectivenessDashboard() {
               </TabsContent>
 
               {/* ===== Engagement & Gender Tab ===== */}
-              <TabsContent value="engagement" className="space-y-6">
+              <TabsContent value="engagement" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SectionDetail
                   title="Civil Society & Private Sector Engagement"
                   icon={<Users className="h-5 w-5 text-slate-500" />}
@@ -950,7 +956,7 @@ export default function AidEffectivenessDashboard() {
               </TabsContent>
 
               {/* ===== GPEDC Compliance Tab ===== */}
-              <TabsContent value="compliance" className="space-y-6">
+              <TabsContent value="compliance" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Full radar */}
                 <Card className="bg-white border-slate-200">
                   <CardHeader>
@@ -966,7 +972,7 @@ export default function AidEffectivenessDashboard() {
                         <PolarGrid stroke="#e2e8f0" />
                         <PolarAngleAxis dataKey="section" tick={{ fontSize: 12, fill: '#475569' }} />
                         <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(v: number) => `${v}%`} />
-                        <Radar name="Score %" dataKey="value" stroke="#1e293b" fill="#334155" fillOpacity={0.3} strokeWidth={2} />
+                        <Radar name="Score %" dataKey="value" stroke="#C25A10" fill="#F37021" fillOpacity={0.3} strokeWidth={2} />
                         <Tooltip formatter={(v: any) => [`${v}%`, 'Score']} />
                         <Legend />
                       </RadarChart>
@@ -991,7 +997,7 @@ export default function AidEffectivenessDashboard() {
                         <YAxis domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} stroke="#64748b" fontSize={12} />
                         <Tooltip formatter={(v: any) => [`${v}%`, 'Score']} />
                         <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                          {metrics.radarData.map((_, i) => <Cell key={`s-${i}`} fill={SLATE_PALETTE[i % SLATE_PALETTE.length]} />)}
+                          {metrics.radarData.map((_, i) => <Cell key={`s-${i}`} fill="#F37021" />)}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
@@ -1012,9 +1018,9 @@ export default function AidEffectivenessDashboard() {
                         <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                           <span className="font-medium text-slate-800">{section.label}</span>
                           <div className="flex items-center gap-3">
-                            <Progress value={metrics.sectionScores[key]} className="w-32 bg-slate-200 [&>div]:bg-slate-700" />
+                            <Progress value={metrics.sectionScores[key]} className="w-32 bg-slate-200" style={{ '--progress-foreground': '#F37021' } as React.CSSProperties} />
                             <Badge className={
-                              metrics.sectionScores[key] >= 70 ? "bg-slate-800 text-white" :
+                              metrics.sectionScores[key] >= 70 ? "bg-[#F37021] text-white" :
                               metrics.sectionScores[key] >= 50 ? "bg-slate-200 text-slate-800" :
                               "bg-slate-100 text-slate-500"
                             }>
@@ -1080,7 +1086,7 @@ function SectionDetail({ title, icon, badge, fields, total, score, helpKey }: {
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">{badge}</Badge>
             <Badge className={
-              score >= 70 ? "bg-slate-800 text-white" :
+              score >= 70 ? "bg-[#F37021] text-white" :
               score >= 50 ? "bg-slate-200 text-slate-800" :
               "bg-slate-100 text-slate-500"
             }>{score}%</Badge>
@@ -1094,8 +1100,8 @@ function SectionDetail({ title, icon, badge, fields, total, score, helpKey }: {
             <XAxis type="number" domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} stroke="#64748b" fontSize={12} />
             <YAxis type="category" dataKey="label" stroke="#64748b" fontSize={11} width={200} />
             <Tooltip formatter={(v: any, _: any, props: any) => [`${v}% (${props.payload.yes}/${total})`, 'Adoption']} />
-            <Bar dataKey="pct" fill="#334155" radius={[0, 4, 4, 0]}>
-              {fields.map((_, i) => <Cell key={`f-${i}`} fill={SLATE_PALETTE[i % SLATE_PALETTE.length]} />)}
+            <Bar dataKey="pct" fill="#F37021" radius={[0, 4, 4, 0]}>
+              {fields.map((_, i) => <Cell key={`f-${i}`} fill="#F37021" />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -1128,7 +1134,7 @@ function PartnerChart({ partnerCounts, orgMap, total }: {
         <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={11} width={150} />
         <Tooltip formatter={(v: any, _: any, props: any) => [`${v} activities (${props.payload.pct}%)`, 'Count']} />
         <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-          {data.map((_, i) => <Cell key={`p-${i}`} fill={SLATE_PALETTE[i % SLATE_PALETTE.length]} />)}
+          {data.map((_, i) => <Cell key={`p-${i}`} fill="#F37021" />)}
         </Bar>
       </BarChart>
     </ResponsiveContainer>

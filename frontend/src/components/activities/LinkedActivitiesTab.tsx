@@ -485,19 +485,8 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
         <h2 className="text-xl font-semibold">Linked Activities</h2>
         <div className="flex gap-2">
           <button
-            onClick={() => setViewMode('card')}
-            className={`px-3 py-1.5 rounded-l-md flex items-center gap-1 ${
-              viewMode === 'card'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            Card
-          </button>
-          <button
             onClick={() => setViewMode('list')}
-            className={`px-3 py-1.5 rounded-r-md flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-l-md flex items-center gap-1 ${
               viewMode === 'list'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-700'
@@ -505,6 +494,17 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
           >
             <TableIcon className="h-4 w-4" />
             Table
+          </button>
+          <button
+            onClick={() => setViewMode('card')}
+            className={`px-3 py-1.5 rounded-r-md flex items-center gap-1 ${
+              viewMode === 'card'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700'
+            }`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Card
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
+import { ROLE_LABELS } from '@/types/user';
 
 export interface RolodexPerson {
   id: string;
@@ -278,7 +279,7 @@ export async function GET(request: NextRequest) {
           phone: user.telephone,
           created_at: user.created_at,
           updated_at: user.updated_at,
-          role_label: user.role || 'User',
+          role_label: (user.role && ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]) || user.role?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'User',
           activity_title: undefined,
           country_code: undefined,
           source_label: 'System User',

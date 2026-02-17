@@ -1763,7 +1763,7 @@ export default function PlannedDisbursementsTab({
               <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No planned disbursements</h3>
               <p className="text-muted-foreground mb-4">
-                Use the buttons above to add your first planned disbursement.
+                Use the button above to add your first planned disbursement.
               </p>
             </div>
           ) : (

@@ -95,7 +95,7 @@ export function TiedStatusSelect({
                   <span className="font-medium text-sm text-gray-900">{selectedOption.name}</span>
                 </span>
               ) : (
-                <span className="text-gray-400 text-sm">{placeholder}</span>
+                <span className="text-muted-foreground text-sm">{placeholder}</span>
               )}
             </span>
             <div className="flex items-center gap-1 ml-2">

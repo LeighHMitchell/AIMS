@@ -541,9 +541,13 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
         .attr("transform", (d: any) => `translate(${d.x},${d.y})`);
     });
 
-    // Enable zoom & pan
+    // Enable zoom & pan (wheel events disabled to prevent scroll hijacking)
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.5, 3])
+      .filter((event) => {
+        // Allow all events except wheel/scroll so page scrolling isn't hijacked
+        return event.type !== 'wheel';
+      })
       .on('zoom', (event) => {
         root.attr('transform', event.transform);
       });
@@ -628,6 +632,30 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
           </select>
         )}
         
+        <button
+          onClick={() => {
+            const svg = d3.select(containerRef.current).select<SVGSVGElement>('svg');
+            if (zoomRef.current) {
+              svg.transition().duration(300).call(zoomRef.current.scaleBy, 1.3);
+            }
+          }}
+          className="px-2.5 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors text-sm font-bold text-gray-700 shadow-lg"
+          title="Zoom in"
+        >
+          +
+        </button>
+        <button
+          onClick={() => {
+            const svg = d3.select(containerRef.current).select<SVGSVGElement>('svg');
+            if (zoomRef.current) {
+              svg.transition().duration(300).call(zoomRef.current.scaleBy, 0.7);
+            }
+          }}
+          className="px-2.5 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors text-sm font-bold text-gray-700 shadow-lg"
+          title="Zoom out"
+        >
+          −
+        </button>
         <button
           onClick={handleReset}
           className="px-4 py-2 bg-[#4c5568] text-white rounded-lg hover:bg-[#374151] transition-colors text-sm font-medium shadow-lg hover:shadow-xl"

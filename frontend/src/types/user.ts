@@ -9,10 +9,10 @@ export const USER_ROLES = {
 
 export const ROLE_LABELS = {
   [USER_ROLES.SUPER_USER]: "Super User",
-  [USER_ROLES.DEV_PARTNER_TIER_1]: "Data Submission",
-  [USER_ROLES.DEV_PARTNER_TIER_2]: "Review & Approval",
-  [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Partner Tier 1",
-  [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Partner Tier 2",
+  [USER_ROLES.DEV_PARTNER_TIER_1]: "Development Partner - Tier 1",
+  [USER_ROLES.DEV_PARTNER_TIER_2]: "Development Partner - Tier 2",
+  [USER_ROLES.GOV_PARTNER_TIER_1]: "Government Partner - Tier 1",
+  [USER_ROLES.GOV_PARTNER_TIER_2]: "Government Partner - Tier 2",
   [USER_ROLES.PUBLIC_USER]: "Public User",
   'admin': "Administrator", // Legacy admin role
 } as const;

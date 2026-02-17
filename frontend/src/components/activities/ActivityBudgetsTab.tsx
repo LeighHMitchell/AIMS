@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, differenceInMonths, parseISO, isValid, isBefore, isAfter, getQuarter, getYear } from 'date-fns';
 import { format as formatDateFns } from 'date-fns';
-import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Edit, DollarSign } from 'lucide-react';
+import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Edit, DollarSign, Wallet } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1973,6 +1973,15 @@ export default function ActivityBudgetsTab({
 
 
           {/* Budget table */}
+          {paginatedBudgets.length === 0 ? (
+            <div className="text-center py-12">
+              <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No budgets</h3>
+              <p className="text-muted-foreground mb-4">
+                Use the button above to add your first budget period.
+              </p>
+            </div>
+          ) : (
           <div className="rounded-md border w-full">
             <Table aria-label="Budgets table" className="w-full">
               <TableHeader className="bg-surface-muted border-b border-border/70">
@@ -1989,7 +1998,7 @@ export default function ActivityBudgetsTab({
                     </TableHead>
                   )}
                   <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4" style={{ width: '200px' }}>
-                    <div 
+                    <div
                       className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors"
                       onClick={() => handleSort('period_start')}
                     >
@@ -2008,13 +2017,13 @@ export default function ActivityBudgetsTab({
                     { label: "Value Date", width: 140, sortKey: "value_date", align: "left" },
                     { label: "USD Value", width: 150, sortKey: "usd_value", align: "right" }
                   ].map((header, i) => (
-                    <TableHead 
-                      key={i + 2} 
+                    <TableHead
+                      key={i + 2}
                       className={`text-sm font-medium text-foreground/90 py-3 px-4 ${header.align === 'right' ? 'text-right' : ''}`}
                       style={{ width: `${header.width}px` }}
                     >
                       {header.sortKey ? (
-                        <div 
+                        <div
                           className={`flex items-center gap-1 cursor-pointer hover:bg-muted/30 transition-colors ${header.align === 'right' ? 'justify-end' : ''}`}
                           onClick={() => handleSort(header.sortKey)}
                         >
@@ -2036,13 +2045,7 @@ export default function ActivityBudgetsTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedBudgets.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={readOnly ? 7 : 9} className="h-24 text-center px-2 py-8">
-                      No budgets added yet. Use the "Add Period" buttons above to get started.
-                    </TableCell>
-                  </TableRow>
-                ) : (
+                {
                   paginatedBudgets.map((budget, index) => {
                     const budgetId = budget.id || `budget-${index}`;
                     const isExpanded = expandedRows.has(budgetId);
@@ -2319,7 +2322,7 @@ export default function ActivityBudgetsTab({
                     </React.Fragment>
                     );
                   })
-                )}
+                }
                 {/* Total Row */}
                 {sortedBudgets.length > 0 && (
                   <TableRow className="bg-slate-50 border-t-2 border-slate-300 font-semibold">
@@ -2342,7 +2345,8 @@ export default function ActivityBudgetsTab({
               </TableBody>
             </Table>
           </div>
-          
+          )}
+
           {/* Pagination Controls */}
           {budgets.length > itemsPerPage && (
             <div className="flex items-center justify-between mt-4 px-2">

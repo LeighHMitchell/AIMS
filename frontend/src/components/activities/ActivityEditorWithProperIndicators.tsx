@@ -23,6 +23,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Wand2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+const ACRONYM_FILLER_WORDS = new Set([
+  'of', 'the', 'and', 'for', 'in', 'to', 'a', 'an', 'on', 'at', 'by'
+]);
+
+function generateAcronym(title: string): string {
+  return title
+    .split(/\s+/)
+    .filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase()))
+    .map(w => w[0].toUpperCase())
+    .join('');
+}
 
 // IATI Activity Status codes
 const ACTIVITY_STATUSES = [
@@ -286,6 +301,28 @@ export function ActivityEditorWithProperIndicators({
                 autosaveState={acronymAutosave.state}
                 triggerSave={acronymAutosave.triggerFieldSave}
                 saveOnBlur={true}
+                endAdornment={
+                  formData.title.split(/\s+/).filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase())).length >= 2 ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            const acronym = generateAcronym(formData.title);
+                            setFormData(prev => ({ ...prev, acronym }));
+                            acronymAutosave.triggerFieldSave(acronym);
+                          }}
+                        >
+                          <Wand2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate from title</TooltipContent>
+                    </Tooltip>
+                  ) : undefined
+                }
               />
 
               {/* Activity ID */}

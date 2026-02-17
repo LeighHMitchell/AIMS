@@ -429,18 +429,6 @@ export default function OrganizationContactsTab({ organizationId, organization }
           {contacts.length > 0 && (
             <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
               <button
-                onClick={() => setViewMode('card')}
-                className={cn(
-                  "p-2 rounded-md transition-colors",
-                  viewMode === 'card'
-                    ? "bg-white shadow-sm text-slate-900"
-                    : "text-slate-500 hover:text-slate-700"
-                )}
-                title="Card view"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-              <button
                 onClick={() => setViewMode('table')}
                 className={cn(
                   "p-2 rounded-md transition-colors",
@@ -451,6 +439,18 @@ export default function OrganizationContactsTab({ organizationId, organization }
                 title="Table view"
               >
                 <TableIcon className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('card')}
+                className={cn(
+                  "p-2 rounded-md transition-colors",
+                  viewMode === 'card'
+                    ? "bg-white shadow-sm text-slate-900"
+                    : "text-slate-500 hover:text-slate-700"
+                )}
+                title="Card view"
+              >
+                <LayoutGrid className="h-4 w-4" />
               </button>
             </div>
           )}

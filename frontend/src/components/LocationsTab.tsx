@@ -356,20 +356,20 @@ export default function LocationsTab({
           {locations.length > 0 && (
             <div className="flex items-center">
               <Button
-                variant={viewMode === 'cards' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('cards')}
-                className="h-7 px-2 rounded-r-none"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
                 variant={viewMode === 'table' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className="h-7 px-2 rounded-l-none"
+                className="h-7 px-2 rounded-r-none"
               >
                 <TableIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'cards' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('cards')}
+                className="h-7 px-2 rounded-l-none"
+              >
+                <LayoutGrid className="h-4 w-4" />
               </Button>
             </div>
           )}

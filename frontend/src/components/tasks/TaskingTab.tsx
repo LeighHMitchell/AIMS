@@ -441,20 +441,20 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
             {(activeView === 'assigned' || activeView === 'created' || activeView === 'reassigned') && (
               <div className="flex border rounded-lg">
                 <Button
-                  variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className="rounded-r-none"
-                  onClick={() => setViewMode('cards')}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button
                   variant={viewMode === 'table' ? 'secondary' : 'ghost'}
                   size="icon"
-                  className="rounded-l-none"
+                  className="rounded-r-none"
                   onClick={() => setViewMode('table')}
                 >
                   <TableIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className="rounded-l-none"
+                  onClick={() => setViewMode('cards')}
+                >
+                  <LayoutGrid className="h-4 w-4" />
                 </Button>
               </div>
             )}
