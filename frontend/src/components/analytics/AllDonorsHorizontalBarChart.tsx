@@ -942,7 +942,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 {IATI_ORGANIZATION_TYPES.map(type => (
                   <SelectItem key={type.code} value={type.code}>
                     <span className="flex items-center gap-2">
-                      <code className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-xs">{type.code}</code>
+                      <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">{type.code}</code>
                       {type.name}
                     </span>
                   </SelectItem>
@@ -1086,7 +1086,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               {IATI_ORGANIZATION_TYPES.map(type => (
                 <SelectItem key={type.code} value={type.code}>
                   <span className="flex items-center gap-2">
-                    <code className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-xs">{type.code}</code>
+                    <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">{type.code}</code>
                     {type.name}
                   </span>
                 </SelectItem>
@@ -1196,7 +1196,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                           `}>
                             {isSelected && <Check className="h-3 w-3 text-white" />}
                           </div>
-                          <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-slate-100 text-slate-600">
+                          <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-muted text-muted-foreground">
                             {item.code}
                           </span>
                           <span className="text-sm text-slate-700 leading-tight">
@@ -1343,7 +1343,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                     <TableCell>
                       {item.type && (
                         <span className="flex items-center gap-1.5">
-                          <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                          <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                             {item.type}
                           </code>
                           <span className="text-sm text-slate-600">{item.typeName}</span>

@@ -241,7 +241,7 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
                       </div>
 
                       {activity.iatiId && (
-                        <div className="text-xs text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded inline-block">
+                        <div className="text-xs text-gray-600 font-mono bg-muted px-2 py-1 rounded inline-block">
                           {activity.iatiId}
                         </div>
                       )}

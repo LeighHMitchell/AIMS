@@ -27,7 +27,8 @@ import {
   X,
   Loader2,
   ChevronsUpDown,
-  Info
+  Info,
+  Lock
 } from 'lucide-react';
 import { GeographyLevelToggle } from '@/components/activities/GeographyLevelToggle';
 import { IATI_COUNTRIES, IATICountry, searchCountries } from '@/data/iati-countries';
@@ -860,11 +861,13 @@ export default function CountriesRegionsTab({
 
       {/* Transaction Level Info */}
       {geographyLevel === 'transaction' && (
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Geography is set at the transaction level. Each transaction will specify its own recipient country or region. 
-            The allocation form below is disabled.
+        <Alert className="bg-amber-50 border-amber-200">
+          <Lock className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            <p className="font-medium">You've chosen to report geography at the transaction level</p>
+            <p className="text-sm mt-1">
+              Each transaction specifies its own recipient country or region. The allocation form below is disabled.
+            </p>
           </AlertDescription>
         </Alert>
       )}
@@ -1317,7 +1320,7 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">
+                          <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
                             {countryAllocation.country?.code}
                           </Badge>
                             <span className="text-sm font-medium text-gray-900">{countryAllocation.country?.name}</span>
@@ -1378,7 +1381,7 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">
+                          <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
                             {regionAllocation.region?.code}
                           </Badge>
                             <span className="text-sm font-medium text-gray-900">{regionAllocation.region?.name}</span>
@@ -1442,7 +1445,7 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">
+                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">
                               {customAllocation.code}
                             </Badge>
                             <span className="text-sm font-medium text-gray-900">{customAllocation.name}</span>

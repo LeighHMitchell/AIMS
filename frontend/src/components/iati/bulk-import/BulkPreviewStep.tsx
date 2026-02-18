@@ -516,7 +516,7 @@ export default function BulkPreviewStep({
                         htmlFor={`aid-${code}`}
                         className="text-sm cursor-pointer font-normal leading-snug"
                       >
-                        <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-xs text-gray-500">{code}</span>{' '}
+                        <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground">{code}</span>{' '}
                         {AID_TYPE_OPTIONS[code] || code}{' '}
                         <span className="text-gray-400">({count})</span>
                       </Label>
@@ -680,7 +680,7 @@ export default function BulkPreviewStep({
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               {activeFilterCount > 0 ? (
                 <span className="text-sm text-gray-600">
-                  Showing <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">{filteredActivities.length}</span> of <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">{activities.length}</span> activities
+                  Showing <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-gray-700">{filteredActivities.length}</span> of <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-gray-700">{activities.length}</span> activities
                 </span>
               ) : (
                 <span />
@@ -778,7 +778,7 @@ export default function BulkPreviewStep({
                                 </button>
                               </span>
                               {' '}
-                              <span className="inline-flex items-center gap-1 bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-gray-600 font-normal whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground font-normal whitespace-nowrap">
                                 {activity.iatiIdentifier}
                                 <button
                                   onClick={(e) => {
@@ -876,7 +876,7 @@ export default function BulkPreviewStep({
                                     }
                                     return (
                                       <>
-                                        <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{statusCode}</span>
+                                        <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{statusCode}</span>
                                         {statusNames[statusCode || ''] || statusCode}
                                       </>
                                     )
@@ -896,7 +896,7 @@ export default function BulkPreviewStep({
                                     }
                                     return (
                                       <>
-                                        <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{activity.hierarchy}</span>
+                                        <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{activity.hierarchy}</span>
                                         {hierarchyNames[activity.hierarchy] || `Level ${activity.hierarchy}`}
                                       </>
                                     )
@@ -924,7 +924,7 @@ export default function BulkPreviewStep({
                                       return (
                                         <tr key={i} className="border-t border-gray-100">
                                           <td className="py-1 text-gray-600">
-                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{oi.type}</span>
+                                            <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{oi.type}</span>
                                             {oiTypeNames[oi.type] || ''}
                                           </td>
                                           <td className="py-1 text-gray-600">
@@ -953,7 +953,7 @@ export default function BulkPreviewStep({
                                       <tr className="border-t border-gray-100">
                                         <td className="py-1 text-gray-500">Collaboration Type</td>
                                         <td className="py-1 text-gray-600">
-                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.collaborationType}</span>
+                                          <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.collaborationType}</span>
                                           {' '}
                                           {(() => {
                                             const names: Record<string, string> = { '1': 'Bilateral', '2': 'Multilateral (inflows)', '3': 'Bilateral, core contributions', '4': 'Multilateral outflows', '6': 'Private sector outflows', '7': 'Bilateral, ex-post reporting', '8': 'Bilateral, triangular co-operation' }
@@ -966,7 +966,7 @@ export default function BulkPreviewStep({
                                       <tr className="border-t border-gray-100">
                                         <td className="py-1 text-gray-500">Aid Type</td>
                                         <td className="py-1 text-gray-600">
-                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.defaultAidType}</span>
+                                          <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.defaultAidType}</span>
                                           {' '}
                                           {(() => {
                                             const names: Record<string, string> = { 'A01': 'General budget support', 'A02': 'Sector budget support', 'B01': 'Core support to NGOs', 'B02': 'Core contributions to multilaterals', 'B03': 'Contributions to specific programmes', 'B04': 'Basket funds', 'C01': 'Project-type interventions', 'D01': 'Donor country personnel', 'D02': 'Other technical assistance', 'E01': 'Scholarships in donor country', 'E02': 'Imputed student costs', 'F01': 'Debt relief', 'G01': 'Administrative costs', 'H01': 'Development awareness', 'H02': 'Refugees in donor countries' }
@@ -979,7 +979,7 @@ export default function BulkPreviewStep({
                                       <tr className="border-t border-gray-100">
                                         <td className="py-1 text-gray-500">Finance Type</td>
                                         <td className="py-1 text-gray-600">
-                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.defaultFinanceType}</span>
+                                          <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.defaultFinanceType}</span>
                                           {' '}
                                           {(() => {
                                             const names: Record<string, string> = { '110': 'Standard grant', '111': 'Subsidies to national private investors', '210': 'Interest subsidy', '211': 'Interest subsidy to national private exporters', '310': 'Capital subscription on deposit basis', '311': 'Capital subscription on encashment basis', '410': 'Aid loan excluding debt reorganisation', '411': 'Investment-related loan to developing country', '412': 'Loan in donor country currency', '413': 'Loan with concession for interest', '414': 'Loan with concession for principal', '421': 'Standard loan', '422': 'Reimbursable grant', '423': 'Bonds', '424': 'Asset-backed securities', '425': 'Other debt securities', '431': 'Subordinated loan', '432': 'Preferred equity', '433': 'Other hybrid instruments', '451': 'Non-banks guaranteed export credits', '452': 'Non-banks non-guaranteed portions', '453': 'Bank export credits', '510': 'Common equity', '511': 'Acquisition of equity not part of joint venture', '512': 'Other acquisition of equity', '520': 'Shares in collective investment vehicles', '530': 'Reinvested earnings', '610': 'Debt forgiveness', '611': 'Debt conversion', '612': 'Debt rescheduling', '613': 'Debt buyback', '614': 'Other debt reduction', '615': 'Debt payment', '616': 'HIPC debt relief', '617': 'Multilateral debt relief', '618': 'Forgiveness of arrears' }
@@ -992,7 +992,7 @@ export default function BulkPreviewStep({
                                       <tr className="border-t border-gray-100">
                                         <td className="py-1 text-gray-500">Flow Type</td>
                                         <td className="py-1 text-gray-600">
-                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.defaultFlowType}</span>
+                                          <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.defaultFlowType}</span>
                                           {' '}
                                           {(() => {
                                             const names: Record<string, string> = { '10': 'ODA', '20': 'OOF', '21': 'Non-export credit OOF', '22': 'Officially supported export credits', '30': 'Private grants', '35': 'Private market', '36': 'Private FDI', '37': 'Other private flows at market terms', '40': 'Non flow', '50': 'Other flows' }
@@ -1005,7 +1005,7 @@ export default function BulkPreviewStep({
                                       <tr className="border-t border-gray-100">
                                         <td className="py-1 text-gray-500">Tied Status</td>
                                         <td className="py-1 text-gray-600">
-                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.defaultTiedStatus}</span>
+                                          <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.defaultTiedStatus}</span>
                                           {' '}
                                           {(() => {
                                             const names: Record<string, string> = { '3': 'Partially tied', '4': 'Tied', '5': 'Untied' }
@@ -1071,7 +1071,7 @@ export default function BulkPreviewStep({
                                         return (
                                           <tr key={i} className={`border-t border-gray-100 ${isHomeCountry ? 'font-semibold' : ''}`}>
                                             <td className={`py-1 ${isHomeCountry ? 'text-gray-900' : 'text-gray-600'}`}>
-                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{c.code}</span>
+                                              <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{c.code}</span>
                                               {countryName}
                                             </td>
                                             <td className={`py-1 text-right ${isHomeCountry ? 'text-gray-900' : ''}`}>{c.percentage != null ? `${c.percentage}%` : '-'}</td>
@@ -1120,9 +1120,9 @@ export default function BulkPreviewStep({
                                         <tr key={i} className="border-t border-gray-100">
                                           <td className="py-1 text-gray-600">
                                             {r.vocabulary && r.vocabulary !== '1' && (
-                                              <span className="bg-gray-100 text-gray-600 px-1 py-0.5 rounded font-mono text-[10px] mr-1">V{r.vocabulary}</span>
+                                              <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono text-[10px] mr-1">V{r.vocabulary}</span>
                                             )}
-                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{r.code}</span>
+                                            <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{r.code}</span>
                                             {regionNames[r.code] || r.code}
                                           </td>
                                           <td className="py-1 text-right">{r.percentage != null ? `${r.percentage}%` : '-'}</td>
@@ -1144,7 +1144,7 @@ export default function BulkPreviewStep({
                                     <p key={i} className="text-xs text-gray-600">
                                       {loc.name || 'Unnamed'}
                                       {loc.coordinates && (
-                                        <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 ml-1.5">
+                                        <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground ml-1.5">
                                           {loc.coordinates.latitude.toFixed(2)}, {loc.coordinates.longitude.toFixed(2)}
                                         </span>
                                       )}
@@ -1188,13 +1188,13 @@ export default function BulkPreviewStep({
                                       return (
                                         <tr key={i} className="border-t border-gray-100">
                                           <td className="py-1 text-gray-600">
-                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{org.role}</span>
+                                            <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{org.role}</span>
                                             {roleNames[org.role] || org.role}
                                           </td>
                                           <td className="py-1 text-gray-600">
                                             {org.type ? (
                                               <>
-                                                <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{org.type}</span>
+                                                <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{org.type}</span>
                                                 {orgTypeNames[org.type] || ''}
                                               </>
                                             ) : (
@@ -1237,11 +1237,11 @@ export default function BulkPreviewStep({
                                           <td className="py-1 text-gray-600">
                                             {vocabLabel && (
                                               <>
-                                                <span className="bg-gray-100 text-gray-600 px-1 py-0.5 rounded font-mono text-[10px]">{vocabLabel}</span>
+                                                <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono text-[10px]">{vocabLabel}</span>
                                                 {' '}
                                               </>
                                             )}
-                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{s.code}</span>
+                                            <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{s.code}</span>
                                             {' '}
                                             {s.name || s.code}
                                           </td>
@@ -1278,7 +1278,7 @@ export default function BulkPreviewStep({
                                       return (
                                         <tr key={i} className="border-t border-gray-100">
                                           <td className="py-1 text-gray-600">
-                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{ra.type}</span>
+                                            <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{ra.type}</span>
                                             {raTypeNames[ra.type] || ''}
                                           </td>
                                           <td className="py-1 text-gray-600 font-mono text-xs">{ra.ref}</td>
@@ -1318,7 +1318,7 @@ export default function BulkPreviewStep({
                                         return (
                                           <tr key={i} className="border-t border-gray-100">
                                             <td className="py-1 text-gray-600">
-                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{c.type}</span>
+                                              <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{c.type}</span>
                                               {condTypeNames[c.type] || ''}
                                             </td>
                                             <td className="py-1 text-gray-600">{c.narrative || '-'}</td>
@@ -1366,14 +1366,14 @@ export default function BulkPreviewStep({
                                       return (
                                         <tr key={i} className="border-t border-gray-100">
                                           <td className="py-1 text-gray-600">
-                                            <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{tx.type}</span>
+                                            <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{tx.type}</span>
                                             {txTypeNames[tx.type] || tx.type}
                                           </td>
                                           <td className="py-1 text-center">
-                                            {tx.recipientCountryCode ? <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-600">{tx.recipientCountryCode}</span> : <span className="text-gray-300">-</span>}
+                                            {tx.recipientCountryCode ? <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{tx.recipientCountryCode}</span> : <span className="text-gray-300">-</span>}
                                           </td>
                                           <td className="py-1 text-center">
-                                            {tx.recipientRegionCode ? <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-600">{tx.recipientRegionCode}</span> : <span className="text-gray-300">-</span>}
+                                            {tx.recipientRegionCode ? <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{tx.recipientRegionCode}</span> : <span className="text-gray-300">-</span>}
                                           </td>
                                           <td className="py-1 text-right font-medium"><span className="text-xs text-gray-400 mr-0.5">{tx.currency}</span>{tx.value?.toLocaleString()}</td>
                                         </tr>
@@ -1438,7 +1438,7 @@ export default function BulkPreviewStep({
                                         <tr key={i} className="border-t border-gray-100">
                                           <td className="py-1 text-gray-600">
                                             {pd.type && (
-                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5" title={pdTypeNames[pd.type] || pd.type}>
+                                              <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5" title={pdTypeNames[pd.type] || pd.type}>
                                                 {pdTypeNames[pd.type] || pd.type}
                                               </span>
                                             )}
@@ -1462,7 +1462,7 @@ export default function BulkPreviewStep({
                                 <span className="font-medium text-gray-700 text-xs uppercase">Country Budget Items</span>
                                 {activity.countryBudgetItems.vocabulary && (
                                   <p className="text-xs text-gray-500 mt-0.5">
-                                    Vocabulary: <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.countryBudgetItems.vocabulary}</span>
+                                    Vocabulary: <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.countryBudgetItems.vocabulary}</span>
                                   </p>
                                 )}
                                 <table className="mt-1 w-full text-xs">
@@ -1476,7 +1476,7 @@ export default function BulkPreviewStep({
                                     {activity.countryBudgetItems.items.map((item, i) => (
                                       <tr key={i} className="border-t border-gray-100">
                                         <td className="py-1 text-gray-600">
-                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{item.code}</span>
+                                          <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{item.code}</span>
                                           {item.description && <span className="ml-1.5">{item.description}</span>}
                                         </td>
                                         <td className="py-1 text-right">{item.percentage != null ? `${item.percentage}%` : '-'}</td>
@@ -1514,7 +1514,7 @@ export default function BulkPreviewStep({
                                             <td className="py-1.5 px-2 text-gray-600">
                                               {contact.type ? (
                                                 <>
-                                                  <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{contact.type}</span>
+                                                  <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{contact.type}</span>
                                                   {' '}
                                                   <span className="text-gray-500">{contactTypeNames[contact.type] || ''}</span>
                                                 </>
@@ -1612,7 +1612,7 @@ export default function BulkPreviewStep({
                                           <td className="py-1.5 text-gray-600 align-top">
                                             {doc.categoryCode ? (
                                               <>
-                                                <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{doc.categoryCode}</span>
+                                                <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{doc.categoryCode}</span>
                                                 <p className="text-gray-500 mt-0.5">{docCategoryNames[doc.categoryCode] || ''}</p>
                                               </>
                                             ) : (
@@ -1629,7 +1629,7 @@ export default function BulkPreviewStep({
                                           </td>
                                           <td className="py-1.5 text-gray-500 align-top">
                                             {doc.format && (
-                                              <span className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-[10px]">
+                                              <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px]">
                                                 {doc.format.replace('application/', '').replace('text/', '').toUpperCase()}
                                               </span>
                                             )}
@@ -1679,7 +1679,7 @@ export default function BulkPreviewStep({
                                 <div>
                                   <span className="font-medium text-gray-700 text-xs uppercase">Activity Scope</span>
                                   <p className="text-gray-600 mt-0.5">
-                                    <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1.5">{activity.activityScope}</span>
+                                    <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{activity.activityScope}</span>
                                     {(() => {
                                       const scopeNames: Record<string, string> = {
                                         '1': 'Global', '2': 'Regional', '3': 'Multi-national',
@@ -1697,7 +1697,7 @@ export default function BulkPreviewStep({
                                 <div>
                                   <span className="font-medium text-gray-700 text-xs uppercase">Language</span>
                                   <p className="text-gray-600 mt-0.5">
-                                    <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.language}</span>
+                                    <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.language}</span>
                                   </p>
                                 </div>
                               )}
@@ -1723,12 +1723,12 @@ export default function BulkPreviewStep({
                                         return (
                                           <tr key={i} className="border-t border-gray-100">
                                             <td className="py-1 text-gray-600">
-                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{pm.code}</span>
+                                              <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{pm.code}</span>
                                               {pm.narrative || markerNames[pm.code] || ''}
                                             </td>
                                             <td className="py-1 text-right">
                                               {pm.significance != null ? (
-                                                <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600" title={sigNames[pm.significance] || ''}>
+                                                <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground" title={sigNames[pm.significance] || ''}>
                                                   {sigNames[pm.significance] || pm.significance}
                                                 </span>
                                               ) : '-'}
@@ -1754,7 +1754,7 @@ export default function BulkPreviewStep({
                                       const typeNames: Record<string, string> = { '1': 'Emergency', '2': 'Appeal' }
                                       return (
                                         <div key={i} className="text-xs text-gray-600">
-                                          <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600 mr-1">{typeNames[hs.type] || hs.type}</span>
+                                          <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{typeNames[hs.type] || hs.type}</span>
                                           <span className="font-mono">{hs.code}</span>
                                           {hs.narrative && <span className="ml-1 text-gray-500">{hs.narrative}</span>}
                                         </div>
@@ -1876,7 +1876,7 @@ export default function BulkPreviewStep({
                                           <tr className="border-t border-gray-100">
                                             <td className="py-1 text-gray-500">Repayment Type</td>
                                             <td className="py-1 text-gray-600">
-                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.crsAdd.loanTerms.repaymentType}</span>
+                                              <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.crsAdd.loanTerms.repaymentType}</span>
                                             </td>
                                           </tr>
                                         )}
@@ -1884,7 +1884,7 @@ export default function BulkPreviewStep({
                                           <tr className="border-t border-gray-100">
                                             <td className="py-1 text-gray-500">Repayment Plan</td>
                                             <td className="py-1 text-gray-600">
-                                              <span className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-600">{activity.crsAdd.loanTerms.repaymentPlan}</span>
+                                              <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{activity.crsAdd.loanTerms.repaymentPlan}</span>
                                             </td>
                                           </tr>
                                         )}

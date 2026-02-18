@@ -277,7 +277,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
               {IATI_ORGANIZATION_TYPES.map((type) => (
                 <SelectItem key={type.code} value={type.code}>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                    <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                       {type.code}
                     </span>
                     <span>{type.name}</span>

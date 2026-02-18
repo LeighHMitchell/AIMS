@@ -414,7 +414,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
                   <div className="text-sm">
                     <Badge 
                       variant="outline" 
-                      className="text-xs font-normal mr-2 bg-slate-100 text-slate-700 border-slate-300 font-mono"
+                      className="text-xs font-normal mr-2 bg-muted text-muted-foreground border-slate-300 font-mono"
                     >
                       {doc.attachedToType}
                     </Badge>

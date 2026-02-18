@@ -152,7 +152,7 @@ export function OrganizationSearchableSelect({
           {(org.iati_org_id || orgTypeName || org.country) && (
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
               {org.iati_org_id && (
-                <span className="text-xs font-mono bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
+                <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                   {org.iati_org_id}
                 </span>
               )}
@@ -161,7 +161,7 @@ export function OrganizationSearchableSelect({
               )}
               {orgTypeName && (
                 <span className="text-xs text-muted-foreground">
-                  {orgTypeCode && <span className="font-mono bg-gray-200 px-1 py-0.5 rounded text-gray-700">{orgTypeCode}</span>}{' '}{orgTypeName}
+                  {orgTypeCode && <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{orgTypeCode}</span>}{' '}{orgTypeName}
                 </span>
               )}
               {orgTypeName && org.country && (

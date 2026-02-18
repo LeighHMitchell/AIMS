@@ -692,7 +692,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     if (!name || name === code || name === '0' || name.trim() === '0') {
       if (code === '0') return null;
       return (
-        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
           {code}
         </code>
       );
@@ -711,7 +711,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     // Final safety check: don't render if displayName is "0" or empty
     if (!displayName || displayName === '0' || displayName === code) {
       return (
-        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
           {code}
         </code>
       );
@@ -719,7 +719,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     
     return (
       <span className="inline-flex items-center gap-1">
-        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
           {code}
         </code>
         <span className="text-slate-900">{displayName}</span>
@@ -1107,7 +1107,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   </h3>
                   {activity.iatiIdentifier && (
                     <>
-                      <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0">
+                      <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0">
                         {activity.iatiIdentifier}
                       </code>
                       <button
@@ -1164,7 +1164,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                             className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
-                          <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                          <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                             {country.code}
                           </code>
                           <span className="text-xs text-slate-900">{countryName}</span>
@@ -1187,7 +1187,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                               <div className="flex items-center gap-2 flex-wrap min-w-0">
                                 <span className="text-sm font-medium text-slate-900 break-words min-w-0">{activity.reportingOrg}</span>
                                 {activity.reportingOrgRef && (
-                                  <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0">
+                                  <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0">
                                     {activity.reportingOrgRef}
                                   </code>
                                 )}
@@ -1349,7 +1349,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                       {refDisplay.normalized && (
                                         <>
                                           {' '}
-                                          <code className={`text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline whitespace-nowrap ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                          <code className={`text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline whitespace-nowrap ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
                                             {refDisplay.normalized}
                                           </code>
                                           {!refDisplay.isValid && (
@@ -1371,7 +1371,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                   <td className="px-2 py-1 whitespace-nowrap">
                                     {orgRole && roleName ? (
                                       <div className="flex items-center gap-1.5">
-                                        <code className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 inline-block shrink-0">
+                                        <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0">
                                           {orgRole}
                                         </code>
                                         <span className="text-slate-600">{roleName}</span>
@@ -1424,7 +1424,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Currency:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {currencyCode}
                                     </code>
                                     {currencyName && (
@@ -1443,7 +1443,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Status:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {activity.status}
                                     </code>
                                     {statusName && (
@@ -1462,7 +1462,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Aid Type:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {label?.code || aidTypeCode}
                                     </code>
                                     <span className="text-slate-900">{label?.name || activity.aidTypeName || aidTypeCode}</span>
@@ -1478,7 +1478,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Flow Type:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {label?.code || activity.flowType}
                                     </code>
                                     <span className="text-slate-900">{label?.name || activity.flowTypeName || activity.flowType}</span>
@@ -1494,7 +1494,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Finance Type:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {label?.code || activity.financeType}
                                     </code>
                                     <span className="text-slate-900">{label?.name || activity.financeTypeName || activity.financeType}</span>
@@ -1510,7 +1510,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-slate-600 whitespace-nowrap align-top">Tied Status:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {label?.code || activity.tiedStatus}
                                     </code>
                                     <span className="text-slate-900">{label?.name || activity.tiedStatusName || activity.tiedStatus}</span>
@@ -1530,7 +1530,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Scope:</td>
                                 <td className="py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {scopeItem?.code || activity.activityScope}
                                     </code>
                                     <span className="text-slate-900">{scopeItem?.name || activity.activityScope}</span>
@@ -1547,7 +1547,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Collaboration:</td>
                                 <td className="py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {label?.code || activity.collaborationType}
                                     </code>
                                     <span className="text-slate-900">{label?.name || activity.collaborationType}</span>
@@ -1568,7 +1568,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="py-1 pr-2 text-slate-600 whitespace-nowrap align-top">Hierarchy:</td>
                                 <td className="py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">
+                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {activity.hierarchy}
                                     </code>
                                     {hierarchyName && (
@@ -12370,14 +12370,14 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 const roleInfo = getOrganizationRoleLabel(field.importValue.role);
                 return roleInfo ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{roleInfo.code}</span>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{roleInfo.code}</span>
                     <span className="text-xs text-gray-600">{roleInfo.name}</span>
                   </div>
                 ) : null;
               })()}
               {field.importValue.ref && (
                 <div className="flex items-center gap-1">
-                  <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-48">{field.importValue.ref}</span>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded truncate max-w-48">{field.importValue.ref}</span>
                   {field.importValue.wasCorrected && (
                     <TooltipProvider>
                       <Tooltip>
@@ -12399,7 +12399,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                 const typeInfo = getOrganizationTypeLabel(field.importValue.type);
                 return typeInfo ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{typeInfo.code}</span>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{typeInfo.code}</span>
                     <span className="text-xs text-gray-600">{typeInfo.name}</span>
                   </div>
                 ) : null;
@@ -14320,7 +14320,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
           onClick={() => onSelect(subsector.code)}
           className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent border-b border-gray-100 last:border-b-0 whitespace-nowrap"
         >
-          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded min-w-[50px]">
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded min-w-[50px]">
             {subsector.code}
           </span>
           <span className="font-medium text-gray-900 flex-1 truncate">
@@ -14345,7 +14345,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
       >
         <span className="truncate">
           <span className="flex items-center gap-2">
-            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{sector.code}</span>
+            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
             <span className="font-medium text-gray-900">{sector.name}</span>
           </span>
         </span>
@@ -14388,7 +14388,7 @@ const SubsectorDropdown = ({ value, options, onSelect }: SubsectorDropdownProps)
         >
           {selectedOption ? (
             <span className="flex items-center gap-2 truncate text-left">
-              <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                 {selectedOption.code}
               </span>
               <span className="truncate text-sm text-left">{selectedOption.name}</span>
@@ -14439,7 +14439,7 @@ const SubsectorDropdown = ({ value, options, onSelect }: SubsectorDropdownProps)
                     <Check
                       className={`h-4 w-4 ${value === option.code ? 'opacity-100' : 'opacity-0'}`}
                     />
-                    <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                       {option.code}
                     </span>
                     <span className="text-sm">{option.name}</span>
@@ -14782,7 +14782,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                     {/* Original sector header */}
                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
                       <div className="flex items-center gap-2">
-                        <code className="text-sm font-mono bg-gray-100 px-2 py-0.5 rounded">{originalCode}</code>
+                        <code className="text-sm font-mono bg-muted px-2 py-0.5 rounded">{originalCode}</code>
                         <span className="text-sm font-medium text-gray-700">{items[0].originalName}</span>
                       </div>
                       <div className="flex items-center gap-2 ml-auto">

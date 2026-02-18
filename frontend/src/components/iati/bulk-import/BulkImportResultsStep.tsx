@@ -208,7 +208,7 @@ export default function BulkImportResultsStep({
                   ) : (
                     <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
                   )}
-                  <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.iatiIdentifier}</span>
+                  <span className="text-xs font-mono bg-muted text-gray-500 px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.iatiIdentifier}</span>
                 </div>
                 <div>
                   {item.action === 'create' && (

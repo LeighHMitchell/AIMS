@@ -233,7 +233,7 @@ export function ParticipatingOrgModal({
           <div className="space-y-2">
             <Label htmlFor="organization" className="flex items-center gap-2">
               Organization <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 align-middle" aria-hidden="true" />
-              <HelpTextTooltip content="Select an existing organization from your database." />
+              <HelpTextTooltip content="Select an existing organization from your database. Can't find your organization? Add it in the Organizations page first." />
             </Label>
             <OrganizationCombobox
               value={formData.organization_id || ''}
@@ -244,11 +244,6 @@ export function ParticipatingOrgModal({
               open={activeDropdown === 'organization'}
               onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'organization' : null)}
             />
-            {!editingOrg && (
-              <p className="text-xs text-gray-500">
-                Can't find your organization? Add it in the Organizations page first.
-              </p>
-            )}
           </div>
 
           {/* Role Selection */}
@@ -507,8 +502,8 @@ export function ParticipatingOrgModal({
               <>Saving...</>
             ) : (
               <>
-                {editingOrg ? <Save className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                {editingOrg ? 'Update' : 'Add'} Organization
+                <Save className="h-4 w-4 mr-2" />
+                {editingOrg ? 'Update' : 'Save'}
               </>
             )}
           </Button>

@@ -583,18 +583,18 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Aid Effectiveness</h2>
-              <p className="text-xs text-white/70">GPEDC Monitoring Framework</p>
+              <h2 className="text-lg font-bold text-white">Aid Effectiveness</h2>
+              <p className="text-xs font-bold text-white/70">GPEDC Monitoring Framework</p>
             </div>
-            <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 text-xs">
+            <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 text-xs font-bold">
               GPEDC Compliant
             </Badge>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Progress value={completionPercentage} className="w-24 h-2 bg-white/20 [&>div]:bg-white" />
-              <span className="text-sm font-medium text-white">{completionPercentage}%</span>
+              <Progress value={completionPercentage} className="w-24 h-2 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
+              <span className="text-sm font-bold text-white">{completionPercentage}%</span>
             </div>
             {isSaving ? (
               <div className="flex items-center gap-1.5 text-xs text-white/70">
@@ -602,7 +602,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                 <span>Saving...</span>
               </div>
             ) : lastSaved ? (
-              <div className="flex items-center gap-1.5 text-xs text-white">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-white">
                 <CheckCircle className="h-3.5 w-3.5" />
                 <span>Saved</span>
               </div>

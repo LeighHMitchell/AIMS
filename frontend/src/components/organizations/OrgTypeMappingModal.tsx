@@ -200,7 +200,7 @@ export function OrgTypeMappingModal({
                     <RadioGroupItem value={option.code} className="mt-0.5" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                           {option.code}
                         </code>
                         <span className="font-medium text-gray-900">

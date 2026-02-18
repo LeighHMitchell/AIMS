@@ -493,7 +493,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                           </h4>
                           <div className="mt-1 flex items-center gap-2 flex-wrap">
                             {activity.iatiIdentifier && (
-                              <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                              <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-gray-600">
                                 {activity.iatiIdentifier}
                               </code>
                             )}
@@ -616,7 +616,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                           <div className="space-y-1 ml-6">
                             {link.iatiIdentifier && (
                               <p className="text-xs break-words">
-                                <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 font-mono">
+                                <code className="bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-mono">
                                   {link.iatiIdentifier}
                                 </code>
                               </p>

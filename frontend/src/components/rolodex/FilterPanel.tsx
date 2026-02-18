@@ -315,7 +315,7 @@ export function FilterPanel({
                   <Layers className="h-4 w-4" />
                   {filters.orgType ? (
                     <span className="flex items-center gap-1.5 truncate">
-                      <code className="font-mono text-xs bg-slate-100 text-slate-600 px-1 py-0.5 rounded">{filters.orgType}</code>
+                      <code className="font-mono text-xs bg-muted text-muted-foreground px-1 py-0.5 rounded">{filters.orgType}</code>
                       <span>{ORG_TYPE_LABELS[filters.orgType]?.label}</span>
                     </span>
                   ) : (
@@ -343,7 +343,7 @@ export function FilterPanel({
                     className="w-full justify-start"
                     onClick={() => { onFiltersChange({ orgType: orgType.key }); setOpenPopover(null); }}
                   >
-                    <code className="font-mono text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mr-2">{orgType.key}</code>
+                    <code className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">{orgType.key}</code>
                     {orgType.label}
                   </Button>
                 ))}

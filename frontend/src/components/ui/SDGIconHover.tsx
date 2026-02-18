@@ -49,7 +49,7 @@ export default function SDGIconHover({
         alt=""
         aria-hidden="true"
         draggable={false}
-        className="col-start-1 row-start-1 w-full h-full object-cover grayscale"
+        className="col-start-1 row-start-1 w-full h-full object-cover grayscale contrast-[0.4] brightness-[0.85]"
       />
 
       {/* Top layer — full colour, clip-path animated */}

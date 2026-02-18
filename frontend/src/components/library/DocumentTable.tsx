@@ -245,7 +245,7 @@ export function DocumentTable({
                 <TableCell>
                   {doc.categoryCode ? (
                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                      <span className="text-xs font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
+                      <span className="text-xs font-mono bg-muted dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
                         {doc.categoryCode}
                       </span>
                       {doc.categoryName && (

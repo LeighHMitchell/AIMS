@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -273,7 +273,13 @@ export default function ImprovedSectorAllocationForm({
     activityId: activityId || '',
     onModeChange
   });
-  
+
+  // When the toggle changes, refresh the form's own mode state
+  const handleModeChangeFromToggle = useCallback((newMode: SectorAllocationMode) => {
+    sectorMode.refreshModeInfo();
+    onModeChange?.(newMode);
+  }, [sectorMode.refreshModeInfo, onModeChange]);
+
   const isTransactionMode = sectorMode.mode === 'transaction';
   const isLocked = isTransactionMode;
   // Multi-select: get all selected sector codes
@@ -918,7 +924,7 @@ export default function ImprovedSectorAllocationForm({
           <div className="flex-1">
             <SectorAllocationModeToggle
               activityId={activityId}
-              onModeChange={onModeChange}
+              onModeChange={handleModeChangeFromToggle}
               disabled={sectorMode.isSwitching}
             />
           </div>
@@ -984,9 +990,9 @@ export default function ImprovedSectorAllocationForm({
           <AlertDescription className="text-amber-800">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Sector allocation is managed at the transaction level</p>
+                <p className="font-medium">You've chosen to report sectors at the transaction level</p>
                 <p className="text-sm mt-1">
-                  The breakdown below shows the weighted average across all transactions.
+                  Each transaction specifies its own sector breakdown. The view below shows the weighted average across all transactions.
                   To edit sectors, go to individual transactions.
                 </p>
               </div>
@@ -1006,6 +1012,8 @@ export default function ImprovedSectorAllocationForm({
         </Alert>
       )}
 
+      {/* Wrap everything below in a disabled overlay when in transaction mode */}
+      <div className={cn("space-y-6", isLocked && "opacity-50 pointer-events-none select-none")}>
       {/* Allocation Summary */}
       <div className="text-base font-semibold leading-none tracking-tight">Allocation Summary</div>
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -1096,7 +1104,7 @@ export default function ImprovedSectorAllocationForm({
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center gap-2">
-              <span>Select Sector to Add</span>
+              <span>Select Sector(s) to Add</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1201,19 +1209,19 @@ export default function ImprovedSectorAllocationForm({
                         >
                           {/* Sector Category Code and Name */}
                           <TableCell className="py-2 text-sm">
-                            <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{categoryGroupCode}</span>{' '}
+                            <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{categoryGroupCode}</span>{' '}
                             {categoryGroupName}
                           </TableCell>
 
                           {/* Sector Code and Name */}
                           <TableCell className="py-2 text-sm">
-                            <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{sectorCode}</span>{' '}
+                            <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{sectorCode}</span>{' '}
                             {sectorName.replace(/^\d{3}\s*-\s*/, '')}
                           </TableCell>
 
                           {/* Sub-sector Code and Name */}
                           <TableCell className="py-2 text-sm">
-                            <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-xs">{subSectorCode}</span>{' '}
+                            <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{subSectorCode}</span>{' '}
                             {subSectorName}
                           </TableCell>
                           
@@ -1321,6 +1329,7 @@ export default function ImprovedSectorAllocationForm({
             </CardContent>
           </Card>
         )}
+      </div>
       </div>
     </div>
   );

@@ -213,7 +213,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
     return (
         <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
           <p className="font-semibold text-gray-900 mb-1">
-            {item.sectorCode && <span className="font-mono bg-gray-100 px-1 rounded mr-2">{item.sectorCode}</span>}
+            {item.sectorCode && <span className="font-mono bg-muted px-1 rounded mr-2">{item.sectorCode}</span>}
             {item.sectorName}
           </p>
           <div className="border-t mt-2 pt-2 space-y-1">
@@ -410,7 +410,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
             style={{ backgroundColor: item.fill }}
           />
           {item.id !== "others" && item.sectorCode && (
-            <span className="text-xs font-mono bg-gray-100 px-1 rounded text-gray-700">{item.sectorCode}</span>
+            <span className="text-xs font-mono bg-muted px-1 rounded text-gray-700">{item.sectorCode}</span>
           )}
           {expanded ? (
             <span className="text-xs text-gray-600">

@@ -124,7 +124,7 @@ export function SDGCoverageChart({
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3">
           <p className="font-semibold text-slate-900 mb-2">
-            <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">SDG {data.sdgGoal}</span>
+            <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">SDG {data.sdgGoal}</span>
             <span className="ml-2">{goal?.name || data.sdgName}</span>
           </p>
           <div className="space-y-1 text-sm">

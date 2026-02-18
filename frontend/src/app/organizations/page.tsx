@@ -1749,8 +1749,7 @@ function OrganizationsPageContent() {
                   localStorage.setItem('organizationViewMode', 'table')
                 }}
               >
-                <TableIcon className="h-4 w-4 mr-2" />
-                Table
+                <TableIcon className="h-4 w-4" />
               </Button>
               <Button
                 variant={viewMode === 'card' ? 'default' : 'outline'}
@@ -1761,8 +1760,7 @@ function OrganizationsPageContent() {
                   localStorage.setItem('organizationViewMode', 'card')
                 }}
               >
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                Card
+                <LayoutGrid className="h-4 w-4" />
               </Button>
             </div>
           </div>

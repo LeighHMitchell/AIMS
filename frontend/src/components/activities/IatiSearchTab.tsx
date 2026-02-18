@@ -464,7 +464,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
     if (!code) return null
     if (!name || name === code) {
       return (
-        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
           {code}
         </code>
       )
@@ -482,7 +482,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
     
     return (
       <span className="inline-flex items-center gap-1">
-        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
           {code}
         </code>
         {displayName && displayName !== code && (
@@ -873,7 +873,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                               <div>
                                 <span className="text-slate-600 font-medium">IATI ID:</span>
                                 <div className="mt-0.5 flex items-center gap-2">
-                                  <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                     {activity.iatiIdentifier}
                                   </code>
                                   <button
@@ -895,7 +895,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                   <div className="mt-0.5">
                                     <div className="text-slate-900">{activity.reportingOrg}</div>
                                     {activity.reportingOrgRef && (
-                                      <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 mt-0.5 block">
+                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground mt-0.5 block">
                                         {activity.reportingOrgRef}
                                       </code>
                                     )}
@@ -910,7 +910,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                       <>
                                         <div className="text-slate-900">{implementingOrgs[0].name}</div>
                                         {implementingOrgs[0].ref && (
-                                          <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 mt-0.5 block">
+                                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground mt-0.5 block">
                                             {implementingOrgs[0].ref}
                                           </code>
                                         )}
@@ -946,7 +946,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                     <div key={idx}>
                                       <div className="text-slate-900">{org.name}</div>
                                       {org.ref && (
-                                        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                           {org.ref}
                                         </code>
                                       )}
@@ -980,7 +980,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                   {activity.hierarchy && (
                                     <div>
                                       <span className="text-slate-600">Hierarchy:</span>{' '}
-                                      <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                         {activity.hierarchy}
                                       </code>
                                     </div>
@@ -988,7 +988,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                   {activity.status && (
                                     <div>
                                       <span className="text-slate-600">Status:</span>{' '}
-                                      <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                         {activity.status}
                                       </code>
                                       <span className="text-slate-900 ml-2">({statusDisplay})</span>
@@ -1070,7 +1070,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                   return (
                                     <span key={idx} className="whitespace-nowrap">
                                       {idx > 0 && ', '}
-                                      <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                         {country}
                                       </code>
                                       {countryName && countryName !== country && (
@@ -1106,7 +1106,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                   const currencyName = currencyInfo?.name || activity.currency;
                                   return (
                                     <>
-                                      <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                         {activity.currency}
                                       </code>
                                       {' '}
@@ -1145,7 +1145,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                     return orgs.map((org, idx) => (
                                       <div key={`${roleCode}-${idx}`} className="flex flex-wrap items-baseline gap-2 text-slate-900">
                                         <span className="whitespace-nowrap">
-                                          <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">{roleCode}</code>
+                                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{roleCode}</code>
                                           {' '}
                                           <span className="font-semibold text-slate-600">{roleName}</span>
                                         </span>
@@ -1156,7 +1156,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                           
                                           return (
                                             <span className="whitespace-nowrap flex items-center gap-1">
-                                              <code className={`text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                              <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
                                                 {refDisplay.normalized}
                                               </code>
                                               {!refDisplay.isValid && (
@@ -1190,7 +1190,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                   const sectorPercentage = typeof sector === 'object' && sector.percentage !== undefined ? sector.percentage : null;
                                   return (
                                     <div key={idx} className="text-slate-900 text-xs">
-                                      <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                         {sectorCode}
                                       </code>
                                       {sectorName && sectorName !== sectorCode && (
@@ -1252,7 +1252,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                     return (
                                       <div>
                                         <span className="text-slate-600">Aid Type: </span>
-                                        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                           {aidCode}
                                         </code>
                                         {' '}
@@ -1287,7 +1287,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                     return (
                                       <div>
                                         <span className="text-slate-600">Flow Type: </span>
-                                        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                           {flowCode}
                                         </code>
                                         {' '}
@@ -1313,7 +1313,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                                   return (
                                     <div>
                                       <span className="text-slate-600">Tied Status: </span>
-                                      <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                         {tiedStatusCode}
                                       </code>
                                       {tiedStatusName && (
@@ -1333,7 +1333,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                             <div className="col-span-1">
                               <span className="text-slate-600 font-medium">Hierarchy:</span>
                               <div className="mt-0.5">
-                                <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                   {activity.hierarchy}
                                 </code>
                               </div>
@@ -1344,7 +1344,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                             <div className="col-span-1">
                               <span className="text-slate-600 font-medium">Status:</span>
                               <div className="mt-0.5">
-                                <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                   {activity.status}
                                 </code>
                                 <span className="text-slate-900 ml-2">({statusDisplay})</span>
@@ -1467,7 +1467,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0">
                       <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm font-medium">
-                        <span className="bg-gray-200 text-gray-600 px-1 py-0.5 rounded text-xs font-mono">
+                        <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-mono">
                           {group.roleCode}
                         </span>
                         <span>{group.roleName}</span>
@@ -1500,7 +1500,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                 <div className="grid grid-cols-1 gap-2 text-sm">
                   {selectedActivityForModal.collaborationType && (
                     <div className="flex items-center gap-2">
-                      <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
+                      <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
                         {selectedActivityForModal.collaborationType}
                       </span>
                       <span className="text-gray-600">Collaboration Type</span>
@@ -1508,7 +1508,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                   )}
                   {selectedActivityForModal.aidType && (
                     <div className="flex items-center gap-2">
-                      <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
+                      <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
                         {selectedActivityForModal.aidType}
                       </span>
                       <span className="text-gray-600">{selectedActivityForModal.aidTypeName || 'Aid Type'}</span>
@@ -1516,7 +1516,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                   )}
                   {selectedActivityForModal.financeType && (
                     <div className="flex items-center gap-2">
-                      <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
+                      <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
                         {selectedActivityForModal.financeType}
                       </span>
                       <span className="text-gray-600">{selectedActivityForModal.financeTypeName || 'Finance Type'}</span>
@@ -1524,7 +1524,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                   )}
                   {selectedActivityForModal.flowType && (
                     <div className="flex items-center gap-2">
-                      <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
+                      <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
                         {selectedActivityForModal.flowType}
                       </span>
                       <span className="text-gray-600">{selectedActivityForModal.flowTypeName || 'Flow Type'}</span>
@@ -1532,7 +1532,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                   )}
                   {selectedActivityForModal.tiedStatus && (
                     <div className="flex items-center gap-2">
-                      <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
+                      <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
                         {selectedActivityForModal.tiedStatus}
                       </span>
                       <span className="text-gray-600">{selectedActivityForModal.tiedStatusName || 'Tied Status'}</span>
@@ -1540,7 +1540,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
                   )}
                   {selectedActivityForModal.hierarchy && (
                     <div className="flex items-center gap-2">
-                      <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
+                      <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs font-mono min-w-fit">
                         {selectedActivityForModal.hierarchy}
                       </span>
                       <span className="text-gray-600">{selectedActivityForModal.hierarchyName || 'Hierarchy'}</span>

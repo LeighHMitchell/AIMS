@@ -365,7 +365,7 @@ export function SectorHierarchyFilter({
                     heading={
                       <div className={cn("flex items-center justify-between w-full", groupInactive && "opacity-50")}>
                         <span className={cn("font-semibold", groupInactive ? "text-gray-400" : "text-foreground")}>
-                          <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2">{group.code}</code>
+                          <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2">{group.code}</code>
                           {group.name}
                           <span className="text-gray-500 font-normal ml-1">({groupCount})</span>
                         </span>
@@ -399,7 +399,7 @@ export function SectorHierarchyFilter({
                               selected.sectors.includes(category.code) ? 'opacity-100' : 'opacity-0'
                             )}
                           />
-                          <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2 shrink-0">{category.code}</code>
+                          <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2 shrink-0">{category.code}</code>
                           <span className={cn("truncate", categoryInactive && "text-gray-400")}>{category.name}</span>
                           <span className="text-gray-500 ml-1">({categoryCount})</span>
                         </CommandItem>
@@ -421,7 +421,7 @@ export function SectorHierarchyFilter({
                                 selected.subSectors.includes(sector.code) ? 'opacity-100' : 'opacity-0'
                               )}
                             />
-                            <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2 shrink-0">{sector.code}</code>
+                            <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2 shrink-0">{sector.code}</code>
                             <span className={cn("truncate", sectorInactive && "text-gray-400")}>{sector.name}</span>
                             <span className="text-gray-500 ml-1">({sectorCount})</span>
                           </CommandItem>

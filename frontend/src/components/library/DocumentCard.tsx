@@ -191,7 +191,7 @@ export function DocumentCard({
           {/* Category */}
           {document.categoryCode && (
             <div className="flex items-start gap-1 text-xs">
-              <span className="font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1 py-0.5 rounded shrink-0">
+              <span className="font-mono bg-muted dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1 py-0.5 rounded shrink-0">
                 {document.categoryCode}
               </span>
               {document.categoryName && (

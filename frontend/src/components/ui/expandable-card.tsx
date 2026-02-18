@@ -196,15 +196,9 @@ export function ExpandableCard({
                     className="h-9"
                   >
                     {viewMode === 'chart' ? (
-                      <>
-                        <TableIcon className="h-4 w-4 mr-2" />
-                        View as Table
-                      </>
+                      <TableIcon className="h-4 w-4" />
                     ) : (
-                      <>
-                        <BarChart3 className="h-4 w-4 mr-2" />
-                        View as Chart
-                      </>
+                      <BarChart3 className="h-4 w-4" />
                     )}
                   </Button>
                 )}

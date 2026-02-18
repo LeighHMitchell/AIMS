@@ -1390,7 +1390,7 @@ export default function OrganizationProfilePage() {
                       <div className="flex flex-wrap items-center gap-3 py-3 border-y border-slate-200">
                         {organization.iati_org_id && (
                           <div className="flex items-center gap-1 group">
-                            <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
+                            <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                               {organization.iati_org_id}
                             </code>
                             <button
@@ -2660,8 +2660,7 @@ export default function OrganizationProfilePage() {
                             onClick={() => setActivitiesView('card')}
                             className="rounded-r-none"
                           >
-                            <LayoutGrid className="h-4 w-4 mr-1" />
-                            Card
+                            <LayoutGrid className="h-4 w-4" />
                           </Button>
                           <Button
                             variant={activitiesView === 'table' ? 'default' : 'outline'}
@@ -2669,8 +2668,7 @@ export default function OrganizationProfilePage() {
                             onClick={() => setActivitiesView('table')}
                             className="rounded-l-none"
                           >
-                            <TableIcon className="h-4 w-4 mr-1" />
-                            Table
+                            <TableIcon className="h-4 w-4" />
                           </Button>
                         </div>
                         <Button
@@ -2900,7 +2898,7 @@ export default function OrganizationProfilePage() {
                                         <span className="font-medium ml-1">({activity.acronym})</span>
                                       )}
                                       {activity.iati_identifier && (
-                                        <span className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-2 inline-flex items-center gap-1">
+                                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2 inline-flex items-center gap-1">
                                           {activity.iati_identifier}
                                           <button
                                             onClick={(e) => {

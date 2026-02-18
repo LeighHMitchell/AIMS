@@ -886,7 +886,7 @@ export default function Atlas() {
                                   className="flex items-center text-xs"
                                 >
                                   <Check className={cn("h-3.5 w-3.5 mr-2 shrink-0", statusFilter.includes(status.code) ? "opacity-100" : "opacity-0")} />
-                                  <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2">{status.code}</code>
+                                  <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono mr-2">{status.code}</code>
                                   <span>{status.name}</span>
                                 </CommandItem>
                               ))}

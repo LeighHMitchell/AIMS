@@ -1865,7 +1865,7 @@ export default function ActivityDetailPage() {
                         <div className="flex flex-wrap items-center gap-3 py-3 border-y border-slate-200">
                           {activity.partnerId && (
                             <div className="flex items-center gap-1 group">
-                              <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
+                              <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                                 {activity.partnerId}
                               </code>
                               <button
@@ -1883,7 +1883,7 @@ export default function ActivityDetailPage() {
                           )}
                           {activity.iatiIdentifier && (
                             <div className="flex items-center gap-1 group">
-                              <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
+                              <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                                 {activity.iatiIdentifier}
                               </code>
                               <button
@@ -2229,7 +2229,7 @@ export default function ActivityDetailPage() {
                                 )}
                                 {/* IATI ID with gray background - inline */}
                                 {reportingOrg.iati_org_id && (
-                                  <span className="text-xs text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
+                                  <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
                                     {reportingOrg.iati_org_id}
                                   </span>
                                 )}
@@ -2280,7 +2280,7 @@ export default function ActivityDetailPage() {
                                       )}
                                       {/* IATI ID with gray background - inline */}
                                       {org.organization?.iati_org_id && (
-                                        <span className="text-xs text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
+                                        <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded ml-2 inline-block align-middle">
                                           {org.organization.iati_org_id}
                                         </span>
                                       )}
@@ -3299,8 +3299,7 @@ export default function ActivityDetailPage() {
                                   onClick={() => setSectorViewMode('pie')}
                                   className="h-8"
                                 >
-                                  <PieChartIcon className="h-4 w-4 mr-1.5" />
-                                  Pie
+                                  <PieChartIcon className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant={sectorViewMode === 'bar' ? 'default' : 'ghost'}
@@ -3308,8 +3307,7 @@ export default function ActivityDetailPage() {
                                   onClick={() => setSectorViewMode('bar')}
                                   className="h-8"
                                 >
-                                  <BarChart3Icon className="h-4 w-4 mr-1.5" />
-                                  Bar
+                                  <BarChart3Icon className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant={sectorViewMode === 'table' ? 'default' : 'ghost'}
@@ -3317,8 +3315,7 @@ export default function ActivityDetailPage() {
                                   onClick={() => setSectorViewMode('table')}
                                   className="h-8"
                                 >
-                                  <TableIcon className="h-4 w-4 mr-1.5" />
-                                  Table
+                                  <TableIcon className="h-4 w-4" />
                                 </Button>
                               </div>
 
@@ -3844,7 +3841,7 @@ export default function ActivityDetailPage() {
                                           )}
                                         </div>
                                         {(org.iati_org_ref || org.organization?.iati_org_id) && (
-                                          <span className="text-xs text-slate-600 font-mono bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                                          <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded mt-1 inline-block">
                                             {org.iati_org_ref || org.organization?.iati_org_id}
                                           </span>
                                     )}

@@ -1325,7 +1325,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                               </TableCell>
                               <TableCell className="font-medium">
                                 {sector.code && (
-                                  <code className="mr-2 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-xs">
+                                  <code className="mr-2 px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                                     {sector.code}
                                   </code>
                                 )}
@@ -1368,7 +1368,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                   </Link>
                                   <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                                     {activity.iatiIdentifier && (
-                                      <span className="font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                      <span className="font-mono bg-muted text-gray-600 px-1.5 py-0.5 rounded">
                                         {activity.iatiIdentifier}
                                       </span>
                                     )}

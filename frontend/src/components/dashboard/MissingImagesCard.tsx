@@ -459,7 +459,7 @@ export function MissingImagesCard({
                       {activity.title}
                     </p>
                     {activity.iatiIdentifier && (
-                      <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                      <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                         {activity.iatiIdentifier}
                       </code>
                     )}

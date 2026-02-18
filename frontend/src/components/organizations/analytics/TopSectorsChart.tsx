@@ -114,8 +114,7 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="bar" className="data-[state=active]:bg-slate-600 data-[state=active]:text-white">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Bar Chart
+              <BarChart3 className="h-4 w-4" />
             </TabsTrigger>
             <TabsTrigger value="donut" className="data-[state=active]:bg-slate-600 data-[state=active]:text-white">
               <PieChart className="h-4 w-4 mr-2" />

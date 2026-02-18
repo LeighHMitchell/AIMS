@@ -35,15 +35,15 @@ const getIconComponent = (iconName: string) => {
 const getPriorityIcon = (priority: string) => {
   switch (priority) {
     case 'low':
-      return { icon: Minus, color: 'text-gray-400' };
+      return { icon: Minus, color: 'text-muted-foreground' };
     case 'medium':
-      return { icon: CircleDot, color: 'text-blue-500' };
+      return { icon: CircleDot, color: 'text-muted-foreground' };
     case 'high':
-      return { icon: AlertTriangle, color: 'text-orange-500' };
+      return { icon: AlertTriangle, color: 'text-muted-foreground' };
     case 'urgent':
-      return { icon: Flame, color: 'text-red-600' };
+      return { icon: Flame, color: 'text-muted-foreground' };
     default:
-      return { icon: Minus, color: 'text-gray-400' };
+      return { icon: Minus, color: 'text-muted-foreground' };
   }
 };
 

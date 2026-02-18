@@ -181,7 +181,6 @@ export function OrganizationEditor({
   const getFormTab = (section: string) => {
     const mapping: Record<string, string> = {
       'general': 'basic',
-      'branding': 'branding',
       'contact': 'contact',
       'aliases': 'aliases',
       'merge': 'merge' // Merge has its own tab
@@ -192,7 +191,6 @@ export function OrganizationEditor({
   // Section order for navigation
   const sectionOrder = [
     'general',
-    'branding',
     'contact',
     'contacts',
     'aliases',
@@ -228,7 +226,7 @@ export function OrganizationEditor({
     }
 
     // For form sections, use OrganizationFormContent with inline mode
-    if (['general', 'branding', 'contact', 'aliases', 'merge'].includes(activeSection)) {
+    if (['general', 'contact', 'aliases', 'merge'].includes(activeSection)) {
       return (
         <OrganizationFormContent
           organization={organization}

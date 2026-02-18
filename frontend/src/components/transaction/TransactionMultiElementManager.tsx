@@ -259,7 +259,7 @@ export function TransactionSectorManager({
                       {sectorInfo.category && (
                         <div className="flex items-center gap-1.5 mt-1.5">
                           {categoryCode && (
-                            <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                            <span className="text-xs font-mono bg-muted text-gray-600 px-1.5 py-0.5 rounded">
                               {categoryCode}
                             </span>
                           )}
@@ -901,7 +901,7 @@ export function TransactionRecipientCountryManager({
           <Card key={index} className="p-3">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 flex-1">
-                <span className="text-xs font-mono text-gray-800 bg-gray-100 px-2 py-1 rounded">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
                   {country.code}
                 </span>
                 <span className="text-sm text-gray-700">
@@ -956,7 +956,7 @@ export function TransactionRecipientCountryManager({
             >
               {selectedCountryCode ? (
                 <span className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-gray-800 bg-gray-100 px-2 py-1 rounded">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
                     {selectedCountryCode}
                   </span>
                   <span>{getCountryName(selectedCountryCode)}</span>
@@ -1014,7 +1014,7 @@ export function TransactionRecipientCountryManager({
                             )}
                           />
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-gray-800 bg-gray-100 px-2 py-1 rounded">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
                               {country.code}
                             </span>
                             <span className="text-sm">{country.name}</span>

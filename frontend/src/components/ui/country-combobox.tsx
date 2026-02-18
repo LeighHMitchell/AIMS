@@ -103,7 +103,7 @@ export function CountryCombobox({
           >
             {selectedCountry ? (
               <span className="flex items-center gap-2">
-                <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700">
+                <span className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-muted-foreground">
                   {selectedCountry.code}
                 </span>
                 <span>{selectedCountry.name}</span>
@@ -145,7 +145,7 @@ export function CountryCombobox({
                         className="cursor-pointer"
                       >
                         <span className="flex items-center gap-2 w-full">
-                          <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700">
+                          <span className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-muted-foreground">
                             {country.code}
                           </span>
                           <span>{country.name}</span>

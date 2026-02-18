@@ -1,6 +1,39 @@
 {
-  "currentVersion": "2.9.0",
+  "currentVersion": "2.10.0",
   "releases": [
+    {
+      "version": "2.10.0",
+      "date": "2026-02-18",
+      "changes": [
+        "<b>Theme Token Migration</b>",
+        "&nbsp;&nbsp;Replaced hardcoded Tailwind colour classes (<code>bg-gray-100</code>, <code>text-slate-600</code>, etc.) with semantic design tokens (<code>bg-muted</code>, <code>text-muted-foreground</code>) across 80+ files",
+        "&nbsp;&nbsp;Prepares the entire UI for dark mode support and consistent theming",
+        "<b>Organisation Editor Redesign</b>",
+        "&nbsp;&nbsp;Merged Branding tab into General &mdash; logo and banner uploads now appear inline on the main form",
+        "&nbsp;&nbsp;Organisation Type field converted to searchable dropdown with full IATI organisation-type codelist",
+        "&nbsp;&nbsp;Acronym field now includes auto-generate wand button (same as Activity Editor)",
+        "&nbsp;&nbsp;Removed UUID display field &mdash; tab count reduced from 7 to 6",
+        "<b>Humanitarian Scope Modal</b>",
+        "&nbsp;&nbsp;Replaced inline humanitarian scope form with a dedicated Add / Edit modal dialog",
+        "&nbsp;&nbsp;New <code>HumanitarianScopeModal</code> component with cleaner field layout and validation",
+        "&nbsp;&nbsp;Humanitarian tab now features a dove illustration empty state",
+        "<b>Sector &amp; Geography Level Toggles</b>",
+        "&nbsp;&nbsp;Activity-level and Transaction-level toggle cards now display descriptive background images instead of placeholder text",
+        "&nbsp;&nbsp;Five new illustration assets for sector, geography, and humanitarian sections",
+        "<b>View Toggle Icons</b>",
+        "&nbsp;&nbsp;Removed text labels from view toggle buttons across 15+ list pages &mdash; now icon-only for a cleaner toolbar",
+        "<b>Sector Allocation Form</b>",
+        "&nbsp;&nbsp;Transaction-mode sector card now shows a disabled overlay explaining allocation is managed per-transaction",
+        "&nbsp;&nbsp;Improved wording and layout for activity-level percentage allocation",
+        "<b>Countries &amp; Regions Alert</b>",
+        "&nbsp;&nbsp;Redesigned the percentage allocation warning with amber styling and <code>AlertTriangle</code> icon",
+        "<b>UI Polish</b>",
+        "&nbsp;&nbsp;SDG icons now use grayscale-to-colour hover transition",
+        "&nbsp;&nbsp;Organisation banner upload height increased from <code>h-40</code> to <code>h-48</code>",
+        "&nbsp;&nbsp;Feedback modal priority icons unified to <code>text-muted-foreground</code>",
+        "&nbsp;&nbsp;IATI import and search badges migrated to semantic theme tokens"
+      ]
+    },
     {
       "version": "2.9.0",
       "date": "2026-02-17",

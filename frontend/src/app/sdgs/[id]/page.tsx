@@ -623,7 +623,7 @@ export default function SDGProfilePage() {
                             </h3>
                             <div className="flex items-center gap-2 mt-0.5">
                               {activity.iati_identifier && (
-                                <code className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1 py-0.5 rounded">{activity.iati_identifier}</code>
+                                <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{activity.iati_identifier}</code>
                               )}
                               <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">
                                 {getStatusLabel(activity.activity_status)}

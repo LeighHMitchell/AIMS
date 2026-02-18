@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Image from 'next/image'
 import { Loader2, AlertTriangle, Check } from 'lucide-react'
 import {
   AlertDialog,
@@ -107,32 +108,30 @@ export function SectorAllocationModeToggle({
           onClick={() => handleCardClick('activity')}
           disabled={disabled || isSwitching}
           className={cn(
-            "relative flex flex-col w-[180px] rounded-lg border p-3 text-left transition-all",
+            "relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden",
             mode === 'activity'
-              ? "border-primary bg-primary/5"
-              : "border-gray-200 bg-background hover:border-gray-300 hover:bg-gray-50",
+              ? "ring-border bg-primary/5"
+              : "ring-border bg-background hover:bg-gray-50",
             (disabled || isSwitching) && "opacity-50 cursor-not-allowed"
           )}
         >
+          {/* Background image */}
+          <Image src="/images/sector-activity-level.png" alt="Activity Level" fill className="object-cover opacity-15" />
+
           {/* Checkmark overlay */}
           {mode === 'activity' && (
-            <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+            <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
               <Check className="h-3 w-3 text-primary-foreground" />
             </div>
           )}
 
-          {/* Image placeholder */}
-          <div className="mb-2 flex h-16 w-full items-center justify-center rounded bg-muted">
-            <span className="text-xs text-muted-foreground">Image placeholder</span>
+          {/* Text overlay */}
+          <div className="relative z-10 p-3">
+            <h4 className="text-sm font-semibold">Activity Level</h4>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Single breakdown for all transactions
+            </p>
           </div>
-
-          {/* Title */}
-          <h4 className="text-sm font-semibold">Activity Level</h4>
-
-          {/* Description */}
-          <p className="mt-1 text-xs text-muted-foreground">
-            Single breakdown for all transactions
-          </p>
         </button>
 
         {/* Transaction Level Card */}
@@ -141,32 +140,30 @@ export function SectorAllocationModeToggle({
           onClick={() => handleCardClick('transaction')}
           disabled={disabled || isSwitching}
           className={cn(
-            "relative flex flex-col w-[180px] rounded-lg border p-3 text-left transition-all",
+            "relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden",
             mode === 'transaction'
-              ? "border-primary bg-primary/5"
-              : "border-gray-200 bg-background hover:border-gray-300 hover:bg-gray-50",
+              ? "ring-border bg-primary/5"
+              : "ring-border bg-background hover:bg-gray-50",
             (disabled || isSwitching) && "opacity-50 cursor-not-allowed"
           )}
         >
+          {/* Background image */}
+          <Image src="/images/sector-transaction-level.png" alt="Transaction Level" fill className="object-cover opacity-15" />
+
           {/* Checkmark overlay */}
           {mode === 'transaction' && (
-            <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+            <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
               <Check className="h-3 w-3 text-primary-foreground" />
             </div>
           )}
 
-          {/* Image placeholder */}
-          <div className="mb-2 flex h-16 w-full items-center justify-center rounded bg-muted">
-            <span className="text-xs text-muted-foreground">Image placeholder</span>
+          {/* Text overlay */}
+          <div className="relative z-10 p-3">
+            <h4 className="text-sm font-semibold">Transaction Level</h4>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Custom breakdown per transaction
+            </p>
           </div>
-
-          {/* Title */}
-          <h4 className="text-sm font-semibold">Transaction Level</h4>
-
-          {/* Description */}
-          <p className="mt-1 text-xs text-muted-foreground">
-            Custom breakdown per transaction
-          </p>
         </button>
 
         {isSwitching && (

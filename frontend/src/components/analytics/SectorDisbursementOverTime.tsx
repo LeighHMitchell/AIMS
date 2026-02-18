@@ -776,7 +776,7 @@ export function SectorDisbursementOverTime({
                             className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
                             style={{ backgroundColor: colorMap.get(cat.categoryCode) }}
                           />
-                          <span className="font-mono text-xs bg-slate-100 px-1 py-0.5 rounded text-slate-600">
+                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                             {cat.categoryCode}
                           </span>
                           <span className="text-xs text-slate-600 truncate max-w-[150px]" title={cat.categoryName}>
@@ -811,7 +811,7 @@ export function SectorDisbursementOverTime({
                       <div key={category.categoryCode}>
                         <div className="flex items-center justify-between mb-0.5">
                           <div className="flex items-center gap-1">
-                            <span className="font-mono text-xs bg-slate-100 px-1 py-0.5 rounded text-slate-600">
+                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                               {category.categoryCode}
                             </span>
                             <span className="text-xs text-slate-600">{category.categoryName}</span>
@@ -1203,7 +1203,7 @@ export function SectorDisbursementOverTime({
                             `}>
                               {isSelected && <Check className="h-3 w-3 text-white" />}
                             </div>
-                            <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-slate-100 text-slate-600">
+                            <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-muted text-muted-foreground">
                               {item.code}
                             </span>
                             <span className="text-sm text-slate-700 leading-tight">
@@ -1379,7 +1379,7 @@ export function SectorDisbursementOverTime({
                     {visibleItemData.map(item => (
                       <TableHead key={item.code} className="text-right font-semibold text-gray-700 min-w-[120px]">
                         <div className="flex flex-col items-end">
-                          <span className="font-mono text-xs bg-gray-100 px-1 py-0.5 rounded text-gray-600 mb-1">
+                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground mb-1">
                             {item.code}
                           </span>
                           <span className="text-xs">{item.name}</span>

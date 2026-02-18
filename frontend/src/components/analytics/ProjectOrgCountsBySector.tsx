@@ -467,7 +467,7 @@ export function ProjectOrgCountsBySector({
           </div>
         )}
         <div className="mb-3 pb-2 border-b">
-          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-gray-600 mr-2">
+          <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">
             {sectorCode}
           </span>
           <span className="font-semibold text-sm">{fullName}</span>
@@ -941,7 +941,7 @@ export function ProjectOrgCountsBySector({
                     chartData.map((sector, idx) => (
                       <TableRow key={idx} className="hover:bg-gray-50">
                         <TableCell className="font-medium sticky left-0 bg-white">
-                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-gray-600 mr-2">
+                          <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">
                             {sector.sectorCode}
                           </span>
                           {sector.sectorName}

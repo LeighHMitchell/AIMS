@@ -247,7 +247,7 @@ export function OrgTransactionsTable({
                         </span>
                       </div>
                       <div className="pl-6">
-                        <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                        <span className="text-xs font-mono bg-muted text-gray-600 px-1.5 py-0.5 rounded">
                           {transaction.activityIatiIdentifier || transaction.activityId}
                         </span>
                       </div>

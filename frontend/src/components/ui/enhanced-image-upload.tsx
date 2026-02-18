@@ -253,7 +253,7 @@ export function EnhancedImageUpload({
 
   const getContainerClass = () => {
     if (variant === 'banner') {
-      return 'h-40 w-full';
+      return 'h-48 w-full';
     }
     return 'h-48 w-48';
   };

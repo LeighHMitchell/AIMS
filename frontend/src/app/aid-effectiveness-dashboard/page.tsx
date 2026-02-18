@@ -673,7 +673,7 @@ export default function AidEffectivenessDashboard() {
                                   <AvatarFallback className="text-[8px] bg-slate-200">{(org.acronym || org.name).substring(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <span className="truncate">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
-                                <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded shrink-0">{org.id.substring(0, 8)}</span>
+                                <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{org.id.substring(0, 8)}</span>
                               </>
                             )
                           })()}
@@ -701,7 +701,7 @@ export default function AidEffectivenessDashboard() {
                             <AvatarFallback className="text-[9px] bg-slate-200">{(org.acronym || org.name).substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className="text-sm truncate">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
-                          <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded shrink-0 ml-auto">{org.id.substring(0, 8)}</span>
+                          <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0 ml-auto">{org.id.substring(0, 8)}</span>
                         </div>
                       </DropdownMenuItem>
                     ))}

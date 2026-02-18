@@ -22,7 +22,8 @@ import {
   Youtube,
   Merge,
   Building2,
-  Loader2
+  Loader2,
+  Wand2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -75,6 +76,19 @@ import {
 import { LabelSaveIndicator } from '@/components/ui/save-indicator'
 import { useOrganizationAutosave } from '@/hooks/use-organization-autosave'
 import { apiFetch } from '@/lib/api-fetch';
+
+// Acronym generation helper
+const ACRONYM_FILLER_WORDS = new Set([
+  'of', 'the', 'and', 'for', 'in', 'to', 'a', 'an', 'on', 'at', 'by'
+]);
+
+function generateAcronym(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase()))
+    .map(w => w[0].toUpperCase())
+    .join('');
+}
 
 // Combine all options for validation (countries + institutional groups)
 const ALL_COUNTRY_AND_REGION_CODES = [
@@ -275,6 +289,8 @@ export function OrganizationFormContent({
   const [showIatiImport, setShowIatiImport] = useState(false)
   const [countrySearchTerm, setCountrySearchTerm] = useState('')
   const [countrySelectOpen, setCountrySelectOpen] = useState(false)
+  const [orgTypeSearchTerm, setOrgTypeSearchTerm] = useState('')
+  const [orgTypeSelectOpen, setOrgTypeSelectOpen] = useState(false)
   
   // Merge organization state
   const [allOrganizations, setAllOrganizations] = useState<ComboboxOrganization[]>([])
@@ -792,10 +808,9 @@ export function OrganizationFormContent({
     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
       {/* Only show tab list in modal mode - inline mode uses sidebar navigation */}
       {renderMode === 'modal' && (
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="basic">General</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
-          <TabsTrigger value="contact">Social & Web</TabsTrigger>
+          <TabsTrigger value="contact">Contact</TabsTrigger>
           <TabsTrigger value="aliases">Aliases</TabsTrigger>
           <TabsTrigger value="budgets">IATI Budgets</TabsTrigger>
           <TabsTrigger value="documents">IATI Documents</TabsTrigger>
@@ -805,7 +820,36 @@ export function OrganizationFormContent({
 
       {/* General Tab */}
       <TabsContent value="basic" className="h-full overflow-y-auto px-2 mt-4 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Branding - Logo & Banner at top like Activity Editor */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">General</h3>
+          <p className="text-sm text-muted-foreground">Upload logos and banner images for your organization profile. Hover over images to reposition, replace, or remove them.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Banner */}
+            <div>
+              <OrganizationBannerUpload
+                value={formData.banner || ''}
+                onChange={(value) => handleInputChange('banner', value)}
+                position={formData.banner_position ?? 50}
+                onPositionChange={(position) => handleInputChange('banner_position', position)}
+                disabled={saving || externalSaving}
+              />
+            </div>
+
+            {/* Logo */}
+            <div>
+              <OrganizationLogoUpload
+                value={formData.logo || ''}
+                onChange={(value) => handleInputChange('logo', value)}
+                scale={formData.logo_scale ?? 100}
+                onScaleChange={(scale) => handleInputChange('logo_scale', scale)}
+                disabled={saving || externalSaving}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
           {/* Name (Required) */}
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -833,13 +877,36 @@ export function OrganizationFormContent({
             >
               Acronym / Short Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
             </LabelSaveIndicator>
-            <Input
-              id="acronym"
-              value={formData.acronym || ''}
-              onChange={(e) => handleInputChange('acronym', e.target.value)}
-              placeholder="DANIDA"
-              className={validationErrors.some(e => e.includes('Acronym')) ? 'border-red-500' : ''}
-            />
+            <div className="relative">
+              <Input
+                id="acronym"
+                value={formData.acronym || ''}
+                onChange={(e) => handleInputChange('acronym', e.target.value)}
+                placeholder="DANIDA"
+                className={`${validationErrors.some(e => e.includes('Acronym')) ? 'border-red-500' : ''} pr-10`}
+              />
+              {formData.name && formData.name.split(/\s+/).filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase())).length >= 2 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          const acronym = generateAcronym(formData.name || '');
+                          handleInputChange('acronym', acronym);
+                        }}
+                      >
+                        <Wand2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Generate from name</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
           </div>
 
           {/* Location Represented */}
@@ -1004,12 +1071,17 @@ export function OrganizationFormContent({
             <Label htmlFor="Organisation_Type_Code" className="text-sm font-medium">
               Organisation Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
             </Label>
-            <Select 
-              value={formData.Organisation_Type_Code || ''} 
-              onValueChange={(value) => handleInputChange('Organisation_Type_Code', value)}
+            <Select
+              value={formData.Organisation_Type_Code || ''}
+              onValueChange={(value) => {
+                handleInputChange('Organisation_Type_Code', value)
+                setOrgTypeSearchTerm('')
+              }}
               disabled={loadingTypes}
+              open={orgTypeSelectOpen}
+              onOpenChange={setOrgTypeSelectOpen}
             >
-              <SelectTrigger 
+              <SelectTrigger
                 className={`${validationErrors.some(e => e.includes('Organisation Type')) ? 'border-red-500' : ''} [&>span]:line-clamp-none [&>span]:whitespace-nowrap`}
               >
                 <SelectValue placeholder={loadingTypes ? "Loading types..." : "Select organisation type"}>
@@ -1025,13 +1097,41 @@ export function OrganizationFormContent({
                   )}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
-                {organizationTypes
-                  .filter(type => type.is_active)
-                  .sort((a, b) => a.sort_order - b.sort_order)
-                  .map((type) => (
-                    <SelectItem 
-                      key={type.code} 
+              <SelectContent className="max-h-[400px]">
+                {/* Search Box */}
+                <div className="px-2 pb-2 border-b sticky top-0 bg-white z-10">
+                  <Input
+                    placeholder="Search organisation types..."
+                    value={orgTypeSearchTerm}
+                    onChange={(e) => setOrgTypeSearchTerm(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    className="h-8"
+                    autoFocus
+                  />
+                </div>
+                {(() => {
+                  const searchLower = orgTypeSearchTerm.toLowerCase()
+                  const filteredTypes = organizationTypes
+                    .filter(type => type.is_active)
+                    .filter(type =>
+                      type.label.toLowerCase().includes(searchLower) ||
+                      type.code.includes(orgTypeSearchTerm) ||
+                      (type.description?.toLowerCase().includes(searchLower) ?? false)
+                    )
+                    .sort((a, b) => a.sort_order - b.sort_order)
+
+                  if (filteredTypes.length === 0) {
+                    return (
+                      <div className="px-2 py-6 text-center text-sm text-gray-500">
+                        No results found for &quot;{orgTypeSearchTerm}&quot;
+                      </div>
+                    )
+                  }
+
+                  return filteredTypes.map((type) => (
+                    <SelectItem
+                      key={type.code}
                       value={type.code}
                     >
                       <div className="flex items-center gap-2">
@@ -1039,9 +1139,47 @@ export function OrganizationFormContent({
                         <span className="font-medium text-foreground">{type.label}</span>
                       </div>
                     </SelectItem>
-                  ))}
+                  ))
+                })()}
               </SelectContent>
             </Select>
+          </div>
+
+        </div>
+
+        {/* IATI Identifier & Residency Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+          {/* IATI Organisation Identifier */}
+          <div className="space-y-2">
+            <LabelSaveIndicator
+              isSaving={iatiOrgIdAutosave.state.isSaving}
+              isSaved={!!iatiOrgIdAutosave.state.lastSaved}
+              hasValue={!!formData.iati_org_id}
+            >
+              IATI Organisation Identifier
+            </LabelSaveIndicator>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  id="iati_org_id_class"
+                  value={formData.iati_org_id || ''}
+                  onChange={(e) => handleInputChange('iati_org_id', e.target.value)}
+                  placeholder="DK-CVR-20228799"
+                  className="pr-10"
+                />
+                {formData.iati_org_id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(formData.iati_org_id || '')}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                    title="Copy IATI ID"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Residency Status */}
@@ -1090,11 +1228,10 @@ export function OrganizationFormContent({
               Whether this organisation is resident within the country
             </p>
           </div>
-
         </div>
 
         {/* Description */}
-        <div className="space-y-2">
+        <div className="space-y-2 max-w-3xl">
           <LabelSaveIndicator
             isSaving={descriptionAutosave.state.isSaving}
             isSaved={!!descriptionAutosave.state.lastSaved}
@@ -1112,66 +1249,8 @@ export function OrganizationFormContent({
           />
         </div>
 
-        <Separator />
-        
         {/* IATI Classification Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* IATI Organisation Identifier */}
-          <div className="space-y-2">
-            <LabelSaveIndicator
-              isSaving={iatiOrgIdAutosave.state.isSaving}
-              isSaved={!!iatiOrgIdAutosave.state.lastSaved}
-              hasValue={!!formData.iati_org_id}
-            >
-              IATI Organisation Identifier
-            </LabelSaveIndicator>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  id="iati_org_id_class"
-                  value={formData.iati_org_id || ''}
-                  onChange={(e) => handleInputChange('iati_org_id', e.target.value)}
-                  placeholder="DK-CVR-20228799"
-                  className="pr-10"
-                />
-                {formData.iati_org_id && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(formData.iati_org_id || '')}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                    title="Copy IATI ID"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Organization UUID (Read-only) */}
-          {organization?.id && (
-            <div className="space-y-2">
-              <Label htmlFor="uuid_class" className="text-sm font-medium">Organization UUID</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="uuid_class"
-                  value={formData.id || ''}
-                  readOnly
-                  className="bg-gray-50 text-gray-600"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyToClipboard(formData.id || '')}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">This unique identifier is used internally by the system</p>
-            </div>
-          )}
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
           {/* Default Currency */}
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -1297,42 +1376,13 @@ export function OrganizationFormContent({
 
       </TabsContent>
 
-      {/* Branding Tab */}
-      <TabsContent value="branding" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
-        <div className="space-y-6">
-          <p className="text-sm text-muted-foreground">Upload logos and banner images for your organization profile. Hover over images to reposition, replace, or remove them.</p>
-
-          {/* Logo */}
-          <div>
-            <OrganizationLogoUpload
-              value={formData.logo || ''}
-              onChange={(value) => handleInputChange('logo', value)}
-              scale={formData.logo_scale ?? 100}
-              onScaleChange={(scale) => handleInputChange('logo_scale', scale)}
-              disabled={saving || externalSaving}
-            />
-          </div>
-
-          {/* Banner */}
-          <div>
-            <OrganizationBannerUpload
-              value={formData.banner || ''}
-              onChange={(value) => handleInputChange('banner', value)}
-              position={formData.banner_position ?? 50}
-              onPositionChange={(position) => handleInputChange('banner_position', position)}
-              disabled={saving || externalSaving}
-            />
-          </div>
-        </div>
-      </TabsContent>
-
       {/* Social & Web Tab */}
       <TabsContent value="contact" className="h-full overflow-y-auto px-2 mt-4 space-y-6">
         {/* Contact Information Section */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">Contact Information</h3>
+          <h3 className="text-lg font-semibold">Contact Information</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
             <div className="space-y-2">
               <LabelSaveIndicator
                 isSaving={emailAutosave.state.isSaving}
@@ -1412,7 +1462,7 @@ export function OrganizationFormContent({
           <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">Social Media</h3>
           <p className="text-sm text-muted-foreground">Add social media profiles for your organization</p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
             <div className="space-y-2">
               <LabelSaveIndicator
                 isSaving={twitterAutosave.state.isSaving}

@@ -251,7 +251,7 @@ export function YearlyTotalsBarChart({
                         />
                         <span className="text-slate-700 font-medium flex items-center gap-2">
                           {typeConfig && (
-                            <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                            <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                               {entry.dataKey}
                             </code>
                           )}

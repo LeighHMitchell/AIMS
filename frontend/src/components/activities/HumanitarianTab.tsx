@@ -4,10 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -18,20 +15,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Trash2, Edit2, Save, X, AlertCircle, Heart, CheckCircle2 } from 'lucide-react';
-import { HumanitarianScope, HumanitarianScopeNarrative } from '@/types/humanitarian';
+import { Plus, Trash2, Edit2, AlertCircle, Heart, CheckCircle2 } from 'lucide-react';
+import { HumanitarianScope } from '@/types/humanitarian';
 import { CountryEmergency } from '@/types/country-emergency';
 import {
-  HUMANITARIAN_SCOPE_TYPES,
-  HUMANITARIAN_SCOPE_VOCABULARIES,
   getScopeTypeName,
   getVocabularyName
 } from '@/data/humanitarian-codelists';
-import { HumanitarianVocabularySelect } from '@/components/forms/HumanitarianVocabularySelect';
-import { HumanitarianTypeSelect } from '@/components/forms/HumanitarianTypeSelect';
-import { EmergencySearchableSelect } from '@/components/forms/EmergencySearchableSelect';
-import { LanguageSelect } from '@/components/forms/LanguageSelect';
 import { formatLanguageDisplay } from '@/data/language-codes';
+import { HumanitarianScopeModal } from '@/components/modals/HumanitarianScopeModal';
 import { toast } from 'sonner';
 
 interface HumanitarianTabProps {
@@ -42,19 +34,19 @@ interface HumanitarianTabProps {
   className?: string;
 }
 
-export function HumanitarianTab({ 
-  activityId, 
+export function HumanitarianTab({
+  activityId,
   readOnly = false,
   onHumanitarianChange,
   onDataChange,
-  className 
+  className
 }: HumanitarianTabProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [humanitarian, setHumanitarian] = useState(false);
   const [scopes, setScopes] = useState<HumanitarianScope[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<HumanitarianScope | null>(null);
-  const [isAddingNew, setIsAddingNew] = useState(false);
   const [emergencyMap, setEmergencyMap] = useState<Record<string, CountryEmergency>>({});
 
   // Fetch humanitarian data
@@ -126,7 +118,7 @@ export function HumanitarianTab({
     try {
       const humanitarianValue = newHumanitarian !== undefined ? newHumanitarian : humanitarian;
       const scopesValue = newScopes || scopes;
-      
+
       const response = await fetch(`/api/activities/${activityId}/humanitarian`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,8 +131,7 @@ export function HumanitarianTab({
       if (response.ok) {
         toast.success('Humanitarian data saved');
         await fetchHumanitarianData();
-        
-        // Notify parent component of the data change
+
         onDataChange?.({
           humanitarian: humanitarianValue,
           humanitarianScopes: scopesValue
@@ -163,51 +154,25 @@ export function HumanitarianTab({
   };
 
   const handleAddScope = () => {
-    setEditingScope({
-      type: '1',
-      vocabulary: '1-2',
-      code: '',
-      vocabulary_uri: '',
-      narratives: [{ language: 'en', narrative: '' }]
-    });
-    setIsAddingNew(true);
+    setEditingScope(null);
+    setModalOpen(true);
   };
 
   const handleEditScope = (scope: HumanitarianScope) => {
-    setEditingScope({ ...scope });
-    setIsAddingNew(false);
+    setEditingScope(scope);
+    setModalOpen(true);
   };
 
-  const handleSaveScope = async () => {
-    if (!editingScope) return;
-
-    // Validation
-    if (!editingScope.code.trim()) {
-      toast.error('Code is required');
-      return;
-    }
-    if (!editingScope.narratives.some(n => n.narrative.trim())) {
-      toast.error('At least one narrative is required');
-      return;
-    }
-
-    // Filter out empty narratives
-    const cleanedScope = {
-      ...editingScope,
-      narratives: editingScope.narratives.filter(n => n.narrative.trim())
-    };
-
+  const handleSaveScope = async (scope: HumanitarianScope) => {
     let newScopes: HumanitarianScope[];
-    if (isAddingNew) {
-      newScopes = [...scopes, cleanedScope];
+    if (scope.id) {
+      newScopes = scopes.map(s => s.id === scope.id ? scope : s);
     } else {
-      newScopes = scopes.map(s => s.id === editingScope.id ? cleanedScope : s);
+      newScopes = [...scopes, scope];
     }
 
     setScopes(newScopes);
     await saveHumanitarianData(humanitarian, newScopes);
-    setEditingScope(null);
-    setIsAddingNew(false);
   };
 
   const handleDeleteScope = async (scopeId?: string) => {
@@ -215,32 +180,6 @@ export function HumanitarianTab({
     setScopes(newScopes);
     await saveHumanitarianData(humanitarian, newScopes);
     toast.success('Humanitarian scope deleted');
-  };
-
-  const handleCancelEdit = () => {
-    setEditingScope(null);
-    setIsAddingNew(false);
-  };
-
-  const addNarrative = () => {
-    if (!editingScope) return;
-    setEditingScope({
-      ...editingScope,
-      narratives: [...editingScope.narratives, { language: 'en', narrative: '' }]
-    });
-  };
-
-  const updateNarrative = (index: number, field: 'language' | 'narrative', value: string) => {
-    if (!editingScope) return;
-    const newNarratives = [...editingScope.narratives];
-    newNarratives[index] = { ...newNarratives[index], [field]: value };
-    setEditingScope({ ...editingScope, narratives: newNarratives });
-  };
-
-  const removeNarrative = (index: number) => {
-    if (!editingScope) return;
-    const newNarratives = editingScope.narratives.filter((_, i) => i !== index);
-    setEditingScope({ ...editingScope, narratives: newNarratives });
   };
 
   if (isLoading) {
@@ -258,14 +197,6 @@ export function HumanitarianTab({
     <div className={`space-y-6 ${className}`}>
       {/* Humanitarian Flag Section - Fieldset Style with Label */}
       <div className="relative border-2 border-red-300 rounded-lg p-6 bg-red-50/30">
-        {/* Label positioned on the border */}
-        <div className="absolute -top-3 left-4 px-2 bg-white">
-          <div className="flex items-center gap-2">
-            <Heart className="h-4 w-4 text-red-500 fill-red-500" />
-            <span className="text-sm font-semibold text-red-700">Humanitarian</span>
-          </div>
-        </div>
-
         <div>
           <div className="flex items-center gap-2">
             <Label
@@ -312,7 +243,7 @@ export function HumanitarianTab({
                   Link to specific emergencies or appeals (optional but recommended)
                 </CardDescription>
               </div>
-              {!readOnly && !editingScope && (
+              {!readOnly && (
                 <Button onClick={handleAddScope} size="sm" disabled={isSaving}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Scope
@@ -321,8 +252,7 @@ export function HumanitarianTab({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Existing Scopes */}
-            {scopes.length === 0 && !editingScope && (
+            {scopes.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 No humanitarian scopes defined. Click "Add Scope" to link to a specific emergency or appeal.
               </div>
@@ -359,7 +289,7 @@ export function HumanitarianTab({
                         <TableCell className="align-top">
                           {scope.vocabulary === '98' && emergencyMap[scope.code] ? (
                             <div className="space-y-1">
-                              <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono whitespace-nowrap">
+                              <code className="px-2 py-1 bg-muted rounded text-sm font-mono whitespace-nowrap">
                                 {scope.code}
                               </code>
                               <div className="text-sm font-medium text-gray-900">
@@ -373,12 +303,12 @@ export function HumanitarianTab({
                               rel="noopener noreferrer"
                               className="inline-block"
                             >
-                              <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono text-blue-600 hover:bg-gray-200 cursor-pointer transition-colors whitespace-nowrap">
+                              <code className="px-2 py-1 bg-muted rounded text-sm font-mono text-blue-600 hover:bg-gray-200 cursor-pointer transition-colors whitespace-nowrap">
                                 {scope.code}
                               </code>
                             </a>
                           ) : (
-                            <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono whitespace-nowrap">
+                            <code className="px-2 py-1 bg-muted rounded text-sm font-mono whitespace-nowrap">
                               {scope.code}
                             </code>
                           )}
@@ -418,7 +348,7 @@ export function HumanitarianTab({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditScope(scope)}
-                                disabled={isSaving || editingScope !== null}
+                                disabled={isSaving}
                               >
                                 <Edit2 className="h-4 w-4" />
                               </Button>
@@ -426,7 +356,7 @@ export function HumanitarianTab({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDeleteScope(scope.id)}
-                                disabled={isSaving || editingScope !== null}
+                                disabled={isSaving}
                               >
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
@@ -439,130 +369,18 @@ export function HumanitarianTab({
                 </Table>
               </div>
             )}
-
-            {/* Edit/Add Form */}
-            {editingScope && (
-              <div className="border rounded-lg p-4 space-y-4 bg-white">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">{isAddingNew ? 'Add' : 'Edit'} Humanitarian Scope</h3>
-                  <div className="flex gap-2">
-                    <Button onClick={handleSaveScope} size="sm" disabled={isSaving} className="bg-black hover:bg-gray-800 text-white">
-                      <Save className="h-4 w-4 mr-2" />
-                      Save
-                    </Button>
-                    <Button onClick={handleCancelEdit} variant="outline" size="sm" disabled={isSaving}>
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="scope-type">Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
-                    <HumanitarianTypeSelect
-                      value={editingScope.type}
-                      onValueChange={(value) => setEditingScope({ ...editingScope, type: value as '1' | '2' })}
-                      placeholder="Select type..."
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="scope-vocabulary">Vocabulary <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
-                    <HumanitarianVocabularySelect
-                      value={editingScope.vocabulary}
-                      onValueChange={(value) => {
-                        const updates: Partial<typeof editingScope> = { vocabulary: value };
-                        if (value === '98') {
-                          updates.code = '';
-                        }
-                        setEditingScope({ ...editingScope, ...updates });
-                      }}
-                      placeholder="Select vocabulary..."
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="scope-code">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
-                    {editingScope.vocabulary === '98' ? (
-                      <EmergencySearchableSelect
-                        value={editingScope.code}
-                        onValueChange={(code) => {
-                          setEditingScope({ ...editingScope, code });
-                        }}
-                        placeholder="Select a country emergency..."
-                      />
-                    ) : (
-                      <Input
-                        id="scope-code"
-                        value={editingScope.code}
-                        onChange={(e) => setEditingScope({ ...editingScope, code: e.target.value })}
-                        placeholder="e.g., EQ-2015-000048-NPL or FNPL15"
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {editingScope.vocabulary === '99' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="scope-uri">Vocabulary URI</Label>
-                    <Input
-                      id="scope-uri"
-                      value={editingScope.vocabulary_uri || ''}
-                      onChange={(e) => setEditingScope({ ...editingScope, vocabulary_uri: e.target.value })}
-                      placeholder="https://example.org/vocabularies/emergencies"
-                    />
-                    <p className="text-xs text-gray-500">URL to your custom vocabulary documentation</p>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Response Description <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /> (at least one required)</Label>
-                    <Button onClick={addNarrative} variant="outline" size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Language
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500">Describe how this activity responds to or addresses the emergency</p>
-
-                  {editingScope.narratives.map((narrative, index) => (
-                    <div key={index} className="flex gap-2 items-start">
-                      <div className="w-52">
-                        <LanguageSelect
-                          value={narrative.language}
-                          onValueChange={(value) => updateNarrative(index, 'language', value)}
-                          placeholder="Select language..."
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Textarea
-                          value={narrative.narrative}
-                          onChange={(e) => updateNarrative(index, 'narrative', e.target.value)}
-                          placeholder="e.g., Providing emergency shelter materials and food assistance to affected communities"
-                          rows={2}
-                        />
-                      </div>
-                      {editingScope.narratives.length > 1 && (
-                        <Button
-                          onClick={() => removeNarrative(index)}
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       )}
+
+      <HumanitarianScopeModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSaveScope}
+        editingScope={editingScope}
+      />
     </div>
   );
 }
 
 export default HumanitarianTab;
-

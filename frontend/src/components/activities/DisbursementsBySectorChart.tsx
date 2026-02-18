@@ -161,8 +161,7 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
               onClick={() => setViewMode('chart')}
               className="rounded-r-none"
             >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Chart
+              <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'table' ? 'default' : 'outline'}
@@ -170,8 +169,7 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
               onClick={() => setViewMode('table')}
               className="rounded-l-none"
             >
-              <TableIcon className="h-4 w-4 mr-2" />
-              Table
+              <TableIcon className="h-4 w-4" />
             </Button>
           </div>
         </div>

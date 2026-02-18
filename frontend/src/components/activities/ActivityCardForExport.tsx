@@ -212,13 +212,13 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Activity ID</div>
-              <div className="text-sm font-mono bg-gray-100 px-3 py-1.5 rounded-lg">
+              <div className="text-sm font-mono bg-muted px-3 py-1.5 rounded-lg">
                 {activity.partner_id || 'Activity ID not reported'}
               </div>
             </div>
             <div className="space-y-1">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">IATI ID</div>
-              <div className="text-sm font-mono bg-gray-100 px-3 py-1.5 rounded-lg text-xs leading-tight">
+              <div className="text-sm font-mono bg-muted px-3 py-1.5 rounded-lg text-xs leading-tight">
                 {activity.iati_id || 'IATI Identifier not reported'}
               </div>
             </div>

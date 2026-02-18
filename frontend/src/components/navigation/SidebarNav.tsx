@@ -187,6 +187,16 @@ export function SidebarNav({
       ]
     },
     {
+      label: "ADVANCED",
+      icon: Shield,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "Transparency Index", href: "/transparency-index", show: true, underDevelopment: true },
+        { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true, underDevelopment: true },
+      ]
+    },
+    {
       label: "OPERATIONS",
       icon: Stack3Icon,
       isAnimated: true,
@@ -196,16 +206,6 @@ export function SidebarNav({
         { name: "Data Clinic", href: "/data-clinic", show: true, underDevelopment: true },
         { name: "Library", href: "/library", show: true, isNew: true },
         { name: "Build History", href: "/build-history", show: true, isNew: true },
-      ]
-    },
-    {
-      label: "ADVANCED",
-      icon: Shield,
-      isAnimated: false,
-      defaultOpen: true,
-      items: [
-        { name: "Transparency Index", href: "/transparency-index", show: true, underDevelopment: true },
-        { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true, underDevelopment: true },
       ]
     },
     {

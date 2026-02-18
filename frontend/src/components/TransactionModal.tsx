@@ -2615,7 +2615,7 @@ export default function TransactionModal({
                               >
                                 {formData.recipient_country_code ? (
                                   <span className="flex items-center gap-2">
-                                    <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                       {formData.recipient_country_code}
                                     </span>
                                     <span className="truncate">
@@ -2644,7 +2644,7 @@ export default function TransactionModal({
                                           setCountryPopoverOpen(false);
                                         }}
                                       >
-                                        <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                        <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded mr-2">
                                           {country.code}
                                         </span>
                                         <span className="truncate">{country.name}</span>
@@ -2679,7 +2679,7 @@ export default function TransactionModal({
                               >
                                 {formData.recipient_region_code ? (
                                   <span className="flex items-center gap-2">
-                                    <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">
+                                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                                       {formData.recipient_region_code}
                                     </span>
                                     <span className="truncate">
@@ -2712,7 +2712,7 @@ export default function TransactionModal({
                                           setRegionPopoverOpen(false);
                                         }}
                                       >
-                                        <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                        <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded mr-2">
                                           {region.code}
                                         </span>
                                         <span className="truncate">{region.name}</span>
@@ -2814,7 +2814,7 @@ export default function TransactionModal({
                                         <div key={idx} className="flex items-center justify-between text-xs text-gray-600 gap-2">
                                           <div className="flex items-center gap-1.5 min-w-0">
                                             {sectorCode && (
-                                              <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 shrink-0">
+                                              <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-gray-700 shrink-0">
                                                 {sectorCode}
                                               </span>
                                             )}
@@ -2911,7 +2911,7 @@ export default function TransactionModal({
                                         <div key={idx} className="flex items-center justify-between text-xs text-gray-600 gap-2">
                                           <div className="flex items-center gap-1.5 min-w-0">
                                             {sectorCode && (
-                                              <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 shrink-0">
+                                              <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-gray-700 shrink-0">
                                                 {sectorCode}
                                               </span>
                                             )}

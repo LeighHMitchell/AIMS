@@ -624,7 +624,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                   {marker.is_iati_standard ? marker.iati_code : marker.code.startsWith('CUSTOM_') ? marker.code.substring(7) : marker.code}
                 </span>
                 {!marker.is_iati_standard && (

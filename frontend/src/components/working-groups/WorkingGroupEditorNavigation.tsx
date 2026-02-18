@@ -123,7 +123,7 @@ export default function WorkingGroupEditorNavigation({
             </h2>
             {workingGroup.code && (
               <div className="flex items-center gap-1 group mt-2">
-                <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono">
+                <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                   {workingGroup.code}
                 </code>
                 <button

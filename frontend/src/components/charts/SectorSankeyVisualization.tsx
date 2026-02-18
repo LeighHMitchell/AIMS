@@ -1418,7 +1418,7 @@ export default function SectorSankeyVisualization({
                     <TableCell className="text-sm">
                       {row.category && (
                         <>
-                          <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded mr-2">{categoryCode}</span>
+                          <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">{categoryCode}</span>
                           <span className="font-medium">{categoryName}</span>
                         </>
                       )}
@@ -1426,13 +1426,13 @@ export default function SectorSankeyVisualization({
                     <TableCell className="text-sm">
                       {row.sector && (
                         <>
-                          <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded mr-2">{sectorCode}</span>
+                          <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">{sectorCode}</span>
                           <span className="font-medium">{sectorName}</span>
                         </>
                       )}
                     </TableCell>
                     <TableCell className="text-sm">
-                      <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded mr-2">{subsectorCode}</span>
+                      <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">{subsectorCode}</span>
                       <span className="font-medium">{subsectorName}</span>
                     </TableCell>
                     <TableCell className="text-right font-semibold">{formatPercentage(row.allocation.percentage)}</TableCell>
@@ -1517,12 +1517,10 @@ export default function SectorSankeyVisualization({
                   Sunburst
                 </TabsTrigger>
                 <TabsTrigger value="bar" className="text-xs px-3">
-                  <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
-                  Bar
+                  <BarChart3 className="h-3.5 w-3.5" />
                 </TabsTrigger>
                 <TabsTrigger value="table" className="text-xs px-3">
-                  <TableIcon className="h-3.5 w-3.5 mr-1.5" />
-                  Table
+                  <TableIcon className="h-3.5 w-3.5" />
                 </TabsTrigger>
               </TabsList>
             </Tabs>

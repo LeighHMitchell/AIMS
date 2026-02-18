@@ -372,7 +372,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                       {group.options.map((status) => (
                         <SelectItem key={status.code} value={status.code}>
                           <span className="inline-flex items-center gap-2">
-                            <code className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-mono">{status.code}</code>
+                            <code className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-xs font-mono">{status.code}</code>
                             <span>{status.name}</span>
                           </span>
                         </SelectItem>

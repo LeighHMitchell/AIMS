@@ -854,7 +854,7 @@ export default function OrganizationFundingEnvelopeTab({
                     >
                       <SelectTrigger className="w-full">
                         <span className="flex items-center gap-2 truncate">
-                          <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                             {editingEnvelope.currency}
                           </span>
                           <span className="truncate">{selectedCurrency?.name || ''}</span>
@@ -864,7 +864,7 @@ export default function OrganizationFundingEnvelopeTab({
                         {currencies.map((currency) => (
                           <SelectItem key={currency.code} value={currency.code}>
                             <span className="flex items-center gap-2">
-                              <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {currency.code}
                               </span>
                               <span>{currency.name}</span>

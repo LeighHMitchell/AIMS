@@ -710,7 +710,7 @@ export function AidEcosystemSolarSystem({
                         `}>
                           {isSelected && <Check className="h-3 w-3 text-white" />}
                         </div>
-                        <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-slate-100 text-slate-600">
+                        <span className="font-mono text-xs px-1.5 py-0.5 rounded flex-shrink-0 bg-muted text-muted-foreground">
                           {item.code}
                         </span>
                         <span className="text-sm text-slate-700 leading-tight">

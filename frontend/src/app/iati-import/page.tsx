@@ -370,7 +370,7 @@ function HistoryTab() {
                           </span>
                         </p>
                         <div className="flex gap-3 mt-1.5 text-xs">
-                          <span className="text-gray-700 font-mono bg-gray-100 px-1.5 py-0.5 rounded">{record.totalActivities} total</span>
+                          <span className="text-gray-700 font-mono bg-muted px-1.5 py-0.5 rounded">{record.totalActivities} total</span>
                           {record.createdCount > 0 && <span className="text-gray-700">{record.createdCount} created</span>}
                           {record.updatedCount > 0 && <span className="text-gray-700">{record.updatedCount} updated</span>}
                           {record.skippedCount > 0 && <span className="text-gray-500">{record.skippedCount} skipped</span>}

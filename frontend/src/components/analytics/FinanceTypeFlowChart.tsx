@@ -1021,7 +1021,7 @@ export function FinanceTypeFlowChart({
                   selectedLabel="Flow Types selected"
                   renderOption={(option: any) => (
                     <span className="flex items-center gap-2">
-                      <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                      <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                         {option.code}
                       </code>
                       <span className="text-sm">{option.name}</span>
@@ -1046,7 +1046,7 @@ export function FinanceTypeFlowChart({
                   selectedLabel="Finance Types selected"
                   renderOption={(option: any) => (
                     <span className="flex items-center gap-2">
-                      <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                      <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                         {option.code}
                       </code>
                       <span className="text-sm">{option.name}</span>
@@ -1074,7 +1074,7 @@ export function FinanceTypeFlowChart({
                   }}
                   renderOption={(option: any) => (
                     <span className="flex items-center gap-2">
-                      <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                      <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                         {option.code}
                       </code>
                       <span className="text-sm">{option.name}</span>
@@ -1400,10 +1400,10 @@ export function FinanceTypeFlowChart({
                                   <TableHead key={`${flowType}_${transactionType}_${financeType.code}`} className="text-right sticky top-0 bg-white">
                                     <div className="flex flex-col items-end gap-1">
                                       <div className="flex items-center gap-1">
-                                        <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                                        <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                                           {transactionType}
                                         </code>
-                                        <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                                        <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                                           {flowType}
                                         </code>
                                         <code className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono text-xs">
@@ -1496,7 +1496,7 @@ export function FinanceTypeFlowChart({
                       variant="secondary"
                       className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200"
                     >
-                      <code className="font-mono text-xs text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                      <code className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {code}
                       </code>
                       <span className="text-sm text-slate-700">{getFlowTypeName(code)}</span>
@@ -1528,7 +1528,7 @@ export function FinanceTypeFlowChart({
                       variant="secondary"
                       className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200"
                     >
-                      <code className="font-mono text-xs text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                      <code className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {code}
                       </code>
                       <span className="text-sm text-slate-700">{getFinanceTypeName(code)}</span>
@@ -1563,7 +1563,7 @@ export function FinanceTypeFlowChart({
                         variant="secondary"
                         className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200"
                       >
-                        <code className="font-mono text-xs text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                        <code className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                           {code}
                         </code>
                         <span className="text-sm text-slate-700">{txType.name}</span>

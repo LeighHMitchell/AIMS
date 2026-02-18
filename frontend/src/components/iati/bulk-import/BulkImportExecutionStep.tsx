@@ -195,23 +195,23 @@ export default function BulkImportExecutionStep({
                     : 'Import Complete'}
                 </span>
               </div>
-              <span className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded text-gray-700">{progressPercent}%</span>
+              <span className="font-mono text-sm bg-muted px-2 py-0.5 rounded text-muted-foreground">{progressPercent}%</span>
             </div>
             <Progress value={progressPercent} className="h-3 bg-gray-200 [&>div]:bg-gray-700" />
 
             {batchStatus && (
               <div className="flex gap-6 text-sm">
                 <span className="text-gray-700">
-                  Created: <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{batchStatus.createdCount}</span>
+                  Created: <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{batchStatus.createdCount}</span>
                 </span>
                 <span className="text-gray-700">
-                  Updated: <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{batchStatus.updatedCount}</span>
+                  Updated: <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{batchStatus.updatedCount}</span>
                 </span>
                 <span className="text-gray-500">
-                  Skipped: <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{batchStatus.skippedCount}</span>
+                  Skipped: <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{batchStatus.skippedCount}</span>
                 </span>
                 <span className="text-gray-700">
-                  Failed: <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{batchStatus.failedCount}</span>
+                  Failed: <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{batchStatus.failedCount}</span>
                 </span>
               </div>
             )}
@@ -253,7 +253,7 @@ export default function BulkImportExecutionStep({
                 <div className="min-w-0">
                   <p className="text-sm truncate">
                     {item.activityTitle || item.iatiIdentifier}
-                    <span className="ml-2 font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{item.iatiIdentifier}</span>
+                    <span className="ml-2 font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-gray-600">{item.iatiIdentifier}</span>
                   </p>
                 </div>
                 {/* Combined Status */}

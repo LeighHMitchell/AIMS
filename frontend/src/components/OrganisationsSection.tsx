@@ -391,7 +391,7 @@ export default function OrganisationsSection({
                                   </span>
                                 )}
                               {(participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id) && (
-                                <span className="text-xs text-gray-500 font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                <span className="text-xs text-gray-500 font-mono bg-muted px-1.5 py-0.5 rounded">
                                   {participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id}
                                 </span>
                               )}

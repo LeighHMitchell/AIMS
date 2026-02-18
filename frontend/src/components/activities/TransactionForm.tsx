@@ -706,7 +706,7 @@ export default function TransactionForm({
                       );
                       return selected ? (
                         <span className="flex items-center gap-2">
-                          <span className="font-mono text-xs bg-gray-100 px-1 rounded">{selected.code}</span>
+                          <span className="font-mono text-xs bg-muted px-1.5 rounded">{selected.code}</span>
                           <span>{selected.label}</span>
                         </span>
                       ) : (
@@ -729,7 +729,7 @@ export default function TransactionForm({
                             }}
                             className="flex items-center gap-2"
                           >
-                            <span className="font-mono text-xs bg-gray-100 px-1 rounded">{option.code}</span>
+                            <span className="font-mono text-xs bg-muted px-1.5 rounded">{option.code}</span>
                             <span>{option.label}</span>
                           </CommandItem>
                         ))}
@@ -746,7 +746,7 @@ export default function TransactionForm({
                             }}
                             className="flex items-center gap-2"
                           >
-                            <span className="font-mono text-xs bg-gray-100 px-1 rounded">{option.code}</span>
+                            <span className="font-mono text-xs bg-muted px-1.5 rounded">{option.code}</span>
                             <span>{option.label}</span>
                           </CommandItem>
                         ))}

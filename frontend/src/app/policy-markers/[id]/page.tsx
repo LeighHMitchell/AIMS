@@ -221,7 +221,7 @@ export default function PolicyMarkerProfilePage() {
                   <h1 className="text-2xl font-bold text-slate-900 mb-1">{marker.name}</h1>
                   <p className="text-sm text-slate-600 leading-relaxed mb-3">{marker.description}</p>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono border border-slate-200">
+                    <code className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded font-mono border border-slate-200">
                       {marker.is_iati_standard ? marker.iati_code || marker.code : marker.code}
                     </code>
                     <Badge className={badgeClass}>{getMarkerTypeLabel(marker.marker_type)}</Badge>
@@ -370,7 +370,7 @@ export default function PolicyMarkerProfilePage() {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-sm text-slate-900 truncate">{activity.title_narrative || 'Untitled Activity'}</h3>
                           <div className="flex items-center gap-2 mt-0.5">
-                            {activity.iati_identifier && <code className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1 py-0.5 rounded">{activity.iati_identifier}</code>}
+                            {activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{activity.iati_identifier}</code>}
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">{getSignificanceLabel(activity.significance, isRMNCH)}</Badge>
                           </div>
                         </div>

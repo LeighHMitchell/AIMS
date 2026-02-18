@@ -381,7 +381,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                         </TooltipProvider>
                         {org.iati_org_id && (
                           <div className="mt-1 flex items-center gap-1">
-                            <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                            <span className="text-xs font-mono bg-muted text-gray-600 px-1.5 py-0.5 rounded">
                               {org.iati_org_id}
                             </span>
                             <button

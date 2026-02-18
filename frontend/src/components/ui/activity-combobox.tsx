@@ -89,7 +89,7 @@ function ReportingOrgLine({ org, recipientCountries }: { org?: ReportingOrg | nu
         <span className="text-xs text-gray-500">({org.acronym})</span>
       )}
       {typeCode && (
-        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1 py-0.5 rounded">
+        <span className="text-xs font-mono text-muted-foreground bg-muted px-1 py-0.5 rounded">
           {typeCode}
         </span>
       )}
@@ -248,7 +248,7 @@ export function ActivityCombobox({
                       </span>
                     )}
                     {selectedActivity.iati_identifier && (
-                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
                         {selectedActivity.iati_identifier}
                       </span>
                     )}
@@ -335,7 +335,7 @@ export function ActivityCombobox({
                         </span>
                       )}
                       {activity.iati_identifier && (
-                        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2 whitespace-nowrap inline-block">
                           {activity.iati_identifier}
                         </span>
                       )}

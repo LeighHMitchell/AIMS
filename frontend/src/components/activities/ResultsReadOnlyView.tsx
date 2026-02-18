@@ -863,7 +863,7 @@ export function ResultsReadOnlyView({
                                     <Badge 
                                       key={idx}
                                       variant="outline" 
-                                      className="text-xs font-mono bg-slate-100 text-slate-700 border-slate-300"
+                                      className="text-xs font-mono bg-muted text-muted-foreground border-slate-300"
                                     >
                                       {ref}
                                     </Badge>
@@ -882,7 +882,7 @@ export function ResultsReadOnlyView({
                                       variant="outline"
                                       className="text-xs font-normal bg-slate-50 text-slate-700 border-slate-200"
                                     >
-                                      <span className="font-mono bg-slate-100 px-1 rounded">{dim.name}</span>
+                                      <span className="font-mono bg-muted text-muted-foreground px-1 rounded">{dim.name}</span>
                                       <span className="ml-1">{dim.value}</span>
                                     </Badge>
                                   ))}

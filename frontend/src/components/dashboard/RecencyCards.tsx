@@ -122,7 +122,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
               </p>
               {lastCreated.iatiIdentifier && (
                 <p className="mt-1.5">
-                  <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                  <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                     {lastCreated.iatiIdentifier}
                   </code>
                 </p>

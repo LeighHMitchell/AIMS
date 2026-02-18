@@ -1441,7 +1441,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 >
                   {otherIdentifierForm.type ? (
                     <span className="flex items-center gap-2 text-left">
-                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {otherIdentifierForm.type}
                       </span>
                       <span className="text-gray-900">
@@ -5172,14 +5172,14 @@ function NewActivityPageContent() {
                       {general.partner_id && (
                         <div className="text-xs">
                           <span className="text-gray-600">Activity Identifier: </span>
-                          <code className="inline px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
+                          <code className="inline px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
                             {general.partner_id}
                           </code>
                         </div>
                       )}
                       {general.iatiIdentifier && (
                         <div className="text-xs">
-                          <code className="inline px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
+                          <code className="inline px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono break-all" style={{ boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' as const }}>
                             {general.iatiIdentifier}
                           </code>
                           <button

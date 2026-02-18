@@ -89,14 +89,13 @@ export default function OrganizationEditorNavigation({
     {
       title: "Basic Information",
       sections: [
-        { id: "general", label: "General" },
-        { id: "branding", label: "Branding" }
+        { id: "general", label: "General" }
       ]
     },
     {
       title: "Contact",
       sections: [
-        { id: "contact", label: "Social & Web" },
+        { id: "contact", label: "Contact Information" },
         { id: "contacts", label: "People" },
         { id: "aliases", label: "Aliases" },
         { id: "merge", label: "Merge" }
@@ -155,7 +154,7 @@ export default function OrganizationEditorNavigation({
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {organization.iati_org_id && (
                 <div className="flex items-center gap-1 group">
-                  <code className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono">
+                  <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                     {organization.iati_org_id}
                   </code>
                   <button

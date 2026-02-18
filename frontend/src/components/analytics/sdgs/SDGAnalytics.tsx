@@ -71,12 +71,10 @@ export function SDGAnalytics({ dateRange, onDateRangeChange, refreshKey }: SDGAn
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'chart' | 'table')}>
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="chart">
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Chart View
+            <BarChart3 className="h-4 w-4" />
           </TabsTrigger>
           <TabsTrigger value="table">
-            <TableIcon className="h-4 w-4 mr-2" />
-            Table View
+            <TableIcon className="h-4 w-4" />
           </TabsTrigger>
         </TabsList>
         <TabsContent value="table" className="mt-4">

@@ -511,7 +511,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     if (!name || name === code || name === '0' || name.trim() === '0') {
       if (code === '0') return null;
       return (
-        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
           {code}
         </code>
       );
@@ -530,7 +530,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     // Final safety check: don't render if displayName is "0" or empty
     if (!displayName || displayName === '0' || displayName === code) {
       return (
-        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
           {code}
         </code>
       );
@@ -538,7 +538,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     
     return (
       <span className="inline-flex items-center gap-1">
-        <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
           {code}
         </code>
         <span className="text-slate-900">{displayName}</span>
@@ -595,7 +595,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   <div className="mt-0.5">
                     <div className="text-slate-900">{activity.reportingOrg}</div>
                     {activity.reportingOrgRef && (
-                      <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 mt-0.5 inline-block">
+                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground mt-0.5 inline-block">
                         {activity.reportingOrgRef}
                       </code>
                     )}
@@ -617,7 +617,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                           
                           return (
                             <span className="flex items-center gap-1 mt-0.5">
-                              <code className={`text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 inline-block ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                              <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
                                 {refDisplay.normalized}
                               </code>
                               {!refDisplay.isValid && (
@@ -748,7 +748,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               <div className="col-span-1">
                 <span className="text-slate-600 font-medium">Default Currency:</span>
                 <div className="mt-0.5">
-                  <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                     {activity.currency}
                   </code>
                 </div>
@@ -788,7 +788,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                       const roleName = getOrganizationRoleName(roleCode);
                       return orgs.map((org, idx) => (
                         <div key={`${roleCode}-${idx}`} className="flex items-center gap-1.5 text-slate-900">
-                          <code className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                             {roleCode}
                           </code>
                           <span className="text-slate-600">{roleName}</span>
@@ -802,7 +802,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                               <>
                                 <span className="text-slate-400">|</span>
                                 <span className="flex items-center gap-1">
-                                  <code className={`text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
+                                  <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${!refDisplay.isValid ? 'border border-red-300' : ''}`}>
                                     {refDisplay.normalized}
                                   </code>
                                   {!refDisplay.isValid && (
@@ -832,7 +832,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                 <span className="text-slate-600 font-medium">Sectors:</span>
                 <div className="mt-0.5 flex flex-wrap gap-1.5">
                   {activity.sectors.slice(0, 5).map((sector: string, idx: number) => (
-                    <code key={idx} className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                    <code key={idx} className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                       {sector}
                     </code>
                   ))}
@@ -8717,21 +8717,21 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 const roleInfo = getOrganizationRoleLabel(field.importValue.role);
                 return roleInfo ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{roleInfo.code}</span>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{roleInfo.code}</span>
                     <span className="text-xs text-gray-600">{roleInfo.name}</span>
                   </div>
                 ) : null;
               })()}
               {field.importValue.ref && (
                 <div className="flex items-center">
-                  <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-48">{field.importValue.ref}</span>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded truncate max-w-48">{field.importValue.ref}</span>
                 </div>
               )}
               {field.importValue.type && (() => {
                 const typeInfo = getOrganizationTypeLabel(field.importValue.type);
                 return typeInfo ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{typeInfo.code}</span>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{typeInfo.code}</span>
                     <span className="text-xs text-gray-600">{typeInfo.name}</span>
                   </div>
                 ) : null;
@@ -10383,7 +10383,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
           onClick={() => onSelect(subsector.code)}
           className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent border-b border-gray-100 last:border-b-0 whitespace-nowrap"
         >
-          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded min-w-[50px]">
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded min-w-[50px]">
             {subsector.code}
           </span>
           <span className="font-medium text-gray-900 flex-1 truncate">
@@ -10408,7 +10408,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
       >
         <span className="truncate">
           <span className="flex items-center gap-2">
-            <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{sector.code}</span>
+            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span>
             <span className="font-medium text-gray-900">{sector.name}</span>
           </span>
         </span>

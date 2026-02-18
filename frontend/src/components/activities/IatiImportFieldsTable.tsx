@@ -725,7 +725,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                       const currency = currencyMatch[2];
                       return (
                         <>
-                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{currency}</code> {value}
+                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{currency}</code> {value}
                         </>
                       );
                     }
@@ -2541,7 +2541,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
-                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all bg-gray-100 p-2 rounded">
+                                        <pre className="text-xs font-mono text-muted-foreground overflow-x-auto whitespace-pre-wrap break-all bg-muted p-2 rounded">
 {xmlSnippet}
                                         </pre>
                                       </div>
@@ -2554,7 +2554,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             <tr className="border-b border-gray-100 align-top">
                                               <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                               <td className="py-1.5 text-gray-900">
-                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{country.code}</code>
+                                                <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{country.code}</code>
                                               </td>
                                             </tr>
                                             <tr className="border-b border-gray-100 align-top">
@@ -2580,7 +2580,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{field.currentValue.code || '—'}</code>
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code || '—'}</code>
                                                 </td>
                                               </tr>
                                               <tr className="border-b border-gray-100 align-top">
@@ -2623,7 +2623,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       {/* Column 1: Raw XML */}
                                       <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
-                                        <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all bg-gray-100 p-2 rounded">
+                                        <pre className="text-xs font-mono text-muted-foreground overflow-x-auto whitespace-pre-wrap break-all bg-muted p-2 rounded">
 {xmlSnippet}
                                         </pre>
                                       </div>
@@ -2636,7 +2636,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             <tr className="border-b border-gray-100 align-top">
                                               <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                               <td className="py-1.5 text-gray-900">
-                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{region.code}</code>
+                                                <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{region.code}</code>
                                               </td>
                                             </tr>
                                             <tr className="border-b border-gray-100 align-top">
@@ -2666,7 +2666,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{field.currentValue.code || '—'}</code>
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code || '—'}</code>
                                                 </td>
                                               </tr>
                                               <tr className="border-b border-gray-100 align-top">
@@ -2749,7 +2749,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {item.code}
                                                         </code>
                                                       </td>
@@ -2794,7 +2794,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {item.code}
                                                         </code>
                                                       </td>
@@ -2888,7 +2888,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Extraction Date</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {fssData.extractionDate}
                                                         </code>
                                                       </td>
@@ -2898,7 +2898,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Priority</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                           {fssData.priority}
                                                         </code>
                                                         {priorityLabels[fssData.priority] || ''}
@@ -2909,7 +2909,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Phaseout Year</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {fssData.phaseoutYear}
                                                         </code>
                                                       </td>
@@ -2928,7 +2928,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Year</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {f.year}
                                                         </code>
                                                       </td>
@@ -2937,7 +2937,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                       <tr className="border-b border-gray-100 align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date</td>
                                                         <td className="py-1.5 text-gray-900">
-                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {f.valueDate}
                                                           </code>
                                                         </td>
@@ -2946,7 +2946,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Currency and Amount</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                           {f.currency}
                                                         </code>
                                                         {f.value?.toLocaleString()}
@@ -2976,7 +2976,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Extraction Date</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {currentFss.extractionDate}
                                                         </code>
                                                       </td>
@@ -2986,7 +2986,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Priority</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                           {currentFss.priority}
                                                         </code>
                                                         {priorityLabels[currentFss.priority] || ''}
@@ -2997,7 +2997,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Phaseout Year</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {currentFss.phaseoutYear}
                                                         </code>
                                                       </td>
@@ -3016,7 +3016,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Year</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {f.year}
                                                         </code>
                                                       </td>
@@ -3025,7 +3025,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                       <tr className="border-b border-gray-100 align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date</td>
                                                         <td className="py-1.5 text-gray-900">
-                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {f.valueDate}
                                                           </code>
                                                         </td>
@@ -3034,7 +3034,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Currency and Amount</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                           {f.currency}
                                                         </code>
                                                         {f.value?.toLocaleString()}
@@ -3106,7 +3106,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         <tr className="border-b border-gray-100 align-top">
                                           <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                           <td className="py-1.5 text-gray-900">
-                                            <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                            <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                               {scope.code || '—'}
                                             </code>
                                           </td>
@@ -3197,7 +3197,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.ref}
                                                     </code>
                                                   </td>
@@ -3207,7 +3207,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Validated Ref:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.validated_ref}
                                                     </code>
                                                   </td>
@@ -3217,7 +3217,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Role:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.role}
                                                     </code>
                                                     <span className="ml-2">{getOrganizationRoleName(orgData.role)}</span>
@@ -3228,7 +3228,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.type}
                                                     </code>
                                                   </td>
@@ -3238,7 +3238,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Activity ID:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.activityId}
                                                     </code>
                                                   </td>
@@ -3248,7 +3248,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">DAC CRS Reporting:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.crsChannelCode}
                                                     </code>
                                                   </td>
@@ -3280,7 +3280,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.ref}
                                                       </code>
                                                     </td>
@@ -3290,7 +3290,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Role:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.role}
                                                       </code>
                                                       <span className="ml-2">{getOrganizationRoleName(field.currentValue.role)}</span>
@@ -3301,7 +3301,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.type}
                                                       </code>
                                                     </td>
@@ -3355,7 +3355,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {relatedActivityData.ref}
                                                     </code>
                                                   </td>
@@ -3365,7 +3365,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tr className="align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Type & Relationship:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {relatedActivityData.type}
                                                     </code>
                                                     {relatedActivityData.relationshipTypeLabel && (
@@ -3388,7 +3388,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.ref}
                                                       </code>
                                                     </td>
@@ -3398,7 +3398,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   <tr className="align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Type & Relationship:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.type}
                                                       </code>
                                                       {field.currentValue.relationshipTypeLabel && (
@@ -3474,7 +3474,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {contactData.type}
                                                     </code>
                                                   </td>
@@ -3546,7 +3546,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.type}
                                                       </code>
                                                     </td>
@@ -3699,7 +3699,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="align-top">
                                                       <td className="py-1 pr-2 font-medium text-gray-600">Category:</td>
                                                       <td className="py-1 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {doc.category_code}
                                                         </code>
                                                         {getDocumentCategoryName(doc.category_code) && (
@@ -3722,7 +3722,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     <tr className="align-top">
                                                       <td className="py-1 pr-2 font-medium text-gray-600">Format:</td>
                                                       <td className="py-1 text-gray-900 break-all">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded break-all whitespace-normal">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded break-all whitespace-normal">
                                                           {doc.format}
                                                         </code>
                                                       </td>
@@ -3753,7 +3753,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                       <tr className="align-top">
                                                         <td className="py-1 pr-2 font-medium text-gray-600">Category:</td>
                                                         <td className="py-1 text-gray-900">
-                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {doc.category_code}
                                                           </code>
                                                           {getDocumentCategoryName(doc.category_code) && (
@@ -3776,7 +3776,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                       <tr className="align-top">
                                                         <td className="py-1 pr-2 font-medium text-gray-600">Format:</td>
                                                         <td className="py-1 text-gray-900 break-all">
-                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded break-all whitespace-normal">
+                                                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded break-all whitespace-normal">
                                                             {doc.format}
                                                           </code>
                                                         </td>
@@ -3887,7 +3887,7 @@ ${importTags.map((tag: any) => {
                                                       <tr className="border-b border-gray-100 align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-gray-400">Vocabulary:</td>
                                                         <td className="py-1.5 text-gray-400">
-                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {tag.vocabulary}
                                                           </code>
                                                           <span className="ml-2">{getVocabLabel(String(tag.vocabulary))}</span>
@@ -3904,7 +3904,7 @@ ${importTags.map((tag: any) => {
                                                       <tr className="border-b border-gray-100 align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-gray-400">Code:</td>
                                                         <td className="py-1.5 text-gray-400">
-                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {tag.code}
                                                           </code>
                                                         </td>
@@ -3946,7 +3946,7 @@ ${importTags.map((tag: any) => {
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-400">Vocabulary:</td>
                                                       <td className="py-1.5 text-gray-400">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {matchingTag.vocabulary}
                                                         </code>
                                                         <span className="ml-2">{getVocabLabel(String(matchingTag.vocabulary))}</span>
@@ -3963,7 +3963,7 @@ ${importTags.map((tag: any) => {
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-400">Code:</td>
                                                       <td className="py-1.5 text-gray-400">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {matchingTag.code}
                                                         </code>
                                                       </td>
@@ -4034,7 +4034,7 @@ ${importTags.map((tag: any) => {
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Latitude:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {loc.latitude}
                                                   </code>
                                                 </td>
@@ -4044,7 +4044,7 @@ ${importTags.map((tag: any) => {
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Longitude:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {loc.longitude}
                                                   </code>
                                                 </td>
@@ -4054,7 +4054,7 @@ ${importTags.map((tag: any) => {
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Country:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {loc.country_code}
                                                   </code>
                                                 </td>
@@ -4064,7 +4064,7 @@ ${importTags.map((tag: any) => {
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {loc.location_type_code}
                                                   </code>
                                                 </td>
@@ -4096,7 +4096,7 @@ ${importTags.map((tag: any) => {
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Latitude:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.latitude}
                                                     </code>
                                                   </td>
@@ -4106,7 +4106,7 @@ ${importTags.map((tag: any) => {
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Longitude:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.longitude}
                                                     </code>
                                                   </td>
@@ -4116,7 +4116,7 @@ ${importTags.map((tag: any) => {
                                                 <tr className="align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Country:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.country_code}
                                                     </code>
                                                   </td>
@@ -4211,7 +4211,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {item.vocabulary}
                                                         </code>
                                                         <span className="ml-2">
@@ -4227,7 +4227,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Item Code:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {bi.code}
                                                       </code>
                                                     </td>
@@ -4255,7 +4255,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {item.currency}
                                                       </code>
                                                       <span className="ml-2">{item.value?.toLocaleString()}</span>
@@ -4266,7 +4266,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {item.transaction_date || item.date}
                                                       </code>
                                                     </td>
@@ -4276,7 +4276,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {item.value_date || item.valueDate}
                                                       </code>
                                                     </td>
@@ -4286,7 +4286,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {item.transaction_type || item.type}
                                                       </code>
                                                       {(item.transaction_type_name || item.typeName) && (
@@ -4300,7 +4300,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
                                                     <td className="py-1.5 text-gray-900">
                                                       {item.providerOrg?.ref ? (
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {item.providerOrg.ref}
                                                         </code>
                                                       ) : (
@@ -4314,7 +4314,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
                                                     <td className="py-1.5 text-gray-900">
                                                       {item.receiverOrg?.ref ? (
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {item.receiverOrg.ref}
                                                         </code>
                                                       ) : (
@@ -4333,7 +4333,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.currency}
                                                   </code>
                                                   <span className="ml-2">{item.value?.toLocaleString()}</span>
@@ -4344,7 +4344,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Start:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.period?.start || item.start}
                                                   </code>
                                                 </td>
@@ -4354,7 +4354,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">End:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.period?.end || item.end}
                                                   </code>
                                                 </td>
@@ -4364,7 +4364,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.transaction_date || item.date}
                                                   </code>
                                                 </td>
@@ -4374,7 +4374,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.value_date || item.valueDate}
                                                   </code>
                                                 </td>
@@ -4384,7 +4384,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Status:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.status}
                                                   </code>
                                                   {item.statusName && (
@@ -4397,7 +4397,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.type}
                                                   </code>
                                                   {item.typeName && (
@@ -4410,7 +4410,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Type:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.transaction_type}
                                                   </code>
                                                   {item.transaction_type_name && (
@@ -4424,7 +4424,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
                                                 <td className="py-1.5 text-gray-900">
                                                   {item.providerOrg?.ref ? (
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {item.providerOrg.ref}
                                                     </code>
                                                   ) : (
@@ -4438,7 +4438,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
                                                 <td className="py-1.5 text-gray-900">
                                                   {item.receiverOrg?.ref ? (
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {item.receiverOrg.ref}
                                                     </code>
                                                   ) : (
@@ -4467,7 +4467,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                       <tr className="border-b border-gray-100 align-top">
                                                         <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
                                                         <td className="py-1.5 text-gray-900">
-                                                          <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {field.currentValue.vocabulary}
                                                           </code>
                                                           <span className="ml-2">
@@ -4484,7 +4484,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Item Code:</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {bi.code}
                                                         </code>
                                                       </td>
@@ -4513,7 +4513,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
                                                     <td className="py-1.5 text-gray-900">
                                                       {field.currentValue.currency && (
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentValue.currency}
                                                         </code>
                                                       )}
@@ -4532,7 +4532,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.transaction_date}
                                                       </code>
                                                     </td>
@@ -4542,7 +4542,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.value_date}
                                                       </code>
                                                     </td>
@@ -4552,7 +4552,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.transaction_type || field.currentValue.type}
                                                       </code>
                                                       {(field.currentValue.transaction_type_name || field.currentValue.typeName) && (
@@ -4566,7 +4566,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
                                                     <td className="py-1.5 text-gray-900">
                                                       {field.currentValue.provider_org_ref ? (
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentValue.provider_org_ref}
                                                         </code>
                                                       ) : (
@@ -4580,7 +4580,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
                                                     <td className="py-1.5 text-gray-900">
                                                       {field.currentValue.receiver_org_ref ? (
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentValue.receiver_org_ref}
                                                         </code>
                                                       ) : (
@@ -4599,7 +4599,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.currency}
                                                     </code>
                                                     <span className="ml-2">{field.currentValue.value?.toLocaleString()}</span>
@@ -4610,7 +4610,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Start:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.period?.start || field.currentValue.start}
                                                     </code>
                                                   </td>
@@ -4620,7 +4620,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">End:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.period?.end || field.currentValue.end}
                                                     </code>
                                                   </td>
@@ -4630,7 +4630,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.transaction_date}
                                                     </code>
                                                   </td>
@@ -4640,7 +4640,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.value_date}
                                                     </code>
                                                   </td>
@@ -4650,7 +4650,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Status:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.status}
                                                     </code>
                                                     {field.currentValue.statusName && (
@@ -4663,7 +4663,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Type:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.transaction_type}
                                                     </code>
                                                     {field.currentValue.transaction_type_name && (
@@ -4676,7 +4676,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.type}
                                                     </code>
                                                     {field.currentValue.typeName && (
@@ -4690,7 +4690,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
                                                   <td className="py-1.5 text-gray-900">
                                                     {field.currentValue.provider_org_ref ? (
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.provider_org_ref}
                                                       </code>
                                                     ) : (
@@ -4704,7 +4704,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
                                                   <td className="py-1.5 text-gray-900">
                                                     {field.currentValue.receiver_org_ref ? (
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.receiver_org_ref}
                                                       </code>
                                                     ) : (
@@ -4797,7 +4797,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             <tr className="border-b border-gray-100 align-top">
                                               <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
                                               <td className="py-1.5 text-gray-900">
-                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                   {pm.vocabulary || '1'}
                                                 </code>
                                                 <span className="text-gray-700">{getVocabularyName(pm.vocabulary || '1')}</span>
@@ -4807,7 +4807,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                     {pm.code}
                                                   </code>
                                                   <span className="text-gray-700">{getPolicyMarkerName(pm.code)}</span>
@@ -4818,7 +4818,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tr className="align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                     {pm.significance}
                                                   </code>
                                                   <span className="text-gray-700">{getSignificanceName(pm.significance)}</span>
@@ -4839,7 +4839,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                       {field.currentValue.vocabulary}
                                                     </code>
                                                     <span className="text-gray-700">{getVocabularyName(field.currentValue.vocabulary)}</span>
@@ -4850,7 +4850,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                       {field.currentValue.code}
                                                     </code>
                                                     <span className="text-gray-700">{getPolicyMarkerName(field.currentValue.code)}</span>
@@ -4861,7 +4861,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <tr className="align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded mr-2">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                       {field.currentValue.significance}
                                                     </code>
                                                     <span className="text-gray-700">{getSignificanceName(field.currentValue.significance)}</span>
@@ -4937,7 +4937,7 @@ ${narrativeLines}
                                             <tr className="border-b border-gray-100 align-top">
                                               <td className="py-1.5 pr-2 font-medium text-gray-600">Conditions:</td>
                                               <td className="py-1.5 text-gray-900">
-                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                   {cond.attached ? '1' : '0'}
                                                 </code>
                                                 <span className="ml-2">{cond.attached ? 'Yes' : 'No'}</span>
@@ -4954,7 +4954,7 @@ ${narrativeLines}
                                                     Condition Type:
                                                   </td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {condition.type}
                                                     </code>
                                                     <span className="ml-2">{getTypeLabel(condition.type)}</span>
@@ -5007,7 +5007,7 @@ ${narrativeLines}
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Conditions:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {field.currentConditionsData.attached ? '1' : '0'}
                                                   </code>
                                                   <span className="ml-2">{field.currentConditionsData.attached ? 'Yes' : 'No'}</span>
@@ -5019,7 +5019,7 @@ ${narrativeLines}
                                                     Condition Type:
                                                   </td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {condition.type}
                                                     </code>
                                                     <span className="ml-2">{getTypeLabel(condition.type)}</span>
@@ -5091,7 +5091,7 @@ ${narrativeLines}
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Channel Code:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {crsData.channel_code}
                                                   </code>
                                                 </td>
@@ -5115,7 +5115,7 @@ ${narrativeLines}
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Type:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {crsData.loanTerms.repayment_type_code}
                                                       </code>
                                                     </td>
@@ -5125,7 +5125,7 @@ ${narrativeLines}
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Plan:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {crsData.loanTerms.repayment_plan_code}
                                                       </code>
                                                     </td>
@@ -5135,7 +5135,7 @@ ${narrativeLines}
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Commitment Date:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {crsData.loanTerms.commitment_date}
                                                       </code>
                                                     </td>
@@ -5145,7 +5145,7 @@ ${narrativeLines}
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment First Date:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {crsData.loanTerms.repayment_first_date}
                                                       </code>
                                                     </td>
@@ -5155,7 +5155,7 @@ ${narrativeLines}
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Final Date:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {crsData.loanTerms.repayment_final_date}
                                                       </code>
                                                     </td>
@@ -5176,7 +5176,7 @@ ${narrativeLines}
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Other Flags Code:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {flag.code}
                                                     </code>
                                                   </td>
@@ -5184,7 +5184,7 @@ ${narrativeLines}
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {flag.significance}
                                                     </code>
                                                   </td>
@@ -5205,7 +5205,7 @@ ${narrativeLines}
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600">Channel Code:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentCrsData.channel_code}
                                                     </code>
                                                   </td>
@@ -5229,7 +5229,7 @@ ${narrativeLines}
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Type:</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentCrsData.loanTerms.repayment_type_code}
                                                         </code>
                                                       </td>
@@ -5239,7 +5239,7 @@ ${narrativeLines}
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Plan:</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentCrsData.loanTerms.repayment_plan_code}
                                                         </code>
                                                       </td>
@@ -5249,7 +5249,7 @@ ${narrativeLines}
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Commitment Date:</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentCrsData.loanTerms.commitment_date}
                                                         </code>
                                                       </td>
@@ -5259,7 +5259,7 @@ ${narrativeLines}
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment First Date:</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentCrsData.loanTerms.repayment_first_date}
                                                         </code>
                                                       </td>
@@ -5269,7 +5269,7 @@ ${narrativeLines}
                                                     <tr className="border-b border-gray-100 align-top">
                                                       <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Final Date:</td>
                                                       <td className="py-1.5 text-gray-900">
-                                                        <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentCrsData.loanTerms.repayment_final_date}
                                                         </code>
                                                       </td>
@@ -5290,7 +5290,7 @@ ${narrativeLines}
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Other Flags Code:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {flag.code}
                                                       </code>
                                                     </td>
@@ -5298,7 +5298,7 @@ ${narrativeLines}
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {flag.significance}
                                                       </code>
                                                     </td>
@@ -5348,7 +5348,7 @@ ${narrativeLines}
                                             <tr className="border-b border-gray-100 align-top">
                                               <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Code:</td>
                                               <td className="py-1.5 text-gray-900">
-                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                   {identifier.code || '—'}
                                                 </code>
                                               </td>
@@ -5356,7 +5356,7 @@ ${narrativeLines}
                                             <tr className="border-b border-gray-100 align-top">
                                               <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Type:</td>
                                               <td className="py-1.5 text-gray-900">
-                                                <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                   {identifier.type || '—'}
                                                 </code>
                                                 {identifier.name && (
@@ -5372,7 +5372,7 @@ ${narrativeLines}
                                               <td className="py-1.5 pr-2 font-medium text-gray-600">Owner Org Ref:</td>
                                               <td className="py-1.5 text-gray-900">
                                                 {identifier.ownerOrg?.ref ? (
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {identifier.ownerOrg.ref}
                                                   </code>
                                                 ) : (
@@ -5393,7 +5393,7 @@ ${narrativeLines}
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Code:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {field.currentValue.code || '—'}
                                                   </code>
                                                 </td>
@@ -5401,7 +5401,7 @@ ${narrativeLines}
                                               <tr className="border-b border-gray-100 align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Type:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {field.currentValue.type || '—'}
                                                   </code>
                                                   {field.currentValue.name && (
@@ -5417,7 +5417,7 @@ ${narrativeLines}
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Owner Org Ref:</td>
                                                 <td className="py-1.5 text-gray-900">
                                                   {field.currentValue.ownerOrg?.ref ? (
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.ownerOrg.ref}
                                                     </code>
                                                   ) : (
@@ -5526,7 +5526,7 @@ ${narrativeLines}
                                               <div key={idx} className="border-b border-amber-100 pb-2 last:border-b-0">
                                                 <div className="flex items-center gap-2">
                                                   {sector.code && (
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {sector.code}
                                                     </code>
                                                   )}
@@ -5601,7 +5601,7 @@ ${narrativeLines}
                                               <tr className="align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {importCode}
                                                   </code>
                                                   {importName && (
@@ -5625,7 +5625,7 @@ ${narrativeLines}
                                               <tr className="align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {currentCode}
                                                   </code>
                                                   {currentName && (
@@ -5757,7 +5757,7 @@ ${narrativeLines}
                                                 <tr className="border-b border-gray-100 align-top" style={{ opacity: 0.4 }}>
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">Date Type:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {dateType}
                                                     </code>
                                                     {dateTypeName && (
@@ -5771,7 +5771,7 @@ ${narrativeLines}
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">ISO Date:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {isoDate}
                                                     </code>
                                                   </td>
@@ -5816,7 +5816,7 @@ ${narrativeLines}
                                               <tr className="align-top">
                                                 <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">ISO Date:</td>
                                                 <td className="py-1.5 text-gray-900">
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {currentIsoDate}
                                                   </code>
                                                 </td>
@@ -5991,7 +5991,7 @@ ${narrativeLines}
                                                   <tr className="border-b border-gray-100 align-top">
                                                     <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">Description Type:</td>
                                                     <td className="py-1.5 text-gray-900">
-                                                      <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {descriptionType}
                                                       </code>
                                                       {descriptionTypeName && (
@@ -6033,7 +6033,7 @@ ${narrativeLines}
                                                 <tr className="border-b border-gray-100 align-top">
                                                   <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">Description Type:</td>
                                                   <td className="py-1.5 text-gray-900">
-                                                    <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {currentDescriptionType}
                                                     </code>
                                                     {currentDescriptionTypeName && (
@@ -6211,7 +6211,7 @@ ${narrativeLines}
                                             {typeof value === 'string' && value.length > 100 ? (
                                               <div className="break-words">{value}</div>
                                             ) : (
-                                              <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                              <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                 {String(value)}
                                               </code>
                                             )}
@@ -6243,7 +6243,7 @@ ${narrativeLines}
                                           <tr className="align-top">
                                             <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
                                             <td className="py-1.5 text-gray-900">
-                                              <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                              <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                 {String(code)}
                                               </code>
                                               <span className="ml-2 text-gray-600">{String(name)}</span>
@@ -6306,7 +6306,7 @@ ${narrativeLines}
                                                 {typeof val === 'string' && val.length > 100 ? (
                                                   <div className="break-words">{val}</div>
                                                 ) : (
-                                                  <code className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {String(val)}
                                                   </code>
                                                 )}

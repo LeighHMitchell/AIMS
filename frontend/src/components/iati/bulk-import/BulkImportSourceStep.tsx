@@ -953,7 +953,7 @@ export default function BulkImportSourceStep({
                   <p className="font-semibold text-gray-900">{orgDisplayName}</p>
                   <div className="flex items-center gap-2 mt-0.5 text-sm text-gray-500">
                     {orgIatiId && (
-                      <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700">
+                      <span className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-muted-foreground">
                         {orgIatiId}
                       </span>
                     )}
@@ -1048,7 +1048,7 @@ export default function BulkImportSourceStep({
                                     alt=""
                                     className="w-5 h-auto rounded-sm"
                                   />
-                                  <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-600">
+                                  <span className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-muted-foreground">
                                     {ALPHA2_TO_ALPHA3[selectedCountry] || selectedCountry}
                                   </span>
                                   <span>{COUNTRY_COORDINATES[selectedCountry]?.name || selectedCountry}</span>
@@ -1103,7 +1103,7 @@ export default function BulkImportSourceStep({
                                       alt=""
                                       className="w-5 h-auto rounded-sm shrink-0"
                                     />
-                                    <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-500 shrink-0">
+                                    <span className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-muted-foreground shrink-0">
                                       {ALPHA2_TO_ALPHA3[country.code] || country.code}
                                     </span>
                                     <span className="text-gray-900">{country.name}</span>
@@ -1232,7 +1232,7 @@ export default function BulkImportSourceStep({
                           <>
                             <Database className="h-3.5 w-3.5 text-gray-400" />
                             <span>
-                              Expected: <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{previewCount.activities.toLocaleString()}</span> activities
+                              Expected: <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{previewCount.activities.toLocaleString()}</span> activities
                             </span>
                           </>
                         )}
@@ -1423,12 +1423,12 @@ export default function BulkImportSourceStep({
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg text-gray-900">
-                        Found <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{filteredActivities.length.toLocaleString()}</span> activit{filteredActivities.length === 1 ? 'y' : 'ies'} with <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{filteredTotals.totalTransactions.toLocaleString()}</span> transactions published by {orgDisplayName}
+                        Found <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{filteredActivities.length.toLocaleString()}</span> activit{filteredActivities.length === 1 ? 'y' : 'ies'} with <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{filteredTotals.totalTransactions.toLocaleString()}</span> transactions published by {orgDisplayName}
                       </h3>
                       <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1.5">
                           <Database className="h-4 w-4" />
-                          <span className="font-mono bg-gray-200 px-1.5 py-0.5 rounded text-gray-700">{datastoreActivities.filter((a) => a.matched).length}</span> already in database
+                          <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{datastoreActivities.filter((a) => a.matched).length}</span> already in database
                         </div>
                         {fetchedAt && (
                           <div className="text-gray-400">

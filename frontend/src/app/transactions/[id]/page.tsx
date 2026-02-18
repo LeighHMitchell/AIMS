@@ -290,7 +290,7 @@ export default function TransactionDetailPage() {
               {/* Transaction UUID Display */}
               <div className="mt-2">
                 <span className="text-xs text-gray-500">Transaction UUID:</span>
-                <div className="font-mono text-sm bg-gray-100 px-2 py-1 rounded mt-1 inline-block">
+                <div className="font-mono text-sm bg-muted px-2 py-1 rounded mt-1 inline-block">
                   {transaction.uuid || transaction.id}
                 </div>
               </div>

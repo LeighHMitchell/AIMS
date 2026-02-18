@@ -462,7 +462,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -501,7 +501,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -538,7 +538,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -575,7 +575,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -612,7 +612,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -650,7 +650,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -683,7 +683,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -717,7 +717,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -744,7 +744,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -784,7 +784,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -819,7 +819,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -852,7 +852,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}
@@ -886,7 +886,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                     <div>
                       <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
                       {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
                           {item.iati_identifier}
                         </code>
                       )}

@@ -99,15 +99,15 @@ const getAttachmentIcon = (type: string | null) => {
 const getPriorityIcon = (priority: string) => {
   switch (priority) {
     case 'low':
-      return { icon: Minus, color: 'text-gray-400' };
+      return { icon: Minus, color: 'text-muted-foreground' };
     case 'medium':
-      return { icon: CircleDot, color: 'text-blue-500' };
+      return { icon: CircleDot, color: 'text-muted-foreground' };
     case 'high':
-      return { icon: AlertTriangle, color: 'text-orange-500' };
+      return { icon: AlertTriangle, color: 'text-muted-foreground' };
     case 'urgent':
-      return { icon: Flame, color: 'text-red-600' };
+      return { icon: Flame, color: 'text-muted-foreground' };
     default:
-      return { icon: Minus, color: 'text-gray-400' };
+      return { icon: Minus, color: 'text-muted-foreground' };
   }
 };
 
@@ -117,17 +117,17 @@ const getPriorityIcon = (priority: string) => {
 const getStatusIcon = (status: string) => {
   switch (status) {
     case 'open':
-      return { icon: CircleDot, color: 'text-blue-600' };
+      return { icon: CircleDot, color: 'text-muted-foreground' };
     case 'in_progress':
-      return { icon: Play, color: 'text-yellow-500' };
+      return { icon: Play, color: 'text-muted-foreground' };
     case 'resolved':
-      return { icon: CheckCircle2, color: 'text-green-600' };
+      return { icon: CheckCircle2, color: 'text-muted-foreground' };
     case 'closed':
-      return { icon: Lock, color: 'text-gray-600' };
+      return { icon: Lock, color: 'text-muted-foreground' };
     case 'archived':
-      return { icon: Archive, color: 'text-gray-500' };
+      return { icon: Archive, color: 'text-muted-foreground' };
     default:
-      return { icon: CircleDot, color: 'text-gray-400' };
+      return { icon: CircleDot, color: 'text-muted-foreground' };
   }
 };
 

@@ -65,7 +65,7 @@ export function CodelistTooltip({
           <div className="text-left">
             {/* Code and Title - visually distinct */}
             <div className="mb-2">
-              <span className="font-mono text-sm bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
+              <span className="font-mono text-sm bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                 {definition.code}
               </span>
               <span className="font-medium text-sm text-foreground ml-2">
@@ -104,7 +104,7 @@ export function CodelistTooltipInline({
       <Tooltip delayDuration={200}>
         <TooltipTrigger asChild>
           <span
-            className={`cursor-help font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+            className={`cursor-help font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
             tabIndex={0}
             role="button"
             aria-label={`Code ${definition.code}: ${definition.name}`}
@@ -119,7 +119,7 @@ export function CodelistTooltipInline({
         >
           <div className="text-left">
             <div className="mb-2">
-              <span className="font-mono text-sm bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
+              <span className="font-mono text-sm bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                 {definition.code}
               </span>
               <span className="font-medium text-sm text-foreground ml-2">

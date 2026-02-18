@@ -338,7 +338,7 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
                 }}
                 renderOption={(option) => (
                   <span className="flex items-center gap-2">
-                    <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs">
+                    <code className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs">
                       {option.value}
                     </code>
                     <span className="text-sm">{option.label}</span>

@@ -357,7 +357,7 @@ export default function SectorProfilePage() {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-sm text-slate-900 truncate">{activity.title_narrative || 'Untitled Activity'}</h3>
                           <div className="flex items-center gap-2 mt-0.5">
-                            {activity.iati_identifier && <code className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1 py-0.5 rounded">{activity.iati_identifier}</code>}
+                            {activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{activity.iati_identifier}</code>}
                             <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
                             {activity.sectorPercentage < 100 && (
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{activity.sectorPercentage}% allocation</Badge>

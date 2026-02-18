@@ -154,18 +154,18 @@ export function OrganizationCombobox({
       <div className="flex items-center gap-2 flex-wrap">
         {/* IATI Org ID Badge */}
         {iatiRef ? (
-          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded hover:text-gray-600">
             {iatiRef}
           </span>
         ) : (
-          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded hover:text-gray-600">
             ID: {org.id}
           </span>
         )}
         
         {/* Organization Type Code Badge */}
         {orgTypeCode && (
-          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded hover:text-gray-600">
+          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded hover:text-gray-600">
             {orgTypeCode}
           </span>
         )}
@@ -270,7 +270,7 @@ export function OrganizationCombobox({
                     {/* Line 2: ID, Type, Country with flag */}
                     <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500">
                       {/* IATI ID or internal ID */}
-                      <span className="font-mono bg-gray-100 px-1 py-0.5 rounded text-[10px]">
+                      <span className="font-mono bg-muted px-1 py-0.5 rounded text-[10px]">
                         {iatiRef || `ID: ${selected.id.substring(0, 8)}`}
                       </span>
 
@@ -279,7 +279,7 @@ export function OrganizationCombobox({
                         <>
                           <span className="text-gray-300">·</span>
                           {orgTypeCode && (
-                            <span className="font-mono bg-gray-100 px-1 py-0.5 rounded text-[10px]">{orgTypeCode}</span>
+                            <span className="font-mono bg-muted px-1 py-0.5 rounded text-[10px]">{orgTypeCode}</span>
                           )}
                           {orgTypeName && (
                             <span className="truncate">{orgTypeName}</span>
@@ -422,7 +422,7 @@ export function OrganizationCombobox({
                       {/* Line 2: ID, Type, Country with flag */}
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         {/* IATI ID or internal ID */}
-                        <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                           {iatiRef || `ID: ${org.id.substring(0, 8)}...`}
                         </span>
 
@@ -431,7 +431,7 @@ export function OrganizationCombobox({
                           <>
                             <span className="text-gray-300">·</span>
                             {orgTypeCode && (
-                              <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{orgTypeCode}</span>
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{orgTypeCode}</span>
                             )}
                             {orgTypeName && (
                               <span className="text-xs text-gray-500">{orgTypeName}</span>

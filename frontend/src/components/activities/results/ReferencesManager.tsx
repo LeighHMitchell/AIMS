@@ -188,14 +188,14 @@ export function ReferencesManager({
                 <div className="flex items-center gap-2 mb-1">
                   <Link2 className="h-4 w-4 text-gray-500" />
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded">
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                       {ref.vocabulary}
                     </span>
                     <span className="font-medium text-gray-900">
                       - {getVocabularyLabel(ref.vocabulary)}
                     </span>
                   </div>
-                  <span className="text-xs font-mono text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                     {ref.code}
                   </span>
                 </div>

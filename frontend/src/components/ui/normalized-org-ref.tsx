@@ -31,7 +31,7 @@ export function NormalizedOrgRef({
     return <span className="text-muted-foreground text-sm">Not set</span>;
   }
   
-  const baseClasses = `text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 ${className}`;
+  const baseClasses = `text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ${className}`;
   const invalidClasses = !refDisplay.isValid && showValidationIndicator 
     ? 'border border-red-300' 
     : '';

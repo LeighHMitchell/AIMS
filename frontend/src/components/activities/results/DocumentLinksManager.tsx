@@ -276,14 +276,14 @@ export function DocumentLinksManager({
                   </a>
                   
                   {doc.format && (
-                    <span className="text-xs font-mono text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded">
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                       {doc.format.replace('application/', '').replace('text/', '').toUpperCase()}
                     </span>
                   )}
                   
                   {doc.category_code && (
                     <div className="flex items-center gap-1">
-                      <span className="text-xs font-mono text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {doc.category_code}
                       </span>
                       <span className="text-xs text-gray-600">

@@ -27,7 +27,7 @@ export function CopyableIdentifier({ value, label }: CopyableIdentifierProps) {
 
   return (
     <div className="group flex items-center gap-2">
-      <code className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded font-mono">
+      <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
         {value}
       </code>
       <Button
