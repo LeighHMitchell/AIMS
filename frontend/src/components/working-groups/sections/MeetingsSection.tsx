@@ -369,7 +369,7 @@ function EditMeetingModal({
               onDelete(meeting)
             }}
           >
-            <Trash2 className="h-4 w-4 mr-1" />
+            <Trash2 className="h-4 w-4 mr-1 text-red-500" />
             Delete
           </Button>
           <div className="flex gap-2">
@@ -433,7 +433,7 @@ function MeetingsTable({ meetings, workingGroupId, onEdit }: MeetingsTableProps)
                   onClick={() => onEdit(meeting)}
                   className="text-gray-600 hover:text-blue-700"
                 >
-                  <Pencil className="h-4 w-4 mr-1" />
+                  <Pencil className="h-4 w-4 mr-1 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                   Edit
                 </Button>
               </td>

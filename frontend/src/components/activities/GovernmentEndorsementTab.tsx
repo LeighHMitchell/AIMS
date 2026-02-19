@@ -27,7 +27,7 @@ import {
   Trash2,
   Save,
   Plus,
-  Edit2,
+  Pencil,
   Star,
   FileCode2
 } from 'lucide-react';
@@ -373,7 +373,7 @@ export default function GovernmentEndorsementTab({
                   size="sm"
                   variant="destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                   Delete
                 </Button>
               )}
@@ -740,14 +740,14 @@ export default function GovernmentEndorsementTab({
                               size="sm"
                               onClick={() => openRefDialog(ref)}
                             >
-                              <Edit2 className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteRef(ref.id)}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </>
                         )}
@@ -807,7 +807,7 @@ export default function GovernmentEndorsementTab({
               <Input
                 value={refFormData.name || ''}
                 onChange={(e) => handleRefFormChange('name', e.target.value)}
-                placeholder="Human-readable name (optional)"
+                placeholder="Human-readable name"
               />
             </div>
 

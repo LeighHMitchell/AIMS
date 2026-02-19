@@ -112,7 +112,7 @@ export function AskQuestionModal({ isOpen, onClose }: AskQuestionModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="context">Context (optional)</Label>
+            <Label htmlFor="context">Context</Label>
             <Textarea
               id="context"
               value={context}
@@ -127,7 +127,7 @@ export function AskQuestionModal({ isOpen, onClose }: AskQuestionModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tags">Tags (optional)</Label>
+            <Label htmlFor="tags">Tags</Label>
             <Input
               id="tags"
               value={tags}

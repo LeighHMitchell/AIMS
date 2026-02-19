@@ -16,14 +16,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Plus, 
-  ChevronDown, 
-  ChevronRight, 
-  Target, 
-  TrendingUp, 
+  Plus,
+  ChevronDown,
+  ChevronRight,
+  Target,
+  TrendingUp,
   BarChart3,
   Trash2,
-  Edit3,
+  Pencil,
   CheckCircle2,
   AlertCircle,
   XCircle,
@@ -36,7 +36,8 @@ import {
   Table as TableIcon,
   Info,
   Link2,
-  FileText
+  FileText,
+  Save
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useResults, useBaselines, useIndicators } from '@/hooks/use-results';
@@ -707,7 +708,7 @@ export function ResultsTab({
 
             <div className="space-y-2">
               <Label htmlFor="result-description" className="text-base font-medium text-gray-900">
-                Add more details (optional)
+                Add more details
               </Label>
               <Textarea
                 id="result-description"
@@ -725,11 +726,12 @@ export function ResultsTab({
             </div>
 
             <div className="flex items-center gap-3 pt-2">
-              <Button 
+              <Button
                 onClick={handleCreateResult}
                 disabled={!newResult.title?.[defaultLanguage]?.trim()}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400 px-6"
               >
+                <Save className="h-4 w-4 mr-2" />
                 Save Result
               </Button>
               <Button 
@@ -809,7 +811,7 @@ export function ResultsTab({
                                 onClick={() => setEditingResult(editingResult === result.id ? null : result.id)}
                       className="text-gray-600"
                               >
-                      <Edit3 className="h-4 w-4" />
+                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                               </Button>
                               <Button 
                                 variant="ghost" 
@@ -817,7 +819,7 @@ export function ResultsTab({
                                 onClick={() => handleDeleteResult(result.id)}
                       className="text-gray-600"
                               >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
                           )}
@@ -980,7 +982,7 @@ export function ResultsTab({
 
                               {/* Indicator Description */}
                               <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-700">Description (optional)</Label>
+                                <Label className="text-sm font-medium text-gray-700">Description</Label>
                                 <Textarea
                                   value={editingIndicatorValues.description || ''}
                                   onChange={(e) => {
@@ -1267,7 +1269,7 @@ export function ResultsTab({
 
                                     <div className="space-y-3">
                                      <div>
-                                        <Label className="text-xs text-gray-600">Target Comment (optional)</Label>
+                                        <Label className="text-xs text-gray-600">Target Comment</Label>
                                         <Textarea
                                           value={newPeriod.target_comment}
                                           onChange={(e) => setNewPeriod(prev => ({ ...prev, target_comment: e.target.value }))}
@@ -1278,7 +1280,7 @@ export function ResultsTab({
                                       </div>
                                       
                                       <div>
-                                        <Label className="text-xs text-gray-600">Actual Comment (optional)</Label>
+                                        <Label className="text-xs text-gray-600">Actual Comment</Label>
                                         <Textarea
                                           value={newPeriod.actual_comment}
                                           onChange={(e) => setNewPeriod(prev => ({ ...prev, actual_comment: e.target.value }))}
@@ -1427,7 +1429,7 @@ export function ResultsTab({
                                            }}
                                            className="text-red-600 hover:text-red-800"
                                          >
-                                           <Trash2 className="h-3 w-3" />
+                                           <Trash2 className="h-3 w-3 text-red-500" />
                                          </Button>
                                             )}
                                        </div>
@@ -1765,14 +1767,14 @@ export function ResultsTab({
                                   }
                                 }}
                               >
-                                <Edit3 className="h-3 w-3" />
+                                <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                               </Button>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => handleDeleteIndicator(indicator.id)}
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Trash2 className="h-3 w-3 text-red-500" />
                               </Button>
                             </div>
                           )}

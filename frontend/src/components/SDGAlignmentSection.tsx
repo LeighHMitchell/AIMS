@@ -434,7 +434,7 @@ export default function SDGAlignmentSection({
                       {/* Specific Targets - Searchable Combobox */}
                       <div>
                         <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                          Specific Targets <span className="font-normal text-muted-foreground">(optional)</span>
+                          Specific Targets
                         </label>
                         <Popover
                           open={targetPopoverOpen[goalId]}

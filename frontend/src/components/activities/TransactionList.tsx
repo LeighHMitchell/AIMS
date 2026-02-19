@@ -26,7 +26,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   Plus, 
-  Edit, 
+  Pencil, 
   Trash2, 
   MoreVertical, 
   Download, 

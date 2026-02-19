@@ -149,9 +149,6 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => fetchTemplates()} disabled={isLoading}>
-            <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
-          </Button>
           {onCreateNew && (
             <Button onClick={onCreateNew}>
               <Plus className="h-4 w-4 mr-2" />
@@ -235,14 +232,14 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
                           {!template.is_system_template && (
                             <>
                               <DropdownMenuItem disabled>
-                                <Pencil className="h-4 w-4 mr-2" />
+                                <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                                 Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => setDeleteConfirmId(template.id)}
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
+                                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                                 Delete
                               </DropdownMenuItem>
                             </>

@@ -60,7 +60,13 @@ export default function Dashboard() {
   const { user, permissions, isLoading } = useUser();
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
-  const defaultTab = searchParams.get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
+
+  // Sync tab with URL search params (e.g. when navigating from nav bar)
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') || 'overview';
+    setActiveTab(tabFromUrl);
+  }, [searchParams]);
 
   // Fetch unread notification count for the tab badge
   useEffect(() => {
@@ -214,20 +220,24 @@ export default function Dashboard() {
           <div className="space-y-6">
             {/* Header */}
             <div className="flex items-start gap-5">
-              {/* Organization Logo */}
-              {user.organization?.logo ? (
+              {/* User Avatar */}
+              {user.profilePicture ? (
                 <Avatar className="h-24 w-24 ring-2 ring-slate-200">
-                  <AvatarImage src={user.organization.logo} alt={user.organization.name} className="object-cover" />
+                  <AvatarImage src={user.profilePicture} alt={user.name} className="object-cover" />
                   <AvatarFallback className="bg-slate-100 text-slate-600 text-2xl font-semibold">
-                    {user.organization.acronym?.slice(0, 2) || user.organization.name.slice(0, 2).toUpperCase()}
+                    {(user.firstName || user.name.split(' ')[0]).slice(0, 1).toUpperCase()}
+                    {(user.lastName || user.name.split(' ').slice(-1)[0]).slice(0, 1).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               ) : (
-                <div className="h-24 w-24 rounded-full bg-slate-100 flex items-center justify-center ring-2 ring-slate-200">
-                  <Building2 className="h-12 w-12 text-slate-400" />
-                </div>
+                <Avatar className="h-24 w-24 ring-2 ring-slate-200">
+                  <AvatarFallback className="bg-slate-100 text-slate-600 text-2xl font-semibold">
+                    {(user.firstName || user.name.split(' ')[0]).slice(0, 1).toUpperCase()}
+                    {(user.lastName || user.name.split(' ').slice(-1)[0]).slice(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
               )}
-              
+
               {/* Text Content */}
               <div>
                 {/* Welcome message with role badge on same line */}
@@ -265,33 +275,46 @@ export default function Dashboard() {
                     </Badge>
                   )}
                 </div>
-                
+
                 {/* Position and department */}
                 {(user.jobTitle || user.department) && (
                   <p className="text-base font-semibold text-slate-700 mt-2">
                     {user.jobTitle && user.department
-                      ? `${user.jobTitle}, ${user.department}`
+                      ? <>{user.jobTitle} <span className="text-slate-400 font-normal">&middot;</span> {user.department}</>
                       : user.jobTitle || user.department}
                   </p>
                 )}
-                
-                {/* Organization info - name and acronym on same line */}
+
+                {/* Organization info with inline org logo */}
                 {user.organization && (
-                  <p className="text-xl font-medium text-slate-900 mt-2">
-                    {user.organization.name}
-                    {user.organization.acronym && (
-                      <span> ({user.organization.acronym})</span>
+                  <div className="flex items-center gap-2 mt-2">
+                    {user.organization.logo ? (
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={user.organization.logo} alt={user.organization.name} className="object-cover" />
+                        <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px] font-semibold">
+                          {user.organization.acronym?.slice(0, 2) || user.organization.name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <Building2 className="h-5 w-5 text-slate-400 shrink-0" />
                     )}
-                  </p>
+                    <p className="text-xl font-medium text-slate-900">
+                      {user.organization.name}
+                      {user.organization.acronym && (
+                        <span> ({user.organization.acronym})</span>
+                      )}
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
 
             {/* Dashboard Tabs */}
             <Tabs
-              defaultValue={defaultTab}
+              value={activeTab}
               className="w-full"
               onValueChange={(value) => {
+                setActiveTab(value);
                 // Update URL to persist tab selection on refresh
                 const url = new URL(window.location.href);
                 url.searchParams.set('tab', value);
@@ -299,15 +322,22 @@ export default function Dashboard() {
               }}
             >
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-                <TabsTrigger 
-                  value="overview" 
+                <TabsTrigger
+                  value="overview"
                   className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="notifications" 
+                <TabsTrigger
+                  value="my-portfolio"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <Briefcase className="h-4 w-4" />
+                  My Portfolio
+                </TabsTrigger>
+                <TabsTrigger
+                  value="notifications"
                   className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <Bell className="h-4 w-4" />
@@ -318,22 +348,22 @@ export default function Dashboard() {
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="activities" 
+                <TabsTrigger
+                  value="activities"
                   className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <ListTodo className="h-4 w-4" />
                   Activities
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="locations" 
+                <TabsTrigger
+                  value="locations"
                   className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <MapPin className="h-4 w-4" />
                   Locations
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="flows" 
+                <TabsTrigger
+                  value="flows"
                   className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <ArrowRightLeft className="h-4 w-4" />
@@ -352,13 +382,6 @@ export default function Dashboard() {
                 >
                   <Bookmark className="h-4 w-4" />
                   Bookmarks
-                </TabsTrigger>
-                <TabsTrigger
-                  value="my-portfolio"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  <Briefcase className="h-4 w-4" />
-                  My Portfolio
                 </TabsTrigger>
                 <TabsTrigger
                   value="tasks"
@@ -388,6 +411,11 @@ export default function Dashboard() {
 
                 {/* Row 5: Transactions Table */}
                 <OrgTransactionsTable organizationId={user.organizationId} />
+              </TabsContent>
+
+              {/* My Portfolio Tab Content */}
+              <TabsContent value="my-portfolio" className="space-y-6">
+                <MyPortfolioTab userId={user.id} organizationId={user.organizationId} />
               </TabsContent>
 
               {/* Activities Tab Content */}
@@ -440,11 +468,6 @@ export default function Dashboard() {
                     <BookmarkedOrganizationsTable userId={user.id} />
                   </TabsContent>
                 </Tabs>
-              </TabsContent>
-
-              {/* My Portfolio Tab Content */}
-              <TabsContent value="my-portfolio" className="space-y-6">
-                <MyPortfolioTab userId={user.id} organizationId={user.organizationId} />
               </TabsContent>
 
               {/* Tasks Tab Content */}

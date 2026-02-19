@@ -1814,7 +1814,7 @@ export default function TransactionModal({
               {/* Provider Organization Activity ID */}
               <div className="space-y-2">
                 <LabelWithInfoAndSave 
-                  helpText="Link to the IATI activity of the provider organization (optional)"
+                  helpText="Link to the IATI activity of the provider organization"
                   isSaving={providerActivityAutosave.isSaving}
                   isSaved={providerActivityAutosave.isSaved}
                   hasValue={!!formData.provider_org_activity_id || !!formData.provider_activity_uuid}
@@ -2018,7 +2018,7 @@ export default function TransactionModal({
               {/* Receiver Organization Activity ID */}
               <div className="space-y-2">
                 <LabelWithInfoAndSave 
-                  helpText="Link to the IATI activity of the receiver organization (optional)"
+                  helpText="Link to the IATI activity of the receiver organization"
                   isSaving={receiverActivityAutosave.isSaving}
                   isSaved={receiverActivityAutosave.isSaved}
                   hasValue={!!formData.receiver_org_activity_id || !!formData.receiver_activity_uuid}

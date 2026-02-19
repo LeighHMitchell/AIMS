@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -287,10 +286,10 @@ export function OrgActivitiesTable({
                 {variant === 'main' && (
                   <>
                     <TableHead>Activity Status</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Publication Status</TableHead>
+                    <TableHead>Validation Status</TableHead>
                     <TableHead className="text-right">Budget</TableHead>
                     <TableHead className="text-right">Planned Disb.</TableHead>
-                    <TableHead>Validation</TableHead>
                     <TableHead>Updated</TableHead>
                   </>
                 )}
@@ -316,31 +315,34 @@ export function OrgActivitiesTable({
                   onClick={() => handleRowClick(activity.id)}
                 >
                   <TableCell>
-                    <div>
-                      <p className="font-medium break-words" title={activity.title}>
-                        {activity.title}
-                      </p>
+                    <p className="font-medium" title={activity.title}>
+                      {activity.title}
                       {activity.iatiIdentifier && (
-                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1 truncate max-w-[280px]" title={activity.iatiIdentifier}>
-                          {activity.iatiIdentifier}
-                        </span>
+                        <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{activity.iatiIdentifier}</code></>
                       )}
-                    </div>
+                    </p>
                   </TableCell>
 
                   {variant === 'main' && (
                     <>
                       <TableCell>
                         {activity.activityStatus && (
-                          <span className={`text-xs px-1.5 py-0.5 rounded inline-block ${ACTIVITY_STATUS_LABELS[activity.activityStatus]?.color || 'bg-gray-100'}`}>
+                          <span className="text-sm text-slate-700">
                             {ACTIVITY_STATUS_LABELS[activity.activityStatus]?.label || activity.activityStatus}
                           </span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={activity.status === 'published' ? 'default' : 'secondary'}>
+                        <span className="text-sm capitalize text-slate-700">
                           {activity.status}
-                        </Badge>
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {activity.validationStatus && (
+                          <span className="text-sm text-slate-700">
+                            {VALIDATION_STATUS_LABELS[activity.validationStatus]?.label || activity.validationStatus}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         {activity.totalBudgetOriginal && activity.totalBudgetOriginal > 0 ? (
@@ -393,13 +395,6 @@ export function OrgActivitiesTable({
                         )}
                       </TableCell>
                       <TableCell>
-                        {activity.validationStatus && (
-                          <span className={`text-xs px-1.5 py-0.5 rounded ${VALIDATION_STATUS_LABELS[activity.validationStatus]?.color || 'bg-gray-100'}`}>
-                            {VALIDATION_STATUS_LABELS[activity.validationStatus]?.label || activity.validationStatus}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
                         <span className="text-xs text-slate-500" title={format(new Date(activity.lastUpdated), 'PPpp')}>
                           {formatDistanceToNow(new Date(activity.lastUpdated), { addSuffix: true })}
                         </span>
@@ -424,7 +419,7 @@ export function OrgActivitiesTable({
                             router.push(`/activities/${activity.id}/edit`);
                           }}
                         >
-                          <Pencil className="h-4 w-4 text-slate-500 hover:text-slate-700" />
+                          <Pencil className="h-4 w-4 hover: text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                         </Button>
                       </TableCell>
                     </>

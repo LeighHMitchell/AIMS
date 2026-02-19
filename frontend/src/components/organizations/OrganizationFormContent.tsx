@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import {
   AlertTriangle,
   Copy,
@@ -23,7 +24,9 @@ import {
   Merge,
   Building2,
   Loader2,
-  Wand2
+  Save,
+  Wand2,
+  Calendar
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -76,6 +79,7 @@ import {
 import { LabelSaveIndicator } from '@/components/ui/save-indicator'
 import { useOrganizationAutosave } from '@/hooks/use-organization-autosave'
 import { apiFetch } from '@/lib/api-fetch';
+import { CustomYear } from '@/types/custom-years';
 
 // Acronym generation helper
 const ACRONYM_FILLER_WORDS = new Set([
@@ -234,6 +238,7 @@ export interface Organization {
   last_updated_datetime?: string
   default_currency?: string
   default_language?: string
+  default_custom_year_id?: string
   alias_refs?: string[]
   name_aliases?: string[]
   twitter?: string
@@ -291,7 +296,9 @@ export function OrganizationFormContent({
   const [countrySelectOpen, setCountrySelectOpen] = useState(false)
   const [orgTypeSearchTerm, setOrgTypeSearchTerm] = useState('')
   const [orgTypeSelectOpen, setOrgTypeSelectOpen] = useState(false)
-  
+  const [customYears, setCustomYears] = useState<CustomYear[]>([])
+  const [loadingCustomYears, setLoadingCustomYears] = useState(false)
+
   // Merge organization state
   const [allOrganizations, setAllOrganizations] = useState<ComboboxOrganization[]>([])
   const [mergeSourceOrgId, setMergeSourceOrgId] = useState<string | null>(initialMergeSourceOrgId || null)
@@ -372,7 +379,13 @@ export function OrganizationFormContent({
     enabled: !!organizationId,
     showToast: true
   })
-  const websiteAutosave = useOrganizationAutosave('website', { 
+  const defaultCustomYearAutosave = useOrganizationAutosave('default_custom_year_id', {
+    organizationId,
+    debounceMs: 500,
+    enabled: !!organizationId,
+    showToast: true
+  })
+  const websiteAutosave = useOrganizationAutosave('website', {
     organizationId, 
     debounceMs: 1500,
     enabled: !!organizationId 
@@ -440,9 +453,26 @@ export function OrganizationFormContent({
     }
   }
 
-  // Fetch organization types on mount
+  // Fetch custom years for fiscal year dropdown
+  const fetchCustomYears = async () => {
+    setLoadingCustomYears(true)
+    try {
+      const response = await apiFetch('/api/custom-years')
+      if (response.ok) {
+        const result = await response.json()
+        setCustomYears(result.data || [])
+      }
+    } catch (error) {
+      console.error('[FormContent] Error fetching custom years:', error)
+    } finally {
+      setLoadingCustomYears(false)
+    }
+  }
+
+  // Fetch organization types and custom years on mount
   useEffect(() => {
     fetchOrganizationTypes()
+    fetchCustomYears()
   }, [])
 
   // Reset form when organization changes
@@ -482,7 +512,8 @@ export function OrganizationFormContent({
         reporting_org_secondary_reporter: organization.reporting_org_secondary_reporter || false,
         last_updated_datetime: organization.last_updated_datetime || undefined,
         default_currency: organization.default_currency || 'USD',
-        default_language: organization.default_language || 'en'
+        default_language: organization.default_language || 'en',
+        default_custom_year_id: organization.default_custom_year_id || ''
       })
       setValidationErrors([])
     } else {
@@ -518,7 +549,8 @@ export function OrganizationFormContent({
         reporting_org_secondary_reporter: false,
         last_updated_datetime: undefined,
         default_currency: 'USD',
-        default_language: 'en'
+        default_language: 'en',
+        default_custom_year_id: ''
       })
       setValidationErrors([])
     }
@@ -552,6 +584,7 @@ export function OrganizationFormContent({
         default_currency: defaultCurrencyAutosave,
         default_language: defaultLanguageAutosave,
         residency_status: residencyStatusAutosave,
+        default_custom_year_id: defaultCustomYearAutosave,
         website: websiteAutosave,
         email: emailAutosave,
         phone: phoneAutosave,
@@ -858,6 +891,16 @@ export function OrganizationFormContent({
               hasValue={!!formData.name}
             >
               Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>The official full name of the organisation</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </LabelSaveIndicator>
             <Input
               id="name"
@@ -876,6 +919,16 @@ export function OrganizationFormContent({
               hasValue={!!formData.acronym}
             >
               Acronym / Short Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>A shortened version of the organisation name, often used for display</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </LabelSaveIndicator>
             <div className="relative">
               <Input
@@ -911,8 +964,18 @@ export function OrganizationFormContent({
 
           {/* Location Represented */}
           <div className="space-y-2">
-            <Label htmlFor="country_represented" className="text-sm font-medium">
+            <Label htmlFor="country_represented" className="text-sm font-medium flex items-center">
               Location Represented <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>Select a country for bilateral agencies, or an institutional group for multilateral organizations</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </Label>
             <Select
               key={`country-${organization?.id || 'new'}`}
@@ -1061,15 +1124,69 @@ export function OrganizationFormContent({
                 })()}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
-              Select a country for bilateral agencies, or an institutional group for multilateral organizations
-            </p>
           </div>
 
+          {/* IATI Organisation Identifier */}
+          <div className="space-y-2">
+            <LabelSaveIndicator
+              isSaving={iatiOrgIdAutosave.state.isSaving}
+              isSaved={!!iatiOrgIdAutosave.state.lastSaved}
+              hasValue={!!formData.iati_org_id}
+            >
+              IATI Organisation Identifier
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>The unique IATI identifier for this organisation (e.g. DK-CVR-20228799)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </LabelSaveIndicator>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  id="iati_org_id_class"
+                  value={formData.iati_org_id || ''}
+                  onChange={(e) => handleInputChange('iati_org_id', e.target.value)}
+                  placeholder="DK-CVR-20228799"
+                  className="pr-10"
+                />
+                {formData.iati_org_id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(formData.iati_org_id || '')}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                    title="Copy IATI ID"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Organisation Type & Residency Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
           {/* Organisation Type (Required) */}
           <div className="space-y-2">
-            <Label htmlFor="Organisation_Type_Code" className="text-sm font-medium">
+            <Label htmlFor="Organisation_Type_Code" className="text-sm font-medium flex items-center">
               Organisation Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>The IATI organisation type classification code</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </Label>
             <Select
               value={formData.Organisation_Type_Code || ''}
@@ -1145,43 +1262,6 @@ export function OrganizationFormContent({
             </Select>
           </div>
 
-        </div>
-
-        {/* IATI Identifier & Residency Status */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
-          {/* IATI Organisation Identifier */}
-          <div className="space-y-2">
-            <LabelSaveIndicator
-              isSaving={iatiOrgIdAutosave.state.isSaving}
-              isSaved={!!iatiOrgIdAutosave.state.lastSaved}
-              hasValue={!!formData.iati_org_id}
-            >
-              IATI Organisation Identifier
-            </LabelSaveIndicator>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  id="iati_org_id_class"
-                  value={formData.iati_org_id || ''}
-                  onChange={(e) => handleInputChange('iati_org_id', e.target.value)}
-                  placeholder="DK-CVR-20228799"
-                  className="pr-10"
-                />
-                {formData.iati_org_id && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(formData.iati_org_id || '')}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                    title="Copy IATI ID"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* Residency Status */}
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -1190,6 +1270,16 @@ export function OrganizationFormContent({
               hasValue={!!formData.residency_status}
             >
               Residency Status
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>Whether this organisation is resident within the country</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </LabelSaveIndicator>
             <Select
               value={formData.residency_status || ''}
@@ -1224,9 +1314,6 @@ export function OrganizationFormContent({
                 </SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
-              Whether this organisation is resident within the country
-            </p>
           </div>
         </div>
 
@@ -1238,14 +1325,22 @@ export function OrganizationFormContent({
             hasValue={!!formData.description}
           >
             Description
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <p>A brief overview of the organisation's mandate and activities. Supports rich text formatting.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </LabelSaveIndicator>
-          <Textarea
-            id="description"
-            value={formData.description || ''}
-            onChange={(e) => handleInputChange('description', e.target.value)}
+          <RichTextEditor
+            content={formData.description || ''}
+            onChange={(content) => handleInputChange('description', content)}
             placeholder="Brief description of the organization"
             rows={6}
-            className="resize-none"
           />
         </div>
 
@@ -1259,6 +1354,16 @@ export function OrganizationFormContent({
               hasValue={!!formData.default_currency}
             >
               Default Currency
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>The default currency used for financial reporting</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </LabelSaveIndicator>
             <Select
               value={formData.default_currency || 'USD'}
@@ -1321,6 +1426,16 @@ export function OrganizationFormContent({
               hasValue={!!formData.default_language}
             >
               Default Language
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>The primary language used by this organisation for reporting</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </LabelSaveIndicator>
             <Select
               value={formData.default_language || 'en'}
@@ -1366,6 +1481,63 @@ export function OrganizationFormContent({
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{lang.code.toUpperCase()}</span>
                       <span>{lang.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Default Financial Year */}
+          <div className="space-y-2">
+            <LabelSaveIndicator
+              isSaving={defaultCustomYearAutosave.state.isSaving}
+              isSaved={!!defaultCustomYearAutosave.state.lastSaved}
+              hasValue={!!formData.default_custom_year_id}
+            >
+              Default Financial Year
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground ml-1 inline-block cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p>The calendar or financial year type this organisation uses for reporting. Options are configured in System Settings.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </LabelSaveIndicator>
+            <Select
+              value={formData.default_custom_year_id || ''}
+              onValueChange={(value) => handleInputChange('default_custom_year_id', value)}
+              disabled={loadingCustomYears}
+            >
+              <SelectTrigger className="[&>span]:line-clamp-none [&>span]:whitespace-nowrap">
+                <SelectValue placeholder={loadingCustomYears ? "Loading..." : "Select financial year type"}>
+                  {formData.default_custom_year_id && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="font-medium text-foreground">
+                        {customYears.find(cy => cy.id === formData.default_custom_year_id)?.name || 'Unknown'}
+                      </span>
+                    </div>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {customYears.length === 0 && !loadingCustomYears && (
+                  <div className="px-2 py-4 text-center text-sm text-gray-500">
+                    No financial year types configured. Ask an admin to set them up in System Settings.
+                  </div>
+                )}
+                {customYears.map((cy) => (
+                  <SelectItem key={cy.id} value={cy.id}>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="font-medium text-foreground">{cy.name}</span>
+                      {cy.isDefault && (
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">System Default</span>
+                      )}
                     </div>
                   </SelectItem>
                 ))}
@@ -1786,7 +1958,7 @@ export function OrganizationFormContent({
             Saving...
           </>
         ) : (
-          'Save'
+          <><Save className="mr-2 h-4 w-4" />Save</>
         )}
       </Button>
       {onNextSection && (
@@ -1802,7 +1974,7 @@ export function OrganizationFormContent({
               Saving...
             </>
           ) : (
-            'Save & Next'
+            <><Save className="mr-2 h-4 w-4" />Save &amp; Next</>
           )}
         </Button>
       )}

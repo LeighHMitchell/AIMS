@@ -37,11 +37,11 @@ export const FINANCING_TYPE_OPTIONS: { value: FinancingType; label: string; icon
   { value: 'other', label: 'Other', icon: 'MoreHorizontal' },
 ];
 
-export const FINANCING_MODALITY_OPTIONS: { value: FinancingModality; label: string; description: string; icon: 'Briefcase' | 'Target' | 'Wallet' | 'FileEdit' }[] = [
+export const FINANCING_MODALITY_OPTIONS: { value: FinancingModality; label: string; description: string; icon: 'Briefcase' | 'Target' | 'Wallet' | 'Pencil' }[] = [
   { value: 'standard', label: 'Standard Project', description: 'Traditional investment project financing', icon: 'Briefcase' },
   { value: 'results_based', label: 'Results-Based Financing', description: 'Disbursements linked to achievement of results (PforR/RBL)', icon: 'Target' },
   { value: 'budgetary_support', label: 'Budgetary Support', description: 'Direct budget support tied to policy reforms', icon: 'Wallet' },
-  { value: 'project_preparation', label: 'Project Preparation', description: 'Financing for project preparation activities', icon: 'FileEdit' },
+  { value: 'project_preparation', label: 'Project Preparation', description: 'Financing for project preparation activities', icon: 'Pencil' },
 ];
 
 // ============================================

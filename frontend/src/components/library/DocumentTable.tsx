@@ -352,7 +352,7 @@ export function DocumentTable({
                       </DropdownMenuItem>
                       {onEdit && doc.sourceType === 'standalone' && (
                         <DropdownMenuItem onClick={() => onEdit(doc)}>
-                          <Pencil className="h-4 w-4 mr-2" />
+                          <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                           Edit
                         </DropdownMenuItem>
                       )}
@@ -384,7 +384,7 @@ export function DocumentTable({
                             onClick={() => onDelete(doc)}
                             className="text-destructive focus:text-destructive"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
+                            <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                             Delete
                           </DropdownMenuItem>
                         </>

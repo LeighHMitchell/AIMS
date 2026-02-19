@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Plus, Edit2, Trash2, AlertCircle, ChevronsUpDown, Check, Search, Loader2 } from "lucide-react";
+import { X, Plus, Pencil, Trash2, AlertCircle, ChevronsUpDown, Check, Search, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BudgetIdentifierVocabularySelect } from "@/components/forms/BudgetIdentifierVocabularySelect";
@@ -303,7 +303,7 @@ export function BudgetMappingModal({
                               size="sm"
                               onClick={() => editBudgetItem(item, index)}
                             >
-                              <Edit2 className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               type="button"
@@ -311,7 +311,7 @@ export function BudgetMappingModal({
                               size="sm"
                               onClick={() => deleteBudgetItem(index)}
                             >
-                              <Trash2 className="h-4 w-4 text-red-600" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         </TableCell>

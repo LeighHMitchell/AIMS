@@ -13,7 +13,7 @@ import {
   Users, 
   Eye, 
   EyeOff,
-  Edit2,
+  Pencil,
   Trash2,
   Download,
   ExternalLink,
@@ -362,7 +362,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
                               size="sm"
                               onClick={() => handleEditStrategy(strategy)}
                             >
-                              <Edit2 className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               variant="outline"
@@ -370,7 +370,7 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
                               onClick={() => handleDeleteStrategy(strategy.id)}
                               className="text-red-600 hover:text-red-700"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </>
                         )}

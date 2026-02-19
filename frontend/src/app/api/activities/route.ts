@@ -785,6 +785,15 @@ export async function POST(request: Request) {
               p_activity_id: body.id
             });
             await ActivityLogger.activityPublished(updatedActivity, body.user);
+
+            // Auto-submit for validation when publishing
+            if (updatedActivity.submission_status !== 'submitted') {
+              await supabase
+                .from('activities')
+                .update({ submission_status: 'submitted' })
+                .eq('id', body.id);
+              updatedActivity.submission_status = 'submitted';
+            }
           } else if (existingActivity.publication_status === 'published') {
             // Optionally update transactions when unpublishing
             await supabase.rpc('update_transactions_on_unpublish', {

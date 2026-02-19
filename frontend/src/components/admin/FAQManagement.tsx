@@ -15,7 +15,8 @@ import { LoadingText } from '@/components/ui/loading-text';
 import {
   HelpCircle,
   Eye,
-  Edit,
+  Pencil,
+  Save,
   Trash2,
   Clock,
   User,
@@ -388,7 +389,7 @@ export function FAQManagement() {
                 {/* In Progress Card */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 min-w-[220px]">
                   <div className="flex items-center gap-2">
-                    <Edit className="h-4 w-4 text-gray-500" />
+                    <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                     <span className="text-xs font-medium text-gray-600">In Progress</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900 mt-0.5">{stats.in_progress}</p>
@@ -487,7 +488,7 @@ export function FAQManagement() {
                         onClick={batchDeleteQuestions}
                         disabled={isBatchDeleting}
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                         {isBatchDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
                       </Button>
                       <Button
@@ -556,7 +557,7 @@ export function FAQManagement() {
                         onClick={batchDeleteQuestions}
                         disabled={isBatchDeleting}
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                         {isBatchDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
                       </Button>
                       <Button
@@ -796,7 +797,7 @@ function QuestionTable({
                           onClick={() => onDelete(question.id)}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>
                     </TableCell>
@@ -975,7 +976,7 @@ function QuestionDetailModal({
             Cancel
           </Button>
           <Button variant="outline" onClick={handleSave}>
-            <Edit className="h-4 w-4 mr-2" />
+            <Save className="h-4 w-4 mr-2" />
             Save Changes
           </Button>
           <Button

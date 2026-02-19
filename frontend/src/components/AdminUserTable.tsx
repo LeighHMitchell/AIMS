@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip"
 import { User, ROLE_LABELS, USER_ROLES, Organization } from "@/types/user"
 import { getRoleBadgeVariant } from "@/lib/role-badge-utils"
-import { Search, UserPlus, Edit, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key, Lock, Check, X, Trash2, ChevronsUpDown, ChevronLeft, ChevronRight, Users, RefreshCw } from "lucide-react"
+import { Search, UserPlus, Pencil, Mail, Phone, Building2, Loader2, AlertCircle, Shield, Key, Lock, Check, X, Trash2, ChevronsUpDown, ChevronLeft, ChevronRight, Users, RefreshCw } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Label } from "@/components/ui/label"
@@ -873,7 +873,7 @@ export function AdminUserTable() {
                             }}
                             title="Edit email"
                           >
-                            <Edit className="h-3 w-3 text-muted-foreground" />
+                            <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                           </Button>
                         </span>
                       )}
@@ -958,7 +958,7 @@ export function AdminUserTable() {
                               size="sm"
                               onClick={() => handleEditUser(user.id)}
                             >
-                              <Edit className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -1012,7 +1012,7 @@ export function AdminUserTable() {
                               disabled={user.id === currentUser?.id}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>

@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NotificationItem } from "@/components/NotificationItem"
-import { AtSign, Bell, AlertCircle, Loader2, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
+import { AtSign, Bell, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -22,6 +22,8 @@ export interface Notification {
   activityId?: string
   activityTitle?: string
   link?: string
+  userName?: string
+  archivedAt?: string | null
 }
 
 interface NotificationTabsProps {
@@ -30,7 +32,6 @@ interface NotificationTabsProps {
 
 // Convert API notification to component notification
 const mapApiNotification = (apiNotif: any): Notification => {
-  // Map notification types - faq_question_answered and faq_new_question are system type
   let type: "mention" | "system" = "system"
   if (apiNotif.type === "mention") {
     type = "mention"
@@ -46,16 +47,38 @@ const mapApiNotification = (apiNotif: any): Notification => {
     activityId: apiNotif.metadata?.activity_id,
     activityTitle: apiNotif.metadata?.activity_title,
     link: apiNotif.link,
+    archivedAt: apiNotif.archived_at,
   }
+}
+
+function NotificationSkeleton() {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start gap-4">
+          <Skeleton className="h-5 w-5 mt-1 shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-1/2" />
+            <div className="flex gap-2 mt-2">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-12" />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export function NotificationTabs({ userId }: NotificationTabsProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
-  // Pagination state - separate for each tab
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+
+  // Pagination state - separate for each column
   const [mentionsPage, setMentionsPage] = useState(1)
   const [systemPage, setSystemPage] = useState(1)
   const [pageLimit, setPageLimit] = useState<number>(() => {
@@ -84,14 +107,15 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
 
       const result = await response.json()
       const mappedNotifications = (result.data || []).map(mapApiNotification)
-      setNotifications(mappedNotifications)
+      // Filter out archived notifications
+      setNotifications(mappedNotifications.filter((n: Notification) => !n.archivedAt))
+      setLastUpdated(new Date())
     } catch (error: any) {
       console.error('Error fetching notifications:', error)
       setError(error.message || 'Failed to load notifications')
       setNotifications([])
     } finally {
       setIsLoading(false)
-      setIsRefreshing(false)
     }
   }, [userId])
 
@@ -100,7 +124,6 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
   }, [fetchNotifications])
 
   const handleMarkAsRead = async (notificationId: string) => {
-    // Optimistic update
     setNotifications(prev =>
       prev.map(notif =>
         notif.id === notificationId ? { ...notif, isRead: true } : notif
@@ -120,7 +143,6 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
     } catch (error: any) {
       console.error('Error marking notification as read:', error)
       toast.error('Failed to mark notification as read')
-      // Revert optimistic update
       setNotifications(prev =>
         prev.map(notif =>
           notif.id === notificationId ? { ...notif, isRead: false } : notif
@@ -136,7 +158,6 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
 
     if (notificationsToUpdate.length === 0) return
 
-    // Optimistic update
     setNotifications(prev =>
       prev.map(notif =>
         notificationsToUpdate.includes(notif.id) ? { ...notif, isRead: true } : notif
@@ -158,7 +179,6 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
     } catch (error: any) {
       console.error('Error marking all as read:', error)
       toast.error('Failed to mark all as read')
-      // Revert optimistic update
       setNotifications(prev =>
         prev.map(notif =>
           notificationsToUpdate.includes(notif.id) ? { ...notif, isRead: false } : notif
@@ -167,9 +187,55 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
     }
   }
 
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    fetchNotifications(false)
+  const handleArchive = async (notificationId: string) => {
+    // Optimistic removal
+    setNotifications(prev => prev.filter(n => n.id !== notificationId))
+
+    try {
+      const response = await apiFetch(`/api/notifications/user`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, notificationId, action: 'archive' }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to archive notification')
+      }
+      toast.success('Notification archived')
+    } catch (error: any) {
+      console.error('Error archiving notification:', error)
+      toast.error('Failed to archive notification')
+      // Refetch to restore
+      fetchNotifications(false)
+    }
+  }
+
+  const handleDelete = async (notificationId: string) => {
+    // Optimistic removal
+    const removedNotif = notifications.find(n => n.id === notificationId)
+    setNotifications(prev => prev.filter(n => n.id !== notificationId))
+
+    try {
+      const response = await apiFetch(`/api/notifications/user`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, notificationId }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete notification')
+      }
+      toast.success('Notification deleted')
+    } catch (error: any) {
+      console.error('Error deleting notification:', error)
+      toast.error('Failed to delete notification')
+      // Restore
+      if (removedNotif) {
+        setNotifications(prev => [...prev, removedNotif].sort((a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        ))
+      }
+    }
   }
 
   const mentionNotifications = notifications.filter(n => n.type === "mention")
@@ -177,25 +243,24 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
   const unreadMentions = mentionNotifications.filter(n => !n.isRead).length
   const unreadSystem = systemNotifications.filter(n => !n.isRead).length
 
-  // Pagination calculations for mentions tab
+  // Pagination for mentions
   const mentionsTotalPages = Math.ceil(mentionNotifications.length / pageLimit)
   const mentionsStartIndex = (mentionsPage - 1) * pageLimit
   const mentionsEndIndex = Math.min(mentionsStartIndex + pageLimit, mentionNotifications.length)
-  const paginatedMentions = useMemo(() => 
+  const paginatedMentions = useMemo(() =>
     mentionNotifications.slice(mentionsStartIndex, mentionsEndIndex),
     [mentionNotifications, mentionsStartIndex, mentionsEndIndex]
   )
 
-  // Pagination calculations for system tab
+  // Pagination for system
   const systemTotalPages = Math.ceil(systemNotifications.length / pageLimit)
   const systemStartIndex = (systemPage - 1) * pageLimit
   const systemEndIndex = Math.min(systemStartIndex + pageLimit, systemNotifications.length)
-  const paginatedSystem = useMemo(() => 
+  const paginatedSystem = useMemo(() =>
     systemNotifications.slice(systemStartIndex, systemEndIndex),
     [systemNotifications, systemStartIndex, systemEndIndex]
   )
 
-  // Reset to page 1 when page limit changes
   const handlePageLimitChange = (newLimit: number) => {
     setPageLimit(newLimit)
     setMentionsPage(1)
@@ -205,129 +270,69 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
     }
   }
 
-  // Pagination component to avoid duplication
-  const PaginationControls = ({ 
-    currentPage, 
-    setCurrentPage, 
-    totalPages, 
-    totalItems, 
-    startIndex, 
-    endIndex,
-    itemLabel 
-  }: { 
+  // Mini pagination controls for each column
+  const MiniPagination = ({
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalItems,
+  }: {
     currentPage: number
     setCurrentPage: (page: number) => void
     totalPages: number
     totalItems: number
-    startIndex: number
-    endIndex: number
-    itemLabel: string
   }) => {
-    if (totalItems === 0) return null
+    if (totalItems <= pageLimit) return null
 
     return (
-      <Card className="mt-4">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-gray-600">
-              Showing {Math.min(startIndex + 1, totalItems)} to {Math.min(endIndex, totalItems)} of {totalItems} {itemLabel}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                First
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum
-                  if (totalPages <= 5) {
-                    pageNum = i + 1
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i
-                  } else {
-                    pageNum = currentPage - 2 + i
-                  }
-
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={currentPage === pageNum ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCurrentPage(pageNum)}
-                      className="w-8 h-8 p-0"
-                    >
-                      {pageNum}
-                    </Button>
-                  )
-                })}
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
-              >
-                Last
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Items per page:</label>
-              <Select
-                value={pageLimit.toString()}
-                onValueChange={(value) => handlePageLimitChange(Number(value))}
-              >
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="25">25</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between mt-3 pt-3 border-t">
+        <span className="text-xs text-slate-500">
+          Page {currentPage} of {totalPages}
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 w-7 p-0"
+            disabled={currentPage <= 1}
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 w-7 p-0"
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+          >
+            <ChevronRight className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
     )
   }
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-32" />
+            {[...Array(3)].map((_, i) => (
+              <NotificationSkeleton key={`mention-${i}`} />
+            ))}
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-32" />
+            {[...Array(3)].map((_, i) => (
+              <NotificationSkeleton key={`system-${i}`} />
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -341,7 +346,7 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
           <Button
             variant="link"
             size="sm"
-            onClick={handleRefresh}
+            onClick={() => fetchNotifications()}
             className="ml-2"
           >
             Try again
@@ -353,130 +358,138 @@ export function NotificationTabs({ userId }: NotificationTabsProps) {
 
   return (
     <div className="space-y-4">
-      {/* Header with refresh button */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Last updated: {new Date().toLocaleTimeString()}
+          <span className="font-semibold">Last updated:</span> {lastUpdated.toLocaleTimeString()}
         </p>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-600">Per page:</label>
+          <Select
+            value={pageLimit.toString()}
+            onValueChange={(value) => handlePageLimitChange(Number(value))}
+          >
+            <SelectTrigger className="w-16 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <Tabs defaultValue="mentions" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="mentions" className="flex items-center gap-2">
-            <AtSign className="h-4 w-4" />
-            Mentions
-            {unreadMentions > 0 && (
-              <Badge variant="destructive" className="ml-2">
-                {unreadMentions}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="system" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            System
-            {unreadSystem > 0 && (
-              <Badge variant="destructive" className="ml-2">
-                {unreadSystem}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="mentions" className="space-y-4">
-          {unreadMentions > 0 && (
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleMarkAllAsRead('mention')}
-              >
-                Mark all as read
-              </Button>
+      {/* Two-column layout */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Mentions Column */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AtSign className="h-4 w-4" />
+                Mentions
+                {unreadMentions > 0 && (
+                  <Badge variant="destructive" className="ml-1">
+                    {unreadMentions}
+                  </Badge>
+                )}
+              </CardTitle>
+              {unreadMentions > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => handleMarkAllAsRead('mention')}
+                >
+                  Mark all read
+                </Button>
+              )}
             </div>
-          )}
-          
-          {mentionNotifications.length > 0 ? (
-            <>
-              {paginatedMentions.map(notification => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onMarkAsRead={handleMarkAsRead}
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {mentionNotifications.length > 0 ? (
+              <>
+                {paginatedMentions.map(notification => (
+                  <NotificationItem
+                    key={notification.id}
+                    notification={notification}
+                    onMarkAsRead={handleMarkAsRead}
+                    onArchive={handleArchive}
+                    onDelete={handleDelete}
+                  />
+                ))}
+                <MiniPagination
+                  currentPage={mentionsPage}
+                  setCurrentPage={setMentionsPage}
+                  totalPages={mentionsTotalPages}
+                  totalItems={mentionNotifications.length}
                 />
-              ))}
-              <PaginationControls
-                currentPage={mentionsPage}
-                setCurrentPage={setMentionsPage}
-                totalPages={mentionsTotalPages}
-                totalItems={mentionNotifications.length}
-                startIndex={mentionsStartIndex}
-                endIndex={mentionsEndIndex}
-                itemLabel="mentions"
-              />
-            </>
-          ) : (
-            <div className="text-center py-12">
-              <AtSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-muted-foreground">No mentions yet</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                When someone mentions you with @{userId.split('-')[0]}, it will appear here
-              </p>
-            </div>
-          )}
-        </TabsContent>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <AtSign className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No mentions yet</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        <TabsContent value="system" className="space-y-4">
-          {unreadSystem > 0 && (
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleMarkAllAsRead('system')}
-              >
-                Mark all as read
-              </Button>
+        {/* System Notifications Column */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                System
+                {unreadSystem > 0 && (
+                  <Badge variant="destructive" className="ml-1">
+                    {unreadSystem}
+                  </Badge>
+                )}
+              </CardTitle>
+              {unreadSystem > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => handleMarkAllAsRead('system')}
+                >
+                  Mark all read
+                </Button>
+              )}
             </div>
-          )}
-          
-          {systemNotifications.length > 0 ? (
-            <>
-              {paginatedSystem.map(notification => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onMarkAsRead={handleMarkAsRead}
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {systemNotifications.length > 0 ? (
+              <>
+                {paginatedSystem.map(notification => (
+                  <NotificationItem
+                    key={notification.id}
+                    notification={notification}
+                    onMarkAsRead={handleMarkAsRead}
+                    onArchive={handleArchive}
+                    onDelete={handleDelete}
+                  />
+                ))}
+                <MiniPagination
+                  currentPage={systemPage}
+                  setCurrentPage={setSystemPage}
+                  totalPages={systemTotalPages}
+                  totalItems={systemNotifications.length}
                 />
-              ))}
-              <PaginationControls
-                currentPage={systemPage}
-                setCurrentPage={setSystemPage}
-                totalPages={systemTotalPages}
-                totalItems={systemNotifications.length}
-                startIndex={systemStartIndex}
-                endIndex={systemEndIndex}
-                itemLabel="notifications"
-              />
-            </>
-          ) : (
-            <div className="text-center py-12">
-              <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-muted-foreground">No system notifications</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Important updates about your activities will appear here
-              </p>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <Bell className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No system notifications</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
-} 
+}

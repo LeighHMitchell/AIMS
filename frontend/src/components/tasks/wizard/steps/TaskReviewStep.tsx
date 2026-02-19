@@ -11,7 +11,7 @@ import {
   Repeat,
   Paperclip,
   AlertCircle,
-  Edit2,
+  Pencil,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,7 @@ function ReviewSection({ title, icon: Icon, onEdit, children }: ReviewSectionPro
           onClick={onEdit}
           className="h-7 px-2 text-xs"
         >
-          <Edit2 className="h-3 w-3 mr-1" />
+          <Pencil className="h-3 w-3 mr-1 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
           Edit
         </Button>
       </div>

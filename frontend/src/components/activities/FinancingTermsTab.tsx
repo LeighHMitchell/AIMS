@@ -18,7 +18,7 @@ import {
   DollarSign,
   Calendar,
   TrendingUp,
-  Edit,
+  Pencil,
   Percent,
   Clock,
   FileText
@@ -274,7 +274,7 @@ export function FinancingTermsTab({
               <Dialog open={showLoanTermsModal} onOpenChange={setShowLoanTermsModal}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="flex items-center gap-2">
-                    <Edit className="h-4 w-4" />
+                    <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                     Edit Loan Terms
                   </Button>
                 </DialogTrigger>
@@ -654,7 +654,7 @@ export function FinancingTermsTab({
                               size="sm"
                               className="text-blue-600 hover:text-blue-700"
                             >
-                              <Edit className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               onClick={() => handleDeleteLoanStatus(status.id, status.year)}
@@ -662,7 +662,7 @@ export function FinancingTermsTab({
                               size="sm"
                               className="text-red-600 hover:text-red-700"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         </td>

@@ -18,7 +18,7 @@ import { User, UserRole, USER_ROLES, ROLE_LABELS } from "@/types/user";
 import { getRoleBadgeVariant } from "@/lib/role-badge-utils";
 import { 
   Users, 
-  Edit, 
+  Pencil, 
   Trash2, 
   Plus, 
   Search, 
@@ -835,7 +835,7 @@ export default function UserManagement() {
                                               <ExternalLink className="h-2 w-2 ml-0.5" />
                                             </div>
                                           ) : (
-                                            <Edit className="h-4 w-4" />
+                                            <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                                           )}
                                         </Button>
                                       </TooltipTrigger>
@@ -875,7 +875,7 @@ export default function UserManagement() {
                                     title="Delete user"
                                     className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-4 w-4 text-red-500" />
                                   </Button>
                                 </div>
                               </td>

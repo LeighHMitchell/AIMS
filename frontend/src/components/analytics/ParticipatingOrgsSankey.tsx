@@ -441,7 +441,6 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-700">View:</span>
               <div className="flex">
                 <Button
                   variant={viewMode === 'sankey' ? 'default' : 'outline'}

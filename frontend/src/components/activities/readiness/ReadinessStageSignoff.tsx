@@ -150,7 +150,7 @@ export function ReadinessStageSignoff({
 
             <div className="space-y-2">
               <Label htmlFor="signoff-remarks">
-                Remarks (Optional)
+                Remarks
               </Label>
               <Textarea
                 id="signoff-remarks"

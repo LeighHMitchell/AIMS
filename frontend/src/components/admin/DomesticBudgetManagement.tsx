@@ -748,7 +748,7 @@ export function DomesticBudgetManagement() {
                                   onClick={() => handleEdit(item)}
                                   className="h-8 w-8 p-0"
                                 >
-                                  <Pencil className="h-4 w-4" />
+                                  <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -756,7 +756,7 @@ export function DomesticBudgetManagement() {
                                   onClick={() => handleDelete(item)}
                                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4 text-red-500" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -1052,7 +1052,7 @@ export function DomesticBudgetManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Label htmlFor="notes">Notes</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}

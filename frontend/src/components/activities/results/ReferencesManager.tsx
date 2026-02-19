@@ -135,7 +135,7 @@ export function ReferencesManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Vocabulary URI (optional)</Label>
+            <Label className="text-xs text-gray-700">Vocabulary URI</Label>
             <Input
               type="url"
               value={formData.vocabulary_uri}
@@ -147,7 +147,7 @@ export function ReferencesManager({
 
           {entityType === 'indicator' && (
             <div className="space-y-2">
-              <Label className="text-xs text-gray-700">Indicator URI (optional)</Label>
+              <Label className="text-xs text-gray-700">Indicator URI</Label>
               <Input
                 type="url"
                 value={formData.indicator_uri}
@@ -232,7 +232,7 @@ export function ReferencesManager({
                   onClick={() => handleDelete(ref.id)}
                   className="text-red-600 hover:text-red-800"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3 w-3 text-red-500" />
                 </Button>
               )}
             </div>

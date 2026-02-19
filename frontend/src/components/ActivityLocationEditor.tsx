@@ -577,7 +577,7 @@ export default function ActivityLocationEditor({
                   </Map>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  Click on the map to add a specific location within this township (optional)
+                  Click on the map to add a specific location within this township
                 </p>
               </CardContent>
             </Card>

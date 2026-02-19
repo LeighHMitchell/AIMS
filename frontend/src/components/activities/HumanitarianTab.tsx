@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Trash2, Edit2, AlertCircle, Heart, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Pencil, AlertCircle, Heart, CheckCircle2 } from 'lucide-react';
 import { HumanitarianScope } from '@/types/humanitarian';
 import { CountryEmergency } from '@/types/country-emergency';
 import {
@@ -350,7 +350,7 @@ export function HumanitarianTab({
                                 onClick={() => handleEditScope(scope)}
                                 disabled={isSaving}
                               >
-                                <Edit2 className="h-4 w-4" />
+                                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                               </Button>
                               <Button
                                 variant="ghost"

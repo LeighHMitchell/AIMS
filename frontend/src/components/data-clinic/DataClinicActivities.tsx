@@ -14,7 +14,7 @@ import {
   Filter, 
   Download,
   RefreshCw,
-  Edit2,
+  Pencil,
   Save,
   X
 } from "lucide-react";
@@ -350,7 +350,7 @@ export function DataClinicActivities() {
             variant="ghost"
             onClick={() => setEditingField({ activityId: activity.id, field })}
           >
-            <Edit2 className="h-3 w-3" />
+            <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
           </Button>
         )}
       </div>

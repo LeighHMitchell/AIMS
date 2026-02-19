@@ -697,7 +697,7 @@ export function EnhancedSubnationalBreakdown({
                   onClick={clearAllocations}
                   className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 active:text-red-600 focus-visible:text-red-600"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                   Clear All
                 </Button>
               </div>
@@ -756,7 +756,7 @@ export function EnhancedSubnationalBreakdown({
                               onClick={() => removeEntry(entry.id)}
                               className="text-red-600 hover:text-red-800 hover:bg-red-50 h-7 w-7 p-0"
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Trash2 className="h-3 w-3 text-red-500" />
                             </Button>
                           </td>
                         )}

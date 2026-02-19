@@ -315,7 +315,6 @@ export function TransactionDocumentUpload({
           <div className="space-y-2">
             <Label htmlFor="url-description">
               Description
-              <span className="text-gray-500 text-xs ml-2">(optional)</span>
             </Label>
             <Input
               id="url-description"

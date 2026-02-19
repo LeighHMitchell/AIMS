@@ -223,16 +223,6 @@ export function TaskTrackingView({
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      {onRefresh && (
-        <div className="flex items-center justify-end">
-          <Button variant="outline" size="sm" onClick={onRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      )}
-
       {/* Task List with Expandable Rows */}
       {tasks.map((task) => {
         const isExpanded = expandedTasks.has(task.id);
@@ -440,7 +430,7 @@ export function TaskTrackingView({
                             setEditingTask(task);
                           }}
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                         </Button>
                       )}
                       {/* Delete Button */}
@@ -454,7 +444,7 @@ export function TaskTrackingView({
                               onClick={(e) => e.stopPropagation()}
                               disabled={deletingTaskId === task.id}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent onClick={(e) => e.stopPropagation()}>

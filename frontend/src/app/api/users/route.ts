@@ -94,6 +94,8 @@ export async function GET(request: NextRequest) {
       lastName: user.last_name,
       suffix: user.suffix,
       gender: user.gender,
+      jobTitle: user.job_title || user.title || '',
+      department: user.department || '',
       profilePicture: user.avatar_url,
       authProvider: user.auth_provider,
       organisation: user.organisation || user.organizations?.name,

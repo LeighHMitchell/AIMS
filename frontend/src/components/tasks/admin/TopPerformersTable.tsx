@@ -34,11 +34,11 @@ export function TopPerformersTable({ performers }: TopPerformersTableProps) {
   const getRankIcon = (index: number) => {
     switch (index) {
       case 0:
-        return <Trophy className="h-5 w-5 text-yellow-500" />;
+        return <Trophy className="h-5 w-5 text-slate-700" />;
       case 1:
-        return <Medal className="h-5 w-5 text-slate-400" />;
+        return <Medal className="h-5 w-5 text-slate-500" />;
       case 2:
-        return <Award className="h-5 w-5 text-amber-600" />;
+        return <Award className="h-5 w-5 text-slate-400" />;
       default:
         return <span className="flex h-5 w-5 items-center justify-center text-sm text-muted-foreground">{index + 1}</span>;
     }
@@ -101,7 +101,7 @@ export function TopPerformersTable({ performers }: TopPerformersTableProps) {
                 <span className="font-medium">{performer.assigned_count}</span>
               </TableCell>
               <TableCell className="text-center">
-                <span className="font-medium text-green-600">{performer.completed_count}</span>
+                <span className="font-medium text-slate-700">{performer.completed_count}</span>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
@@ -118,11 +118,11 @@ export function TopPerformersTable({ performers }: TopPerformersTableProps) {
               </TableCell>
               <TableCell className="text-center">
                 {performer.overdue_count > 0 ? (
-                  <Badge variant="destructive" className="font-normal">
+                  <Badge variant="outline" className="bg-slate-100 text-slate-700 font-normal">
                     {performer.overdue_count}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="bg-green-50 text-green-600">
+                  <Badge variant="outline" className="bg-slate-50 text-slate-500">
                     0
                   </Badge>
                 )}

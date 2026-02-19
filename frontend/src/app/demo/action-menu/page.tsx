@@ -5,7 +5,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { MoreVertical, Edit, Trash2, Eye, Download, Share, Copy } from "lucide-react"
+import { MoreVertical, Pencil, Trash2, Eye, Download, Share, Copy } from "lucide-react"
 import { toast } from "sonner"
 
 export default function ActionMenuDemoPage() {
@@ -55,13 +55,13 @@ export default function ActionMenuDemoPage() {
                       className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
                       onClick={() => handleAction('Edit', 'demo')}
                     >
-                      <Edit className="h-4 w-4" /> Edit
+                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
                     </button>
                     <button 
                       className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
                       onClick={() => handleAction('Delete', 'demo')}
                     >
-                      <Trash2 className="h-4 w-4" /> Delete
+                      <Trash2 className="h-4 w-4 text-red-500" /> Delete
                     </button>
                   </PopoverContent>
                 </Popover>
@@ -116,13 +116,13 @@ export default function ActionMenuDemoPage() {
                                 className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
                                 onClick={() => handleAction('Edit', item.id)}
                               >
-                                <Edit className="h-4 w-4" /> Edit
+                                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
                               </button>
                               <button 
                                 className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
                                 onClick={() => handleAction('Delete', item.id)}
                               >
-                                <Trash2 className="h-4 w-4" /> Delete
+                                <Trash2 className="h-4 w-4 text-red-500" /> Delete
                               </button>
                             </PopoverContent>
                           </Popover>
@@ -158,7 +158,7 @@ export default function ActionMenuDemoPage() {
                       className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
                       onClick={() => handleAction('Edit', 'extended')}
                     >
-                      <Edit className="h-4 w-4" /> Edit
+                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
                     </button>
                     <button 
                       className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
@@ -183,7 +183,7 @@ export default function ActionMenuDemoPage() {
                       className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
                       onClick={() => handleAction('Delete', 'extended')}
                     >
-                      <Trash2 className="h-4 w-4" /> Delete
+                      <Trash2 className="h-4 w-4 text-red-500" /> Delete
                     </button>
                   </PopoverContent>
                 </Popover>
@@ -200,7 +200,7 @@ export default function ActionMenuDemoPage() {
               <div>
                 <h3 className="font-semibold mb-2">Basic Structure:</h3>
                 <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-{`import { MoreVertical, Edit, Trash2 } from "lucide-react"
+{`import { MoreVertical, Pencil, Trash2 } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 
@@ -210,10 +210,10 @@ import { Button } from "@/components/ui/button"
   </PopoverTrigger>
   <PopoverContent className="w-32 p-1">
     <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm" onClick={handleEdit}>
-      <Edit className="h-4 w-4" /> Edit
+      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
     </button>
     <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm" onClick={handleDelete}>
-      <Trash2 className="h-4 w-4" /> Delete
+      <Trash2 className="h-4 w-4 text-red-500" /> Delete
     </button>
   </PopoverContent>
 </Popover>`}

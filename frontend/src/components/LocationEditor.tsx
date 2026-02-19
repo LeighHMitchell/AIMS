@@ -203,7 +203,7 @@ export default function LocationEditor({
                 disabled={!canEdit}
                 className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600 active:text-red-600 focus-visible:text-red-600"
               >
-                <Trash2 className="h-4 w-4 mr-1" />
+                <Trash2 className="h-4 w-4 mr-1 text-red-500" />
                 Clear All
               </Button>
             </>
@@ -245,7 +245,7 @@ export default function LocationEditor({
                   disabled={!canEdit}
                   className="text-red-600 hover:text-red-800 hover:bg-red-50"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
               </div>
             </div>

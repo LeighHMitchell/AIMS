@@ -13,7 +13,7 @@ import {
 import {
   MoreVertical,
   Eye,
-  PencilLine,
+  Pencil,
   FileText,
   FileSpreadsheet,
   Trash2,
@@ -82,7 +82,7 @@ export function OrganizationActionMenu({
 
         {onEdit && (
           <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
-            <PencilLine className="h-4 w-4 mr-2" />
+            <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
             Edit
           </DropdownMenuItem>
         )}
@@ -120,7 +120,7 @@ export function OrganizationActionMenu({
               onClick={onDelete}
               className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
               Delete
             </DropdownMenuItem>
           </>

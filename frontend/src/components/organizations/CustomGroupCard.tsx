@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Users, Edit2, Trash2, MoreVertical, Globe, Lock, Eye, Building2 } from 'lucide-react'
+import { Users, Pencil, Trash2, MoreVertical, Globe, Lock, Eye, Building2 } from 'lucide-react'
 import { motion, useReducedMotion, type Transition } from "framer-motion"
 import { useMemo } from "react"
 
@@ -143,7 +143,7 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
                 View
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(group)}>
-                <Edit2 className="h-4 w-4 mr-2" style={{ color: colors.blueSlate }} />
+                <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -151,7 +151,7 @@ export function CustomGroupCard({ group, onEdit, onDelete }: CustomGroupCardProp
                 onClick={() => onDelete(group)}
                 style={{ color: colors.primaryScarlet }}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>

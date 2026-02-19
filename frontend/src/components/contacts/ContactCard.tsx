@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Mail, Phone, Building2, Edit2, Trash2, User, Globe, ExternalLink, MailPlus } from 'lucide-react';
+import { Mail, Phone, Building2, Pencil, Trash2, User, Globe, ExternalLink, MailPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getContactTypeIcon, validateIatiContactType } from '@/lib/contact-utils';
@@ -64,7 +64,7 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
           className="h-8 w-8 p-0 hover:bg-slate-100 rounded-md"
           title="Edit contact"
         >
-          <Edit2 className="h-4 w-4 text-slate-500" />
+          <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
         </Button>
         <Button
           variant="ghost"
@@ -73,7 +73,7 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
           className="h-8 w-8 p-0 hover:bg-red-50 text-red-500 hover:text-red-600 rounded-md"
           title="Delete contact"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4 text-red-500" />
         </Button>
       </div>
 

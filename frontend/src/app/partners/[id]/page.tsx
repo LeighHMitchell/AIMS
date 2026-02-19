@@ -22,7 +22,7 @@ import {
   Facebook,
   Twitter,
   Linkedin,
-  Edit,
+  Pencil,
   FileText,
   PieChart,
   BarChart,
@@ -320,7 +320,7 @@ export default function PartnerProfilePage() {
                 </div>
                 {permissions.canManageUsers && (
                   <Button variant="outline" onClick={() => setShowEditDialog(true)}>
-                    <Edit className="h-4 w-4 mr-2" />
+                    <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                     Edit Profile
                   </Button>
                 )}

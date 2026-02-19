@@ -1,14 +1,13 @@
 "use client";
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOrgDashboardStats } from '@/hooks/useOrgDashboardStats';
 import { useUser } from '@/hooks/useUser';
 import { formatDistanceToNow, format } from 'date-fns';
-import { Plus, Edit, CheckCircle, XCircle, HelpCircle, FileText } from 'lucide-react';
+import { Plus, Pencil, CheckCircle, XCircle, HelpCircle, FileText } from 'lucide-react';
 import type { ValidationEventType } from '@/types/dashboard';
 
 interface RecencyCardsProps {
@@ -58,13 +57,8 @@ function formatTimestamp(timestamp: string): { relative: string; absolute: strin
 }
 
 export function RecencyCards({ organizationId }: RecencyCardsProps) {
-  const router = useRouter();
   const { user } = useUser();
   const { stats, loading, error } = useOrgDashboardStats(organizationId, user?.id);
-
-  const handleCardClick = (activityId: string) => {
-    router.push(`/activities/${activityId}`);
-  };
 
   if (loading) {
     return (
@@ -102,127 +96,181 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       {/* Last Activity Created */}
-      <Card
-        className={`bg-white transition-all ${
-          lastCreated ? 'cursor-pointer hover:shadow-md hover:bg-slate-50' : ''
-        }`}
-        onClick={() => lastCreated && handleCardClick(lastCreated.id)}
+      <a
+        href={lastCreated ? `/activities/${lastCreated.id}` : undefined}
+        className={lastCreated ? '' : 'pointer-events-none'}
+        onClick={(e) => {
+          if (!lastCreated) e.preventDefault();
+        }}
       >
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-            <Plus className="h-4 w-4 text-slate-600" />
-            Last Activity Created
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {lastCreated ? (
-            <div>
-              <p className="font-medium text-slate-900 leading-snug" title={lastCreated.title}>
-                {lastCreated.title}
-              </p>
-              {lastCreated.iatiIdentifier && (
-                <p className="mt-1.5">
-                  <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                    {lastCreated.iatiIdentifier}
-                  </code>
+        <Card
+          className={`bg-white transition-all h-full ${
+            lastCreated ? 'cursor-pointer hover:shadow-md hover:bg-slate-50' : ''
+          }`}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
+              <Plus className="h-4 w-4 text-slate-600" />
+              Last Activity Created
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {lastCreated ? (
+              <div>
+                <p className="font-medium text-slate-900 leading-snug" title={lastCreated.title}>
+                  {lastCreated.title}
+                  {lastCreated.iatiIdentifier && (
+                    <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastCreated.iatiIdentifier}</code></>
+                  )}
                 </p>
-              )}
-              <p
-                className="text-xs text-slate-500 mt-1.5"
-                title={formatTimestamp(lastCreated.timestamp).absolute}
-              >
-                {formatTimestamp(lastCreated.timestamp).relative}
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500 italic">No activities created yet</p>
-          )}
-        </CardContent>
-      </Card>
+                {lastCreated.creatorProfile && (
+                  <div className="mt-2 text-xs text-slate-500">
+                    <span className="font-medium text-slate-600">{lastCreated.creatorProfile.name}</span>
+                    {lastCreated.creatorProfile.jobTitle && (
+                      <span> · {lastCreated.creatorProfile.jobTitle}</span>
+                    )}
+                    {lastCreated.creatorProfile.department && (
+                      <span> · {lastCreated.creatorProfile.department}</span>
+                    )}
+                  </div>
+                )}
+                <p
+                  className="text-xs text-slate-500 mt-1.5"
+                  title={formatTimestamp(lastCreated.timestamp).absolute}
+                >
+                  {formatTimestamp(lastCreated.timestamp).relative}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 italic">No activities created yet</p>
+            )}
+          </CardContent>
+        </Card>
+      </a>
 
       {/* Last Activity Edited */}
-      <Card
-        className={`bg-white transition-all ${
-          lastEdited ? 'cursor-pointer hover:shadow-md hover:bg-slate-50' : ''
-        }`}
-        onClick={() => lastEdited && handleCardClick(lastEdited.id)}
+      <a
+        href={lastEdited ? `/activities/${lastEdited.id}` : undefined}
+        className={lastEdited ? '' : 'pointer-events-none'}
+        onClick={(e) => {
+          if (!lastEdited) e.preventDefault();
+        }}
       >
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-            <Edit className="h-4 w-4 text-slate-600" />
-            Last Activity Edited
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {lastEdited ? (
-            <>
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-slate-900 truncate flex-1" title={lastEdited.title}>
+        <Card
+          className={`bg-white transition-all h-full ${
+            lastEdited ? 'cursor-pointer hover:shadow-md hover:bg-slate-50' : ''
+          }`}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+              Last Activity Edited
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {lastEdited ? (
+              <>
+                <p className="font-medium text-slate-900 leading-snug" title={lastEdited.title}>
                   {lastEdited.title}
+                  {lastEdited.iatiIdentifier && (
+                    <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastEdited.iatiIdentifier}</code></>
+                  )}
                 </p>
-                <Badge variant={lastEdited.editedByYou ? 'default' : 'secondary'} className="text-xs shrink-0">
-                  {lastEdited.editedByYou ? 'You' : lastEdited.editedByName || 'Colleague'}
-                </Badge>
-              </div>
-              <p
-                className="text-xs text-slate-500 mt-1"
-                title={formatTimestamp(lastEdited.timestamp).absolute}
-              >
-                {formatTimestamp(lastEdited.timestamp).relative}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-slate-500 italic">No activities edited yet</p>
-          )}
-        </CardContent>
-      </Card>
+                {/* Editor details */}
+                <div className="mt-2 text-xs text-slate-500">
+                  {lastEdited.editedByYou ? (
+                    <span className="font-medium text-slate-600">Edited by you</span>
+                  ) : (
+                    <>
+                      <span className="font-medium text-slate-600">
+                        {lastEdited.editorProfile?.name || lastEdited.editedByName || 'Colleague'}
+                      </span>
+                      {lastEdited.editorProfile?.jobTitle && (
+                        <span> · {lastEdited.editorProfile.jobTitle}</span>
+                      )}
+                      {lastEdited.editorProfile?.department && (
+                        <span> · {lastEdited.editorProfile.department}</span>
+                      )}
+                    </>
+                  )}
+                </div>
+                <p
+                  className="text-xs text-slate-500 mt-1"
+                  title={formatTimestamp(lastEdited.timestamp).absolute}
+                >
+                  {formatTimestamp(lastEdited.timestamp).relative}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500 italic">No activities edited yet</p>
+            )}
+          </CardContent>
+        </Card>
+      </a>
 
       {/* Last Validation Event */}
-      <Card
-        className={`bg-white transition-all ${
-          lastValidation ? 'cursor-pointer hover:shadow-md hover:bg-slate-50' : ''
-        }`}
-        onClick={() => lastValidation && router.push(`/activities/${lastValidation.activityId}?tab=government-endorsement`)}
+      <a
+        href={lastValidation ? `/activities/${lastValidation.activityId}?tab=government-endorsement` : undefined}
+        className={lastValidation ? '' : 'pointer-events-none'}
+        onClick={(e) => {
+          if (!lastValidation) e.preventDefault();
+        }}
       >
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-slate-600" />
-            Last Validation Event
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {lastValidation ? (
-            <>
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-slate-900 truncate flex-1" title={lastValidation.activityTitle}>
-                  {lastValidation.activityTitle}
+        <Card
+          className={`bg-white transition-all h-full ${
+            lastValidation ? 'cursor-pointer hover:shadow-md hover:bg-slate-50' : ''
+          }`}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-slate-600" />
+              Last Validation Event
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {lastValidation ? (
+              <>
+                <div className="flex items-start gap-2">
+                  <p className="font-medium text-slate-900 leading-snug flex-1" title={lastValidation.activityTitle}>
+                    {lastValidation.activityTitle}
+                  </p>
+                  {(() => {
+                    const config = VALIDATION_EVENT_CONFIG[lastValidation.eventType];
+                    return (
+                      <Badge className={`text-xs shrink-0 ${config.bgColor} ${config.color} border-0`}>
+                        {config.label}
+                      </Badge>
+                    );
+                  })()}
+                </div>
+                {lastValidation.iatiIdentifier && (
+                  <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
+                    {lastValidation.iatiIdentifier}
+                  </code>
+                )}
+                {lastValidation.validatorName && (
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    by <span className="font-medium text-slate-600">{lastValidation.validatorName}</span>
+                  </p>
+                )}
+                {lastValidation.rejectionReason && (
+                  <p className="text-xs text-slate-500 mt-1 italic line-clamp-2">
+                    &ldquo;{lastValidation.rejectionReason}&rdquo;
+                  </p>
+                )}
+                <p
+                  className="text-xs text-slate-500 mt-1"
+                  title={formatTimestamp(lastValidation.timestamp).absolute}
+                >
+                  {formatTimestamp(lastValidation.timestamp).relative}
                 </p>
-                {(() => {
-                  const config = VALIDATION_EVENT_CONFIG[lastValidation.eventType];
-                  return (
-                    <Badge className={`text-xs shrink-0 ${config.bgColor} ${config.color} border-0`}>
-                      {config.label}
-                    </Badge>
-                  );
-                })()}
-              </div>
-              <p
-                className="text-xs text-slate-500 mt-1"
-                title={formatTimestamp(lastValidation.timestamp).absolute}
-              >
-                {formatTimestamp(lastValidation.timestamp).relative}
-              </p>
-              {lastValidation.validatingAuthority && (
-                <p className="text-xs text-slate-400 mt-0.5">
-                  by {lastValidation.validatingAuthority}
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-slate-500 italic">No validation events yet</p>
-          )}
-        </CardContent>
-      </Card>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500 italic">No validation events yet</p>
+            )}
+          </CardContent>
+        </Card>
+      </a>
     </div>
   );
 }

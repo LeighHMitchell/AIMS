@@ -1,6 +1,6 @@
 import React from 'react'
 import { 
-  FileEdit, 
+  Pencil, 
   Clock, 
   CheckCircle, 
   XCircle, 
@@ -29,7 +29,7 @@ export const getSubmissionStatusIcon = (status: string): StatusIconConfig => {
   switch (status) {
     case 'draft': 
       return { 
-        icon: <FileEdit className="h-4 w-4 text-black" />, 
+        icon: <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />, 
         tooltip: "Draft - In progress" 
       }
     case 'submitted': 
@@ -54,7 +54,7 @@ export const getSubmissionStatusIcon = (status: string): StatusIconConfig => {
       }
     default: 
       return { 
-        icon: <FileEdit className="h-4 w-4 text-black" />, 
+        icon: <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />, 
         tooltip: "Unknown status" 
       }
   }

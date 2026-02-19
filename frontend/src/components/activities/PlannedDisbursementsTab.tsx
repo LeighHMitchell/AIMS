@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid, addMonths, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, differenceInMonths, getQuarter, getYear } from 'date-fns';
-import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Edit, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Unlock, RefreshCw } from 'lucide-react';
+import { Trash2, Copy, Loader2, Plus, CalendarIcon, Download, DollarSign, Users, Pencil, Save, X, Check, MoreVertical, Calendar, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Lock, Unlock, RefreshCw } from 'lucide-react';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
@@ -2063,7 +2063,7 @@ export default function PlannedDisbursementsTab({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => openModal(disbursement)} disabled={isReadOnly}>
-                                    <Edit className="mr-2 h-4 w-4" />
+                                    <Pencil className="mr-2 h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                                     Edit
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleDuplicate(disbursement)} disabled={isReadOnly}>
@@ -2078,7 +2078,7 @@ export default function PlannedDisbursementsTab({
                                     {deleteLoading === disbursement.id ? (
                                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
-                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                                     )}
                                     Delete
                                   </DropdownMenuItem>

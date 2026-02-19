@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
   MapPin,
-  Edit,
+  Pencil,
   Trash2,
   Copy,
   MoreVertical,
@@ -269,7 +269,7 @@ export default function LocationCard({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem onClick={() => onEdit(location)}>
-                      <Edit className="h-4 w-4 mr-2" />
+                      <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                       Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleDuplicate}>
@@ -281,7 +281,7 @@ export default function LocationCard({
                       onClick={() => onDelete(location.id!)}
                       className="text-red-600 focus:text-red-600"
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>

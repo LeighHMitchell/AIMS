@@ -17,7 +17,7 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  Edit2,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -335,7 +335,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
                   }}
                   className="text-blue-600 border-blue-200 hover:bg-blue-50"
                 >
-                  <Edit2 className="h-4 w-4 mr-1" />
+                  <Pencil className="h-4 w-4 mr-1 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                   Edit & Merge
                 </Button>
               )}

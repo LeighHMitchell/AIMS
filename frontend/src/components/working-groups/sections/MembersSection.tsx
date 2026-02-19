@@ -361,7 +361,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                           className="text-red-600"
                           onClick={() => setMemberToDelete(member)}
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
+                          <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                           Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>

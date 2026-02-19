@@ -11,10 +11,10 @@ interface TaskTypeBreakdownProps {
 }
 
 const typeColors: Record<TaskType, string> = {
-  reporting: 'bg-blue-500',
-  validation: 'bg-purple-500',
-  compliance: 'bg-orange-500',
-  information: 'bg-slate-500',
+  reporting: 'bg-slate-800',
+  validation: 'bg-slate-600',
+  compliance: 'bg-slate-400',
+  information: 'bg-slate-300',
 };
 
 export function TaskTypeBreakdown({ data }: TaskTypeBreakdownProps) {
@@ -79,10 +79,10 @@ function PieChart({ data, total }: { data: TaskTypeAnalytics[]; total: number })
     let currentAngle = 0;
     const gradientParts: string[] = [];
     const colors: Record<TaskType, string> = {
-      reporting: '#3b82f6',
-      validation: '#8b5cf6',
-      compliance: '#f97316',
-      information: '#64748b',
+      reporting: '#1e293b',
+      validation: '#475569',
+      compliance: '#94a3b8',
+      information: '#cbd5e1',
     };
 
     for (const item of data) {

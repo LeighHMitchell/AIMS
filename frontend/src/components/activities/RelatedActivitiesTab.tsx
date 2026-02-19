@@ -410,7 +410,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                                   onClick={() => handleDelete(activity.id)}
                                   className="text-red-600 hover:text-red-800 hover:bg-red-50"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                 </Button>
                               ) : null}
                             </div>

@@ -27,7 +27,7 @@ import {
   MoreVertical,
   Briefcase,
   Printer,
-  Edit,
+  Pencil,
   User,
   Trash2,
   Layers
@@ -332,7 +332,7 @@ export function PersonCard({
                     onClick={handleDeleteContact}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
-                    <Trash2 className="mr-2 h-4 w-4" />
+                    <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                     Delete Contact
                   </DropdownMenuItem>
                 </>
@@ -427,7 +427,7 @@ export function PersonCard({
                         onClick={handleDeleteContact}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                         Delete Contact
                       </DropdownMenuItem>
                     </>

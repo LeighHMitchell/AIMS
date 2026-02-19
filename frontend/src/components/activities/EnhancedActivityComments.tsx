@@ -52,7 +52,7 @@ import {
   File,
   Image,
   FileText,
-  Trash,
+  Trash2,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -1065,7 +1065,7 @@ function CommentCard({
                       onClick={() => onDelete(comment.id)}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
-                      <Trash className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Delete comment</TooltipContent>

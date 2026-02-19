@@ -16,6 +16,7 @@ import {
   FileText,
   ArrowRightLeft,
   Wallet,
+  HelpCircle,
 } from 'lucide-react';
 
 interface DashboardHeroCardsProps {
@@ -26,6 +27,7 @@ interface DashboardHeroCardsProps {
 interface DualMetricCardProps {
   title: string;
   icon: React.ElementType;
+  helpText: string;
   leftMetric: {
     value: number;
     label: string;
@@ -39,26 +41,39 @@ interface DualMetricCardProps {
     tooltip?: string;
   };
   onTitleClick?: () => void;
+  className?: string;
 }
 
 function DualMetricCard({
   title,
   icon: Icon,
+  helpText,
   leftMetric,
   rightMetric,
   onTitleClick,
+  className,
 }: DualMetricCardProps) {
   return (
     <TooltipProvider>
-      <Card className="bg-white hover:shadow-md transition-shadow">
+      <Card className={`bg-white hover:shadow-md transition-shadow ${className || ''}`}>
         <CardContent className="p-5">
           {/* Card Title */}
-          <div
-            className={`flex items-center gap-2 mb-4 ${onTitleClick ? 'cursor-pointer hover:text-primary' : ''}`}
-            onClick={onTitleClick}
-          >
-            <Icon className="h-4 w-4 text-slate-500" />
-            <span className="text-sm font-medium text-slate-600">{title}</span>
+          <div className="flex items-center gap-2 mb-4">
+            <div
+              className={`flex items-center gap-2 ${onTitleClick ? 'cursor-pointer hover:text-primary' : ''}`}
+              onClick={onTitleClick}
+            >
+              <Icon className="h-4 w-4 text-slate-500" />
+              <span className="text-sm font-medium text-slate-600">{title}</span>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p className="text-sm">{helpText}</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Dual Metrics */}
@@ -109,9 +124,9 @@ function DualMetricCard({
   );
 }
 
-function DualMetricCardSkeleton() {
+function DualMetricCardSkeleton({ className }: { className?: string }) {
   return (
-    <Card className="bg-white">
+    <Card className={`bg-white ${className || ''}`}>
       <CardContent className="p-5">
         <div className="flex items-center gap-2 mb-4">
           <Skeleton className="h-4 w-4" />
@@ -147,10 +162,11 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <DualMetricCardSkeleton key={i} />
-        ))}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <DualMetricCardSkeleton className="lg:col-span-2" />
+        <DualMetricCardSkeleton />
+        <DualMetricCardSkeleton />
+        <DualMetricCardSkeleton />
       </div>
     );
   }
@@ -164,77 +180,82 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {/* Card 1: Validation Status */}
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      {/* Card 1: Budgets & Planned Disbursements (2-col span) */}
       <DualMetricCard
-        title="Validation Status"
-        icon={ClipboardCheck}
+        title="Budgets & Planned Disbursements"
+        icon={Wallet}
+        helpText="Total budget records and planned disbursement records across all your organisation's activities. Budgets define planned spending; planned disbursements define expected fund transfers."
+        className="lg:col-span-2"
         leftMetric={{
-          value: stats?.pendingValidationCount ?? 0,
-          label: 'Pending validation',
-          onClick: () => navigateToActivities('submissionStatuses=submitted'),
-          tooltip: 'Activities submitted for government review',
+          value: stats?.orgBudgetCount ?? 0,
+          label: 'Budgets',
+          tooltip: 'Total budget records across all your organisation\'s activities',
         }}
         rightMetric={{
-          value: stats?.validatedCount ?? 0,
-          label: 'Validated',
-          onClick: () => navigateToActivities('submissionStatuses=validated'),
-          tooltip: 'Activities approved by government',
+          value: stats?.orgPlannedDisbursementCount ?? 0,
+          label: 'Planned Disbursements',
+          tooltip: 'Total planned disbursement records across all your organisation\'s activities',
         }}
-        onTitleClick={() => navigateToActivities('submissionStatuses=submitted,validated')}
       />
 
-      {/* Card 2: Activities */}
-      <DualMetricCard
-        title="Activities"
-        icon={FileText}
-        leftMetric={{
-          value: stats?.publishedCount ?? 0,
-          label: 'Published',
-          onClick: () => navigateToActivities('publicationStatus=published'),
-          tooltip: 'Activities with published or public state',
-        }}
-        rightMetric={{
-          value: stats?.draftCount ?? 0,
-          label: 'Draft',
-          onClick: () => navigateToActivities('publicationStatus=draft'),
-          tooltip: 'Activities not yet published',
-        }}
-        onTitleClick={() => navigateToActivities()}
-      />
-
-      {/* Card 3: Financial Transactions */}
+      {/* Card 2: Financial Transactions */}
       <DualMetricCard
         title="Financial Transactions"
         icon={ArrowRightLeft}
+        helpText="Financial transactions where your organisation is involved — either as the reporting organisation, provider, or receiver of funds."
         leftMetric={{
           value: stats?.orgTransactionCount ?? 0,
           label: 'Organisation',
           onClick: () => navigateToActivities('tab=transactions'),
-          tooltip: 'All transactions reported by your organisation',
+          tooltip: 'All transactions involving your organisation (as reporter, provider, or receiver)',
         }}
         rightMetric={{
           value: stats?.userTransactionCount ?? 0,
           label: 'Reported by you',
           onClick: () => navigateToActivities('tab=transactions&createdBy=me'),
-          tooltip: 'Transactions you have created or submitted',
+          tooltip: 'Transactions you have personally created or submitted',
         }}
       />
 
-      {/* Card 4: Budgets & Planned Disbursements */}
+      {/* Card 3: Validation Status */}
       <DualMetricCard
-        title="Budgets & Disbursements"
-        icon={Wallet}
+        title="Validation Status"
+        icon={ClipboardCheck}
+        helpText="Government validation status of your organisation's activities. Activities must be submitted for review and then validated by the relevant authority."
         leftMetric={{
-          value: stats?.orgBudgetAndDisbursementCount ?? 0,
-          label: 'Organisation',
-          tooltip: `Budgets: ${stats?.orgBudgetCount ?? 0}\nPlanned Disbursements: ${stats?.orgPlannedDisbursementCount ?? 0}`,
+          value: stats?.pendingValidationCount ?? 0,
+          label: 'Pending validation',
+          onClick: () => navigateToActivities('submissionStatuses=submitted'),
+          tooltip: 'Activities submitted and awaiting government review',
         }}
         rightMetric={{
-          value: stats?.userBudgetAndDisbursementCount ?? 0,
-          label: 'Reported by you',
-          tooltip: `Budgets: ${stats?.userBudgetCount ?? 0}\nPlanned Disbursements: ${stats?.userPlannedDisbursementCount ?? 0}`,
+          value: stats?.validatedCount ?? 0,
+          label: 'Validated',
+          onClick: () => navigateToActivities('submissionStatuses=validated'),
+          tooltip: 'Activities reviewed and approved by the government',
         }}
+        onTitleClick={() => navigateToActivities('submissionStatuses=submitted,validated')}
+      />
+
+      {/* Card 4: Activities */}
+      <DualMetricCard
+        title="Activities"
+        icon={FileText}
+        helpText="Publication status of your organisation's activities. Published activities are visible publicly; draft activities are still being prepared."
+        leftMetric={{
+          value: stats?.publishedCount ?? 0,
+          label: 'Published',
+          onClick: () => navigateToActivities('publicationStatus=published'),
+          tooltip: 'Activities that have been published and are publicly visible',
+        }}
+        rightMetric={{
+          value: stats?.draftCount ?? 0,
+          label: 'Draft',
+          onClick: () => navigateToActivities('publicationStatus=draft'),
+          tooltip: 'Activities still in draft form, not yet published',
+        }}
+        onTitleClick={() => navigateToActivities()}
       />
     </div>
   );

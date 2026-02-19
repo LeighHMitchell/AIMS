@@ -20,7 +20,6 @@ import {
   XCircle,
   AlertTriangle,
   PlayCircle,
-  RefreshCw,
   LayoutGrid,
   Table as TableIcon,
   Archive,
@@ -271,9 +270,6 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={refreshAll} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
           {canCreateTasks && (
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -398,27 +394,25 @@ export function TaskingTab({ userId, canCreateTasks = false, canViewAnalytics = 
           <div className="flex items-center gap-4">
             {/* View Toggle - Active/Archived */}
             {activeView === 'assigned' && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">View:</span>
-                <div className="flex">
-                  <Button
-                    variant={!showArchived ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setShowArchived(false)}
-                    className="rounded-r-none"
-                  >
-                    Active
-                  </Button>
-                  <Button
-                    variant={showArchived ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setShowArchived(true)}
-                    className="rounded-l-none"
-                  >
-                    <Archive className="h-4 w-4 mr-1" />
-                    Archived
-                  </Button>
-                </div>
+              <div className="flex">
+                <Button
+                  variant={!showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(false)}
+                  className="rounded-r-none"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                  Active
+                </Button>
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(true)}
+                  className="rounded-l-none"
+                >
+                  <Archive className="h-4 w-4 mr-1" />
+                  Archived
+                </Button>
               </div>
             )}
 

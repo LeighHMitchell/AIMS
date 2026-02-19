@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Edit2, Trash2, ExternalLink, FileText, Calendar, Globe, Tag, Languages, GripVertical, Loader2, AlertCircle, Upload } from 'lucide-react'
+import { Plus, Pencil, Trash2, ExternalLink, FileText, Calendar, Globe, Tag, Languages, GripVertical, Loader2, AlertCircle, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   DndContext,
@@ -206,14 +206,14 @@ function SortableDocumentCard({
                 size="sm"
                 onClick={() => onEdit(document)}
               >
-                <Edit2 className="h-4 w-4" />
+                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onDelete(index)}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-red-500" />
               </Button>
             </div>
           )}
@@ -788,7 +788,7 @@ export function IATIDocumentManager({
                           size="sm"
                           onClick={() => removeTitle(index)}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-3 w-3 text-red-500" />
                         </Button>
                       )}
                     </div>
@@ -832,7 +832,7 @@ export function IATIDocumentManager({
                           size="sm"
                           onClick={() => removeDescription(index)}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-3 w-3 text-red-500" />
                         </Button>
                       </div>
                       <Textarea
@@ -954,7 +954,7 @@ export function IATIDocumentManager({
                         size="sm"
                         onClick={() => removeRecipientCountry(index)}
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-3 w-3 text-red-500" />
                       </Button>
                     </div>
                   ))}

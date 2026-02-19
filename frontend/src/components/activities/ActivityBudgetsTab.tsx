@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addMonths, addQuarters, addYears, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, differenceInMonths, parseISO, isValid, isBefore, isAfter, getQuarter, getYear } from 'date-fns';
 import { format as formatDateFns } from 'date-fns';
-import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Edit, DollarSign, Wallet } from 'lucide-react';
+import { Trash2, Copy, Loader2, CheckCircle, Lock, Unlock, FastForward, AlertCircle, Info, MoreVertical, Plus, Calendar, Download, Pencil, DollarSign, Wallet } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,7 +46,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { BUDGET_TYPES } from '@/data/budget-type';
 import { BUDGET_STATUSES } from '@/data/budget-status';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Trash2 as TrashIcon, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw } from 'lucide-react';
+import { ChevronsUpDown, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { exportToCSV } from '@/lib/csv-export';
@@ -2171,13 +2171,13 @@ export default function ActivityBudgetsTab({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openModalForEditBudget(budget)}>
-                                <Edit className="h-4 w-4 mr-2" /> Edit
+                                <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => duplicateForward(index)}>
                                 <Copy className="h-4 w-4 mr-2" /> Duplicate
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => deleteBudget(index)} className="text-red-600">
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                <Trash2 className="h-4 w-4 mr-2 text-red-500" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -2881,7 +2881,7 @@ export default function ActivityBudgetsTab({
                                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                   type="button"
                                 >
-                                  <TrashIcon className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4 text-red-500" />
                                 </Button>
                               </div>
 

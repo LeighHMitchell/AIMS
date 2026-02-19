@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
   ArrowLeft,
-  Edit,
+  Pencil,
+  Save,
   Users,
   FileText,
   Calendar,
@@ -290,7 +291,7 @@ export default function WorkingGroupProfilePage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => router.push(`/working-groups/${workingGroup.id}/edit`)}>
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                   Edit Details
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push(`/working-groups/${workingGroup.id}/edit?section=members`)}>
@@ -301,7 +302,7 @@ export default function WorkingGroupProfilePage() {
                   className="text-red-600"
                   onClick={() => setShowDeleteDialog(true)}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                   Delete Group
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -319,7 +320,7 @@ export default function WorkingGroupProfilePage() {
                 size="sm"
                 onClick={() => setIsEditing(!isEditing)}
               >
-                <Edit className="h-4 w-4" />
+                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               </Button>
             </div>
           </CardHeader>
@@ -333,7 +334,7 @@ export default function WorkingGroupProfilePage() {
                   placeholder="Enter working group purpose and mandate..."
                 />
                 <div className="flex gap-2">
-                  <Button onClick={handleSaveDescription}>Save</Button>
+                  <Button onClick={handleSaveDescription}><Save className="h-4 w-4 mr-2" />Save</Button>
                   <Button variant="outline" onClick={() => {
                     setIsEditing(false)
                     setEditedDescription(workingGroup.description || '')

@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortI
 import { LoadingText } from '@/components/ui/loading-text';
 import { FEEDBACK_TYPES, FEEDBACK_STATUS_TYPES, FEEDBACK_PRIORITY_TYPES } from '@/data/feedback-types';
 import { ALL_APP_FEATURES, APP_FEATURES } from '@/data/app-features';
-import { MessageSquare, Eye, Edit, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, Trash, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search, Plus, Trash2 } from 'lucide-react';
+import { MessageSquare, Eye, Pencil, Save, Calendar, User, HelpCircle, MessageCircle, Lightbulb, Bug, Zap, Paperclip, Download, Image, FileText, Archive, ArchiveRestore, ChevronLeft, ChevronRight, Circle, CheckCircle, AlertCircle, XCircle, CircleDot, Play, CheckCircle2, Lock, Minus, AlertTriangle, Flame, Check, ChevronsUpDown, Search, Plus, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
@@ -538,7 +538,7 @@ export function FeedbackManagement() {
                     onClick={batchDeleteFeedback}
                     disabled={isBatchDeleting}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                     {isBatchDeleting ? 'Deleting...' : `Delete Selected (${selectedIds.size})`}
                   </Button>
                   <Button
@@ -959,7 +959,7 @@ export function FeedbackManagement() {
                             title="Delete"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
                           >
-                            <Trash className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
                       </TableCell>
@@ -1258,7 +1258,7 @@ function FeedbackDetailModal({
                 >
                   {feature && feature !== 'none'
                     ? ALL_APP_FEATURES.find(f => f.code === feature)?.name
-                    : "Select a feature (optional)"}
+                    : "Select a feature"}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
@@ -1404,7 +1404,7 @@ function FeedbackDetailModal({
             Cancel
           </Button>
           <Button onClick={handleSave}>
-            <Edit className="h-4 w-4 mr-2" />
+            <Save className="h-4 w-4 mr-2" />
             Save Changes
           </Button>
         </DialogFooter>

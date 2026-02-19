@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOrgDashboardStats } from '@/hooks/useOrgDashboardStats';
 import { useUser } from '@/hooks/useUser';
-import { Activity, FileEdit, Clock, CheckCircle } from 'lucide-react';
+import { Activity, Pencil, Clock, CheckCircle } from 'lucide-react';
 
 interface OrgSummaryCardsProps {
   organizationId: string;
@@ -66,7 +66,7 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
     {
       title: 'Unpublished',
       value: stats?.unpublishedCount ?? 0,
-      icon: FileEdit,
+      icon: Pencil,
       description: 'Draft activities awaiting publication',
       onClick: () => handleCardClick('publicationStatus=draft'),
       color: 'text-slate-500',

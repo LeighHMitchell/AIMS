@@ -203,7 +203,7 @@ export function BookmarkedOrganizationsTable({ userId: propUserId }: BookmarkedO
                         <p className="font-medium" title={organization.name}>
                           {organization.name}
                           {organization.acronym && (
-                            <span className="text-slate-500"> ({organization.acronym})</span>
+                            <span> ({organization.acronym})</span>
                           )}
                         </p>
                       </div>

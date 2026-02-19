@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Plus, Trash2, Info, Globe, HelpCircle } from 'lucide-react';
+import { X, Plus, Trash2, Info, Globe, HelpCircle, Save } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -345,7 +345,7 @@ export function DocumentForm({
                             size="icon"
                             onClick={() => removeNarrative('title', index)}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>
                         )}
                       </div>
@@ -396,7 +396,7 @@ export function DocumentForm({
                           size="icon"
                           onClick={() => removeNarrative('description', index)}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>
                       </div>
                     ))}
@@ -475,7 +475,7 @@ export function DocumentForm({
             
             {/* Geography Section */}
             <div>
-              <h3 className="text-sm font-medium mb-3">Geography (Optional)</h3>
+              <h3 className="text-sm font-medium mb-3">Geography</h3>
               
               <div className="space-y-4">
                 {/* Recipient Countries */}
@@ -591,6 +591,7 @@ export function DocumentForm({
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={showValidation && !validation.ok}>
+            <Save className="h-4 w-4 mr-2" />
             Save Document Link
           </Button>
         </div>

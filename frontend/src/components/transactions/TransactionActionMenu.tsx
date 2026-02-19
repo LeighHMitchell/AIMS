@@ -2,7 +2,7 @@
 
 import {
   MoreVertical,
-  PencilLine,
+  Pencil,
   Trash2,
   CheckCircle,
   UserX,
@@ -81,7 +81,7 @@ export function TransactionActionMenu({
           <>
             {showAcceptReject && <DropdownMenuSeparator />}
             <DropdownMenuItem onClick={onEdit}>
-              <PencilLine className="h-4 w-4 mr-2" />
+              <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               Edit
             </DropdownMenuItem>
           </>
@@ -100,7 +100,7 @@ export function TransactionActionMenu({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
               Delete
             </DropdownMenuItem>
           </>

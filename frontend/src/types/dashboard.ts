@@ -3,18 +3,27 @@
  * All data is scoped to the logged-in user's organization
  */
 
+// User profile details for recency cards
+export interface UserProfile {
+  name: string;
+  jobTitle?: string;
+  department?: string;
+}
+
 // Recency item for last created/edited activities
 export interface RecencyItem {
   id: string;
   title: string;
   timestamp: string;
   iatiIdentifier?: string;
+  creatorProfile?: UserProfile;
 }
 
 // Extended recency item for edited activities with user context
 export interface EditedRecencyItem extends RecencyItem {
   editedByYou: boolean;
   editedByName?: string;
+  editorProfile?: UserProfile;
 }
 
 // Validation event types matching government endorsement statuses
@@ -24,9 +33,12 @@ export type ValidationEventType = 'validated' | 'rejected' | 'more_info_requeste
 export interface ValidationEvent {
   activityId: string;
   activityTitle: string;
+  iatiIdentifier?: string;
   eventType: ValidationEventType;
   timestamp: string;
   validatingAuthority?: string;
+  validatorName?: string;
+  rejectionReason?: string;
 }
 
 // Organization dashboard statistics

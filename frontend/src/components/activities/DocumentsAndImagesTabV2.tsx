@@ -13,7 +13,7 @@ import {
   X,
   Cloud,
   ExternalLink,
-  Edit,
+  Pencil,
   Trash2,
   ChevronLeft,
   ChevronRight,
@@ -759,7 +759,7 @@ export function DocumentsAndImagesTabV2({
                                 onClick={() => handleEditDocument(doc)}
                                 className="h-8 w-8 p-0"
                               >
-                                <Edit className="w-4 h-4" />
+                                <Pencil className="w-4 h-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                               </Button>
                               <Button
                                 size="sm"
@@ -767,7 +767,7 @@ export function DocumentsAndImagesTabV2({
                                 onClick={() => handleDeleteDocument(doc.url)}
                                 className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4 text-red-500" />
                               </Button>
                             </>
                           )}

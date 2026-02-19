@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Plus, Trash2, Info, Globe, HelpCircle, ChevronsUpDown, Check, Search } from 'lucide-react';
+import { X, Plus, Trash2, Info, Globe, HelpCircle, ChevronsUpDown, Check, Search, Save } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -742,7 +742,7 @@ export function DocumentFormEnhanced({
             
             {/* Geography Section */}
             <div>
-              <h3 className="text-sm font-medium mb-3">Geography (Optional)</h3>
+              <h3 className="text-sm font-medium mb-3">Geography</h3>
               
               <div className="space-y-4">
                 {/* Recipient Countries */}
@@ -803,6 +803,7 @@ export function DocumentFormEnhanced({
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={showValidation && !validation.ok}>
+            <Save className="h-4 w-4 mr-2" />
             Save Document Link
           </Button>
         </div>

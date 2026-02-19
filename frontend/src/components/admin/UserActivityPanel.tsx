@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
-  Activity, Clock, FileText, Edit, Trash2, Plus, 
+  Activity, Clock, FileText, Pencil, Trash2, Plus, 
   CheckCircle, XCircle, Send, UserPlus, DollarSign,
   Building2, LogIn, LogOut, AlertTriangle, RefreshCw,
   Calendar
@@ -51,8 +51,8 @@ const getActionIcon = (actionType: string, entityType?: string) => {
     create: entityType === 'organization' ? <Building2 className="h-4 w-4 text-green-600" /> : 
             entityType === 'user' ? <UserPlus className="h-4 w-4 text-green-600" /> :
             <Plus className="h-4 w-4 text-green-600" />,
-    edit: <Edit className="h-4 w-4 text-blue-600" />,
-    delete: <Trash2 className="h-4 w-4 text-red-600" />,
+    edit: <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />,
+    delete: <Trash2 className="h-4 w-4 text-red-500" />,
     submit_validation: <Send className="h-4 w-4 text-purple-600" />,
     validate: <CheckCircle className="h-4 w-4 text-green-600" />,
     reject: <XCircle className="h-4 w-4 text-red-600" />,

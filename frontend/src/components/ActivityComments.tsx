@@ -39,7 +39,7 @@ import {
   Eye,
   Archive,
   ArchiveRestore,
-  Trash,
+  Trash2,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -785,7 +785,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                       onClick={() => handleDeleteComment(comment.id)}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
-                      <Trash className="h-3 w-3 mr-1" />
+                      <Trash2 className="h-3 w-3 mr-1 text-red-500" />
                       Delete
                     </Button>
                   )}

@@ -726,7 +726,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             groups={aidModalityGroups}
                             value={formData.defaultAidType}
                             onValueChange={(value) => handleInputChange('defaultAidType', value)}
-                            placeholder="Select aid modality (optional)"
+                            placeholder="Select aid modality"
                             disabled={isCreating}
                             dropdownId="quick-add-aid-type"
                           />
@@ -741,7 +741,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                             groups={financeTypeGroups}
                             value={formData.defaultFinanceType}
                             onValueChange={(value) => handleInputChange('defaultFinanceType', value)}
-                            placeholder="Select finance type (optional)"
+                            placeholder="Select finance type"
                             disabled={isCreating}
                             dropdownId="quick-add-finance-type"
                           />

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
-import { Trash2, Plus, Loader2, Edit, Save, X, AlertCircle, CheckCircle, TrendingUp } from 'lucide-react';
+import { Trash2, Plus, Loader2, Pencil, Save, X, AlertCircle, CheckCircle, TrendingUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -467,7 +467,7 @@ export default function ForwardSpendingSurveyTab({
                 onClick={deleteFss}
                 disabled={savingFss}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                 Delete FSS
               </Button>
             )}
@@ -668,7 +668,7 @@ export default function ForwardSpendingSurveyTab({
                                 size="sm"
                                 onClick={() => openForecastModal(forecast)}
                               >
-                                <Edit className="h-4 w-4" />
+                                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                               </Button>
                               <Button
                                 variant="ghost"
@@ -679,7 +679,7 @@ export default function ForwardSpendingSurveyTab({
                                 {deleteLoading === forecast.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4 text-red-500" />
                                 )}
                               </Button>
                             </div>

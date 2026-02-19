@@ -217,7 +217,7 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
                     className="text-red-500 hover:text-red-600"
                     onClick={() => setDocToDelete(doc)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
               </div>

@@ -226,7 +226,7 @@ export function TransactionSectorManager({
                 onClick={clearAll}
                 className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600"
               >
-                <Trash2 className="h-3 w-3 mr-1" />
+                <Trash2 className="h-3 w-3 mr-1 text-red-500" />
                 Clear All
               </Button>
             </div>
@@ -295,7 +295,7 @@ export function TransactionSectorManager({
                       onClick={() => removeSector(index)}
                       className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
                 </Card>
@@ -544,7 +544,7 @@ export function TransactionAidTypeManager({
                 onClick={() => removeAidType(index)}
                 className="h-8 w-8 p-0"
         >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-red-500" />
         </Button>
             </div>
       </Card>
@@ -930,7 +930,7 @@ export function TransactionRecipientCountryManager({
               onClick={() => removeCountry(index)}
                 className="h-8 w-8 p-0"
             >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-red-500" />
             </Button>
             </div>
           </Card>
@@ -1035,7 +1035,7 @@ export function TransactionRecipientCountryManager({
               <div className="flex items-center gap-1 flex-1">
               <Input
                 type="number"
-                  placeholder="Percentage (optional)"
+                  placeholder="Percentage"
                 min="0"
                 max="100"
                 step="0.1"
@@ -1141,7 +1141,7 @@ export function TransactionRecipientRegionManager({
                 onClick={() => removeRegion(index)}
                 className="ml-auto h-6 w-6 p-0"
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3 w-3 text-red-500" />
               </Button>
             </div>
             {region.narrative && (
@@ -1192,7 +1192,7 @@ export function TransactionRecipientRegionManager({
             )}
           </div>
           <Input
-            placeholder="Narrative (optional)"
+            placeholder="Narrative"
             value={newRegion.narrative || ''}
             onChange={(e) => setNewRegion({ ...newRegion, narrative: e.target.value })}
             className="h-8"

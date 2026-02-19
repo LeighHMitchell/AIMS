@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Edit2, Trash2, ArrowRight, ArrowLeft, ArrowUpDown, CheckCircle, Loader2, FileCode } from 'lucide-react';
+import { Search, Link2, Plus, X, ExternalLink, AlertCircle, Pencil, Trash2, ArrowRight, ArrowLeft, ArrowUpDown, CheckCircle, Loader2, FileCode } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -661,7 +661,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                               onClick={() => handleEdit(link)}
                               className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900"
                             >
-                              <Edit2 className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -669,7 +669,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                               onClick={() => handleDelete(link.id)}
                               className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </>
                         )}

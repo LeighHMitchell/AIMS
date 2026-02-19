@@ -4,7 +4,7 @@ import { Menu } from 'bloom-menu';
 import {
   MoreVertical,
   Eye,
-  PencilLine,
+  Pencil,
   FileText,
   FileSpreadsheet,
   Trash2,
@@ -88,7 +88,7 @@ export function OrganizationCardActionMenu({
 
           {onEdit && (
             <Menu.Item className={itemClass} onSelect={onEdit}>
-              <PencilLine className="h-4 w-4" />
+              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               Edit
             </Menu.Item>
           )}
@@ -130,7 +130,7 @@ export function OrganizationCardActionMenu({
             <>
               <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
               <Menu.Item className={dangerItemClass} onSelect={onDelete}>
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-red-500" />
                 Delete
               </Menu.Item>
             </>

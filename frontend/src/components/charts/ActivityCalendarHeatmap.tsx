@@ -5,7 +5,13 @@ import * as d3 from 'd3'
 import { format, startOfWeek, endOfWeek, eachDayOfInterval,
   isWithinInterval, startOfDay, parseISO } from 'date-fns'
 import { Button } from '@/components/ui/button'
-import { Grid3x3, List, BarChart3 } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 type ActivityEventType = 'activity_created' | 'activity_updated' | 'transaction_created' | 'budget_created' | 'disbursement_created' | 'comment_added' | 'document_uploaded' | 'location_updated' | 'sector_updated' | 'result_added' | 'contact_updated' | 'status_changed' | 'partner_updated' | 'other'
@@ -18,27 +24,15 @@ interface UserActivityEvent {
 
 interface ActivityCalendarHeatmapProps {
   events: UserActivityEvent[]
+  fiscalYearConfig?: {
+    startMonth: number  // 1-12
+    startDay: number
+    endMonth: number    // 1-12
+    endDay: number
+  }
 }
 
-// Color scheme for activity types
-const EVENT_TYPE_COLORS: Record<ActivityEventType, string> = {
-  'activity_created': '#22c55e',    // Green - new activities
-  'activity_updated': '#3b82f6',    // Blue - updates
-  'transaction_created': '#f59e0b', // Amber - transactions
-  'budget_created': '#8b5cf6',      // Purple - budgets
-  'disbursement_created': '#ec4899', // Pink - disbursements
-  'comment_added': '#06b6d4',       // Cyan - comments
-  'document_uploaded': '#14b8a6',   // Teal - documents
-  'location_updated': '#84cc16',    // Lime - locations
-  'sector_updated': '#f97316',      // Orange - sectors
-  'result_added': '#6366f1',        // Indigo - results
-  'contact_updated': '#a855f7',     // Purple - contacts
-  'status_changed': '#ef4444',      // Red - status changes
-  'partner_updated': '#0ea5e9',     // Sky blue - partners/orgs
-  'other': '#64748b',               // Slate - other actions
-}
-
-// Singular labels
+// Singular labels for tooltip breakdown
 const EVENT_TYPE_LABELS: Record<ActivityEventType, string> = {
   'activity_created': 'Activity Created',
   'activity_updated': 'Activity Updated',
@@ -74,7 +68,6 @@ const EVENT_TYPE_LABELS_PLURAL: Record<ActivityEventType, string> = {
   'other': 'Other Actions',
 }
 
-// Helper to get label with proper pluralization
 const getEventTypeLabel = (type: ActivityEventType, count: number): string => {
   return count === 1 ? EVENT_TYPE_LABELS[type] : EVENT_TYPE_LABELS_PLURAL[type]
 }
@@ -86,236 +79,72 @@ interface DayData {
   typeBreakdown: Record<ActivityEventType, number>
 }
 
-// Convert hex color to RGB
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  return result
-    ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
-    : null
-}
-
-// Blend multiple colors proportionally
-function blendColors(colors: Array<{ color: string; weight: number }>): string {
-  if (colors.length === 0) return '#EBEDF0'
-  if (colors.length === 1) return colors[0].color
-
-  let totalWeight = colors.reduce((sum, c) => sum + c.weight, 0)
-  if (totalWeight === 0) return '#EBEDF0'
-
-  let r = 0
-  let g = 0
-  let b = 0
-
-  colors.forEach(({ color, weight }) => {
-    const rgb = hexToRgb(color)
-    if (rgb) {
-      const normalizedWeight = weight / totalWeight
-      r += rgb.r * normalizedWeight
-      g += rgb.g * normalizedWeight
-      b += rgb.b * normalizedWeight
-    }
-  })
-
-  return `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g).toString(16).padStart(2, '0')}${Math.round(b).toString(16).padStart(2, '0')}`
-}
-
 // Get available years from data
-function getAvailableYears(data: DayData[], yearType: 'calendar' | 'financial'): number[] {
+function getAvailableYears(data: DayData[], yearType: 'calendar' | 'financial', fyStartMonth: number): number[] {
   const years = new Set<number>()
   data.forEach(d => {
     if (yearType === 'calendar') {
       years.add(d.date.getFullYear())
     } else {
-      const month = d.date.getMonth()
+      const month = d.date.getMonth() // 0-indexed
       const year = d.date.getFullYear()
-      years.add(month >= 6 ? year : year - 1)
+      // FY starts at fyStartMonth (1-indexed), compare with 0-indexed month
+      years.add(month >= (fyStartMonth - 1) ? year : year - 1)
     }
   })
   return Array.from(years).sort((a, b) => b - a)
 }
 
 // Get year range based on type
-function getYearRange(year: number, yearType: 'calendar' | 'financial'): { start: Date; end: Date } {
+function getYearRange(
+  year: number,
+  yearType: 'calendar' | 'financial',
+  fyConfig?: { startMonth: number; startDay: number; endMonth: number; endDay: number }
+): { start: Date; end: Date } {
   if (yearType === 'calendar') {
     return {
       start: new Date(year, 0, 1),
       end: new Date(year, 11, 31)
     }
-  } else {
+  }
+  if (fyConfig) {
+    // Custom FY config (months are 1-indexed in config, 0-indexed in Date)
     return {
-      start: new Date(year, 6, 1),
-      end: new Date(year + 1, 5, 30)
+      start: new Date(year, fyConfig.startMonth - 1, fyConfig.startDay),
+      end: new Date(year + 1, fyConfig.endMonth - 1, fyConfig.endDay)
     }
   }
-}
-
-// Timeline View Component
-function TimelineView({
-  data,
-  onHoverDay,
-  onLeaveDay
-}: {
-  data: DayData[]
-  onHoverDay: (day: DayData, e: React.MouseEvent) => void
-  onLeaveDay: () => void
-}) {
-  const groupedByMonth = useMemo(() => {
-    const groups = new Map<string, DayData[]>()
-    const sortedData = [...data].sort((a, b) => b.date.getTime() - a.date.getTime())
-
-    sortedData.forEach(day => {
-      const monthKey = format(day.date, 'yyyy-MM')
-      if (!groups.has(monthKey)) groups.set(monthKey, [])
-      groups.get(monthKey)!.push(day)
-    })
-    return Array.from(groups.entries())
-  }, [data])
-
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        <p className="font-medium">No activity to display</p>
-      </div>
-    )
+  // Default: July 1 - June 30
+  return {
+    start: new Date(year, 6, 1),
+    end: new Date(year + 1, 5, 30)
   }
-
-  return (
-    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-      {groupedByMonth.map(([monthKey, days]) => (
-        <div key={monthKey}>
-          <div className="sticky top-0 bg-white/95 backdrop-blur font-semibold text-slate-700 py-2 px-3 border-b border-slate-200 rounded-t-lg">
-            {format(parseISO(monthKey + '-01'), 'MMMM yyyy')}
-            <span className="ml-2 text-sm font-normal text-slate-500">
-              ({days.length} day{days.length !== 1 ? 's' : ''}, {days.reduce((sum, d) => sum + d.count, 0)} actions)
-            </span>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {days.map(day => (
-              <div
-                key={day.date.toISOString()}
-                className="w-full px-3 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors text-left cursor-pointer"
-                onMouseEnter={(e) => onHoverDay(day, e)}
-                onMouseLeave={onLeaveDay}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="text-sm font-medium text-slate-900 w-16">
-                    {format(day.date, 'MMM dd')}
-                  </div>
-                  <div className="flex gap-1">
-                    {Object.entries(day.typeBreakdown).map(([type, count]) => (
-                      count > 0 && (
-                        <div
-                          key={type}
-                          className="w-3 h-3 rounded-sm"
-                          style={{ backgroundColor: EVENT_TYPE_COLORS[type as ActivityEventType] || '#64748B' }}
-                          title={`${EVENT_TYPE_LABELS[type as ActivityEventType] || type}: ${count}`}
-                        />
-                      )
-                    ))}
-                  </div>
-                  <span className="text-sm text-slate-500">
-                    {day.count} action{day.count !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
 }
 
-// Monthly Summary View Component
-function MonthlySummaryView({
-  data,
-  onHoverMonth,
-  onLeaveMonth
-}: {
-  data: DayData[]
-  onHoverMonth: (days: DayData[], e: React.MouseEvent) => void
-  onLeaveMonth: () => void
-}) {
-  const monthlyData = useMemo(() => {
-    const months = new Map<string, { count: number; days: number; daysList: DayData[] }>()
-    data.forEach(day => {
-      const monthKey = format(day.date, 'yyyy-MM')
-      if (!months.has(monthKey)) {
-        months.set(monthKey, { count: 0, days: 0, daysList: [] })
-      }
-      const m = months.get(monthKey)!
-      m.count += day.count
-      m.days += 1
-      m.daysList.push(day)
-    })
-    return Array.from(months.entries())
-      .map(([key, data]) => ({ month: key, ...data }))
-      .sort((a, b) => a.month.localeCompare(b.month))
-  }, [data])
+// Single color: Cool Steel #7b95a7 — intensity from light to full
+function getDayColor(count: number, intensity: number): string {
+  if (count === 0) return 'transparent'
 
-  const maxValue = useMemo(() => {
-    return Math.max(...monthlyData.map(m => m.count), 1)
-  }, [monthlyData])
+  // Base color RGB for #7b95a7
+  const r = 123, g = 149, b = 167
+  // Interpolate from near-white to full color
+  const minOpacity = 0.25
+  const opacity = minOpacity + intensity * (1 - minOpacity)
 
-  if (monthlyData.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        <p className="font-medium">No activity to display</p>
-      </div>
-    )
-  }
+  const blendedR = Math.round(255 + (r - 255) * opacity)
+  const blendedG = Math.round(255 + (g - 255) * opacity)
+  const blendedB = Math.round(255 + (b - 255) * opacity)
 
-  return (
-    <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
-      {monthlyData.map(month => {
-        const percentage = (month.count / maxValue) * 100
-
-        return (
-          <div
-            key={month.month}
-            className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-left cursor-pointer"
-            onMouseEnter={(e) => onHoverMonth(month.daysList, e)}
-            onMouseLeave={onLeaveMonth}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-medium text-slate-900">
-                {format(parseISO(month.month + '-01'), 'MMMM yyyy')}
-              </div>
-              <div className="text-right">
-                <div className="font-semibold text-slate-900">
-                  {month.count} action{month.count !== 1 ? 's' : ''}
-                </div>
-                <div className="text-xs text-slate-500">
-                  {month.days} active day{month.days !== 1 ? 's' : ''}
-                </div>
-              </div>
-            </div>
-            <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all bg-green-500"
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
+  return `rgb(${blendedR}, ${blendedG}, ${blendedB})`
 }
 
-export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps) {
-  const [viewMode, setViewMode] = useState<'heatmap' | 'timeline' | 'monthly'>('heatmap')
+export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCalendarHeatmapProps) {
   const [yearType, setYearType] = useState<'calendar' | 'financial'>('calendar')
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
-  const [hoveredDay, setHoveredDay] = useState<DayData | null>(null)
-  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null)
-
-  // Ref for D3 rendering
   const svgRef = useRef<SVGSVGElement>(null)
+
+  // FY start month for year grouping (1-indexed)
+  const fyStartMonth = fiscalYearConfig?.startMonth ?? 7
 
   // Process events by date
   const processedData = useMemo(() => {
@@ -336,20 +165,11 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
             events: [],
             count: 0,
             typeBreakdown: {
-              'activity_created': 0,
-              'activity_updated': 0,
-              'transaction_created': 0,
-              'budget_created': 0,
-              'disbursement_created': 0,
-              'comment_added': 0,
-              'document_uploaded': 0,
-              'location_updated': 0,
-              'sector_updated': 0,
-              'result_added': 0,
-              'contact_updated': 0,
-              'status_changed': 0,
-              'partner_updated': 0,
-              'other': 0,
+              'activity_created': 0, 'activity_updated': 0, 'transaction_created': 0,
+              'budget_created': 0, 'disbursement_created': 0, 'comment_added': 0,
+              'document_uploaded': 0, 'location_updated': 0, 'sector_updated': 0,
+              'result_added': 0, 'contact_updated': 0, 'status_changed': 0,
+              'partner_updated': 0, 'other': 0,
             },
           })
         }
@@ -368,8 +188,8 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
 
   // Get available years
   const availableYears = useMemo(() => {
-    return getAvailableYears(processedData, yearType)
-  }, [processedData, yearType])
+    return getAvailableYears(processedData, yearType, fyStartMonth)
+  }, [processedData, yearType, fyStartMonth])
 
   // Set default selected year
   useMemo(() => {
@@ -382,10 +202,10 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
   const displayRange = useMemo(() => {
     if (selectedYear === null) {
       const now = new Date()
-      return getYearRange(now.getFullYear(), yearType)
+      return getYearRange(now.getFullYear(), yearType, fiscalYearConfig)
     }
-    return getYearRange(selectedYear, yearType)
-  }, [selectedYear, yearType])
+    return getYearRange(selectedYear, yearType, fiscalYearConfig)
+  }, [selectedYear, yearType, fiscalYearConfig])
 
   // Filter data by selected year range
   const filteredData = useMemo(() => {
@@ -398,36 +218,7 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
   const stats = useMemo(() => {
     const totalActions = filteredData.reduce((sum, d) => sum + d.count, 0)
     const totalActiveDays = filteredData.length
-    const avgPerDay = totalActiveDays > 0 ? totalActions / totalActiveDays : 0
-
-    // Count by type
-    const byType: Record<ActivityEventType, number> = {
-      'activity_created': 0,
-      'activity_updated': 0,
-      'transaction_created': 0,
-      'budget_created': 0,
-      'disbursement_created': 0,
-      'comment_added': 0,
-      'document_uploaded': 0,
-      'location_updated': 0,
-      'sector_updated': 0,
-      'result_added': 0,
-      'contact_updated': 0,
-      'status_changed': 0,
-      'other': 0,
-    }
-    filteredData.forEach(d => {
-      Object.entries(d.typeBreakdown).forEach(([type, count]) => {
-        byType[type as ActivityEventType] += count
-      })
-    })
-
-    return {
-      totalActions,
-      totalActiveDays,
-      avgPerDay,
-      byType
-    }
+    return { totalActions, totalActiveDays }
   }, [filteredData])
 
   // Generate calendar grid
@@ -473,37 +264,6 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
     return { weeks, maxValue }
   }, [filteredData, displayRange])
 
-  // Get color for a day - blend colors based on event types
-  const getDayColor = (dayData: DayData | null, intensity: number): string => {
-    if (!dayData || dayData.count === 0) {
-      return 'transparent'
-    }
-
-    const colorWeights: Array<{ color: string; weight: number }> = []
-
-    Object.entries(dayData.typeBreakdown).forEach(([type, count]) => {
-      if (count > 0) {
-        const color = EVENT_TYPE_COLORS[type as ActivityEventType] || '#64748B'
-        colorWeights.push({ color, weight: count })
-      }
-    })
-
-    if (colorWeights.length === 0) {
-      return 'transparent'
-    }
-
-    const baseColor = blendColors(colorWeights)
-    const rgb = hexToRgb(baseColor)
-    if (!rgb) return baseColor
-
-    const intensityScale = 0.3 + intensity * 0.7
-    const r = Math.round(Math.min(rgb.r * intensityScale, 255))
-    const g = Math.round(Math.min(rgb.g * intensityScale, 255))
-    const b = Math.round(Math.min(rgb.b * intensityScale, 255))
-
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
-  }
-
   // Get month labels
   const monthLabels = useMemo(() => {
     const months: Array<{ month: number; year: number; weekIndex: number; startWeek: number }> = []
@@ -534,9 +294,8 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
   }, [calendarGrid.weeks])
 
   // D3 tooltip
-  const tooltipRef = useRef<d3.Selection<HTMLDivElement, unknown, null, undefined> | null>(null)
+  const tooltipRef = useRef<d3.Selection<HTMLDivElement, unknown, HTMLElement, any> | null>(null)
 
-  // Initialize D3 tooltip
   useEffect(() => {
     if (!tooltipRef.current) {
       tooltipRef.current = d3.select('body').append('div')
@@ -555,9 +314,7 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
 
   // Render heatmap with D3
   useEffect(() => {
-    if (viewMode !== 'heatmap' || !svgRef.current || calendarGrid.weeks.length === 0) {
-      return
-    }
+    if (!svgRef.current || calendarGrid.weeks.length === 0) return
 
     d3.select(svgRef.current).selectAll('*').remove()
 
@@ -608,8 +365,8 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
     })
 
     // Render day labels
-    const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-    dayLabels.forEach((label, idx) => {
+    const dayLabelsArr = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+    dayLabelsArr.forEach((label, idx) => {
       dayLabelGroup.append('text')
         .attr('x', dayLabelWidth / 2)
         .attr('y', padding.top + (idx * dayHeight) + (dayHeight / 2) + 3)
@@ -627,15 +384,14 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
       date: Date
       data: DayData | null
       intensity: number
-      color: string
+      count: number
       hasData: boolean
       isInYearRange: boolean
     }> = []
 
     calendarGrid.weeks.forEach((week, weekIdx) => {
       week.forEach((day, dayIdx) => {
-        const dayColor = getDayColor(day.data, day.intensity)
-        const hasData = day.data && day.data.count > 0
+        const hasData = day.data != null && day.data.count > 0
         const isInYearRange = isWithinInterval(day.date, {
           start: displayRange.start,
           end: displayRange.end
@@ -647,7 +403,7 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
           date: day.date,
           data: day.data,
           intensity: day.intensity,
-          color: dayColor,
+          count: day.data?.count ?? 0,
           hasData,
           isInYearRange
         })
@@ -664,7 +420,7 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
         .attr('width', cellSize - 1)
         .attr('height', cellSize - 1)
         .attr('rx', 2)
-        .attr('fill', d => d.hasData ? d.color : 'transparent')
+        .attr('fill', d => d.hasData ? getDayColor(d.count, d.intensity) : 'transparent')
         .attr('stroke', d => d.hasData ? 'rgba(0,0,0,0.15)' : '#f1f5f9')
         .attr('stroke-width', 1)
         .attr('opacity', d => d.isInYearRange ? 1 : 0.2)
@@ -685,16 +441,10 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
                 .sort((a, b) => b[1] - a[1])
                 .map(([type, count]) => {
                   const typeLabel = getEventTypeLabel(type as ActivityEventType, count)
-                  const typeColor = EVENT_TYPE_COLORS[type as ActivityEventType] || '#64748B'
                   return `
                     <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 12px; height: 12px; background-color: ${typeColor}; border-radius: 2px; flex-shrink: 0;"></div>
-                        <span style="color: #475569;">${typeLabel}</span>
-                      </div>
-                      <div style="color: #0f172a; font-weight: 500; margin-left: 8px;">
-                        ${count}
-                      </div>
+                      <span style="color: #475569;">${typeLabel}</span>
+                      <span style="color: #0f172a; font-weight: 500; margin-left: 8px;">${count}</span>
                     </div>
                   `
                 }).join('')
@@ -751,22 +501,7 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
           }
         })
 
-  }, [viewMode, calendarGrid, monthLabels, displayRange, filteredData])
-
-  // Tooltip handlers
-  const handleDayHover = (day: DayData, e: React.MouseEvent) => {
-    setHoveredDay(day)
-    const rect = e.currentTarget.getBoundingClientRect()
-    setTooltipPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10,
-    })
-  }
-
-  const handleDayLeave = () => {
-    setHoveredDay(null)
-    setTooltipPosition(null)
-  }
+  }, [calendarGrid, monthLabels, displayRange, filteredData])
 
   // Format year label
   const getYearLabel = (year: number) => {
@@ -793,37 +528,6 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
       {/* Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-wrap">
-          {/* View Mode Toggle */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
-            <Button
-              variant={viewMode === 'heatmap' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('heatmap')}
-              className="h-7 px-2"
-              title="Heatmap view"
-            >
-              <Grid3x3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'timeline' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('timeline')}
-              className="h-7 px-2"
-              title="Timeline view"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'monthly' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('monthly')}
-              className="h-7 px-2"
-              title="Monthly summary"
-            >
-              <BarChart3 className="h-4 w-4" />
-            </Button>
-          </div>
-
           {/* Year Type Toggle */}
           <div className="flex gap-1 border rounded-lg p-1 bg-white">
             <Button
@@ -854,182 +558,48 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
             </Button>
           </div>
 
-          {/* Year Selector */}
+          {/* Year Selector - Dropdown */}
           {availableYears.length > 0 && (
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
-              {availableYears.slice(0, 5).map((year) => (
-                <Button
-                  key={year}
-                  variant={selectedYear === year ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setSelectedYear(year)}
-                  className={cn(
-                    'h-7 px-3 text-xs',
-                    selectedYear === year
-                      ? 'bg-slate-900 text-white hover:bg-slate-800'
-                      : ''
-                  )}
-                >
-                  {getYearLabel(year)}
-                </Button>
-              ))}
-            </div>
+            <Select
+              value={selectedYear?.toString() ?? ''}
+              onValueChange={(val) => setSelectedYear(parseInt(val))}
+            >
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableYears.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {getYearLabel(year)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
       </div>
 
-      {/* View Content */}
-      {viewMode === 'heatmap' && (
-        <>
-          {/* Calendar Grid - D3 rendered */}
-          <div className="overflow-x-auto w-full">
-            <svg ref={svgRef} className="w-full" />
-          </div>
+      {/* Calendar Grid - D3 rendered */}
+      <div className="overflow-x-auto w-full">
+        <svg ref={svgRef} className="w-full" />
+      </div>
 
-          {/* Legend */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-4 text-xs">
-              <span className="text-slate-600">Less</span>
-              <div className="flex gap-1">
-                {[0, 0.25, 0.5, 0.75, 1.0].map((intensity) => {
-                  const color = intensity === 0 ? '#f1f5f9' : getDayColor(
-                    {
-                      date: new Date(),
-                      events: [],
-                      count: 1,
-                      typeBreakdown: { 'activity_created': 1, 'activity_updated': 0, 'transaction_created': 0, 'budget_created': 0, 'disbursement_created': 0, 'comment_added': 0, 'document_uploaded': 0, 'location_updated': 0, 'sector_updated': 0, 'result_added': 0, 'contact_updated': 0, 'status_changed': 0, 'partner_updated': 0, 'other': 0 },
-                    },
-                    intensity
-                  )
-                  return (
-                    <div
-                      key={intensity}
-                      className="w-3 h-3 rounded-sm"
-                      style={{
-                        backgroundColor: color,
-                        border: intensity === 0 ? '1px solid #e2e8f0' : '1px solid rgba(0,0,0,0.1)'
-                      }}
-                    />
-                  )
-                })}
-              </div>
-              <span className="text-slate-600">More</span>
-            </div>
+      {/* Intensity Legend */}
+      <div className="flex items-center gap-1 text-xs">
+        {[0, 0.25, 0.5, 0.75, 1.0].map((intensity) => (
+          <div
+            key={intensity}
+            className="w-3 h-3 rounded-sm"
+            style={{
+              backgroundColor: intensity === 0 ? '#f1f5f9' : getDayColor(1, intensity),
+              border: intensity === 0 ? '1px solid #e2e8f0' : '1px solid rgba(0,0,0,0.1)'
+            }}
+          />
+        ))}
+      </div>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs">
-              <span className="text-slate-600 font-medium">Action types:</span>
-              {Object.entries(EVENT_TYPE_COLORS)
-                .filter(([type]) => stats.byType[type as ActivityEventType] > 0)
-                .map(([type, color]) => (
-                  <div key={type} className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-sm"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="text-slate-600">
-                      {EVENT_TYPE_LABELS[type as ActivityEventType]}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </>
-      )}
-
-      {viewMode === 'timeline' && (
-        <TimelineView
-          data={filteredData}
-          onHoverDay={handleDayHover}
-          onLeaveDay={handleDayLeave}
-        />
-      )}
-
-      {viewMode === 'monthly' && (
-        <MonthlySummaryView
-          data={filteredData}
-          onHoverMonth={(days, e) => {
-            const combined: DayData = {
-              date: days[0]?.date || new Date(),
-              events: days.flatMap(d => d.events),
-              count: days.reduce((sum, d) => sum + d.count, 0),
-              typeBreakdown: {
-                'activity_created': 0,
-                'activity_updated': 0,
-                'transaction_created': 0,
-                'budget_created': 0,
-                'disbursement_created': 0,
-                'comment_added': 0,
-                'document_uploaded': 0,
-                'location_updated': 0,
-                'sector_updated': 0,
-                'result_added': 0,
-                'contact_updated': 0,
-                'status_changed': 0,
-                'other': 0,
-              }
-            }
-            days.forEach(day => {
-              Object.entries(day.typeBreakdown).forEach(([type, count]) => {
-                combined.typeBreakdown[type as ActivityEventType] += count
-              })
-            })
-            handleDayHover(combined, e)
-          }}
-          onLeaveMonth={handleDayLeave}
-        />
-      )}
-
-      {/* Detailed Tooltip (for Timeline and Monthly views only) */}
-      {viewMode !== 'heatmap' && hoveredDay && tooltipPosition && (
-        <div
-          className="fixed bg-white border border-slate-200 rounded-lg shadow-xl p-4 z-50 pointer-events-none"
-          style={{
-            left: `${tooltipPosition.x}px`,
-            top: `${tooltipPosition.y}px`,
-            transform: 'translate(-50%, -100%)',
-            marginTop: '-8px',
-            minWidth: '280px',
-            maxWidth: '350px',
-          }}
-        >
-          <p className="font-semibold text-slate-900 mb-3 text-base">
-            {format(hoveredDay.date, 'EEEE, MMMM dd, yyyy')}
-          </p>
-
-          <div className="bg-slate-50 p-2 rounded mb-3">
-            <div className="text-lg font-bold text-slate-900">{hoveredDay.count}</div>
-            <div className="text-xs text-slate-500">Action{hoveredDay.count !== 1 ? 's' : ''}</div>
-          </div>
-
-          <div className="border-t border-slate-200 pt-3">
-            <p className="text-xs font-medium text-slate-700 mb-2">By Type</p>
-            <div className="space-y-1.5">
-              {Object.entries(hoveredDay.typeBreakdown)
-                .filter(([, count]) => count > 0)
-                .sort((a, b) => b[1] - a[1])
-                .map(([type, count]) => (
-                  <div key={type} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: EVENT_TYPE_COLORS[type as ActivityEventType] || '#64748B' }}
-                      />
-                      <span className="text-slate-600 truncate">
-                        {getEventTypeLabel(type as ActivityEventType, count)}
-                      </span>
-                    </div>
-                    <div className="text-slate-900 font-medium ml-2">
-                      {count}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Stats Cards at Bottom */}
-      <div className="grid grid-cols-4 gap-4 pt-4 border-t border-slate-200">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200">
         <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-slate-900">{stats.totalActions.toLocaleString()}</div>
           <div className="text-xs text-slate-500 mt-1">Total Actions</div>
@@ -1037,14 +607,6 @@ export function ActivityCalendarHeatmap({ events }: ActivityCalendarHeatmapProps
         <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-slate-900">{stats.totalActiveDays.toLocaleString()}</div>
           <div className="text-xs text-slate-500 mt-1">Active Days</div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-slate-900">{stats.avgPerDay.toFixed(1)}</div>
-          <div className="text-xs text-slate-500 mt-1">Avg/Day</div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-green-600">{stats.byType['activity_created']}</div>
-          <div className="text-xs text-slate-500 mt-1">Activities Created</div>
         </div>
       </div>
     </div>

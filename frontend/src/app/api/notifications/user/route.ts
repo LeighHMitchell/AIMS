@@ -176,3 +176,83 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+
+/**
+ * PATCH /api/notifications/user
+ * Archive a notification (soft hide)
+ */
+export async function PATCH(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    }
+
+    const body = await request.json();
+    const { userId, notificationId, action } = body;
+
+    if (!userId || !notificationId) {
+      return NextResponse.json({ error: 'userId and notificationId are required' }, { status: 400 });
+    }
+
+    if (action === 'archive') {
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ archived_at: new Date().toISOString() })
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('[User Notifications] Error archiving:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, message: 'Notification archived' });
+    }
+
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+  } catch (error) {
+    console.error('[User Notifications] PATCH error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/notifications/user
+ * Permanently delete a notification
+ */
+export async function DELETE(request: NextRequest) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    }
+
+    const body = await request.json();
+    const { userId, notificationId } = body;
+
+    if (!userId || !notificationId) {
+      return NextResponse.json({ error: 'userId and notificationId are required' }, { status: 400 });
+    }
+
+    const { error } = await supabase
+      .from('user_notifications')
+      .delete()
+      .eq('id', notificationId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('[User Notifications] Error deleting:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Notification deleted' });
+  } catch (error) {
+    console.error('[User Notifications] DELETE error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -193,7 +193,7 @@ export function FAQRatingButtons({ faqId, ratingType, label }: FAQRatingButtonsP
                 </Button>
               </div>
               <Textarea
-                placeholder="Tell us more (optional)..."
+                placeholder="Tell us more..."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={3}

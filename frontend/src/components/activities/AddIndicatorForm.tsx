@@ -257,7 +257,7 @@ export function AddIndicatorForm({
 
         {/* Baseline Section */}
         <div className="space-y-4 pt-4 border-t">
-          <h4 className="text-sm font-medium text-gray-900">Baseline (Optional)</h4>
+          <h4 className="text-sm font-medium text-gray-900">Baseline</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">

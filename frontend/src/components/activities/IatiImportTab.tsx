@@ -4057,7 +4057,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           selected: !hasCurrentCrsData, // Auto-select if no current data
           hasConflict: hasConflict,
           tab: 'finances',
-          description: 'DAC CRS Reporting (optional)',
+          description: 'DAC CRS Reporting',
           isCrsField: true,
           crsData: parsedActivity.financingTerms,
           currentCrsData: currentCrsData
@@ -14863,7 +14863,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                     onClick={() => handleRemoveSplit(mapping.id)}
                                     className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 transition-colors duration-200"
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-4 w-4 text-red-500" />
                                   </Button>
                                 )}
                               </td>

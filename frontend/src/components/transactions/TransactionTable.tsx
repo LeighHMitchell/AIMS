@@ -16,7 +16,7 @@ import {
   ChevronDown,
   CheckCircle,
   FileClock,
-  Edit,
+  Pencil,
   Info,
   ArrowUpFromLine,
   ArrowDownToLine,
@@ -1225,7 +1225,7 @@ export function TransactionTable({
                             <h3 className="text-xs uppercase tracking-wide text-muted-foreground">Description</h3>
                             {onEdit && (
                               <button className="text-muted-foreground hover:text-foreground transition-colors">
-                                <Edit className="h-3 w-3" />
+                                <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                               </button>
                             )}
                         </div>

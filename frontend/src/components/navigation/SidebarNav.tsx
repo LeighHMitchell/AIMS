@@ -337,11 +337,11 @@ export function SidebarNav({
                 <Link
                   href={item.href}
                   className={cn(
-                    "group relative flex items-center gap-3 py-2 px-3 text-sm font-bold rounded-md",
+                    "group relative flex items-center gap-3 py-2 px-3 ml-2 text-sm font-bold rounded-md",
                     "transition-colors duration-200",
-                    "hover:bg-gray-100 dark:hover:bg-gray-800",
+                    "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
                     isActive
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      ? "bg-[#5f7f7a]/15 text-[#3C6255] dark:bg-[#5f7f7a]/20 dark:text-[#7a9994]"
                       : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
                   )}
                 >
@@ -469,12 +469,12 @@ export function SidebarNav({
                               className={cn(
                                 "group relative flex items-center justify-between py-2 px-3 text-sm font-medium rounded-md",
                                 "transition-colors duration-200",
-                                "hover:bg-gray-100 dark:hover:bg-gray-800",
+                                "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
                                 isActive
-                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                  ? "bg-[#5f7f7a]/15 text-[#3C6255] dark:bg-[#5f7f7a]/20 dark:text-[#7a9994]"
                                   : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100",
                                 // Add left padding for connector when not collapsed
-                                !isCollapsed && "ml-4 pl-6"
+                                !isCollapsed && "ml-6 pl-6"
                               )}
                             >
                               <span

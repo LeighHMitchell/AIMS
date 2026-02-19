@@ -3,7 +3,7 @@
 import React, { useRef } from 'react';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
-import { Calendar, MoreVertical, Edit3, Trash2, Clock, Download, Copy, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Calendar, MoreVertical, Pencil, Trash2, Clock, Download, Copy, Bookmark, BookmarkCheck } from 'lucide-react';
 import { useBookmarks } from '@/hooks/use-bookmarks';
 import {
   DropdownMenu,
@@ -259,7 +259,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
             </DropdownMenuItem>
             {onEdit && (
               <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
-                <Edit3 className="mr-2 h-4 w-4" />
+                <Pencil className="mr-2 h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                 Edit
               </DropdownMenuItem>
             )}
@@ -268,7 +268,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 onClick={handleDelete} 
                 className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
+                <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                 Delete
               </DropdownMenuItem>
             )}

@@ -263,7 +263,7 @@ export function BudgetStatusField({
           hasValue={!!budgetStatusNotes}
           className="text-gray-700"
         >
-          Notes (Optional)
+          Notes
         </LabelSaveIndicator>
         <Textarea
           value={localNotes}

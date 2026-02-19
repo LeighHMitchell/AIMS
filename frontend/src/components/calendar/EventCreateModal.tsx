@@ -662,7 +662,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                     onValueChange={(val) => setSelectedWorkingGroupId(val === 'none' ? '' : val)}
                   >
                     <SelectTrigger className="w-full rounded-lg">
-                      <SelectValue placeholder="No working group (optional)" />
+                      <SelectValue placeholder="No working group" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No working group (general meeting)</SelectItem>

@@ -20,7 +20,7 @@ import {
 import {
   Plus,
   Search,
-  Edit,
+  Pencil,
   Trash2,
   ChevronDown,
   ChevronUp,
@@ -511,7 +511,7 @@ export default function FAQPage() {
                               onClick={() => handleEdit(faq)}
                               className="h-8 w-8 p-0"
                             >
-                              <Edit className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -519,7 +519,7 @@ export default function FAQPage() {
                               onClick={() => handleDelete(faq.id)}
                               className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         )}

@@ -707,7 +707,7 @@ export default function GovernmentInputsSection({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-900" htmlFor="indicator-code">National indicator code (optional)</label>
+                      <label className="text-sm font-medium text-gray-900" htmlFor="indicator-code">National indicator code</label>
                       <Input
                         id="indicator-code"
                         value={governmentInputs.nationalPlanAlignment?.nationalIndicatorCode || ""}

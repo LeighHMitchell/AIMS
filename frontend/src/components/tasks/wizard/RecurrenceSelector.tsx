@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Repeat } from 'lucide-react';
+import { Calendar, Clock, Repeat, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -443,7 +443,7 @@ export function RecurrenceSelector({
           <Button variant="outline" onClick={handleClear}>
             Clear
           </Button>
-          <Button onClick={handleSave}>Save Recurrence</Button>
+          <Button onClick={handleSave}><Save className="h-4 w-4 mr-2" />Save Recurrence</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -125,7 +125,7 @@ export function LinkExternalActivityModal({
 
           {/* Activity Title */}
           <div className="space-y-2">
-            <Label htmlFor="external-title">Activity Title (Optional)</Label>
+            <Label htmlFor="external-title">Activity Title</Label>
             <Input
               id="external-title"
               placeholder="Enter activity title for reference"
@@ -163,7 +163,7 @@ export function LinkExternalActivityModal({
 
           {/* Narrative */}
           <div className="space-y-2">
-            <Label htmlFor="narrative">Narrative (Optional)</Label>
+            <Label htmlFor="narrative">Narrative</Label>
             <Textarea
               id="narrative"
               placeholder="Add additional context about this relationship..."

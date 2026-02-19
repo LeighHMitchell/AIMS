@@ -5,7 +5,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, Users, Edit, Trash2, Eye } from 'lucide-react'
+import { Plus, Search, Users, Pencil, Trash2, Eye } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -256,7 +256,7 @@ export default function ManageGroupsPage() {
                       onClick={() => router.push(`/partners/groups/${group.id}/edit`)}
                       className="flex-1"
                     >
-                      <Edit className="h-3 w-3 mr-1" />
+                      <Pencil className="h-3 w-3 mr-1 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                       Edit
                     </Button>
                     <Button
@@ -265,7 +265,7 @@ export default function ManageGroupsPage() {
                       onClick={() => handleDelete(group.id)}
                       className="text-red-600 hover:text-red-700"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3 w-3 text-red-500" />
                     </Button>
                   </div>
                 </CardContent>

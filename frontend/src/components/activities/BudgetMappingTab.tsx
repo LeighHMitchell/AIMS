@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Plus, Edit2, Trash2, AlertCircle, ChevronDown, ChevronRight, Sparkles, Check, RefreshCw, Info } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, ChevronDown, ChevronRight, Sparkles, Check, RefreshCw, Info } from "lucide-react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -721,7 +721,7 @@ export default function BudgetMappingTab({
                                 className="p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted"
                                 title="Edit"
                               >
-                                <Edit2 className="h-4 w-4" />
+                                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                               </button>
                               <button
                                 type="button"
@@ -729,7 +729,7 @@ export default function BudgetMappingTab({
                                 className="p-1 text-muted-foreground hover:text-red-600 rounded hover:bg-muted"
                                 title="Delete"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4 text-red-500" />
                               </button>
                             </div>
                           </TableCell>

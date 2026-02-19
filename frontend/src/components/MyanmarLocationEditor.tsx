@@ -228,7 +228,7 @@ export default function MyanmarLocationEditor({
             {/* Description */}
             <div>
               <Label htmlFor="description" className="text-sm font-medium">
-                Description (Optional)
+                Description
               </Label>
               <Textarea
                 id="description"

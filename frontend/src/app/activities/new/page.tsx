@@ -193,9 +193,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
   // Focus state tracking for save indicators
   const [isTitleFocused, setIsTitleFocused] = useState(false);
-  const [isObjectivesFocused, setIsObjectivesFocused] = useState(false);
-  const [isTargetGroupsFocused, setIsTargetGroupsFocused] = useState(false);
-  const [isOtherFocused, setIsOtherFocused] = useState(false);
   const [isPlannedStartDescriptionFocused, setIsPlannedStartDescriptionFocused] = useState(false);
   const [isPlannedEndDescriptionFocused, setIsPlannedEndDescriptionFocused] = useState(false);
   const [isActualStartDescriptionFocused, setIsActualStartDescriptionFocused] = useState(false);
@@ -1351,7 +1348,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       className="p-1 hover:bg-gray-200 rounded"
                       title="Edit identifier"
                     >
-                      <Pencil className="w-3.5 h-3.5 text-gray-500 hover:text-gray-700" />
+                      <Pencil className="w-3.5 h-3.5 hover: text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                     </button>
                     <button
                       type="button"
@@ -1497,7 +1494,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                Owner Organisation Ref <span className="text-gray-400">(Optional)</span>
+                Owner Organisation Ref
               </label>
               <Input
                 type="text"
@@ -1667,8 +1664,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <LabelSaveIndicator
               isSaving={descriptionObjectivesAutosave.state.isSaving}
               isSaved={descriptionObjectivesAutosave.state.isPersistentlySaved}
-              hasValue={!!general.descriptionObjectives?.trim()}
-              isFocused={isObjectivesFocused}
+              hasValue={!!general.descriptionObjectives && general.descriptionObjectives.replace(/<[^>]*>/g, '').trim() !== ''}
               className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
             >
               <div className="flex items-center gap-2">
@@ -1694,25 +1690,17 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           {visibleDescriptionFields.objectives && (
             <div className="mt-2">
               <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-                <Textarea
-                  value={general.descriptionObjectives || ''}
-                  onChange={(e) => {
+                <RichTextEditor
+                  content={general.descriptionObjectives || ''}
+                  onChange={(content) => {
                     if (!fieldLockStatus.isLocked) {
-                      setGeneral((g: any) => ({ ...g, descriptionObjectives: e.target.value }));
-                      setHasUnsavedChanges(true);
-                    }
-                  }}
-                  onFocus={() => setIsObjectivesFocused(true)}
-                  onBlur={(e) => {
-                    setIsObjectivesFocused(false);
-                    if (!fieldLockStatus.isLocked && e.target.value.trim()) {
-                      descriptionObjectivesAutosave.triggerFieldSave(e.target.value);
+                      setGeneral((g: any) => ({ ...g, descriptionObjectives: content }));
+                      descriptionObjectivesAutosave.triggerFieldSave(content);
                     }
                   }}
                   placeholder="Describe the specific objectives of this activity..."
                   rows={6}
                   disabled={fieldLockStatus.isLocked}
-                  className="resize-y"
                 />
               </div>
               {descriptionObjectivesAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionObjectivesAutosave.state.error.message}</p>}
@@ -1740,8 +1728,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <LabelSaveIndicator
               isSaving={descriptionTargetGroupsAutosave.state.isSaving}
               isSaved={descriptionTargetGroupsAutosave.state.isPersistentlySaved}
-              hasValue={!!general.descriptionTargetGroups?.trim()}
-              isFocused={isTargetGroupsFocused}
+              hasValue={!!general.descriptionTargetGroups && general.descriptionTargetGroups.replace(/<[^>]*>/g, '').trim() !== ''}
               className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
             >
               <div className="flex items-center gap-2">
@@ -1767,25 +1754,17 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           {visibleDescriptionFields.targetGroups && (
             <div className="mt-2">
               <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-                <Textarea
-                  value={general.descriptionTargetGroups || ''}
-                  onChange={(e) => {
+                <RichTextEditor
+                  content={general.descriptionTargetGroups || ''}
+                  onChange={(content) => {
                     if (!fieldLockStatus.isLocked) {
-                      setGeneral((g: any) => ({ ...g, descriptionTargetGroups: e.target.value }));
-                      setHasUnsavedChanges(true);
-                    }
-                  }}
-                  onFocus={() => setIsTargetGroupsFocused(true)}
-                  onBlur={(e) => {
-                    setIsTargetGroupsFocused(false);
-                    if (!fieldLockStatus.isLocked && e.target.value.trim()) {
-                      descriptionTargetGroupsAutosave.triggerFieldSave(e.target.value);
+                      setGeneral((g: any) => ({ ...g, descriptionTargetGroups: content }));
+                      descriptionTargetGroupsAutosave.triggerFieldSave(content);
                     }
                   }}
                   placeholder="Describe the target groups and beneficiaries of this activity..."
                   rows={6}
                   disabled={fieldLockStatus.isLocked}
-                  className="resize-y"
                 />
               </div>
               {descriptionTargetGroupsAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionTargetGroupsAutosave.state.error.message}</p>}
@@ -1813,8 +1792,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             <LabelSaveIndicator
               isSaving={descriptionOtherAutosave.state.isSaving}
               isSaved={descriptionOtherAutosave.state.isPersistentlySaved}
-              hasValue={!!general.descriptionOther?.trim()}
-              isFocused={isOtherFocused}
+              hasValue={!!general.descriptionOther && general.descriptionOther.replace(/<[^>]*>/g, '').trim() !== ''}
               className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-gray-400' : 'text-gray-700'}`}
             >
               <div className="flex items-center gap-2">
@@ -1840,25 +1818,17 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           {visibleDescriptionFields.other && (
             <div className="mt-2">
               <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
-                <Textarea
-                  value={general.descriptionOther || ''}
-                  onChange={(e) => {
+                <RichTextEditor
+                  content={general.descriptionOther || ''}
+                  onChange={(content) => {
                     if (!fieldLockStatus.isLocked) {
-                      setGeneral((g: any) => ({ ...g, descriptionOther: e.target.value }));
-                      setHasUnsavedChanges(true);
-                    }
-                  }}
-                  onFocus={() => setIsOtherFocused(true)}
-                  onBlur={(e) => {
-                    setIsOtherFocused(false);
-                    if (!fieldLockStatus.isLocked && e.target.value.trim()) {
-                      descriptionOtherAutosave.triggerFieldSave(e.target.value);
+                      setGeneral((g: any) => ({ ...g, descriptionOther: content }));
+                      descriptionOtherAutosave.triggerFieldSave(content);
                     }
                   }}
                   placeholder="Add any other relevant information about this activity..."
                   rows={6}
                   disabled={fieldLockStatus.isLocked}
-                  className="resize-y"
                 />
               </div>
               {descriptionOtherAutosave.state.error && <p className="text-xs text-red-600 mt-2">Failed to save: {descriptionOtherAutosave.state.error.message}</p>}
@@ -2126,7 +2096,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </div>
               {showPlannedStartDescription && (
                 <div className="mt-2 space-y-1">
-                  <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                  <label className="text-xs text-gray-600">Description/Context</label>
                   <Textarea
                     value={general.plannedStartDescription || ''}
                     onChange={(e) => {
@@ -2214,7 +2184,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </div>
               {showPlannedEndDescription && (
                 <div className="mt-2 space-y-1">
-                  <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                  <label className="text-xs text-gray-600">Description/Context</label>
                   <Textarea
                     value={general.plannedEndDescription || ''}
                     onChange={(e) => {
@@ -2296,7 +2266,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     isFocused={isActualStartDescriptionFocused}
                     className="text-xs text-gray-600"
                   >
-                    Description/Context (optional)
+                    Description/Context
                   </LabelSaveIndicator>
                   <Textarea
                     value={general.actualStartDescription || ''}
@@ -2393,7 +2363,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </div>
               {showActualEndDescription && (
                 <div className="mt-2 space-y-1">
-                  <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                  <label className="text-xs text-gray-600">Description/Context</label>
                   <Textarea
                     value={general.actualEndDescription || ''}
                     onChange={(e) => {
@@ -2474,7 +2444,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         className="p-1 hover:bg-gray-100 rounded"
                         title="Edit date"
                       >
-                        <Pencil className="w-3.5 h-3.5 text-gray-500 hover:text-gray-700" />
+                        <Pencil className="w-3.5 h-3.5 hover: text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                       </button>
                       <button
                         type="button"
@@ -2548,7 +2518,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                Description/Context <span className="text-gray-400">(Optional)</span>
+                Description/Context
               </label>
               <Textarea
                 value={activityDateForm.description}

@@ -33,16 +33,14 @@ import {
   Target,
   Copy,
   Check,
-  Edit,
+  Pencil,
   Mail,
   Phone,
   LayoutGrid,
   Table as TableIcon,
   User,
   MoreVertical,
-  Edit2,
   Trash2,
-  PencilLine,
   ChevronDown,
   ChevronUp,
   ChevronLeft,
@@ -1308,7 +1306,7 @@ export default function OrganizationProfilePage() {
               />
               <Link href={`/organizations/${id}/edit`}>
                 <Button className="bg-black hover:bg-gray-800">
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Pencil className="h-4 w-4 mr-2 text-white" />
                   Edit Organization
                 </Button>
               </Link>
@@ -2974,7 +2972,7 @@ export default function OrganizationProfilePage() {
                                       <DropdownMenuItem 
                                         onClick={() => handleEditActivity(activity.id)}
                                       >
-                                        <Edit2 className="mr-2 h-4 w-4" />
+                                        <Pencil className="mr-2 h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                                         Edit
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
@@ -2982,7 +2980,7 @@ export default function OrganizationProfilePage() {
                                         onClick={() => setDeleteActivityId(activity.id)}
                                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                       >
-                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                                         Delete
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>

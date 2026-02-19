@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { useMyPortfolioData } from "@/hooks/useMyPortfolioData"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
@@ -15,7 +15,6 @@ import {
   CheckCircle,
   XCircle,
   Users,
-  Loader2
 } from "lucide-react"
 import { formatCurrency } from "@/lib/format"
 import { Badge } from "@/components/ui/badge"
@@ -24,14 +23,43 @@ import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { SectorDistributionChart } from "@/components/charts/SectorDistributionChart"
 import { ActivityCalendarHeatmap } from "@/components/charts/ActivityCalendarHeatmap"
+import { apiFetch } from "@/lib/api-fetch"
 
 interface MyPortfolioTabProps {
   userId: string
   organizationId: string
 }
 
+interface FiscalYearConfig {
+  startMonth: number
+  startDay: number
+  endMonth: number
+  endDay: number
+}
+
 export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) {
   const { data, loading: isLoading, error } = useMyPortfolioData()
+  const [fiscalYearConfig, setFiscalYearConfig] = useState<FiscalYearConfig | undefined>(undefined)
+
+  // Fetch the org's default fiscal year config
+  useEffect(() => {
+    apiFetch('/api/custom-years')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data) {
+          const defaultYear = result.data.find((cy: any) => cy.isDefault)
+          if (defaultYear) {
+            setFiscalYearConfig({
+              startMonth: defaultYear.startMonth,
+              startDay: defaultYear.startDay,
+              endMonth: defaultYear.endMonth,
+              endDay: defaultYear.endDay,
+            })
+          }
+        }
+      })
+      .catch(err => console.error('[MyPortfolio] Failed to fetch custom years:', err))
+  }, [])
 
   if (error) {
     return (
@@ -52,9 +80,57 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
   if (isLoading || !data) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        {/* Description skeleton */}
+        <Skeleton className="h-5 w-96" />
+
+        {/* Summary cards skeleton */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-20 mb-1" />
+                <Skeleton className="h-3 w-16" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
+
+        {/* Smart filter cards skeleton */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-5 w-8" />
+                </div>
+                <Skeleton className="h-4 w-40 mt-1" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, j) => (
+                    <Skeleton key={j} className="h-16 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Charts skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="w-full h-96" />
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -86,7 +162,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalBudget)}</div>
-            <p className="text-xs text-muted-foreground">Sum of budgets</p>
+            <p className="text-xs text-muted-foreground">Sum of budgets (USD)</p>
           </CardContent>
         </Card>
 
@@ -97,7 +173,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalPlannedDisbursements)}</div>
-            <p className="text-xs text-muted-foreground">Scheduled</p>
+            <p className="text-xs text-muted-foreground">Planned total (USD)</p>
           </CardContent>
         </Card>
 
@@ -108,7 +184,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalCommitments)}</div>
-            <p className="text-xs text-muted-foreground">Type 11</p>
+            <p className="text-xs text-muted-foreground">Committed total (USD)</p>
           </CardContent>
         </Card>
 
@@ -119,7 +195,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalDisbursements)}</div>
-            <p className="text-xs text-muted-foreground">Type 3</p>
+            <p className="text-xs text-muted-foreground">Disbursed total (USD)</p>
           </CardContent>
         </Card>
 
@@ -130,7 +206,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalExpenditure)}</div>
-            <p className="text-xs text-muted-foreground">Type 4</p>
+            <p className="text-xs text-muted-foreground">Spent total (USD)</p>
           </CardContent>
         </Card>
       </div>
@@ -142,7 +218,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Pipeline but Past Expected Start</CardTitle>
-              <Badge variant="destructive">{data.pipelinePastStart.length}</Badge>
+              <Badge variant="secondary">{data.pipelinePastStart.length}</Badge>
             </div>
             <CardDescription>Activities that should have started</CardDescription>
           </CardHeader>
@@ -169,7 +245,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Inactive for 90+ Days</CardTitle>
-              <Badge variant="warning">{data.inactive90Days.length}</Badge>
+              <Badge variant="secondary">{data.inactive90Days.length}</Badge>
             </div>
             <CardDescription>Activities needing updates</CardDescription>
           </CardHeader>
@@ -243,11 +319,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
               <CardDescription>Your contributions: activities created, transactions added, budgets updated, and more</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <Skeleton className="w-full h-96" />
-              ) : (
-                <ActivityCalendarHeatmap events={data.userActivityEvents || []} />
-              )}
+              <ActivityCalendarHeatmap events={data.userActivityEvents || []} fiscalYearConfig={fiscalYearConfig} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -259,11 +331,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
               <CardDescription>Activities grouped by DAC 3-digit sector codes</CardDescription>
             </CardHeader>
             <CardContent className="h-64 overflow-y-auto">
-              {isLoading ? (
-                <Skeleton className="w-full h-full" />
-              ) : (
-                <SectorDistributionChart data={data.sectorDistribution} />
-              )}
+              <SectorDistributionChart data={data.sectorDistribution} />
             </CardContent>
           </Card>
         </TabsContent>

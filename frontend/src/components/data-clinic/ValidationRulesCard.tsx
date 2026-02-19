@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/table';
 import {
   ClipboardCheck,
-  ArrowRight,
+  Pencil,
   CheckCircle2,
   AlertCircle,
   Download,
@@ -44,16 +44,6 @@ import { apiFetch } from '@/lib/api-fetch';
 
 interface ValidationRulesCardProps {
   organizationId: string;
-}
-
-// Status badge component
-function StatusBadge({ status }: { status: string }) {
-  const statusInfo = ACTIVITY_STATUS_LABELS[status] || { label: 'Unknown', color: 'bg-gray-100 text-gray-700' };
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusInfo.color}`}>
-      {statusInfo.label}
-    </span>
-  );
 }
 
 // Format date for display
@@ -122,11 +112,11 @@ function RuleTable<T extends { id: string }>({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-slate-600 hover:text-slate-900"
+                  className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900"
                   onClick={() => onEditClick(item.id)}
+                  title="Edit activity"
                 >
-                  Edit
-                  <ArrowRight className="h-3 w-3 ml-1" />
+                  <Pencil className="h-4 w-4" />
                 </Button>
               </TableCell>
             </TableRow>
@@ -410,512 +400,638 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
 
   const totalIssues = data.counts.total;
 
-  return (
-    <Card className="bg-white">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardCheck className="h-5 w-5 text-[#7b95a7]" />
-              Validation Rules Check
-              {totalIssues > 0 && (
-                <Badge variant="destructive" className="ml-2">
-                  {totalIssues} {totalIssues === 1 ? 'issue' : 'issues'}
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription>
-              Activities and transactions failing data quality rules
-            </CardDescription>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadCSV}
-            disabled={totalIssues === 0}
-            title="Download all failures as CSV"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {totalIssues === 0 ? (
+  // Check if a category has any issues
+  const hasActivityRules = data.counts.activityRules > 0;
+  const hasTransactionRules = data.counts.transactionRules > 0;
+  const hasLocationRules = data.counts.locationRules > 0;
+  const hasParticipatingOrgRules = data.counts.participatingOrgRules > 0;
+  const hasSectorRules = data.counts.sectorRules > 0;
+
+  if (totalIssues === 0) {
+    return (
+      <Card className="bg-white">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardCheck className="h-5 w-5 text-[#7b95a7]" />
+            Validation Rules Check
+          </CardTitle>
+          <CardDescription>
+            Activities and transactions failing data quality rules
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-green-500 mb-3" />
+            <CheckCircle2 className="h-12 w-12 text-slate-400 mb-3" />
             <p className="text-lg font-medium text-slate-700">All validation rules pass!</p>
             <p className="text-sm text-slate-500 mt-1">
               Great job! All your activities meet the data quality requirements.
             </p>
           </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Activity Rules */}
-            <RuleTable<ImplementationPastEndDateActivity>
-              title="Implementation Past End Date"
-              description="Activities under implementation but past their planned end date"
-              items={data.activityRules.implementationPastEndDate}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Planned End Date',
-                  accessor: (item) => formatDate(item.planned_end_date),
-                  className: 'w-[130px]',
-                },
-                {
-                  header: 'Status',
-                  accessor: (item) => <StatusBadge status={item.activity_status} />,
-                  className: 'w-[120px]',
-                },
-                {
-                  header: 'Days Past End',
-                  accessor: (item) => (
-                    <Badge variant="destructive">{item.days_past_end} days</Badge>
-                  ),
-                  className: 'w-[120px]',
-                },
-              ]}
-              onEditClick={handleEditClick}
-            />
+        </CardContent>
+      </Card>
+    );
+  }
 
-            <RuleTable<ImplementationWithActualEndActivity>
-              title="Implementation With Actual End Date"
-              description="Activities in implementation status that have an actual end date set"
-              items={data.activityRules.implementationWithActualEnd}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Status',
-                  accessor: (item) => <StatusBadge status={item.activity_status} />,
-                  className: 'w-[120px]',
-                },
-                {
-                  header: 'Actual End Date',
-                  accessor: (item) => formatDate(item.actual_end_date),
-                  className: 'w-[130px]',
-                },
-                {
-                  header: 'Last Updated',
-                  accessor: (item) => formatDate(item.updated_at),
-                  className: 'w-[130px]',
-                },
-              ]}
-              onEditClick={handleEditClick}
-            />
+  return (
+    <div className="space-y-6">
+      {/* Summary header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <ClipboardCheck className="h-5 w-5 text-[#7b95a7]" />
+            Validation Rules Check
+            <Badge variant="destructive" className="ml-2">
+              {totalIssues} {totalIssues === 1 ? 'issue' : 'issues'}
+            </Badge>
+          </h2>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Activities and transactions failing data quality rules
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDownloadCSV}
+          disabled={totalIssues === 0}
+          title="Download all failures as CSV"
+        >
+          <Download className="h-4 w-4 mr-1" />
+          Export CSV
+        </Button>
+      </div>
 
-            <RuleTable<MissingPlannedStartActivity>
-              title="Missing Planned Start Date"
-              description="Activities without a planned start date"
-              items={data.activityRules.missingPlannedStart}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Status',
-                  accessor: (item) => <StatusBadge status={item.activity_status} />,
-                  className: 'w-[120px]',
-                },
-                {
-                  header: 'Created',
-                  accessor: (item) => formatDate(item.created_at),
-                  className: 'w-[130px]',
-                },
-                {
-                  header: 'Last Updated',
-                  accessor: (item) => formatDate(item.updated_at),
-                  className: 'w-[130px]',
-                },
-              ]}
-              onEditClick={handleEditClick}
-            />
+      {/* Activity Rules */}
+      {hasActivityRules && (
+        <Card className="bg-white">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              Activity Rules
+              <Badge variant="secondary">{data.counts.activityRules}</Badge>
+            </CardTitle>
+            <CardDescription>
+              Date and status consistency checks
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <RuleTable<ImplementationPastEndDateActivity>
+                title="Implementation Past End Date"
+                description="Activities under implementation but past their planned end date"
+                items={data.activityRules.implementationPastEndDate}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Planned End Date',
+                    accessor: (item) => formatDate(item.planned_end_date),
+                    className: 'w-[130px]',
+                  },
+                  {
+                    header: 'Status',
+                    accessor: (item) => {
+                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
+                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                    },
+                    className: 'w-[120px]',
+                  },
+                  {
+                    header: 'Days Past End',
+                    accessor: (item) => (
+                      <Badge variant="destructive">{item.days_past_end} days</Badge>
+                    ),
+                    className: 'w-[120px]',
+                  },
+                ]}
+                onEditClick={handleEditClick}
+              />
 
-            <RuleTable<MissingPlannedEndActivity>
-              title="Missing Planned End Date"
-              description="Activities without a planned end date"
-              items={data.activityRules.missingPlannedEnd}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Planned Start',
-                  accessor: (item) => formatDate(item.planned_start_date),
-                  className: 'w-[130px]',
-                },
-                {
-                  header: 'Status',
-                  accessor: (item) => <StatusBadge status={item.activity_status} />,
-                  className: 'w-[120px]',
-                },
-                {
-                  header: 'Last Updated',
-                  accessor: (item) => formatDate(item.updated_at),
-                  className: 'w-[130px]',
-                },
-              ]}
-              onEditClick={handleEditClick}
-            />
+              <RuleTable<ImplementationWithActualEndActivity>
+                title="Implementation With Actual End Date"
+                description="Activities in implementation status that have an actual end date set"
+                items={data.activityRules.implementationWithActualEnd}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Status',
+                    accessor: (item) => {
+                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
+                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                    },
+                    className: 'w-[120px]',
+                  },
+                  {
+                    header: 'Actual End Date',
+                    accessor: (item) => formatDate(item.actual_end_date),
+                    className: 'w-[130px]',
+                  },
+                  {
+                    header: 'Last Updated',
+                    accessor: (item) => formatDate(item.updated_at),
+                    className: 'w-[130px]',
+                  },
+                ]}
+                onEditClick={handleEditClick}
+              />
 
-            <RuleTable<ClosedWithoutActualEndActivity>
-              title="Closed Without Actual End Date"
-              description="Closed activities that don't have an actual end date"
-              items={data.activityRules.closedWithoutActualEnd}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Planned End',
-                  accessor: (item) => formatDate(item.planned_end_date),
-                  className: 'w-[130px]',
-                },
-                {
-                  header: 'Status',
-                  accessor: (item) => <StatusBadge status={item.activity_status} />,
-                  className: 'w-[120px]',
-                },
-                {
-                  header: 'Last Updated',
-                  accessor: (item) => formatDate(item.updated_at),
-                  className: 'w-[130px]',
-                },
-              ]}
-              onEditClick={handleEditClick}
-            />
+              <RuleTable<MissingPlannedStartActivity>
+                title="Missing Planned Start Date"
+                description="Activities without a planned start date"
+                items={data.activityRules.missingPlannedStart}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Status',
+                    accessor: (item) => {
+                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
+                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                    },
+                    className: 'w-[120px]',
+                  },
+                  {
+                    header: 'Created',
+                    accessor: (item) => formatDate(item.created_at),
+                    className: 'w-[130px]',
+                  },
+                  {
+                    header: 'Last Updated',
+                    accessor: (item) => formatDate(item.updated_at),
+                    className: 'w-[130px]',
+                  },
+                ]}
+                onEditClick={handleEditClick}
+              />
 
-            {/* Transaction Rules */}
-            <RuleTable<NoCommitmentActivity>
-              title="No Commitment Transaction"
-              description="Activities without any commitment transactions"
-              items={data.transactionRules.noCommitmentTransaction}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Total Transactions',
-                  accessor: (item) => item.transaction_count,
-                  className: 'w-[140px]',
-                },
-                {
-                  header: 'Status',
-                  accessor: (item) => <StatusBadge status={item.activity_status} />,
-                  className: 'w-[120px]',
-                },
-              ]}
-              onEditClick={(id) => router.push(`/activities/${id}?tab=finances`)}
-            />
+              <RuleTable<MissingPlannedEndActivity>
+                title="Missing Planned End Date"
+                description="Activities without a planned end date"
+                items={data.activityRules.missingPlannedEnd}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Planned Start',
+                    accessor: (item) => formatDate(item.planned_start_date),
+                    className: 'w-[130px]',
+                  },
+                  {
+                    header: 'Status',
+                    accessor: (item) => {
+                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
+                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                    },
+                    className: 'w-[120px]',
+                  },
+                  {
+                    header: 'Last Updated',
+                    accessor: (item) => formatDate(item.updated_at),
+                    className: 'w-[130px]',
+                  },
+                ]}
+                onEditClick={handleEditClick}
+              />
 
-            {/* Location Rules */}
-            <RuleTable<PercentageNotHundredActivity>
-              title="Percentages Don't Sum to 100%"
-              description="Activities where location percentages don't add up to 100%"
-              items={data.locationRules.percentageNotHundred}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Total %',
-                  accessor: (item) => (
-                    <Badge variant="destructive">{item.total_percentage.toFixed(1)}%</Badge>
-                  ),
-                  className: 'w-[100px]',
-                },
-                {
-                  header: 'Locations',
-                  accessor: (item) => item.location_count,
-                  className: 'w-[100px]',
-                },
-              ]}
-              onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
-            />
+              <RuleTable<ClosedWithoutActualEndActivity>
+                title="Closed Without Actual End Date"
+                description="Closed activities that don't have an actual end date"
+                items={data.activityRules.closedWithoutActualEnd}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Planned End',
+                    accessor: (item) => formatDate(item.planned_end_date),
+                    className: 'w-[130px]',
+                  },
+                  {
+                    header: 'Status',
+                    accessor: (item) => {
+                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
+                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                    },
+                    className: 'w-[120px]',
+                  },
+                  {
+                    header: 'Last Updated',
+                    accessor: (item) => formatDate(item.updated_at),
+                    className: 'w-[130px]',
+                  },
+                ]}
+                onEditClick={handleEditClick}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-            <RuleTable<NoLocationsActivity>
-              title="No Locations"
-              description="Activities without any linked locations"
-              items={data.locationRules.noLocations}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Status',
-                  accessor: (item) => <StatusBadge status={item.activity_status} />,
-                  className: 'w-[120px]',
-                },
-              ]}
-              onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
-            />
+      {/* Transaction Rules */}
+      {hasTransactionRules && (
+        <Card className="bg-white">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              Transaction Rules
+              <Badge variant="secondary">{data.counts.transactionRules}</Badge>
+            </CardTitle>
+            <CardDescription>
+              Financial transaction completeness checks
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <RuleTable<NoCommitmentActivity>
+                title="No Commitment Transaction"
+                description="Activities without any commitment transactions"
+                items={data.transactionRules.noCommitmentTransaction}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Total Transactions',
+                    accessor: (item) => item.transaction_count,
+                    className: 'w-[140px]',
+                  },
+                  {
+                    header: 'Status',
+                    accessor: (item) => {
+                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
+                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                    },
+                    className: 'w-[120px]',
+                  },
+                ]}
+                onEditClick={(id) => router.push(`/activities/${id}?tab=finances`)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-            <RuleTable<MixedAdminLevelsActivity>
-              title="Mixed Admin Levels"
-              description="Activities with locations at different administrative levels"
-              items={data.locationRules.mixedAdminLevels}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Admin Levels',
-                  accessor: (item) => (
-                    <div className="flex gap-1 flex-wrap">
-                      {item.admin_levels.map((level, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          Level {level}
-                        </Badge>
-                      ))}
-                    </div>
-                  ),
-                  className: 'w-[150px]',
-                },
-                {
-                  header: 'Locations',
-                  accessor: (item) => item.location_count,
-                  className: 'w-[100px]',
-                },
-              ]}
-              onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
-            />
+      {/* Location Rules */}
+      {hasLocationRules && (
+        <Card className="bg-white">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              Location Rules
+              <Badge variant="secondary">{data.counts.locationRules}</Badge>
+            </CardTitle>
+            <CardDescription>
+              Geographic data quality checks
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <RuleTable<PercentageNotHundredActivity>
+                title="Percentages Don't Sum to 100%"
+                description="Activities where location percentages don't add up to 100%"
+                items={data.locationRules.percentageNotHundred}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Total %',
+                    accessor: (item) => (
+                      <Badge variant="destructive">{item.total_percentage.toFixed(1)}%</Badge>
+                    ),
+                    className: 'w-[100px]',
+                  },
+                  {
+                    header: 'Locations',
+                    accessor: (item) => item.location_count,
+                    className: 'w-[100px]',
+                  },
+                ]}
+                onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
+              />
 
-            <RuleTable<ZeroPercentLocationActivity>
-              title="Zero Percent Location"
-              description="Activities with locations that have 0% allocation"
-              items={data.locationRules.zeroPercentLocation}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Location',
-                  accessor: (item) => item.location_name,
-                  className: 'w-[200px]',
-                },
-                {
-                  header: 'Percentage',
-                  accessor: () => (
-                    <Badge variant="destructive">0%</Badge>
-                  ),
-                  className: 'w-[100px]',
-                },
-              ]}
-              onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
-            />
+              <RuleTable<NoLocationsActivity>
+                title="No Locations"
+                description="Activities without any linked locations"
+                items={data.locationRules.noLocations}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Status',
+                    accessor: (item) => {
+                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
+                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                    },
+                    className: 'w-[120px]',
+                  },
+                ]}
+                onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
+              />
 
-            {/* Participating Organisation Rules */}
-            <RuleTable<NoImplementingOrgActivity>
-              title="No Implementing Organisation"
-              description="Activities without an implementing organisation"
-              items={data.participatingOrgRules.noImplementingOrg}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Status',
-                  accessor: (item) => <StatusBadge status={item.activity_status} />,
-                  className: 'w-[120px]',
-                },
-                {
-                  header: 'Participating Orgs',
-                  accessor: (item) => item.participating_org_count,
-                  className: 'w-[140px]',
-                },
-              ]}
-              onEditClick={(id) => router.push(`/activities/${id}?tab=stakeholders`)}
-            />
+              <RuleTable<MixedAdminLevelsActivity>
+                title="Mixed Admin Levels"
+                description="Activities with locations at different administrative levels"
+                items={data.locationRules.mixedAdminLevels}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Admin Levels',
+                    accessor: (item) => (
+                      <div className="flex gap-1 flex-wrap">
+                        {item.admin_levels.map((level, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            Level {level}
+                          </Badge>
+                        ))}
+                      </div>
+                    ),
+                    className: 'w-[150px]',
+                  },
+                  {
+                    header: 'Locations',
+                    accessor: (item) => item.location_count,
+                    className: 'w-[100px]',
+                  },
+                ]}
+                onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
+              />
 
-            {/* Sector Rules */}
-            <RuleTable<SectorPercentageNotHundredActivity>
-              title="Sector Percentages Don't Sum to 100%"
-              description="Activities where sector percentage allocations don't total 100%"
-              items={data.sectorRules.sectorPercentageNotHundred}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Total %',
-                  accessor: (item) => (
-                    <Badge variant="destructive">{item.total_sector_percentage.toFixed(1)}%</Badge>
-                  ),
-                  className: 'w-[100px]',
-                },
-                {
-                  header: 'Sectors',
-                  accessor: (item) => item.sector_count,
-                  className: 'w-[100px]',
-                },
-              ]}
-              onEditClick={(id) => router.push(`/activities/${id}?tab=sectors`)}
-            />
+              <RuleTable<ZeroPercentLocationActivity>
+                title="Zero Percent Location"
+                description="Activities with locations that have 0% allocation"
+                items={data.locationRules.zeroPercentLocation}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Location',
+                    accessor: (item) => item.location_name,
+                    className: 'w-[200px]',
+                  },
+                  {
+                    header: 'Percentage',
+                    accessor: () => (
+                      <Badge variant="destructive">0%</Badge>
+                    ),
+                    className: 'w-[100px]',
+                  },
+                ]}
+                onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-            <RuleTable<ZeroPercentSectorActivity>
-              title="Zero Percent Sector"
-              description="Activities with sectors that have 0% allocation"
-              items={data.sectorRules.zeroPercentSector}
-              columns={[
-                {
-                  header: 'Activity',
-                  accessor: (item) => (
-                    <div>
-                      <p className="font-medium text-slate-900 line-clamp-1">{item.title_narrative}</p>
-                      {item.iati_identifier && (
-                        <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {item.iati_identifier}
-                        </code>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Sector',
-                  accessor: (item) => (
-                    <div>
-                      <p className="text-slate-900">{item.sector_name}</p>
-                      <code className="text-xs font-mono text-slate-500">{item.sector_code}</code>
-                    </div>
-                  ),
-                  className: 'w-[200px]',
-                },
-                {
-                  header: 'Percentage',
-                  accessor: () => (
-                    <Badge variant="destructive">0%</Badge>
-                  ),
-                  className: 'w-[100px]',
-                },
-              ]}
-              onEditClick={(id) => router.push(`/activities/${id}?tab=sectors`)}
-            />
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* Participating Organisation Rules */}
+      {hasParticipatingOrgRules && (
+        <Card className="bg-white">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              Participating Organisation Rules
+              <Badge variant="secondary">{data.counts.participatingOrgRules}</Badge>
+            </CardTitle>
+            <CardDescription>
+              Organisation role completeness checks
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <RuleTable<NoImplementingOrgActivity>
+                title="No Implementing Organisation"
+                description="Activities without an implementing organisation"
+                items={data.participatingOrgRules.noImplementingOrg}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Status',
+                    accessor: (item) => {
+                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
+                      return <span className="text-sm text-slate-700">{statusInfo?.label || 'Unknown'}</span>;
+                    },
+                    className: 'w-[120px]',
+                  },
+                  {
+                    header: 'Participating Orgs',
+                    accessor: (item) => item.participating_org_count,
+                    className: 'w-[140px]',
+                  },
+                ]}
+                onEditClick={(id) => router.push(`/activities/${id}?tab=stakeholders`)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sector Rules */}
+      {hasSectorRules && (
+        <Card className="bg-white">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              Sector Rules
+              <Badge variant="secondary">{data.counts.sectorRules}</Badge>
+            </CardTitle>
+            <CardDescription>
+              Sector allocation checks
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <RuleTable<SectorPercentageNotHundredActivity>
+                title="Sector Percentages Don't Sum to 100%"
+                description="Activities where sector percentage allocations don't total 100%"
+                items={data.sectorRules.sectorPercentageNotHundred}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Total %',
+                    accessor: (item) => (
+                      <Badge variant="destructive">{item.total_sector_percentage.toFixed(1)}%</Badge>
+                    ),
+                    className: 'w-[100px]',
+                  },
+                  {
+                    header: 'Sectors',
+                    accessor: (item) => item.sector_count,
+                    className: 'w-[100px]',
+                  },
+                ]}
+                onEditClick={(id) => router.push(`/activities/${id}?tab=sectors`)}
+              />
+
+              <RuleTable<ZeroPercentSectorActivity>
+                title="Zero Percent Sector"
+                description="Activities with sectors that have 0% allocation"
+                items={data.sectorRules.zeroPercentSector}
+                columns={[
+                  {
+                    header: 'Activity',
+                    accessor: (item) => (
+                      <p className="font-medium text-slate-900">
+                        {item.title_narrative}
+                        {item.iati_identifier && (
+                          <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            {item.iati_identifier}
+                          </code></>
+                        )}
+                      </p>
+                    ),
+                  },
+                  {
+                    header: 'Sector',
+                    accessor: (item) => (
+                      <div>
+                        <p className="text-slate-900">{item.sector_name}</p>
+                        <code className="text-xs font-mono text-slate-500">{item.sector_code}</code>
+                      </div>
+                    ),
+                    className: 'w-[200px]',
+                  },
+                  {
+                    header: 'Percentage',
+                    accessor: () => (
+                      <Badge variant="destructive">0%</Badge>
+                    ),
+                    className: 'w-[100px]',
+                  },
+                ]}
+                onEditClick={(id) => router.push(`/activities/${id}?tab=sectors`)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

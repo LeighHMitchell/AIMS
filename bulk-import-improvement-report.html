@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IATI Bulk Import Tool - Deep Dive Improvement Report</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-2: #334155;
+    --border: #475569;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-light: #60a5fa;
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.1);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.1);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.1);
+    --purple: #a855f7;
+    --purple-bg: rgba(168,85,247,0.1);
+    --cyan: #06b6d4;
+    --cyan-bg: rgba(6,182,212,0.1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+  header { text-align: center; padding: 3rem 0 2rem; border-bottom: 1px solid var(--border); margin-bottom: 3rem; }
+  header h1 { font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-light), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+  header p { color: var(--text-muted); font-size: 1.1rem; }
+  header .meta { display: flex; gap: 2rem; justify-content: center; margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); }
+  header .meta span { display: flex; align-items: center; gap: 0.4rem; }
+
+  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 3rem; }
+  .toc h2 { font-size: 1.1rem; margin-bottom: 1rem; color: var(--accent-light); }
+  .toc ol { padding-left: 1.5rem; }
+  .toc li { margin-bottom: 0.4rem; }
+  .toc a { color: var(--text); text-decoration: none; transition: color 0.2s; }
+  .toc a:hover { color: var(--accent-light); }
+
+  section { margin-bottom: 3rem; }
+  section > h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 0.6rem; }
+  h3 { font-size: 1.15rem; margin: 1.5rem 0 0.75rem; color: var(--accent-light); }
+  h4 { font-size: 1rem; margin: 1rem 0 0.5rem; color: var(--text); }
+  p { margin-bottom: 0.75rem; color: var(--text-muted); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+  .card.highlight-red { border-left: 4px solid var(--red); }
+  .card.highlight-amber { border-left: 4px solid var(--amber); }
+  .card.highlight-green { border-left: 4px solid var(--green); }
+  .card.highlight-purple { border-left: 4px solid var(--purple); }
+  .card.highlight-cyan { border-left: 4px solid var(--cyan); }
+  .card.done { opacity: 0.7; border-left: 4px solid var(--green); background: linear-gradient(135deg, var(--surface), rgba(34,197,94,0.05)); }
+  .card.done h4 { text-decoration: line-through; text-decoration-color: var(--green); }
+  .card h4 { margin-top: 0; }
+  .card p:last-child { margin-bottom: 0; }
+
+  .badge { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-purple { background: var(--purple-bg); color: var(--purple); }
+  .badge-cyan { background: var(--cyan-bg); color: var(--cyan); }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; background: var(--surface); position: sticky; top: 0; }
+  td { color: var(--text); }
+  tr:hover td { background: rgba(59,130,246,0.05); }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; }
+  @media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-align: center; }
+  .stat-card .number { font-size: 2.5rem; font-weight: 800; }
+  .stat-card .label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
+
+  .priority-tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+  .priority-high { background: var(--red-bg); color: var(--red); }
+  .priority-medium { background: var(--amber-bg); color: var(--amber); }
+  .priority-low { background: var(--green-bg); color: var(--green); }
+  .priority-done { background: var(--green-bg); color: var(--green); }
+
+  .file-ref { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; color: var(--cyan); background: rgba(6,182,212,0.1); padding: 0.1rem 0.4rem; border-radius: 4px; }
+
+  ul { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+  li { margin-bottom: 0.3rem; color: var(--text-muted); }
+  li strong { color: var(--text); }
+
+  .exec-summary { background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(168,85,247,0.1)); border: 1px solid rgba(59,130,246,0.3); border-radius: 12px; padding: 2rem; margin-bottom: 3rem; }
+  .exec-summary h2 { border: none; margin-bottom: 1rem; }
+
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem; background: var(--surface-2); padding: 0.1rem 0.4rem; border-radius: 4px; }
+
+  .section-icon { font-size: 1.4rem; }
+  footer { text-align: center; padding: 2rem 0; border-top: 1px solid var(--border); margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem; }
+
+  .done-tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: var(--green-bg); color: var(--green); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>IATI Bulk Import Tool &mdash; Deep Dive Analysis</h1>
+  <p>Comprehensive improvement report: data gaps, UI enhancements, and technical opportunities</p>
+  <div class="meta">
+    <span>Original: 7 Feb 2026</span>
+    <span>Updated: 8 Feb 2026</span>
+    <span>Codebase: aims_project</span>
+    <span>Analysis: Claude Opus 4.6</span>
+  </div>
+</header>
+
+<!-- EXECUTIVE SUMMARY -->
+<div class="exec-summary">
+  <h2>Executive Summary</h2>
+  <p>The IATI Bulk Import Tool is a well-architected 5-step wizard supporting both IATI Datastore (API) and XML file import. The original deep dive on 7 Feb 2026 identified significant gaps. Since then, <strong>substantial implementation work</strong> has closed many of those gaps. This updated report reflects the current state of the codebase.</p>
+  <div class="grid-4" style="margin-top:1.5rem;">
+    <div class="stat-card">
+      <div class="number" style="color:var(--green);">17</div>
+      <div class="label">Items Implemented Since Report</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" style="color:var(--amber);">7</div>
+      <div class="label">IATI Fields Still Not Fetched</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" style="color:var(--amber);">1</div>
+      <div class="label">Field Fetched but Not Imported</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" style="color:var(--red);">11</div>
+      <div class="label">Remaining UI &amp; Technical Improvements</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#section-0">Progress Since Initial Analysis</a></li>
+    <li><a href="#section-1">IATI Datastore Fields Available but Not Fetched</a></li>
+    <li><a href="#section-2">Fields Fetched/Parsed but Not Imported to Database</a></li>
+    <li><a href="#section-3">Database Tables Ready but Not Populated by Import</a></li>
+    <li><a href="#section-4">UI / UX Improvement Opportunities</a></li>
+    <li><a href="#section-5">Technical / Architecture Improvements</a></li>
+    <li><a href="#section-6">Current Field Coverage Matrix</a></li>
+    <li><a href="#section-7">Remaining Prioritised Recommendations</a></li>
+  </ol>
+</div>
+
+<!-- SECTION 0: PROGRESS -->
+<section id="section-0">
+  <h2><span class="section-icon">0.</span> Progress Since Initial Analysis</h2>
+  <p>The following items from the original 7 Feb report have been <strong>fully implemented</strong>:</p>
+
+  <h3>Data Fields Now Fully Fetched, Mapped &amp; Imported</h3>
+  <div class="grid-2">
+    <div class="card done">
+      <h4>Humanitarian Flag &amp; Scope <span class="done-tag">Done</span></h4>
+      <p><code>humanitarian</code> boolean written to activities table. <code>humanitarian_scope</code> records imported to <code>humanitarian_scope</code> table. Fetched via Datastore Solr fields: <code>humanitarian</code>, <code>humanitarian_scope_type</code>, <code>humanitarian_scope_vocabulary</code>, <code>humanitarian_scope_code</code>, <code>humanitarian_scope_narrative</code>.</p>
+    </div>
+    <div class="card done">
+      <h4>Policy Markers <span class="done-tag">Done</span></h4>
+      <p>Fetched via <code>policy_marker_code</code>, <code>policy_marker_vocabulary</code>, <code>policy_marker_significance</code>, <code>policy_marker_narrative</code>. Mapped in <span class="file-ref">datastore-mapper.ts</span>. Imported to <code>activity_policy_markers</code> table with IATI code lookup.</p>
+    </div>
+    <div class="card done">
+      <h4>Results Data (Full Hierarchy) <span class="done-tag">Done</span></h4>
+      <p>Results XML pre-fetched in parallel via <span class="file-ref">parse-results-xml.ts</span>. Imported to the full 14-table hierarchy: <code>activity_results</code>, <code>result_indicators</code>, <code>indicator_baselines</code>, <code>indicator_periods</code>, plus references, document links, locations, and dimensions.</p>
+    </div>
+    <div class="card done">
+      <h4>Tags (including SDGs) <span class="done-tag">Done</span></h4>
+      <p>Fetched via <code>tag_code</code>, <code>tag_vocabulary</code>, <code>tag_narrative</code>. Upserted to <code>tags</code> table, linked via <code>activity_tags</code> junction table. SDG vocabulary 2/3 supported.</p>
+    </div>
+    <div class="card done">
+      <h4>Activity Scope <span class="done-tag">Done</span></h4>
+      <p><code>activity_scope_code</code> fetched, mapped to <code>activityScope</code>, written to <code>activity_scope</code> column in both create and update paths.</p>
+    </div>
+    <div class="card done">
+      <h4>Default Language <span class="done-tag">Done</span></h4>
+      <p><code>default_lang</code> fetched, mapped to <code>language</code>, written to <code>language</code> column (defaults to <code>'en'</code>).</p>
+    </div>
+    <div class="card done">
+      <h4>DAC/CRS Classification Fields <span class="done-tag">Done</span></h4>
+      <p>All five fields now written in both create and update paths: <code>collaboration_type</code>, <code>default_aid_type</code>, <code>default_finance_type</code>, <code>default_flow_type</code>, <code>default_tied_status</code>.</p>
+    </div>
+    <div class="card done">
+      <h4>Non-DAC Sector Vocabularies <span class="done-tag">Done</span></h4>
+      <p>Sector filter now includes vocabulary <code>'99'</code> (reporting-org specific) alongside DAC vocabularies 1 and 2. <code>sector_vocabulary</code> column populated per record.</p>
+    </div>
+  </div>
+
+  <h3>Technical &amp; Performance Improvements</h3>
+  <div class="grid-2">
+    <div class="card done">
+      <h4>Batch Insert Optimization <span class="done-tag">Done</span></h4>
+      <p>All child records (transactions, budgets, sectors, locations, contacts, documents, policy markers, humanitarian scopes, tags) use <code>batchInsertWithFallback()</code> &mdash; batch insert first, individual fallback on failure.</p>
+    </div>
+    <div class="card done">
+      <h4>USD Conversion Caching <span class="done-tag">Done</span></h4>
+      <p>In-memory <code>rateCache</code> deduplicates by <code>currency_date</code> key within each batch. Additionally, zero-value and USD-denominated transactions now skip the conversion lookup entirely (no DB/API hit).</p>
+    </div>
+    <div class="card done">
+      <h4>Organisation Resolution Batching <span class="done-tag">Done</span></h4>
+      <p>New <code>prefetchOrganizations()</code> in <span class="file-ref">organization-helpers.ts</span> resolves all unique org refs/names across all activities in 3&ndash;4 batch DB queries before the main loop. Previously each org was resolved individually (~270+ sequential queries for 21 activities). Per-activity org lookups now use a synchronous cache <code>Map</code> instead of <code>await getOrCreateOrganization()</code>.</p>
+    </div>
+    <div class="card done">
+      <h4>Completion Notification <span class="done-tag">Done</span></h4>
+      <p><code>notifyImportComplete()</code> creates a notification in <code>user_notifications</code> table when import finishes, displayed via the notification bell UI.</p>
+    </div>
+  </div>
+
+  <h3>UI Features</h3>
+  <div class="grid-2">
+    <div class="card done">
+      <h4>Import History UI <span class="done-tag">Done</span></h4>
+      <p>History tab on the IATI Import page. API route at <span class="file-ref">api/iati/history/route.ts</span> provides batch history with status filters, search, and drill-down to individual batch items.</p>
+    </div>
+    <div class="card done">
+      <h4>Scheduled / Automatic Imports (Auto-Sync) <span class="done-tag">Done</span></h4>
+      <p>Cron-based IATI sync service at <span class="file-ref">api/cron/iati-sync/route.ts</span>. Runs daily for activities with <code>auto_sync = true</code>. Per-activity field-level sync control via <code>auto_sync_fields</code> column. Includes rate limiting, timeout handling, and change detection.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 1: FIELDS NOT FETCHED -->
+<section id="section-1">
+  <h2><span class="section-icon">1.</span> IATI Datastore Fields Still Not Fetched</h2>
+  <p>The following Solr fields are available in the IATI Datastore but are <strong>not</strong> currently requested by the tool. (Down from 16 in the original report to 7 after implementation work.)</p>
+
+  <div class="card highlight-amber">
+    <h4>1.1 Related Activities <span class="badge badge-amber">Medium Value</span></h4>
+    <p>Solr fields: <code>related_activity_ref</code>, <code>related_activity_type</code>. Your DB has <code>activity_relationships</code> table (migration <span class="file-ref">20240118_create_activity_relationships.sql</span>). Parent/child activity hierarchies and programme-level linkages are published by donors.</p>
+    <p><strong>Impact:</strong> Parent-child and sibling activity relationships aren't reconstructed during import, losing programme-level context.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>1.2 Other Identifiers <span class="badge badge-amber">Medium Value</span></h4>
+    <p>Solr fields: <code>other_identifier_ref</code>, <code>other_identifier_type</code>, <code>other_identifier_owner_org_ref</code>, <code>other_identifier_owner_org_narrative</code>. Your DB has <code>other_identifiers</code> JSONB column on activities (migration <span class="file-ref">20250106000000_add_other_identifiers_jsonb.sql</span>).</p>
+    <p><strong>Impact:</strong> Cross-referencing with donor internal project codes, previous system IDs, or CRS identifiers is lost.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>1.3 Conditions <span class="badge badge-amber">Medium Value</span></h4>
+    <p>Solr fields: <code>conditions_attached</code>, <code>condition_type</code>, <code>condition_narrative</code>. DB table: <code>activity_conditions</code> (migration <span class="file-ref">20250129000009_create_activity_conditions.sql</span>).</p>
+    <p><strong>Impact:</strong> Conditionality information from donors (policy conditions, fiduciary requirements) must be entered manually.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>1.4 Recipient Regions <span class="badge badge-amber">Medium Value</span></h4>
+    <p>Solr fields: <code>recipient_region_code</code>, <code>recipient_region_vocabulary</code>, <code>recipient_region_percentage</code>. Some activities target regions (e.g., "South-East Asia") rather than specific countries.</p>
+    <p><strong>Impact:</strong> Regional activities (not country-specific) may appear to have no geographic targeting after import.</p>
+  </div>
+
+  <div class="card highlight-green">
+    <h4>1.5 Country Budget Items <span class="badge badge-green">Low Value</span></h4>
+    <p>Solr fields: <code>country_budget_items_vocabulary</code>, <code>country_budget_items_budget_item_code</code>, etc. DB table: <code>country_budget_items</code> (migration <span class="file-ref">20250116000006_create_country_budget_items.sql</span>).</p>
+  </div>
+
+  <div class="card highlight-green">
+    <h4>1.6 Transaction-Level Classification Overrides <span class="badge badge-green">Low Value</span></h4>
+    <p>Solr fields: <code>transaction_aid_type_code</code>, <code>transaction_finance_type_code</code>, <code>transaction_flow_type_code</code>, <code>transaction_tied_status_code</code>. These allow individual transactions to override activity-level defaults. DB columns exist but the mapper doesn't extract them from the Datastore.</p>
+  </div>
+
+  <div class="card highlight-green">
+    <h4>1.7 Other Low-Value Fields <span class="badge badge-green">Low Value</span></h4>
+    <p>FSS (Forward Spending Survey), CRS additional data, transaction-level geography, document hash / last updated datetime. All have DB tables but low practical value for most AIMS use cases.</p>
+  </div>
+</section>
+
+<!-- SECTION 2: FETCHED BUT NOT IMPORTED -->
+<section id="section-2">
+  <h2><span class="section-icon">2.</span> Fields Fetched/Parsed but Not Imported to Database</h2>
+  <p>Almost all previously identified gaps in this category have been resolved. Only one field remains:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Fetched From</th>
+          <th>Mapped To</th>
+          <th>Written to DB?</th>
+          <th>DB Column Exists?</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="opacity:0.5;">
+          <td><strong>collaborationType</strong></td>
+          <td><code>collaboration_type_code</code></td>
+          <td><code>ParsedActivity.collaborationType</code></td>
+          <td style="color:var(--green);">Yes</td>
+          <td style="color:var(--green);">Yes</td>
+          <td><span class="done-tag">Done</span></td>
+        </tr>
+        <tr style="opacity:0.5;">
+          <td><strong>defaultAidType</strong></td>
+          <td><code>default_aid_type_code</code></td>
+          <td><code>ParsedActivity.defaultAidType</code></td>
+          <td style="color:var(--green);">Yes</td>
+          <td style="color:var(--green);">Yes</td>
+          <td><span class="done-tag">Done</span></td>
+        </tr>
+        <tr style="opacity:0.5;">
+          <td><strong>defaultFinanceType</strong></td>
+          <td><code>default_finance_type_code</code></td>
+          <td><code>ParsedActivity.defaultFinanceType</code></td>
+          <td style="color:var(--green);">Yes</td>
+          <td style="color:var(--green);">Yes</td>
+          <td><span class="done-tag">Done</span></td>
+        </tr>
+        <tr style="opacity:0.5;">
+          <td><strong>defaultFlowType</strong></td>
+          <td><code>default_flow_type_code</code></td>
+          <td><code>ParsedActivity.defaultFlowType</code></td>
+          <td style="color:var(--green);">Yes</td>
+          <td style="color:var(--green);">Yes</td>
+          <td><span class="done-tag">Done</span></td>
+        </tr>
+        <tr style="opacity:0.5;">
+          <td><strong>defaultTiedStatus</strong></td>
+          <td><code>default_tied_status_code</code></td>
+          <td><code>ParsedActivity.defaultTiedStatus</code></td>
+          <td style="color:var(--green);">Yes</td>
+          <td style="color:var(--green);">Yes</td>
+          <td><span class="done-tag">Done</span></td>
+        </tr>
+        <tr style="opacity:0.5;">
+          <td><strong>Non-DAC Sectors</strong></td>
+          <td><code>sector_code</code> (all vocabs)</td>
+          <td><code>ParsedActivity.sectors</code></td>
+          <td style="color:var(--green);">DAC + vocab 99</td>
+          <td style="color:var(--green);">Yes</td>
+          <td><span class="done-tag">Done</span></td>
+        </tr>
+        <tr>
+          <td><strong>capitalSpend</strong></td>
+          <td>Not indexed in Datastore</td>
+          <td><code>ParsedActivity.capitalSpend</code></td>
+          <td style="color:var(--red);">No</td>
+          <td style="color:var(--green);">Yes &mdash; <code>capital_spend</code></td>
+          <td><span class="badge badge-green">Low</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The <code>capitalSpend</code> field is not indexed in the IATI Datastore Solr instance and cannot be fetched via the API. It is only available via raw XML or d-portal. This is a Datastore limitation, not an application gap.</p>
+</section>
+
+<!-- SECTION 3: DB TABLES NOT POPULATED -->
+<section id="section-3">
+  <h2><span class="section-icon">3.</span> Database Tables &mdash; Import Population Status</h2>
+  <p>Status of database tables relative to bulk import population:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Database Table</th>
+          <th>IATI Element</th>
+          <th>Populated by Import?</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="opacity:0.5;">
+          <td><code>activity_policy_markers</code></td>
+          <td>policy-marker</td>
+          <td style="color:var(--green);">Yes</td>
+          <td><span class="done-tag">Done</span></td>
+        </tr>
+        <tr style="opacity:0.5;">
+          <td><code>activity_results</code> + 13 child tables</td>
+          <td>result</td>
+          <td style="color:var(--green);">Yes (via XML pre-fetch)</td>
+          <td><span class="done-tag">Done</span></td>
+        </tr>
+        <tr style="opacity:0.5;">
+          <td><code>humanitarian_scope</code></td>
+          <td>humanitarian-scope</td>
+          <td style="color:var(--green);">Yes</td>
+          <td><span class="done-tag">Done</span></td>
+        </tr>
+        <tr style="opacity:0.5;">
+          <td><code>tags</code> / <code>activity_tags</code></td>
+          <td>tag (incl. SDGs)</td>
+          <td style="color:var(--green);">Yes</td>
+          <td><span class="done-tag">Done</span></td>
+        </tr>
+        <tr>
+          <td><code>activity_relationships</code></td>
+          <td>related-activity</td>
+          <td style="color:var(--red);">No &mdash; not fetched from Datastore</td>
+          <td><span class="priority-tag priority-medium">Medium</span></td>
+        </tr>
+        <tr>
+          <td><code>activity_conditions</code></td>
+          <td>conditions</td>
+          <td style="color:var(--red);">No &mdash; not fetched from Datastore</td>
+          <td><span class="priority-tag priority-medium">Medium</span></td>
+        </tr>
+        <tr>
+          <td><code>planned_disbursements</code></td>
+          <td>planned-disbursement</td>
+          <td style="color:var(--red);">No &mdash; not indexed in Datastore</td>
+          <td><span class="priority-tag priority-low">Low</span></td>
+        </tr>
+        <tr>
+          <td><code>country_budget_items</code></td>
+          <td>country-budget-items</td>
+          <td style="color:var(--red);">No</td>
+          <td><span class="priority-tag priority-low">Low</span></td>
+        </tr>
+        <tr>
+          <td><code>financing_terms</code></td>
+          <td>crs-add</td>
+          <td style="color:var(--red);">No</td>
+          <td><span class="priority-tag priority-low">Low</span></td>
+        </tr>
+        <tr>
+          <td><code>fss</code> / <code>fss_forecasts</code></td>
+          <td>fss</td>
+          <td style="color:var(--red);">No</td>
+          <td><span class="priority-tag priority-low">Low</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 4: UI IMPROVEMENTS -->
+<section id="section-4">
+  <h2><span class="section-icon">4.</span> UI / UX Improvement Opportunities</h2>
+
+  <div class="card highlight-red">
+    <h4>4.1 No Diff/Comparison View for Updates <span class="priority-tag priority-high">High</span></h4>
+    <p>When <code>activityMatching = 'update_existing'</code>, the user has no way to see what will change before confirming the import. There's no side-by-side comparison of existing vs. incoming data. Users are making blind decisions about whether to update.</p>
+    <p><strong>Suggestion:</strong> Add a diff view in the Preview step showing field-by-field changes (old value vs. new value) for matched activities, with the ability to accept/reject individual field changes.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>4.2 No Rollback / Undo Capability <span class="priority-tag priority-medium">Medium</span></h4>
+    <p>Once activities are imported, there's no way to reverse a batch. If a user imports the wrong file or selects wrong options, the only recourse is manual cleanup. The batch metadata in <code>iati_import_batch_items</code> tracks which activities were created/updated, so rollback is technically feasible.</p>
+    <p><strong>Suggestion:</strong> Add a "Rollback Import" button on the Results step and in Import History. For created activities, delete them. For updated activities, restore from a pre-import snapshot.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>4.3 No Partial Retry for Failed Items <span class="priority-tag priority-medium">Medium</span></h4>
+    <p>If some activities fail during import (e.g., due to DB constraint violations), the user must start a new import to retry them. Failed items could be retried individually.</p>
+    <p><strong>Suggestion:</strong> Add a "Retry Failed" button on the Results step that re-processes only the failed batch items.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>4.4 No Data Quality / Completeness Score <span class="priority-tag priority-medium">Medium</span></h4>
+    <p>The Preview step shows validation issues (error/warning/info), but doesn't provide a completeness score per activity. Users can't quickly identify which activities have the richest data vs. skeleton records.</p>
+    <p><strong>Suggestion:</strong> Add a visual completeness indicator (e.g., progress ring) showing how many key IATI fields are populated: title, description, dates, transactions, budgets, sectors, locations, contacts, documents, results.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>4.5 Preview Step Could Show More Data <span class="priority-tag priority-medium">Medium</span></h4>
+    <p>The expanded row in the Preview step shows good detail but could also show:</p>
+    <ul>
+      <li>Policy markers (now fetched)</li>
+      <li>Results summary (X indicators, Y periods)</li>
+      <li>Humanitarian scope / emergency classifications (now fetched)</li>
+      <li>Tags / SDG mapping (now fetched)</li>
+      <li>Whether the activity has been updated since last import</li>
+    </ul>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>4.6 No Field-Level Import Configuration <span class="priority-tag priority-low">Low</span></h4>
+    <p>The Rules step offers activity-level matching and transaction handling, but no field-level control. A user might want to import transactions from IATI but keep their locally-edited title/description. Currently it's all-or-nothing per section.</p>
+    <p><strong>Suggestion:</strong> Add checkboxes where users can choose which data categories to import: Core Info, Dates, Transactions, Budgets, Sectors, Locations, Contacts, Documents, Classifications, etc.</p>
+  </div>
+
+  <div class="card highlight-green">
+    <h4>4.7 Simulated Progress Instead of Real Streaming <span class="priority-tag priority-low">Low</span></h4>
+    <p>The Source step uses a simulated progress bar during Datastore fetch. The progress phases (Connecting 0-5%, Fetching 5-80%, etc.) are estimations, not real indicators.</p>
+    <p><strong>Suggestion:</strong> Switch to Server-Sent Events (SSE) for real-time progress. Show actual "Page 3 of 7" progress instead of estimates.</p>
+  </div>
+</section>
+
+<!-- SECTION 5: TECHNICAL IMPROVEMENTS -->
+<section id="section-5">
+  <h2><span class="section-icon">5.</span> Technical / Architecture Improvements</h2>
+
+  <div class="card highlight-red">
+    <h4>5.1 Fire-and-Forget Background Processing <span class="priority-tag priority-high">High Risk</span></h4>
+    <p>The import processing uses a fire-and-forget <code>processActivities().catch(...)</code> pattern. The response is returned immediately while processing continues asynchronously. On Vercel's serverless platform, the function may be terminated after the response is sent, leaving batches stuck in <code>'importing'</code> status.</p>
+    <p><strong>Suggestion:</strong> Use Vercel's <code>waitUntil()</code> / Next.js <code>after()</code> API for background processing, or move to a proper job queue (e.g., Supabase Edge Functions, or a cron-based processor that picks up pending batches).</p>
+    <p><strong>Note:</strong> The <code>maxDuration = 300</code> (5 minutes) setting helps on Vercel Pro, but doesn't address the fundamental fire-and-forget issue.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>5.2 No Idempotency / Duplicate Detection <span class="priority-tag priority-medium">Medium</span></h4>
+    <p>If a user imports the same batch twice (e.g., refresh during import), there's no deduplication of transactions, budgets, or other related records when using <code>append_new</code> mode.</p>
+    <p><strong>Suggestion:</strong> Add a <code>source_hash</code> or <code>import_batch_id</code> field to child records to enable duplicate detection. When appending, skip records that already exist from the same source.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>5.3 Stale Batch Recovery <span class="priority-tag priority-medium">Medium</span></h4>
+    <p>If the server crashes mid-import, the batch remains in <code>'importing'</code> status with no mechanism to resume or clean up. Items already processed are committed, but remaining items stay <code>'queued'</code>.</p>
+    <p><strong>Suggestion:</strong> Add a cron job or startup check that marks batches older than 10 minutes in <code>'importing'</code> status as <code>'failed'</code> with a timeout message. Optionally allow resuming from the last successful item.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>5.4 Results Importer Performance <span class="priority-tag priority-medium">Performance</span></h4>
+    <p>The results importer (<span class="file-ref">results-importer.ts</span>) inserts every result, indicator, baseline, period, and their child records (locations, dimensions, document links) <strong>one at a time</strong> across 14 tables. For activities with rich results frameworks, this generates hundreds of sequential DB inserts per activity. This is likely the biggest remaining performance bottleneck.</p>
+    <p><strong>Suggestion:</strong> Batch-insert child records where parent IDs are known. For example, after creating an indicator, batch-insert all its references and document links in single calls rather than one-by-one.</p>
+  </div>
+
+  <div class="card highlight-amber">
+    <h4>5.5 Memory Pressure from Large Activity Sets <span class="priority-tag priority-medium">Risk</span></h4>
+    <p>The entire activity array (including all transactions, budgets, documents, etc.) is sent in the POST request body and held in memory during processing. For organizations with 5,000+ activities and extensive transaction histories, this could exceed serverless memory limits.</p>
+    <p><strong>Suggestion:</strong> Process activities in smaller chunks (e.g., 50 at a time), or stream the data from temporary storage rather than passing everything in one HTTP request.</p>
+  </div>
+
+  <div class="card highlight-green">
+    <h4>5.6 No IATI Codelist Validation <span class="priority-tag priority-low">Low</span></h4>
+    <p>Imported sector codes, country codes, transaction types, etc. are not validated against the official IATI codelists. Invalid codes could be imported and cause downstream issues.</p>
+    <p><strong>Suggestion:</strong> Add codelist validation during the validation step. Reference IATI codelists to flag activities with invalid codes before import.</p>
+  </div>
+</section>
+
+<!-- SECTION 6: COVERAGE MATRIX -->
+<section id="section-6">
+  <h2><span class="section-icon">6.</span> Current Field Coverage Matrix</h2>
+  <p>Complete overview of IATI 2.03 activity elements vs. current import coverage:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>IATI Element</th>
+          <th>Fetched?</th>
+          <th>Parsed?</th>
+          <th>Displayed?</th>
+          <th>Imported?</th>
+          <th>DB Ready?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>iati-identifier</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>reporting-org</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>title</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>description</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>participating-org</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>other-identifier</strong></td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>activity-status</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>activity-date</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>contact-info</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>activity-scope</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>recipient-country</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>recipient-region</strong></td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--amber);">Partial</td></tr>
+        <tr><td><strong>location</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>sector</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">DAC + vocab 99</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>tag</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>country-budget-items</strong></td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>humanitarian-scope</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>policy-marker</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>collaboration-type</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>default-flow-type</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>default-finance-type</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>default-aid-type</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>default-tied-status</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>budget</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>planned-disbursement</strong></td><td style="color:var(--red);">No*</td><td style="color:var(--amber);">Type only</td><td style="color:var(--amber);">In Preview</td><td style="color:var(--red);">No</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>capital-spend</strong></td><td style="color:var(--red);">No*</td><td style="color:var(--amber);">Type only</td><td style="color:var(--amber);">In Preview</td><td style="color:var(--red);">No</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>transaction</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>document-link</strong></td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>related-activity</strong></td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>conditions</strong></td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>result</strong></td><td style="color:var(--green);">Yes (XML)</td><td style="color:var(--green);">Yes</td><td style="color:var(--amber);">Counts only</td><td style="color:var(--green);">Yes</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>crs-add</strong></td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--green);">Yes</td></tr>
+        <tr><td><strong>fss</strong></td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--red);">No</td><td style="color:var(--green);">Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:0.85rem;">* These fields are noted as "not indexed in IATI Datastore" in code comments. They may be available via d-portal or raw XML.</p>
+  <p style="font-size:0.85rem;"><strong>Coverage:</strong> 24 of 32 IATI elements are now fully imported (75%). Up from 15 of 32 (47%) in the original report.</p>
+</section>
+
+<!-- SECTION 7: REMAINING RECOMMENDATIONS -->
+<section id="section-7">
+  <h2><span class="section-icon">7.</span> Remaining Prioritised Recommendations</h2>
+  <p>Items already implemented have been removed. These are the outstanding opportunities:</p>
+
+  <h3>Quick Wins (Low Effort, High Impact)</h3>
+  <div class="grid-2">
+    <div class="card highlight-green">
+      <h4>1. Fetch &amp; import related activities</h4>
+      <p>Add <code>related_activity_ref</code> and <code>related_activity_type</code> to Solr fields, map in <code>datastore-mapper.ts</code>, import to <code>activity_relationships</code> table. Reconstructs parent/child hierarchies.</p>
+      <p><strong>Effort:</strong> ~1 hour | <strong>Files:</strong> 4 files</p>
+    </div>
+    <div class="card highlight-green">
+      <h4>2. Fetch &amp; import other identifiers</h4>
+      <p>Add <code>other_identifier_ref</code>, <code>other_identifier_type</code> to Solr fields, map and store in the <code>other_identifiers</code> JSONB column.</p>
+      <p><strong>Effort:</strong> ~45 minutes | <strong>Files:</strong> 3 files</p>
+    </div>
+    <div class="card highlight-green">
+      <h4>3. Fetch &amp; import conditions</h4>
+      <p>Add <code>conditions_attached</code>, <code>condition_type</code>, <code>condition_narrative</code> to Solr fields. Map and import to <code>activity_conditions</code> table.</p>
+      <p><strong>Effort:</strong> ~1 hour | <strong>Files:</strong> 4 files</p>
+    </div>
+    <div class="card highlight-green">
+      <h4>4. Fetch &amp; import recipient regions</h4>
+      <p>Add <code>recipient_region_code</code>, <code>recipient_region_vocabulary</code>, <code>recipient_region_percentage</code> to Solr fields. Ensures regional activities have geographic data.</p>
+      <p><strong>Effort:</strong> ~1 hour | <strong>Files:</strong> 4 files</p>
+    </div>
+  </div>
+
+  <h3>Medium Effort, High Impact</h3>
+  <div class="grid-2">
+    <div class="card highlight-amber">
+      <h4>5. Results importer performance</h4>
+      <p>Batch-insert child records in <span class="file-ref">results-importer.ts</span> where possible. Currently every reference, document link, location, and dimension is a separate <code>await insert()</code>. This is the biggest remaining performance bottleneck for activities with rich results frameworks.</p>
+      <p><strong>Effort:</strong> ~3 hours | <strong>Files:</strong> <span class="file-ref">results-importer.ts</span></p>
+    </div>
+    <div class="card highlight-amber">
+      <h4>6. Preview step: show newly-fetched data</h4>
+      <p>The Preview step could now show policy markers, humanitarian scope, tags/SDGs, and results counts &mdash; all of which are fetched but not yet displayed in the expanded preview row.</p>
+      <p><strong>Effort:</strong> ~2 hours | <strong>Files:</strong> <span class="file-ref">BulkPreviewStep.tsx</span></p>
+    </div>
+    <div class="card highlight-amber">
+      <h4>7. Stale batch recovery</h4>
+      <p>Add logic (cron or on-page-load) to mark batches stuck in <code>'importing'</code> for &gt;10 minutes as <code>'failed'</code>. Optionally allow resume from last successful item.</p>
+      <p><strong>Effort:</strong> ~2 hours | <strong>Files:</strong> Cron route or API route</p>
+    </div>
+    <div class="card highlight-amber">
+      <h4>8. Data quality / completeness score</h4>
+      <p>Add a visual completeness indicator per activity in Preview showing how many key IATI fields are populated.</p>
+      <p><strong>Effort:</strong> ~2 hours | <strong>Files:</strong> <span class="file-ref">BulkPreviewStep.tsx</span></p>
+    </div>
+  </div>
+
+  <h3>Higher Effort, Strategic Value</h3>
+  <div class="grid-2">
+    <div class="card highlight-purple">
+      <h4>9. Diff/comparison view for updates</h4>
+      <p>Before importing updates, show side-by-side comparison of existing vs. incoming data per field. Requires fetching existing activity data during preview.</p>
+      <p><strong>Effort:</strong> ~8 hours | <strong>Files:</strong> New component + API</p>
+    </div>
+    <div class="card highlight-purple">
+      <h4>10. Rollback capability</h4>
+      <p>Store pre-import snapshots, track which records were created by each batch, enable one-click rollback.</p>
+      <p><strong>Effort:</strong> ~12 hours | <strong>Files:</strong> Multiple</p>
+    </div>
+    <div class="card highlight-purple">
+      <h4>11. Reliable background processing</h4>
+      <p>Replace fire-and-forget with proper job queue. Options: Supabase Edge Functions, Vercel Cron + batch processor, or <code>waitUntil()</code>.</p>
+      <p><strong>Effort:</strong> ~8 hours | <strong>Files:</strong> Architecture change</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Generated by Claude Opus 4.6 Deep Dive Analysis | Originally 7 February 2026 | Updated 8 February 2026</p>
+  <p>Source files analysed: datastore-mapper.ts, fetch-org-activities/route.ts, bulk-import/route.ts, organization-helpers.ts, parse-results-xml.ts, results-importer.ts, sync-service.ts, types.ts, BulkImportSourceStep.tsx, BulkPreviewStep.tsx, BulkImportRulesStep.tsx, BulkImportExecutionStep.tsx, BulkImportResultsStep.tsx, BulkValidationStep.tsx, BulkImportWizard.tsx, and 170+ migration files.</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Search, Plus, Edit2, Eye, Trash2, ExternalLink, Globe, MapPin, Users, Activity, DollarSign, Building2, AlertTriangle, Copy, Upload, X, ImageIcon, Info, TableIcon, LayoutGrid, Calendar, Mail, Phone, HelpCircle, User, Lock, MoreVertical, Download, FileText, FileSpreadsheet } from 'lucide-react'
+import { Search, Plus, Pencil, Eye, Trash2, ExternalLink, Globe, MapPin, Users, Activity, DollarSign, Building2, AlertTriangle, Copy, Upload, X, ImageIcon, Info, TableIcon, LayoutGrid, Calendar, Mail, Phone, HelpCircle, User, Lock, MoreVertical, Download, FileText, FileSpreadsheet } from 'lucide-react'
 import { exportOrganizationToPDF, exportOrganizationToExcel } from '@/lib/organization-export'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -934,7 +934,7 @@ const OrganizationCard: React.FC<{
               className="cursor-pointer"
               onClick={(e) => { e.stopPropagation(); onEdit(organization); }}
             >
-              <Edit2 className="h-4 w-4 mr-2" />
+              <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -956,7 +956,7 @@ const OrganizationCard: React.FC<{
               className="cursor-pointer text-red-600 hover:bg-red-50"
               onClick={(e) => { e.stopPropagation(); onDelete(organization); }}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -1156,7 +1156,7 @@ const OrganizationListView: React.FC<{
                 }}
                 className="text-gray-600 hover:text-blue-600"
               >
-                <Edit2 className="h-4 w-4" />
+                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               </Button>
               <Button
                 variant="ghost"
@@ -1167,7 +1167,7 @@ const OrganizationListView: React.FC<{
                 }}
                 className="text-gray-600 hover:text-red-600"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-red-500" />
               </Button>
             </div>
           </div>
@@ -1974,7 +1974,7 @@ function OrganizationsPageContent() {
                                       setEditGroupModalOpen(true)
                                     }}
                                   >
-                                    <Edit2 className="h-4 w-4" />
+                                    <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                                   </Button>
                                   <Button
                                     variant="ghost"
@@ -1998,7 +1998,7 @@ function OrganizationsPageContent() {
                                       }
                                     }}
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-4 w-4 text-red-500" />
                                   </Button>
                                 </div>
                               </TableCell>

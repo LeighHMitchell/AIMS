@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Edit2, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon, HelpCircle, ChevronDown, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon, HelpCircle, ChevronDown, X } from 'lucide-react'
 import { toast } from 'sonner'
 import OrganizationFundingVisualization from './OrganizationFundingVisualization'
 import {
@@ -602,7 +602,7 @@ export default function OrganizationFundingEnvelopeTab({
                                       onClick={() => openModal(envelope)}
                                       disabled={deleteLoading === envelope.id}
                                     >
-                                      <Edit2 className="h-4 w-4" />
+                                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -613,7 +613,7 @@ export default function OrganizationFundingEnvelopeTab({
                                       {deleteLoading === envelope.id ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                       ) : (
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-4 w-4 text-red-500" />
                                       )}
                                     </Button>
                                   </div>

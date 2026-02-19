@@ -191,10 +191,8 @@ export function BookmarkedActivitiesTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[35%]">Activity</TableHead>
+                <TableHead className="w-[40%]">Activity</TableHead>
                 <TableHead>Reported By</TableHead>
-                <TableHead>Activity Status</TableHead>
-                <TableHead>Publication Status</TableHead>
                 <TableHead className="text-right">Budget</TableHead>
                 <TableHead>Updated</TableHead>
                 <TableHead className="w-[60px]"></TableHead>
@@ -212,7 +210,7 @@ export function BookmarkedActivitiesTable() {
                       <p className="font-medium" title={activity.title_narrative}>
                         {activity.title_narrative}
                         {activity.acronym && (
-                          <span className="text-slate-500"> ({activity.acronym})</span>
+                          <span> ({activity.acronym})</span>
                         )}
                       </p>
                       {activity.iati_identifier && (
@@ -234,29 +232,13 @@ export function BookmarkedActivitiesTable() {
                           }}
                         />
                       )}
-                      <div className="text-sm">
-                        <span className="text-slate-700">
-                          {activity.reporting_org_name || activity.created_by_org_name || '-'}
-                        </span>
+                      <span className="text-sm text-slate-700">
+                        {activity.reporting_org_name || activity.created_by_org_name || '-'}
                         {(activity.reporting_org_acronym || activity.created_by_org_acronym) && (
-                          <span className="text-slate-500"> ({activity.reporting_org_acronym || activity.created_by_org_acronym})</span>
+                          <> ({activity.reporting_org_acronym || activity.created_by_org_acronym})</>
                         )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {activity.activity_status ? (
-                      <span className={`text-xs px-1.5 py-0.5 rounded inline-block w-fit ${ACTIVITY_STATUS_LABELS[activity.activity_status]?.color || 'bg-gray-100 text-gray-700'}`}>
-                        {ACTIVITY_STATUS_LABELS[activity.activity_status]?.label || activity.activity_status}
                       </span>
-                    ) : (
-                      <span className="text-slate-400">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={activity.publication_status === 'published' ? 'default' : 'secondary'} className="w-fit">
-                      {activity.publication_status || 'draft'}
-                    </Badge>
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     {activity.totalBudgetOriginal && activity.totalBudgetOriginal > 0 ? (

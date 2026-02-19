@@ -62,10 +62,10 @@ export async function GET(request: NextRequest) {
         .select('publication_status, submission_status')
         .eq('reporting_org_id', organizationId),
 
-      // Last activity created
+      // Last activity created (with creator info)
       supabase
         .from('activities')
-        .select('id, title_narrative, iati_identifier, created_at')
+        .select('id, title_narrative, iati_identifier, created_at, created_by')
         .eq('reporting_org_id', organizationId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       // Last activity edited
       supabase
         .from('activities')
-        .select('id, title_narrative, updated_at, updated_by')
+        .select('id, title_narrative, iati_identifier, updated_at, updated_by')
         .eq('reporting_org_id', organizationId)
         .order('updated_at', { ascending: false })
         .limit(1)
@@ -88,10 +88,13 @@ export async function GET(request: NextRequest) {
           validation_status,
           validation_date,
           validating_authority,
+          comments,
           updated_at,
+          updated_by,
           activities!inner (
             id,
             title_narrative,
+            iati_identifier,
             reporting_org_id
           )
         `)
@@ -117,6 +120,38 @@ export async function GET(request: NextRequest) {
         a.submission_status === 'validated'
     ).length;
 
+    // Collect user IDs that need profile lookups
+    const userIdsToLookup: string[] = [];
+    if (lastCreatedResult.data?.created_by) userIdsToLookup.push(lastCreatedResult.data.created_by);
+    if (lastEditedResult.data?.updated_by) userIdsToLookup.push(lastEditedResult.data.updated_by);
+    if (lastValidationResult.data?.updated_by) userIdsToLookup.push(lastValidationResult.data.updated_by);
+
+    // Fetch all user profiles in one query
+    const uniqueUserIds = [...new Set(userIdsToLookup.filter(Boolean))];
+    const userProfileMap = new Map<string, { first_name: string; last_name: string; job_title: string; department: string }>();
+    if (uniqueUserIds.length > 0) {
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, job_title, department')
+        .in('id', uniqueUserIds);
+
+      (usersData || []).forEach((u: any) => {
+        userProfileMap.set(u.id, u);
+      });
+    }
+
+    // Helper to build UserProfile
+    const buildProfile = (userId2: string | null) => {
+      if (!userId2) return undefined;
+      const u = userProfileMap.get(userId2);
+      if (!u) return undefined;
+      return {
+        name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Unknown',
+        jobTitle: u.job_title || undefined,
+        department: u.department || undefined,
+      };
+    };
+
     // Process last created activity
     let lastActivityCreated: RecencyItem | null = null;
     if (lastCreatedResult.data && !lastCreatedResult.error) {
@@ -125,6 +160,7 @@ export async function GET(request: NextRequest) {
         title: lastCreatedResult.data.title_narrative || 'Untitled Activity',
         timestamp: lastCreatedResult.data.created_at,
         iatiIdentifier: lastCreatedResult.data.iati_identifier || undefined,
+        creatorProfile: buildProfile(lastCreatedResult.data.created_by),
       };
     }
 
@@ -132,38 +168,32 @@ export async function GET(request: NextRequest) {
     let lastActivityEdited: EditedRecencyItem | null = null;
     if (lastEditedResult.data && !lastEditedResult.error) {
       const editedByYou = userId ? lastEditedResult.data.updated_by === userId : false;
+      const editorProfile = buildProfile(lastEditedResult.data.updated_by);
       lastActivityEdited = {
         id: lastEditedResult.data.id,
         title: lastEditedResult.data.title_narrative || 'Untitled Activity',
         timestamp: lastEditedResult.data.updated_at,
+        iatiIdentifier: lastEditedResult.data.iati_identifier || undefined,
         editedByYou,
+        editedByName: editorProfile?.name || 'Colleague',
+        editorProfile: editedByYou ? undefined : editorProfile,
       };
-
-      // If not edited by the current user, fetch the editor's name
-      if (!editedByYou && lastEditedResult.data.updated_by) {
-        const { data: editorData } = await supabase
-          .from('users')
-          .select('first_name, last_name')
-          .eq('id', lastEditedResult.data.updated_by)
-          .single();
-
-        if (editorData) {
-          lastActivityEdited.editedByName =
-            `${editorData.first_name || ''} ${editorData.last_name || ''}`.trim() || 'Colleague';
-        }
-      }
     }
 
     // Process last validation event
     let lastValidationEvent: ValidationEvent | null = null;
     if (lastValidationResult.data && !lastValidationResult.error) {
-      const activity = lastValidationResult.data.activities as { id: string; title_narrative: string } | null;
+      const activity = lastValidationResult.data.activities as { id: string; title_narrative: string; iati_identifier?: string } | null;
+      const validatorProfile = buildProfile(lastValidationResult.data.updated_by);
       lastValidationEvent = {
         activityId: lastValidationResult.data.activity_id,
         activityTitle: activity?.title_narrative || 'Untitled Activity',
+        iatiIdentifier: activity?.iati_identifier || undefined,
         eventType: lastValidationResult.data.validation_status as ValidationEvent['eventType'],
         timestamp: lastValidationResult.data.validation_date || lastValidationResult.data.updated_at,
         validatingAuthority: lastValidationResult.data.validating_authority,
+        validatorName: validatorProfile?.name,
+        rejectionReason: lastValidationResult.data.comments || undefined,
       };
     }
 

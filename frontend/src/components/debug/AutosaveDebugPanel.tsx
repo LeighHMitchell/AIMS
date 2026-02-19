@@ -277,7 +277,7 @@ export function AutosaveDebugPanel({ activityData, className }: AutosaveDebugPan
                   size="sm"
                   className="text-green-400 border-green-400 text-xs"
                 >
-                  <Trash2 className="h-3 w-3 mr-1" />
+                  <Trash2 className="h-3 w-3 mr-1 text-red-500" />
                   Clear Logs
                 </Button>
               </div>

@@ -1775,7 +1775,7 @@ const autoPopulateIatiFields = useCallback((params: {
                 onClick={handleDelete}
                 className="flex items-center gap-2"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 text-red-500" />
                 Delete
               </Button>
             )}

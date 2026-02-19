@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Clock, Edit2, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react'
+import { Clock, Pencil, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { differenceInDays, format, parseISO } from 'date-fns'
@@ -481,7 +481,7 @@ export function StaleTransactionsTable() {
                         onClick={() => router.push(`/activities/new?id=${activity.id}&section=finances`)}
                         title="Edit transactions"
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                       </Button>
                     </TableCell>
                   </TableRow>

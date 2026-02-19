@@ -305,7 +305,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                         {score > 0 && (
                           <div className="space-y-2 pt-2 border-t border-gray-100">
                             <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-gray-700">
-                              Rationale for Scoring (Optional)
+                              Rationale for Scoring
                             </Label>
                             <Textarea
                               id={`${marker.id}-rationale`}
@@ -389,7 +389,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                         {score > 0 && (
                           <div className="space-y-2 pt-2 border-t border-gray-100">
                             <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-gray-700">
-                              Rationale for Scoring (Optional)
+                              Rationale for Scoring
                             </Label>
                             <Textarea
                               id={`${marker.id}-rationale`}
@@ -473,7 +473,7 @@ export default function PolicyMarkersSection({ activityId, policyMarkers, onChan
                         {score > 0 && (
                           <div className="space-y-2 pt-2 border-t border-gray-100">
                             <Label htmlFor={`${marker.id}-rationale`} className="text-sm font-medium text-gray-700">
-                              Rationale for Scoring (Optional)
+                              Rationale for Scoring
                             </Label>
                             <Textarea
                               id={`${marker.id}-rationale`}

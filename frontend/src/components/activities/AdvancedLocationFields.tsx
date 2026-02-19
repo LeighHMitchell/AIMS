@@ -256,7 +256,7 @@ export default function AdvancedLocationFields({
                             onClick={() => removeLocation(location.id)}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         )}
                       </div>
@@ -437,7 +437,7 @@ export default function AdvancedLocationFields({
 
                       {/* Coordinates */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Coordinates (Optional)</Label>
+                        <Label className="text-sm font-medium">Coordinates</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor={`latitude-${location.id}`}>Latitude</Label>
@@ -491,7 +491,7 @@ export default function AdvancedLocationFields({
 
                       {/* Percentage Allocation */}
                       <div className="space-y-2">
-                        <Label htmlFor={`percentage-${location.id}`}>Percentage Allocation (Optional)</Label>
+                        <Label htmlFor={`percentage-${location.id}`}>Percentage Allocation</Label>
                         <Input
                           id={`percentage-${location.id}`}
                           type="number"

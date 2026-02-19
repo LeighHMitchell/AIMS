@@ -27,7 +27,7 @@ import {
   HelpCircle,
   Plus,
   MoreVertical,
-  Edit,
+  Pencil,
   Trash2,
   MapPin,
   Tag,
@@ -457,7 +457,7 @@ export function EventDetailModal({
                 <>
                   {!isEditing ? (
                     <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
-                      <Edit className="h-4 w-4" />
+                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                     </Button>
                   ) : (
                     <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
@@ -466,7 +466,7 @@ export function EventDetailModal({
                   )}
                   {(isOrganizer || user?.role === 'admin') && (
                     <Button variant="ghost" size="sm" onClick={handleDelete} className="text-[#dc2625]">
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   )}
                 </>
@@ -1034,7 +1034,7 @@ export function EventDetailModal({
                             onClick={() => handleDeleteDocument(doc)}
                             title="Delete"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         )}
                       </div>

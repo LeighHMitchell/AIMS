@@ -42,42 +42,42 @@ const ACTION_CONFIG: Record<ActionType, {
 }> = {
   validation_returned: {
     icon: AlertCircle,
-    color: 'text-[#dc2625]',
-    bgColor: 'bg-[#dc2625]/10',
-    badgeVariant: 'destructive',
-    badgeStyle: 'bg-[#dc2625] text-white hover:bg-[#dc2625]/90',
+    color: 'text-slate-600',
+    bgColor: 'bg-slate-50',
+    badgeVariant: 'secondary',
+    badgeStyle: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
     label: 'Validation Returned',
   },
   missing_data: {
     icon: AlertTriangle,
-    color: 'text-[#4c5568]',
-    bgColor: 'bg-[#4c5568]/10',
+    color: 'text-slate-600',
+    bgColor: 'bg-slate-50',
     badgeVariant: 'secondary',
-    badgeStyle: 'bg-[#4c5568] text-white hover:bg-[#4c5568]/90',
+    badgeStyle: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
     label: 'Missing Data',
   },
   closing_soon: {
     icon: Clock,
-    color: 'text-[#7b95a7]',
-    bgColor: 'bg-[#7b95a7]/10',
-    badgeVariant: 'default',
-    badgeStyle: 'bg-[#7b95a7] text-white hover:bg-[#7b95a7]/90',
+    color: 'text-slate-600',
+    bgColor: 'bg-slate-50',
+    badgeVariant: 'secondary',
+    badgeStyle: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
     label: 'Closing Soon',
   },
   out_of_date: {
     icon: History,
-    color: 'text-[#4c5568]',
-    bgColor: 'bg-[#cfd0d5]/30',
+    color: 'text-slate-600',
+    bgColor: 'bg-slate-50',
     badgeVariant: 'secondary',
-    badgeStyle: 'bg-[#cfd0d5] text-[#4c5568] hover:bg-[#cfd0d5]/90',
+    badgeStyle: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
     label: 'Needs Update',
   },
   new_comment: {
     icon: MessageSquare,
-    color: 'text-[#7b95a7]',
-    bgColor: 'bg-[#f1f4f8]',
-    badgeVariant: 'outline',
-    badgeStyle: 'bg-[#f1f4f8] text-[#4c5568] border-[#cfd0d5] hover:bg-[#cfd0d5]/50',
+    color: 'text-slate-600',
+    bgColor: 'bg-slate-50',
+    badgeVariant: 'secondary',
+    badgeStyle: 'bg-slate-200 text-slate-700 hover:bg-slate-300',
     label: 'New Comment',
   },
 };
@@ -176,7 +176,7 @@ export function ActionsRequiredPanel({
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
+            <AlertCircle className="h-5 w-5 text-slate-600" />
             Actions Required
           </CardTitle>
         </CardHeader>
@@ -193,7 +193,7 @@ export function ActionsRequiredPanel({
       <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <CheckCircle2 className="h-5 w-5 text-slate-600" />
             Actions Required
           </CardTitle>
           <CardDescription>
@@ -202,7 +202,7 @@ export function ActionsRequiredPanel({
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-green-500 mb-3" />
+            <CheckCircle2 className="h-12 w-12 text-slate-400 mb-3" />
             <p className="text-lg font-medium text-slate-700">All caught up!</p>
             <p className="text-sm text-slate-500 mt-1">
               You have no pending actions at the moment.

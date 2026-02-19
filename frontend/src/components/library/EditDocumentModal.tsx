@@ -248,7 +248,7 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder="Enter document description (optional)"
+              placeholder="Enter document description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Edit2, Trash2, DollarSign, Building2, Globe2, MapPin, Loader2, AlertCircle } from 'lucide-react'
+import { Plus, Pencil, Trash2, DollarSign, Building2, Globe2, MapPin, Loader2, AlertCircle, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -383,14 +383,14 @@ export function IATIBudgetManager({
                     size="sm"
                     onClick={() => handleEditBudget(budget)}
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteBudget(budgetIndex)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
               )}
@@ -448,14 +448,14 @@ export function IATIBudgetManager({
                           size="sm"
                           onClick={() => handleEditBudgetLine(budgetIndex, lineIndex)}
                         >
-                          <Edit2 className="h-3 w-3" />
+                          <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteBudgetLine(budgetIndex, lineIndex)}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-3 w-3 text-red-500" />
                         </Button>
                       </div>
                     )}
@@ -867,6 +867,7 @@ export function IATIBudgetManager({
               Cancel
             </Button>
             <Button onClick={handleSaveBudgetLine}>
+              <Save className="h-4 w-4 mr-2" />
               Save Budget Line
             </Button>
           </DialogFooter>

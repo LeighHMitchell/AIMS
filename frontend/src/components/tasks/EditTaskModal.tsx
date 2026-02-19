@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { CalendarIcon, Loader2, X } from 'lucide-react';
+import { CalendarIcon, Loader2, Save, X } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Task, UpdateTaskRequest, TaskPriority, TaskAssignees } from '@/types/task';
 import { cn } from '@/lib/utils';
@@ -343,7 +343,7 @@ export function EditTaskModal({
                 Cancel
               </Button>
               <Button type="submit" disabled={!canSubmit}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save Changes
               </Button>
             </div>

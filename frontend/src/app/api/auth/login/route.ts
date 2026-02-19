@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
       email: userData.email,
       title: userData.title || '',
       jobTitle: userData.job_title || userData.title || '',
+      department: userData.department || '',
       role: userData.role,
       organizationId: userData.organization_id,
       organisation: organization?.name || '',

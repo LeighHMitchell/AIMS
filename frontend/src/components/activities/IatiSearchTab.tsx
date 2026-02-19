@@ -752,7 +752,7 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
             
             {/* Country */}
             <div className="space-y-2">
-              <Label htmlFor="country">Recipient Country (Optional)</Label>
+              <Label htmlFor="country">Recipient Country</Label>
               <CountryCombobox
                 countries={uniqueCountries}
                 value={filters.recipientCountry}

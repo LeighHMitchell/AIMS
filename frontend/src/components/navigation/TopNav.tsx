@@ -169,7 +169,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                     <span>My Portfolio</span>
                   </Link>
 
-                  <Link href="/notifications" className={itemClass} onClick={() => setIsMenuOpen(false)}>
+                  <Link href="/dashboard?tab=notifications" className={itemClass} onClick={() => setIsMenuOpen(false)}>
                     <Bell className="h-4 w-4" />
                     <span>Notifications</span>
                   </Link>

@@ -20,6 +20,7 @@ export interface TransactionTrendPoint {
   count: number;
   amount: number;
   types?: Record<string, number>; // transaction_type -> count
+  typeAmounts?: Record<string, number>; // transaction_type -> USD value
 }
 
 export interface SectorBreakdown {
@@ -27,6 +28,9 @@ export interface SectorBreakdown {
   name: string;
   percentage: number;
   activityCount: number;
+  totalBudget: number;
+  totalPlannedDisbursements: number;
+  totalDisbursements: number;
 }
 
 export interface HeroStatsData {
@@ -208,47 +212,73 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => a.year - b.year)
       .slice(-5); // Last 5 years
 
-    // Process transaction trend by year with type breakdown
-    const transactionsByYear = new Map<number, { 
-      count: number; 
-      amount: number; 
+    // Process transaction trend by year with type breakdown (counts + amounts)
+    const transactionsByYear = new Map<number, {
+      count: number;
+      amount: number;
       types: Map<string, number>;
+      typeAmounts: Map<string, number>;
     }>();
-    
+
     allTransactions.forEach((tx: any) => {
       if (tx.transaction_date) {
         const d = new Date(tx.transaction_date);
         const year = d.getFullYear();
         if (!transactionsByYear.has(year)) {
-          transactionsByYear.set(year, { count: 0, amount: 0, types: new Map() });
+          transactionsByYear.set(year, { count: 0, amount: 0, types: new Map(), typeAmounts: new Map() });
         }
         const existing = transactionsByYear.get(year)!;
         existing.count += 1;
-        existing.amount += tx.value_usd || tx.value || 0;
-        
-        // Count by transaction type
+        const txAmount = tx.value_usd || tx.value || 0;
+        existing.amount += txAmount;
+
+        // Count and sum by transaction type
         const txType = tx.transaction_type || 'unknown';
         existing.types.set(txType, (existing.types.get(txType) || 0) + 1);
+        existing.typeAmounts.set(txType, (existing.typeAmounts.get(txType) || 0) + txAmount);
       }
     });
 
     // Convert to array format, using year as the "month" field for compatibility
     const transactionTrend: TransactionTrendPoint[] = Array.from(transactionsByYear.entries())
-      .map(([year, data]) => ({ 
-        month: year.toString(), // Use year as string for chart display
-        count: data.count, 
+      .map(([year, data]) => ({
+        month: year.toString(),
+        count: data.count,
         amount: data.amount,
-        types: Object.fromEntries(data.types) // Convert Map to object
+        types: Object.fromEntries(data.types),
+        typeAmounts: Object.fromEntries(data.typeAmounts),
       }))
       .sort((a, b) => a.month.localeCompare(b.month))
-      .slice(-5); // Last 5 years
+      .slice(-5);
 
-    // Process sector breakdown
+    // Build lookup maps for budgets, planned disbursements, and disbursement transactions per activity
+    const budgetsByActivity = new Map<string, number>();
+    (budgetsResult.data || []).forEach((b: any) => {
+      const amount = b.usd_value || (b.currency === 'USD' ? b.value : 0) || 0;
+      budgetsByActivity.set(b.activity_id, (budgetsByActivity.get(b.activity_id) || 0) + amount);
+    });
+
+    const plannedDisbByActivity = new Map<string, number>();
+    (plannedDisbursementsResult.data || []).forEach((pd: any) => {
+      const amount = pd.usd_amount || (pd.currency === 'USD' ? pd.amount : 0) || 0;
+      plannedDisbByActivity.set(pd.activity_id, (plannedDisbByActivity.get(pd.activity_id) || 0) + amount);
+    });
+
+    const disbursementsByActivity = new Map<string, number>();
+    allTransactions.forEach((tx: any) => {
+      // Only count disbursements (type 3) and expenditures (type 4)
+      if (tx.transaction_type === '3' || tx.transaction_type === '4') {
+        const amount = tx.value_usd || tx.value || 0;
+        disbursementsByActivity.set(tx.activity_id, (disbursementsByActivity.get(tx.activity_id) || 0) + amount);
+      }
+    });
+
+    // Process sector breakdown with financial data
     const sectorMap = new Map<string, { name: string; totalPercentage: number; activityIds: Set<string> }>();
     (sectorsResult.data || []).forEach((sector: any) => {
       const code = sector.sector_code?.substring(0, 3) || 'Unknown'; // DAC3 level
       const name = sector.sector_name || 'Unknown Sector';
-      
+
       if (!sectorMap.has(code)) {
         sectorMap.set(code, { name, totalPercentage: 0, activityIds: new Set() });
       }
@@ -258,14 +288,29 @@ export async function GET(request: NextRequest) {
     });
 
     const sectorBreakdown: SectorBreakdown[] = Array.from(sectorMap.entries())
-      .map(([code, data]) => ({
-        code,
-        name: data.name.split(' - ')[0] || data.name, // Get short name
-        percentage: Math.round(data.totalPercentage / Math.max(data.activityIds.size, 1)),
-        activityCount: data.activityIds.size,
-      }))
+      .map(([code, data]) => {
+        // Sum financials for activities in this sector
+        let totalBudget = 0;
+        let totalPlannedDisbursements = 0;
+        let totalDisbursements = 0;
+        data.activityIds.forEach((actId: string) => {
+          totalBudget += budgetsByActivity.get(actId) || 0;
+          totalPlannedDisbursements += plannedDisbByActivity.get(actId) || 0;
+          totalDisbursements += disbursementsByActivity.get(actId) || 0;
+        });
+
+        return {
+          code,
+          name: data.name.split(' - ')[0] || data.name,
+          percentage: Math.round(data.totalPercentage / Math.max(data.activityIds.size, 1)),
+          activityCount: data.activityIds.size,
+          totalBudget,
+          totalPlannedDisbursements,
+          totalDisbursements,
+        };
+      })
       .sort((a, b) => b.activityCount - a.activityCount)
-      .slice(0, 6); // Top 6 sectors
+      .slice(0, 8); // Top 8 sectors
 
     const response: HeroStatsData = {
       totalActivities,

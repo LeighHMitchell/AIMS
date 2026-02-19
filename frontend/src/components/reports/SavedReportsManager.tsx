@@ -501,6 +501,7 @@ export function SavedReportsManager({
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={isSaving}>
+              <Save className="h-4 w-4 mr-2" />
               {isSaving ? 'Saving...' : editingReportId ? 'Update' : 'Save'}
             </Button>
           </DialogFooter>
@@ -573,7 +574,7 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = fals
                 onEdit(report)
               }}
             >
-              <Pencil className="h-3 w-3" />
+              <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
             </Button>
           )}
           {onDelete && (
@@ -586,7 +587,7 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = fals
                 onDelete(report.id)
               }}
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3 w-3 text-red-500" />
             </Button>
           )}
         </div>

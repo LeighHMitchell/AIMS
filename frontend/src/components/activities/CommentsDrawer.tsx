@@ -19,7 +19,7 @@ import {
   CornerDownRight,
   HelpCircle,
   MessageCircle,
-  Trash,
+  Trash2,
   Share2
 } from 'lucide-react';
 import { ActivityComment } from '@/types/comment';
@@ -320,7 +320,7 @@ function CommentItem({
                     onClick={() => onDelete(comment.id)}
                     className="text-red-600 focus:text-red-600"
                   >
-                    <Trash className="h-3.5 w-3.5 mr-2" />
+                    <Trash2 className="h-3.5 w-3.5 mr-2 text-red-500" />
                     Delete
                   </DropdownMenuItem>
                 )}

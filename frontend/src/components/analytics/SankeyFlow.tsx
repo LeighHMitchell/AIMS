@@ -502,7 +502,6 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
         {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">View:</span>
             <div className="flex">
               <Button
                 variant={viewMode === 'periodic' ? 'default' : 'outline'}

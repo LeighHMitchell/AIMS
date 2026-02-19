@@ -19,7 +19,7 @@ import {
   Target, 
   TrendingUp, 
   Calendar,
-  Edit3,
+  Pencil,
   Trash2,
   Save,
   X,
@@ -253,7 +253,7 @@ export function IndicatorCard({
                     onClick={() => setIsEditing(true)}
                     className="text-gray-800 hover:bg-gray-100"
                   >
-                    <Edit3 className="h-3 w-3" />
+                    <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                   </Button>
                   <Button 
                     variant="ghost" 
@@ -261,7 +261,7 @@ export function IndicatorCard({
                     onClick={handleDeleteIndicator}
                     className="text-gray-800 hover:bg-gray-100"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-3 w-3 text-red-500" />
                   </Button>
                 </div>
               )}
@@ -430,7 +430,7 @@ export function IndicatorCard({
                           size="sm"
                           onClick={() => setShowBaselineForm(true)}
                         >
-                          <Edit3 className="h-3 w-3" />
+                          <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                         </Button>
                       )}
                     </div>
@@ -461,7 +461,7 @@ export function IndicatorCard({
                     </div>
 
                     <div className="space-y-2">
-                      <Label>ISO Date (optional)</Label>
+                      <Label>ISO Date</Label>
                       <Input
                         type="date"
                         value={baselineForm.iso_date}
@@ -498,6 +498,7 @@ export function IndicatorCard({
 
                   <div className="flex items-center gap-2">
                     <Button onClick={handleSaveBaseline}>
+                      <Save className="h-4 w-4 mr-2" />
                       Save Baseline
                     </Button>
                     <Button variant="outline" onClick={() => setShowBaselineForm(false)}>

@@ -9,7 +9,7 @@ import {
   Calendar,
   Languages,
   MapPin,
-  Edit,
+  Pencil,
   ExternalLink,
   Trash2,
   AlertCircle,
@@ -491,7 +491,7 @@ export function DocumentCardInline({
                             size="icon"
                             onClick={() => removeNarrative('title', index + 1)}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>
                         </div>
                       ))}
@@ -558,7 +558,7 @@ export function DocumentCardInline({
                               onClick={() => removeNarrative('description', index)}
                               className="px-2"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4 text-red-500" />
                             </Button>
                           </div>
                           <Textarea
@@ -749,7 +749,7 @@ export function DocumentCardInline({
               onClick={handleEdit}
               className="text-xs gap-1"
             >
-              <Edit className="w-3 h-3" />
+              <Pencil className="w-3 h-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               Edit
             </Button>
             
@@ -769,7 +769,7 @@ export function DocumentCardInline({
               onClick={() => onDelete(formData.url)}
               className="text-xs gap-1 text-red-600 hover:text-red-700"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3 h-3 text-red-500" />
               Delete
             </Button>
           </div>

@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { HelpCircle, Briefcase, Target, Wallet, FileEdit, Landmark, Gift, GraduationCap, Layers, MoreHorizontal } from 'lucide-react';
+import { HelpCircle, Briefcase, Target, Wallet, Pencil, Landmark, Gift, GraduationCap, Layers, MoreHorizontal } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -158,7 +158,7 @@ export function ReadinessConfigSection({
                   Briefcase,
                   Target,
                   Wallet,
-                  FileEdit,
+                  Pencil,
                 }[option.icon];
                 return (
                   <SelectItem key={option.value} value={option.value}>

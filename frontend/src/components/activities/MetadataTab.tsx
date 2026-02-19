@@ -10,8 +10,8 @@ import {
   Database, 
   Activity, 
   AlertCircle,
-  Edit,
-  Trash,
+  Pencil,
+  Trash2,
   Plus,
   Upload,
   Download,
@@ -135,10 +135,10 @@ const getActionIcon = (action: string) => {
     case 'edit':
     case 'update':
     case 'updated':
-      return <Edit className="h-4 w-4 text-gray-600" />;
+      return <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />;
     case 'delete':
     case 'deleted':
-      return <Trash className="h-4 w-4 text-gray-600" />;
+      return <Trash2 className="h-4 w-4 text-red-500" />;
     case 'publish':
     case 'published':
       return <Upload className="h-4 w-4 text-gray-600" />;

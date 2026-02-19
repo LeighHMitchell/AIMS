@@ -1160,7 +1160,7 @@ export default function ImprovedSectorAllocationForm({
                             className="text-xs text-[#DC2625] border-[#DC2625]/30 hover:bg-[#DC2625]/10 hover:text-[#DC2625] active:text-[#DC2625] focus-visible:text-[#DC2625]"
                             disabled={isLocked}
                           >
-                            <Trash2 className="h-3 w-3 mr-1" />
+                            <Trash2 className="h-3 w-3 mr-1 text-red-500" />
                             Clear All
                           </Button>
                         </TooltipTrigger>
@@ -1264,7 +1264,7 @@ export default function ImprovedSectorAllocationForm({
                                 onClick={() => removeSector(allocation.id)}
                                 className="h-6 w-6 p-0 text-[#DC2625] hover:text-[#DC2625] hover:bg-[#DC2625]/10"
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Trash2 className="h-3 w-3 text-red-500" />
                               </Button>
                             )}
                           </TableCell>

@@ -280,7 +280,7 @@ export default function PolicyMarkersSectionIATI({ activityId, policyMarkers, on
                   className="flex items-center gap-1 text-xs font-medium text-gray-700 hover:text-gray-900 mb-2"
                 >
                   {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                  Rationale (Optional)
+                  Rationale
                 </button>
                 
                 {isExpanded && (

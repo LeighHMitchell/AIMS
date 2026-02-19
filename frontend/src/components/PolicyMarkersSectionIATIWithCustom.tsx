@@ -682,7 +682,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           {isSelected && (
             <div>
               <Label className="text-xs font-medium mb-1 block text-slate-700">
-                Rationale {readOnly ? '' : '(Optional)'}
+                Rationale
               </Label>
               {readOnly ? (
                 rationale ? (
@@ -766,7 +766,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                   deleteCustomMarker(marker.id);
                 }}
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3 w-3 text-red-500" />
               </Button>
             </div>
           )}
@@ -913,7 +913,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     id="custom-description"
                     value={customMarkerForm.description}
                     onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Enter description (optional)"
+                    placeholder="Enter description"
                     rows={2}
                   />
                 </div>
@@ -1059,7 +1059,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
                     id="edit-custom-description"
                     value={customMarkerForm.description}
                     onChange={(e) => setCustomMarkerForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Enter description (optional)"
+                    placeholder="Enter description"
                     rows={2}
                   />
                 </div>

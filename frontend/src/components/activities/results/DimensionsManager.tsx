@@ -122,7 +122,7 @@ export function DimensionsManager({
 
           {/* Template Selection */}
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Use Template (optional)</Label>
+            <Label className="text-xs text-gray-700">Use Template</Label>
             <div className="flex flex-wrap gap-2">
               {Object.keys(DIMENSION_TEMPLATES).map((template) => (
                 <Button

@@ -17,7 +17,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Edit,
+  Pencil,
   Trash2,
   Download,
 } from 'lucide-react';
@@ -909,7 +909,7 @@ export function DocumentsAndImagesTabInline({
                                             className="h-7 w-7 p-0"
                                             title="Edit"
                                           >
-                                            <Edit className="w-3 h-3" />
+                                            <Pencil className="w-3 h-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                                           </Button>
                                           
                                           {/* Delete Button */}
@@ -920,7 +920,7 @@ export function DocumentsAndImagesTabInline({
                                             className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
                                             title="Delete"
                                           >
-                                            <Trash2 className="w-3 h-3" />
+                                            <Trash2 className="w-3 h-3 text-red-500" />
                                           </Button>
                                         </div>
                                       </TableCell>

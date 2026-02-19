@@ -15,7 +15,10 @@ import { escapeIlikeWildcards } from '@/lib/security-utils';
 export const dynamic = 'force-dynamic';
 
 // Helper function to fetch linked transactions for all activities
-async function fetchAllLinkedTransactions(activityIds: string[]) {
+async function fetchAllLinkedTransactions(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  activityIds: string[]
+) {
   if (activityIds.length === 0) return [];
   
   try {
@@ -308,7 +311,7 @@ export async function GET(request: Request) {
       ));
       
       if (userActivityIds.length > 0) {
-        const linkedTransactions = await fetchAllLinkedTransactions(userActivityIds);
+        const linkedTransactions = await fetchAllLinkedTransactions(supabase, userActivityIds);
         // Apply transaction source filter to linked transactions if needed
         let filteredLinked = linkedTransactions;
         if (transactionSource !== 'all') {

@@ -36,6 +36,7 @@ import {
   Loader2,
   Calendar,
   AlertCircle,
+  Save,
 } from "lucide-react";
 import {
   CustomYear,
@@ -364,7 +365,7 @@ export function CustomYearsManagement() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => handleEdit(year)}>
-                    <Pencil className="h-4 w-4 mr-2" />
+                    <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                     Edit
                   </DropdownMenuItem>
                   {!year.isDefault && (
@@ -378,7 +379,7 @@ export function CustomYearsManagement() {
                       onClick={() => handleDelete(year)}
                       className="text-red-600 focus:text-red-600"
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                       Delete
                     </DropdownMenuItem>
                   )}
@@ -641,7 +642,7 @@ export function CustomYearsManagement() {
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : editingYear ? <Save className="h-4 w-4 mr-2" /> : null}
               {editingYear ? "Save Changes" : "Create"}
             </Button>
           </DialogFooter>

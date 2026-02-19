@@ -161,7 +161,7 @@ function TreeNode({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(node)}>
-                <Pencil className="h-4 w-4 mr-2" />
+                <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onAddChild(node)}>
@@ -172,7 +172,7 @@ function TreeNode({
                 onClick={() => onDelete(node)}
                 className="text-red-600"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -829,7 +829,7 @@ export function BudgetClassificationsManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="nameLocal">Local Name (Optional)</Label>
+              <Label htmlFor="nameLocal">Local Name</Label>
               <Input
                 id="nameLocal"
                 value={formData.nameLocal}
@@ -841,7 +841,7 @@ export function BudgetClassificationsManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}

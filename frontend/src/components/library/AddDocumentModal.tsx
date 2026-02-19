@@ -418,7 +418,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder="Enter document description (optional)"
+              placeholder="Enter document description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}

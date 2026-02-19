@@ -242,7 +242,7 @@ export function ReassignTaskModal({
 
           {/* Note */}
           <div className="space-y-2">
-            <Label htmlFor="note">Note (optional)</Label>
+            <Label htmlFor="note">Note</Label>
             <Textarea
               id="note"
               placeholder="Add a note about why you're reassigning this task..."

@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import {
   Plus,
   Trash2,
-  Edit2,
+  Pencil,
   Globe,
   MapPin,
   AlertCircle,
@@ -1352,7 +1352,7 @@ export default function CountriesRegionsTab({
                               onClick={() => editCountry(countryAllocation)}
                               disabled={!canEdit}
                             >
-                              <Edit2 className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -1361,7 +1361,7 @@ export default function CountriesRegionsTab({
                               onClick={() => removeCountry(countryAllocation.id)}
                               disabled={!canEdit}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         </TableCell>
@@ -1413,7 +1413,7 @@ export default function CountriesRegionsTab({
                               onClick={() => editRegion(regionAllocation)}
                               disabled={!canEdit}
                             >
-                              <Edit2 className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -1422,7 +1422,7 @@ export default function CountriesRegionsTab({
                               onClick={() => removeRegion(regionAllocation.id)}
                               disabled={!canEdit}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         </TableCell>
@@ -1485,7 +1485,7 @@ export default function CountriesRegionsTab({
                               onClick={() => editCustomGeography(customAllocation)}
                               disabled={!canEdit}
                             >
-                              <Edit2 className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -1494,7 +1494,7 @@ export default function CountriesRegionsTab({
                               onClick={() => removeCustomGeography(customAllocation.id)}
                               disabled={!canEdit}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         </TableCell>

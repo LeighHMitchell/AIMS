@@ -104,7 +104,6 @@ export default function CoordinationPage() {
             {/* Toggle Controls */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-700">View:</span>
                 <div className="flex gap-1">
                   <Button
                     variant={view === "sectors" ? "default" : "outline"}

@@ -3,7 +3,7 @@
 import { Menu } from 'bloom-menu';
 import {
   MoreVertical,
-  PencilLine,
+  Pencil,
   Trash2,
 } from 'lucide-react';
 
@@ -42,7 +42,7 @@ export function BudgetActionMenu({
         <Menu.Content className="p-1.5">
           {onEdit && (
             <Menu.Item className={itemClass} onSelect={onEdit}>
-              <PencilLine className="h-4 w-4" />
+              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               Edit
             </Menu.Item>
           )}
@@ -53,7 +53,7 @@ export function BudgetActionMenu({
 
           {onDelete && (
             <Menu.Item className={dangerItemClass} onSelect={onDelete}>
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 text-red-500" />
               Delete
             </Menu.Item>
           )}

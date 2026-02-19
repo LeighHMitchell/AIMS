@@ -419,7 +419,7 @@ export default function FocalPointsTab({
                     {isLoading && actionLoading?.startsWith('remove') ? (
                       <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                     ) : (
-                      <Trash2 className="h-4 w-4 mr-1" />
+                      <Trash2 className="h-4 w-4 mr-1 text-red-500" />
                     )}
                     Remove
                   </Button>

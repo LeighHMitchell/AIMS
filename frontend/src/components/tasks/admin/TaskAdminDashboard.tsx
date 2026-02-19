@@ -20,7 +20,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import {
-  RefreshCw,
   TrendingUp,
   TrendingDown,
   Clock,
@@ -147,9 +146,6 @@ export function TaskAdminDashboard({ userId }: TaskAdminDashboardProps) {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" size="icon" onClick={refresh} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
         </div>
       </div>
 
@@ -167,7 +163,7 @@ export function TaskAdminDashboard({ userId }: TaskAdminDashboardProps) {
           value={`${summary?.completion_rate ?? 0}%`}
           description={`${summary?.completed_assignments ?? 0} of ${summary?.total_assignments ?? 0} assignments`}
           icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
-          valueClassName={getCompletionRateColor(summary?.completion_rate ?? 0)}
+          valueClassName="text-slate-900"
           isLoading={isLoading}
         />
         <SummaryCard
@@ -175,9 +171,7 @@ export function TaskAdminDashboard({ userId }: TaskAdminDashboardProps) {
           value={summary?.overdue_assignments ?? 0}
           description={`${overdueTasks.length} tasks with overdue assignments`}
           icon={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
-          valueClassName={
-            (summary?.overdue_assignments ?? 0) > 0 ? 'text-amber-600' : 'text-green-600'
-          }
+          valueClassName="text-slate-900"
           isLoading={isLoading}
         />
         <SummaryCard

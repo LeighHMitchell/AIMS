@@ -6,7 +6,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -166,11 +166,11 @@ export default function TransactionDetailPage() {
           </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm">
-              <Edit className="h-4 w-4 mr-2" />
+              <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               Edit
             </Button>
             <Button variant="outline" size="sm" className="text-red-600">
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
               Delete
             </Button>
           </div>

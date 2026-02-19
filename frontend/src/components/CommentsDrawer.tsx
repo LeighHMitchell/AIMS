@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, MessageSquare, Send, Loader2, AlertCircle, Archive, ArchiveRestore, Trash, ChevronsUpDown, Check } from 'lucide-react';
+import { X, MessageSquare, Send, Loader2, AlertCircle, Archive, ArchiveRestore, Trash2, ChevronsUpDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -568,7 +568,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                         onClick={() => handleDeleteComment(comment.id)}
                         className="text-xs text-red-600 hover:text-red-800"
                       >
-                        <Trash className="h-3 w-3 inline mr-1" />
+                        <Trash2 className="h-3 w-3 inline mr-1 text-red-500" />
                         Delete
                       </button>
                     )}

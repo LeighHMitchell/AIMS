@@ -53,6 +53,7 @@ import {
   X,
   Check,
   AlertCircle,
+  Save,
 } from "lucide-react";
 import dacSectorsData from "@/data/dac-sectors.json";
 import { apiFetch } from '@/lib/api-fetch';
@@ -596,7 +597,7 @@ export function CountrySectorVocabularyManagement() {
                   size="sm"
                   onClick={() => openEditVocabularyDialog(selectedVocabulary)}
                 >
-                  <Pencil className="h-4 w-4 mr-1" />
+                  <Pencil className="h-4 w-4 mr-1 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                   Edit
                 </Button>
                 <Button
@@ -608,7 +609,7 @@ export function CountrySectorVocabularyManagement() {
                     setDeleteDialogOpen(true);
                   }}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
               </>
             )}
@@ -731,7 +732,7 @@ export function CountrySectorVocabularyManagement() {
                               onClick={() => openEditSectorDialog(sector)}
                               title="Edit sector"
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -743,7 +744,7 @@ export function CountrySectorVocabularyManagement() {
                               }}
                               title="Delete sector"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         </td>
@@ -878,7 +879,7 @@ export function CountrySectorVocabularyManagement() {
                 Cancel
               </Button>
               <Button onClick={saveVocabulary}>
-                {editingVocabulary ? "Save Changes" : "Create Vocabulary"}
+                {editingVocabulary ? <><Save className="h-4 w-4 mr-2" />Save Changes</> : "Create Vocabulary"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -954,7 +955,7 @@ export function CountrySectorVocabularyManagement() {
                 Cancel
               </Button>
               <Button onClick={saveSector}>
-                {editingSector ? "Save Changes" : "Add Sector"}
+                {editingSector ? <><Save className="h-4 w-4 mr-2" />Save Changes</> : "Add Sector"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1078,7 +1079,7 @@ export function CountrySectorVocabularyManagement() {
               <Button variant="outline" onClick={() => setMappingDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={saveMappings}>Save Mappings</Button>
+              <Button onClick={saveMappings}><Save className="h-4 w-4 mr-2" />Save Mappings</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

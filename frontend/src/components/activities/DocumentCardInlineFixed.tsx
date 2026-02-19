@@ -5,7 +5,7 @@ import {
   Video,
   Music,
   Archive,
-  Edit,
+  Pencil,
   Copy,
   ExternalLink,
   Trash2,
@@ -313,7 +313,7 @@ export function DocumentCardInlineFixed({
                     onClick={() => onEdit?.()}
                     className="text-xs gap-1 h-7 px-2"
             >
-              <Edit className="w-3 h-3" />
+              <Pencil className="w-3 h-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               Edit
             </Button>
             
@@ -333,7 +333,7 @@ export function DocumentCardInlineFixed({
               onClick={() => onDelete(formData.url)}
                     className="text-xs gap-1 h-7 px-2 text-red-600 hover:text-red-700"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3 h-3 text-red-500" />
               Delete
             </Button>
                 </div>

@@ -12,7 +12,7 @@ import {
   AlertCircle,
   Search,
   RefreshCw,
-  Edit2,
+  Pencil,
   Save,
   X,
   Calendar,
@@ -327,7 +327,7 @@ export function DataClinicBudgets() {
             variant="ghost"
             onClick={() => startEditing(budget.id, field, String(value || ''))}
           >
-            <Edit2 className="h-3 w-3" />
+            <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
           </Button>
         )}
       </div>

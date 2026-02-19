@@ -16,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
-import { AlertTriangle, Search, Building2, Plus, ChevronRight } from 'lucide-react'
+import { AlertTriangle, Search, Building2, Plus, ChevronRight, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import OrganizationCombobox from '@/components/organization-combobox'
 
@@ -381,6 +381,7 @@ export function ResolveOrganizationModal({
             className="bg-slate-600 hover:bg-slate-700"
             disabled={resolvedCount === 0}
           >
+            <Save className="h-4 w-4 mr-2" />
             Save ({resolvedCount}/{totalCount})
           </Button>
         </DialogFooter>

@@ -438,7 +438,6 @@ export default function FundFlowGraph({
     <div className="w-full space-y-4">
       {/* Toggle buttons */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-medium text-slate-600">View:</span>
         <Button
           variant={viewMode === 'transactions' ? 'default' : 'outline'}
           size="sm"

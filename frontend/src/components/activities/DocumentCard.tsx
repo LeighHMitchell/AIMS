@@ -9,7 +9,7 @@ import {
   Calendar,
   Languages,
   MapPin,
-  Edit,
+  Pencil,
   ExternalLink,
   Trash2,
   AlertCircle,
@@ -225,7 +225,7 @@ export function DocumentCard({
               onClick={() => onEdit(document)}
               className="text-xs gap-1"
             >
-              <Edit className="w-3 h-3" />
+              <Pencil className="w-3 h-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               Edit
             </Button>
           )}
@@ -247,7 +247,7 @@ export function DocumentCard({
               onClick={() => onDelete(document.url)}
               className="text-xs gap-1 text-red-600 hover:text-red-700"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3 h-3 text-red-500" />
               Delete
             </Button>
           )}

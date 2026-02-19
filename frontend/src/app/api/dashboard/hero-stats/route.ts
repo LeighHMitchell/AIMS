@@ -74,21 +74,30 @@ export async function GET(request: NextRequest) {
     ).length;
 
     // Fetch transaction, budget, and planned disbursement counts in parallel
+    // For transactions, query both own-activity transactions AND transactions where
+    // org is provider/receiver (matching org-hero-stats approach), then deduplicate
     const [
-      orgTransactionsResult,
+      orgTransactionsOnActivitiesResult,
+      orgTransactionsAsPartyResult,
       userTransactionsResult,
       orgBudgetsResult,
       userBudgetsResult,
       orgPlannedDisbursementsResult,
       userPlannedDisbursementsResult,
     ] = await Promise.all([
-      // Organization total transactions
+      // Transactions on org's own activities (just IDs for dedup)
       activityIds.length > 0
         ? supabase
-            .from('activity_transactions')
-            .select('*', { count: 'exact', head: true })
+            .from('transactions')
+            .select('uuid')
             .in('activity_id', activityIds)
-        : Promise.resolve({ count: 0, error: null }),
+        : Promise.resolve({ data: [], error: null }),
+
+      // Transactions where org is provider or receiver (on any activity)
+      supabase
+        .from('transactions')
+        .select('uuid')
+        .or(`provider_org_id.eq.${organizationId},receiver_org_id.eq.${organizationId}`),
 
       // User's transactions
       userId && activityIds.length > 0
@@ -134,8 +143,11 @@ export async function GET(request: NextRequest) {
         : Promise.resolve({ count: 0, error: null }),
     ]);
 
-    // Extract counts
-    const orgTransactionCount = orgTransactionsResult.count || 0;
+    // Deduplicate transaction counts by uuid (same approach as org-hero-stats)
+    const txUuids = new Set<string>();
+    (orgTransactionsOnActivitiesResult.data || []).forEach((tx: { uuid: string }) => txUuids.add(tx.uuid));
+    (orgTransactionsAsPartyResult.data || []).forEach((tx: { uuid: string }) => txUuids.add(tx.uuid));
+    const orgTransactionCount = txUuids.size;
     const userTransactionCount = userTransactionsResult.count || 0;
     const orgBudgetCount = orgBudgetsResult.count || 0;
     const userBudgetCount = userBudgetsResult.count || 0;

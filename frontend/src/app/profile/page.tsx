@@ -42,7 +42,7 @@ import {
   Activity,
   Camera,
   Save,
-  Edit,
+  Pencil,
   X,
   Check,
   Clock,
@@ -821,7 +821,7 @@ export default function ProfilePage() {
                   <div>
                     {!isEditing ? (
                       <Button onClick={handleEditClick} size="sm">
-                        <Edit className="h-4 w-4 mr-2" />
+                        <Pencil className="h-4 w-4 mr-2 text-white" />
                         Edit Profile
                       </Button>
                     ) : (
@@ -1443,7 +1443,7 @@ export default function ProfilePage() {
                 {/* Delete Account */}
                 <div className="flex items-center justify-between p-4 border border-destructive/30 rounded-lg bg-destructive/5">
                   <div className="flex items-center gap-3">
-                    <Trash2 className="h-5 w-5 text-destructive" />
+                    <Trash2 className="h-5 w-5 text-red-500" />
                     <div>
                       <p className="font-medium text-destructive">Delete Account</p>
                       {user.role === 'super_user' || user.role === 'admin' ? (
@@ -1462,7 +1462,7 @@ export default function ProfilePage() {
                       variant="destructive"
                       onClick={() => setDeleteAccountDialogOpen(true)}
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                       Delete Account
                     </Button>
                   )}

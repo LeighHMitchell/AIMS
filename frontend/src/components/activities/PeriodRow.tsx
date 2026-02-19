@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Edit3, 
+  Pencil,
   Trash2, 
   Save, 
   X,
@@ -285,7 +285,7 @@ export function PeriodRow({
               onClick={() => setIsEditing(true)}
               className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              <Edit3 className="h-3 w-3" />
+              <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
             </Button>
             <Button 
               size="sm" 
@@ -293,7 +293,7 @@ export function PeriodRow({
               onClick={handleDeletePeriod}
               className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3 w-3 text-red-500" />
             </Button>
           </div>
         )}

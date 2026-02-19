@@ -469,7 +469,7 @@ export function ParticipatingOrgModal({
                         onClick={() => removeNarrative(index)}
                         className="px-2 py-1 h-10"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-3 w-3 text-red-500" />
                       </Button>
                     </div>
                   </div>

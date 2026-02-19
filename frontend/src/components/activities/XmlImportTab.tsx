@@ -77,6 +77,7 @@ import {
   Loader2,
   Search,
   DownloadCloud,
+  Save,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -2560,7 +2561,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
           selected: false, // Don't auto-select as it's optional
           hasConflict: false,
           tab: 'finances',
-          description: 'DAC CRS Reporting (optional)',
+          description: 'DAC CRS Reporting',
           isCrsField: true,
           crsData: parsedActivity.financingTerms
         });
@@ -11112,7 +11113,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                     onClick={() => handleRemoveSubsector(originalIndex)}
                                     className="h-8 w-8 p-0 text-gray-400 hover:text-red-600"
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-4 w-4 text-red-500" />
                                   </Button>
                                 )}
                               </div>
@@ -11220,11 +11221,12 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
           <Button variant="outline" onClick={onClose} className="bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200">
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleSave}
             disabled={Math.abs(totalPercentage - 100) > 0.01}
             className="bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400"
           >
+            <Save className="h-4 w-4 mr-2" />
             Save Refined Sectors
           </Button>
         </DialogFooter>

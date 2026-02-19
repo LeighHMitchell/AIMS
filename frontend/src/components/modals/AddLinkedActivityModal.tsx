@@ -324,7 +324,7 @@ export function AddLinkedActivityModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="external-title">Activity Title (Optional)</Label>
+                <Label htmlFor="external-title">Activity Title</Label>
                 <Input
                   id="external-title"
                   placeholder="Enter activity title for reference"
@@ -364,7 +364,7 @@ export function AddLinkedActivityModal({
 
           {/* Narrative */}
           <div className="space-y-2">
-            <Label htmlFor="narrative">Description (Optional)</Label>
+            <Label htmlFor="narrative">Description</Label>
             <Textarea
               id="narrative"
               placeholder="Describe the relationship between these activities..."

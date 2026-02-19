@@ -865,7 +865,6 @@ export default function TransactionForm({
             <div className="space-y-2">
               <Label htmlFor="value_date">
                 Value Date
-                <span className="text-gray-500 text-xs ml-2">(optional)</span>
               </Label>
               <Input
                 id="value_date"
@@ -1158,7 +1157,6 @@ export default function TransactionForm({
           <div className="space-y-2">
             <Label htmlFor="description">
               Description
-              <span className="text-gray-500 text-xs ml-2">(optional)</span>
             </Label>
             <Textarea
               id="description"

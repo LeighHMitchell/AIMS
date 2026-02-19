@@ -169,7 +169,7 @@ export default function NewGroupPage() {
 
               {/* Group Code */}
               <div className="space-y-2">
-                <Label htmlFor="group_code">Group Code (Optional)</Label>
+                <Label htmlFor="group_code">Group Code</Label>
                 <Input
                   id="group_code"
                   value={formData.group_code}

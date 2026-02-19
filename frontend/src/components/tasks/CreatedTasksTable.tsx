@@ -572,7 +572,7 @@ export function CreatedTasksTable({
                           onEdit(task);
                         }}
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                       </Button>
                     )}
                     {onDelete && (
@@ -584,7 +584,7 @@ export function CreatedTasksTable({
                             className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50"
                             disabled={deletingTaskId === task.id}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>

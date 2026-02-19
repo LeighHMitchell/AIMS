@@ -14,7 +14,7 @@ import {
   Info,
   LayoutGrid,
   Table as TableIcon,
-  Edit2,
+  Pencil,
   Trash2,
   Copy
 } from 'lucide-react';
@@ -496,7 +496,7 @@ export default function LocationsTab({
                             className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
                             title="Edit location"
                           >
-                            <Edit2 className="h-4 w-4" />
+                            <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                           </button>
 <button
                             type="button"
@@ -504,7 +504,7 @@ export default function LocationsTab({
                             className="p-1.5 rounded hover:bg-gray-100 text-red-500"
                             title="Delete location"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </button>
                         </div>
                       </TableCell>

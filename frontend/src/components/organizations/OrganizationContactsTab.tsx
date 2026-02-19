@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, AlertCircle, Search, X, User as UserIcon, Mail, Phone, Globe, Edit2, Trash2, Upload, ChevronsUpDown, Check, LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { Plus, AlertCircle, Search, X, User as UserIcon, Mail, Phone, Globe, Pencil, Trash2, Upload, ChevronsUpDown, Check, LayoutGrid, Table as TableIcon } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -536,7 +536,7 @@ function ContactCard({
           className="h-8 w-8 p-0 hover:bg-slate-100 rounded-md"
           title="Edit contact"
         >
-          <Edit2 className="h-4 w-4 text-slate-500" />
+          <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
         </Button>
         <Button
           variant="ghost"
@@ -545,7 +545,7 @@ function ContactCard({
           className="h-8 w-8 p-0 hover:bg-red-50 text-red-500 hover:text-red-600 rounded-md"
           title="Delete contact"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4 text-red-500" />
         </Button>
       </div>
 
@@ -751,7 +751,7 @@ function ContactsTable({
                       className="h-8 w-8 p-0 hover:bg-slate-100"
                       title="Edit contact"
                     >
-                      <Edit2 className="h-4 w-4 text-slate-500" />
+                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -760,7 +760,7 @@ function ContactsTable({
                       className="h-8 w-8 p-0 hover:bg-red-50 text-red-500 hover:text-red-600"
                       title="Delete contact"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
                 </td>

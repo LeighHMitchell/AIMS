@@ -21,8 +21,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { 
-  Plus, Download, Edit2, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Users, Grid3X3, TableIcon, Search, MoreVertical, Edit,
-  PencilLine, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
+  Plus, Download, Pencil, Trash2, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Users, Grid3X3, TableIcon, Search, MoreVertical, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
   FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
@@ -1060,7 +1059,7 @@ function ActivitiesPageContent() {
                                       onClick={() => router.push(`/activities/new?id=${activity.id}`)}
                                       className="p-1 hover:text-primary cursor-pointer transition-colors"
                                     >
-                                      <PencilLine className="h-4 w-4" />
+                                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -1076,7 +1075,7 @@ function ActivitiesPageContent() {
                                     onClick={() => setDeleteActivityId(activity.id)}
                                     className="p-1 hover:text-primary cursor-pointer transition-colors"
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-4 w-4 text-red-500" />
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -1200,7 +1199,7 @@ function ActivitiesPageContent() {
                                 router.push(`/activities/new?id=${activity.id}`);
                               }}
                             >
-                              <Edit className="h-4 w-4" /> Edit
+                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
                             </button>
                           )}
                           <button 
@@ -1210,7 +1209,7 @@ function ActivitiesPageContent() {
                               setDeleteActivityId(activity.id);
                             }}
                           >
-                            <Trash2 className="h-4 w-4" /> Delete
+                            <Trash2 className="h-4 w-4 text-red-500" /> Delete
                           </button>
                         </PopoverContent>
                       </Popover>

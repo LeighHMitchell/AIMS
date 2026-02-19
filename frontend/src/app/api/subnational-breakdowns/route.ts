@@ -40,6 +40,11 @@ export async function GET(request: NextRequest) {
       activityQuery = activityQuery.eq('organizations.name', orgFilter)
     }
 
+    const orgIdFilter = searchParams.get('organizationId')
+    if (orgIdFilter) {
+      activityQuery = activityQuery.eq('reporting_org_id', orgIdFilter)
+    }
+
     const { data: activities, error: activitiesError } = await activityQuery
 
     if (activitiesError) {

@@ -241,7 +241,7 @@ export function ShareTaskModal({
 
           {/* Share Message */}
           <div className="space-y-2">
-            <Label htmlFor="message">Message (optional)</Label>
+            <Label htmlFor="message">Message</Label>
             <Textarea
               id="message"
               placeholder="Add a message to include with the share..."

@@ -873,7 +873,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       </div>
                       {formData.planned_start_date && (
                       <div className="space-y-1">
-                        <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                        <label className="text-xs text-gray-600">Description/Context</label>
                         <Textarea
                           value={formData.planned_start_description || ''}
                           onChange={(e) => {
@@ -909,7 +909,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       </div>
                       {formData.planned_end_date && (
                       <div className="space-y-1">
-                        <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                        <label className="text-xs text-gray-600">Description/Context</label>
                         <Textarea
                           value={formData.planned_end_description || ''}
                           onChange={(e) => {
@@ -948,7 +948,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       </div>
                       {!actualStartDisabled && formData.actual_start_date && (
                       <div className="space-y-1">
-                        <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                        <label className="text-xs text-gray-600">Description/Context</label>
                         <Textarea
                           value={formData.actual_start_description || ''}
                           onChange={(e) => {
@@ -989,7 +989,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                       </div>
                       {!actualEndDisabled && formData.actual_end_date && (
                       <div className="space-y-1">
-                        <label className="text-xs text-gray-600">Description/Context (optional)</label>
+                        <label className="text-xs text-gray-600">Description/Context</label>
                         <Textarea
                           value={formData.actual_end_description || ''}
                           onChange={(e) => {
@@ -1050,7 +1050,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                                   disabled={saving.other_identifiers}
                                   className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4 text-red-500" />
                                 </Button>
                               </div>
 
@@ -1104,7 +1104,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                                 {/* Owner Organisation Ref (Optional) */}
                                 <div className="space-y-1">
                                   <label className="text-sm font-medium text-gray-700">
-                                    Owner Organisation Ref{' '}<span className="text-gray-400">(Optional)</span>
+                                    Owner Organisation Ref
                                   </label>
                                   <Input
                                     type="text"

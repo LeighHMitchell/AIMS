@@ -170,7 +170,7 @@ export function DocumentLinksManager({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-gray-700">Description (optional)</Label>
+            <Label className="text-xs text-gray-700">Description</Label>
             <Textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -307,7 +307,7 @@ export function DocumentLinksManager({
                   onClick={() => handleDelete(doc.id)}
                   className="text-red-600 hover:text-red-800 ml-2"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3 w-3 text-red-500" />
                 </Button>
               )}
             </div>
