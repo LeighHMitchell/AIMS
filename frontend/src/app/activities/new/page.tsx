@@ -1005,7 +1005,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       </div>
 
       {/* Field-level Autosave for Title and Acronym */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6" data-tour="editor-title">
         {/* Activity Title - takes up 2 columns */}
         <div className="lg:col-span-2 space-y-2">
           <LabelSaveIndicator
@@ -1128,7 +1128,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
 
 
       {/* Activity Identifier, IATI Identifier, and UUID Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6" data-tour="editor-identifier">
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={activityIdAutosave.state.isSaving}
@@ -2019,7 +2019,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       </div>
 
       {/* Row 8: Date Fields */}
-      <div className="space-y-4">
+      <div className="space-y-4" data-tour="editor-dates">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-gray-900">Activity Dates</h3>
           <HelpTextTooltip>
@@ -5246,7 +5246,7 @@ function NewActivityPageContent() {
             )}
           
           {/* Activity Editor Navigation */}
-          <div>
+          <div data-tour="editor-tabs">
             <ActivityEditorNavigation
               activeSection={activeSection}
               onSectionChange={handleTabChange}
@@ -5263,7 +5263,7 @@ function NewActivityPageContent() {
         {/* Main Content Panel */}
         <main className="flex-1 overflow-y-auto bg-white">
           <div className="activity-editor pl-0 pr-6 md:pr-8 py-6 pb-24">
-            <div className="flex items-center justify-end mb-6">
+            <div className="flex items-center justify-end mb-6" data-tour="editor-save">
               <div className="flex items-center gap-6">
                 {/* Publish Toggle */}
                                  {canPublish && (

@@ -163,7 +163,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
         >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-600 flex items-center gap-2">
-              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+              <Pencil className="h-4 w-4 text-slate-500" />
               Last Activity Edited
             </CardTitle>
           </CardHeader>

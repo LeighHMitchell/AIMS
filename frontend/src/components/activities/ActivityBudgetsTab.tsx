@@ -2171,7 +2171,7 @@ export default function ActivityBudgetsTab({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openModalForEditBudget(budget)}>
-                                <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
+                                <Pencil className="h-4 w-4 mr-2 text-slate-500" /> Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => duplicateForward(index)}>
                                 <Copy className="h-4 w-4 mr-2" /> Duplicate

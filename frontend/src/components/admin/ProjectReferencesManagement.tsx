@@ -581,7 +581,7 @@ export function ProjectReferencesManagement() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => handleEdit(ref)}>
-                                  <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                                  <Pencil className="h-4 w-4 mr-2 text-slate-500" />
                                   Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem

@@ -597,7 +597,7 @@ export function CountrySectorVocabularyManagement() {
                   size="sm"
                   onClick={() => openEditVocabularyDialog(selectedVocabulary)}
                 >
-                  <Pencil className="h-4 w-4 mr-1 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                  <Pencil className="h-4 w-4 mr-1 text-slate-500" />
                   Edit
                 </Button>
                 <Button
@@ -732,7 +732,7 @@ export function CountrySectorVocabularyManagement() {
                               onClick={() => openEditSectorDialog(sector)}
                               title="Edit sector"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                              <Pencil className="h-4 w-4 text-slate-500" />
                             </Button>
                             <Button
                               variant="ghost"

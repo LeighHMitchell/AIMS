@@ -253,7 +253,7 @@ export function IndicatorCard({
                     onClick={() => setIsEditing(true)}
                     className="text-gray-800 hover:bg-gray-100"
                   >
-                    <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                    <Pencil className="h-3 w-3 text-slate-500" />
                   </Button>
                   <Button 
                     variant="ghost" 
@@ -430,7 +430,7 @@ export function IndicatorCard({
                           size="sm"
                           onClick={() => setShowBaselineForm(true)}
                         >
-                          <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                          <Pencil className="h-3 w-3 text-slate-500" />
                         </Button>
                       )}
                     </div>

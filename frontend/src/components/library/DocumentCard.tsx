@@ -102,7 +102,7 @@ export function DocumentCard({
             </DropdownMenuItem>
             {onEdit && document.sourceType === 'standalone' && (
               <DropdownMenuItem onClick={onEdit}>
-                <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                <Pencil className="h-4 w-4 mr-2 text-slate-500" />
                 Edit
               </DropdownMenuItem>
             )}

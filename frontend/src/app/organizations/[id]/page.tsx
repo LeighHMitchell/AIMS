@@ -1272,7 +1272,7 @@ export default function OrganizationProfilePage() {
               Back to Organizations
             </Button>
             
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center" data-tour="org-actions">
               <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
                 <Download className="h-4 w-4 mr-2" />
                 Export Profile
@@ -1314,7 +1314,7 @@ export default function OrganizationProfilePage() {
           </div>
 
           {/* Organization Header Card */}
-          <Card className="mb-6 border-0 shadow-none overflow-hidden">
+          <Card className="mb-6 border-0 shadow-none overflow-hidden" data-tour="org-header">
             {/* Banner Image */}
             {organization.banner && (
               <div className="w-full h-48 overflow-hidden">
@@ -1530,7 +1530,7 @@ export default function OrganizationProfilePage() {
                   </div>
 
                 {/* Contact & Metadata Card - Column 4 */}
-                <div className="lg:col-span-1 self-start">
+                <div className="lg:col-span-1 self-start" data-tour="org-contact">
                   <Card className="border-slate-200 bg-white">
                     <CardContent className="p-4">
                       <div className="space-y-3">
@@ -2608,7 +2608,7 @@ export default function OrganizationProfilePage() {
           {/* Main Content Tabs */}
           <Card className="border-0 shadow-none">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap justify-center">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap justify-center" data-tour="org-tabs">
                 <TabsTrigger value="activities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Activities
                 </TabsTrigger>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { Calendar, Clock, MapPin, Plus, Users, SlidersHorizontal, History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,9 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { CalendarSkeleton } from '@/components/ui/skeleton-loader'
 import { EventCreateModal } from '@/components/calendar/EventCreateModal'
 import { EventDetailModal } from '@/components/calendar/EventDetailModal'
+import { CalendarEventHeatmap } from '@/components/calendar/CalendarEventHeatmap'
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils'
 
 // Dynamic import for FullCalendar to avoid SSR issues
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false })
@@ -19,6 +21,7 @@ const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false }
 // Import plugins directly (they're not React components)
 import dayGridPlugin from '@fullcalendar/daygrid'
 import listPlugin from '@fullcalendar/list'
+import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 
 interface CalendarEvent {
@@ -44,7 +47,9 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'meeting' | 'deadline' | 'workshop' | 'conference' | 'other'>('all')
-  const [view, setView] = useState<'month' | 'list'>('month')
+  const [view, setView] = useState<'year' | 'month' | 'week' | 'day'>('month')
+  const [heatmapYear, setHeatmapYear] = useState(new Date().getFullYear())
+  const calendarRef = useRef<any>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
@@ -105,7 +110,34 @@ export default function CalendarPage() {
   })
 
   const handleDateClick = (arg: any) => {
-    setViewingDate(new Date(arg.dateStr))
+    if (view === 'week' || view === 'day') {
+      setSelectedDate(new Date(arg.dateStr))
+      setShowAddModal(true)
+    } else {
+      setViewingDate(new Date(arg.dateStr))
+    }
+  }
+
+  // Drill-down from heatmap day click to day view
+  const handleHeatmapDayClick = useCallback((date: Date) => {
+    setView('day')
+    // Wait for FullCalendar to mount, then navigate to the date
+    setTimeout(() => {
+      if (calendarRef.current) {
+        const api = calendarRef.current.getApi()
+        api.changeView('timeGridDay', date)
+      }
+    }, 50)
+  }, [])
+
+  // Map view to FullCalendar view name
+  const getFullCalendarView = (v: typeof view) => {
+    switch (v) {
+      case 'month': return 'dayGridMonth'
+      case 'week': return 'timeGridWeek'
+      case 'day': return 'timeGridDay'
+      default: return 'dayGridMonth'
+    }
   }
 
   const handleEventClick = (clickInfo: any) => {
@@ -217,6 +249,22 @@ export default function CalendarPage() {
         .fc-event {
           cursor: pointer;
         }
+        .fc .fc-timegrid-slot {
+          height: 3em;
+        }
+        .fc .fc-timegrid-now-indicator-line {
+          border-color: #dc2625;
+          border-width: 2px;
+        }
+        .fc .fc-timegrid-now-indicator-arrow {
+          border-top-color: #dc2625;
+        }
+        .fc .fc-timegrid-event .fc-event-main {
+          padding: 2px 4px;
+        }
+        .fc .fc-timegrid-event {
+          border-radius: 4px;
+        }
       `}</style>
       <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
@@ -246,15 +294,24 @@ export default function CalendarPage() {
             </SelectContent>
           </Select>
           
-          <Select value={view} onValueChange={(value: 'month' | 'list') => setView(value)}>
-            <SelectTrigger className="w-[120px] rounded-lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">Month View</SelectItem>
-              <SelectItem value="list">List View</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-1 border border-[#cfd0d5] rounded-lg p-1 bg-white">
+            {(['year', 'month', 'week', 'day'] as const).map((v) => (
+              <Button
+                key={v}
+                variant={view === v ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setView(v)}
+                className={cn(
+                  'h-7 px-3 text-xs capitalize rounded-md',
+                  view === v
+                    ? 'bg-[#4c5568] text-white hover:bg-[#4c5568]/90'
+                    : 'text-[#4c5568] hover:bg-[#f1f4f8]'
+                )}
+              >
+                {v}
+              </Button>
+            ))}
+          </div>
           
           <Button onClick={() => setShowAddModal(true)} className="bg-[#dc2625] hover:bg-[#dc2625]/90 rounded-lg">
             <Plus className="h-4 w-4 mr-2" />
@@ -267,11 +324,19 @@ export default function CalendarPage() {
         <div className="md:col-span-3">
           <Card className="bg-white border-[#cfd0d5] rounded-xl">
             <CardContent className="p-6">
-              {typeof window !== 'undefined' && (
+              {view === 'year' ? (
+                <CalendarEventHeatmap
+                  events={filteredEvents}
+                  year={heatmapYear}
+                  onDayClick={handleHeatmapDayClick}
+                  onYearChange={setHeatmapYear}
+                />
+              ) : typeof window !== 'undefined' && (
                 <FullCalendar
+                  ref={calendarRef}
                   key={view}
-                  plugins={[dayGridPlugin, listPlugin, interactionPlugin]}
-                  initialView={view === 'month' ? 'dayGridMonth' : 'listWeek'}
+                  plugins={[dayGridPlugin, listPlugin, timeGridPlugin, interactionPlugin]}
+                  initialView={getFullCalendarView(view)}
                   headerToolbar={{
                     left: 'prev',
                     center: 'title today',
@@ -287,6 +352,10 @@ export default function CalendarPage() {
                   eventMouseEnter={handleEventMouseEnter}
                   eventMouseLeave={handleEventMouseLeave}
                   selectable={true}
+                  slotMinTime="06:00:00"
+                  slotMaxTime="22:00:00"
+                  allDaySlot={true}
+                  nowIndicator={true}
                 />
               )}
             </CardContent>

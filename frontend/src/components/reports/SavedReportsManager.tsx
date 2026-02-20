@@ -574,7 +574,7 @@ function ReportCard({ report, onLoad, onEdit, onDelete, variant, isPinned = fals
                 onEdit(report)
               }}
             >
-              <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+              <Pencil className="h-3 w-3 text-slate-500" />
             </Button>
           )}
           {onDelete && (

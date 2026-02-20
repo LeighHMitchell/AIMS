@@ -1183,7 +1183,7 @@ export default function IATIImportPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap" data-tour="import-tabs">
             <TabsTrigger value="bulk-import" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Database className="h-4 w-4" />
               Bulk Import
@@ -2090,11 +2090,11 @@ export default function IATIImportPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="bulk-import" className="space-y-6">
+          <TabsContent value="bulk-import" className="space-y-6" data-tour="import-wizard">
             <BulkImportWizard />
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-6">
+          <TabsContent value="history" className="space-y-6" data-tour="import-history">
             <HistoryTab />
           </TabsContent>
         </Tabs>

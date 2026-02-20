@@ -2063,7 +2063,7 @@ export default function PlannedDisbursementsTab({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => openModal(disbursement)} disabled={isReadOnly}>
-                                    <Pencil className="mr-2 h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                                    <Pencil className="mr-2 h-4 w-4 text-slate-500" />
                                     Edit
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleDuplicate(disbursement)} disabled={isReadOnly}>

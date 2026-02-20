@@ -718,7 +718,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Search, Filters, and View Controls - All in One Row */}
-        <div className="flex items-end gap-3 py-3 bg-slate-50 rounded-lg px-3 border border-gray-200">
+        <div className="flex items-end gap-3 py-3 bg-slate-50 rounded-lg px-3 border border-gray-200" data-tour="transactions-filters">
           {/* Search */}
           <div className="flex flex-col gap-1">
             <Label className="text-xs text-muted-foreground">Search</Label>
@@ -843,6 +843,7 @@ export default function TransactionsPage() {
         )}
 
         {/* Yearly Summary Chart */}
+        <div data-tour="transactions-chart">
         <YearlyTotalsBarChart
           title="Transaction Totals by Year"
           description="Yearly totals by transaction type (filtered)"
@@ -866,6 +867,7 @@ export default function TransactionsPage() {
             />
           }
         />
+        </div>
 
         {/* Transactions Table */}
         {loading || (transactions?.total || 0) === 0 ? (
@@ -887,7 +889,7 @@ export default function TransactionsPage() {
             <div className="text-slate-500">No matching transactions found</div>
           </div>
         ) : (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden" data-tour="transactions-table">
             <div className="overflow-x-auto">
               <TransactionTable
                 transactions={sortedTransactions}
@@ -914,7 +916,7 @@ export default function TransactionsPage() {
 
         {/* Pagination */}
         {!loading && totalTransactions > 0 && (
-          <Card>
+          <Card data-tour="transactions-pagination">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">

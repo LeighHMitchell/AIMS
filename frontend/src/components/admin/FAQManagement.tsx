@@ -389,7 +389,7 @@ export function FAQManagement() {
                 {/* In Progress Card */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 min-w-[220px]">
                   <div className="flex items-center gap-2">
-                    <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                    <Pencil className="h-4 w-4 text-slate-500" />
                     <span className="text-xs font-medium text-gray-600">In Progress</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900 mt-0.5">{stats.in_progress}</p>

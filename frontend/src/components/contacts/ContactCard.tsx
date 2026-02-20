@@ -64,7 +64,7 @@ export default function ContactCard({ contact, onEdit, onDelete }: ContactCardPr
           className="h-8 w-8 p-0 hover:bg-slate-100 rounded-md"
           title="Edit contact"
         >
-          <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+          <Pencil className="h-4 w-4 text-slate-500" />
         </Button>
         <Button
           variant="ghost"

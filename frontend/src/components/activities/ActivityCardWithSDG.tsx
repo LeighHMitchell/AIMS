@@ -304,7 +304,7 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
             </DropdownMenuItem>
             {onEdit && (
               <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
-                <Pencil className="mr-2 h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                <Pencil className="mr-2 h-4 w-4 text-slate-500" />
                 Edit
               </DropdownMenuItem>
             )}

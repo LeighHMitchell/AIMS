@@ -496,7 +496,7 @@ export default function LocationsTab({
                             className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
                             title="Edit location"
                           >
-                            <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                            <Pencil className="h-4 w-4 text-slate-500" />
                           </button>
 <button
                             type="button"

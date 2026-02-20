@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { humanizeFieldName } from '@/lib/utils';
 
 interface OrganizationAutosaveState {
   isSaving: boolean;
@@ -15,6 +16,7 @@ interface UseOrganizationAutosaveOptions {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
   showToast?: boolean;
+  displayName?: string;
 }
 
 export function useOrganizationAutosave(
@@ -27,7 +29,8 @@ export function useOrganizationAutosave(
     debounceMs = 1500,
     onSuccess,
     onError,
-    showToast = false
+    showToast = false,
+    displayName
   } = options;
 
   const [state, setState] = useState<OrganizationAutosaveState>({
@@ -101,7 +104,7 @@ export function useOrganizationAutosave(
       }));
 
       if (showToast) {
-        toast.success(`${fieldName} saved`);
+        toast.success(`${displayName || humanizeFieldName(fieldName)} saved`);
       }
 
       onSuccess?.(responseData);
@@ -134,7 +137,7 @@ export function useOrganizationAutosave(
 
       onError?.(err);
     }
-  }, [fieldName, organizationId, enabled, onSuccess, onError, showToast]);
+  }, [fieldName, organizationId, enabled, onSuccess, onError, showToast, displayName]);
 
   // Trigger save with debouncing
   const triggerSave = useCallback((value: any) => {

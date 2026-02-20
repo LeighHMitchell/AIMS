@@ -380,7 +380,7 @@ export function PeriodRowEnhanced({
               onClick={() => setIsEditing(true)}
               className="h-6 w-6 p-0"
             >
-              <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+              <Pencil className="h-3 w-3 text-slate-500" />
             </Button>
             <Button 
               variant="ghost" 

@@ -1,6 +1,36 @@
 {
-  "currentVersion": "2.11.0",
+  "currentVersion": "2.12.0",
   "releases": [
+    {
+      "version": "2.12.0",
+      "date": "2026-02-20",
+      "changes": [
+        "<b>Guided Spotlight Tours</b>",
+        "&nbsp;&nbsp;New interactive page tours powered by <code>react-joyride</code> &mdash; spotlight overlays walk first-time users through each page section",
+        "&nbsp;&nbsp;Six pre-seeded tours: Dashboard Overview, Activity List, Activity Editor, Transactions, Organisation Profile, and Bulk Import",
+        "&nbsp;&nbsp;Tour button added to the top navigation bar &mdash; click to replay the current page&rsquo;s tour at any time",
+        "&nbsp;&nbsp;Tours auto-start on first visit; completion and dismissal tracked per-user via <code>user_tour_completions</code> table",
+        "&nbsp;&nbsp;Tour steps stored in the database with locale support for future i18n, role filtering, and admin-editable content",
+        "&nbsp;&nbsp;<code>data-tour</code> target attributes added across 30+ components on Dashboard, Activities, Transactions, Calendar, IATI Import, and Activity Editor pages",
+        "&nbsp;&nbsp;API routes for fetching tours by route, recording completions, and resetting tour progress",
+        "&nbsp;&nbsp;Database migration: <code>tours</code>, <code>tour_steps</code>, and <code>user_tour_completions</code> tables with RLS policies",
+        "<b>Calendar &mdash; Week, Day &amp; Year Views</b>",
+        "&nbsp;&nbsp;View toggle redesigned as a segmented button bar with Year / Month / Week / Day options (replaces old Month/List dropdown)",
+        "&nbsp;&nbsp;Week and Day views powered by FullCalendar <code>timeGridPlugin</code> with time slot rows from 06:00&ndash;22:00",
+        "&nbsp;&nbsp;Red &ldquo;now indicator&rdquo; line shows current time in week and day views",
+        "&nbsp;&nbsp;New <code>CalendarEventHeatmap</code> component for Year view &mdash; GitHub-style heat grid of daily event density",
+        "&nbsp;&nbsp;Heatmap day click drills down to Day view, auto-navigating FullCalendar to the selected date",
+        "&nbsp;&nbsp;Clicking a time slot in Week or Day view opens the new-event modal pre-filled with that date",
+        "<b>Toast &amp; Field Name Humanisation</b>",
+        "&nbsp;&nbsp;New <code>humanizeFieldName()</code> utility with 40+ explicit snake_case-to-label mappings (e.g. <code>organisation_type</code> &rarr; &ldquo;Organisation Type&rdquo;)",
+        "&nbsp;&nbsp;All autosave toasts now display human-readable field names instead of raw column names",
+        "&nbsp;&nbsp;Applied across <code>use-organization-autosave</code>, <code>use-working-group-autosave</code>, <code>use-supabase-field-update</code>, and <code>toast-manager</code>",
+        "&nbsp;&nbsp;Optional <code>displayName</code> override on organisation and working-group autosave hooks for custom labels",
+        "<b>UI Polish</b>",
+        "&nbsp;&nbsp;Countries &amp; Regions table: edit/delete buttons converted from <code>Button</code> components to native <code>&lt;button&gt;</code> elements with title attributes for accessibility",
+        "&nbsp;&nbsp;Organisation form: acronym wand button wrapper repositioned for better alignment inside the input field"
+      ]
+    },
     {
       "version": "2.11.0",
       "date": "2026-02-19",

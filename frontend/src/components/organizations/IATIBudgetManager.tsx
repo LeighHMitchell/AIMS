@@ -383,7 +383,7 @@ export function IATIBudgetManager({
                     size="sm"
                     onClick={() => handleEditBudget(budget)}
                   >
-                    <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                    <Pencil className="h-4 w-4 text-slate-500" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -448,7 +448,7 @@ export function IATIBudgetManager({
                           size="sm"
                           onClick={() => handleEditBudgetLine(budgetIndex, lineIndex)}
                         >
-                          <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                          <Pencil className="h-3 w-3 text-slate-500" />
                         </Button>
                         <Button
                           variant="ghost"

@@ -219,7 +219,7 @@ export default function Dashboard() {
         <div className="p-8">
           <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-start gap-5">
+            <div className="flex items-start gap-5" data-tour="dashboard-welcome">
               {/* User Avatar */}
               {user.profilePicture ? (
                 <Avatar className="h-24 w-24 ring-2 ring-slate-200">
@@ -321,7 +321,7 @@ export default function Dashboard() {
                 router.push(url.pathname + url.search, { scroll: false });
               }}
             >
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap" data-tour="dashboard-tabs">
                 <TabsTrigger
                   value="overview"
                   className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -395,22 +395,32 @@ export default function Dashboard() {
               {/* Overview Tab Content */}
               <TabsContent value="overview" className="space-y-6">
                 {/* Row 1: Dashboard Hero Cards (dual-metric cards) */}
-                <DashboardHeroCards organizationId={user.organizationId} userId={user.id} />
+                <div data-tour="hero-cards">
+                  <DashboardHeroCards organizationId={user.organizationId} userId={user.id} />
+                </div>
 
                 {/* Row 2: Hero Visualization Cards (charts) */}
-                <HeroVisualizationCards organizationId={user.organizationId} />
+                <div data-tour="hero-charts">
+                  <HeroVisualizationCards organizationId={user.organizationId} />
+                </div>
 
                 {/* Row 3: Recency Cards */}
-                <RecencyCards organizationId={user.organizationId} />
+                <div data-tour="recency-cards">
+                  <RecencyCards organizationId={user.organizationId} />
+                </div>
 
                 {/* Row 4: Actions Required Panel (Highest Priority) */}
+                <div data-tour="actions-required">
                 <ActionsRequiredPanel
                   organizationId={user.organizationId}
                   userId={user.id}
                 />
+                </div>
 
                 {/* Row 5: Transactions Table */}
-                <OrgTransactionsTable organizationId={user.organizationId} />
+                <div data-tour="org-transactions">
+                  <OrgTransactionsTable organizationId={user.organizationId} />
+                </div>
               </TabsContent>
 
               {/* My Portfolio Tab Content */}

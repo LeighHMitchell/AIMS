@@ -42,7 +42,7 @@ export function BudgetActionMenu({
         <Menu.Content className="p-1.5">
           {onEdit && (
             <Menu.Item className={itemClass} onSelect={onEdit}>
-              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+              <Pencil className="h-4 w-4 text-slate-500" />
               Edit
             </Menu.Item>
           )}

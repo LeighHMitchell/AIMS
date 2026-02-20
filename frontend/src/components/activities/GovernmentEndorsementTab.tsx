@@ -740,7 +740,7 @@ export default function GovernmentEndorsementTab({
                               size="sm"
                               onClick={() => openRefDialog(ref)}
                             >
-                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                              <Pencil className="h-4 w-4 text-slate-500" />
                             </Button>
                             <Button
                               variant="ghost"

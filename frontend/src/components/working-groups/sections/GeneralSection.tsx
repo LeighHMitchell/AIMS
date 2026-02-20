@@ -68,12 +68,14 @@ export default function GeneralSection({
     debounceMs: 500,
     enabled: !!workingGroupId,
     showToast: true,
+    displayName: 'Group Type',
   })
   const activeAutosave = useWorkingGroupAutosave('is_active', {
     workingGroupId,
     debounceMs: 500,
     enabled: !!workingGroupId,
     showToast: true,
+    displayName: 'Active Status',
   })
   const bannerAutosave = useWorkingGroupAutosave('banner', {
     workingGroupId,

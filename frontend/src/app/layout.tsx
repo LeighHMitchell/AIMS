@@ -7,6 +7,7 @@ import { UserMenu } from "@/components/UserMenu"
 import { SettingsMenu } from "@/components/SettingsMenu"
 import { SystemSettingsProvider } from "@/contexts/SystemSettingsContext"
 import { LoadingBarProvider } from "@/components/providers/LoadingBarProvider"
+import { TourProvider } from "@/components/tour/TourProvider"
 import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -40,7 +41,9 @@ export default function RootLayout({
           <UserProvider>
             <Suspense fallback={null}>
               <LoadingBarProvider>
-                {children}
+                <TourProvider>
+                  {children}
+                </TourProvider>
               </LoadingBarProvider>
             </Suspense>
             <Toaster 

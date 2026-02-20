@@ -1698,7 +1698,7 @@ const router = useRouter();
     <MainLayout>
       <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap justify-between items-center mb-6">
+      <div className="flex flex-wrap justify-between items-center mb-6" data-tour="activities-header">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold text-slate-800">Activities</h1>
@@ -1721,7 +1721,7 @@ const router = useRouter();
       </div>
 
       {/* Filters and View Controls - All in One Row */}
-      <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200">
+      <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200" data-tour="activities-filters">
         {/* Status Filter */}
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground">Status</Label>
@@ -1867,7 +1867,7 @@ const router = useRouter();
         <div className="flex-1 min-w-[8px]" />
 
         {/* View Mode Toggle */}
-        <div className="flex items-center flex-shrink-0">
+        <div className="flex items-center flex-shrink-0" data-tour="activities-view-toggle">
           <Button
             variant={viewMode === 'table' ? 'default' : 'outline'}
             size="sm"
@@ -1920,7 +1920,7 @@ const router = useRouter();
           </div>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden fade-in">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden fade-in" data-tour="activities-table">
           <div className="overflow-x-auto">
             <table className="w-full table-auto border-collapse activities-table">
               <thead className="bg-surface-muted border-b border-border">
@@ -3953,7 +3953,7 @@ const router = useRouter();
 
       {/* Pagination */}
       {!isShowingAll && totalActivities > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4" data-tour="activities-pagination">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600">
               Showing {Math.min(startIndex + 1, totalActivities)} to {Math.min(endIndex, totalActivities)} of {totalActivities} activities

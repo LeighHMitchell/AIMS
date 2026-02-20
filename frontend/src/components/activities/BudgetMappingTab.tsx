@@ -721,7 +721,7 @@ export default function BudgetMappingTab({
                                 className="p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted"
                                 title="Edit"
                               >
-                                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                                <Pencil className="h-4 w-4 text-slate-500" />
                               </button>
                               <button
                                 type="button"

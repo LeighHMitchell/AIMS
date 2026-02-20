@@ -15,6 +15,7 @@ import { FeedbackModal } from "@/components/ui/feedback-modal"
 import { AskQuestionModal } from "@/components/faq/AskQuestionModal"
 import { NotificationBell } from "@/components/notifications/NotificationBell"
 import { AboutModal } from "@/components/ui/about-modal"
+import { TourButton } from "@/components/tour/TourButton"
 
 interface TopNavProps {
   user?: {
@@ -92,6 +93,9 @@ export function TopNav({ user, onLogout }: TopNavProps) {
             isExpanded={isSearchExpanded}
             onExpandedChange={setIsSearchExpanded}
           />
+
+          {/* Page tour */}
+          {user && <TourButton />}
 
           {/* Notification Bell */}
           {user && (

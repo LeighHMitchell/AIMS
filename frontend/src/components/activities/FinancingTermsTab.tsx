@@ -274,7 +274,7 @@ export function FinancingTermsTab({
               <Dialog open={showLoanTermsModal} onOpenChange={setShowLoanTermsModal}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="flex items-center gap-2">
-                    <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                    <Pencil className="h-4 w-4 text-slate-500" />
                     Edit Loan Terms
                   </Button>
                 </DialogTrigger>
@@ -654,7 +654,7 @@ export function FinancingTermsTab({
                               size="sm"
                               className="text-blue-600 hover:text-blue-700"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                              <Pencil className="h-4 w-4 text-slate-500" />
                             </Button>
                             <Button
                               onClick={() => handleDeleteLoanStatus(status.id, status.year)}

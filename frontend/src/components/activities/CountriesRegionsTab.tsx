@@ -1345,24 +1345,24 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-600"
+                            <button
+                              type="button"
                               onClick={() => editCountry(countryAllocation)}
                               disabled={!canEdit}
+                              className="p-1.5 rounded hover:bg-gray-100 text-gray-600 disabled:pointer-events-none disabled:opacity-50"
+                              title="Edit country"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500"
+                              <Pencil className="h-4 w-4 text-slate-500" />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => removeCountry(countryAllocation.id)}
                               disabled={!canEdit}
+                              className="p-1.5 rounded hover:bg-gray-100 text-red-500 disabled:pointer-events-none disabled:opacity-50"
+                              title="Delete country"
                             >
                               <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
+                            </button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1406,24 +1406,24 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-600"
+                            <button
+                              type="button"
                               onClick={() => editRegion(regionAllocation)}
                               disabled={!canEdit}
+                              className="p-1.5 rounded hover:bg-gray-100 text-gray-600 disabled:pointer-events-none disabled:opacity-50"
+                              title="Edit region"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500"
+                              <Pencil className="h-4 w-4 text-slate-500" />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => removeRegion(regionAllocation.id)}
                               disabled={!canEdit}
+                              className="p-1.5 rounded hover:bg-gray-100 text-red-500 disabled:pointer-events-none disabled:opacity-50"
+                              title="Delete region"
                             >
                               <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
+                            </button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1478,24 +1478,24 @@ export default function CountriesRegionsTab({
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-600"
+                            <button
+                              type="button"
                               onClick={() => editCustomGeography(customAllocation)}
                               disabled={!canEdit}
+                              className="p-1.5 rounded hover:bg-gray-100 text-gray-600 disabled:pointer-events-none disabled:opacity-50"
+                              title="Edit custom geography"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500"
+                              <Pencil className="h-4 w-4 text-slate-500" />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => removeCustomGeography(customAllocation.id)}
                               disabled={!canEdit}
+                              className="p-1.5 rounded hover:bg-gray-100 text-red-500 disabled:pointer-events-none disabled:opacity-50"
+                              title="Delete custom geography"
                             >
                               <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
+                            </button>
                           </div>
                         </TableCell>
                       </TableRow>

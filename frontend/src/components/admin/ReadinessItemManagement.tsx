@@ -369,7 +369,7 @@ export function ReadinessItemManagement({
                           size="sm"
                           onClick={() => openEditDialog(item)}
                         >
-                          <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                          <Pencil className="h-4 w-4 text-slate-500" />
                         </Button>
                         <Button
                           variant="ghost"

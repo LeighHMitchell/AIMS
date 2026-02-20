@@ -12,6 +12,7 @@ import { VersionBadge } from "@/components/ui/version-badge"
 import { useSmartPreCache } from "@/hooks/use-pre-cached-data"
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch"
 import { getHomeRoute } from "@/lib/navigation-utils"
+import { TourOverlay } from "@/components/tour/TourOverlay"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -40,6 +41,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
 
   const content = (
     <div className="flex h-screen overflow-hidden bg-background border-0">
+      <TourOverlay />
       {/* Fixed Sidebar */}
       <aside
         className={`${sidebarWidth} flex-shrink-0 border-r h-full fixed top-0 left-0 z-40 flex flex-col bg-surface-muted`}

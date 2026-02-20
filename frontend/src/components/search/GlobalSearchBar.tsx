@@ -463,7 +463,7 @@ export function GlobalSearchBar({
             className={cn(
               inputHeight,
               inputTextSize,
-              "flex-1 bg-transparent px-3 outline-none placeholder:text-muted-foreground focus:ring-0 focus:outline-none border-none"
+              "flex-1 bg-transparent px-3 outline-none placeholder:text-muted-foreground focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 border-none"
             )}
           />
           {(loading || isSearching) && (
@@ -664,7 +664,7 @@ export function GlobalSearchBar({
             className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             aria-label="Open search"
           >
-            <Search className="h-4 w-4 text-muted-foreground" />
+            <Search className="h-5 w-5" />
           </motion.button>
         ) : (
           <motion.div

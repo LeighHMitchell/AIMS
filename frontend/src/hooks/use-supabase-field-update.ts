@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api-fetch';
+import { humanizeFieldName } from '@/lib/utils';
 
 interface FieldUpdateState {
   isUpdating: boolean;
@@ -43,7 +44,7 @@ export function useSupabaseFieldUpdate(
       console.error('[SupabaseFieldUpdate] Error:', error.message);
       onError?.(field, error);
       if (showErrorToast) {
-        toast.error(`Failed to update ${field}: No record ID`);
+        toast.error(`Failed to update ${humanizeFieldName(field)}: No record ID`);
       }
       return false;
     }
@@ -124,7 +125,7 @@ export function useSupabaseFieldUpdate(
       onSuccess?.(field, value);
 
       if (showSuccessToast) {
-        toast.success(`${field} updated successfully`);
+        toast.success(`${humanizeFieldName(field)} updated successfully`);
       }
 
       return true;
@@ -148,7 +149,7 @@ export function useSupabaseFieldUpdate(
       onError?.(field, err);
 
       if (showErrorToast) {
-        toast.error(`Failed to update ${field}: ${err.message}`);
+        toast.error(`Failed to update ${humanizeFieldName(field)}: ${err.message}`);
       }
 
       return false;

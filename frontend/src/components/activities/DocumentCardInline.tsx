@@ -749,7 +749,7 @@ export function DocumentCardInline({
               onClick={handleEdit}
               className="text-xs gap-1"
             >
-              <Pencil className="w-3 h-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+              <Pencil className="w-3 h-3 text-slate-500" />
               Edit
             </Button>
             

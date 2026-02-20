@@ -237,7 +237,7 @@ export function SidebarNav({
         <div className="space-y-4">
           {/* Add New Activity CTA Button */}
           {canCreateActivities && (
-            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="pb-4 border-b border-gray-200 dark:border-gray-700" data-tour="activities-create">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 

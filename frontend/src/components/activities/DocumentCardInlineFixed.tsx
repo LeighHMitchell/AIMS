@@ -313,7 +313,7 @@ export function DocumentCardInlineFixed({
                     onClick={() => onEdit?.()}
                     className="text-xs gap-1 h-7 px-2"
             >
-              <Pencil className="w-3 h-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+              <Pencil className="w-3 h-3 text-slate-500" />
               Edit
             </Button>
             

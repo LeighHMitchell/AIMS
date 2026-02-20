@@ -344,46 +344,52 @@ export function OrganizationFormContent({
     debounceMs: 2000,
     enabled: !!organizationId 
   })
-  const orgTypeAutosave = useOrganizationAutosave('organisation_type', { 
-    organizationId, 
+  const orgTypeAutosave = useOrganizationAutosave('organisation_type', {
+    organizationId,
     debounceMs: 500,
     enabled: !!organizationId,
-    showToast: true
+    showToast: true,
+    displayName: 'Organisation Type'
   })
-  const countryAutosave = useOrganizationAutosave('country', { 
-    organizationId, 
+  const countryAutosave = useOrganizationAutosave('country', {
+    organizationId,
     debounceMs: 500,
     enabled: !!organizationId,
-    showToast: true
+    showToast: true,
+    displayName: 'Country'
   })
   const iatiOrgIdAutosave = useOrganizationAutosave('iati_org_id', { 
     organizationId, 
     debounceMs: 1000,
     enabled: !!organizationId 
   })
-  const defaultCurrencyAutosave = useOrganizationAutosave('default_currency', { 
-    organizationId, 
+  const defaultCurrencyAutosave = useOrganizationAutosave('default_currency', {
+    organizationId,
     debounceMs: 500,
     enabled: !!organizationId,
-    showToast: true
+    showToast: true,
+    displayName: 'Default Currency'
   })
   const defaultLanguageAutosave = useOrganizationAutosave('default_language', {
     organizationId,
     debounceMs: 500,
     enabled: !!organizationId,
-    showToast: true
+    showToast: true,
+    displayName: 'Default Language'
   })
   const residencyStatusAutosave = useOrganizationAutosave('residency_status', {
     organizationId,
     debounceMs: 500,
     enabled: !!organizationId,
-    showToast: true
+    showToast: true,
+    displayName: 'Residency Status'
   })
   const defaultCustomYearAutosave = useOrganizationAutosave('default_custom_year_id', {
     organizationId,
     debounceMs: 500,
     enabled: !!organizationId,
-    showToast: true
+    showToast: true,
+    displayName: 'Default Financial Year'
   })
   const websiteAutosave = useOrganizationAutosave('website', {
     organizationId, 
@@ -939,25 +945,27 @@ export function OrganizationFormContent({
                 className={`${validationErrors.some(e => e.includes('Acronym')) ? 'border-red-500' : ''} pr-10`}
               />
               {formData.name && formData.name.split(/\s+/).filter(w => w.length > 0 && !ACRONYM_FILLER_WORDS.has(w.toLowerCase())).length >= 2 && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          const acronym = generateAcronym(formData.name || '');
-                          handleInputChange('acronym', acronym);
-                        }}
-                      >
-                        <Wand2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Generate from name</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            const acronym = generateAcronym(formData.name || '');
+                            handleInputChange('acronym', acronym);
+                          }}
+                        >
+                          <Wand2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Generate from name</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               )}
             </div>
           </div>

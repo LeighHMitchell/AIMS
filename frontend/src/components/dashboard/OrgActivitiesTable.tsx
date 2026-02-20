@@ -419,7 +419,7 @@ export function OrgActivitiesTable({
                             router.push(`/activities/${activity.id}/edit`);
                           }}
                         >
-                          <Pencil className="h-4 w-4 hover: text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                          <Pencil className="h-4 w-4 text-slate-500" />
                         </Button>
                       </TableCell>
                     </>

@@ -51,7 +51,7 @@ const getActionIcon = (actionType: string, entityType?: string) => {
     create: entityType === 'organization' ? <Building2 className="h-4 w-4 text-green-600" /> : 
             entityType === 'user' ? <UserPlus className="h-4 w-4 text-green-600" /> :
             <Plus className="h-4 w-4 text-green-600" />,
-    edit: <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />,
+    edit: <Pencil className="h-4 w-4 text-slate-500" />,
     delete: <Trash2 className="h-4 w-4 text-red-500" />,
     submit_validation: <Send className="h-4 w-4 text-purple-600" />,
     validate: <CheckCircle className="h-4 w-4 text-green-600" />,

@@ -421,7 +421,7 @@ export default function OrganisationsSection({
                               onClick={() => handleEdit(participatingOrg)}
                               className="hover:bg-blue-50 hover:text-blue-600"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                              <Pencil className="h-4 w-4 text-slate-500" />
                             </Button>
                             <Button
                               variant="ghost"

@@ -759,7 +759,7 @@ export function DocumentsAndImagesTabV2({
                                 onClick={() => handleEditDocument(doc)}
                                 className="h-8 w-8 p-0"
                               >
-                                <Pencil className="w-4 h-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                                <Pencil className="w-4 h-4 text-slate-500" />
                               </Button>
                               <Button
                                 size="sm"

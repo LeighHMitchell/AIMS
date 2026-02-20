@@ -135,7 +135,7 @@ const getActionIcon = (action: string) => {
     case 'edit':
     case 'update':
     case 'updated':
-      return <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />;
+      return <Pencil className="h-4 w-4 text-slate-500" />;
     case 'delete':
     case 'deleted':
       return <Trash2 className="h-4 w-4 text-red-500" />;

@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { humanizeFieldName } from '@/lib/utils';
 
 // Global state to track active toasts and prevent duplicates
 const activeToasts = new Set<string>();
@@ -130,7 +131,7 @@ export function showFieldSaveSuccess(fieldName: string, options?: {
       
       activeToasts.add(id);
       
-      toast.success(`${fieldName.replace(/_/g, ' ')} updated`, {
+      toast.success(`${humanizeFieldName(fieldName)} updated`, {
         id,
         duration: 2000, // Shorter duration for field updates
         position: 'top-center',

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { humanizeFieldName } from '@/lib/utils';
 
 interface WorkingGroupAutosaveState {
   isSaving: boolean;
@@ -15,6 +16,7 @@ interface UseWorkingGroupAutosaveOptions {
   onSuccess?: (data: any) => void;
   onError?: (error: Error) => void;
   showToast?: boolean;
+  displayName?: string;
 }
 
 export function useWorkingGroupAutosave(
@@ -27,7 +29,8 @@ export function useWorkingGroupAutosave(
     debounceMs = 1500,
     onSuccess,
     onError,
-    showToast = false
+    showToast = false,
+    displayName
   } = options;
 
   const [state, setState] = useState<WorkingGroupAutosaveState>({
@@ -95,7 +98,7 @@ export function useWorkingGroupAutosave(
       }));
 
       if (showToast) {
-        toast.success(`${fieldName} saved`);
+        toast.success(`${displayName || humanizeFieldName(fieldName)} saved`);
       }
 
       onSuccess?.(responseData);
@@ -126,7 +129,7 @@ export function useWorkingGroupAutosave(
 
       onError?.(err);
     }
-  }, [fieldName, workingGroupId, enabled, onSuccess, onError, showToast]);
+  }, [fieldName, workingGroupId, enabled, onSuccess, onError, showToast, displayName]);
 
   const triggerSave = useCallback((value: any) => {
     if (!enabled || !workingGroupId) return;

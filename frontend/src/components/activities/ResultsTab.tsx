@@ -811,7 +811,7 @@ export function ResultsTab({
                                 onClick={() => setEditingResult(editingResult === result.id ? null : result.id)}
                       className="text-gray-600"
                               >
-                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                      <Pencil className="h-4 w-4 text-slate-500" />
                               </Button>
                               <Button 
                                 variant="ghost" 
@@ -1767,7 +1767,7 @@ export function ResultsTab({
                                   }
                                 }}
                               >
-                                <Pencil className="h-3 w-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                                <Pencil className="h-3 w-3 text-slate-500" />
                               </Button>
                               <Button 
                                 variant="ghost" 

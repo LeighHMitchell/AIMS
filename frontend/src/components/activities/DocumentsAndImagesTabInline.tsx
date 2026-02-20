@@ -909,7 +909,7 @@ export function DocumentsAndImagesTabInline({
                                             className="h-7 w-7 p-0"
                                             title="Edit"
                                           >
-                                            <Pencil className="w-3 h-3 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                                            <Pencil className="w-3 h-3 text-slate-500" />
                                           </Button>
                                           
                                           {/* Delete Button */}
