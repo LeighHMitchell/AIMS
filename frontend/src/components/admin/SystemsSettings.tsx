@@ -5,13 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Globe, Save, CheckCircle, AlertCircle, Languages, DollarSign, Calendar } from "lucide-react"
+import { Globe, Save, CheckCircle, AlertCircle, Languages, DollarSign, Calendar, Shield } from "lucide-react"
 import { countries } from "@/data/countries"
 import { useSystemSettings } from "@/hooks/useSystemSettings"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import Flag from "react-world-flags"
 import { CustomYearsManagement } from "./CustomYearsManagement"
+import { AidEffectivenessOptionsManagement } from "./AidEffectivenessOptionsManagement"
 import { LoadingText } from "@/components/ui/loading-text"
 
 // Get unique countries sorted alphabetically by name
@@ -390,6 +391,22 @@ export function SystemsSettings() {
         </CardHeader>
         <CardContent>
           <CustomYearsManagement />
+        </CardContent>
+      </Card>
+
+      {/* Aid Effectiveness Options Card - full width */}
+      <Card className="md:col-span-3">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Aid Effectiveness Dropdown Options
+          </CardTitle>
+          <CardDescription>
+            Configure country-specific dropdown options for the Aid Effectiveness form (national plans, government frameworks, accountability frameworks, capacity plans)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AidEffectivenessOptionsManagement />
         </CardContent>
       </Card>
     </div>

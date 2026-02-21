@@ -40,7 +40,9 @@ import {
   Building2,
   FileText,
   ExternalLink,
-  Trash2
+  Trash2,
+  Copy,
+  Check
 } from 'lucide-react';
 
 import { PersonCard } from '@/components/rolodex/PersonCard';
@@ -58,6 +60,15 @@ export default function RolodexPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [deleteContact, setDeleteContact] = useState<RolodexPerson | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+
+  const handleCopyEmail = (e: React.MouseEvent, email: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(email);
+    setCopiedEmail(email);
+    setTimeout(() => setCopiedEmail(null), 1500);
+  };
   
   const {
     people,
@@ -489,20 +500,33 @@ export default function RolodexPage() {
                           </td>
                           <td className="px-4 py-2 text-sm text-foreground align-middle">
                             {person.email && (
-                              <a 
-                                href={`mailto:${person.email}`}
-                                className="text-sm text-foreground hover:text-blue-600 inline-flex items-center"
-                              >
-                                <Mail className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
-                                <span>{person.email}</span>
-                              </a>
+                              <div className="group/email inline-flex items-center">
+                                <a
+                                  href={`mailto:${person.email}`}
+                                  className="text-sm text-foreground inline-flex items-center"
+                                >
+                                  <Mail className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
+                                  <span>{person.email}</span>
+                                </a>
+                                <button
+                                  onClick={(e) => handleCopyEmail(e, person.email!)}
+                                  className="ml-1.5 opacity-0 group-hover/email:opacity-100 transition-opacity flex-shrink-0"
+                                  title="Copy email"
+                                >
+                                  {copiedEmail === person.email ? (
+                                    <Check className="h-3.5 w-3.5 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                  )}
+                                </button>
+                              </div>
                             )}
                           </td>
                           <td className="px-4 py-2 text-sm text-foreground align-middle">
                             {person.phone && (
                               <a 
                                 href={`tel:${person.phone}`}
-                                className="text-sm text-foreground hover:text-blue-600 inline-flex items-center"
+                                className="text-sm text-foreground inline-flex items-center"
                               >
                                 <Phone className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
                                 <span>{person.phone}</span>

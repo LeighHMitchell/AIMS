@@ -33,6 +33,8 @@ import {
 import { GeographyLevelToggle } from '@/components/activities/GeographyLevelToggle';
 import { IATI_COUNTRIES, IATICountry, searchCountries } from '@/data/iati-countries';
 import { IATI_REGIONS, IATIRegion, searchRegions } from '@/data/iati-regions';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-select';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -111,6 +113,7 @@ export default function CountriesRegionsTab({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   // Close all dropdowns when clicking outside the form
   const closeAllDropdowns = () => {
@@ -397,7 +400,7 @@ export default function CountriesRegionsTab({
     if (!selectedType || !percentage) return;
     
     const percentageValue = parseFloat(percentage);
-    if (isNaN(percentageValue) || percentageValue <= 0) return;
+    if (isNaN(percentageValue) || percentageValue < 0) return;
 
     // If editing, update existing allocation
     if (editingId) {
@@ -446,6 +449,7 @@ export default function CountriesRegionsTab({
       
       // Reset form after editing
       cancelEdit();
+      setShowAddForm(false);
       return;
     }
     
@@ -491,6 +495,7 @@ export default function CountriesRegionsTab({
       setCustomVocabularyUri('');
       setPercentage('');
       setVocabulary('');
+      setShowAddForm(false);
       return;
     }
     
@@ -570,6 +575,7 @@ export default function CountriesRegionsTab({
     setNarrative('');
     setVocabulary('');
     setItemSearchQuery('');
+    setShowAddForm(false);
   };
 
   // Handle type selection
@@ -597,6 +603,12 @@ export default function CountriesRegionsTab({
       setCustomVocabularyUri('');
     }
 
+    // Auto-default percentage: 100% if first allocation, 0 otherwise
+    if (type === 'custom' && !percentage) {
+      const hasExisting = countries.length > 0 || regions.length > 0 || customGeographies.length > 0;
+      setPercentage(hasExisting ? '0' : '100');
+    }
+
     // Close dropdown immediately
     setTypeDropdownOpen(false);
   };
@@ -617,6 +629,7 @@ export default function CountriesRegionsTab({
     setNarrative(countryAllocation.narrative || '');
     setVocabulary(countryAllocation.vocabulary || 'A4');
     setItemSearchQuery(countryAllocation.country?.name || '');
+    setShowAddForm(true);
   };
 
   const editRegion = (regionAllocation: RegionAllocation) => {
@@ -627,6 +640,7 @@ export default function CountriesRegionsTab({
     setNarrative(regionAllocation.narrative || '');
     setVocabulary(regionAllocation.vocabulary || '1');
     setItemSearchQuery(regionAllocation.region?.name || '');
+    setShowAddForm(true);
   };
 
   const editCustomGeography = (customAllocation: CustomGeographyAllocation) => {
@@ -638,6 +652,7 @@ export default function CountriesRegionsTab({
     setPercentage(customAllocation.percentage.toString());
     setNarrative(customAllocation.narrative || '');
     setVocabulary('99');
+    setShowAddForm(true);
   };
 
   const cancelEdit = () => {
@@ -659,6 +674,12 @@ export default function CountriesRegionsTab({
     setSelectedItem(itemCode);
     // Close dropdown immediately
     setItemDropdownOpen(false);
+
+    // Auto-default percentage: 100% if first allocation, 0 otherwise
+    if (!percentage && itemCode) {
+      const hasExisting = countries.length > 0 || regions.length > 0 || customGeographies.length > 0;
+      setPercentage(hasExisting ? '0' : '100');
+    }
   };
 
   // Update country percentage
@@ -906,92 +927,111 @@ export default function CountriesRegionsTab({
 
       {!isLoading && (
         <div className={`space-y-6 ${geographyLevel === 'transaction' ? 'opacity-50 pointer-events-none' : ''}`}>
-          {/* Add Allocation Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Add Countries & Regions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Main form section */}
-                <div className="space-y-4">
-                  {/* First row: Type, Vocabulary, Item, Percentage, Add Button */}
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+          {/* Add Country/Region Button */}
+          {canEdit && (
+            <div className="flex justify-end">
+              <Button onClick={() => setShowAddForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Country or Region
+              </Button>
+            </div>
+          )}
+
+          {/* Add/Edit Allocation Modal */}
+          <Dialog
+            open={showAddForm}
+            onOpenChange={(open) => {
+              if (!open) {
+                cancelEdit();
+                setShowAddForm(false);
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  {editingId ? 'Edit Allocation' : 'Add Country or Region'}
+                </DialogTitle>
+                <DialogDescription>
+                  Select a type, choose a country or region, and set the percentage allocation.
+                </DialogDescription>
+              </DialogHeader>
+
+              <ScrollArea className="flex-1 max-h-[calc(90vh-12rem)]">
+                <div ref={formRef as any} className="space-y-4 pr-4">
                   {/* Type Selection */}
-                  <div className="space-y-2 md:col-span-3">
-                  <Label>Type</Label>
-                  <Popover open={typeDropdownOpen} onOpenChange={setTypeDropdownOpen}>
-                    <PopoverTrigger
-                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
-                      disabled={!canEdit}
-                    >
-                      <span className="truncate">
-                        {selectedType ? (
-                          <span className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                              {selectedType === 'country' ? 'CT' : 'RG'}
-                            </span>
-                            <span className="font-medium">
-                              {typeOptions.find(opt => opt.value === selectedType)?.label}
-                            </span>
-                          </span>
-                        ) : (
-                          'Select type...'
-                        )}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {selectedType && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTypeChange('');
-                            }}
-                            className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                            aria-label="Clear selection"
-                          >
-                            <span className="text-xs">×</span>
-                          </button>
-                        )}
-                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-[var(--radix-popover-trigger-width)] min-w-[200px] p-0 shadow-lg border"
-                      align="start"
-                      side="bottom"
-                      sideOffset={4}
-                    >
-                      <Command>
-                        <CommandGroup>
-                          {typeOptions.map((option) => (
-                            <CommandItem
-                              key={option.value}
-                              value={option.value}
-                              onSelect={() => {
-                                  handleTypeChange(option.value as 'country' | 'region' | 'custom' | '');
-                              }}
-                                className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
-                            >
+                  <div className="space-y-2">
+                    <Label>Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5 align-middle" aria-hidden="true" /></Label>
+                    <Popover open={typeDropdownOpen} onOpenChange={setTypeDropdownOpen}>
+                      <PopoverTrigger
+                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+                        disabled={!canEdit}
+                      >
+                        <span className="truncate">
+                          {selectedType ? (
+                            <span className="flex items-center gap-2">
                               <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                  {option.value === 'country' ? 'CT' : option.value === 'region' ? 'RG' : 'CG'}
+                                {selectedType === 'country' ? 'CT' : selectedType === 'region' ? 'RG' : 'CG'}
                               </span>
-                              <span className="font-medium">{option.label}</span>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                              <span className="font-medium">
+                                {typeOptions.find(opt => opt.value === selectedType)?.label}
+                              </span>
+                            </span>
+                          ) : (
+                            'Select type...'
+                          )}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {selectedType && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTypeChange('');
+                              }}
+                              className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                              aria-label="Clear selection"
+                            >
+                              <span className="text-xs">×</span>
+                            </button>
+                          )}
+                          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[var(--radix-popover-trigger-width)] min-w-[200px] p-0 shadow-lg border"
+                        align="start"
+                        side="bottom"
+                        sideOffset={4}
+                      >
+                        <Command>
+                          <CommandGroup>
+                            {typeOptions.map((option) => (
+                              <CommandItem
+                                key={option.value}
+                                value={option.value}
+                                onSelect={() => {
+                                  handleTypeChange(option.value as 'country' | 'region' | 'custom' | '');
+                                }}
+                                className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                              >
+                                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                  {option.value === 'country' ? 'CT' : option.value === 'region' ? 'RG' : 'CG'}
+                                </span>
+                                <span className="font-medium">{option.label}</span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
                   {/* Vocabulary Selection */}
-                  <div className="space-y-2 md:col-span-3">
+                  <div className="space-y-2">
                     <Label>Vocabulary</Label>
-                  {selectedType ? (
+                    {selectedType ? (
                       <Popover open={vocabularyDropdownOpen} onOpenChange={setVocabularyDropdownOpen}>
                         <PopoverTrigger
                           className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
@@ -1028,7 +1068,7 @@ export default function CountriesRegionsTab({
                             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                           </div>
                         </PopoverTrigger>
-                        <PopoverContent 
+                        <PopoverContent
                           className="w-[var(--radix-popover-trigger-width)] min-w-[300px] p-0 shadow-lg border"
                           align="start"
                           side="bottom"
@@ -1056,79 +1096,74 @@ export default function CountriesRegionsTab({
                         </PopoverContent>
                       </Popover>
                     ) : (
-                      <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors">
-                        <span className="truncate text-muted-foreground">
-                          Select type first
-                        </span>
+                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                        Select type first
                       </div>
                     )}
                   </div>
 
                   {/* Item Selection */}
-                  <div className="space-y-2 md:col-span-3">
-                    <Label>Item</Label>
+                  <div className="space-y-2">
+                    <Label>Item <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5 align-middle" aria-hidden="true" /></Label>
                     {selectedType === 'custom' ? (
-                      <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors">
-                        <span className="truncate text-muted-foreground">
-                          Custom Geography fields below
-                        </span>
+                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                        Custom Geography fields below
                       </div>
                     ) : selectedType ? (
-                    <Popover open={itemDropdownOpen} onOpenChange={setItemDropdownOpen}>
-                      <PopoverTrigger
-                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
-                        disabled={!canEdit}
-                      >
-                        <span className="truncate">
-                          {selectedItem ? (
-                            <span className="flex items-center gap-2">
-                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                {selectedItem}
+                      <Popover open={itemDropdownOpen} onOpenChange={setItemDropdownOpen}>
+                        <PopoverTrigger
+                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
+                          disabled={!canEdit}
+                        >
+                          <span className="truncate">
+                            {selectedItem ? (
+                              <span className="flex items-center gap-2">
+                                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                  {selectedItem}
+                                </span>
+                                <span className="font-medium">
+                                  {filteredItems.find(item => item.code === selectedItem)?.name}
+                                </span>
                               </span>
-                              <span className="font-medium">
-                                {filteredItems.find(item => item.code === selectedItem)?.name}
-                              </span>
-                            </span>
-                          ) : (
+                            ) : (
                               `Select ${selectedType === 'country' ? 'Country' : 'Region'}...`
-                          )}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {selectedItem && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleItemChange('');
-                              }}
-                              className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
-                              aria-label="Clear selection"
-                            >
-                              <span className="text-xs">×</span>
-                            </button>
-                          )}
-                          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent 
-                        className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border"
-                        align="start"
-                        side="bottom"
-                        sideOffset={4}
-                      >
-                        <Command>
-                          <div className="flex items-center border-b px-3 py-2">
-                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                            <input
+                            )}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {selectedItem && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleItemChange('');
+                                }}
+                                className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors"
+                                aria-label="Clear selection"
+                              >
+                                <span className="text-xs">×</span>
+                              </button>
+                            )}
+                            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-[var(--radix-popover-trigger-width)] min-w-[320px] p-0 shadow-lg border"
+                          align="start"
+                          side="bottom"
+                          sideOffset={4}
+                        >
+                          <Command>
+                            <div className="flex items-center border-b px-3 py-2">
+                              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                              <input
                                 placeholder={`Search ${selectedType === 'country' ? 'countries' : 'regions'}...`}
-                              value={itemSearchQuery}
-                              onChange={(e) => setItemSearchQuery(e.target.value)}
+                                value={itemSearchQuery}
+                                onChange={(e) => setItemSearchQuery(e.target.value)}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Escape') {
                                     setItemDropdownOpen(false);
                                     setItemSearchQuery("");
                                   } else if (e.key === 'Enter' || e.key === 'Tab') {
-                                    // Close dropdown and keep current search query
                                     setItemDropdownOpen(false);
                                   }
                                 }}
@@ -1145,104 +1180,79 @@ export default function CountriesRegionsTab({
                                   <span className="text-xs">×</span>
                                 </button>
                               )}
-                          </div>
+                            </div>
                             <CommandList>
                               <CommandEmpty>No {selectedType === 'country' ? 'countries' : 'regions'} found.</CommandEmpty>
-                          <CommandGroup className="max-h-[200px] overflow-y-auto">
-                            {filteredItems.map((item) => (
-                              <CommandItem
-                                key={item.code}
-                                value={item.code}
-                                onSelect={() => {
-                                  handleItemChange(item.code);
-                                  setItemSearchQuery("");
-                                }}
+                              <CommandGroup className="max-h-[200px] overflow-y-auto">
+                                {filteredItems.map((item) => (
+                                  <CommandItem
+                                    key={item.code}
+                                    value={item.code}
+                                    onSelect={() => {
+                                      handleItemChange(item.code);
+                                      setItemSearchQuery("");
+                                    }}
                                     className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
-                              >
-                                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                  {item.code}
-                                </span>
+                                  >
+                                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                      {item.code}
+                                    </span>
                                     <div className="flex flex-col">
-                                <span className="font-medium">{item.name}</span>
+                                      <span className="font-medium">{item.name}</span>
                                       {item.description && (
                                         <span className="text-xs text-muted-foreground">{item.description}</span>
                                       )}
                                     </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
                             </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  ) : (
-                    <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors">
-                      <span className="truncate text-muted-foreground">
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    ) : (
+                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
                         Select type first
-                      </span>
-                    </div>
-                  )}
-                </div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Percentage */}
-                  <div className="space-y-2 md:col-span-2">
-                  <Label>Percentage (%)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={percentage}
-                    onChange={(e) => setPercentage(e.target.value)}
-                    placeholder="0.0"
+                  <div className="space-y-2">
+                    <Label>Percentage (%) <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5 align-middle" aria-hidden="true" /></Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={percentage}
+                      onChange={(e) => setPercentage(e.target.value)}
+                      placeholder="0.0"
                       disabled={!canEdit || (selectedType !== 'custom' && !selectedItem)}
-                    className="w-full border-gray-300 focus:ring-gray-500 focus:border-gray-500"
-                  />
-                </div>
-
-                  {/* Add Button */}
-                  <div className="space-y-2 md:col-span-1">
-                  <Label>&nbsp;</Label>
-                  <Button
-                    onClick={addAllocation}
-                      disabled={
-                        !canEdit || 
-                        !selectedType || 
-                        !vocabulary ||
-                        !percentage || 
-                        (selectedType !== 'custom' && !selectedItem) ||
-                        (selectedType === 'custom' && (!customName.trim() || !customCode.trim()))
-                      }
-                      className="w-full bg-black hover:bg-gray-800 text-white"
-                    variant="default"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                      {editingId ? 'Update' : 'Add'}
-                  </Button>
-                  </div>
+                      className="w-full border-gray-300 focus:ring-gray-500 focus:border-gray-500"
+                    />
                   </div>
 
                   {/* Narrative field */}
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <div className="space-y-2 md:col-span-12">
-                      <Label className="text-sm font-medium">Narrative / Description</Label>
-                      <Input
-                        type="text"
-                        value={narrative}
-                        onChange={(e) => setNarrative(e.target.value)}
-                        placeholder="e.g., Covers all South Asian states except India"
-                        disabled={!canEdit}
-                        className="w-full border-gray-300 focus:ring-gray-500 focus:border-gray-500"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Narrative / Description</Label>
+                    <Input
+                      type="text"
+                      value={narrative}
+                      onChange={(e) => setNarrative(e.target.value)}
+                      placeholder="e.g., Covers all South Asian states except India"
+                      disabled={!canEdit}
+                      className="w-full border-gray-300 focus:ring-gray-500 focus:border-gray-500"
+                    />
                   </div>
 
-                  {/* Custom Geography Fields - Below the main row */}
+                  {/* Custom Geography Fields */}
                   {selectedType === 'custom' && (
-                    <div className="space-y-3">
+                    <div className="space-y-3 pt-2 border-t">
+                      <h4 className="text-sm font-medium text-gray-900">Custom Geography Details</h4>
                       <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-sm font-medium">Name</Label>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5 align-middle" aria-hidden="true" /></Label>
                           <Input
                             type="text"
                             value={customName}
@@ -1252,8 +1262,8 @@ export default function CountriesRegionsTab({
                             className="w-full border-gray-300 focus:ring-gray-500 focus:border-gray-500"
                           />
                         </div>
-                        <div>
-                          <Label className="text-sm font-medium">Code</Label>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5 align-middle" aria-hidden="true" /></Label>
                           <Input
                             type="text"
                             value={customCode}
@@ -1264,7 +1274,7 @@ export default function CountriesRegionsTab({
                           />
                         </div>
                       </div>
-                      <div>
+                      <div className="space-y-2">
                         <Label className="text-sm font-medium">Vocabulary URI</Label>
                         <Input
                           type="url"
@@ -1278,9 +1288,35 @@ export default function CountriesRegionsTab({
                     </div>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </ScrollArea>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    cancelEdit();
+                    setShowAddForm(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={addAllocation}
+                  disabled={
+                    !canEdit ||
+                    !selectedType ||
+                    !vocabulary ||
+                    !percentage ||
+                    (selectedType !== 'custom' && !selectedItem) ||
+                    (selectedType === 'custom' && (!customName.trim() || !customCode.trim()))
+                  }
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {editingId ? 'Update' : 'Add'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Allocations Table */}
           <Card>

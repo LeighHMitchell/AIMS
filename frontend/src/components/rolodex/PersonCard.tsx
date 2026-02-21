@@ -30,7 +30,9 @@ import {
   Pencil,
   User,
   Trash2,
-  Layers
+  Layers,
+  Copy,
+  Check
 } from 'lucide-react';
 import { getRoleBadgeVariant, getRoleDisplayLabel } from '@/lib/role-badge-utils';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -57,6 +59,7 @@ export function PersonCard({
   const router = useRouter();
   const [isContactEditModalOpen, setIsContactEditModalOpen] = useState(false);
   const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   // Use unified role utilities for consistent styling
   
   // Generate initials for avatar (keeping for backward compatibility)
@@ -81,6 +84,13 @@ export function PersonCard({
 
   // Check if this person is a super user
   const isPersonSuperUser = person.source === 'user' && (person.role === 'super_user' || person.role_label === 'super_user');
+
+  const handleCopyEmail = (e: React.MouseEvent, email: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(email);
+    setCopiedEmail(email);
+    setTimeout(() => setCopiedEmail(null), 1500);
+  };
 
   const handleEmailClick = (email?: string) => {
     if (email) {
@@ -496,24 +506,46 @@ export function PersonCard({
           {(person.email || person.secondary_email) && (
             <div className="space-y-1">
               {person.email && (
-                <div className="flex items-center space-x-2 text-xs">
-                  <Mail className="h-3 w-3 text-slate-400" />
+                <div className="group/email flex items-center space-x-2 text-xs">
+                  <Mail className="h-3 w-3 text-slate-400 flex-shrink-0" />
                   <button
                     onClick={() => handleEmailClick(person.email)}
-                    className="text-slate-600 hover:text-blue-600 transition-colors truncate"
+                    className="text-slate-600 truncate"
                   >
                     {person.email}
+                  </button>
+                  <button
+                    onClick={(e) => handleCopyEmail(e, person.email!)}
+                    className="opacity-0 group-hover/email:opacity-100 transition-opacity flex-shrink-0"
+                    title="Copy email"
+                  >
+                    {copiedEmail === person.email ? (
+                      <Check className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Copy className="h-3 w-3 text-slate-400 hover:text-slate-600" />
+                    )}
                   </button>
                 </div>
               )}
               {person.secondary_email && (
-                <div className="flex items-center space-x-2 text-xs ml-4">
+                <div className="group/email2 flex items-center space-x-2 text-xs ml-4">
                   <span className="text-slate-400">|</span>
                   <button
                     onClick={() => handleEmailClick(person.secondary_email)}
-                    className="text-slate-600 hover:text-blue-600 transition-colors truncate"
+                    className="text-slate-600 truncate"
                   >
                     {person.secondary_email}
+                  </button>
+                  <button
+                    onClick={(e) => handleCopyEmail(e, person.secondary_email!)}
+                    className="opacity-0 group-hover/email2:opacity-100 transition-opacity flex-shrink-0"
+                    title="Copy email"
+                  >
+                    {copiedEmail === person.secondary_email ? (
+                      <Check className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Copy className="h-3 w-3 text-slate-400 hover:text-slate-600" />
+                    )}
                   </button>
                 </div>
               )}
@@ -528,7 +560,7 @@ export function PersonCard({
                   <Phone className="h-3 w-3 text-slate-400" />
                   <button
                     onClick={handlePhoneClick}
-                    className="text-slate-600 hover:text-blue-600 transition-colors"
+                    className="text-slate-600"
                   >
                     {person.phone}
                   </button>
@@ -539,7 +571,7 @@ export function PersonCard({
                   <span className="text-slate-400">|</span>
                   <button
                     onClick={handleFaxClick}
-                    className="text-slate-600 hover:text-blue-600 transition-colors"
+                    className="text-slate-600"
                   >
                     <Printer className="h-3 w-3 mr-1 inline" />
                     {person.fax}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,12 +25,16 @@ import {
   ArrowDown,
   ChevronRight,
   ChevronDown,
+  Mountain,
+  Map as MapIcon,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
 import { SectorHierarchyFilter, SectorFilterSelection, matchesSectorFilter } from '@/components/maps/SectorHierarchyFilter';
 import { apiFetch } from '@/lib/api-fetch';
 import { Map, MapControls, useMap } from '@/components/ui/map';
+import { useHomeCountry } from '@/contexts/SystemSettingsContext';
+import { getCountryCenter, getCountryZoom } from '@/data/country-coordinates';
 import type MapLibreGL from 'maplibre-gl';
 
 // Dynamic imports for map layers (SSR disabled)
@@ -167,6 +171,8 @@ interface LocationData {
     status: string;
     organization_id: string;
     organization_name?: string;
+    organization_acronym?: string;
+    organization_logo?: string;
     sectors?: Array<{
       code: string;
       name: string;
@@ -230,7 +236,28 @@ function MapBoundsHandler({
   return null;
 }
 
+// Bridge component: syncs map instance + 3D state to the parent
+function Map3DSync({ onIs3DChange }: { onIs3DChange: (v: boolean) => void }) {
+  const { map, isLoaded } = useMap();
+
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+
+    const handleMove = () => {
+      const pitch = Math.round(map.getPitch());
+      const bearing = Math.round(map.getBearing());
+      onIs3DChange(pitch !== 0 || bearing !== 0);
+    };
+
+    map.on('move', handleMove);
+    return () => { map.off('move', handleMove); };
+  }, [map, isLoaded, onIs3DChange]);
+
+  return null;
+}
+
 export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
+  const homeCountry = useHomeCountry();
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -243,8 +270,10 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
     sectors: [],
     subSectors: [],
   });
+  const [showOnlyActiveSectors, setShowOnlyActiveSectors] = useState(true);
   const [tabMode, setTabMode] = useState<TabMode>('map');
   const mapRef = useRef<MapLibreGL.Map | null>(null);
+  const [is3D, setIs3D] = useState(false);
 
   // Subnational breakdown state
   const [subnationalData, setSubnationalData] = useState<{
@@ -370,6 +399,33 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
     return filtered;
   }, [validLocations, statusFilter, sectorFilter]);
 
+  // Compute sector activity counts (apply status filter only, not sector filter)
+  const sectorActivityCounts = useMemo(() => {
+    let locationsForCounting = validLocations;
+    if (statusFilter !== 'all') {
+      locationsForCounting = locationsForCounting.filter(loc =>
+        loc.activity?.status === statusFilter
+      );
+    }
+
+    const sectorActivities: Record<string, Set<string>> = {};
+    locationsForCounting.forEach(location => {
+      const activityId = location.activity_id;
+      location.activity?.sectors?.forEach(sector => {
+        if (!sectorActivities[sector.code]) {
+          sectorActivities[sector.code] = new Set();
+        }
+        sectorActivities[sector.code].add(activityId);
+      });
+    });
+
+    const counts: Record<string, number> = {};
+    Object.entries(sectorActivities).forEach(([code, activities]) => {
+      counts[code] = activities.size;
+    });
+    return counts;
+  }, [validLocations, statusFilter]);
+
   // Calculate bounds to fit all markers with padding (in [lat, lng] format for internal use)
   const mapBounds = useMemo((): [[number, number], [number, number]] | null => {
     if (filteredLocations.length === 0) {
@@ -394,13 +450,24 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
     ];
   }, [filteredLocations]);
 
-  // Default center for empty state - MapLibre uses [lng, lat]
-  const defaultCenter: [number, number] = [105.0, 12.5]; // Cambodia [lng, lat]
+  // Default center for empty state - derived from host country in system settings
+  // getCountryCenter returns [lat, lng]; MapLibre uses [lng, lat]
+  const homeCenter = getCountryCenter(homeCountry);
+  const defaultCenter: [number, number] = [homeCenter[1], homeCenter[0]];
+  const defaultZoom = getCountryZoom(homeCountry);
 
   const handleReset = () => {
     setShouldResetMap(true);
     setTimeout(() => setShouldResetMap(false), 100);
   };
+
+  const handle3DView = useCallback(() => {
+    mapRef.current?.easeTo({ pitch: 60, bearing: -20, duration: 1000 });
+  }, []);
+
+  const handle2DView = useCallback(() => {
+    mapRef.current?.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
+  }, []);
 
   if (loading) {
     return (
@@ -502,6 +569,9 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                 <SectorHierarchyFilter
                   selected={sectorFilter}
                   onChange={setSectorFilter}
+                  activityCounts={sectorActivityCounts}
+                  showOnlyActiveSectors={showOnlyActiveSectors}
+                  onShowOnlyActiveSectorsChange={setShowOnlyActiveSectors}
                   className="w-[200px] h-9 text-xs"
                 />
               </div>
@@ -564,6 +634,30 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                       <Flame className="h-4 w-4" />
                     </Button>
                   </div>
+
+                  {is3D ? (
+                    <Button
+                      onClick={handle2DView}
+                      variant="outline"
+                      size="sm"
+                      title="2D View"
+                      className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+                    >
+                      <MapIcon className="h-4 w-4 mr-1.5" />
+                      <span className="text-xs">2D</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handle3DView}
+                      variant="outline"
+                      size="sm"
+                      title="3D View"
+                      className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+                    >
+                      <Mountain className="h-4 w-4 mr-1.5" />
+                      <span className="text-xs">3D</span>
+                    </Button>
+                  )}
                 </div>
 
                 {/* MapLibre Map */}
@@ -571,7 +665,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                   key={`org-map-${organizationId}-${mapStyle}`}
                   ref={mapRef}
                   center={defaultCenter}
-                  zoom={6}
+                  zoom={defaultZoom}
                   minZoom={2}
                   styles={{
                     light: MAP_STYLES[mapStyle].style as string | object,
@@ -579,6 +673,7 @@ export function OrgActivitiesMap({ organizationId }: OrgActivitiesMapProps) {
                   }}
                 >
                   <MapControls position="top-right" showZoom />
+                  <Map3DSync onIs3DChange={setIs3D} />
 
                   {/* Markers mode */}
                   {viewMode === 'markers' && filteredLocations.length > 0 && (

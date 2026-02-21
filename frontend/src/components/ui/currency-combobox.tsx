@@ -93,7 +93,7 @@ export function CurrencyCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full max-w-[400px] p-0 z-[9999]" align="start" sideOffset={4}>
+      <PopoverContent className="w-full max-w-[400px] p-0 z-[10001]" align="start" sideOffset={4}>
         <Command className="max-h-[400px]">
           <CommandInput
             placeholder="Search currency code or name..."

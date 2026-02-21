@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch'
@@ -53,13 +53,11 @@ export function OrganizationEditor({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Update active section when URL changes
+  // Ref to track current org ID so callbacks don't depend on the full organization object
+  const orgIdRef = useRef(organizationId || (initialData as Organization)?.id)
   useEffect(() => {
-    const section = searchParams?.get('section')
-    if (section) {
-      setActiveSection(section)
-    }
-  }, [searchParams])
+    orgIdRef.current = organizationId || organization?.id
+  }, [organizationId, organization?.id])
 
   // Load organization data if we have an ID
   useEffect(() => {
@@ -116,7 +114,8 @@ export function OrganizationEditor({
 
   // Handle organization save
   const handleSave = useCallback(async (data: Partial<Organization>) => {
-    if (!organizationId && !organization?.id) {
+    const currentId = orgIdRef.current
+    if (!currentId) {
       // Creating new organization
       await handleCreate(data)
       return
@@ -124,8 +123,7 @@ export function OrganizationEditor({
 
     setSaving(true)
     try {
-      const id = organizationId || organization?.id
-      const response = await apiFetch(`/api/organizations/${id}`, {
+      const response = await apiFetch(`/api/organizations/${currentId}`, {
         method: 'PUT',
         body: JSON.stringify(data)
       })
@@ -138,21 +136,17 @@ export function OrganizationEditor({
       const updatedOrg = await response.json()
       setOrganization(updatedOrg)
       toast.success('Organization saved successfully')
-      
-      if (onSuccess) {
-        onSuccess()
-      }
     } catch (error: any) {
       console.error('Error saving organization:', error)
       toast.error(error.message || 'Failed to save organization')
     } finally {
       setSaving(false)
     }
-  }, [organizationId, organization, handleCreate, onSuccess])
+  }, [handleCreate])
 
   // Handle organization deletion
   const handleDeleteOrganization = useCallback(async () => {
-    const currentOrgId = organizationId || organization?.id
+    const currentOrgId = orgIdRef.current
     if (!currentOrgId) return
 
     setIsDeleting(true)
@@ -175,7 +169,7 @@ export function OrganizationEditor({
     } finally {
       setIsDeleting(false)
     }
-  }, [organizationId, organization, router])
+  }, [router])
 
   // Map section IDs to form tab names
   const getFormTab = (section: string) => {
@@ -208,9 +202,9 @@ export function OrganizationEditor({
     if (currentIndex < sectionOrder.length - 1) {
       const nextSection = sectionOrder[currentIndex + 1]
       setActiveSection(nextSection)
-      router.replace(`/organizations/${organizationId}/edit?section=${nextSection}`, { scroll: false })
+      window.history.replaceState(null, '', `/organizations/${orgIdRef.current}/edit?section=${nextSection}`)
     }
-  }, [activeSection, organizationId, router])
+  }, [activeSection])
 
   // Render section content
   const renderSectionContent = () => {
@@ -232,9 +226,7 @@ export function OrganizationEditor({
           organization={organization}
           renderMode="inline"
           onSave={handleSave}
-          onSuccess={() => {
-            if (onSuccess) onSuccess()
-          }}
+          onSuccess={onSuccess}
           initialTab={getFormTab(activeSection)}
           externalSaving={saving}
           onNextSection={handleNextSection}

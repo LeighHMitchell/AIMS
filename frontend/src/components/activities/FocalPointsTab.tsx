@@ -26,10 +26,11 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
 import { FocalPointHandoffModal } from './FocalPointHandoffModal';
-import { 
-  FocalPoint, 
+import { AssignFocalPointModal } from './AssignFocalPointModal';
+import {
+  FocalPoint,
   FocalPointType,
-  FocalPointsTabProps 
+  FocalPointsTabProps
 } from '@/types/focal-points';
 import {
   getFocalPointPermissions,
@@ -52,6 +53,9 @@ export default function FocalPointsTab({
   // Assignment state
   const [selectedUser, setSelectedUser] = useState<UserOption | null>(null);
   
+  // Assign modal state
+  const [showAssignModal, setShowAssignModal] = useState(false);
+
   // Handoff modal state
   const [handoffModalOpen, setHandoffModalOpen] = useState(false);
   const [handoffType, setHandoffType] = useState<FocalPointType>('government_focal_point');
@@ -506,63 +510,29 @@ export default function FocalPointsTab({
       {renderPendingHandoffAlert('government_focal_point')}
       {renderPendingHandoffAlert('development_partner_focal_point')}
 
-      {/* Super User Assignment Section */}
+      {/* Assign Focal Point Button + Modal */}
       {permissions.canAssignFocalPoints && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
+        <>
+          <div className="flex justify-end">
+            <Button onClick={() => setShowAssignModal(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
               Assign Focal Point
-            </CardTitle>
-            <CardDescription>
-              Search for a user and assign them as a government or development partner focal point.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Select User</label>
-                <UserSearchableSelect
-                  value={selectedUser?.id}
-                  selectedUserData={selectedUser}
-                  onValueChange={(userId, userData) => {
-                    setSelectedUser(userId && userData ? userData : null);
-                  }}
-                  placeholder="Search for a user..."
-                  searchPlaceholder="Type name or email..."
-                  className="w-full"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  className="w-full"
-                  onClick={() => handleAssign('government_focal_point')}
-                  disabled={!selectedUser || actionLoading !== null}
-                >
-                  {actionLoading === 'assign-government_focal_point' ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Building2 className="h-4 w-4 mr-2" />
-                  )}
-                  Government Focal Point
-                </Button>
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => handleAssign('development_partner_focal_point')}
-                  disabled={!selectedUser || actionLoading !== null}
-                >
-                  {actionLoading === 'assign-development_partner_focal_point' ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Users className="h-4 w-4 mr-2" />
-                  )}
-                  Development Partner Focal Point
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </Button>
+          </div>
+
+          <AssignFocalPointModal
+            isOpen={showAssignModal}
+            onClose={() => setShowAssignModal(false)}
+            onAssign={(type) => {
+              handleAssign(type).then(() => setShowAssignModal(false));
+            }}
+            selectedUser={selectedUser}
+            onSelectedUserChange={(userId, userData) => {
+              setSelectedUser(userId && userData ? userData : null);
+            }}
+            actionLoading={actionLoading}
+          />
+        </>
       )}
 
       {/* Focal Points Grid - Side by Side */}

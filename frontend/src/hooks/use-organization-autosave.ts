@@ -46,6 +46,19 @@ export function useOrganizationAutosave(
   const pendingValueRef = useRef<any>(null);
   const lastSavedValueRef = useRef<any>(null);
 
+  // For existing organizations, mark fields as already persisted so green ticks
+  // appear on load for fields that have data (instead of only after an in-session save)
+  useEffect(() => {
+    if (organizationId && enabled) {
+      setState(prev => {
+        if (!prev.lastSaved) {
+          return { ...prev, lastSaved: new Date() };
+        }
+        return prev;
+      });
+    }
+  }, [organizationId, enabled]);
+
   // Perform the actual save
   const performSave = useCallback(async (value: any) => {
     if (!enabled || !organizationId || isSavingRef.current) {

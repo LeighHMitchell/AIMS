@@ -39,6 +39,8 @@ import {
   FileText,
   Save
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useResults, useBaselines, useIndicators } from '@/hooks/use-results';
 import { supabase } from '@/lib/supabase';
@@ -354,7 +356,14 @@ export function ResultsTab({
   const [editingIndicator, setEditingIndicator] = useState<string | null>(null);
   const [editingIndicatorValues, setEditingIndicatorValues] = useState<{
     title?: string;
+    description?: string;
+    measure?: string;
+    ascending?: boolean;
+    aggregation_status?: boolean;
     baseline?: number;
+    baseline_year?: number;
+    baseline_iso_date?: string;
+    baseline_comment?: string;
     target?: number;
     actual?: number;
   }>({});
@@ -646,21 +655,21 @@ export function ResultsTab({
           )}
       </div>
 
-      {/* Simple Add Result Form */}
-      {showAddResult && !readOnly && (
-        <Card className="border-2 border-gray-400 bg-gray-50">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg text-gray-900">What result do you want to achieve?</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-              <div className="space-y-2">
+      {/* Add Result Modal */}
+      <Dialog open={showAddResult && !readOnly} onOpenChange={(open) => { if (!open) setShowAddResult(false); }}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>What result do you want to achieve?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
               <Label htmlFor="result-title" className="text-base font-medium text-gray-900">
                 Result name *
               </Label>
               <Input
                 id="result-title"
                 value={newResult.title?.[defaultLanguage] || ''}
-                onChange={(e) => 
+                onChange={(e) =>
                   setNewResult(prev => ({
                     ...prev,
                     title: { ...prev.title, [defaultLanguage]: e.target.value }
@@ -713,7 +722,7 @@ export function ResultsTab({
               <Textarea
                 id="result-description"
                 value={newResult.description?.[defaultLanguage] || ''}
-                onChange={(e) => 
+                onChange={(e) =>
                   setNewResult(prev => ({
                     ...prev,
                     description: { ...prev.description, [defaultLanguage]: e.target.value }
@@ -724,27 +733,25 @@ export function ResultsTab({
                 className="w-full text-base"
               />
             </div>
+          </div>
 
-            <div className="flex items-center gap-3 pt-2">
-              <Button
-                onClick={handleCreateResult}
-                disabled={!newResult.title?.[defaultLanguage]?.trim()}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400 px-6"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Result
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowAddResult(false)}
-                className="text-gray-600"
-              >
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAddResult(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateResult}
+              disabled={!newResult.title?.[defaultLanguage]?.trim()}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Result
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Main Content - Simple List */}
       {displayResults.length === 0 && !showDummyData ? (
@@ -825,103 +832,124 @@ export function ResultsTab({
                           )}
                         </div>
 
-              {/* Simple Edit Form */}
-                        {editingResult === result.id && !readOnly && (
-                <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-3">
-                                <Input
-                    value={
-                      editingResultData[result.id]?.title?.[defaultLanguage] ?? 
-                      (result.title as any)[defaultLanguage] ?? ''
-                    }
-                                  onChange={(e) => 
-                                    handleUpdateResultField(result.id, 'title', {
-                                      ...(editingResultData[result.id]?.title || result.title),
-                                      [defaultLanguage]: e.target.value
-                                    })
-                                  }
-                    placeholder="Result name"
-                    className="text-lg font-medium"
-                                />
-                                <Textarea
-                    value={
-                      editingResultData[result.id]?.description?.[defaultLanguage] ?? 
-                      ((result.description as any)?.[defaultLanguage]) ?? ''
-                    }
-                                  onChange={(e) => 
-                                    handleUpdateResultField(result.id, 'description', {
-                                      ...(editingResultData[result.id]?.description || result.description),
-                                      [defaultLanguage]: e.target.value
-                                    })
-                                  }
-                    placeholder="Add details..."
-                    rows={2}
-                                  className="w-full"
-                                />
-                                
-                                {/* Aggregation Status Toggle */}
-                                <div className="flex items-center gap-3 py-2">
-                                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                    Aggregation Status
-                                    <HelpTextTooltip>
-                                      Enable if this result can be aggregated across multiple activities
-                                    </HelpTextTooltip>
-                                  </Label>
-                                  <Switch
-                                    checked={editingResultData[result.id]?.aggregation_status ?? result.aggregation_status}
-                                    onCheckedChange={(checked) =>
-                                      handleUpdateResultField(result.id, 'aggregation_status', checked)
-                                    }
-                                  />
-                                </div>
+              {/* Edit Result Modal */}
+              <Dialog
+                open={editingResult === result.id && !readOnly}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setEditingResult(null);
+                    setEditingResultData(prev => {
+                      const newData = { ...prev };
+                      delete newData[result.id];
+                      return newData;
+                    });
+                  }
+                }}
+              >
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
+                  <DialogHeader>
+                    <DialogTitle>Edit Result</DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="flex-1 max-h-[calc(90vh-10rem)]">
+                    <div className="space-y-4 pr-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Result Name</Label>
+                        <Input
+                          value={
+                            editingResultData[result.id]?.title?.[defaultLanguage] ??
+                            (result.title as any)[defaultLanguage] ?? ''
+                          }
+                          onChange={(e) =>
+                            handleUpdateResultField(result.id, 'title', {
+                              ...(editingResultData[result.id]?.title || result.title),
+                              [defaultLanguage]: e.target.value
+                            })
+                          }
+                          placeholder="Result name"
+                          className="text-lg font-medium"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Description</Label>
+                        <Textarea
+                          value={
+                            editingResultData[result.id]?.description?.[defaultLanguage] ??
+                            ((result.description as any)?.[defaultLanguage]) ?? ''
+                          }
+                          onChange={(e) =>
+                            handleUpdateResultField(result.id, 'description', {
+                              ...(editingResultData[result.id]?.description || result.description),
+                              [defaultLanguage]: e.target.value
+                            })
+                          }
+                          placeholder="Add details..."
+                          rows={2}
+                          className="w-full"
+                        />
+                      </div>
 
-                                <Separator />
+                      {/* Aggregation Status Toggle */}
+                      <div className="flex items-center gap-3 py-2">
+                        <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          Aggregation Status
+                          <HelpTextTooltip>
+                            Enable if this result can be aggregated across multiple activities
+                          </HelpTextTooltip>
+                        </Label>
+                        <Switch
+                          checked={editingResultData[result.id]?.aggregation_status ?? result.aggregation_status}
+                          onCheckedChange={(checked) =>
+                            handleUpdateResultField(result.id, 'aggregation_status', checked)
+                          }
+                        />
+                      </div>
 
-                                {/* Result References */}
-                                <ReferencesManager
-                                  entityType="result"
-                                  entityId={result.id}
-                                  references={result.references || []}
-                                  onUpdate={fetchResults}
-                                  readOnly={readOnly}
-                                />
+                      <Separator />
 
-                                <Separator />
+                      {/* Result References */}
+                      <ReferencesManager
+                        entityType="result"
+                        entityId={result.id}
+                        references={result.references || []}
+                        onUpdate={fetchResults}
+                        readOnly={readOnly}
+                      />
 
-                                {/* Result Documents */}
-                                <DocumentLinksManager
-                                  entityType="result"
-                                  entityId={result.id}
-                                  documents={result.document_links || []}
-                                  onUpdate={fetchResults}
-                                  readOnly={readOnly}
-                                  defaultLanguage={defaultLanguage}
-                                />
-                                
-                              <div className="flex items-center gap-2">
-                                <Button 
-                                  onClick={() => handleSaveResultEdit(result.id)}
-                      size="sm"
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
-                                >
+                      <Separator />
+
+                      {/* Result Documents */}
+                      <DocumentLinksManager
+                        entityType="result"
+                        entityId={result.id}
+                        documents={result.document_links || []}
+                        onUpdate={fetchResults}
+                        readOnly={readOnly}
+                        defaultLanguage={defaultLanguage}
+                      />
+                    </div>
+                  </ScrollArea>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditingResult(null);
+                        setEditingResultData(prev => {
+                          const newData = { ...prev };
+                          delete newData[result.id];
+                          return newData;
+                        });
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => handleSaveResultEdit(result.id)}
+                    >
                       Save
-                                </Button>
-                                <Button 
-                      variant="ghost" 
-                      size="sm"
-                                  onClick={() => {
-                                    setEditingResult(null);
-                                    setEditingResultData(prev => {
-                                      const newData = { ...prev };
-                                      delete newData[result.id];
-                                      return newData;
-                                    });
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                </div>
-              )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               {/* Indicators Section - Simplified */}
               <div className="ml-10 mt-4">
                 <div className="flex items-center justify-between mb-3">
@@ -938,763 +966,625 @@ export function ResultsTab({
                             )}
                           </div>
 
-                {/* Simple Add Indicator Form */}
-                          {showAddIndicator === result.id && !readOnly && (
-                            <AddIndicatorForm
-                              resultId={result.id}
-                              activityId={activityId}
-                              defaultLanguage={defaultLanguage}
-                              onCancel={() => setShowAddIndicator(null)}
-                              onSuccess={() => {
-                                setShowAddIndicator(null);
-                                fetchResults();
-                              }}
-                            />
-                          )}
+                {/* Add Indicator Modal */}
+                          <AddIndicatorForm
+                            open={showAddIndicator === result.id && !readOnly}
+                            resultId={result.id}
+                            activityId={activityId}
+                            defaultLanguage={defaultLanguage}
+                            onCancel={() => setShowAddIndicator(null)}
+                            onSuccess={() => {
+                              setShowAddIndicator(null);
+                              fetchResults();
+                            }}
+                          />
 
                           {result.indicators && result.indicators.length > 0 ? (
                   <div className="space-y-3">
                     {result.indicators.map((indicator, idx) => (
                       <div key={indicator.id} className="bg-gray-50 p-4 rounded-lg">
-                        {/* Show edit form in full width when editing */}
-                        {editingIndicator === indicator.id && !readOnly ? (
-                          <div className="space-y-4">
-                            <h5 className="font-medium text-gray-900 mb-2">
-                              Edit Indicator {idx + 1}
-                            </h5>
-                            {/* Full Width Indicator Editing */}
-                            <div className="space-y-4">
-                              {/* Title Editing */}
-                              <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-700">Indicator Name</Label>
-                              <Input
-                                value={editingIndicatorValues.title || ''}
-                                onChange={(e) => {
-                                  setEditingIndicatorValues(prev => ({
-                                    ...prev,
-                                    title: e.target.value
-                                  }));
-                                }}
-                                  placeholder="Indicator name"
-                                  className="font-medium"
-                              />
-                              </div>
-
-                              {/* Indicator Description */}
-                              <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-700">Description</Label>
-                                <Textarea
-                                  value={editingIndicatorValues.description || ''}
-                                  onChange={(e) => {
-                                    setEditingIndicatorValues(prev => ({
-                                      ...prev,
-                                      description: e.target.value
-                                    }));
-                                  }}
-                                  placeholder="Detailed description of this indicator"
-                                  rows={2}
-                                  className="text-sm"
-                                />
-                              </div>
-
-                              {/* Measure Type */}
-                              <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                  Measure Type
-                                  <HelpTextTooltip>
-                                    How this indicator is measured (unit, percentage, nominal, ordinal, or qualitative)
-                                  </HelpTextTooltip>
-                                </Label>
-                                <MeasureTypeSearchableSelect
-                                  value={editingIndicatorValues.measure || indicator.measure || '1'}
-                                  onValueChange={(value) => {
-                                    setEditingIndicatorValues(prev => ({
-                                      ...prev,
-                                      measure: value as MeasureType
-                                    }));
-                                  }}
-                                  placeholder="Select measure type..."
-                                  className="max-w-lg"
-                                />
-                              </div>
-
-                              {/* Ascending Toggle */}
-                              <div className="flex items-center justify-between py-2">
-                                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                  Ascending Values
-                                  <HelpTextTooltip>
-                                    Enable if higher values indicate better performance (e.g., literacy rate). Disable for negative indicators (e.g., mortality rate).
-                                  </HelpTextTooltip>
-                                </Label>
-                                <Switch
-                                  checked={editingIndicatorValues.ascending ?? indicator.ascending ?? true}
-                                  onCheckedChange={(checked) => {
-                                    setEditingIndicatorValues(prev => ({
-                                      ...prev,
-                                      ascending: checked
-                                    }));
-                                  }}
-                                />
-                              </div>
-
-                              {/* Aggregation Status Toggle */}
-                              <div className="flex items-center gap-3 py-2">
-                                <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                  Aggregation Status
-                                  <HelpTextTooltip>
-                                    Enable if this indicator can be aggregated or compared across activities
-                                  </HelpTextTooltip>
-                                </Label>
-                                <Switch
-                                  checked={editingIndicatorValues.aggregation_status ?? indicator.aggregation_status ?? false}
-                                  onCheckedChange={(checked) => {
-                                    setEditingIndicatorValues(prev => ({
-                                      ...prev,
-                                      aggregation_status: checked
-                                    }));
-                                  }}
-                                />
-                            </div>
-                            
-                              <Separator />
-
-                              {/* Indicator References */}
-                              <ReferencesManager
-                                entityType="indicator"
-                                entityId={indicator.id}
-                                references={indicator.references || []}
-                                onUpdate={fetchResults}
-                                readOnly={readOnly}
-                              />
-
-                              <Separator />
-
-                              {/* Indicator Documents */}
-                              <DocumentLinksManager
-                                entityType="indicator"
-                                entityId={indicator.id}
-                                documents={indicator.document_links || []}
-                                onUpdate={fetchResults}
-                                readOnly={readOnly}
-                                defaultLanguage={defaultLanguage}
-                              />
-
-                              <Separator />
-
-                              {/* Baseline Section */}
-                              <div className="space-y-4 p-4 bg-gray-100 rounded-lg">
-                                <h6 className="text-sm font-semibold text-gray-900">Baseline Information</h6>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                      Baseline Value
-                                      <HelpTextTooltip>
-                                        The starting value before your activity began
-                                      </HelpTextTooltip>
-                                    </Label>
-                              <Input
-                                      type="number"
-                                      step="any"
-                                      value={editingIndicatorValues.baseline || ''}
-                                onChange={(e) => {
-                                  setEditingIndicatorValues(prev => ({
-                                    ...prev,
-                                          baseline: parseFloat(e.target.value) || undefined
-                                  }));
-                                }}
-                                      placeholder="Starting value"
-                                      className="text-sm"
-                                    />
-                                  </div>
-
-                                  <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-gray-700">Baseline Year</Label>
-                                    <Input
-                                      type="number"
-                                      min="1900"
-                                      max="2100"
-                                      value={editingIndicatorValues.baseline_year || ''}
-                                      onChange={(e) => {
-                                        setEditingIndicatorValues(prev => ({
-                                          ...prev,
-                                          baseline_year: parseInt(e.target.value) || undefined
-                                        }));
-                                      }}
-                                      placeholder="e.g., 2020"
-                                      className="text-sm"
-                                    />
-                                  </div>
-                              </div>
-
+                        {/* Edit Indicator Modal */}
+                        <Dialog
+                          open={editingIndicator === indicator.id && !readOnly}
+                          onOpenChange={(open) => {
+                            if (!open) {
+                              setEditingIndicator(null);
+                              setEditingIndicatorValues({});
+                            }
+                          }}
+                        >
+                          <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+                            <DialogHeader>
+                              <DialogTitle>Edit Indicator</DialogTitle>
+                            </DialogHeader>
+                            <ScrollArea className="flex-1 max-h-[calc(90vh-10rem)]">
+                              <div className="space-y-4 pr-4">
+                                {/* Title Editing */}
                                 <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-gray-700">Baseline Date</Label>
+                                  <Label className="text-sm font-medium text-gray-700">Indicator Name</Label>
                                   <Input
-                                    type="date"
-                                    value={editingIndicatorValues.baseline_iso_date || ''}
+                                    value={editingIndicatorValues.title || ''}
                                     onChange={(e) => {
                                       setEditingIndicatorValues(prev => ({
                                         ...prev,
-                                        baseline_iso_date: e.target.value
+                                        title: e.target.value
                                       }));
                                     }}
-                                    className="text-sm max-w-xs"
+                                    placeholder="Indicator name"
+                                    className="font-medium"
                                   />
                                 </div>
 
+                                {/* Indicator Description */}
                                 <div className="space-y-2">
-                                  <Label className="text-sm font-medium text-gray-700">Baseline Comment</Label>
+                                  <Label className="text-sm font-medium text-gray-700">Description</Label>
                                   <Textarea
-                                    value={editingIndicatorValues.baseline_comment || ''}
+                                    value={editingIndicatorValues.description || ''}
                                     onChange={(e) => {
                                       setEditingIndicatorValues(prev => ({
                                         ...prev,
-                                        baseline_comment: e.target.value
+                                        description: e.target.value
                                       }));
                                     }}
-                                    placeholder="Explanation of baseline measurement"
+                                    placeholder="Detailed description of this indicator"
                                     rows={2}
                                     className="text-sm"
                                   />
                                 </div>
 
-                                {indicator.baseline?.id && (
-                                  <>
-                                    <Separator />
-                                    
-                                    {/* Baseline Locations */}
-                                    <LocationsManager
-                                      entityType="baseline"
-                                      entityId={indicator.baseline.id}
-                                      locations={indicator.baseline.locations || []}
-                                      onUpdate={fetchResults}
-                                      readOnly={readOnly}
-                                    />
-
-                                    <Separator />
-
-                                    {/* Baseline Dimensions */}
-                                    <DimensionsManager
-                                      entityType="baseline"
-                                      entityId={indicator.baseline.id}
-                                      dimensions={indicator.baseline.dimensions || []}
-                                      onUpdate={fetchResults}
-                                      readOnly={readOnly}
-                                    />
-
-                                    <Separator />
-
-                                    {/* Baseline Documents */}
-                                    <DocumentLinksManager
-                                      entityType="baseline"
-                                      entityId={indicator.baseline.id}
-                                      documents={indicator.baseline.document_links || []}
-                                      onUpdate={fetchResults}
-                                      readOnly={readOnly}
-                                      defaultLanguage={defaultLanguage}
-                                    />
-                                  </>
-                                )}
-                              </div>
-
-                               {/* Period Management */}
-                               <div className="space-y-3">
-                                 <div className="flex items-center justify-between">
-                                   <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                                     <Clock className="h-4 w-4" />
-                                     Progress Tracking Periods
+                                {/* Measure Type */}
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                    Measure Type
                                     <HelpTextTooltip>
-                                       Add multiple time periods to track progress monthly, quarterly, or at custom intervals
+                                      How this indicator is measured (unit, percentage, nominal, ordinal, or qualitative)
                                     </HelpTextTooltip>
                                   </Label>
-                                   <Button
-                                     size="sm"
-                                     variant="outline"
-                                     onClick={() => setShowAddPeriod(indicator.id)}
-                                     className="text-xs"
-                                   >
-                                     <Plus className="h-3 w-3 mr-1" />
-                                     Add Period
-                                   </Button>
-                                 </div>
-
-                                 {/* Add New Period Form */}
-                                 {showAddPeriod === indicator.id && (
-                                   <div className="bg-gray-50 p-3 rounded border space-y-3">
-                                     <div className="grid grid-cols-2 gap-3">
-                                       <div>
-                                         <Label className="text-xs text-gray-600">Period Start</Label>
-                                         <Input
-                                           type="date"
-                                           value={newPeriod.period_start}
-                                           onChange={(e) => setNewPeriod(prev => ({ ...prev, period_start: e.target.value }))}
-                                           className="text-xs"
-                                         />
-                                       </div>
-                                       <div>
-                                         <Label className="text-xs text-gray-600">Period End</Label>
-                                         <Input
-                                           type="date"
-                                           value={newPeriod.period_end}
-                                           onChange={(e) => setNewPeriod(prev => ({ ...prev, period_end: e.target.value }))}
-                                           className="text-xs"
-                                         />
-                                       </div>
-                                     </div>
-                                     
-                                     <div className="grid grid-cols-2 gap-3">
-                                       <div>
-                                         <Label className="text-xs text-gray-600">Target Value</Label>
-                                  <Input
-                                    type="number"
-                                    step="any"
-                                           value={newPeriod.target_value}
-                                           onChange={(e) => setNewPeriod(prev => ({ ...prev, target_value: e.target.value }))}
-                                           placeholder="Target for this period"
-                                           className="text-xs"
+                                  <MeasureTypeSearchableSelect
+                                    value={editingIndicatorValues.measure || indicator.measure || '1'}
+                                    onValueChange={(value) => {
+                                      setEditingIndicatorValues(prev => ({
+                                        ...prev,
+                                        measure: value as MeasureType
+                                      }));
+                                    }}
+                                    placeholder="Select measure type..."
+                                    className="max-w-lg"
                                   />
                                 </div>
-                                <div>
-                                         <Label className="text-xs text-gray-600">Actual Value</Label>
-                                  <Input
-                                    type="number"
-                                    step="any"
-                                           value={newPeriod.actual_value}
-                                           onChange={(e) => setNewPeriod(prev => ({ ...prev, actual_value: e.target.value }))}
-                                           placeholder="Actual achieved"
-                                           className="text-xs"
+
+                                {/* Ascending Toggle */}
+                                <div className="flex items-center justify-between py-2">
+                                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                    Ascending Values
+                                    <HelpTextTooltip>
+                                      Enable if higher values indicate better performance (e.g., literacy rate). Disable for negative indicators (e.g., mortality rate).
+                                    </HelpTextTooltip>
+                                  </Label>
+                                  <Switch
+                                    checked={editingIndicatorValues.ascending ?? indicator.ascending ?? true}
+                                    onCheckedChange={(checked) => {
+                                      setEditingIndicatorValues(prev => ({
+                                        ...prev,
+                                        ascending: checked
+                                      }));
+                                    }}
                                   />
                                 </div>
-                              </div>
 
-                                    <div className="space-y-3">
-                                     <div>
-                                        <Label className="text-xs text-gray-600">Target Comment</Label>
-                                        <Textarea
-                                          value={newPeriod.target_comment}
-                                          onChange={(e) => setNewPeriod(prev => ({ ...prev, target_comment: e.target.value }))}
-                                          placeholder="Notes about the target"
-                                          rows={2}
-                                         className="text-xs"
-                                       />
-                                      </div>
-                                      
-                                      <div>
-                                        <Label className="text-xs text-gray-600">Actual Comment</Label>
-                                        <Textarea
-                                          value={newPeriod.actual_comment}
-                                          onChange={(e) => setNewPeriod(prev => ({ ...prev, actual_comment: e.target.value }))}
-                                          placeholder="Notes about the actual achievement"
-                                          rows={2}
-                                          className="text-xs"
-                                        />
-                                      </div>
-                                     </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <Button 
-                                  size="sm"
-                                  onClick={async () => {
-                                           if (!newPeriod.period_start || !newPeriod.period_end) {
-                                             toast.error('Please provide period start and end dates');
-                                             return;
-                                           }
+                                {/* Aggregation Status Toggle */}
+                                <div className="flex items-center gap-3 py-2">
+                                  <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                    Aggregation Status
+                                    <HelpTextTooltip>
+                                      Enable if this indicator can be aggregated or compared across activities
+                                    </HelpTextTooltip>
+                                  </Label>
+                                  <Switch
+                                    checked={editingIndicatorValues.aggregation_status ?? indicator.aggregation_status ?? false}
+                                    onCheckedChange={(checked) => {
+                                      setEditingIndicatorValues(prev => ({
+                                        ...prev,
+                                        aggregation_status: checked
+                                      }));
+                                    }}
+                                  />
+                                </div>
 
-                                           try {
-                                             const { error } = await supabase
-                                               .from('indicator_periods')
-                                               .insert({
-                                        indicator_id: indicator.id,
-                                                 period_start: newPeriod.period_start,
-                                                 period_end: newPeriod.period_end,
-                                                 target_value: newPeriod.target_value ? parseFloat(newPeriod.target_value) : null,
-                                                 actual_value: newPeriod.actual_value ? parseFloat(newPeriod.actual_value) : null,
-                                                target_comment: newPeriod.target_comment ? { [defaultLanguage]: newPeriod.target_comment } : null,
-                                                actual_comment: newPeriod.actual_comment ? { [defaultLanguage]: newPeriod.actual_comment } : null,
-                                                 facet: 'Total'
-                                               });
+                                <Separator />
 
-                                             if (error) {
-                                               console.error('Error adding period:', error);
-                                               toast.error('Failed to add period');
-                                               return;
-                                             }
+                                {/* Indicator References */}
+                                <ReferencesManager
+                                  entityType="indicator"
+                                  entityId={indicator.id}
+                                  references={indicator.references || []}
+                                  onUpdate={fetchResults}
+                                  readOnly={readOnly}
+                                />
 
-                                             toast.success('Period added successfully');
-                                             setNewPeriod({
-                                               period_start: '',
-                                               period_end: '',
-                                               target_value: '',
-                                               actual_value: '',
-                                              target_comment: '',
-                                              actual_comment: ''
-                                             });
-                                             setShowAddPeriod(null);
-                                        await fetchResults();
-                                           } catch (err) {
-                                             console.error('Unexpected error:', err);
-                                             toast.error('Failed to add period');
-                                           }
-                                         }}
-                                         className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
-                                       >
-                                         Add Period
-                                       </Button>
-                                       <Button
-                                         size="sm"
-                                         variant="ghost"
-                                         onClick={() => {
-                                           setShowAddPeriod(null);
-                                           setNewPeriod({
-                                             period_start: '',
-                                             period_end: '',
-                                             target_value: '',
-                                             actual_value: '',
-                                            target_comment: '',
-                                            actual_comment: ''
-                                           });
-                                         }}
-                                       >
-                                         Cancel
-                                       </Button>
-                                     </div>
-                                   </div>
-                                 )}
+                                <Separator />
 
-                                 {/* Existing Periods List */}
-                                 {indicator.periods && indicator.periods.length > 0 && (
-                                   <div className="space-y-2">
-                                    {indicator.periods.map((period: any, index: number) => {
-                                      const isExpanded = expandedPeriods.includes(period.id);
-                                      
-                                      return (
-                                        <div key={period.id || index} className="bg-white rounded border">
-                                          {/* Period Header */}
-                                          <div className="flex items-center justify-between p-3">
-                                         <div className="flex-1">
-                                              <div className="flex items-center gap-2">
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() => {
-                                                    setExpandedPeriods(prev =>
-                                                      isExpanded
-                                                        ? prev.filter(id => id !== period.id)
-                                                        : [...prev, period.id]
-                                                    );
-                                                  }}
-                                                  className="h-6 w-6 p-0"
-                                                >
-                                                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                                </Button>
-                                                <div className="text-sm">
-                                                  <div className="font-medium text-gray-900">
-                                             {new Date(period.period_start).toLocaleDateString()} - {new Date(period.period_end).toLocaleDateString()}
-                                           </div>
-                                                  <div className="text-xs text-gray-600">
-                                             Target: {period.target_value?.toLocaleString() || 'Not set'} | 
-                                             Actual: {period.actual_value?.toLocaleString() || 'Not set'}
-                                             {period.target_value && period.actual_value && (
-                                                      <span className="ml-2 font-medium text-gray-900">
-                                                 ({Math.round((period.actual_value / period.target_value) * 100)}%)
-                                               </span>
-                                             )}
-                                           </div>
-                                         </div>
-                                              </div>
-                                            </div>
-                                            {!readOnly && (
-                                         <Button
-                                           size="sm"
-                                           variant="ghost"
-                                           onClick={async () => {
-                                             if (window.confirm('Delete this period?')) {
-                                               try {
-                                                 const { error } = await supabase
-                                                   .from('indicator_periods')
-                                                   .delete()
-                                                   .eq('id', period.id);
+                                {/* Indicator Documents */}
+                                <DocumentLinksManager
+                                  entityType="indicator"
+                                  entityId={indicator.id}
+                                  documents={indicator.document_links || []}
+                                  onUpdate={fetchResults}
+                                  readOnly={readOnly}
+                                  defaultLanguage={defaultLanguage}
+                                />
 
-                                                 if (error) {
-                                                   toast.error('Failed to delete period');
-                                                   return;
-                                                 }
+                                <Separator />
 
-                                                 toast.success('Period deleted');
-                                                 await fetchResults();
-                                               } catch (err) {
-                                                 toast.error('Failed to delete period');
-                                               }
-                                             }
-                                           }}
-                                           className="text-red-600 hover:text-red-800"
-                                         >
-                                           <Trash2 className="h-3 w-3 text-red-500" />
-                                         </Button>
-                                            )}
-                                       </div>
+                                {/* Baseline Section */}
+                                <div className="space-y-4 p-4 bg-gray-100 rounded-lg">
+                                  <h6 className="text-sm font-semibold text-gray-900">Baseline Information</h6>
 
-                                          {/* Period Metadata - Collapsible */}
-                                          {isExpanded && (
-                                            <div className="px-3 pb-3 space-y-3 border-t pt-3">
-                                              {/* Comments Display */}
-                                              {(period.target_comment || period.actual_comment) && (
-                                                <div className="space-y-2 text-xs">
-                                                  {period.target_comment && (
-                                                    <div>
-                                                      <span className="font-medium text-gray-700">Target: </span>
-                                                      <span className="text-gray-600">
-                                                        {typeof period.target_comment === 'string' 
-                                                          ? period.target_comment 
-                                                          : period.target_comment[defaultLanguage] || Object.values(period.target_comment)[0]}
-                                                      </span>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        Baseline Value
+                                        <HelpTextTooltip>
+                                          The starting value before your activity began
+                                        </HelpTextTooltip>
+                                      </Label>
+                                      <Input
+                                        type="number"
+                                        step="any"
+                                        value={editingIndicatorValues.baseline || ''}
+                                        onChange={(e) => {
+                                          setEditingIndicatorValues(prev => ({
+                                            ...prev,
+                                            baseline: parseFloat(e.target.value) || undefined
+                                          }));
+                                        }}
+                                        placeholder="Starting value"
+                                        className="text-sm"
+                                      />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                      <Label className="text-sm font-medium text-gray-700">Baseline Year</Label>
+                                      <Input
+                                        type="number"
+                                        min="1900"
+                                        max="2100"
+                                        value={editingIndicatorValues.baseline_year || ''}
+                                        onChange={(e) => {
+                                          setEditingIndicatorValues(prev => ({
+                                            ...prev,
+                                            baseline_year: parseInt(e.target.value) || undefined
+                                          }));
+                                        }}
+                                        placeholder="e.g., 2020"
+                                        className="text-sm"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-gray-700">Baseline Date</Label>
+                                    <Input
+                                      type="date"
+                                      value={editingIndicatorValues.baseline_iso_date || ''}
+                                      onChange={(e) => {
+                                        setEditingIndicatorValues(prev => ({
+                                          ...prev,
+                                          baseline_iso_date: e.target.value
+                                        }));
+                                      }}
+                                      className="text-sm max-w-xs"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-gray-700">Baseline Comment</Label>
+                                    <Textarea
+                                      value={editingIndicatorValues.baseline_comment || ''}
+                                      onChange={(e) => {
+                                        setEditingIndicatorValues(prev => ({
+                                          ...prev,
+                                          baseline_comment: e.target.value
+                                        }));
+                                      }}
+                                      placeholder="Explanation of baseline measurement"
+                                      rows={2}
+                                      className="text-sm"
+                                    />
+                                  </div>
+
+                                  {indicator.baseline?.id && (
+                                    <>
+                                      <Separator />
+
+                                      {/* Baseline Locations */}
+                                      <LocationsManager
+                                        entityType="baseline"
+                                        entityId={indicator.baseline.id}
+                                        locations={indicator.baseline.locations || []}
+                                        onUpdate={fetchResults}
+                                        readOnly={readOnly}
+                                      />
+
+                                      <Separator />
+
+                                      {/* Baseline Dimensions */}
+                                      <DimensionsManager
+                                        entityType="baseline"
+                                        entityId={indicator.baseline.id}
+                                        dimensions={indicator.baseline.dimensions || []}
+                                        onUpdate={fetchResults}
+                                        readOnly={readOnly}
+                                      />
+
+                                      <Separator />
+
+                                      {/* Baseline Documents */}
+                                      <DocumentLinksManager
+                                        entityType="baseline"
+                                        entityId={indicator.baseline.id}
+                                        documents={indicator.baseline.document_links || []}
+                                        onUpdate={fetchResults}
+                                        readOnly={readOnly}
+                                        defaultLanguage={defaultLanguage}
+                                      />
+                                    </>
+                                  )}
+                                </div>
+
+                                {/* Period Management */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                      <Clock className="h-4 w-4" />
+                                      Progress Tracking Periods
+                                      <HelpTextTooltip>
+                                        Add multiple time periods to track progress monthly, quarterly, or at custom intervals
+                                      </HelpTextTooltip>
+                                    </Label>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setShowAddPeriod(indicator.id)}
+                                      className="text-xs"
+                                    >
+                                      <Plus className="h-3 w-3 mr-1" />
+                                      Add Period
+                                    </Button>
+                                  </div>
+
+                                  {/* Existing Periods List */}
+                                  {indicator.periods && indicator.periods.length > 0 && (
+                                    <div className="space-y-2">
+                                      {indicator.periods.map((period: any, index: number) => {
+                                        const isExpanded = expandedPeriods.includes(period.id);
+
+                                        return (
+                                          <div key={period.id || index} className="bg-white rounded border">
+                                            {/* Period Header */}
+                                            <div className="flex items-center justify-between p-3">
+                                              <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                      setExpandedPeriods(prev =>
+                                                        isExpanded
+                                                          ? prev.filter(id => id !== period.id)
+                                                          : [...prev, period.id]
+                                                      );
+                                                    }}
+                                                    className="h-6 w-6 p-0"
+                                                  >
+                                                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                                  </Button>
+                                                  <div className="text-sm">
+                                                    <div className="font-medium text-gray-900">
+                                                      {new Date(period.period_start).toLocaleDateString()} - {new Date(period.period_end).toLocaleDateString()}
                                                     </div>
-                                                  )}
-                                                  {period.actual_comment && (
-                                                    <div>
-                                                      <span className="font-medium text-gray-700">Actual: </span>
-                                                      <span className="text-gray-600">
-                                                        {typeof period.actual_comment === 'string'
-                                                          ? period.actual_comment
-                                                          : period.actual_comment[defaultLanguage] || Object.values(period.actual_comment)[0]}
-                                                      </span>
+                                                    <div className="text-xs text-gray-600">
+                                                      Target: {period.target_value?.toLocaleString() || 'Not set'} |
+                                                      Actual: {period.actual_value?.toLocaleString() || 'Not set'}
+                                                      {period.target_value && period.actual_value && (
+                                                        <span className="ml-2 font-medium text-gray-900">
+                                                          ({Math.round((period.actual_value / period.target_value) * 100)}%)
+                                                        </span>
+                                                      )}
                                                     </div>
-                                                  )}
+                                                  </div>
                                                 </div>
+                                              </div>
+                                              {!readOnly && (
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={async () => {
+                                                    if (window.confirm('Delete this period?')) {
+                                                      try {
+                                                        const { error } = await supabase
+                                                          .from('indicator_periods')
+                                                          .delete()
+                                                          .eq('id', period.id);
+
+                                                        if (error) {
+                                                          toast.error('Failed to delete period');
+                                                          return;
+                                                        }
+
+                                                        toast.success('Period deleted');
+                                                        await fetchResults();
+                                                      } catch (err) {
+                                                        toast.error('Failed to delete period');
+                                                      }
+                                                    }
+                                                  }}
+                                                  className="text-red-600 hover:text-red-800"
+                                                >
+                                                  <Trash2 className="h-3 w-3 text-red-500" />
+                                                </Button>
                                               )}
-
-                                              <Separator />
-
-                                              {/* Target Locations */}
-                                              <LocationsManager
-                                                entityType="period"
-                                                entityId={period.id}
-                                                locations={period.locations || []}
-                                                locationType="target"
-                                                onUpdate={fetchResults}
-                                                readOnly={readOnly}
-                                              />
-
-                                              {/* Actual Locations */}
-                                              <LocationsManager
-                                                entityType="period"
-                                                entityId={period.id}
-                                                locations={period.locations || []}
-                                                locationType="actual"
-                                                onUpdate={fetchResults}
-                                                readOnly={readOnly}
-                                              />
-
-                                              <Separator />
-
-                                              {/* Target Dimensions */}
-                                              <DimensionsManager
-                                                entityType="period"
-                                                entityId={period.id}
-                                                dimensions={period.dimensions || []}
-                                                dimensionType="target"
-                                                onUpdate={fetchResults}
-                                                readOnly={readOnly}
-                                              />
-
-                                              {/* Actual Dimensions */}
-                                              <DimensionsManager
-                                                entityType="period"
-                                                entityId={period.id}
-                                                dimensions={period.dimensions || []}
-                                                dimensionType="actual"
-                                                onUpdate={fetchResults}
-                                                readOnly={readOnly}
-                                              />
-
-                                              <Separator />
-
-                                              {/* Target Documents */}
-                                              <DocumentLinksManager
-                                                entityType="period"
-                                                entityId={period.id}
-                                                documents={period.document_links || []}
-                                                linkType="target"
-                                                onUpdate={fetchResults}
-                                                readOnly={readOnly}
-                                                defaultLanguage={defaultLanguage}
-                                              />
-
-                                              {/* Actual Documents */}
-                                              <DocumentLinksManager
-                                                entityType="period"
-                                                entityId={period.id}
-                                                documents={period.document_links || []}
-                                                linkType="actual"
-                                                onUpdate={fetchResults}
-                                                readOnly={readOnly}
-                                                defaultLanguage={defaultLanguage}
-                                              />
                                             </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                   </div>
-                                 )}
 
-                                 {/* Quick Add Buttons */}
-                                 <div className="flex gap-2">
-                                   <Button
-                                     size="sm"
-                                     variant="outline"
-                                     onClick={() => {
-                                       const now = new Date();
-                                       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-                                       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                                       
-                                       setNewPeriod({
-                                         period_start: monthStart.toISOString().split('T')[0],
-                                         period_end: monthEnd.toISOString().split('T')[0],
-                                         target_value: '',
-                                         actual_value: '',
-                                        target_comment: `Target for ${monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
-                                        actual_comment: ''
-                                       });
-                                       setShowAddPeriod(indicator.id);
-                                     }}
-                                     className="text-xs"
-                                   >
-                                     + This Month
-                                </Button>
-                                <Button 
-                                  size="sm"
-                                     variant="outline"
-                                     onClick={() => {
-                                       const now = new Date();
-                                       const quarter = Math.floor(now.getMonth() / 3);
-                                       const quarterStart = new Date(now.getFullYear(), quarter * 3, 1);
-                                       const quarterEnd = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
-                                       
-                                       setNewPeriod({
-                                         period_start: quarterStart.toISOString().split('T')[0],
-                                         period_end: quarterEnd.toISOString().split('T')[0],
-                                         target_value: '',
-                                         actual_value: '',
-                                        target_comment: `Target for Q${quarter + 1} ${now.getFullYear()}`,
-                                        actual_comment: ''
-                                       });
-                                       setShowAddPeriod(indicator.id);
-                                     }}
-                                     className="text-xs"
-                                   >
-                                     + This Quarter
-                                </Button>
-                                 </div>
+                                            {/* Period Metadata - Collapsible */}
+                                            {isExpanded && (
+                                              <div className="px-3 pb-3 space-y-3 border-t pt-3">
+                                                {/* Comments Display */}
+                                                {(period.target_comment || period.actual_comment) && (
+                                                  <div className="space-y-2 text-xs">
+                                                    {period.target_comment && (
+                                                      <div>
+                                                        <span className="font-medium text-gray-700">Target: </span>
+                                                        <span className="text-gray-600">
+                                                          {typeof period.target_comment === 'string'
+                                                            ? period.target_comment
+                                                            : period.target_comment[defaultLanguage] || Object.values(period.target_comment)[0]}
+                                                        </span>
+                                                      </div>
+                                                    )}
+                                                    {period.actual_comment && (
+                                                      <div>
+                                                        <span className="font-medium text-gray-700">Actual: </span>
+                                                        <span className="text-gray-600">
+                                                          {typeof period.actual_comment === 'string'
+                                                            ? period.actual_comment
+                                                            : period.actual_comment[defaultLanguage] || Object.values(period.actual_comment)[0]}
+                                                        </span>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+
+                                                <Separator />
+
+                                                {/* Target Locations */}
+                                                <LocationsManager
+                                                  entityType="period"
+                                                  entityId={period.id}
+                                                  locations={period.locations || []}
+                                                  locationType="target"
+                                                  onUpdate={fetchResults}
+                                                  readOnly={readOnly}
+                                                />
+
+                                                {/* Actual Locations */}
+                                                <LocationsManager
+                                                  entityType="period"
+                                                  entityId={period.id}
+                                                  locations={period.locations || []}
+                                                  locationType="actual"
+                                                  onUpdate={fetchResults}
+                                                  readOnly={readOnly}
+                                                />
+
+                                                <Separator />
+
+                                                {/* Target Dimensions */}
+                                                <DimensionsManager
+                                                  entityType="period"
+                                                  entityId={period.id}
+                                                  dimensions={period.dimensions || []}
+                                                  dimensionType="target"
+                                                  onUpdate={fetchResults}
+                                                  readOnly={readOnly}
+                                                />
+
+                                                {/* Actual Dimensions */}
+                                                <DimensionsManager
+                                                  entityType="period"
+                                                  entityId={period.id}
+                                                  dimensions={period.dimensions || []}
+                                                  dimensionType="actual"
+                                                  onUpdate={fetchResults}
+                                                  readOnly={readOnly}
+                                                />
+
+                                                <Separator />
+
+                                                {/* Target Documents */}
+                                                <DocumentLinksManager
+                                                  entityType="period"
+                                                  entityId={period.id}
+                                                  documents={period.document_links || []}
+                                                  linkType="target"
+                                                  onUpdate={fetchResults}
+                                                  readOnly={readOnly}
+                                                  defaultLanguage={defaultLanguage}
+                                                />
+
+                                                {/* Actual Documents */}
+                                                <DocumentLinksManager
+                                                  entityType="period"
+                                                  entityId={period.id}
+                                                  documents={period.document_links || []}
+                                                  linkType="actual"
+                                                  onUpdate={fetchResults}
+                                                  readOnly={readOnly}
+                                                  defaultLanguage={defaultLanguage}
+                                                />
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+
+                                  {/* Quick Add Buttons */}
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        const now = new Date();
+                                        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                                        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+                                        setNewPeriod({
+                                          period_start: monthStart.toISOString().split('T')[0],
+                                          period_end: monthEnd.toISOString().split('T')[0],
+                                          target_value: '',
+                                          actual_value: '',
+                                          target_comment: `Target for ${monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+                                          actual_comment: ''
+                                        });
+                                        setShowAddPeriod(indicator.id);
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      + This Month
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        const now = new Date();
+                                        const quarter = Math.floor(now.getMonth() / 3);
+                                        const quarterStart = new Date(now.getFullYear(), quarter * 3, 1);
+                                        const quarterEnd = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
+
+                                        setNewPeriod({
+                                          period_start: quarterStart.toISOString().split('T')[0],
+                                          period_end: quarterEnd.toISOString().split('T')[0],
+                                          target_value: '',
+                                          actual_value: '',
+                                          target_comment: `Target for Q${quarter + 1} ${now.getFullYear()}`,
+                                          actual_comment: ''
+                                        });
+                                        setShowAddPeriod(indicator.id);
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      + This Quarter
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
-                                
-                                <div className="flex items-center gap-2 pt-2">
-                                <Button 
-                                  size="sm"
-                                  onClick={async () => {
-                                    if (!editingIndicatorValues.title?.trim()) {
-                                      toast.error('Please provide an indicator name');
-                                      return;
+                            </ScrollArea>
+                            <DialogFooter>
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingIndicator(null);
+                                  setEditingIndicatorValues({});
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={async () => {
+                                  if (!editingIndicatorValues.title?.trim()) {
+                                    toast.error('Please provide an indicator name');
+                                    return;
+                                  }
+
+                                  try {
+                                    // Build update object for indicator
+                                    const updateData: any = {
+                                      updated_at: new Date().toISOString()
+                                    };
+
+                                    // Update title if changed
+                                    if (editingIndicatorValues.title !== (indicator.title as any)[defaultLanguage]) {
+                                      updateData.title = { [defaultLanguage]: editingIndicatorValues.title };
                                     }
 
-                                    try {
-                                      // Build update object for indicator
-                                      const updateData: any = {
-                                        updated_at: new Date().toISOString()
+                                    // Update description if changed
+                                    if (editingIndicatorValues.description !== undefined &&
+                                        editingIndicatorValues.description !== ((indicator.description as any)?.[defaultLanguage] || '')) {
+                                      updateData.description = { [defaultLanguage]: editingIndicatorValues.description };
+                                    }
+
+                                    // Update measure type if changed
+                                    if (editingIndicatorValues.measure && editingIndicatorValues.measure !== indicator.measure) {
+                                      updateData.measure = editingIndicatorValues.measure;
+                                    }
+
+                                    // Update ascending if changed
+                                    if (editingIndicatorValues.ascending !== undefined && editingIndicatorValues.ascending !== indicator.ascending) {
+                                      updateData.ascending = editingIndicatorValues.ascending;
+                                    }
+
+                                    // Update aggregation status if changed
+                                    if (editingIndicatorValues.aggregation_status !== undefined &&
+                                        editingIndicatorValues.aggregation_status !== indicator.aggregation_status) {
+                                      updateData.aggregation_status = editingIndicatorValues.aggregation_status;
+                                    }
+
+                                    // Save indicator updates if there are any changes
+                                    if (Object.keys(updateData).length > 1) { // More than just updated_at
+                                      const { error: indicatorError } = await supabase
+                                        .from('result_indicators')
+                                        .update(updateData)
+                                        .eq('id', indicator.id);
+
+                                      if (indicatorError) {
+                                        toast.error('Failed to update indicator');
+                                        return;
+                                      }
+                                    }
+
+                                    // Save baseline if provided
+                                    if (editingIndicatorValues.baseline !== undefined) {
+                                      const baselineData: any = {
+                                        indicator_id: indicator.id,
+                                        value: editingIndicatorValues.baseline
                                       };
 
-                                      // Update title if changed
-                                      if (editingIndicatorValues.title !== (indicator.title as any)[defaultLanguage]) {
-                                        updateData.title = { [defaultLanguage]: editingIndicatorValues.title };
+                                      // Add baseline year if provided
+                                      if (editingIndicatorValues.baseline_year) {
+                                        baselineData.baseline_year = editingIndicatorValues.baseline_year;
                                       }
 
-                                      // Update description if changed
-                                      if (editingIndicatorValues.description !== undefined && 
-                                          editingIndicatorValues.description !== ((indicator.description as any)?.[defaultLanguage] || '')) {
-                                        updateData.description = { [defaultLanguage]: editingIndicatorValues.description };
+                                      // Add baseline ISO date if provided
+                                      if (editingIndicatorValues.baseline_iso_date) {
+                                        baselineData.iso_date = editingIndicatorValues.baseline_iso_date;
                                       }
 
-                                      // Update measure type if changed
-                                      if (editingIndicatorValues.measure && editingIndicatorValues.measure !== indicator.measure) {
-                                        updateData.measure = editingIndicatorValues.measure;
+                                      // Add baseline comment if provided
+                                      if (editingIndicatorValues.baseline_comment) {
+                                        baselineData.comment = { [defaultLanguage]: editingIndicatorValues.baseline_comment };
                                       }
 
-                                      // Update ascending if changed
-                                      if (editingIndicatorValues.ascending !== undefined && editingIndicatorValues.ascending !== indicator.ascending) {
-                                        updateData.ascending = editingIndicatorValues.ascending;
-                                      }
-
-                                      // Update aggregation status if changed
-                                      if (editingIndicatorValues.aggregation_status !== undefined && 
-                                          editingIndicatorValues.aggregation_status !== indicator.aggregation_status) {
-                                        updateData.aggregation_status = editingIndicatorValues.aggregation_status;
-                                      }
-
-                                      // Save indicator updates if there are any changes
-                                      if (Object.keys(updateData).length > 1) { // More than just updated_at
-                                        const { error: indicatorError } = await supabase
-                                          .from('result_indicators')
-                                          .update(updateData)
-                                          .eq('id', indicator.id);
-
-                                        if (indicatorError) {
-                                          toast.error('Failed to update indicator');
-                                          return;
-                                        }
-                                      }
-
-                                      // Save baseline if provided
-                                      if (editingIndicatorValues.baseline !== undefined) {
-                                        const baselineData: any = {
-                                          indicator_id: indicator.id,
-                                          value: editingIndicatorValues.baseline
-                                        };
-                                        
-                                        // Add baseline year if provided
-                                        if (editingIndicatorValues.baseline_year) {
-                                          baselineData.baseline_year = editingIndicatorValues.baseline_year;
-                                        }
-                                        
-                                        // Add baseline ISO date if provided
-                                        if (editingIndicatorValues.baseline_iso_date) {
-                                          baselineData.iso_date = editingIndicatorValues.baseline_iso_date;
-                                        }
-                                        
-                                        // Add baseline comment if provided
-                                        if (editingIndicatorValues.baseline_comment) {
-                                          baselineData.comment = { [defaultLanguage]: editingIndicatorValues.baseline_comment };
-                                        }
-                                        
-                                        await upsertBaseline(baselineData);
-                                      }
-                                      
-                                      toast.success('Indicator updated');
-                                      setEditingIndicator(null);
-                                      setEditingIndicatorValues({});
-                                      await fetchResults();
-                                    } catch (err) {
-                                      console.error('Error saving indicator:', err);
-                                      toast.error('Failed to save indicator');
+                                      await upsertBaseline(baselineData);
                                     }
-                                  }}
-                                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
-                                >
-                                  Save
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => {
+
+                                    toast.success('Indicator updated');
                                     setEditingIndicator(null);
                                     setEditingIndicatorValues({});
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                            </div>
-                                </div>
-                                 </div>
-                        ) : (
+                                    await fetchResults();
+                                  } catch (err) {
+                                    console.error('Error saving indicator:', err);
+                                    toast.error('Failed to save indicator');
+                                  }
+                                }}
+                              >
+                                Save
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
                           <>
                             {/* Normal View - Not Editing */}
                             <div className="flex items-start justify-between">
@@ -1875,7 +1765,6 @@ export function ResultsTab({
                           </div>
                         )}
                           </>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -2215,6 +2104,163 @@ export function ResultsTab({
           </Tabs>
         </div>
       )}
+
+      {/* Add Period Modal */}
+      <Dialog
+        open={showAddPeriod !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowAddPeriod(null);
+            setNewPeriod({
+              period_start: '',
+              period_end: '',
+              target_value: '',
+              actual_value: '',
+              target_comment: '',
+              actual_comment: ''
+            });
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add Period</DialogTitle>
+            <DialogDescription>
+              Define a time period with target and actual values to track progress.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Period Start</Label>
+                <Input
+                  type="date"
+                  value={newPeriod.period_start}
+                  onChange={(e) => setNewPeriod(prev => ({ ...prev, period_start: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Period End</Label>
+                <Input
+                  type="date"
+                  value={newPeriod.period_end}
+                  onChange={(e) => setNewPeriod(prev => ({ ...prev, period_end: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Target Value</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  value={newPeriod.target_value}
+                  onChange={(e) => setNewPeriod(prev => ({ ...prev, target_value: e.target.value }))}
+                  placeholder="Target for this period"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Actual Value</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  value={newPeriod.actual_value}
+                  onChange={(e) => setNewPeriod(prev => ({ ...prev, actual_value: e.target.value }))}
+                  placeholder="Actual achieved"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Target Comment</Label>
+              <Textarea
+                value={newPeriod.target_comment}
+                onChange={(e) => setNewPeriod(prev => ({ ...prev, target_comment: e.target.value }))}
+                placeholder="Notes about the target"
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Actual Comment</Label>
+              <Textarea
+                value={newPeriod.actual_comment}
+                onChange={(e) => setNewPeriod(prev => ({ ...prev, actual_comment: e.target.value }))}
+                placeholder="Notes about the actual achievement"
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddPeriod(null);
+                setNewPeriod({
+                  period_start: '',
+                  period_end: '',
+                  target_value: '',
+                  actual_value: '',
+                  target_comment: '',
+                  actual_comment: ''
+                });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!newPeriod.period_start || !newPeriod.period_end) {
+                  toast.error('Please provide period start and end dates');
+                  return;
+                }
+
+                if (!showAddPeriod) return;
+
+                try {
+                  const { error } = await supabase
+                    .from('indicator_periods')
+                    .insert({
+                      indicator_id: showAddPeriod,
+                      period_start: newPeriod.period_start,
+                      period_end: newPeriod.period_end,
+                      target_value: newPeriod.target_value ? parseFloat(newPeriod.target_value) : null,
+                      actual_value: newPeriod.actual_value ? parseFloat(newPeriod.actual_value) : null,
+                      target_comment: newPeriod.target_comment ? { [defaultLanguage]: newPeriod.target_comment } : null,
+                      actual_comment: newPeriod.actual_comment ? { [defaultLanguage]: newPeriod.actual_comment } : null,
+                      facet: 'Total'
+                    });
+
+                  if (error) {
+                    console.error('Error adding period:', error);
+                    toast.error('Failed to add period');
+                    return;
+                  }
+
+                  toast.success('Period added successfully');
+                  setNewPeriod({
+                    period_start: '',
+                    period_end: '',
+                    target_value: '',
+                    actual_value: '',
+                    target_comment: '',
+                    actual_comment: ''
+                  });
+                  setShowAddPeriod(null);
+                  await fetchResults();
+                } catch (err) {
+                  console.error('Unexpected error:', err);
+                  toast.error('Failed to add period');
+                }
+              }}
+            >
+              Add Period
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

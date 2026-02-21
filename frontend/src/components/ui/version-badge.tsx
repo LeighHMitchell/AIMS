@@ -37,7 +37,7 @@ export function VersionBadge() {
         side="right"
         align="start"
         sideOffset={8}
-        className="w-80 shadow-xl border border-gray-200 z-[9999] p-0"
+        className="w-80 shadow-xl border border-gray-200 z-[10001] p-0"
         style={{ backgroundColor: '#f6f5f3', opacity: 1 }}
       >
         <div

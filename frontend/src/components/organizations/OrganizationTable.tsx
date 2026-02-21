@@ -348,18 +348,40 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="font-medium line-clamp-2 flex items-start gap-1.5">
-                                <Link
-                                  href={`/organizations/${org.id}`}
-                                  className="flex-1"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {org.name}
-                                  {org.acronym && (
-                                    <span>
-                                      {' '}({org.acronym})
-                                    </span>
+                                <span className="flex-1">
+                                  <Link
+                                    href={`/organizations/${org.id}`}
+                                    className="hover:underline"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {org.name}
+                                    {org.acronym && (
+                                      <span>
+                                        {' '}({org.acronym})
+                                      </span>
+                                    )}
+                                  </Link>
+                                  {org.iati_org_id && (
+                                    <>
+                                      {' '}
+                                      <span className="inline-flex items-center gap-0.5 whitespace-nowrap align-middle">
+                                        <span className="text-xs font-mono font-normal bg-muted text-gray-600 px-1.5 py-0.5 rounded">
+                                          {org.iati_org_id}
+                                        </span>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            copyToClipboard(org.iati_org_id!, 'IATI ID');
+                                          }}
+                                          className="p-0.5 hover:bg-gray-100 rounded transition-colors"
+                                          title="Copy IATI ID"
+                                        >
+                                          <Copy className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+                                        </button>
+                                      </span>
+                                    </>
                                   )}
-                                </Link>
+                                </span>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -379,23 +401,6 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                             )}
                           </Tooltip>
                         </TooltipProvider>
-                        {org.iati_org_id && (
-                          <div className="mt-1 flex items-center gap-1">
-                            <span className="text-xs font-mono bg-muted text-gray-600 px-1.5 py-0.5 rounded">
-                              {org.iati_org_id}
-                            </span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyToClipboard(org.iati_org_id!, 'IATI ID');
-                              }}
-                              className="p-0.5 hover:bg-gray-100 rounded transition-colors"
-                              title="Copy IATI ID"
-                            >
-                              <Copy className="h-3 w-3 text-gray-400 hover:text-gray-600" />
-                            </button>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </TableCell>

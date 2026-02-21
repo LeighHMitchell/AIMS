@@ -271,7 +271,7 @@ export function EnhancedDatePicker({
       {isOpen && !disabled && portalContainer && createPortal(
         <div 
           ref={dropdownRef}
-          className="fixed z-[9999] p-4 bg-white border border-gray-300 rounded-lg shadow-lg"
+          className="fixed z-[10001] p-4 bg-white border border-gray-300 rounded-lg shadow-lg"
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,

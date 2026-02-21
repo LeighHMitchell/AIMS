@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { isPositiveValue } from '@/lib/aid-effectiveness-helpers';
 
 interface GPEDCIndicator {
   indicator: string
@@ -155,7 +156,7 @@ export async function GET(request: NextRequest) {
         switch (indicator.indicator) {
           case 'ownership':
             isCompliant = !!(
-              aidEffectiveness.linkedToGovFramework === 'yes' &&
+              isPositiveValue(aidEffectiveness.linkedToGovFramework) &&
               aidEffectiveness.supportsPublicSector === 'yes'
             )
             break

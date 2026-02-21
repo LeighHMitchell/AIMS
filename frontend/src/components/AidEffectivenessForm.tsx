@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrganizationCombobox } from "@/components/ui/organization-combobox";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -32,7 +32,9 @@ import {
   Eye,
   Handshake,
   Heart,
-  MessageSquare
+  MessageSquare,
+  Paperclip,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -41,60 +43,63 @@ import { supabase } from "@/lib/supabase";
 import * as XLSX from 'xlsx';
 import { apiFetch } from '@/lib/api-fetch';
 
-// Types for form data
+// ──────────────────────────────────────────────
+// Types
+// ──────────────────────────────────────────────
+
 export interface AidEffectivenessFormData {
   // Section 1: Government Ownership & Strategic Alignment (GPEDC 1)
   implementingPartner?: string;
-  formallyApprovedByGov?: boolean;
-  includedInNationalPlan?: boolean;
-  linkedToGovFramework?: boolean;
-  indicatorsFromGov?: boolean;
-  indicatorsViaGovData?: boolean;
-  implementedByNationalInstitution?: boolean;
-  govEntityAccountable?: boolean;
-  supportsPublicSector?: boolean;
-  capacityDevFromNationalPlan?: boolean;
+  formallyApprovedByGov?: string | null;
+  includedInNationalPlan?: string | null;
+  linkedToGovFramework?: string | null;
+  indicatorsFromGov?: string | null;
+  indicatorsViaGovData?: string | null;
+  implementedByNationalInstitution?: string | null;
+  govEntityAccountable?: string | null;
+  supportsPublicSector?: string | null;
+  capacityDevFromNationalPlan?: string | null;
   numOutcomeIndicators?: number;
 
   // Section 2: Use of Country PFM & Procurement Systems (GPEDC 5a)
-  fundsViaNationalTreasury?: boolean;
-  govBudgetSystem?: boolean;
-  govFinReporting?: boolean;
-  finReportingIntegratedPFM?: boolean;
-  govAudit?: boolean;
-  govProcurement?: boolean;
+  fundsViaNationalTreasury?: string | null;
+  govBudgetSystem?: string | null;
+  govFinReporting?: string | null;
+  finReportingIntegratedPFM?: string | null;
+  govAudit?: string | null;
+  govProcurement?: string | null;
   govSystemWhyNot?: string;
 
   // Section 3: Predictability & Aid Characteristics (GPEDC 5b, 6, 10)
-  annualBudgetShared?: boolean;
-  forwardPlanShared?: boolean;
-  multiYearFinancingAgreement?: boolean;
+  annualBudgetShared?: string | null;
+  forwardPlanShared?: string | null;
+  multiYearFinancingAgreement?: string | null;
   tiedStatus?: string;
 
   // Section 4: Transparency & Timely Reporting (GPEDC 4)
-  annualFinReportsPublic?: boolean;
-  dataUpdatedPublicly?: boolean;
-  finalEvalPlanned?: boolean;
+  annualFinReportsPublic?: string | null;
+  dataUpdatedPublicly?: string | null;
+  finalEvalPlanned?: string | null;
   finalEvalDate?: string;
-  evalReportPublic?: boolean;
-  performanceIndicatorsReported?: boolean;
+  evalReportPublic?: string | null;
+  performanceIndicatorsReported?: string | null;
 
   // Section 5: Mutual Accountability (GPEDC 7)
-  jointAnnualReview?: boolean;
-  mutualAccountabilityFramework?: boolean;
-  correctiveActionsDocumented?: boolean;
+  jointAnnualReview?: string | null;
+  mutualAccountabilityFramework?: string | null;
+  correctiveActionsDocumented?: string | null;
 
   // Section 6: Civil Society & Private Sector Engagement (GPEDC 2 & 3)
-  civilSocietyConsulted?: boolean;
-  csoInvolvedInImplementation?: boolean;
-  coreFlexibleFundingToCSO?: boolean;
-  publicPrivateDialogue?: boolean;
-  privateSectorEngaged?: boolean;
+  civilSocietyConsulted?: string | null;
+  csoInvolvedInImplementation?: string | null;
+  coreFlexibleFundingToCSO?: string | null;
+  publicPrivateDialogue?: string | null;
+  privateSectorEngaged?: string | null;
 
   // Section 7: Gender Equality & Inclusion (GPEDC 8)
-  genderObjectivesIntegrated?: boolean;
-  genderBudgetAllocation?: boolean;
-  genderDisaggregatedIndicators?: boolean;
+  genderObjectivesIntegrated?: string | null;
+  genderBudgetAllocation?: string | null;
+  genderDisaggregatedIndicators?: string | null;
 
   // Section 8: Contacts
   contactName?: string;
@@ -111,6 +116,9 @@ export interface AidEffectivenessFormData {
 
   // Section 10: Remarks
   remarks?: string;
+
+  // Per-field evidence documents
+  documents?: Record<string, { fileName: string; fileUrl: string; uploadedAt: string } | null>;
 
   // Metadata
   lastSaved?: string;
@@ -145,6 +153,77 @@ interface Organization {
   name: string;
   acronym?: string;
 }
+
+interface AEOption {
+  id: string;
+  category: string;
+  label: string;
+  description?: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
+// ──────────────────────────────────────────────
+// Constants
+// ──────────────────────────────────────────────
+
+// Multi-option dropdown fields (hardcoded options)
+const MULTI_OPTION_FIELDS: Record<string, { label: string; description?: string }[]> = {
+  civilSocietyConsulted: [
+    { label: "Formal structured", description: "Formal structured consultation process" },
+    { label: "Informal", description: "Informal consultation" },
+    { label: "Information sharing only", description: "One-way information sharing" },
+    { label: "Not consulted", description: "No consultation with civil society" },
+  ],
+  csoInvolvedInImplementation: [
+    { label: "Lead implementer", description: "CSO is the lead implementing partner" },
+    { label: "Co-implementer", description: "CSO co-implements alongside other partners" },
+    { label: "Advisory/oversight", description: "CSO provides advisory or oversight role" },
+    { label: "Not involved", description: "No CSO involvement in implementation" },
+  ],
+  privateSectorEngaged: [
+    { label: "Governance/oversight", description: "Private sector in governance or oversight" },
+    { label: "Financial partner", description: "Private sector as financial partner" },
+    { label: "Technical partner", description: "Private sector as technical partner" },
+    { label: "Not engaged", description: "No private sector engagement" },
+  ],
+  genderObjectivesIntegrated: [
+    { label: "Principal (GEN-3)", description: "Gender equality is the principal objective" },
+    { label: "Significant (GEN-2)", description: "Gender equality is a significant objective" },
+    { label: "Marginal (GEN-1)", description: "Marginal contribution to gender equality" },
+    { label: "Not targeted (GEN-0)", description: "Gender equality is not targeted" },
+  ],
+  coreFlexibleFundingToCSO: [
+    { label: "Core/institutional", description: "Core/institutional funding to CSOs" },
+    { label: "Flexible project", description: "Flexible project-level funding" },
+    { label: "Earmarked only", description: "Only earmarked/restricted funding" },
+    { label: "No funding to CSOs", description: "No funding provided to CSOs" },
+  ],
+};
+
+// Country-specific dropdown fields with their negative option
+const COUNTRY_DROPDOWN_FIELDS: Record<string, string> = {
+  includedInNationalPlan: "Not included",
+  linkedToGovFramework: "Not linked",
+  mutualAccountabilityFramework: "Not assessed",
+  capacityDevFromNationalPlan: "Not based on national plan",
+};
+
+// Fields that get per-field evidence document upload slots
+const DOCUMENT_UPLOAD_FIELDS = new Set([
+  "formallyApprovedByGov",
+  "includedInNationalPlan",
+  "linkedToGovFramework",
+  "indicatorsFromGov",
+  "fundsViaNationalTreasury",
+  "govAudit",
+  "annualBudgetShared",
+  "annualFinReportsPublic",
+  "finalEvalPlanned",
+  "jointAnnualReview",
+  "mutualAccountabilityFramework",
+  "genderBudgetAllocation",
+]);
 
 // GPEDC-aligned tooltips
 const TOOLTIPS: Record<string, string> = {
@@ -195,6 +274,10 @@ const TIED_STATUS_OPTIONS = [
   { value: "tied", label: "Tied", description: "Procurement restricted to donor country" },
 ];
 
+// ──────────────────────────────────────────────
+// Sub-components
+// ──────────────────────────────────────────────
+
 // Helper component for field labels with visible description
 const FieldWithDescription: React.FC<{ description: string; children: React.ReactNode }> = ({ description, children }) => (
   <div className="space-y-1">
@@ -203,35 +286,232 @@ const FieldWithDescription: React.FC<{ description: string; children: React.Reac
   </div>
 );
 
-// Survey-style checkbox question
-const CheckboxField: React.FC<{
+// Inline evidence document upload for individual fields
+// Renders inline (same row) next to dropdowns/radio buttons
+const InlineDocumentUpload: React.FC<{
+  fieldName: string;
+  document?: { fileName: string; fileUrl: string; uploadedAt: string } | null;
+  uploading: boolean;
+  onUpload: (fieldName: string, file: File) => void;
+  onRemove: (fieldName: string) => void;
+}> = ({ fieldName, document: docInfo, uploading, onUpload, onRemove }) => {
+  const inputId = `doc-upload-${fieldName}`;
+
+  if (docInfo) {
+    return (
+      <div className="flex items-center gap-2">
+        <Paperclip className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+        <a
+          href={docInfo.fileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-600 hover:underline truncate max-w-[200px]"
+        >
+          {docInfo.fileName}
+        </a>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-5 w-5 p-0 text-gray-400 hover:text-red-500"
+          onClick={() => onRemove(fieldName)}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Input
+        type="file"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onUpload(fieldName, file);
+        }}
+        className="hidden"
+        id={inputId}
+        disabled={uploading}
+      />
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-9 px-3 text-xs text-slate-600 hover:text-slate-800 flex-shrink-0"
+        onClick={() => document.getElementById(inputId)?.click()}
+        disabled={uploading}
+      >
+        {uploading ? (
+          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+        ) : (
+          <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+        )}
+        {uploading ? "Uploading..." : "Attach evidence"}
+      </Button>
+    </>
+  );
+};
+
+// Yes/No radio button field (replaces CheckboxField)
+const RadioButtonField: React.FC<{
   id: string;
-  checked?: boolean;
-  onCheckedChange: (checked: boolean) => void;
+  value?: string | null;
+  onValueChange: (value: string) => void;
   label: string;
   tooltip?: string;
   description?: string;
-}> = ({ id, checked, onCheckedChange, label, tooltip, description }) => (
-  <div className="flex items-start space-x-3 py-3 border-b border-slate-100 last:border-b-0">
-    <Checkbox
-      id={id}
-      checked={checked ?? false}
-      onCheckedChange={onCheckedChange}
-      className="mt-0.5 border-orange-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
-    />
-    <div className="flex-1 space-y-0.5">
-      <Label htmlFor={id} className="text-sm font-medium cursor-pointer leading-tight text-slate-800">
-        {label}
-      </Label>
-      {tooltip && (
-        <p className="text-xs text-slate-500 leading-relaxed">{tooltip}</p>
-      )}
-      {description && (
-        <p className="text-xs text-slate-400 italic">{description}</p>
-      )}
+  documentUpload?: boolean;
+  document?: { fileName: string; fileUrl: string; uploadedAt: string } | null;
+  uploadingDoc?: boolean;
+  onDocUpload?: (fieldName: string, file: File) => void;
+  onDocRemove?: (fieldName: string) => void;
+}> = ({ id, value, onValueChange, label, tooltip, description, documentUpload, document, uploadingDoc, onDocUpload, onDocRemove }) => (
+  <div className="py-3 border-b border-slate-100 last:border-b-0">
+    <div className="flex items-start gap-3">
+      <RadioGroup
+        value={value || ""}
+        onValueChange={onValueChange}
+        className="flex items-center gap-3 mt-0.5 flex-shrink-0"
+      >
+        <div className="flex items-center gap-1">
+          <RadioGroupItem value="yes" id={`${id}-yes`} className="border-orange-300 text-orange-500" />
+          <Label htmlFor={`${id}-yes`} className="text-xs font-medium cursor-pointer text-slate-600">Yes</Label>
+        </div>
+        <div className="flex items-center gap-1">
+          <RadioGroupItem value="no" id={`${id}-no`} className="border-orange-300 text-orange-500" />
+          <Label htmlFor={`${id}-no`} className="text-xs font-medium cursor-pointer text-slate-600">No</Label>
+        </div>
+      </RadioGroup>
+      <div className="flex-1 flex items-start justify-between gap-3">
+        <div className="space-y-0.5">
+          <Label className="text-sm font-medium leading-tight text-slate-800">
+            {label}
+          </Label>
+          {tooltip && (
+            <p className="text-xs text-slate-500 leading-relaxed">{tooltip}</p>
+          )}
+          {description && (
+            <p className="text-xs text-slate-400 italic">{description}</p>
+          )}
+        </div>
+        {documentUpload && onDocUpload && onDocRemove && (
+          <InlineDocumentUpload
+            fieldName={id}
+            document={document}
+            uploading={uploadingDoc || false}
+            onUpload={onDocUpload}
+            onRemove={onDocRemove}
+          />
+        )}
+      </div>
     </div>
   </div>
 );
+
+// Dropdown field for hardcoded multi-option fields
+const DropdownField: React.FC<{
+  id: string;
+  value?: string | null;
+  onValueChange: (value: string) => void;
+  label: string;
+  tooltip?: string;
+  options: { label: string; description?: string }[];
+}> = ({ id, value, onValueChange, label, tooltip, options }) => (
+  <div className="py-3 border-b border-slate-100 last:border-b-0">
+    <div className="space-y-2">
+      <div className="space-y-0.5">
+        <Label className="text-sm font-medium leading-tight text-slate-800">
+          {label}
+        </Label>
+        {tooltip && (
+          <p className="text-xs text-slate-500 leading-relaxed">{tooltip}</p>
+        )}
+      </div>
+      <Select value={value || ""} onValueChange={onValueChange}>
+        <SelectTrigger className="max-w-md">
+          <SelectValue placeholder="Select an option..." />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map(option => (
+            <SelectItem key={option.label} value={option.label}>
+              <div className="flex flex-col">
+                <span>{option.label}</span>
+                {option.description && (
+                  <span className="text-xs text-gray-500">{option.description}</span>
+                )}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  </div>
+);
+
+// Country-specific dropdown field (fetches options from API + appends negative option)
+const CountryDropdownField: React.FC<{
+  id: string;
+  value?: string | null;
+  onValueChange: (value: string) => void;
+  label: string;
+  tooltip?: string;
+  description?: string;
+  negativeOption: string;
+  aeOptions: AEOption[];
+  documentUpload?: boolean;
+  document?: { fileName: string; fileUrl: string; uploadedAt: string } | null;
+  uploadingDoc?: boolean;
+  onDocUpload?: (fieldName: string, file: File) => void;
+  onDocRemove?: (fieldName: string) => void;
+}> = ({ id, value, onValueChange, label, tooltip, description, negativeOption, aeOptions, documentUpload, document, uploadingDoc, onDocUpload, onDocRemove }) => {
+  // Build options: admin-configured options + "yes" + negative option
+  const options = [
+    { value: "yes", label: "Yes" },
+    ...aeOptions.map(opt => ({ value: opt.label, label: opt.label })),
+    { value: negativeOption, label: negativeOption },
+  ];
+
+  return (
+    <div className="py-3 border-b border-slate-100 last:border-b-0">
+      <div className="space-y-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-0.5">
+            <Label className="text-sm font-medium leading-tight text-slate-800">
+              {label}
+            </Label>
+            {tooltip && (
+              <p className="text-xs text-slate-500 leading-relaxed">{tooltip}</p>
+            )}
+            {description && (
+              <p className="text-xs text-slate-400 italic">{description}</p>
+            )}
+          </div>
+          {documentUpload && onDocUpload && onDocRemove && (
+            <InlineDocumentUpload
+              fieldName={id}
+              document={document}
+              uploading={uploadingDoc || false}
+              onUpload={onDocUpload}
+              onRemove={onDocRemove}
+            />
+          )}
+        </div>
+        <Select value={value || ""} onValueChange={onValueChange}>
+          <SelectTrigger className="max-w-md">
+            <SelectValue placeholder="Select an option..." />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+};
 
 // Contact card component
 const ContactCard: React.FC<{
@@ -298,6 +578,10 @@ const ContactCard: React.FC<{
   );
 };
 
+// ──────────────────────────────────────────────
+// Main Component
+// ──────────────────────────────────────────────
+
 export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => {
   const { user } = useUser();
 
@@ -309,6 +593,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadingDocField, setUploadingDocField] = useState<string | null>(null);
+  const [aeOptions, setAeOptions] = useState<AEOption[]>([]);
   const formDataRef = useRef(formData);
   const autosaveRef = useRef<NodeJS.Timeout>();
 
@@ -335,6 +621,22 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     fetchOrganizations();
   }, []);
 
+  // Fetch country-specific dropdown options
+  useEffect(() => {
+    const fetchAEOptions = async () => {
+      try {
+        const response = await apiFetch('/api/admin/aid-effectiveness-options?activeOnly=true');
+        if (response.ok) {
+          const result = await response.json();
+          setAeOptions(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching AE options:', error);
+      }
+    };
+    fetchAEOptions();
+  }, []);
+
   // Pre-fill implementing partner with user's reporting org
   useEffect(() => {
     if (user?.organizationId && !formData.implementingPartner) {
@@ -345,45 +647,50 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     }
   }, [user?.organizationId]);
 
+  // Get options for a specific country-dropdown category
+  const getOptionsForCategory = useCallback((category: string) => {
+    return aeOptions.filter(opt => opt.category === category);
+  }, [aeOptions]);
+
   // Calculate completion percentage
   const completionPercentage = useMemo(() => {
     const fields = [
       formData.implementingPartner,
-      formData.formallyApprovedByGov !== undefined,
-      formData.includedInNationalPlan !== undefined,
-      formData.linkedToGovFramework !== undefined,
-      formData.indicatorsFromGov !== undefined,
-      formData.indicatorsViaGovData !== undefined,
-      formData.implementedByNationalInstitution !== undefined,
-      formData.govEntityAccountable !== undefined,
-      formData.supportsPublicSector !== undefined,
-      formData.capacityDevFromNationalPlan !== undefined,
-      formData.fundsViaNationalTreasury !== undefined,
-      formData.govBudgetSystem !== undefined,
-      formData.govFinReporting !== undefined,
-      formData.finReportingIntegratedPFM !== undefined,
-      formData.govAudit !== undefined,
-      formData.govProcurement !== undefined,
-      formData.annualBudgetShared !== undefined,
-      formData.forwardPlanShared !== undefined,
-      formData.multiYearFinancingAgreement !== undefined,
+      formData.formallyApprovedByGov != null,
+      formData.includedInNationalPlan != null,
+      formData.linkedToGovFramework != null,
+      formData.indicatorsFromGov != null,
+      formData.indicatorsViaGovData != null,
+      formData.implementedByNationalInstitution != null,
+      formData.govEntityAccountable != null,
+      formData.supportsPublicSector != null,
+      formData.capacityDevFromNationalPlan != null,
+      formData.fundsViaNationalTreasury != null,
+      formData.govBudgetSystem != null,
+      formData.govFinReporting != null,
+      formData.finReportingIntegratedPFM != null,
+      formData.govAudit != null,
+      formData.govProcurement != null,
+      formData.annualBudgetShared != null,
+      formData.forwardPlanShared != null,
+      formData.multiYearFinancingAgreement != null,
       formData.tiedStatus,
-      formData.annualFinReportsPublic !== undefined,
-      formData.dataUpdatedPublicly !== undefined,
-      formData.finalEvalPlanned !== undefined,
-      formData.evalReportPublic !== undefined,
-      formData.performanceIndicatorsReported !== undefined,
-      formData.jointAnnualReview !== undefined,
-      formData.mutualAccountabilityFramework !== undefined,
-      formData.correctiveActionsDocumented !== undefined,
-      formData.civilSocietyConsulted !== undefined,
-      formData.csoInvolvedInImplementation !== undefined,
-      formData.coreFlexibleFundingToCSO !== undefined,
-      formData.publicPrivateDialogue !== undefined,
-      formData.privateSectorEngaged !== undefined,
-      formData.genderObjectivesIntegrated !== undefined,
-      formData.genderBudgetAllocation !== undefined,
-      formData.genderDisaggregatedIndicators !== undefined,
+      formData.annualFinReportsPublic != null,
+      formData.dataUpdatedPublicly != null,
+      formData.finalEvalPlanned != null,
+      formData.evalReportPublic != null,
+      formData.performanceIndicatorsReported != null,
+      formData.jointAnnualReview != null,
+      formData.mutualAccountabilityFramework != null,
+      formData.correctiveActionsDocumented != null,
+      formData.civilSocietyConsulted != null,
+      formData.csoInvolvedInImplementation != null,
+      formData.coreFlexibleFundingToCSO != null,
+      formData.publicPrivateDialogue != null,
+      formData.privateSectorEngaged != null,
+      formData.genderObjectivesIntegrated != null,
+      formData.genderBudgetAllocation != null,
+      formData.genderDisaggregatedIndicators != null,
     ];
     const filled = fields.filter(Boolean).length;
     return Math.round((filled / fields.length) * 100);
@@ -441,50 +748,104 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     autosaveRef.current = setTimeout(autoSave, 2000);
   };
 
+  // Per-field evidence document upload
+  const handleFieldDocumentUpload = async (fieldName: string, file: File) => {
+    if (!general.id) {
+      toast.error("Please save the activity first");
+      return;
+    }
+
+    setUploadingDocField(fieldName);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${fieldName}_${Date.now()}.${fileExt}`;
+      const filePath = `activities/${general.id}/effectiveness/${fieldName}/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('activity-documents')
+        .upload(filePath, file, { upsert: true });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('activity-documents')
+        .getPublicUrl(filePath);
+
+      const newDocuments = {
+        ...formData.documents,
+        [fieldName]: {
+          fileName: file.name,
+          fileUrl: publicUrl,
+          uploadedAt: new Date().toISOString(),
+        }
+      };
+      updateField('documents', newDocuments);
+      toast.success(`Evidence document uploaded`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error("Failed to upload document");
+    } finally {
+      setUploadingDocField(null);
+    }
+  };
+
+  // Per-field evidence document remove
+  const handleFieldDocumentRemove = (fieldName: string) => {
+    const newDocuments = { ...formData.documents };
+    newDocuments[fieldName] = null;
+    updateField('documents', newDocuments);
+  };
+
   // Export form data to XLSX
   const handleExportXLSX = () => {
     try {
-      const b = (val?: boolean) => val === true ? 'Yes' : val === false ? 'No' : '';
+      const formatValue = (val?: string | null) => {
+        if (val == null) return '';
+        if (val === 'yes') return 'Yes';
+        if (val === 'no') return 'No';
+        return val;
+      };
+
       const exportData = [
         { Section: '1. Government Ownership', Field: 'Implementing Partner', Value: formData.implementingPartner || '' },
-        { Section: '1. Government Ownership', Field: 'Formally Approved by Government', Value: b(formData.formallyApprovedByGov) },
-        { Section: '1. Government Ownership', Field: 'Included in National Development Plan', Value: b(formData.includedInNationalPlan) },
-        { Section: '1. Government Ownership', Field: 'Linked to Government Results Framework', Value: b(formData.linkedToGovFramework) },
-        { Section: '1. Government Ownership', Field: 'Indicators from Government Frameworks', Value: b(formData.indicatorsFromGov) },
-        { Section: '1. Government Ownership', Field: 'Monitored via Government M&E', Value: b(formData.indicatorsViaGovData) },
-        { Section: '1. Government Ownership', Field: 'Implemented by National Institution', Value: b(formData.implementedByNationalInstitution) },
-        { Section: '1. Government Ownership', Field: 'Gov Entity as Accountable Authority', Value: b(formData.govEntityAccountable) },
-        { Section: '1. Government Ownership', Field: 'Supports Public Sector Capacity', Value: b(formData.supportsPublicSector) },
-        { Section: '1. Government Ownership', Field: 'Capacity Dev from National Plan', Value: b(formData.capacityDevFromNationalPlan) },
+        { Section: '1. Government Ownership', Field: 'Formally Approved by Government', Value: formatValue(formData.formallyApprovedByGov) },
+        { Section: '1. Government Ownership', Field: 'Included in National Development Plan', Value: formatValue(formData.includedInNationalPlan) },
+        { Section: '1. Government Ownership', Field: 'Linked to Government Results Framework', Value: formatValue(formData.linkedToGovFramework) },
+        { Section: '1. Government Ownership', Field: 'Indicators from Government Frameworks', Value: formatValue(formData.indicatorsFromGov) },
+        { Section: '1. Government Ownership', Field: 'Monitored via Government M&E', Value: formatValue(formData.indicatorsViaGovData) },
+        { Section: '1. Government Ownership', Field: 'Implemented by National Institution', Value: formatValue(formData.implementedByNationalInstitution) },
+        { Section: '1. Government Ownership', Field: 'Gov Entity as Accountable Authority', Value: formatValue(formData.govEntityAccountable) },
+        { Section: '1. Government Ownership', Field: 'Supports Public Sector Capacity', Value: formatValue(formData.supportsPublicSector) },
+        { Section: '1. Government Ownership', Field: 'Capacity Dev from National Plan', Value: formatValue(formData.capacityDevFromNationalPlan) },
         { Section: '1. Government Ownership', Field: 'Number of Outcome Indicators', Value: formData.numOutcomeIndicators?.toString() || '' },
-        { Section: '2. Country Systems', Field: 'Funds via National Treasury', Value: b(formData.fundsViaNationalTreasury) },
-        { Section: '2. Country Systems', Field: 'Government Budget Execution', Value: b(formData.govBudgetSystem) },
-        { Section: '2. Country Systems', Field: 'Government Financial Reporting', Value: b(formData.govFinReporting) },
-        { Section: '2. Country Systems', Field: 'Integrated into National PFM', Value: b(formData.finReportingIntegratedPFM) },
-        { Section: '2. Country Systems', Field: 'Government Audit', Value: b(formData.govAudit) },
-        { Section: '2. Country Systems', Field: 'National Procurement Systems', Value: b(formData.govProcurement) },
+        { Section: '2. Country Systems', Field: 'Funds via National Treasury', Value: formatValue(formData.fundsViaNationalTreasury) },
+        { Section: '2. Country Systems', Field: 'Government Budget Execution', Value: formatValue(formData.govBudgetSystem) },
+        { Section: '2. Country Systems', Field: 'Government Financial Reporting', Value: formatValue(formData.govFinReporting) },
+        { Section: '2. Country Systems', Field: 'Integrated into National PFM', Value: formatValue(formData.finReportingIntegratedPFM) },
+        { Section: '2. Country Systems', Field: 'Government Audit', Value: formatValue(formData.govAudit) },
+        { Section: '2. Country Systems', Field: 'National Procurement Systems', Value: formatValue(formData.govProcurement) },
         { Section: '2. Country Systems', Field: 'Why Not Using Gov Systems', Value: formData.govSystemWhyNot || '' },
-        { Section: '3. Predictability', Field: 'Annual Budget Shared', Value: b(formData.annualBudgetShared) },
-        { Section: '3. Predictability', Field: 'Forward Plan Shared', Value: b(formData.forwardPlanShared) },
-        { Section: '3. Predictability', Field: 'Multi-Year Financing Agreement', Value: b(formData.multiYearFinancingAgreement) },
+        { Section: '3. Predictability', Field: 'Annual Budget Shared', Value: formatValue(formData.annualBudgetShared) },
+        { Section: '3. Predictability', Field: 'Forward Plan Shared', Value: formatValue(formData.forwardPlanShared) },
+        { Section: '3. Predictability', Field: 'Multi-Year Financing Agreement', Value: formatValue(formData.multiYearFinancingAgreement) },
         { Section: '3. Predictability', Field: 'Tied Status', Value: formData.tiedStatus || '' },
-        { Section: '4. Transparency', Field: 'Annual Financial Reports Public', Value: b(formData.annualFinReportsPublic) },
-        { Section: '4. Transparency', Field: 'Data Updated Publicly Annually', Value: b(formData.dataUpdatedPublicly) },
-        { Section: '4. Transparency', Field: 'Final Evaluation Planned', Value: b(formData.finalEvalPlanned) },
+        { Section: '4. Transparency', Field: 'Annual Financial Reports Public', Value: formatValue(formData.annualFinReportsPublic) },
+        { Section: '4. Transparency', Field: 'Data Updated Publicly Annually', Value: formatValue(formData.dataUpdatedPublicly) },
+        { Section: '4. Transparency', Field: 'Final Evaluation Planned', Value: formatValue(formData.finalEvalPlanned) },
         { Section: '4. Transparency', Field: 'Final Evaluation Date', Value: formData.finalEvalDate || '' },
-        { Section: '4. Transparency', Field: 'Evaluation Report Public', Value: b(formData.evalReportPublic) },
-        { Section: '4. Transparency', Field: 'Performance Indicators Reported', Value: b(formData.performanceIndicatorsReported) },
-        { Section: '5. Mutual Accountability', Field: 'Joint Annual Review', Value: b(formData.jointAnnualReview) },
-        { Section: '5. Mutual Accountability', Field: 'Mutual Accountability Framework', Value: b(formData.mutualAccountabilityFramework) },
-        { Section: '5. Mutual Accountability', Field: 'Corrective Actions Documented', Value: b(formData.correctiveActionsDocumented) },
-        { Section: '6. Civil Society & Private Sector', Field: 'Civil Society Consulted', Value: b(formData.civilSocietyConsulted) },
-        { Section: '6. Civil Society & Private Sector', Field: 'CSOs in Implementation', Value: b(formData.csoInvolvedInImplementation) },
-        { Section: '6. Civil Society & Private Sector', Field: 'Core Funding to CSOs', Value: b(formData.coreFlexibleFundingToCSO) },
-        { Section: '6. Civil Society & Private Sector', Field: 'Public-Private Dialogue', Value: b(formData.publicPrivateDialogue) },
-        { Section: '6. Civil Society & Private Sector', Field: 'Private Sector Engaged', Value: b(formData.privateSectorEngaged) },
-        { Section: '7. Gender Equality', Field: 'Gender Objectives Integrated', Value: b(formData.genderObjectivesIntegrated) },
-        { Section: '7. Gender Equality', Field: 'Gender Budget Allocation', Value: b(formData.genderBudgetAllocation) },
-        { Section: '7. Gender Equality', Field: 'Gender-Disaggregated Indicators', Value: b(formData.genderDisaggregatedIndicators) },
+        { Section: '4. Transparency', Field: 'Evaluation Report Public', Value: formatValue(formData.evalReportPublic) },
+        { Section: '4. Transparency', Field: 'Performance Indicators Reported', Value: formatValue(formData.performanceIndicatorsReported) },
+        { Section: '5. Mutual Accountability', Field: 'Joint Annual Review', Value: formatValue(formData.jointAnnualReview) },
+        { Section: '5. Mutual Accountability', Field: 'Mutual Accountability Framework', Value: formatValue(formData.mutualAccountabilityFramework) },
+        { Section: '5. Mutual Accountability', Field: 'Corrective Actions Documented', Value: formatValue(formData.correctiveActionsDocumented) },
+        { Section: '6. Civil Society & Private Sector', Field: 'Civil Society Consulted', Value: formatValue(formData.civilSocietyConsulted) },
+        { Section: '6. Civil Society & Private Sector', Field: 'CSOs in Implementation', Value: formatValue(formData.csoInvolvedInImplementation) },
+        { Section: '6. Civil Society & Private Sector', Field: 'Core Funding to CSOs', Value: formatValue(formData.coreFlexibleFundingToCSO) },
+        { Section: '6. Civil Society & Private Sector', Field: 'Public-Private Dialogue', Value: formatValue(formData.publicPrivateDialogue) },
+        { Section: '6. Civil Society & Private Sector', Field: 'Private Sector Engaged', Value: formatValue(formData.privateSectorEngaged) },
+        { Section: '7. Gender Equality', Field: 'Gender Objectives Integrated', Value: formatValue(formData.genderObjectivesIntegrated) },
+        { Section: '7. Gender Equality', Field: 'Gender Budget Allocation', Value: formatValue(formData.genderBudgetAllocation) },
+        { Section: '7. Gender Equality', Field: 'Gender-Disaggregated Indicators', Value: formatValue(formData.genderDisaggregatedIndicators) },
         { Section: '10. Remarks', Field: 'Additional Notes', Value: formData.remarks || '' },
       ];
 
@@ -560,14 +921,14 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     updateField('contacts', newContacts);
   };
 
-  // Check if any gov system is false (for conditional text)
+  // Check if any gov system is "no" (for conditional text)
   const anyGovSystemNo =
-    formData.fundsViaNationalTreasury === false ||
-    formData.govBudgetSystem === false ||
-    formData.govFinReporting === false ||
-    formData.finReportingIntegratedPFM === false ||
-    formData.govAudit === false ||
-    formData.govProcurement === false;
+    formData.fundsViaNationalTreasury === 'no' ||
+    formData.govBudgetSystem === 'no' ||
+    formData.govFinReporting === 'no' ||
+    formData.finReportingIntegratedPFM === 'no' ||
+    formData.govAudit === 'no' ||
+    formData.govProcurement === 'no';
 
   return (
     <div className="bg-white rounded-lg shadow-sm border">
@@ -637,70 +998,96 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           <div className="space-y-0 border rounded-lg px-4 bg-white">
-            <CheckboxField
+            <RadioButtonField
               id="formallyApprovedByGov"
-              checked={formData.formallyApprovedByGov}
-              onCheckedChange={(checked) => updateField('formallyApprovedByGov', checked)}
+              value={formData.formallyApprovedByGov}
+              onValueChange={(value) => updateField('formallyApprovedByGov', value)}
               label="Formally Approved by Government Before Implementation Began"
               tooltip={TOOLTIPS.formallyApprovedByGov}
+              documentUpload
+              document={formData.documents?.formallyApprovedByGov}
+              uploadingDoc={uploadingDocField === 'formallyApprovedByGov'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <CountryDropdownField
               id="includedInNationalPlan"
-              checked={formData.includedInNationalPlan}
-              onCheckedChange={(checked) => updateField('includedInNationalPlan', checked)}
+              value={formData.includedInNationalPlan}
+              onValueChange={(value) => updateField('includedInNationalPlan', value)}
               label="Included in National Development Plan or Sector Strategy"
               tooltip={TOOLTIPS.includedInNationalPlan}
               description="Document reference exists"
+              negativeOption={COUNTRY_DROPDOWN_FIELDS.includedInNationalPlan}
+              aeOptions={getOptionsForCategory('includedInNationalPlan')}
+              documentUpload
+              document={formData.documents?.includedInNationalPlan}
+              uploadingDoc={uploadingDocField === 'includedInNationalPlan'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <CountryDropdownField
               id="linkedToGovFramework"
-              checked={formData.linkedToGovFramework}
-              onCheckedChange={(checked) => updateField('linkedToGovFramework', checked)}
+              value={formData.linkedToGovFramework}
+              onValueChange={(value) => updateField('linkedToGovFramework', value)}
               label="Linked to Government Results Framework"
               tooltip={TOOLTIPS.linkedToGovFramework}
+              negativeOption={COUNTRY_DROPDOWN_FIELDS.linkedToGovFramework}
+              aeOptions={getOptionsForCategory('linkedToGovFramework')}
+              documentUpload
+              document={formData.documents?.linkedToGovFramework}
+              uploadingDoc={uploadingDocField === 'linkedToGovFramework'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <RadioButtonField
               id="indicatorsFromGov"
-              checked={formData.indicatorsFromGov}
-              onCheckedChange={(checked) => updateField('indicatorsFromGov', checked)}
+              value={formData.indicatorsFromGov}
+              onValueChange={(value) => updateField('indicatorsFromGov', value)}
               label="Indicators Drawn from Government Monitoring Frameworks"
               tooltip={TOOLTIPS.indicatorsFromGov}
+              documentUpload
+              document={formData.documents?.indicatorsFromGov}
+              uploadingDoc={uploadingDocField === 'indicatorsFromGov'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <RadioButtonField
               id="indicatorsViaGovData"
-              checked={formData.indicatorsViaGovData}
-              onCheckedChange={(checked) => updateField('indicatorsViaGovData', checked)}
+              value={formData.indicatorsViaGovData}
+              onValueChange={(value) => updateField('indicatorsViaGovData', value)}
               label="Monitored Through Government M&E Systems"
               tooltip={TOOLTIPS.indicatorsViaGovData}
             />
-            <CheckboxField
+            <RadioButtonField
               id="implementedByNationalInstitution"
-              checked={formData.implementedByNationalInstitution}
-              onCheckedChange={(checked) => updateField('implementedByNationalInstitution', checked)}
+              value={formData.implementedByNationalInstitution}
+              onValueChange={(value) => updateField('implementedByNationalInstitution', value)}
               label="Implemented by a National Public Institution"
               tooltip={TOOLTIPS.implementedByNationalInstitution}
             />
-            <CheckboxField
+            <RadioButtonField
               id="govEntityAccountable"
-              checked={formData.govEntityAccountable}
-              onCheckedChange={(checked) => updateField('govEntityAccountable', checked)}
+              value={formData.govEntityAccountable}
+              onValueChange={(value) => updateField('govEntityAccountable', value)}
               label="Government Entity Contractually Designated as Accountable Authority"
               tooltip={TOOLTIPS.govEntityAccountable}
             />
-            <CheckboxField
+            <RadioButtonField
               id="supportsPublicSector"
-              checked={formData.supportsPublicSector}
-              onCheckedChange={(checked) => updateField('supportsPublicSector', checked)}
+              value={formData.supportsPublicSector}
+              onValueChange={(value) => updateField('supportsPublicSector', value)}
               label="Supports Public Sector Capacity Strengthening"
               tooltip={TOOLTIPS.supportsPublicSector}
             />
-            <CheckboxField
+            <CountryDropdownField
               id="capacityDevFromNationalPlan"
-              checked={formData.capacityDevFromNationalPlan}
-              onCheckedChange={(checked) => updateField('capacityDevFromNationalPlan', checked)}
+              value={formData.capacityDevFromNationalPlan}
+              onValueChange={(value) => updateField('capacityDevFromNationalPlan', value)}
               label="Capacity Development Based on Nationally Identified Capacity Plan"
               tooltip={TOOLTIPS.capacityDevFromNationalPlan}
               description="GPEDC Indicator 9"
+              negativeOption={COUNTRY_DROPDOWN_FIELDS.capacityDevFromNationalPlan}
+              aeOptions={getOptionsForCategory('capacityDevFromNationalPlan')}
             />
           </div>
 
@@ -728,45 +1115,55 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           <div className="space-y-0 border rounded-lg px-4 bg-white">
-            <CheckboxField
+            <RadioButtonField
               id="fundsViaNationalTreasury"
-              checked={formData.fundsViaNationalTreasury}
-              onCheckedChange={(checked) => updateField('fundsViaNationalTreasury', checked)}
+              value={formData.fundsViaNationalTreasury}
+              onValueChange={(value) => updateField('fundsViaNationalTreasury', value)}
               label="Funds Disbursed Through National Treasury System"
               tooltip={TOOLTIPS.fundsViaNationalTreasury}
+              documentUpload
+              document={formData.documents?.fundsViaNationalTreasury}
+              uploadingDoc={uploadingDocField === 'fundsViaNationalTreasury'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <RadioButtonField
               id="govBudgetSystem"
-              checked={formData.govBudgetSystem}
-              onCheckedChange={(checked) => updateField('govBudgetSystem', checked)}
+              value={formData.govBudgetSystem}
+              onValueChange={(value) => updateField('govBudgetSystem', value)}
               label="Government Budget Execution Procedures Used"
               tooltip={TOOLTIPS.govBudgetSystem}
             />
-            <CheckboxField
+            <RadioButtonField
               id="govFinReporting"
-              checked={formData.govFinReporting}
-              onCheckedChange={(checked) => updateField('govFinReporting', checked)}
+              value={formData.govFinReporting}
+              onValueChange={(value) => updateField('govFinReporting', value)}
               label="Government Financial Reporting Systems Used"
               tooltip={TOOLTIPS.govFinReporting}
             />
-            <CheckboxField
+            <RadioButtonField
               id="finReportingIntegratedPFM"
-              checked={formData.finReportingIntegratedPFM}
-              onCheckedChange={(checked) => updateField('finReportingIntegratedPFM', checked)}
+              value={formData.finReportingIntegratedPFM}
+              onValueChange={(value) => updateField('finReportingIntegratedPFM', value)}
               label="Financial Reporting Integrated into National PFM Systems"
               tooltip={TOOLTIPS.finReportingIntegratedPFM}
             />
-            <CheckboxField
+            <RadioButtonField
               id="govAudit"
-              checked={formData.govAudit}
-              onCheckedChange={(checked) => updateField('govAudit', checked)}
+              value={formData.govAudit}
+              onValueChange={(value) => updateField('govAudit', value)}
               label="Government Audit Procedures Used (National Audit Institution)"
               tooltip={TOOLTIPS.govAudit}
+              documentUpload
+              document={formData.documents?.govAudit}
+              uploadingDoc={uploadingDocField === 'govAudit'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <RadioButtonField
               id="govProcurement"
-              checked={formData.govProcurement}
-              onCheckedChange={(checked) => updateField('govProcurement', checked)}
+              value={formData.govProcurement}
+              onValueChange={(value) => updateField('govProcurement', value)}
               label="National Procurement Law and Systems Used"
               tooltip={TOOLTIPS.govProcurement}
             />
@@ -797,24 +1194,29 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           <div className="space-y-0 border rounded-lg px-4 bg-white">
-            <CheckboxField
+            <RadioButtonField
               id="annualBudgetShared"
-              checked={formData.annualBudgetShared}
-              onCheckedChange={(checked) => updateField('annualBudgetShared', checked)}
+              value={formData.annualBudgetShared}
+              onValueChange={(value) => updateField('annualBudgetShared', value)}
               label="Annual Budget Shared with Government in Advance of Fiscal Year"
               tooltip={TOOLTIPS.annualBudgetShared}
+              documentUpload
+              document={formData.documents?.annualBudgetShared}
+              uploadingDoc={uploadingDocField === 'annualBudgetShared'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <RadioButtonField
               id="forwardPlanShared"
-              checked={formData.forwardPlanShared}
-              onCheckedChange={(checked) => updateField('forwardPlanShared', checked)}
+              value={formData.forwardPlanShared}
+              onValueChange={(value) => updateField('forwardPlanShared', value)}
               label="Three-Year Forward Expenditure Shared with Government"
               tooltip={TOOLTIPS.forwardPlanShared}
             />
-            <CheckboxField
+            <RadioButtonField
               id="multiYearFinancingAgreement"
-              checked={formData.multiYearFinancingAgreement}
-              onCheckedChange={(checked) => updateField('multiYearFinancingAgreement', checked)}
+              value={formData.multiYearFinancingAgreement}
+              onValueChange={(value) => updateField('multiYearFinancingAgreement', value)}
               label="Multi-Year Financing Agreement Signed"
               tooltip={TOOLTIPS.multiYearFinancingAgreement}
             />
@@ -854,44 +1256,54 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           <div className="space-y-0 border rounded-lg px-4 bg-white">
-            <CheckboxField
+            <RadioButtonField
               id="annualFinReportsPublic"
-              checked={formData.annualFinReportsPublic}
-              onCheckedChange={(checked) => updateField('annualFinReportsPublic', checked)}
+              value={formData.annualFinReportsPublic}
+              onValueChange={(value) => updateField('annualFinReportsPublic', value)}
               label="Annual Financial Reports Publicly Accessible"
               tooltip={TOOLTIPS.annualFinReportsPublic}
+              documentUpload
+              document={formData.documents?.annualFinReportsPublic}
+              uploadingDoc={uploadingDocField === 'annualFinReportsPublic'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <RadioButtonField
               id="dataUpdatedPublicly"
-              checked={formData.dataUpdatedPublicly}
-              onCheckedChange={(checked) => updateField('dataUpdatedPublicly', checked)}
+              value={formData.dataUpdatedPublicly}
+              onValueChange={(value) => updateField('dataUpdatedPublicly', value)}
               label="Financial and Results Data Updated Publicly at Least Annually"
               tooltip={TOOLTIPS.dataUpdatedPublicly}
             />
-            <CheckboxField
+            <RadioButtonField
               id="finalEvalPlanned"
-              checked={formData.finalEvalPlanned}
-              onCheckedChange={(checked) => updateField('finalEvalPlanned', checked)}
+              value={formData.finalEvalPlanned}
+              onValueChange={(value) => updateField('finalEvalPlanned', value)}
               label="Final Evaluation Planned"
               tooltip={TOOLTIPS.finalEvalPlanned}
+              documentUpload
+              document={formData.documents?.finalEvalPlanned}
+              uploadingDoc={uploadingDocField === 'finalEvalPlanned'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <RadioButtonField
               id="evalReportPublic"
-              checked={formData.evalReportPublic}
-              onCheckedChange={(checked) => updateField('evalReportPublic', checked)}
+              value={formData.evalReportPublic}
+              onValueChange={(value) => updateField('evalReportPublic', value)}
               label="Evaluation Report Publicly Available (Once Completed)"
               tooltip={TOOLTIPS.evalReportPublic}
             />
-            <CheckboxField
+            <RadioButtonField
               id="performanceIndicatorsReported"
-              checked={formData.performanceIndicatorsReported}
-              onCheckedChange={(checked) => updateField('performanceIndicatorsReported', checked)}
+              value={formData.performanceIndicatorsReported}
+              onValueChange={(value) => updateField('performanceIndicatorsReported', value)}
               label="Performance Indicators Reported Annually"
               tooltip={TOOLTIPS.performanceIndicatorsReported}
             />
           </div>
 
-          {formData.finalEvalPlanned && (
+          {formData.finalEvalPlanned === 'yes' && (
             <div className="ml-6 space-y-2">
               <Label className="text-sm text-gray-600">Planned Evaluation Date</Label>
               <Input
@@ -917,24 +1329,36 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </p>
 
           <div className="space-y-0 border rounded-lg px-4 bg-white">
-            <CheckboxField
+            <RadioButtonField
               id="jointAnnualReview"
-              checked={formData.jointAnnualReview}
-              onCheckedChange={(checked) => updateField('jointAnnualReview', checked)}
+              value={formData.jointAnnualReview}
+              onValueChange={(value) => updateField('jointAnnualReview', value)}
               label="Joint Annual Review Conducted with Government and Development Partners"
               tooltip={TOOLTIPS.jointAnnualReview}
+              documentUpload
+              document={formData.documents?.jointAnnualReview}
+              uploadingDoc={uploadingDocField === 'jointAnnualReview'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <CountryDropdownField
               id="mutualAccountabilityFramework"
-              checked={formData.mutualAccountabilityFramework}
-              onCheckedChange={(checked) => updateField('mutualAccountabilityFramework', checked)}
+              value={formData.mutualAccountabilityFramework}
+              onValueChange={(value) => updateField('mutualAccountabilityFramework', value)}
               label="Activity Assessed Under a Formal Country-Level Mutual Accountability Framework"
               tooltip={TOOLTIPS.mutualAccountabilityFramework}
+              negativeOption={COUNTRY_DROPDOWN_FIELDS.mutualAccountabilityFramework}
+              aeOptions={getOptionsForCategory('mutualAccountabilityFramework')}
+              documentUpload
+              document={formData.documents?.mutualAccountabilityFramework}
+              uploadingDoc={uploadingDocField === 'mutualAccountabilityFramework'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <RadioButtonField
               id="correctiveActionsDocumented"
-              checked={formData.correctiveActionsDocumented}
-              onCheckedChange={(checked) => updateField('correctiveActionsDocumented', checked)}
+              value={formData.correctiveActionsDocumented}
+              onValueChange={(value) => updateField('correctiveActionsDocumented', value)}
               label="Corrective Actions Documented When Targets Are Not Met"
               tooltip={TOOLTIPS.correctiveActionsDocumented}
             />
@@ -954,40 +1378,44 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </p>
 
           <div className="space-y-0 border rounded-lg px-4 bg-white">
-            <CheckboxField
+            <DropdownField
               id="civilSocietyConsulted"
-              checked={formData.civilSocietyConsulted}
-              onCheckedChange={(checked) => updateField('civilSocietyConsulted', checked)}
-              label="Formal Consultation with Civil Society During Design Phase"
+              value={formData.civilSocietyConsulted}
+              onValueChange={(value) => updateField('civilSocietyConsulted', value)}
+              label="Level of Civil Society Consultation During Design Phase"
               tooltip={TOOLTIPS.civilSocietyConsulted}
+              options={MULTI_OPTION_FIELDS.civilSocietyConsulted}
             />
-            <CheckboxField
+            <DropdownField
               id="csoInvolvedInImplementation"
-              checked={formData.csoInvolvedInImplementation}
-              onCheckedChange={(checked) => updateField('csoInvolvedInImplementation', checked)}
-              label="Civil Society Organisations Involved in Implementation or Governance"
+              value={formData.csoInvolvedInImplementation}
+              onValueChange={(value) => updateField('csoInvolvedInImplementation', value)}
+              label="Civil Society Involvement in Implementation or Governance"
               tooltip={TOOLTIPS.csoInvolvedInImplementation}
+              options={MULTI_OPTION_FIELDS.csoInvolvedInImplementation}
             />
-            <CheckboxField
+            <DropdownField
               id="coreFlexibleFundingToCSO"
-              checked={formData.coreFlexibleFundingToCSO}
-              onCheckedChange={(checked) => updateField('coreFlexibleFundingToCSO', checked)}
-              label="Core or Flexible Funding Provided to Civil Society Organisations"
+              value={formData.coreFlexibleFundingToCSO}
+              onValueChange={(value) => updateField('coreFlexibleFundingToCSO', value)}
+              label="Type of Funding Provided to Civil Society Organisations"
               tooltip={TOOLTIPS.coreFlexibleFundingToCSO}
+              options={MULTI_OPTION_FIELDS.coreFlexibleFundingToCSO}
             />
-            <CheckboxField
+            <RadioButtonField
               id="publicPrivateDialogue"
-              checked={formData.publicPrivateDialogue}
-              onCheckedChange={(checked) => updateField('publicPrivateDialogue', checked)}
+              value={formData.publicPrivateDialogue}
+              onValueChange={(value) => updateField('publicPrivateDialogue', value)}
               label="Structured Public-Private Dialogue Mechanisms Included"
               tooltip={TOOLTIPS.publicPrivateDialogue}
             />
-            <CheckboxField
+            <DropdownField
               id="privateSectorEngaged"
-              checked={formData.privateSectorEngaged}
-              onCheckedChange={(checked) => updateField('privateSectorEngaged', checked)}
-              label="Private Sector Actors Formally Engaged in Governance or Oversight"
+              value={formData.privateSectorEngaged}
+              onValueChange={(value) => updateField('privateSectorEngaged', value)}
+              label="Level of Private Sector Engagement in Governance or Oversight"
               tooltip={TOOLTIPS.privateSectorEngaged}
+              options={MULTI_OPTION_FIELDS.privateSectorEngaged}
             />
           </div>
         </div>
@@ -1001,24 +1429,30 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           <div className="space-y-0 border rounded-lg px-4 bg-white">
-            <CheckboxField
+            <DropdownField
               id="genderObjectivesIntegrated"
-              checked={formData.genderObjectivesIntegrated}
-              onCheckedChange={(checked) => updateField('genderObjectivesIntegrated', checked)}
-              label="Gender Equality or Inclusion Objectives Integrated into Activity Framework"
+              value={formData.genderObjectivesIntegrated}
+              onValueChange={(value) => updateField('genderObjectivesIntegrated', value)}
+              label="Gender Equality or Inclusion Objectives Integration Level"
               tooltip={TOOLTIPS.genderObjectivesIntegrated}
+              options={MULTI_OPTION_FIELDS.genderObjectivesIntegrated}
             />
-            <CheckboxField
+            <RadioButtonField
               id="genderBudgetAllocation"
-              checked={formData.genderBudgetAllocation}
-              onCheckedChange={(checked) => updateField('genderBudgetAllocation', checked)}
+              value={formData.genderBudgetAllocation}
+              onValueChange={(value) => updateField('genderBudgetAllocation', value)}
               label="Dedicated Budget Allocation for Gender Equality Outcomes"
               tooltip={TOOLTIPS.genderBudgetAllocation}
+              documentUpload
+              document={formData.documents?.genderBudgetAllocation}
+              uploadingDoc={uploadingDocField === 'genderBudgetAllocation'}
+              onDocUpload={handleFieldDocumentUpload}
+              onDocRemove={handleFieldDocumentRemove}
             />
-            <CheckboxField
+            <RadioButtonField
               id="genderDisaggregatedIndicators"
-              checked={formData.genderDisaggregatedIndicators}
-              onCheckedChange={(checked) => updateField('genderDisaggregatedIndicators', checked)}
+              value={formData.genderDisaggregatedIndicators}
+              onValueChange={(value) => updateField('genderDisaggregatedIndicators', value)}
               label="Gender-Disaggregated Indicators Included"
               tooltip={TOOLTIPS.genderDisaggregatedIndicators}
             />

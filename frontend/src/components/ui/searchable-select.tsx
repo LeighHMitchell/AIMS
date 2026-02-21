@@ -174,7 +174,7 @@ export function SearchableSelect({
         </PopoverTrigger>
         <PopoverContent
           ref={contentRef}
-          className={cn("min-w-[250px] p-0 z-[9999]", dropdownClassName)}
+          className={cn("min-w-[250px] p-0 z-[10001]", dropdownClassName)}
           align="start"
         >
           <Command>

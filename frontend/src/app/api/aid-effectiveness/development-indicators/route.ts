@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { isPositiveValue } from '@/lib/aid-effectiveness-helpers';
 
 interface DevelopmentIndicatorData {
   indicator: string
@@ -122,12 +123,21 @@ export async function GET(request: NextRequest) {
       const aidEffectiveness = activity.general_info?.aidEffectiveness || {}
       
       // Count yes/no responses for each indicator
+      // linkedToGovFramework is now a dropdown (country-specific), so use isPositiveValue
       Object.keys(indicatorCounts).forEach(key => {
         const value = aidEffectiveness[key]
-        if (value === 'yes') {
-          indicatorCounts[key as keyof typeof indicatorCounts].yes++
-        } else if (value === 'no') {
-          indicatorCounts[key as keyof typeof indicatorCounts].no++
+        if (key === 'linkedToGovFramework') {
+          if (isPositiveValue(value)) {
+            indicatorCounts[key as keyof typeof indicatorCounts].yes++
+          } else if (value && !isPositiveValue(value)) {
+            indicatorCounts[key as keyof typeof indicatorCounts].no++
+          }
+        } else {
+          if (value === 'yes') {
+            indicatorCounts[key as keyof typeof indicatorCounts].yes++
+          } else if (value === 'no') {
+            indicatorCounts[key as keyof typeof indicatorCounts].no++
+          }
         }
       })
 

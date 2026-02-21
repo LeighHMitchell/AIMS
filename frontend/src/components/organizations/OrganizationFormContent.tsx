@@ -888,7 +888,7 @@ export function OrganizationFormContent({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Name (Required) */}
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -972,7 +972,11 @@ export function OrganizationFormContent({
 
           {/* Location Represented */}
           <div className="space-y-2">
-            <Label htmlFor="country_represented" className="text-sm font-medium flex items-center">
+            <LabelSaveIndicator
+              isSaving={countryAutosave.state.isSaving}
+              isSaved={!!countryAutosave.state.lastSaved}
+              hasValue={!!formData.country_represented}
+            >
               Location Represented <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               <TooltipProvider>
                 <Tooltip>
@@ -984,7 +988,7 @@ export function OrganizationFormContent({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </Label>
+            </LabelSaveIndicator>
             <Select
               key={`country-${organization?.id || 'new'}`}
               value={formData.country_represented || ''}
@@ -1180,10 +1184,14 @@ export function OrganizationFormContent({
         </div>
 
         {/* Organisation Type & Residency Status */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Organisation Type (Required) */}
           <div className="space-y-2">
-            <Label htmlFor="Organisation_Type_Code" className="text-sm font-medium flex items-center">
+            <LabelSaveIndicator
+              isSaving={orgTypeAutosave.state.isSaving}
+              isSaved={!!orgTypeAutosave.state.lastSaved}
+              hasValue={!!formData.Organisation_Type_Code}
+            >
               Organisation Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               <TooltipProvider>
                 <Tooltip>
@@ -1195,7 +1203,7 @@ export function OrganizationFormContent({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </Label>
+            </LabelSaveIndicator>
             <Select
               value={formData.Organisation_Type_Code || ''}
               onValueChange={(value) => {
@@ -1326,7 +1334,7 @@ export function OrganizationFormContent({
         </div>
 
         {/* Description */}
-        <div className="space-y-2 max-w-3xl">
+        <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={descriptionAutosave.state.isSaving}
             isSaved={!!descriptionAutosave.state.lastSaved}
@@ -1353,7 +1361,7 @@ export function OrganizationFormContent({
         </div>
 
         {/* IATI Classification Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Default Currency */}
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -1561,8 +1569,8 @@ export function OrganizationFormContent({
         {/* Contact Information Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Contact Information</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <LabelSaveIndicator
                 isSaving={emailAutosave.state.isSaving}
@@ -1641,8 +1649,8 @@ export function OrganizationFormContent({
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">Social Media</h3>
           <p className="text-sm text-muted-foreground">Add social media profiles for your organization</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <LabelSaveIndicator
                 isSaving={twitterAutosave.state.isSaving}
@@ -2133,7 +2141,7 @@ export function OrganizationFormContent({
           </div>
 
           {/* Footer with Save Button - Fixed at bottom */}
-          <footer className="fixed bottom-0 right-0 left-64 bg-transparent py-3 px-6 z-50">
+          <footer className="fixed bottom-0 right-0 left-64 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md py-3 px-6 z-50">
             {renderButtons()}
           </footer>
         </div>

@@ -33,7 +33,17 @@ import {
   BarChart3,
   Maximize2,
   HelpCircle,
+  LineChart as LineChartIcon,
+  Table as TableIcon,
 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface BudgetTrendPoint {
@@ -187,11 +197,32 @@ function ChartHelpIcon({ text }: { text: string }) {
   );
 }
 
+type ViewMode = 'bar' | 'line' | 'table';
+
+function ChartViewToggle({ mode, setMode }: { mode: ViewMode; setMode: (m: ViewMode) => void }) {
+  return (
+    <div className="flex gap-0.5 ml-auto">
+      <Button variant={mode === 'bar' ? 'default' : 'ghost'} size="sm" className="h-6 w-6 p-0" title="Bar chart" onClick={() => setMode('bar')}>
+        <BarChart3 className="h-3.5 w-3.5" />
+      </Button>
+      <Button variant={mode === 'line' ? 'default' : 'ghost'} size="sm" className="h-6 w-6 p-0" title="Line chart" onClick={() => setMode('line')}>
+        <LineChartIcon className="h-3.5 w-3.5" />
+      </Button>
+      <Button variant={mode === 'table' ? 'default' : 'ghost'} size="sm" className="h-6 w-6 p-0" title="Table" onClick={() => setMode('table')}>
+        <TableIcon className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
+
 export function HeroVisualizationCards({ organizationId }: HeroVisualizationCardsProps) {
   const [data, setData] = useState<HeroStatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
+  const [budgetViewMode, setBudgetViewMode] = useState<'bar' | 'line' | 'table'>('bar');
+  const [plannedViewMode, setPlannedViewMode] = useState<'bar' | 'line' | 'table'>('bar');
+  const [transactionsViewMode, setTransactionsViewMode] = useState<'bar' | 'line' | 'table'>('line');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -270,48 +301,100 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               Total Budgets (USD)
               <ChartHelpIcon text="Total budget amounts (converted to USD) across all your organisation's activities, grouped by year based on budget period start date." />
             </CardTitle>
-            <p className="text-lg font-bold text-slate-900">{formatCurrency(totalBudget)}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-lg font-bold text-slate-900">{formatCurrency(totalBudget)}</p>
+              <ChartViewToggle mode={budgetViewMode} setMode={setBudgetViewMode} />
+            </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
             <div className="h-32">
               {data?.budgetTrend && data.budgetTrend.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.budgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                    <XAxis
-                      dataKey="year"
-                      tick={{ fontSize: 10, fill: '#64748b' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const point = payload[0].payload as BudgetTrendPoint;
-                          return (
-                            <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
-                              <table className="border-collapse">
-                                <thead>
-                                  <tr className="bg-slate-50">
-                                    <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
-                                    <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td className="px-3 py-1.5 text-slate-600">{point.year}</td>
-                                    <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#dc2625" />
-                  </BarChart>
-                </ResponsiveContainer>
+                budgetViewMode === 'table' ? (
+                  <div className="h-full overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs py-1 h-auto">Year</TableHead>
+                          <TableHead className="text-xs py-1 h-auto text-right">Amount (USD)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.budgetTrend.map((point) => (
+                          <TableRow key={point.year}>
+                            <TableCell className="text-xs py-1">{point.year}</TableCell>
+                            <TableCell className="text-xs py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    {budgetViewMode === 'line' ? (
+                      <LineChart data={data.budgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const point = payload[0].payload as BudgetTrendPoint;
+                              return (
+                                <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
+                                  <table className="border-collapse">
+                                    <thead>
+                                      <tr className="bg-slate-50">
+                                        <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr>
+                                        <td className="px-3 py-1.5 text-slate-600">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Line type="monotone" dataKey="amount" stroke="#dc2625" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    ) : (
+                      <BarChart data={data.budgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const point = payload[0].payload as BudgetTrendPoint;
+                              return (
+                                <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
+                                  <table className="border-collapse">
+                                    <thead>
+                                      <tr className="bg-slate-50">
+                                        <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr>
+                                        <td className="px-3 py-1.5 text-slate-600">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#dc2625" />
+                      </BarChart>
+                    )}
+                  </ResponsiveContainer>
+                )
               ) : (
                 <div className="h-full flex items-center justify-center text-slate-400 text-sm">
                   No budget data
@@ -337,48 +420,100 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               Planned Disbursements (USD)
               <ChartHelpIcon text="Total planned disbursement amounts (converted to USD) across all your organisation's activities, grouped by year based on period start date." />
             </CardTitle>
-            <p className="text-lg font-bold text-slate-900">{formatCurrency(totalPlanned)}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-lg font-bold text-slate-900">{formatCurrency(totalPlanned)}</p>
+              <ChartViewToggle mode={plannedViewMode} setMode={setPlannedViewMode} />
+            </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
             <div className="h-32">
               {data?.plannedBudgetTrend && data.plannedBudgetTrend.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.plannedBudgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                    <XAxis
-                      dataKey="year"
-                      tick={{ fontSize: 10, fill: '#64748b' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const point = payload[0].payload as BudgetTrendPoint;
-                          return (
-                            <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
-                              <table className="border-collapse">
-                                <thead>
-                                  <tr className="bg-slate-50">
-                                    <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
-                                    <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td className="px-3 py-1.5 text-slate-600">{point.year}</td>
-                                    <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#4c5568" />
-                  </BarChart>
-                </ResponsiveContainer>
+                plannedViewMode === 'table' ? (
+                  <div className="h-full overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs py-1 h-auto">Year</TableHead>
+                          <TableHead className="text-xs py-1 h-auto text-right">Amount (USD)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.plannedBudgetTrend.map((point) => (
+                          <TableRow key={point.year}>
+                            <TableCell className="text-xs py-1">{point.year}</TableCell>
+                            <TableCell className="text-xs py-1 text-right">{formatCurrencyFull(point.amount)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    {plannedViewMode === 'line' ? (
+                      <LineChart data={data.plannedBudgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const point = payload[0].payload as BudgetTrendPoint;
+                              return (
+                                <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
+                                  <table className="border-collapse">
+                                    <thead>
+                                      <tr className="bg-slate-50">
+                                        <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr>
+                                        <td className="px-3 py-1.5 text-slate-600">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Line type="monotone" dataKey="amount" stroke="#4c5568" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    ) : (
+                      <BarChart data={data.plannedBudgetTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const point = payload[0].payload as BudgetTrendPoint;
+                              return (
+                                <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
+                                  <table className="border-collapse">
+                                    <thead>
+                                      <tr className="bg-slate-50">
+                                        <th className="px-3 py-1.5 text-left font-semibold text-slate-700">Year</th>
+                                        <th className="px-3 py-1.5 text-right font-semibold text-slate-700">Amount (USD)</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr>
+                                        <td className="px-3 py-1.5 text-slate-600">{point.year}</td>
+                                        <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#4c5568" />
+                      </BarChart>
+                    )}
+                  </ResponsiveContainer>
+                )
               ) : (
                 <div className="h-full flex items-center justify-center text-slate-400 text-sm">
                   No planned data
@@ -404,7 +539,10 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
               Transactions by Type (USD)
               <ChartHelpIcon text="Total transaction values (converted to USD) by IATI transaction type, grouped by year. Includes all transactions where your organisation is the reporter, provider, or receiver." />
             </CardTitle>
-            <p className="text-lg font-bold text-slate-900">{formatCurrency(totalTransactionValue)}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-lg font-bold text-slate-900">{formatCurrency(totalTransactionValue)}</p>
+              <ChartViewToggle mode={transactionsViewMode} setMode={setTransactionsViewMode} />
+            </div>
           </CardHeader>
           <CardContent className="pt-0 pb-3">
             <div className="h-32">
@@ -412,86 +550,133 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                 (() => {
                   const uniqueTypes = getUniqueTransactionTypes(data.transactionTrend);
                   const hasTypeData = uniqueTypes.length > 0;
-                  const lineChartData = hasTypeData
+                  const chartData = hasTypeData
                     ? transformDataForValueChart(data.transactionTrend, uniqueTypes)
                     : data.transactionTrend;
 
+                  const transactionTooltip = (
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          const dataPoint = data.transactionTrend.find(t => t.month === label);
+                          return (
+                            <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
+                              <table className="border-collapse">
+                                <thead>
+                                  <tr className="bg-slate-50">
+                                    <th className="px-3 py-1.5 text-left font-semibold text-slate-700" colSpan={2}>Year {label}</th>
+                                  </tr>
+                                  <tr className="bg-slate-50">
+                                    <th className="px-3 py-1 text-left font-medium text-slate-600">Type</th>
+                                    <th className="px-3 py-1 text-right font-medium text-slate-600">USD Value</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {dataPoint?.typeAmounts && Object.entries(dataPoint.typeAmounts)
+                                    .sort(([, a], [, b]) => b - a)
+                                    .map(([type, amount]) => (
+                                      <tr key={type} className="border-t border-slate-100">
+                                        <td className="px-3 py-1">
+                                          <span className="flex items-center gap-1.5">
+                                            <span
+                                              className="w-2 h-2 rounded-full inline-block"
+                                              style={{ backgroundColor: getTransactionTypeColor(type, uniqueTypes.indexOf(type)) }}
+                                            />
+                                            {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                                          </span>
+                                        </td>
+                                        <td className="px-3 py-1 text-right font-medium">{formatCurrency(amount)}</td>
+                                      </tr>
+                                    ))}
+                                  <tr className="border-t-2 border-slate-300">
+                                    <td className="px-3 py-1.5 font-semibold">Total</td>
+                                    <td className="px-3 py-1.5 text-right font-semibold">{formatCurrency(dataPoint?.amount || 0)}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                  );
+
+                  if (transactionsViewMode === 'table') {
+                    return (
+                      <div className="h-full overflow-y-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs py-1 h-auto">Year</TableHead>
+                              {uniqueTypes.map(type => (
+                                <TableHead key={type} className="text-xs py-1 h-auto text-right">
+                                  {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                                </TableHead>
+                              ))}
+                              <TableHead className="text-xs py-1 h-auto text-right">Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {data.transactionTrend.map((point) => (
+                              <TableRow key={point.month}>
+                                <TableCell className="text-xs py-1">{point.month}</TableCell>
+                                {uniqueTypes.map(type => (
+                                  <TableCell key={type} className="text-xs py-1 text-right">
+                                    {formatCurrency(point.typeAmounts?.[type] || 0)}
+                                  </TableCell>
+                                ))}
+                                <TableCell className="text-xs py-1 text-right font-medium">{formatCurrency(point.amount)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    );
+                  }
+
                   return (
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={lineChartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                        <XAxis
-                          dataKey="month"
-                          tick={{ fontSize: 10, fill: '#64748b' }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <Tooltip
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              const dataPoint = data.transactionTrend.find(t => t.month === label);
-                              return (
-                                <div className="bg-white border border-slate-200 rounded shadow-lg text-xs p-0 overflow-hidden">
-                                  <table className="border-collapse">
-                                    <thead>
-                                      <tr className="bg-slate-50">
-                                        <th className="px-3 py-1.5 text-left font-semibold text-slate-700" colSpan={2}>Year {label}</th>
-                                      </tr>
-                                      <tr className="bg-slate-50">
-                                        <th className="px-3 py-1 text-left font-medium text-slate-600">Type</th>
-                                        <th className="px-3 py-1 text-right font-medium text-slate-600">USD Value</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {dataPoint?.typeAmounts && Object.entries(dataPoint.typeAmounts)
-                                        .sort(([, a], [, b]) => b - a)
-                                        .map(([type, amount]) => (
-                                          <tr key={type} className="border-t border-slate-100">
-                                            <td className="px-3 py-1">
-                                              <span className="flex items-center gap-1.5">
-                                                <span
-                                                  className="w-2 h-2 rounded-full inline-block"
-                                                  style={{ backgroundColor: getTransactionTypeColor(type, uniqueTypes.indexOf(type)) }}
-                                                />
-                                                {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
-                                              </span>
-                                            </td>
-                                            <td className="px-3 py-1 text-right font-medium">{formatCurrency(amount)}</td>
-                                          </tr>
-                                        ))}
-                                      <tr className="border-t-2 border-slate-300">
-                                        <td className="px-3 py-1.5 font-semibold">Total</td>
-                                        <td className="px-3 py-1.5 text-right font-semibold">{formatCurrency(dataPoint?.amount || 0)}</td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        {hasTypeData ? (
-                          uniqueTypes.map((type, index) => (
-                            <Line
-                              key={type}
-                              type="monotone"
-                              dataKey={`type_${type}`}
-                              stroke={getTransactionTypeColor(type, index)}
-                              strokeWidth={2}
-                              dot={false}
-                              name={TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
-                            />
-                          ))
-                        ) : (
-                          <Line
-                            type="monotone"
-                            dataKey="amount"
-                            stroke={BAR_COLORS[0]}
-                            strokeWidth={2}
-                            dot={false}
-                          />
-                        )}
-                      </LineChart>
+                      {transactionsViewMode === 'bar' ? (
+                        <BarChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                          <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                          {transactionTooltip}
+                          {hasTypeData ? (
+                            uniqueTypes.map((type, index) => (
+                              <Bar
+                                key={type}
+                                dataKey={`type_${type}`}
+                                stackId="transactions"
+                                fill={getTransactionTypeColor(type, index)}
+                                radius={index === uniqueTypes.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                name={TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                              />
+                            ))
+                          ) : (
+                            <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill={BAR_COLORS[0]} />
+                          )}
+                        </BarChart>
+                      ) : (
+                        <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                          <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                          {transactionTooltip}
+                          {hasTypeData ? (
+                            uniqueTypes.map((type, index) => (
+                              <Line
+                                key={type}
+                                type="monotone"
+                                dataKey={`type_${type}`}
+                                stroke={getTransactionTypeColor(type, index)}
+                                strokeWidth={2}
+                                dot={false}
+                                name={TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                              />
+                            ))
+                          ) : (
+                            <Line type="monotone" dataKey="amount" stroke={BAR_COLORS[0]} strokeWidth={2} dot={false} />
+                          )}
+                        </LineChart>
+                      )}
                     </ResponsiveContainer>
                   );
                 })()
@@ -602,39 +787,94 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
         onClose={() => setExpandedChart(null)}
         title="Total Budgets Over Time (USD)"
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data?.budgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-            <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-            <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  const point = payload[0].payload as BudgetTrendPoint;
-                  return (
-                    <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
-                      <table className="border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50">
-                            <th className="px-3 py-1.5 text-left font-semibold">Year</th>
-                            <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="px-3 py-1.5">{point.year}</td>
-                            <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Bar dataKey="amount" name="Budget (USD)" fill="#dc2625" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        {budgetViewMode === 'table' ? (
+          <div className="h-full overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Year</TableHead>
+                  <TableHead className="text-right">Amount (USD)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(data?.budgetTrend || []).map((point) => (
+                  <TableRow key={point.year}>
+                    <TableCell>{point.year}</TableCell>
+                    <TableCell className="text-right">{formatCurrencyFull(point.amount)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            {budgetViewMode === 'line' ? (
+              <LineChart data={data?.budgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const point = payload[0].payload as BudgetTrendPoint;
+                      return (
+                        <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
+                          <table className="border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50">
+                                <th className="px-3 py-1.5 text-left font-semibold">Year</th>
+                                <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-3 py-1.5">{point.year}</td>
+                                <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Line type="monotone" dataKey="amount" stroke="#dc2625" strokeWidth={2} dot={{ r: 4 }} name="Budget (USD)" />
+              </LineChart>
+            ) : (
+              <BarChart data={data?.budgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const point = payload[0].payload as BudgetTrendPoint;
+                      return (
+                        <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
+                          <table className="border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50">
+                                <th className="px-3 py-1.5 text-left font-semibold">Year</th>
+                                <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-3 py-1.5">{point.year}</td>
+                                <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="amount" name="Budget (USD)" fill="#dc2625" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        )}
       </ExpandedChartModal>
 
       <ExpandedChartModal
@@ -642,39 +882,94 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
         onClose={() => setExpandedChart(null)}
         title="Planned Disbursements Over Time (USD)"
       >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data?.plannedBudgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-            <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-            <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  const point = payload[0].payload as BudgetTrendPoint;
-                  return (
-                    <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
-                      <table className="border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50">
-                            <th className="px-3 py-1.5 text-left font-semibold">Year</th>
-                            <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="px-3 py-1.5">{point.year}</td>
-                            <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Bar dataKey="amount" name="Planned Disbursements (USD)" fill="#4c5568" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        {plannedViewMode === 'table' ? (
+          <div className="h-full overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Year</TableHead>
+                  <TableHead className="text-right">Amount (USD)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(data?.plannedBudgetTrend || []).map((point) => (
+                  <TableRow key={point.year}>
+                    <TableCell>{point.year}</TableCell>
+                    <TableCell className="text-right">{formatCurrencyFull(point.amount)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            {plannedViewMode === 'line' ? (
+              <LineChart data={data?.plannedBudgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const point = payload[0].payload as BudgetTrendPoint;
+                      return (
+                        <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
+                          <table className="border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50">
+                                <th className="px-3 py-1.5 text-left font-semibold">Year</th>
+                                <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-3 py-1.5">{point.year}</td>
+                                <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Line type="monotone" dataKey="amount" stroke="#4c5568" strokeWidth={2} dot={{ r: 4 }} name="Planned Disbursements (USD)" />
+              </LineChart>
+            ) : (
+              <BarChart data={data?.plannedBudgetTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const point = payload[0].payload as BudgetTrendPoint;
+                      return (
+                        <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
+                          <table className="border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50">
+                                <th className="px-3 py-1.5 text-left font-semibold">Year</th>
+                                <th className="px-3 py-1.5 text-right font-semibold">Amount (USD)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-3 py-1.5">{point.year}</td>
+                                <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="amount" name="Planned Disbursements (USD)" fill="#4c5568" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        )}
       </ExpandedChartModal>
 
       <ExpandedChartModal
@@ -685,83 +980,142 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
         {(() => {
           const uniqueTypes = data?.transactionTrend ? getUniqueTransactionTypes(data.transactionTrend) : [];
           const hasTypeData = uniqueTypes.length > 0;
-          const lineChartData = hasTypeData && data?.transactionTrend
+          const chartData = hasTypeData && data?.transactionTrend
             ? transformDataForValueChart(data.transactionTrend, uniqueTypes)
             : data?.transactionTrend || [];
 
+          const expandedTransactionTooltip = (
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length && data?.transactionTrend) {
+                  const dataPoint = data.transactionTrend.find(t => t.month === label);
+                  return (
+                    <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
+                      <table className="border-collapse w-full">
+                        <thead>
+                          <tr className="bg-slate-50">
+                            <th className="px-3 py-1.5 text-left font-semibold" colSpan={2}>Year {label}</th>
+                          </tr>
+                          <tr className="bg-slate-50 border-b border-slate-200">
+                            <th className="px-3 py-1 text-left font-medium text-slate-600">Type</th>
+                            <th className="px-3 py-1 text-right font-medium text-slate-600">USD Value</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dataPoint?.typeAmounts && Object.entries(dataPoint.typeAmounts)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([type, amount]) => (
+                              <tr key={type} className="border-t border-slate-100">
+                                <td className="px-3 py-1">
+                                  <span className="flex items-center gap-2">
+                                    <span
+                                      className="w-3 h-3 rounded-sm inline-block"
+                                      style={{ backgroundColor: getTransactionTypeColor(type, uniqueTypes.indexOf(type)) }}
+                                    />
+                                    {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-1 text-right font-medium">{formatCurrency(amount)}</td>
+                              </tr>
+                            ))}
+                          <tr className="border-t-2 border-slate-300">
+                            <td className="px-3 py-1.5 font-semibold">Total</td>
+                            <td className="px-3 py-1.5 text-right font-semibold">{formatCurrency(dataPoint?.amount || 0)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+          );
+
+          if (transactionsViewMode === 'table') {
+            return (
+              <div className="h-full overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Year</TableHead>
+                      {uniqueTypes.map(type => (
+                        <TableHead key={type} className="text-right">
+                          {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                        </TableHead>
+                      ))}
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(data?.transactionTrend || []).map((point) => (
+                      <TableRow key={point.month}>
+                        <TableCell>{point.month}</TableCell>
+                        {uniqueTypes.map(type => (
+                          <TableCell key={type} className="text-right">
+                            {formatCurrency(point.typeAmounts?.[type] || 0)}
+                          </TableCell>
+                        ))}
+                        <TableCell className="text-right font-medium">{formatCurrency(point.amount)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            );
+          }
+
           return (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={lineChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length && data?.transactionTrend) {
-                      const dataPoint = data.transactionTrend.find(t => t.month === label);
-                      return (
-                        <div className="bg-white border border-slate-200 rounded shadow-lg text-sm p-0 overflow-hidden">
-                          <table className="border-collapse w-full">
-                            <thead>
-                              <tr className="bg-slate-50">
-                                <th className="px-3 py-1.5 text-left font-semibold" colSpan={2}>Year {label}</th>
-                              </tr>
-                              <tr className="bg-slate-50 border-b border-slate-200">
-                                <th className="px-3 py-1 text-left font-medium text-slate-600">Type</th>
-                                <th className="px-3 py-1 text-right font-medium text-slate-600">USD Value</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {dataPoint?.typeAmounts && Object.entries(dataPoint.typeAmounts)
-                                .sort(([, a], [, b]) => b - a)
-                                .map(([type, amount]) => (
-                                  <tr key={type} className="border-t border-slate-100">
-                                    <td className="px-3 py-1">
-                                      <span className="flex items-center gap-2">
-                                        <span
-                                          className="w-3 h-3 rounded-sm inline-block"
-                                          style={{ backgroundColor: getTransactionTypeColor(type, uniqueTypes.indexOf(type)) }}
-                                        />
-                                        {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
-                                      </span>
-                                    </td>
-                                    <td className="px-3 py-1 text-right font-medium">{formatCurrency(amount)}</td>
-                                  </tr>
-                                ))}
-                              <tr className="border-t-2 border-slate-300">
-                                <td className="px-3 py-1.5 font-semibold">Total</td>
-                                <td className="px-3 py-1.5 text-right font-semibold">{formatCurrency(dataPoint?.amount || 0)}</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                {hasTypeData ? (
-                  uniqueTypes.map((type, index) => (
+              {transactionsViewMode === 'bar' ? (
+                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                  {expandedTransactionTooltip}
+                  {hasTypeData ? (
+                    uniqueTypes.map((type, index) => (
+                      <Bar
+                        key={type}
+                        dataKey={`type_${type}`}
+                        stackId="transactions"
+                        fill={getTransactionTypeColor(type, index)}
+                        radius={index === uniqueTypes.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                        name={TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                      />
+                    ))
+                  ) : (
+                    <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill={BAR_COLORS[0]} />
+                  )}
+                </BarChart>
+              ) : (
+                <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                  {expandedTransactionTooltip}
+                  {hasTypeData ? (
+                    uniqueTypes.map((type, index) => (
+                      <Line
+                        key={type}
+                        type="monotone"
+                        dataKey={`type_${type}`}
+                        stroke={getTransactionTypeColor(type, index)}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        name={TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                      />
+                    ))
+                  ) : (
                     <Line
-                      key={type}
                       type="monotone"
-                      dataKey={`type_${type}`}
-                      stroke={getTransactionTypeColor(type, index)}
+                      dataKey="amount"
+                      stroke="#7b95a7"
                       strokeWidth={2}
                       dot={{ r: 4 }}
-                      name={TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                      name="Transaction Value (USD)"
                     />
-                  ))
-                ) : (
-                  <Line
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#7b95a7"
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    name="Transaction Value (USD)"
-                  />
-                )}
-              </LineChart>
+                  )}
+                </LineChart>
+              )}
             </ResponsiveContainer>
           );
         })()}

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -199,12 +200,14 @@ export function HumanitarianTab({
       <div className="relative border-2 border-red-300 rounded-lg p-6 bg-red-50/30">
         <div>
           <div className="flex items-center gap-2">
-            <Label
-              htmlFor="humanitarian-toggle"
+            <LabelSaveIndicator
+              isSaving={isSaving}
+              isSaved={!isLoading && activityId !== 'NEW'}
+              hasValue={humanitarian}
               className="text-sm font-medium cursor-pointer text-red-900"
             >
               Humanitarian Activity
-            </Label>
+            </LabelSaveIndicator>
             <HelpTextTooltip content="Mark this activity as humanitarian if it relates entirely or partially to humanitarian aid. This follows IATI Standard guidance for humanitarian reporting." />
           </div>
           <p className="text-xs text-red-700 mt-1">

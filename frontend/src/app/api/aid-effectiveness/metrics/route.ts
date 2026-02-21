@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { isPositiveValue } from '@/lib/aid-effectiveness-helpers';
 
 interface AidEffectivenessMetrics {
   totalActivities: number
@@ -126,19 +127,19 @@ export async function GET(request: NextRequest) {
       // Check GPEDC compliance (all required fields completed)
       const isCompliant = !!(
         aidEffectiveness.implementingPartner &&
-        aidEffectiveness.linkedToGovFramework &&
-        aidEffectiveness.supportsPublicSector &&
+        isPositiveValue(aidEffectiveness.linkedToGovFramework) &&
+        aidEffectiveness.supportsPublicSector === 'yes' &&
         aidEffectiveness.numOutcomeIndicators !== undefined &&
-        aidEffectiveness.indicatorsFromGov &&
-        aidEffectiveness.indicatorsViaGovData &&
-        aidEffectiveness.finalEvalPlanned &&
-        aidEffectiveness.govBudgetSystem &&
-        aidEffectiveness.govFinReporting &&
-        aidEffectiveness.govAudit &&
-        aidEffectiveness.govProcurement &&
-        aidEffectiveness.annualBudgetShared &&
-        aidEffectiveness.forwardPlanShared &&
-        aidEffectiveness.tiedStatus
+        aidEffectiveness.indicatorsFromGov === 'yes' &&
+        aidEffectiveness.indicatorsViaGovData === 'yes' &&
+        aidEffectiveness.finalEvalPlanned === 'yes' &&
+        aidEffectiveness.govBudgetSystem === 'yes' &&
+        aidEffectiveness.govFinReporting === 'yes' &&
+        aidEffectiveness.govAudit === 'yes' &&
+        aidEffectiveness.govProcurement === 'yes' &&
+        aidEffectiveness.annualBudgetShared === 'yes' &&
+        aidEffectiveness.forwardPlanShared === 'yes' &&
+        aidEffectiveness.tiedStatus === 'untied'
       )
       
       if (isCompliant) {

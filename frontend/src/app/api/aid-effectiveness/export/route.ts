@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { isPositiveValue } from '@/lib/aid-effectiveness-helpers';
 
 export async function GET(request: NextRequest) {
   const { supabase, response: authResponse } = await requireAuth();
@@ -135,7 +136,7 @@ export async function GET(request: NextRequest) {
       // Calculate GPEDC compliance
       const isCompliant = !!(
         aidEffectiveness.implementingPartner &&
-        aidEffectiveness.linkedToGovFramework === 'yes' &&
+        isPositiveValue(aidEffectiveness.linkedToGovFramework) &&
         aidEffectiveness.supportsPublicSector === 'yes' &&
         aidEffectiveness.numOutcomeIndicators &&
         aidEffectiveness.indicatorsFromGov === 'yes' &&

@@ -1080,42 +1080,33 @@ const OrganizationListView: React.FC<{
               className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer" 
               onClick={() => router.push(`/organizations/${org.id}`)}
             >
-              {/* Organization Name */}
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900">
+              {/* Organization Name + Acronym + IATI ID */}
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-gray-900 truncate">
                   {org.name}
                 </h3>
-              </div>
-
-              {/* Acronym */}
-              {org.acronym && (
-                <div className="flex-shrink-0">
-                  <span className="text-sm font-semibold text-gray-900">
-                    {org.acronym}
+                {org.acronym && (
+                  <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                    ({org.acronym})
                   </span>
-                </div>
-              )}
-
-              {/* IATI ID */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                {org.iati_org_id
-                  ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{org.iati_org_id}</span>
-                  : <p className="text-sm text-gray-500">No IATI ID</p>
-                }
+                )}
                 {org.iati_org_id && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      navigator.clipboard.writeText(org.iati_org_id || '')
-                      toast.success('Copied to clipboard')
-                    }}
-                    className="h-5 w-5 p-0"
-                    title="Copy IATI ID"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
+                  <>
+                    <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex-shrink-0">{org.iati_org_id}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigator.clipboard.writeText(org.iati_org_id || '')
+                        toast.success('Copied to clipboard')
+                      }}
+                      className="h-5 w-5 p-0 flex-shrink-0"
+                      title="Copy IATI ID"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </>
                 )}
               </div>
 

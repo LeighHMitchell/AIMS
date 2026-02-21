@@ -137,10 +137,10 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <h2 className="text-lg font-bold text-white mb-1 line-clamp-2 transition-colors">
+            <h2 className="text-lg font-bold text-white mb-1 transition-colors">
               <Link
                 href={orgUrl}
-                className="relative z-10 hover:underline"
+                className="relative z-10 hover:underline inline"
                 onClick={(e) => e.stopPropagation()}
               >
                 {organization.name}
@@ -148,6 +148,21 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
                   <span className="ml-1">({organization.acronym})</span>
                 )}
               </Link>
+              {' '}
+              <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
+                <span className="text-xs font-mono font-normal bg-white/20 text-white/80 px-1.5 py-0.5 rounded backdrop-blur-sm no-underline">{displayId}</span>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    copyToClipboard(displayId);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10"
+                  title="Copy ID"
+                >
+                  <Copy className="w-3 h-3 text-white/70" />
+                </button>
+              </span>
             </h2>
             <div className="flex items-center gap-2 text-xs" style={{ color: colors.paleSlate }}>
               {(organization.country_represented || organization.country) && (
@@ -216,42 +231,21 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
         </div>
 
         {/* Bottom Section */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
-              {idLabel}
-            </p>
-            <p className="flex items-center gap-1">
-              <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{displayId}</span>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  copyToClipboard(displayId);
-                }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity relative z-10"
-                title="Copy ID"
-              >
-                <Copy className="w-3 h-3" style={{ color: colors.coolSteel }} />
-              </button>
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            {organization.website && (
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.open(organization.website, '_blank');
-                }}
-                className="flex items-center gap-1 text-[10px] hover:underline relative z-10"
-                style={{ color: colors.blueSlate }}
-              >
-                <ExternalLink className="w-3 h-3" />
-                Visit Website
-              </button>
-            )}
-          </div>
+        <div className="flex items-center justify-end">
+          {organization.website && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(organization.website, '_blank');
+              }}
+              className="flex items-center gap-1 text-[10px] hover:underline relative z-10"
+              style={{ color: colors.blueSlate }}
+            >
+              <ExternalLink className="w-3 h-3" />
+              Visit Website
+            </button>
+          )}
         </div>
       </div>
     </motion.div>

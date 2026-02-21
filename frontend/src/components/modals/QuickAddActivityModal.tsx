@@ -496,7 +496,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
       <DialogContent
-        className="max-w-4xl max-h-[90vh] overflow-hidden p-0"
+        className="max-w-4xl max-h-[90vh] overflow-visible p-0"
         onPointerDownOutside={(e) => {
           // Prevent closing when clicking on popover content (portaled outside dialog)
           const target = e.target as HTMLElement;
@@ -517,7 +517,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="relative overflow-hidden"
+            className="relative"
           >
             {/* Header */}
             <div className="border-b border-border/40 bg-background/80 px-6 py-4">

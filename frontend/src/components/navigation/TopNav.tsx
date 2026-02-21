@@ -85,7 +85,7 @@ export function TopNav({ user, onLogout }: TopNavProps) {
   };
 
   return (
-    <nav className="border-b sticky top-0 z-[9999] bg-white">
+    <nav className="border-b sticky top-0 z-[9999] bg-white/60 dark:bg-gray-900/60 backdrop-blur-md">
       <div className="flex h-16 items-center px-6">
         <div className="ml-auto flex items-center space-x-4">
           {/* Global Search Bar */}

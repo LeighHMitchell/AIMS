@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { isPositiveValue } from '@/lib/aid-effectiveness-helpers';
 
 interface ImplementingPartnerData {
   partner_name: string
@@ -174,7 +175,7 @@ export async function GET(request: NextRequest) {
         // GPEDC compliance (all required fields)
         const isCompliant = !!(
           aidEffectiveness.implementingPartner &&
-          aidEffectiveness.linkedToGovFramework === 'yes' &&
+          isPositiveValue(aidEffectiveness.linkedToGovFramework) &&
           aidEffectiveness.supportsPublicSector === 'yes' &&
           aidEffectiveness.numOutcomeIndicators &&
           aidEffectiveness.indicatorsFromGov === 'yes' &&

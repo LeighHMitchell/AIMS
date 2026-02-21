@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Lock, Copy, Check, Trash2 } from "lucide-react"
@@ -51,7 +51,6 @@ export default function OrganizationEditorNavigation({
   organization = null,
   onDelete
 }: OrganizationEditorNavigationProps) {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
@@ -73,16 +72,14 @@ export default function OrganizationEditorNavigation({
     if (disabled) {
       return;
     }
-    
+
     // Call the original onSectionChange handler
     onSectionChange(sectionId)
-    
-    // Update URL with the new section parameter
+
+    // Update URL for bookmarkability without triggering Next.js router navigation
     const params = new URLSearchParams(searchParams?.toString() || '')
     params.set('section', sectionId)
-    
-    // Use replace to avoid adding to browser history for each tab switch
-    router.replace(`?${params.toString()}`, { scroll: false })
+    window.history.replaceState(null, '', `?${params.toString()}`)
   }
 
   const navigationGroups: NavigationGroup[] = [

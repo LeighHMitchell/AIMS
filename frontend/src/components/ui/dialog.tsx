@@ -35,25 +35,25 @@ const DialogContent = React.forwardRef<
         className
       )}
       onPointerDownOutside={(e) => {
-        // Prevent dialog from closing when clicking on popover content
+        // Prevent dialog from closing when clicking on popover or dropdown menu content
         const target = e.target as HTMLElement;
-        if (target.closest('[data-popover-content]')) {
+        if (target.closest('[data-popover-content]') || target.closest('[data-radix-dropdown-menu-content]') || target.closest('[role="menu"]')) {
           e.preventDefault();
         }
         onPointerDownOutside?.(e);
       }}
       onInteractOutside={(e) => {
-        // Prevent dialog from closing when interacting with popover content
+        // Prevent dialog from closing when interacting with popover or dropdown menu content
         const target = e.target as HTMLElement;
-        if (target.closest('[data-popover-content]')) {
+        if (target.closest('[data-popover-content]') || target.closest('[data-radix-dropdown-menu-content]') || target.closest('[role="menu"]')) {
           e.preventDefault();
         }
         onInteractOutside?.(e);
       }}
       onFocusOutside={(e) => {
-        // Prevent dialog focus trap from stealing focus from popover content
+        // Prevent dialog focus trap from stealing focus from popover or dropdown menu content
         const target = e.target as HTMLElement;
-        if (target.closest('[data-popover-content]')) {
+        if (target.closest('[data-popover-content]') || target.closest('[data-radix-dropdown-menu-content]') || target.closest('[role="menu"]')) {
           e.preventDefault();
         }
         onFocusOutside?.(e);

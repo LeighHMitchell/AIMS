@@ -1438,14 +1438,8 @@ export default function OrganizationProfilePage() {
                       {/* Activity Stats Bar */}
                       {activities.length > 0 && (
                         <div className="mb-3">
-                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm">
                           {(() => {
-                            // Calculate first activity date (earliest start date)
-                            const firstActivityDate = activities
-                              .map(a => a.actual_start_date || a.planned_start_date)
-                              .filter(Boolean)
-                              .sort()[0];
-
                             // Calculate most recent transaction date
                             const allTransactionDates = activities
                               .flatMap(a => (a.transactions || []).map(t => t.transaction_date))
@@ -1463,12 +1457,6 @@ export default function OrganizationProfilePage() {
 
                             return (
                               <>
-                                {firstActivityDate && (
-                                  <div>
-                                    <span className="text-slate-500">First activity:</span>{' '}
-                                    <span className="text-slate-900 font-medium">{formatDate(firstActivityDate)}</span>
-                                  </div>
-                                )}
                                 {mostRecentTransactionDate && (
                                   <div>
                                     <span className="text-slate-500">Most recent transaction:</span>{' '}
@@ -2002,9 +1990,9 @@ export default function OrganizationProfilePage() {
                           >
                             <table className="text-xs w-full border-collapse">
                               <thead>
-                                <tr className="bg-slate-50 border-b border-slate-200">
-                                  <th className="text-left px-3 py-2 text-slate-600 font-semibold">{hoveredPoint.year}</th>
-                                  <th className="text-right px-3 py-2 text-slate-600 font-semibold">Value</th>
+                                <tr className="bg-surface-muted border-b border-border">
+                                  <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{hoveredPoint.year}</th>
+                                  <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Value</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -2080,7 +2068,7 @@ export default function OrganizationProfilePage() {
                               <td className="text-right py-1 text-slate-900 font-medium">{formatCurrencyShort(item.amount)}</td>
                             </tr>
                           ))}
-                          <tr className="border-t-2 border-slate-300 bg-slate-50">
+                          <tr className="border-t-2 border-border bg-surface-muted">
                             <td className="py-1 text-slate-900 font-semibold">Total</td>
                             <td className="text-right py-1 text-slate-900 font-semibold">
                               {formatCurrencyShort(budgetsByYear.reduce((sum, item) => sum + item.amount, 0))}
@@ -2119,9 +2107,9 @@ export default function OrganizationProfilePage() {
                                   <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
                                     <table className="text-xs w-full border-collapse">
                                       <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-200">
-                                          <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
-                                          <th className="text-right px-3 py-2 text-slate-600 font-semibold">Budget</th>
+                                        <tr className="bg-surface-muted border-b border-border">
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Budget</th>
                                         </tr>
                                       </thead>
                                       <tbody>
@@ -2166,9 +2154,9 @@ export default function OrganizationProfilePage() {
                                   <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
                                     <table className="text-xs w-full border-collapse">
                                       <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-200">
-                                          <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
-                                          <th className="text-right px-3 py-2 text-slate-600 font-semibold">Budget</th>
+                                        <tr className="bg-surface-muted border-b border-border">
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Budget</th>
                                         </tr>
                                       </thead>
                                       <tbody>
@@ -2295,7 +2283,7 @@ export default function OrganizationProfilePage() {
                                 <td className="text-right py-1 text-slate-900 font-medium">{formatCurrencyShort(item.expenditures)}</td>
                               </tr>
                             ))}
-                            <tr className="border-t-2 border-slate-300 bg-slate-50">
+                            <tr className="border-t-2 border-border bg-surface-muted">
                               <td className="py-1 text-slate-900 font-semibold">Total</td>
                               <td className="text-right py-1 font-semibold text-slate-700">
                                 {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.plannedDisbursements, 0))}
@@ -2334,9 +2322,9 @@ export default function OrganizationProfilePage() {
                                     <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
                                       <table className="text-xs w-full border-collapse">
                                         <thead>
-                                          <tr className="bg-slate-50 border-b border-slate-200">
-                                            <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
-                                            <th className="text-right px-3 py-2 text-slate-600 font-semibold">Value</th>
+                                          <tr className="bg-surface-muted border-b border-border">
+                                            <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
+                                            <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Value</th>
                                           </tr>
                                         </thead>
                                         <tbody>
@@ -2408,9 +2396,9 @@ export default function OrganizationProfilePage() {
                                     <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
                                       <table className="text-xs w-full border-collapse">
                                         <thead>
-                                          <tr className="bg-slate-50 border-b border-slate-200">
-                                            <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
-                                            <th className="text-right px-3 py-2 text-slate-600 font-semibold">Value</th>
+                                          <tr className="bg-surface-muted border-b border-border">
+                                            <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
+                                            <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Value</th>
                                           </tr>
                                         </thead>
                                         <tbody>
@@ -2557,8 +2545,8 @@ export default function OrganizationProfilePage() {
                                       <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden whitespace-nowrap">
                                         <table className="text-xs border-collapse">
                                           <thead>
-                                            <tr className="bg-slate-50 border-b border-slate-200">
-                                              <th colSpan={2} className="text-left px-3 py-2 text-slate-600 font-semibold">{item.name}</th>
+                                            <tr className="bg-surface-muted border-b border-border">
+                                              <th colSpan={2} className="text-left px-3 py-2 text-muted-foreground font-semibold">{item.name}</th>
                                             </tr>
                                           </thead>
                                           <tbody>

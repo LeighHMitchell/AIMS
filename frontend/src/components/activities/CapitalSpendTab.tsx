@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2, Info, AlertCircle, ChevronDown, Building2, Repeat } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -132,6 +133,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
         const value = data?.capital_spend_percentage;
         if (value !== null && value !== undefined) {
           setCapitalSpend(value.toString());
+          setSaved(true);
           // Notify parent component for tab completion (after state is set)
           setTimeout(() => onCapitalSpendChange?.(value), 0);
         } else {
@@ -249,10 +251,14 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
             <div className="space-y-4 pt-4">
               {/* Capital Spend Input */}
               <div className="space-y-2">
-                <Label htmlFor="capital-spend" className="text-base flex items-center gap-2">
+                <LabelSaveIndicator
+                  isSaving={saving}
+                  isSaved={saved}
+                  hasValue={!!capitalSpend}
+                >
                   <Building2 className="h-4 w-4 text-gray-600" />
                   Capital Spend Percentage
-                </Label>
+                </LabelSaveIndicator>
                 <div className="relative max-w-xs">
                   <Input
                     id="capital-spend"
@@ -281,10 +287,14 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
 
               {/* Recurrent Spend Display */}
               <div className="space-y-2">
-                <Label htmlFor="recurrent-spend" className="text-base flex items-center gap-2">
+                <LabelSaveIndicator
+                  isSaving={saving}
+                  isSaved={saved}
+                  hasValue={!!capitalSpend}
+                >
                   <Repeat className="h-4 w-4 text-gray-600" />
                   Recurrent Spend Percentage
-                </Label>
+                </LabelSaveIndicator>
                 <div className="relative max-w-xs">
                   <Input
                     id="recurrent-spend"

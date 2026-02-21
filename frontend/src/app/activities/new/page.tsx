@@ -2096,7 +2096,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </div>
               {showPlannedStartDescription && (
                 <div className="mt-2 space-y-1">
-                  <label className="text-xs text-gray-600">Description/Context</label>
+                  <LabelSaveIndicator
+                    isSaving={plannedStartDescriptionAutosave.state.isSaving}
+                    isSaved={plannedStartDescriptionAutosave.state.isPersistentlySaved}
+                    hasValue={!!general.plannedStartDescription?.trim()}
+                    isFocused={isPlannedStartDescriptionFocused}
+                    className="text-xs text-gray-600"
+                  >
+                    Description/Context
+                  </LabelSaveIndicator>
                   <Textarea
                     value={general.plannedStartDescription || ''}
                     onChange={(e) => {
@@ -2184,7 +2192,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </div>
               {showPlannedEndDescription && (
                 <div className="mt-2 space-y-1">
-                  <label className="text-xs text-gray-600">Description/Context</label>
+                  <LabelSaveIndicator
+                    isSaving={plannedEndDescriptionAutosave.state.isSaving}
+                    isSaved={plannedEndDescriptionAutosave.state.isPersistentlySaved}
+                    hasValue={!!general.plannedEndDescription?.trim()}
+                    isFocused={isPlannedEndDescriptionFocused}
+                    className="text-xs text-gray-600"
+                  >
+                    Description/Context
+                  </LabelSaveIndicator>
                   <Textarea
                     value={general.plannedEndDescription || ''}
                     onChange={(e) => {
@@ -2363,7 +2379,15 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </div>
               {showActualEndDescription && (
                 <div className="mt-2 space-y-1">
-                  <label className="text-xs text-gray-600">Description/Context</label>
+                  <LabelSaveIndicator
+                    isSaving={actualEndDescriptionAutosave.state.isSaving}
+                    isSaved={actualEndDescriptionAutosave.state.isPersistentlySaved}
+                    hasValue={!!general.actualEndDescription?.trim()}
+                    isFocused={isActualEndDescriptionFocused}
+                    className="text-xs text-gray-600"
+                  >
+                    Description/Context
+                  </LabelSaveIndicator>
                   <Textarea
                     value={general.actualEndDescription || ''}
                     onChange={(e) => {
@@ -5489,7 +5513,7 @@ function NewActivityPageContent() {
           </div>
           
           {/* Combined Footer with Navigation and Validation Actions */}
-          <footer className={`fixed bottom-0 right-0 bg-transparent py-4 px-8 transition-all duration-400 ${sidebarCollapsed ? 'left-20' : 'left-72'} ${isModalOpen ? 'z-[40]' : 'z-[60]'}`}>
+          <footer className={`fixed bottom-0 right-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md py-4 px-8 transition-all duration-400 ${sidebarCollapsed ? 'left-20' : 'left-72'} ${isModalOpen ? 'z-[40]' : 'z-[60]'}`}>
             <div className="max-w-full flex items-center justify-between gap-4">
               {/* Left side: Validation Actions */}
               <div className="flex items-center gap-4">
