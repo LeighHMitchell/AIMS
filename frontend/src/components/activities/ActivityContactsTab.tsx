@@ -169,26 +169,26 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="h-6 bg-slate-200 rounded w-32 animate-pulse"></div>
-          <div className="h-9 bg-slate-200 rounded w-24 animate-pulse"></div>
+          <div className="h-6 bg-muted rounded w-32 animate-pulse"></div>
+          <div className="h-9 bg-muted rounded w-24 animate-pulse"></div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="border border-slate-200 rounded-2xl p-6 bg-white">
+            <div key={i} className="border border-border rounded-2xl p-6 bg-card">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 bg-slate-200 rounded-full animate-pulse flex-shrink-0"></div>
+                <div className="w-16 h-16 bg-muted rounded-full animate-pulse flex-shrink-0"></div>
                 <div className="flex-1 space-y-2">
-                  <div className="h-6 bg-slate-200 rounded w-3/4 animate-pulse"></div>
-                  <div className="h-4 bg-slate-200 rounded w-2/3 animate-pulse"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/2 animate-pulse"></div>
+                  <div className="h-6 bg-muted rounded w-3/4 animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded w-2/3 animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded w-1/2 animate-pulse"></div>
                 </div>
               </div>
               <div className="mt-4 space-y-2">
-                <div className="h-4 bg-slate-200 rounded w-4/5 animate-pulse"></div>
-                <div className="h-4 bg-slate-200 rounded w-3/5 animate-pulse"></div>
+                <div className="h-4 bg-muted rounded w-4/5 animate-pulse"></div>
+                <div className="h-4 bg-muted rounded w-3/5 animate-pulse"></div>
               </div>
               <div className="mt-4">
-                <div className="h-6 bg-slate-200 rounded-full w-24 animate-pulse"></div>
+                <div className="h-6 bg-muted rounded-full w-24 animate-pulse"></div>
               </div>
             </div>
           ))}
@@ -219,9 +219,9 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <Users className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-slate-900 mb-2">No contacts found</h3>
-          <p className="text-slate-600">
+          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No contacts found</h3>
+          <p className="text-muted-foreground">
             No contacts have been added to this activity yet.
           </p>
         </CardContent>
@@ -238,7 +238,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
     return (
       <div 
         key={contact.id} 
-        className="border border-slate-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-white"
+        className="border border-border rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-card"
       >
         {/* Left-aligned layout with avatar on left */}
         <div className="flex items-start gap-4">
@@ -254,18 +254,18 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
           {/* Content - right side */}
           <div className="flex-1 min-w-0 space-y-1">
             {/* Line 1: Title, First Name, Last Name (or Organisation for IATI contacts without person) */}
-            <h3 className="text-lg font-semibold text-slate-900 leading-tight break-words">
+            <h3 className="text-lg font-semibold text-foreground leading-tight break-words">
               {fullName}
               {contact.isFocalPoint && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span className="cursor-default">
-                        <MailPlus className="h-4 w-4 ml-2 inline text-slate-600" />
+                        <MailPlus className="h-4 w-4 ml-2 inline text-muted-foreground" />
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">
-                      <p className="text-sm text-gray-600 font-normal">This contact is designated as the focal point for this activity</p>
+                    <TooltipContent className="max-w-xs border border-border bg-card shadow-lg">
+                      <p className="text-sm text-muted-foreground font-normal">This contact is designated as the focal point for this activity</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -278,8 +278,8 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                         <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 h-4 align-middle bg-blue-50 text-blue-700 border-blue-200">IATI</Badge>
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">
-                      <p className="text-sm text-gray-600 font-normal">This contact was imported from IATI data</p>
+                    <TooltipContent className="max-w-xs border border-border bg-card shadow-lg">
+                      <p className="text-sm text-muted-foreground font-normal">This contact was imported from IATI data</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -288,17 +288,17 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
 
             {/* Line 2: Job Title • Department */}
             {jobLine && (
-              <p className="text-sm text-slate-600 break-words">
+              <p className="text-sm text-muted-foreground break-words">
                 {jobLine}
               </p>
             )}
 
             {/* Line 3: Organization (only show if person name exists, otherwise it's already in the title) */}
             {contact.organisation && (contact.firstName || contact.lastName) && (
-              <p className="text-sm text-slate-600 break-words">
+              <p className="text-sm text-muted-foreground break-words">
                 {contact.organisation}
                 {contact.organisationAcronym && (
-                  <span className="text-slate-500 ml-1">({contact.organisationAcronym})</span>
+                  <span className="text-muted-foreground ml-1">({contact.organisationAcronym})</span>
                 )}
               </p>
             )}
@@ -309,10 +309,10 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
         <div className="mt-4 space-y-2">
           {contact.email && (
             <div className="flex items-center space-x-2">
-              <Mail className="h-4 w-4 text-slate-400 flex-shrink-0" />
+              <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <a 
                 href={`mailto:${contact.email}`} 
-                className="text-sm text-slate-700 hover:text-blue-600 transition-colors truncate"
+                className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
               >
                 {contact.email}
               </a>
@@ -321,8 +321,8 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
 
           {(contact.phone || contact.phoneNumber) && (
             <div className="flex items-center space-x-2">
-              <Phone className="h-4 w-4 text-slate-400 flex-shrink-0" />
-              <span className="text-sm text-slate-700">
+              <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm text-foreground">
                 {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
               </span>
             </div>
@@ -330,12 +330,12 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
 
           {contact.website && (
             <div className="flex items-center space-x-2">
-              <Globe className="h-4 w-4 text-slate-400 flex-shrink-0" />
+              <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <a 
                 href={contact.website} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-sm text-slate-700 hover:text-blue-600 transition-colors truncate"
+                className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
               >
                 {contact.website.replace(/^https?:\/\//, '')}
               </a>
@@ -345,7 +345,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
 
         {/* Contact Type at bottom */}
         <div className="mt-4">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
             {typeInfo.label}
           </span>
         </div>
@@ -356,10 +356,10 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
   // Render table view
   const renderTableView = () => {
     return (
-      <div className="border border-slate-200 rounded-lg overflow-hidden">
+      <div className="border border-border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50">
+            <TableRow className="bg-muted">
               <TableHead className="font-semibold">Name</TableHead>
               <TableHead className="font-semibold">Position</TableHead>
               <TableHead className="font-semibold">Organization</TableHead>
@@ -386,17 +386,17 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                         initials={getInitials(fullName)}
                       />
                       <div>
-                        <span className="font-medium text-slate-900">{fullName}</span>
+                        <span className="font-medium text-foreground">{fullName}</span>
                         {contact.isFocalPoint && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className="cursor-default">
-                                  <MailPlus className="h-3 w-3 ml-1 inline text-slate-600" />
+                                  <MailPlus className="h-3 w-3 ml-1 inline text-muted-foreground" />
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">
-                                <p className="text-sm text-gray-600 font-normal">Focal Point</p>
+                              <TooltipContent className="max-w-xs border border-border bg-card shadow-lg">
+                                <p className="text-sm text-muted-foreground font-normal">Focal Point</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -404,15 +404,15 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-slate-600">
+                  <TableCell className="text-muted-foreground">
                     {jobLine || '-'}
                   </TableCell>
-                  <TableCell className="text-slate-600">
+                  <TableCell className="text-muted-foreground">
                     {contact.organisation ? (
                       <>
                         {contact.organisation}
                         {contact.organisationAcronym && (
-                          <span className="text-slate-400 ml-1">({contact.organisationAcronym})</span>
+                          <span className="text-muted-foreground ml-1">({contact.organisationAcronym})</span>
                         )}
                       </>
                     ) : '-'}
@@ -421,13 +421,13 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                     {contact.email ? (
                       <a 
                         href={`mailto:${contact.email}`}
-                        className="text-slate-700 hover:text-blue-600 transition-colors"
+                        className="text-foreground hover:text-blue-600 transition-colors"
                       >
                         {contact.email}
                       </a>
                     ) : '-'}
                   </TableCell>
-                  <TableCell className="text-slate-600">
+                  <TableCell className="text-muted-foreground">
                     {contact.phone || contact.phoneNumber ? (
                       <span>
                         {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
@@ -435,7 +435,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
                     ) : '-'}
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
                       {typeInfo.label}
                     </span>
                   </TableCell>
@@ -466,7 +466,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
     return (
       <div 
         key={focalPoint.id}
-        className="flex items-start gap-3 p-4 bg-white border border-slate-200 rounded-lg"
+        className="flex items-start gap-3 p-4 bg-card border border-border rounded-lg"
       >
         <UserAvatar
           src={focalPoint.avatar_url}
@@ -478,7 +478,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="font-medium text-slate-900">{focalPoint.name}</h4>
+            <h4 className="font-medium text-foreground">{focalPoint.name}</h4>
             <Badge variant="outline" className={
               type === 'government' 
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
@@ -488,15 +488,15 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
             </Badge>
           </div>
           
-          <p className="text-sm text-slate-600 mt-0.5">{focalPoint.email}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{focalPoint.email}</p>
           
           {focalPoint.job_title && (
-            <p className="text-sm text-slate-500">{focalPoint.job_title}</p>
+            <p className="text-sm text-muted-foreground">{focalPoint.job_title}</p>
           )}
           
           {orgName && (
-            <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-1">
-              <Building2 className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+            <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
               {orgName}
               {orgAcronym && ` (${orgAcronym})`}
             </p>
@@ -515,14 +515,14 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <UserCheck className="h-5 w-5 text-slate-600" />
+              <UserCheck className="h-5 w-5 text-muted-foreground" />
               Activity Focal Points
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {[1, 2].map((i) => (
-                <div key={i} className="h-24 bg-slate-100 rounded-lg animate-pulse"></div>
+                <div key={i} className="h-24 bg-muted rounded-lg animate-pulse"></div>
               ))}
             </div>
           </CardContent>
@@ -538,7 +538,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
       <Card className="mb-6">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <UserCheck className="h-5 w-5 text-slate-600" />
+            <UserCheck className="h-5 w-5 text-muted-foreground" />
             Activity Focal Points
           </CardTitle>
           <CardDescription className="text-xs">
@@ -562,11 +562,11 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
 
       {/* Header with view toggle */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">
+        <h3 className="text-lg font-semibold text-foreground">
           Activity Contacts ({contacts.length})
         </h3>
         
-        <div className="flex border border-slate-200 rounded-md">
+        <div className="flex border border-border rounded-md">
           <Button
             variant={viewMode === 'table' ? 'default' : 'ghost'}
             size="sm"

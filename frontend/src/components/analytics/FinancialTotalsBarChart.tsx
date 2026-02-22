@@ -15,7 +15,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle, CalendarIcon, ChevronDown, Download, BarChart3, LineChart as LineChartIcon, TrendingUp, Table2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import {
@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { cn } from '@/lib/utils'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 // Brand color palette - 5 distinct colors, no duplicates
 const BRAND_PALETTE = {
   primaryScarlet: '#dc2625',
@@ -597,26 +599,38 @@ export function FinancialTotalsBarChart({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 min-w-[200px]">
-          <p className="font-semibold text-slate-900 mb-2 border-b pb-2">{label}</p>
+        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[200px]">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground">{label}</p>
+            {customYears.find(cy => cy.id === calendarType)?.name && (
+              <p className="text-xs text-muted-foreground mt-0.5">{customYears.find(cy => cy.id === calendarType)!.name}</p>
+            )}
+          </div>
+          <div className="p-3">
           <table className="w-full text-sm">
             <tbody>
               {payload.map((entry: any, index: number) => (
-                <tr key={index}>
+                <tr key={index} className={(entry.name || '').includes('Planned Disbursements') ? 'border-b' : ''}>
                   <td className="py-1 pr-3 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: entry.color }}
                     />
-                    <span className="text-slate-700">{entry.name}</span>
+                    {(() => {
+                      const codeMap: Record<string, string> = { 'Incoming Funds': '1', 'Outgoing Commitments': '2', 'Commitments': '2', 'Disbursements': '3', 'Expenditures': '4', 'Credit Guarantee': '10', 'Incoming Commitments': '11', 'Disbursement': '3' }
+                      const code = codeMap[entry.name]
+                      return code ? <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-muted-foreground">{code}</code> : null
+                    })()}
+                    <span className="text-foreground">{entry.name}</span>
                   </td>
-                  <td className="py-1 text-right font-semibold text-slate-900">
+                  <td className="py-1 text-right font-semibold text-foreground">
                     {formatCurrencyFull(entry.value)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )
     }
@@ -634,7 +648,7 @@ export function FinancialTotalsBarChart({
               className="w-3 h-3 rounded-sm flex-shrink-0"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-sm text-slate-700">{entry.value}</span>
+            <span className="text-sm text-foreground">{entry.value}</span>
           </li>
         ))}
       </ul>
@@ -669,11 +683,11 @@ export function FinancialTotalsBarChart({
       return (
         <div className="overflow-auto" style={{ maxHeight: height }}>
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 sticky top-0">
+            <thead className="bg-muted sticky top-0">
               <tr>
-                <th className="text-left px-4 py-3 font-semibold text-slate-700 border-b">Year</th>
+                <th className="text-left px-4 py-3 font-semibold text-foreground border-b">Year</th>
                 {activeDataKeys.map(key => (
-                  <th key={key} className="text-right px-4 py-3 font-semibold text-slate-700 border-b">
+                  <th key={key} className="text-right px-4 py-3 font-semibold text-foreground border-b">
                     <div className="flex items-center justify-end gap-2">
                       <div
                         className="w-3 h-3 rounded-sm flex-shrink-0"
@@ -683,41 +697,41 @@ export function FinancialTotalsBarChart({
                     </div>
                   </th>
                 ))}
-                <th className="text-right px-4 py-3 font-semibold text-slate-700 border-b">Total</th>
+                <th className="text-right px-4 py-3 font-semibold text-foreground border-b">Total</th>
               </tr>
             </thead>
             <tbody>
               {chartData.map((row, idx) => {
                 const rowTotal = activeDataKeys.reduce((sum, key) => sum + (Number(row[key]) || 0), 0)
                 return (
-                  <tr key={row.displayYear} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                    <td className="px-4 py-2.5 font-medium text-slate-900 border-b border-slate-100">
+                  <tr key={row.displayYear} className={idx % 2 === 0 ? 'bg-card' : 'bg-muted/50'}>
+                    <td className="px-4 py-2.5 font-medium text-foreground border-b border-border">
                       {row.displayYear}
                     </td>
                     {activeDataKeys.map(key => (
-                      <td key={key} className="text-right px-4 py-2.5 text-slate-600 border-b border-slate-100 font-mono">
+                      <td key={key} className="text-right px-4 py-2.5 text-muted-foreground border-b border-border font-mono">
                         {formatCurrencyFull(Number(row[key]) || 0)}
                       </td>
                     ))}
-                    <td className="text-right px-4 py-2.5 text-slate-900 font-semibold border-b border-slate-100 font-mono">
+                    <td className="text-right px-4 py-2.5 text-foreground font-semibold border-b border-border font-mono">
                       {formatCurrencyFull(rowTotal)}
                     </td>
                   </tr>
                 )
               })}
             </tbody>
-            <tfoot className="bg-slate-100">
+            <tfoot className="bg-muted">
               <tr>
-                <td className="px-4 py-3 font-semibold text-slate-900 border-t-2 border-slate-300">Total</td>
+                <td className="px-4 py-3 font-semibold text-foreground border-t-2 border-border">Total</td>
                 {activeDataKeys.map(key => {
                   const columnTotal = chartData.reduce((sum, row) => sum + (Number(row[key]) || 0), 0)
                   return (
-                    <td key={key} className="text-right px-4 py-3 font-semibold text-slate-900 border-t-2 border-slate-300 font-mono">
+                    <td key={key} className="text-right px-4 py-3 font-semibold text-foreground border-t-2 border-border font-mono">
                       {formatCurrencyFull(columnTotal)}
                     </td>
                   )
                 })}
-                <td className="text-right px-4 py-3 font-bold text-slate-900 border-t-2 border-slate-300 font-mono">
+                <td className="text-right px-4 py-3 font-bold text-foreground border-t-2 border-border font-mono">
                   {formatCurrencyFull(
                     chartData.reduce((grandTotal, row) => 
                       grandTotal + activeDataKeys.reduce((sum, key) => sum + (Number(row[key]) || 0), 0), 0
@@ -735,7 +749,7 @@ export function FinancialTotalsBarChart({
       return (
         <ResponsiveContainer width="100%" height={height}>
           <LineChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} />
             <Tooltip content={<CustomTooltip />} />
@@ -769,7 +783,7 @@ export function FinancialTotalsBarChart({
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} />
             <Tooltip content={<CustomTooltip />} />
@@ -795,7 +809,7 @@ export function FinancialTotalsBarChart({
     return (
       <ResponsiveContainer width="100%" height={height}>
         <BarChart {...commonProps} barGap={0} barCategoryGap="20%">
-          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis {...xAxisProps} />
           <YAxis {...yAxisProps} />
           <Tooltip content={<CustomTooltip />} />
@@ -817,12 +831,12 @@ export function FinancialTotalsBarChart({
   // Compact mode
   if (compact) {
     if (loading || customYearsLoading) {
-      return <Skeleton className="h-full w-full" />
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
 
     if (error || chartData.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-slate-500">
+        <div className="h-full flex items-center justify-center text-muted-foreground">
           <p className="text-sm">{error || 'No data available'}</p>
         </div>
       )
@@ -833,7 +847,7 @@ export function FinancialTotalsBarChart({
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 20, left: 20, bottom: 30 }} barGap={0} barCategoryGap="20%">
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis dataKey="displayYear" stroke="#64748B" fontSize={11} tickLine={false} />
             <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={10} />
             <Tooltip content={<CustomTooltip />} />
@@ -855,15 +869,13 @@ export function FinancialTotalsBarChart({
   // Full view
   if (loading || customYearsLoading) {
     return (
-      <div className="flex items-center justify-center h-[500px]">
-        <Skeleton className="h-full w-full" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-[500px] text-slate-400">
+      <div className="flex items-center justify-center h-[500px] text-muted-foreground">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
           <p className="font-medium">{error}</p>
@@ -880,7 +892,7 @@ export function FinancialTotalsBarChart({
         {customYears.length > 0 && (
           <>
             {/* Calendar Type Selector */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 border rounded-lg p-1 bg-card">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 gap-1">
@@ -892,7 +904,7 @@ export function FinancialTotalsBarChart({
                   {customYears.map(cy => (
                     <DropdownMenuItem
                       key={cy.id}
-                      className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                      className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                       onClick={() => setCalendarType(cy.id)}
                     >
                       {cy.name}
@@ -904,7 +916,7 @@ export function FinancialTotalsBarChart({
 
             {/* Year Range Selector */}
             <div className="flex flex-col gap-1">
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 border rounded-lg p-1 bg-card">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 gap-1">
@@ -919,10 +931,10 @@ export function FinancialTotalsBarChart({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="p-3 w-auto">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                      <span className="text-xs font-medium text-foreground">Select Year Range</span>
                       <button
                         onClick={selectDataRange}
-                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                        className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                         title={actualDataRange ? `Select years with data: ${getYearLabel(actualDataRange.minYear)} - ${getYearLabel(actualDataRange.maxYear)}` : 'Select years with data'}
                       >
                         Data Range
@@ -944,7 +956,7 @@ export function FinancialTotalsBarChart({
                                 ? 'bg-primary text-primary-foreground'
                                 : inRange
                                   ? 'bg-primary/20 text-primary'
-                                  : 'text-slate-600 hover:bg-slate-100'
+                                  : 'text-muted-foreground hover:bg-muted'
                               }
                             `}
                           >
@@ -953,7 +965,7 @@ export function FinancialTotalsBarChart({
                         )
                       })}
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-2 text-center">
+                    <p className="text-[10px] text-muted-foreground mt-2 text-center">
                       Click start year, then click end year
                     </p>
                   </DropdownMenuContent>
@@ -961,7 +973,7 @@ export function FinancialTotalsBarChart({
               </div>
               {/* Date Range Indicator */}
               {effectiveDateRange?.from && effectiveDateRange?.to && (
-                <span className="text-xs text-slate-500 text-center">
+                <span className="text-xs text-muted-foreground text-center">
                   {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
                 </span>
               )}
@@ -988,7 +1000,7 @@ export function FinancialTotalsBarChart({
                   return (
                     <div
                       key={code}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-100 cursor-pointer"
+                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
                       onClick={() => toggleTransactionType(code)}
                     >
                       <Checkbox
@@ -996,7 +1008,7 @@ export function FinancialTotalsBarChart({
                         onCheckedChange={() => toggleTransactionType(code)}
                         onClick={(e) => e.stopPropagation()}
                       />
-                      <code className="text-xs text-slate-600 bg-slate-200 px-1.5 py-0.5 rounded font-mono min-w-[24px] text-center">{code}</code>
+                      <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono min-w-[24px] text-center">{code}</code>
                       <div
                         className="w-3 h-3 rounded-sm flex-shrink-0"
                         style={{ backgroundColor: displayColor }}
@@ -1006,7 +1018,7 @@ export function FinancialTotalsBarChart({
                   )
                 })}
                 {availableTransactionTypes.length === 0 && (
-                  <div className="px-2 py-3 text-sm text-slate-500 text-center">
+                  <div className="px-2 py-3 text-sm text-muted-foreground text-center">
                     No transaction data available
                   </div>
                 )}
@@ -1014,39 +1026,39 @@ export function FinancialTotalsBarChart({
             </DropdownMenuContent>
           </DropdownMenu>
           {/* Chart Type Toggle */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          <div className="flex gap-1 rounded-lg p-1 bg-muted">
             <Button
-              variant={chartType === 'bar' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setChartType('bar')}
-              className="h-8"
+              className={cn("h-8", chartType === 'bar' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               title="Bar Chart"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
-              variant={chartType === 'line' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setChartType('line')}
-              className="h-8"
+              className={cn("h-8", chartType === 'line' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               title="Line Chart"
             >
               <LineChartIcon className="h-4 w-4" />
             </Button>
             <Button
-              variant={chartType === 'area' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setChartType('area')}
-              className="h-8"
+              className={cn("h-8", chartType === 'area' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               title="Area Chart"
             >
               <TrendingUp className="h-4 w-4" />
             </Button>
             <Button
-              variant={chartType === 'table' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setChartType('table')}
-              className="h-8"
+              className={cn("h-8", chartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               title="Table View"
             >
               <Table2 className="h-4 w-4" />
@@ -1054,7 +1066,7 @@ export function FinancialTotalsBarChart({
           </div>
 
           {/* Export Button */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          <div className="flex gap-1 border rounded-lg p-1 bg-card">
             <Button
               variant="ghost"
               size="sm"
@@ -1073,7 +1085,7 @@ export function FinancialTotalsBarChart({
         {chartData.length > 0 ? (
           renderChart(500, false)
         ) : (
-          <div className="flex items-center justify-center h-full text-slate-400">
+          <div className="flex items-center justify-center h-full text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No financial data available</p>
@@ -1084,7 +1096,7 @@ export function FinancialTotalsBarChart({
       </div>
 
       {/* Explanatory text */}
-      <p className="text-sm text-gray-600 leading-relaxed">
+      <p className="text-sm text-muted-foreground leading-relaxed">
         This chart provides a comprehensive view of financial flows over time, helping you understand the full lifecycle of aid funding. 
         <strong> Budgets</strong> represent approved funding allocations, while <strong>Planned Disbursements</strong> show when funds are scheduled to be released. 
         By comparing these forward-looking figures with actual <strong>transaction types</strong> (such as disbursements, commitments, and expenditures), 

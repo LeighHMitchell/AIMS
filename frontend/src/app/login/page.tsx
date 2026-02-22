@@ -96,10 +96,10 @@ export default function LoginPage() {
               className="h-24 w-24 object-contain"
             />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className="text-2xl font-bold text-foreground">
             <span className="font-bold">æther</span>
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-muted-foreground">
             Development Finance Information, Simplified.
           </CardDescription>
         </CardHeader>
@@ -115,7 +115,7 @@ export default function LoginPage() {
           
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email
               </label>
               <Input
@@ -129,7 +129,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="text-sm font-medium text-foreground">
                 Password
               </label>
               <Input
@@ -164,10 +164,10 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-300" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#F6F5F4] px-2 text-gray-500">Or continue with</span>
+              <span className="bg-[#F6F5F4] px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
 
@@ -175,29 +175,29 @@ export default function LoginPage() {
           <GmailLogin redirectTo="/auth/callback" />
 
           {/* Create Account Link */}
-          <div className="mt-6 text-center text-sm text-gray-600">
+          <div className="mt-6 text-center text-sm text-muted-foreground">
             New to æther?{" "}
             <Link
               href="/register"
-              className="text-gray-900 hover:text-black font-medium underline"
+              className="text-foreground hover:text-black font-medium underline"
             >
               Create an account
             </Link>
           </div>
 
           {/* Terms and Privacy Links */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="flex justify-center gap-4 text-sm text-gray-600">
+          <div className="mt-6 pt-4 border-t border-border">
+            <div className="flex justify-center gap-4 text-sm text-muted-foreground">
               <Link 
                 href="/terms-of-service" 
-                className="hover:text-gray-900 underline"
+                className="hover:text-foreground underline"
               >
                 Terms of Service
               </Link>
-              <span className="text-gray-400">•</span>
+              <span className="text-muted-foreground">•</span>
               <Link 
                 href="/privacy-policy" 
-                className="hover:text-gray-900 underline"
+                className="hover:text-foreground underline"
               >
                 Privacy Policy
               </Link>

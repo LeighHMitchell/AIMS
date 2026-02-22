@@ -58,9 +58,9 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
                   if (active && payload && payload.length) {
                     return (
                       <div className={TOOLTIP_CLASSES}>
-                        <p className="font-medium text-xs text-slate-900 mb-1">Target {payload[0].payload.name}</p>
+                        <p className="font-medium text-xs text-foreground mb-1">Target {payload[0].payload.name}</p>
                         {payload.map((entry: any, i: number) => (
-                          <p key={i} className="text-xs text-slate-600">
+                          <p key={i} className="text-xs text-muted-foreground">
                             {entry.name}: {formatCurrencyShort(entry.value)}
                           </p>
                         ))}
@@ -83,7 +83,7 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
         {displayTargets.map(target => {
           const disbursedPercent = target.commitments > 0 ? (target.disbursements / target.commitments) * 100 : 0
           return (
-            <div key={target.targetId} className="border border-slate-200 rounded-lg p-3">
+            <div key={target.targetId} className="border border-border rounded-lg p-3">
               <div className="flex items-start justify-between mb-1">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -93,17 +93,17 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
                     >
                       {target.targetId}
                     </span>
-                    <span className="text-xs text-slate-500">{target.activityCount} activit{target.activityCount === 1 ? 'y' : 'ies'}</span>
+                    <span className="text-xs text-muted-foreground">{target.activityCount} activit{target.activityCount === 1 ? 'y' : 'ies'}</span>
                   </div>
-                  <p className="text-sm text-slate-700 mt-1">{target.targetText}</p>
+                  <p className="text-sm text-foreground mt-1">{target.targetText}</p>
                 </div>
                 <div className="text-right ml-3 flex-shrink-0">
-                  <p className="text-sm font-semibold text-slate-900">{formatCurrencyShort(target.totalValue)}</p>
-                  <p className="text-xs text-slate-500">{formatCurrencyShort(target.disbursements)} disbursed</p>
+                  <p className="text-sm font-semibold text-foreground">{formatCurrencyShort(target.totalValue)}</p>
+                  <p className="text-xs text-muted-foreground">{formatCurrencyShort(target.disbursements)} disbursed</p>
                 </div>
               </div>
               {target.commitments > 0 && (
-                <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
+                <div className="w-full bg-muted rounded-full h-1.5 mt-2">
                   <div
                     className="h-1.5 rounded-full transition-all"
                     style={{
@@ -120,7 +120,7 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
         {fundedTargets.length > (compact ? 5 : 10) && (
           <button
             onClick={() => setShowAll(!showAll)}
-            className="text-xs text-slate-500 hover:text-slate-700 underline"
+            className="text-xs text-muted-foreground hover:text-foreground underline"
           >
             {showAll ? 'Show less' : `Show all ${fundedTargets.length} funded targets`}
           </button>
@@ -130,12 +130,12 @@ export function SDGTargetBreakdown({ targets, sdgColor, compact = false }: SDGTa
       {/* Unfunded Targets */}
       {unfundedTargets.length > 0 && !compact && (
         <div>
-          <p className="text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">Unfunded Targets</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Unfunded Targets</p>
           <div className="flex flex-wrap gap-2">
             {unfundedTargets.map(target => (
               <span
                 key={target.targetId}
-                className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-400"
+                className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground"
                 title={target.targetText}
               >
                 {target.targetId}

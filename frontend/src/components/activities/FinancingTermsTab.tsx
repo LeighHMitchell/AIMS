@@ -215,7 +215,7 @@ export function FinancingTermsTab({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
       </div>
     );
   }
@@ -262,7 +262,7 @@ export function FinancingTermsTab({
           <div className="flex items-center justify-between">
             <div>
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-gray-600" />
+            <DollarSign className="h-5 w-5 text-muted-foreground" />
             Loan Terms
             {loanTermsSaved && <CheckCircle2 className="h-5 w-5 text-green-600" />}
           </CardTitle>
@@ -274,7 +274,7 @@ export function FinancingTermsTab({
               <Dialog open={showLoanTermsModal} onOpenChange={setShowLoanTermsModal}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="flex items-center gap-2">
-                    <Pencil className="h-4 w-4 text-slate-500" />
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
                     Edit Loan Terms
                   </Button>
                 </DialogTrigger>
@@ -302,7 +302,7 @@ export function FinancingTermsTab({
                   placeholder="e.g., 4.00"
                   className="pr-8"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
               </div>
             </div>
 
@@ -323,7 +323,7 @@ export function FinancingTermsTab({
                   placeholder="e.g., 3.00"
                   className="pr-8"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
               </div>
             </div>
           </div>
@@ -447,22 +447,22 @@ export function FinancingTermsTab({
             {/* First Row: Interest Rates and Repayment Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Interest Rates Card */}
-              <Card className="hover:border-gray-300 transition-colors">
+              <Card className="hover:border-border transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <Percent className="h-4 w-4 text-gray-600" />
+                    <div className="p-2 bg-muted rounded-lg">
+                      <Percent className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0 space-y-3">
                       <div>
-                        <div className="text-xs font-medium text-gray-600 mb-1">Interest Rate 1</div>
-                        <div className="text-lg font-semibold text-gray-900">
+                        <div className="text-xs font-medium text-muted-foreground mb-1">Interest Rate 1</div>
+                        <div className="text-lg font-semibold text-foreground">
                           {loanTermsForm.rate_1 ? `${loanTermsForm.rate_1}%` : '-'}
                         </div>
                       </div>
                       <div className="border-t pt-3">
-                        <div className="text-xs font-medium text-gray-600 mb-1">Interest Rate 2</div>
-                        <div className="text-lg font-semibold text-gray-900">
+                        <div className="text-xs font-medium text-muted-foreground mb-1">Interest Rate 2</div>
+                        <div className="text-lg font-semibold text-foreground">
                           {loanTermsForm.rate_2 ? `${loanTermsForm.rate_2}%` : '-'}
                         </div>
                       </div>
@@ -472,16 +472,16 @@ export function FinancingTermsTab({
               </Card>
 
               {/* Repayment Info Card */}
-              <Card className="hover:border-gray-300 transition-colors">
+              <Card className="hover:border-border transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <FileText className="h-4 w-4 text-gray-600" />
+                    <div className="p-2 bg-muted rounded-lg">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0 space-y-3">
                       <div>
-                        <div className="text-xs font-medium text-gray-600 mb-1">Repayment Type</div>
-                        <div className="text-sm font-semibold text-gray-900">
+                        <div className="text-xs font-medium text-muted-foreground mb-1">Repayment Type</div>
+                        <div className="text-sm font-semibold text-foreground">
                           {loanTermsForm.repayment_type_code ? 
                             getRepaymentTypeLabel(loanTermsForm.repayment_type_code) : 
                             '-'
@@ -489,8 +489,8 @@ export function FinancingTermsTab({
                         </div>
                       </div>
                       <div className="border-t pt-3">
-                        <div className="text-xs font-medium text-gray-600 mb-1">Repayment Plan</div>
-                        <div className="text-sm font-semibold text-gray-900">
+                        <div className="text-xs font-medium text-muted-foreground mb-1">Repayment Plan</div>
+                        <div className="text-sm font-semibold text-foreground">
                           {loanTermsForm.repayment_plan_code ? 
                             getRepaymentPlanLabel(loanTermsForm.repayment_plan_code) : 
                             '-'
@@ -506,15 +506,15 @@ export function FinancingTermsTab({
             {/* Second Row: Dates */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Commitment Date */}
-              <Card className="hover:border-gray-300 transition-colors">
+              <Card className="hover:border-border transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <Calendar className="h-4 w-4 text-gray-600" />
+                    <div className="p-2 bg-muted rounded-lg">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-gray-600 mb-1">Commitment Date</div>
-                      <div className="text-sm font-semibold text-gray-900">
+                      <div className="text-xs font-medium text-muted-foreground mb-1">Commitment Date</div>
+                      <div className="text-sm font-semibold text-foreground">
                         {loanTermsForm.commitment_date ? formatDate(loanTermsForm.commitment_date) : '-'}
                       </div>
                     </div>
@@ -523,15 +523,15 @@ export function FinancingTermsTab({
               </Card>
 
               {/* First Repayment */}
-              <Card className="hover:border-gray-300 transition-colors">
+              <Card className="hover:border-border transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <Calendar className="h-4 w-4 text-gray-600" />
+                    <div className="p-2 bg-muted rounded-lg">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-gray-600 mb-1">First Repayment</div>
-                      <div className="text-sm font-semibold text-gray-900">
+                      <div className="text-xs font-medium text-muted-foreground mb-1">First Repayment</div>
+                      <div className="text-sm font-semibold text-foreground">
                         {loanTermsForm.repayment_first_date ? formatDate(loanTermsForm.repayment_first_date) : '-'}
                       </div>
                     </div>
@@ -540,15 +540,15 @@ export function FinancingTermsTab({
               </Card>
 
               {/* Final Repayment */}
-              <Card className="hover:border-gray-300 transition-colors">
+              <Card className="hover:border-border transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <Calendar className="h-4 w-4 text-gray-600" />
+                    <div className="p-2 bg-muted rounded-lg">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-gray-600 mb-1">Final Repayment</div>
-                      <div className="text-sm font-semibold text-gray-900">
+                      <div className="text-xs font-medium text-muted-foreground mb-1">Final Repayment</div>
+                      <div className="text-sm font-semibold text-foreground">
                         {loanTermsForm.repayment_final_date ? formatDate(loanTermsForm.repayment_final_date) : '-'}
                       </div>
                     </div>
@@ -559,15 +559,15 @@ export function FinancingTermsTab({
 
             {/* Third Row: OECD CRS Flags */}
             <div className="grid grid-cols-1 gap-4">
-              <Card className="hover:border-gray-300 transition-colors">
+              <Card className="hover:border-border transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <FileText className="h-4 w-4 text-gray-600" />
+                    <div className="p-2 bg-muted rounded-lg">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-gray-600 mb-1">OECD CRS Flags</div>
-                      <div className="text-sm font-semibold text-gray-900">
+                      <div className="text-xs font-medium text-muted-foreground mb-1">OECD CRS Flags</div>
+                      <div className="text-sm font-semibold text-foreground">
                         {selectedCRSFlags.length > 0 ? `${selectedCRSFlags.length} selected` : '-'}
                       </div>
                     </div>
@@ -585,7 +585,7 @@ export function FinancingTermsTab({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-gray-600" />
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
                 Loan Status (Yearly)
               </CardTitle>
               <CardDescription>
@@ -612,7 +612,7 @@ export function FinancingTermsTab({
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50">
+                  <tr className="border-b bg-muted">
                     <th className="text-left p-2 font-medium">Year</th>
                     <th className="text-left p-2 font-medium">Currency</th>
                     <th className="text-left p-2 font-medium">Value Date</th>
@@ -654,7 +654,7 @@ export function FinancingTermsTab({
                               size="sm"
                               className="text-blue-600 hover:text-blue-700"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
                             <Button
                               onClick={() => handleDeleteLoanStatus(status.id, status.year)}
@@ -673,8 +673,8 @@ export function FinancingTermsTab({
               </table>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              <TrendingUp className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+            <div className="text-center py-8 text-muted-foreground">
+              <TrendingUp className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
               <p>No loan status entries yet</p>
               <p className="text-sm">Click "Add Year" to record yearly loan status</p>
             </div>

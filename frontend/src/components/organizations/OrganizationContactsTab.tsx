@@ -299,21 +299,21 @@ export default function OrganizationContactsTab({ organizationId, organization }
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-card p-6 rounded-lg border border-border">
           <div className="space-y-4">
-            <div className="h-10 bg-slate-200 rounded animate-pulse"></div>
-            <div className="h-10 bg-slate-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-muted rounded animate-pulse"></div>
+            <div className="h-10 bg-muted rounded w-32 animate-pulse"></div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-card p-6 rounded-lg border border-border">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="border border-slate-200 rounded-lg p-6">
+              <div key={i} className="border border-border rounded-lg p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 bg-slate-200 rounded-full animate-pulse"></div>
+                  <div className="w-16 h-16 bg-muted rounded-full animate-pulse"></div>
                   <div className="flex-1 space-y-2">
-                    <div className="h-6 bg-slate-200 rounded w-3/4 animate-pulse"></div>
-                    <div className="h-4 bg-slate-200 rounded w-2/3 animate-pulse"></div>
+                    <div className="h-6 bg-muted rounded w-3/4 animate-pulse"></div>
+                    <div className="h-4 bg-muted rounded w-2/3 animate-pulse"></div>
                   </div>
                 </div>
               </div>
@@ -327,16 +327,16 @@ export default function OrganizationContactsTab({ organizationId, organization }
   return (
     <div className="space-y-6">
       {/* Search and Add Section */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
+      <div className="bg-card p-6 rounded-lg border border-border">
         <h2 className="text-lg font-semibold mb-4">Add Contact to Organization Profile</h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           Add contacts that will be displayed on your public organization profile page. You can search for existing users in your organization or create new contact records.
         </p>
 
         {/* User Search */}
         <div className="relative mb-4" ref={searchContainerRef}>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => {
@@ -355,16 +355,16 @@ export default function OrganizationContactsTab({ organizationId, organization }
                 }}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2"
               >
-                <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                <X className="h-4 w-4 text-muted-foreground hover:text-muted-foreground" />
               </button>
             )}
           </div>
 
           {/* Search Results Dropdown */}
           {showUserSearch && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
               {filteredUsers.length === 0 ? (
-                <div className="p-4 text-sm text-gray-500 text-center">
+                <div className="p-4 text-sm text-muted-foreground text-center">
                   {searchQuery ? `No users found matching "${searchQuery}"` : 'No users found in your organization'}
                 </div>
               ) : (
@@ -372,7 +372,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
                   <button
                     key={user.id}
                     onClick={() => handleSelectUser(user)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left"
                   >
                     <UserAvatar
                       src={user.avatar_url}
@@ -381,10 +381,10 @@ export default function OrganizationContactsTab({ organizationId, organization }
                       size="lg"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{user.full_name}</p>
-                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{user.full_name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                       {user.job_title && (
-                        <p className="text-xs text-gray-400 truncate">{user.job_title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.job_title}</p>
                       )}
                     </div>
                   </button>
@@ -395,7 +395,7 @@ export default function OrganizationContactsTab({ organizationId, organization }
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500">Or</span>
+          <span className="text-sm text-muted-foreground">Or</span>
           <Button onClick={handleCreateNew} variant="outline">
             <Plus className="h-4 w-4 mr-2" />
             Create New Contact
@@ -416,25 +416,25 @@ export default function OrganizationContactsTab({ organizationId, organization }
       )}
 
       {/* Current Contacts List */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
+      <div className="bg-card p-6 rounded-lg border border-border">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold">
               Organization Contacts
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               These contacts will be displayed on your public organization profile page.
             </p>
           </div>
           {contacts.length > 0 && (
-            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
               <button
                 onClick={() => setViewMode('table')}
                 className={cn(
                   "p-2 rounded-md transition-colors",
                   viewMode === 'table'
-                    ? "bg-white shadow-sm text-slate-900"
-                    : "text-slate-500 hover:text-slate-700"
+                    ? "bg-card shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
                 title="Table view"
               >
@@ -445,8 +445,8 @@ export default function OrganizationContactsTab({ organizationId, organization }
                 className={cn(
                   "p-2 rounded-md transition-colors",
                   viewMode === 'card'
-                    ? "bg-white shadow-sm text-slate-900"
-                    : "text-slate-500 hover:text-slate-700"
+                    ? "bg-card shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
                 title="Card view"
               >
@@ -488,10 +488,10 @@ export default function OrganizationContactsTab({ organizationId, organization }
       {/* Loading overlay */}
       {isSaving && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl">
+          <div className="bg-card p-6 rounded-lg shadow-xl">
             <div className="flex items-center gap-3">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <p className="text-gray-700">Saving contact...</p>
+              <p className="text-foreground">Saving contact...</p>
             </div>
           </div>
         </div>
@@ -517,7 +517,7 @@ function ContactCard({
   const jobLine = [contact.jobTitle, contact.department].filter(Boolean).join(' • ');
 
   return (
-    <div className="relative border border-slate-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-white">
+    <div className="relative border border-border rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-card">
       {/* Primary badge */}
       {contact.isPrimary && (
         <div className="absolute top-4 left-4">
@@ -533,10 +533,10 @@ function ContactCard({
           variant="ghost"
           size="sm"
           onClick={() => onEdit(contact)}
-          className="h-8 w-8 p-0 hover:bg-slate-100 rounded-md"
+          className="h-8 w-8 p-0 hover:bg-muted rounded-md"
           title="Edit contact"
         >
-          <Pencil className="h-4 w-4 text-slate-500" />
+          <Pencil className="h-4 w-4 text-muted-foreground" />
         </Button>
         <Button
           variant="ghost"
@@ -558,7 +558,7 @@ function ContactCard({
         />
 
         <div className="flex-1 min-w-0 space-y-1">
-          <h3 className="text-lg font-semibold text-slate-900 leading-tight break-words">
+          <h3 className="text-lg font-semibold text-foreground leading-tight break-words">
             {fullName}
             {contact.linkedUser && (
               <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
@@ -568,7 +568,7 @@ function ContactCard({
           </h3>
 
           {jobLine && (
-            <p className="text-sm text-slate-600 break-words">{jobLine}</p>
+            <p className="text-sm text-muted-foreground break-words">{jobLine}</p>
           )}
 
           {organization && (
@@ -580,13 +580,13 @@ function ContactCard({
                   className="w-5 h-5 object-contain rounded"
                 />
               ) : (
-                <div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center">
-                  <span className="text-[10px] font-medium text-slate-500">
+                <div className="w-5 h-5 bg-muted rounded flex items-center justify-center">
+                  <span className="text-[10px] font-medium text-muted-foreground">
                     {organization.acronym?.charAt(0) || organization.name.charAt(0)}
                   </span>
                 </div>
               )}
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-muted-foreground">
                 {organization.name}
                 {organization.acronym && ` (${organization.acronym})`}
               </span>
@@ -598,10 +598,10 @@ function ContactCard({
       <div className="mt-4 space-y-2">
         {contact.email && (
           <div className="flex items-center space-x-2">
-            <Mail className="h-4 w-4 text-slate-400 flex-shrink-0" />
+            <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <a
               href={`mailto:${contact.email}`}
-              className="text-sm text-slate-700 hover:text-blue-600 transition-colors truncate"
+              className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
             >
               {contact.email}
             </a>
@@ -610,8 +610,8 @@ function ContactCard({
 
         {(contact.phone || contact.phoneNumber) && (
           <div className="flex items-center space-x-2">
-            <Phone className="h-4 w-4 text-slate-400 flex-shrink-0" />
-            <span className="text-sm text-slate-700">
+            <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm text-foreground">
               {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
             </span>
           </div>
@@ -619,12 +619,12 @@ function ContactCard({
 
         {contact.website && (
           <div className="flex items-center space-x-2">
-            <Globe className="h-4 w-4 text-slate-400 flex-shrink-0" />
+            <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <a
               href={contact.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-slate-700 hover:text-blue-600 transition-colors truncate"
+              className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
             >
               {contact.website.replace(/^https?:\/\//, '')}
             </a>
@@ -633,7 +633,7 @@ function ContactCard({
       </div>
 
       <div className="mt-4">
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
           {typeInfo.label}
         </span>
       </div>
@@ -657,14 +657,14 @@ function ContactsTable({
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-slate-200">
-            <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Contact</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Role</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Organization</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Email</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Phone</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Type</th>
-            <th className="text-right py-3 px-4 text-sm font-medium text-slate-600">Actions</th>
+          <tr className="border-b border-border">
+            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Contact</th>
+            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Role</th>
+            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Organization</th>
+            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
+            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Phone</th>
+            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Type</th>
+            <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -674,7 +674,7 @@ function ContactsTable({
             const jobLine = [contact.jobTitle, contact.department].filter(Boolean).join(' • ');
 
             return (
-              <tr key={contact.id} className="border-b border-slate-100 hover:bg-slate-50">
+              <tr key={contact.id} className="border-b border-border hover:bg-muted/50">
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
                     <UserAvatar
@@ -684,7 +684,7 @@ function ContactsTable({
                       size="md"
                     />
                     <div>
-                      <p className="text-sm font-medium text-slate-900">{fullName}</p>
+                      <p className="text-sm font-medium text-foreground">{fullName}</p>
                       {contact.isPrimary && (
                         <span className="text-xs text-blue-600">Primary Contact</span>
                       )}
@@ -692,7 +692,7 @@ function ContactsTable({
                   </div>
                 </td>
                 <td className="py-3 px-4">
-                  <p className="text-sm text-slate-700">{jobLine || '—'}</p>
+                  <p className="text-sm text-foreground">{jobLine || '—'}</p>
                 </td>
                 <td className="py-3 px-4">
                   {organization ? (
@@ -704,41 +704,41 @@ function ContactsTable({
                           className="w-5 h-5 object-contain rounded"
                         />
                       ) : (
-                        <div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center">
-                          <span className="text-[10px] font-medium text-slate-500">
+                        <div className="w-5 h-5 bg-muted rounded flex items-center justify-center">
+                          <span className="text-[10px] font-medium text-muted-foreground">
                             {organization.acronym?.charAt(0) || organization.name.charAt(0)}
                           </span>
                         </div>
                       )}
-                      <span className="text-sm text-slate-600">
+                      <span className="text-sm text-muted-foreground">
                         {organization.acronym || organization.name}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-sm text-slate-400">—</span>
+                    <span className="text-sm text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="py-3 px-4">
                   {contact.email ? (
                     <a
                       href={`mailto:${contact.email}`}
-                      className="text-sm text-slate-700 hover:text-blue-600"
+                      className="text-sm text-foreground hover:text-blue-600"
                     >
                       {contact.email}
                     </a>
                   ) : (
-                    <span className="text-sm text-slate-400">—</span>
+                    <span className="text-sm text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="py-3 px-4">
-                  <span className="text-sm text-slate-700">
+                  <span className="text-sm text-foreground">
                     {contact.phone || contact.phoneNumber
                       ? `${contact.countryCode ? contact.countryCode + ' ' : ''}${contact.phoneNumber || contact.phone}`
                       : '—'}
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
                     {typeInfo.label}
                   </span>
                 </td>
@@ -748,10 +748,10 @@ function ContactsTable({
                       variant="ghost"
                       size="sm"
                       onClick={() => onEdit(contact)}
-                      className="h-8 w-8 p-0 hover:bg-slate-100"
+                      className="h-8 w-8 p-0 hover:bg-muted"
                       title="Edit contact"
                     >
-                      <Pencil className="h-4 w-4 text-slate-500" />
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -938,10 +938,10 @@ function ContactFormDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-gray-900">
+          <DialogTitle className="text-foreground">
             {contact?.id ? 'Edit Contact' : 'Add New Contact'}
           </DialogTitle>
-          <DialogDescription className="text-gray-600">
+          <DialogDescription className="text-muted-foreground">
             {contact?.id
               ? 'Update the contact information.'
               : 'Add a new contact to display on your organization profile.'}
@@ -956,8 +956,8 @@ function ContactFormDialog({
               <div
                 className={cn(
                   "relative w-24 h-24 rounded-full border-2 border-dashed transition-all cursor-pointer",
-                  isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400",
-                  formData.profilePhoto && "border-solid border-gray-200"
+                  isDragging ? "border-blue-500 bg-blue-50" : "border-border hover:border-gray-400",
+                  formData.profilePhoto && "border-solid border-border"
                 )}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -983,8 +983,8 @@ function ContactFormDialog({
                     </button>
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-full">
-                    <UserIcon className="h-10 w-10 text-gray-400" />
+                  <div className="w-full h-full flex items-center justify-center bg-muted rounded-full">
+                    <UserIcon className="h-10 w-10 text-muted-foreground" />
                   </div>
                 )}
               </div>
@@ -1006,7 +1006,7 @@ function ContactFormDialog({
                 {formData.profilePhoto ? 'Change Photo' : 'Upload Photo'}
               </Button>
 
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-muted-foreground text-center">
                 Drag & drop or click to upload<br />Max 2MB
               </p>
               {errors.profilePhoto && (
@@ -1221,7 +1221,7 @@ function ContactFormDialog({
               onChange={(e) => handleChange('mailingAddress', e.target.value)}
               placeholder="Street address, city, postal code"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -1234,7 +1234,7 @@ function ContactFormDialog({
               onChange={(e) => handleChange('notes', e.target.value)}
               placeholder="Additional notes about this contact..."
               rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </form>

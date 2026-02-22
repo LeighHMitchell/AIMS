@@ -9,22 +9,12 @@ import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHea
 import { EnhancedFinancesSection } from "@/components/activities/EnhancedFinancesSection"
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab"
 import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
-import ForwardSpendingSurveyTab from "@/components/activities/ForwardSpendingSurveyTab"
-import { ResultsTab } from "@/components/activities/ResultsTab"
-import { CapitalSpendTab } from "@/components/activities/CapitalSpendTab"
-import { FinancingTermsTab } from "@/components/activities/FinancingTermsTab"
-import { ConditionsTab } from "@/components/activities/ConditionsTab"
 
 // Section IDs for the Funding & Delivery group
 export const FUNDING_DELIVERY_SECTIONS = [
   'finances',
   'planned-disbursements',
   'budgets',
-  'forward-spending-survey',
-  'results',
-  'capital-spend',
-  'financing-terms',
-  'conditions'
 ] as const
 export type FundingDeliverySectionId = typeof FUNDING_DELIVERY_SECTIONS[number]
 
@@ -87,21 +77,6 @@ interface FundingDeliveryGroupProps {
 
   // Planned Disbursements props
   onDisbursementsChange: (disbursements: any[]) => void
-
-  // Forward Spending Survey props
-  onFssChange: (count: number) => void
-
-  // Results props
-  onResultsChange: (results: any[]) => void
-
-  // Capital Spend props
-  onCapitalSpendChange: (percentage: number | null) => void
-
-  // Financing Terms props
-  onFinancingTermsChange: (hasData: boolean) => void
-
-  // Conditions props
-  onConditionsChange: (conditions: any[]) => void
 }
 
 /**
@@ -134,22 +109,12 @@ export function FundingDeliveryGroup({
   // Callbacks
   onBudgetsChange,
   onDisbursementsChange,
-  onFssChange,
-  onResultsChange,
-  onCapitalSpendChange,
-  onFinancingTermsChange,
-  onConditionsChange,
 }: FundingDeliveryGroupProps) {
 
   // Create refs for each section
   const financesRef = useRef<HTMLElement>(null)
   const plannedDisbursementsRef = useRef<HTMLElement>(null)
   const budgetsRef = useRef<HTMLElement>(null)
-  const forwardSpendRef = useRef<HTMLElement>(null)
-  const resultsRef = useRef<HTMLElement>(null)
-  const capitalSpendRef = useRef<HTMLElement>(null)
-  const financingTermsRef = useRef<HTMLElement>(null)
-  const conditionsRef = useRef<HTMLElement>(null)
 
   // Track if initial scroll has happened (to prevent re-scrolling when scroll spy updates)
   const hasInitiallyScrolled = useRef(false)
@@ -159,11 +124,6 @@ export function FundingDeliveryGroup({
     { id: 'finances', ref: financesRef },
     { id: 'planned-disbursements', ref: plannedDisbursementsRef },
     { id: 'budgets', ref: budgetsRef },
-    { id: 'forward-spending-survey', ref: forwardSpendRef },
-    { id: 'results', ref: resultsRef },
-    { id: 'capital-spend', ref: capitalSpendRef },
-    { id: 'financing-terms', ref: financingTermsRef },
-    { id: 'conditions', ref: conditionsRef },
   ] : []
 
   // Use scroll spy to track visible section
@@ -262,11 +222,6 @@ export function FundingDeliveryGroup({
       financesRef.current,
       plannedDisbursementsRef.current,
       budgetsRef.current,
-      forwardSpendRef.current,
-      resultsRef.current,
-      capitalSpendRef.current,
-      financingTermsRef.current,
-      conditionsRef.current
     ]
     sectionElements.forEach((el) => {
       if (el) observer.observe(el)
@@ -399,126 +354,6 @@ export function FundingDeliveryGroup({
             )}
           </section>
 
-          {/* Forward Spending Survey Section */}
-          <section
-            id="forward-spending-survey"
-            ref={forwardSpendRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
-          >
-            {isSectionActive('forward-spending-survey') || activeSections.has('forward-spending-survey') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <SectionHeader
-                  id="forward-spending-survey"
-                  title={getSectionLabel('forward-spending-survey')}
-                  helpText={getSectionHelpText('forward-spending-survey')}
-                  showDivider={false}
-                />
-                <ForwardSpendingSurveyTab
-                  activityId={activityId}
-                  readOnly={!permissions?.canEditActivity}
-                  onFssChange={onFssChange}
-                />
-              </div>
-            ) : (
-              <SectionSkeleton sectionId="forward-spending-survey" />
-            )}
-          </section>
-
-          {/* Results Section */}
-          <section
-            id="results"
-            ref={resultsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
-          >
-            {isSectionActive('results') || activeSections.has('results') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <SectionHeader
-                  id="results"
-                  title={getSectionLabel('results')}
-                  helpText={getSectionHelpText('results')}
-                  showDivider={false}
-                />
-                <ResultsTab
-                  activityId={activityId}
-                  readOnly={!permissions?.canEditActivity}
-                  onResultsChange={onResultsChange}
-                  defaultLanguage="en"
-                />
-              </div>
-            ) : (
-              <SectionSkeleton sectionId="results" />
-            )}
-          </section>
-
-          {/* Capital Spend Section */}
-          <section
-            id="capital-spend"
-            ref={capitalSpendRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
-          >
-            {isSectionActive('capital-spend') || activeSections.has('capital-spend') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <SectionHeader
-                  id="capital-spend"
-                  title={getSectionLabel('capital-spend')}
-                  helpText={getSectionHelpText('capital-spend')}
-                  showDivider={false}
-                />
-                <CapitalSpendTab
-                  activityId={activityId}
-                  readOnly={!permissions?.canEditActivity}
-                  onCapitalSpendChange={onCapitalSpendChange}
-                />
-              </div>
-            ) : (
-              <SectionSkeleton sectionId="capital-spend" />
-            )}
-          </section>
-
-          {/* Financing Terms Section */}
-          <section
-            id="financing-terms"
-            ref={financingTermsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
-          >
-            {isSectionActive('financing-terms') || activeSections.has('financing-terms') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <SectionHeader
-                  id="financing-terms"
-                  title={getSectionLabel('financing-terms')}
-                  helpText={getSectionHelpText('financing-terms')}
-                  showDivider={false}
-                />
-                <FinancingTermsTab
-                  activityId={activityId}
-                  readOnly={!permissions?.canEditActivity}
-                  onFinancingTermsChange={(hasData) => {
-                    onFinancingTermsChange(hasData)
-                  }}
-                />
-              </div>
-            ) : (
-              <SectionSkeleton sectionId="financing-terms" />
-            )}
-          </section>
-
-          {/* Conditions Section */}
-          <section
-            id="conditions"
-            ref={conditionsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
-          >
-            {isSectionActive('conditions') || activeSections.has('conditions') ? (
-              <ConditionsTab
-                activityId={activityId}
-                readOnly={!permissions?.canEditActivity}
-                defaultLanguage="en"
-                onConditionsChange={onConditionsChange}
-              />
-            ) : (
-              <SectionSkeleton sectionId="conditions" />
-            )}
-          </section>
         </div>
       )}
     </div>

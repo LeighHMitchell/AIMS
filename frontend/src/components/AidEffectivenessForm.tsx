@@ -161,6 +161,7 @@ interface AEOption {
   description?: string;
   sort_order: number;
   is_active: boolean;
+  responsible_ministries?: { id: string; code: string; name: string }[];
 }
 
 // ──────────────────────────────────────────────
@@ -466,9 +467,9 @@ const CountryDropdownField: React.FC<{
 }> = ({ id, value, onValueChange, label, tooltip, description, negativeOption, aeOptions, documentUpload, document, uploadingDoc, onDocUpload, onDocRemove }) => {
   // Build options: admin-configured options + "yes" + negative option
   const options = [
-    { value: "yes", label: "Yes" },
-    ...aeOptions.map(opt => ({ value: opt.label, label: opt.label })),
-    { value: negativeOption, label: negativeOption },
+    { value: "yes", label: "Yes", ministries: undefined as { id: string; code: string; name: string }[] | undefined },
+    ...aeOptions.map(opt => ({ value: opt.label, label: opt.label, ministries: opt.responsible_ministries })),
+    { value: negativeOption, label: negativeOption, ministries: undefined as { id: string; code: string; name: string }[] | undefined },
   ];
 
   return (
@@ -503,7 +504,14 @@ const CountryDropdownField: React.FC<{
           <SelectContent>
             {options.map(option => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                <div className="flex flex-col">
+                  <span>{option.label}</span>
+                  {option.ministries && option.ministries.length > 0 && (
+                    <span className="text-xs text-gray-500">
+                      {option.ministries.map(m => `${m.name} (${m.code})`).join(", ")}
+                    </span>
+                  )}
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
@@ -806,47 +814,57 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         return val;
       };
 
+      // Look up responsible ministries for a country-dropdown field value
+      const getMinistryNames = (category: string, val?: string | null): string => {
+        if (!val) return '';
+        const match = aeOptions.find(opt => opt.category === category && opt.label === val);
+        if (match?.responsible_ministries && match.responsible_ministries.length > 0) {
+          return match.responsible_ministries.map(m => m.name).join('; ');
+        }
+        return '';
+      };
+
       const exportData = [
-        { Section: '1. Government Ownership', Field: 'Implementing Partner', Value: formData.implementingPartner || '' },
-        { Section: '1. Government Ownership', Field: 'Formally Approved by Government', Value: formatValue(formData.formallyApprovedByGov) },
-        { Section: '1. Government Ownership', Field: 'Included in National Development Plan', Value: formatValue(formData.includedInNationalPlan) },
-        { Section: '1. Government Ownership', Field: 'Linked to Government Results Framework', Value: formatValue(formData.linkedToGovFramework) },
-        { Section: '1. Government Ownership', Field: 'Indicators from Government Frameworks', Value: formatValue(formData.indicatorsFromGov) },
-        { Section: '1. Government Ownership', Field: 'Monitored via Government M&E', Value: formatValue(formData.indicatorsViaGovData) },
-        { Section: '1. Government Ownership', Field: 'Implemented by National Institution', Value: formatValue(formData.implementedByNationalInstitution) },
-        { Section: '1. Government Ownership', Field: 'Gov Entity as Accountable Authority', Value: formatValue(formData.govEntityAccountable) },
-        { Section: '1. Government Ownership', Field: 'Supports Public Sector Capacity', Value: formatValue(formData.supportsPublicSector) },
-        { Section: '1. Government Ownership', Field: 'Capacity Dev from National Plan', Value: formatValue(formData.capacityDevFromNationalPlan) },
-        { Section: '1. Government Ownership', Field: 'Number of Outcome Indicators', Value: formData.numOutcomeIndicators?.toString() || '' },
-        { Section: '2. Country Systems', Field: 'Funds via National Treasury', Value: formatValue(formData.fundsViaNationalTreasury) },
-        { Section: '2. Country Systems', Field: 'Government Budget Execution', Value: formatValue(formData.govBudgetSystem) },
-        { Section: '2. Country Systems', Field: 'Government Financial Reporting', Value: formatValue(formData.govFinReporting) },
-        { Section: '2. Country Systems', Field: 'Integrated into National PFM', Value: formatValue(formData.finReportingIntegratedPFM) },
-        { Section: '2. Country Systems', Field: 'Government Audit', Value: formatValue(formData.govAudit) },
-        { Section: '2. Country Systems', Field: 'National Procurement Systems', Value: formatValue(formData.govProcurement) },
-        { Section: '2. Country Systems', Field: 'Why Not Using Gov Systems', Value: formData.govSystemWhyNot || '' },
-        { Section: '3. Predictability', Field: 'Annual Budget Shared', Value: formatValue(formData.annualBudgetShared) },
-        { Section: '3. Predictability', Field: 'Forward Plan Shared', Value: formatValue(formData.forwardPlanShared) },
-        { Section: '3. Predictability', Field: 'Multi-Year Financing Agreement', Value: formatValue(formData.multiYearFinancingAgreement) },
-        { Section: '3. Predictability', Field: 'Tied Status', Value: formData.tiedStatus || '' },
-        { Section: '4. Transparency', Field: 'Annual Financial Reports Public', Value: formatValue(formData.annualFinReportsPublic) },
-        { Section: '4. Transparency', Field: 'Data Updated Publicly Annually', Value: formatValue(formData.dataUpdatedPublicly) },
-        { Section: '4. Transparency', Field: 'Final Evaluation Planned', Value: formatValue(formData.finalEvalPlanned) },
-        { Section: '4. Transparency', Field: 'Final Evaluation Date', Value: formData.finalEvalDate || '' },
-        { Section: '4. Transparency', Field: 'Evaluation Report Public', Value: formatValue(formData.evalReportPublic) },
-        { Section: '4. Transparency', Field: 'Performance Indicators Reported', Value: formatValue(formData.performanceIndicatorsReported) },
-        { Section: '5. Mutual Accountability', Field: 'Joint Annual Review', Value: formatValue(formData.jointAnnualReview) },
-        { Section: '5. Mutual Accountability', Field: 'Mutual Accountability Framework', Value: formatValue(formData.mutualAccountabilityFramework) },
-        { Section: '5. Mutual Accountability', Field: 'Corrective Actions Documented', Value: formatValue(formData.correctiveActionsDocumented) },
-        { Section: '6. Civil Society & Private Sector', Field: 'Civil Society Consulted', Value: formatValue(formData.civilSocietyConsulted) },
-        { Section: '6. Civil Society & Private Sector', Field: 'CSOs in Implementation', Value: formatValue(formData.csoInvolvedInImplementation) },
-        { Section: '6. Civil Society & Private Sector', Field: 'Core Funding to CSOs', Value: formatValue(formData.coreFlexibleFundingToCSO) },
-        { Section: '6. Civil Society & Private Sector', Field: 'Public-Private Dialogue', Value: formatValue(formData.publicPrivateDialogue) },
-        { Section: '6. Civil Society & Private Sector', Field: 'Private Sector Engaged', Value: formatValue(formData.privateSectorEngaged) },
-        { Section: '7. Gender Equality', Field: 'Gender Objectives Integrated', Value: formatValue(formData.genderObjectivesIntegrated) },
-        { Section: '7. Gender Equality', Field: 'Gender Budget Allocation', Value: formatValue(formData.genderBudgetAllocation) },
-        { Section: '7. Gender Equality', Field: 'Gender-Disaggregated Indicators', Value: formatValue(formData.genderDisaggregatedIndicators) },
-        { Section: '10. Remarks', Field: 'Additional Notes', Value: formData.remarks || '' },
+        { Section: '1. Government Ownership', Field: 'Implementing Partner', Value: formData.implementingPartner || '', 'Responsible Ministry': '' },
+        { Section: '1. Government Ownership', Field: 'Formally Approved by Government', Value: formatValue(formData.formallyApprovedByGov), 'Responsible Ministry': '' },
+        { Section: '1. Government Ownership', Field: 'Included in National Development Plan', Value: formatValue(formData.includedInNationalPlan), 'Responsible Ministry': getMinistryNames('includedInNationalPlan', formData.includedInNationalPlan) },
+        { Section: '1. Government Ownership', Field: 'Linked to Government Results Framework', Value: formatValue(formData.linkedToGovFramework), 'Responsible Ministry': getMinistryNames('linkedToGovFramework', formData.linkedToGovFramework) },
+        { Section: '1. Government Ownership', Field: 'Indicators from Government Frameworks', Value: formatValue(formData.indicatorsFromGov), 'Responsible Ministry': '' },
+        { Section: '1. Government Ownership', Field: 'Monitored via Government M&E', Value: formatValue(formData.indicatorsViaGovData), 'Responsible Ministry': '' },
+        { Section: '1. Government Ownership', Field: 'Implemented by National Institution', Value: formatValue(formData.implementedByNationalInstitution), 'Responsible Ministry': '' },
+        { Section: '1. Government Ownership', Field: 'Gov Entity as Accountable Authority', Value: formatValue(formData.govEntityAccountable), 'Responsible Ministry': '' },
+        { Section: '1. Government Ownership', Field: 'Supports Public Sector Capacity', Value: formatValue(formData.supportsPublicSector), 'Responsible Ministry': '' },
+        { Section: '1. Government Ownership', Field: 'Capacity Dev from National Plan', Value: formatValue(formData.capacityDevFromNationalPlan), 'Responsible Ministry': getMinistryNames('capacityDevFromNationalPlan', formData.capacityDevFromNationalPlan) },
+        { Section: '1. Government Ownership', Field: 'Number of Outcome Indicators', Value: formData.numOutcomeIndicators?.toString() || '', 'Responsible Ministry': '' },
+        { Section: '2. Country Systems', Field: 'Funds via National Treasury', Value: formatValue(formData.fundsViaNationalTreasury), 'Responsible Ministry': '' },
+        { Section: '2. Country Systems', Field: 'Government Budget Execution', Value: formatValue(formData.govBudgetSystem), 'Responsible Ministry': '' },
+        { Section: '2. Country Systems', Field: 'Government Financial Reporting', Value: formatValue(formData.govFinReporting), 'Responsible Ministry': '' },
+        { Section: '2. Country Systems', Field: 'Integrated into National PFM', Value: formatValue(formData.finReportingIntegratedPFM), 'Responsible Ministry': '' },
+        { Section: '2. Country Systems', Field: 'Government Audit', Value: formatValue(formData.govAudit), 'Responsible Ministry': '' },
+        { Section: '2. Country Systems', Field: 'National Procurement Systems', Value: formatValue(formData.govProcurement), 'Responsible Ministry': '' },
+        { Section: '2. Country Systems', Field: 'Why Not Using Gov Systems', Value: formData.govSystemWhyNot || '', 'Responsible Ministry': '' },
+        { Section: '3. Predictability', Field: 'Annual Budget Shared', Value: formatValue(formData.annualBudgetShared), 'Responsible Ministry': '' },
+        { Section: '3. Predictability', Field: 'Forward Plan Shared', Value: formatValue(formData.forwardPlanShared), 'Responsible Ministry': '' },
+        { Section: '3. Predictability', Field: 'Multi-Year Financing Agreement', Value: formatValue(formData.multiYearFinancingAgreement), 'Responsible Ministry': '' },
+        { Section: '3. Predictability', Field: 'Tied Status', Value: formData.tiedStatus || '', 'Responsible Ministry': '' },
+        { Section: '4. Transparency', Field: 'Annual Financial Reports Public', Value: formatValue(formData.annualFinReportsPublic), 'Responsible Ministry': '' },
+        { Section: '4. Transparency', Field: 'Data Updated Publicly Annually', Value: formatValue(formData.dataUpdatedPublicly), 'Responsible Ministry': '' },
+        { Section: '4. Transparency', Field: 'Final Evaluation Planned', Value: formatValue(formData.finalEvalPlanned), 'Responsible Ministry': '' },
+        { Section: '4. Transparency', Field: 'Final Evaluation Date', Value: formData.finalEvalDate || '', 'Responsible Ministry': '' },
+        { Section: '4. Transparency', Field: 'Evaluation Report Public', Value: formatValue(formData.evalReportPublic), 'Responsible Ministry': '' },
+        { Section: '4. Transparency', Field: 'Performance Indicators Reported', Value: formatValue(formData.performanceIndicatorsReported), 'Responsible Ministry': '' },
+        { Section: '5. Mutual Accountability', Field: 'Joint Annual Review', Value: formatValue(formData.jointAnnualReview), 'Responsible Ministry': '' },
+        { Section: '5. Mutual Accountability', Field: 'Mutual Accountability Framework', Value: formatValue(formData.mutualAccountabilityFramework), 'Responsible Ministry': getMinistryNames('mutualAccountabilityFramework', formData.mutualAccountabilityFramework) },
+        { Section: '5. Mutual Accountability', Field: 'Corrective Actions Documented', Value: formatValue(formData.correctiveActionsDocumented), 'Responsible Ministry': '' },
+        { Section: '6. Civil Society & Private Sector', Field: 'Civil Society Consulted', Value: formatValue(formData.civilSocietyConsulted), 'Responsible Ministry': '' },
+        { Section: '6. Civil Society & Private Sector', Field: 'CSOs in Implementation', Value: formatValue(formData.csoInvolvedInImplementation), 'Responsible Ministry': '' },
+        { Section: '6. Civil Society & Private Sector', Field: 'Core Funding to CSOs', Value: formatValue(formData.coreFlexibleFundingToCSO), 'Responsible Ministry': '' },
+        { Section: '6. Civil Society & Private Sector', Field: 'Public-Private Dialogue', Value: formatValue(formData.publicPrivateDialogue), 'Responsible Ministry': '' },
+        { Section: '6. Civil Society & Private Sector', Field: 'Private Sector Engaged', Value: formatValue(formData.privateSectorEngaged), 'Responsible Ministry': '' },
+        { Section: '7. Gender Equality', Field: 'Gender Objectives Integrated', Value: formatValue(formData.genderObjectivesIntegrated), 'Responsible Ministry': '' },
+        { Section: '7. Gender Equality', Field: 'Gender Budget Allocation', Value: formatValue(formData.genderBudgetAllocation), 'Responsible Ministry': '' },
+        { Section: '7. Gender Equality', Field: 'Gender-Disaggregated Indicators', Value: formatValue(formData.genderDisaggregatedIndicators), 'Responsible Ministry': '' },
+        { Section: '10. Remarks', Field: 'Additional Notes', Value: formData.remarks || '', 'Responsible Ministry': '' },
       ];
 
       if (formData.contacts && formData.contacts.length > 0) {
@@ -854,7 +872,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           exportData.push({
             Section: '8. Contacts',
             Field: `Contact ${index + 1}`,
-            Value: `${contact.firstName} ${contact.lastName}${contact.email ? ` (${contact.email})` : ''}`
+            Value: `${contact.firstName} ${contact.lastName}${contact.email ? ` (${contact.email})` : ''}`,
+            'Responsible Ministry': '',
           });
         });
       }
@@ -862,7 +881,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Aid Effectiveness');
-      ws['!cols'] = [{ wch: 30 }, { wch: 40 }, { wch: 50 }];
+      ws['!cols'] = [{ wch: 30 }, { wch: 40 }, { wch: 50 }, { wch: 40 }];
       XLSX.writeFile(wb, `aid-effectiveness-${general.iati_id || general.id}.xlsx`);
       toast.success('Aid effectiveness data exported successfully');
     } catch (error) {

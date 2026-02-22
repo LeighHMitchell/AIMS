@@ -167,21 +167,21 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
       case '4':
         return <ArrowUpRight className="w-4 h-4 text-red-600" />;
       default:
-        return <DollarSign className="w-4 h-4 text-gray-600" />;
+        return <DollarSign className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+      <div className="bg-card rounded-lg shadow-sm border border-border p-8">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/4 mb-2"></div>
-          <div className="h-4 bg-gray-100 rounded w-1/3 mb-4"></div>
+          <div className="h-6 bg-muted rounded w-1/4 mb-2"></div>
+          <div className="h-4 bg-muted rounded w-1/3 mb-4"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-gray-50 rounded-lg p-4">
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              <div key={i} className="bg-muted rounded-lg p-4">
+                <div className="h-4 bg-muted rounded w-1/2 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-3/4"></div>
               </div>
             ))}
           </div>
@@ -191,10 +191,10 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-8 space-y-6">
       <div>
-        <h3 className="text-xl font-semibold text-gray-900">Linked Transactions</h3>
-        <p className="text-sm text-gray-600 mt-1">
+        <h3 className="text-xl font-semibold text-foreground">Linked Transactions</h3>
+        <p className="text-sm text-muted-foreground mt-1">
           View transactions from linked activities. These are read-only and for reference only.
         </p>
       </div>
@@ -215,7 +215,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
             <div className="flex justify-between items-start mb-4">
               <div>
                 <Label>Transaction Summary</Label>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Showing {filteredTransactions.length} transactions from {linkedActivityCount} linked activities
                 </p>
               </div>
@@ -232,8 +232,8 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
             {/* Currency Totals */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               {Object.entries(totalsByCurrency).map(([currency, total]) => (
-                <div key={currency} className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-sm text-gray-600">Total in {currency}</div>
+                <div key={currency} className="bg-muted rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground">Total in {currency}</div>
                   <div className="text-2xl font-semibold">{formatCurrency(total, currency)}</div>
                 </div>
               ))}
@@ -271,30 +271,30 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
 
           {/* Transactions Table */}
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-border">
               <thead className="bg-surface-muted">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Provider
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Receiver
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Source Activity
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-card divide-y divide-border">
                 {filteredTransactions.map((transaction) => (
                   <tr key={transaction.id} className="hover:bg-muted/50 opacity-75">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -311,27 +311,27 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
                     <td className="px-6 py-4">
                       <div className="text-sm">
                         <div className="flex items-center gap-1">
-                          <Building2 className="w-3 h-3 text-gray-400" />
+                          <Building2 className="w-3 h-3 text-muted-foreground" />
                           {transaction.providerOrg.name || 'N/A'}
                         </div>
                         {transaction.providerOrg.ref && (
-                          <div className="text-xs text-gray-500">{transaction.providerOrg.ref}</div>
+                          <div className="text-xs text-muted-foreground">{transaction.providerOrg.ref}</div>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm">
                         <div className="flex items-center gap-1">
-                          <Building2 className="w-3 h-3 text-gray-400" />
+                          <Building2 className="w-3 h-3 text-muted-foreground" />
                           {transaction.receiverOrg.name || 'N/A'}
                         </div>
                         {transaction.receiverOrg.ref && (
-                          <div className="text-xs text-gray-500">{transaction.receiverOrg.ref}</div>
+                          <div className="text-xs text-muted-foreground">{transaction.receiverOrg.ref}</div>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Calendar className="w-3 h-3" />
                         {new Date(transaction.transactionDate).toLocaleDateString()}
                       </div>
@@ -346,7 +346,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
                         {transaction.activityTitle}
                         <ExternalLink className="w-3 h-3" />
                       </a>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {transaction.activityIatiId}
                       </div>
                     </td>

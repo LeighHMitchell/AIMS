@@ -105,7 +105,7 @@ export function DateRevisionHistory({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         data-popover-trigger
-        className={`${buttonSize} rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors`}
+        className={`${buttonSize} rounded hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors`}
         title="View date revision history"
       >
         <History className={iconSize} />
@@ -116,16 +116,16 @@ export function DateRevisionHistory({
         sideOffset={8}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b">
+        <div className="flex items-center justify-between px-3 py-2 bg-muted border-b">
           <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-slate-500" />
-            <span className="text-sm font-medium text-slate-700">
+            <History className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
               {DATE_FIELD_LABELS[dateField]} History
             </span>
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-600"
+            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-muted-foreground"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -136,7 +136,7 @@ export function DateRevisionHistory({
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-600"></div>
-              <span className="ml-2 text-sm text-slate-500">Loading history...</span>
+              <span className="ml-2 text-sm text-muted-foreground">Loading history...</span>
             </div>
           ) : error ? (
             <div className="px-3 py-4 text-center">
@@ -150,47 +150,47 @@ export function DateRevisionHistory({
             </div>
           ) : history.length === 0 ? (
             <div className="px-3 py-6 text-center">
-              <Clock className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">No revisions recorded</p>
-              <p className="text-xs text-slate-400 mt-1">
+              <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No revisions recorded</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 Changes to this date will appear here
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               {/* Current value */}
               <div className="px-3 py-2.5 bg-blue-50/50">
                 <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium mb-1">
                   <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
                   Current Value
                 </div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-foreground">
                   {formatDateValue(currentValue)}
                 </p>
               </div>
 
               {/* Revision history */}
               {history.map((change, index) => (
-                <div key={change.id} className="px-3 py-2.5 hover:bg-slate-50">
+                <div key={change.id} className="px-3 py-2.5 hover:bg-muted/50">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xs font-medium text-slate-500">
+                    <span className="text-xs font-medium text-muted-foreground">
                       Revision {history.length - index}
                     </span>
                   </div>
                   
                   {/* Date change visualization */}
                   <div className="flex items-center gap-2 text-sm mb-2">
-                    <span className="text-slate-500 line-through">
+                    <span className="text-muted-foreground line-through">
                       {formatDateValue(change.oldValue)}
                     </span>
-                    <ArrowRight className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                    <span className="text-slate-900 font-medium">
+                    <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    <span className="text-foreground font-medium">
                       {formatDateValue(change.newValue)}
                     </span>
                   </div>
 
                   {/* Metadata */}
-                  <div className="flex items-center gap-3 text-xs text-slate-400">
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <User className="h-3 w-3" />
                       <span>{change.userName}</span>

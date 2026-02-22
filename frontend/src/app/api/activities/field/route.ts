@@ -720,6 +720,12 @@ export async function POST(request: Request) {
         newValue = body.value;
         updateData.hierarchy = body.value;
         break;
+
+      case 'is_pooled_fund':
+        oldValue = existingActivity.is_pooled_fund;
+        newValue = body.value;
+        updateData.is_pooled_fund = Boolean(body.value);
+        break;
         
       case 'language':
         oldValue = existingActivity.language;

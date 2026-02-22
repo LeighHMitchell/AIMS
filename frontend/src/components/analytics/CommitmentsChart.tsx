@@ -13,9 +13,10 @@ import {
 } from 'recharts'
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, getYear, getQuarter } from 'date-fns'
 import { supabase } from '@/lib/supabase'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 interface CommitmentsChartProps {
   dateRange: {
@@ -183,12 +184,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <div className="flex justify-between items-center mb-4">
-          <Skeleton className="h-9 w-40 bg-slate-100" />
-        </div>
-        <Skeleton className="h-[400px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -237,7 +233,7 @@ export function CommitmentsChart({ dateRange, refreshKey, onDataChange }: Commit
         >
           <CartesianGrid 
             strokeDasharray="3 3" 
-            stroke="#e2e8f0" 
+            stroke={CHART_STRUCTURE_COLORS.grid} 
             vertical={false}
           />
           <XAxis 

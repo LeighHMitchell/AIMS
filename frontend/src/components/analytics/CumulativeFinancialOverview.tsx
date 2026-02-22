@@ -16,7 +16,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle, Download, FileImage, LineChart as LineChartIcon, BarChart3, Table as TableIcon, TrendingUp as TrendingUpIcon, CalendarIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -42,6 +42,8 @@ import { FINANCIAL_OVERVIEW_COLORS, BRAND_COLORS } from '@/components/analytics/
 import { CustomYear, getCustomYearRange, getCustomYearLabel, crossesCalendarYear } from '@/types/custom-years'
 import { format, parseISO } from 'date-fns'
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -900,13 +902,15 @@ export function CumulativeFinancialOverview({
 
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
             <p className="font-semibold text-slate-900 text-sm">{fullDate}</p>
+            {customYears.find(cy => cy.id === calendarType)?.name && (
+              <p className="text-xs text-slate-400 mt-0.5">{customYears.find(cy => cy.id === calendarType)!.name}</p>
+            )}
           </div>
           <div className="p-2">
             {transactions.length > 0 && (
               <>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Transactions</p>
                 <table className="w-full text-sm mb-2">
                   <tbody>
                     {transactions.map(renderRow)}
@@ -1067,7 +1071,7 @@ export function CumulativeFinancialOverview({
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
-      return <Skeleton className="h-full w-full" />
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (error || displayData.length === 0) {
       return (
@@ -1080,7 +1084,7 @@ export function CumulativeFinancialOverview({
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={displayData} margin={{ top: 10, right: 20, left: 20, bottom: 30 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis
               dataKey="displayDate"
               stroke="#64748B"
@@ -1119,9 +1123,7 @@ export function CumulativeFinancialOverview({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[500px]">
-        <Skeleton className="h-full w-full" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -1254,20 +1256,20 @@ export function CumulativeFinancialOverview({
             {/* Right Side Controls */}
             <div className="flex items-center gap-2 flex-wrap ml-auto">
               {/* Periodic/Cumulative Toggle */}
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
                 <Button
-                  variant={dataMode === 'periodic' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setDataMode('periodic')}
-                  className="h-8"
+                  className={cn("h-8", dataMode === 'periodic' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 >
                   Periodic
                 </Button>
                 <Button
-                  variant={dataMode === 'cumulative' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setDataMode('cumulative')}
-                  className="h-8"
+                  className={cn("h-8", dataMode === 'cumulative' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 >
                   Cumulative
                 </Button>
@@ -1295,48 +1297,48 @@ export function CumulativeFinancialOverview({
               </div>
 
               {/* Chart Type Toggle */}
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
                 <Button
-                  variant={chartType === 'line' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setChartType('line')}
-                  className="h-8"
+                  className={cn("h-8", chartType === 'line' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Line"
                 >
                   <LineChartIcon className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={chartType === 'bar' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setChartType('bar')}
-                  className="h-8"
+                  className={cn("h-8", chartType === 'bar' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Bar"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={chartType === 'area' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setChartType('area')}
-                  className="h-8"
+                  className={cn("h-8", chartType === 'area' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Area"
                 >
                   <TrendingUpIcon className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={chartType === 'table' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setChartType('table')}
-                  className="h-8"
+                  className={cn("h-8", chartType === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Table"
                 >
                   <TableIcon className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={chartType === 'total' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setChartType('total')}
-                  className="h-8"
+                  className={cn("h-8", chartType === 'total' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Total"
                 >
                   <BarChart3 className="h-4 w-4" />
@@ -1524,7 +1526,7 @@ export function CumulativeFinancialOverview({
                   }
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                   <XAxis
                     dataKey="name"
                     stroke="#64748B"
@@ -1570,7 +1572,7 @@ export function CumulativeFinancialOverview({
                   barGap={0}
                   barCategoryGap="20%"
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                   <XAxis
                     dataKey="displayDate"
                     stroke="#64748B"
@@ -1675,7 +1677,7 @@ export function CumulativeFinancialOverview({
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                   key={`line-${allocationMethod}-${dataMode}`}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                   <XAxis
                     dataKey="displayDate"
                     stroke="#64748B"
@@ -1857,7 +1859,7 @@ export function CumulativeFinancialOverview({
                       </linearGradient>
                     )}
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                   <XAxis
                     dataKey="displayDate"
                     stroke="#64748B"

@@ -1,7 +1,25 @@
 {
-  "currentVersion": "2.13.0",
-  "narrativeSummary": "This release focused on making the Aid Effectiveness survey much more useful. Instead of simple yes/no checkboxes, questions now offer real answer choices — like dropdown menus tailored to each country and options that capture how something was done, not just whether it was done. Staff can also attach evidence documents directly to individual survey questions. Admins get a new settings panel to manage the dropdown options. Elsewhere, forms across the activity editor (results, countries, focal points) now open in tidy pop-up dialogs instead of long inline panels, the dashboard charts can be viewed as bar charts, line charts, or tables, the map centres on your home country and supports a 3D view, and the top navigation bar has a modern frosted-glass look.",
+  "currentVersion": "2.14.0",
+  "narrativeSummary": "æther Myanmar now supports pooled and trust funds so you can model activities that receive contributions and disburse to child projects. The Aid Effectiveness survey is further strengthened: dropdown options can be linked to responsible ministries, and seed data is in place for national plans, results frameworks, accountability frameworks, and capacity development. This builds on the recent survey overhaul with richer, country-ready options and clearer data structures.",
   "releases": [
+    {
+      "version": "2.14.0",
+      "date": "2026-02-22",
+      "narrativeSummary": "This update prepares the system for pooled and trust funds: activities can now be marked as pooled funds and linked to child activities, with seed data to demonstrate the flow of contributions and disbursements. On the Aid Effectiveness side, each dropdown option can be linked to responsible ministries, making it easier to see which government bodies own which choices. Seed data for all four Aid Effectiveness dropdown categories has been added so countries can go live with realistic options for national plans, results frameworks, accountability, and capacity development.",
+      "changes": [
+        "<b>Pooled Fund Support</b>",
+        "&nbsp;&nbsp;New <code>is_pooled_fund</code> column on <code>activities</code> to mark activities as pooled/trust funds that receive contributions and disburse to child activities",
+        "&nbsp;&nbsp;Index on <code>is_pooled_fund</code> for efficient filtering",
+        "&nbsp;&nbsp;Seed script for pooled fund test data: one parent fund and three child activities with contributions and disbursements",
+        "<b>Aid Effectiveness — Responsible Ministries</b>",
+        "&nbsp;&nbsp;New <code>responsible_ministries</code> JSONB column on <code>aid_effectiveness_options</code>",
+        "&nbsp;&nbsp;Junction table <code>ae_option_ministries</code> linking options to <code>budget_classifications</code> (ministries)",
+        "&nbsp;&nbsp;RLS policies for select, insert, update, delete on <code>ae_option_ministries</code>",
+        "<b>Aid Effectiveness Seed Data</b>",
+        "&nbsp;&nbsp;Seed script populates all four Aid Effectiveness dropdown categories with GPEDC-aligned options",
+        "&nbsp;&nbsp;Categories: National Development Plans, Government Results Frameworks, Accountability Frameworks, Capacity Development from National Plan"
+      ]
+    },
     {
       "version": "2.13.0",
       "date": "2026-02-21",

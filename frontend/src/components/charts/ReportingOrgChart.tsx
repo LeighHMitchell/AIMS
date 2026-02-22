@@ -3,7 +3,7 @@ import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TableSkeleton } from "@/components/ui/skeleton-loader";
+import { LoadingText } from "@/components/ui/loading-text";
 
 interface AnalyticsFilters {
   donor: string;
@@ -149,7 +149,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
 
   // Loading state
   if (loading) {
-    return <TableSkeleton rows={8} columns={5} />;
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
   }
 
   // Error state

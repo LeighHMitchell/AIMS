@@ -15,7 +15,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronUp, BarChart3, LineChart as LineChartIcon, Table2, Maximize2, CalendarIcon } from 'lucide-react'
 import {
@@ -28,6 +28,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CustomYear, crossesCalendarYear, getCustomYearLabel } from '@/types/custom-years'
+import { cn } from '@/lib/utils'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 type ViewMode = 'bar' | 'line' | 'table'
 
@@ -234,7 +236,7 @@ export function YearlyTotalsBarChart({
 
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
             <p className="font-semibold text-slate-900 text-sm">{formatYearLabel(label)}</p>
           </div>
           <div className="p-2">
@@ -423,7 +425,7 @@ export function YearlyTotalsBarChart({
         data={chartData}
         margin={{ top: 20, right: 30, left: 20, bottom: selectedYear ? 40 : 20 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
           dataKey="year"
           stroke="#64748B"
@@ -484,7 +486,7 @@ export function YearlyTotalsBarChart({
         data={chartData}
         margin={{ top: 20, right: 30, left: 20, bottom: selectedYear ? 40 : 20 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
           dataKey="year"
           stroke="#64748B"
@@ -661,7 +663,7 @@ export function YearlyTotalsBarChart({
         : `${getYearDisplayLabel(startYear!)} – ${getYearDisplayLabel(endYear!)}`
 
     return (
-      <div className="flex gap-1 border rounded-lg p-1 bg-white">
+      <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs">
@@ -759,7 +761,7 @@ export function YearlyTotalsBarChart({
         </CardHeader>
         {!isCollapsed && (
           <CardContent>
-            <Skeleton className="w-full" style={{ height }} />
+            <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
           </CardContent>
         )}
       </Card>

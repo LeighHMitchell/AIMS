@@ -46,6 +46,7 @@ import {
 import { useOrganizations } from '@/hooks/use-organizations'
 import { ActivitySpendTrajectoryChart } from '@/components/charts/ActivitySpendTrajectoryChart'
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -75,7 +76,7 @@ const CustomInteractiveLegend: React.FC<CustomLegendProps> = ({ payload, hiddenS
           <button
             key={`legend-${index}`}
             onClick={() => onToggleSeries(entry.value)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all cursor-pointer hover:bg-slate-100 ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all cursor-pointer hover:bg-muted ${
               isHidden ? 'opacity-40' : 'opacity-100'
             }`}
             title={isHidden ? `Click to show ${entry.value}` : `Click to hide ${entry.value}`}
@@ -88,7 +89,7 @@ const CustomInteractiveLegend: React.FC<CustomLegendProps> = ({ payload, hiddenS
               }}
             />
             <span
-              className={`text-sm ${isHidden ? 'line-through text-slate-400' : 'text-slate-700'}`}
+              className={`text-sm ${isHidden ? 'line-through text-muted-foreground' : 'text-foreground'}`}
             >
               {entry.value}
             </span>
@@ -348,7 +349,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
 
     // Create tooltip
     const tooltip = d3.select('body').append('div')
-      .attr('class', 'absolute bg-white border border-slate-200 rounded-lg shadow-lg text-sm pointer-events-none z-50')
+      .attr('class', 'absolute bg-card border border-border rounded-lg shadow-lg text-sm pointer-events-none z-50')
       .style('opacity', 0)
 
     // Prepare data - show top 8 providers and receivers
@@ -435,6 +436,12 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
     // Create node map for quick lookup
     const nodeMap = new Map(nodes.map(n => [n.id, n]))
 
+    // Helper: format org label as "Name (ACRONYM)" when acronym differs from name
+    const formatOrgLabel = (name: string, displayName?: string) => {
+      if (displayName && displayName !== name) return `${name} (${displayName})`
+      return name
+    }
+
     // Track cumulative heights for flow positioning
     const providerOutY = new Map<string, number>()
     const receiverInY = new Map<string, number>()
@@ -505,27 +512,25 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
         .on('mouseover', function(event) {
           d3.select(this).attr('fill-opacity', 0.7)
           tooltip.style('opacity', 1)
-          // Show display names in header, full names if different
-          const providerLabel = flow.providerDisplay !== flow.provider 
-            ? `${flow.providerDisplay} (${flow.provider})` 
-            : flow.provider
-          const receiverLabel = flow.receiverDisplay !== flow.receiver 
-            ? `${flow.receiverDisplay} (${flow.receiver})` 
-            : flow.receiver
+          // Show "Name (ACRONYM)" format using node data for acronyms
+          const provNode = nodeMap.get(`provider-${flow.provider}`)
+          const recvNode = nodeMap.get(`receiver-${flow.receiver}`)
+          const providerLabel = formatOrgLabel(flow.provider, provNode?.displayName)
+          const receiverLabel = formatOrgLabel(flow.receiver, recvNode?.displayName)
           tooltip.html(`
-            <div class="bg-slate-100 px-3 py-2 border-b border-slate-200 rounded-t-lg">
-              <div class="font-semibold text-slate-900 text-sm">${providerLabel} → ${receiverLabel}</div>
+            <div class="bg-muted px-3 py-2 border-b border-border rounded-t-lg">
+              <div class="font-semibold text-foreground text-sm">${providerLabel} → ${receiverLabel}</div>
             </div>
             <div class="p-2">
               <table class="w-full text-sm">
                 <tbody>
-                  <tr class="border-b border-slate-100 last:border-b-0">
-                    <td class="py-1.5 pr-4 text-slate-700 font-medium">Amount</td>
-                    <td class="py-1.5 text-right font-semibold text-slate-900">${formatCurrency(flow.value)}</td>
+                  <tr class="border-b border-border last:border-b-0">
+                    <td class="py-1.5 pr-4 text-foreground font-medium">Amount</td>
+                    <td class="py-1.5 text-right font-semibold text-foreground">${formatCurrency(flow.value)}</td>
                   </tr>
-                  <tr class="border-b border-slate-100 last:border-b-0">
-                    <td class="py-1.5 pr-4 text-slate-700 font-medium">% of Total</td>
-                    <td class="py-1.5 text-right font-semibold text-slate-900">${((flow.value / totalValue) * 100).toFixed(1)}%</td>
+                  <tr class="border-b border-border last:border-b-0">
+                    <td class="py-1.5 pr-4 text-foreground font-medium">% of Total</td>
+                    <td class="py-1.5 text-right font-semibold text-foreground">${((flow.value / totalValue) * 100).toFixed(1)}%</td>
                   </tr>
                 </tbody>
               </table>
@@ -560,21 +565,18 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
       .on('mouseover', function(event, d) {
         d3.select(this).style('filter', 'brightness(1.2)')
         tooltip.style('opacity', 1)
-        // Show acronym and full name if they differ
-        const nameDisplay = d.displayName !== d.name 
-          ? `<div class="font-semibold">${d.displayName}</div><div class="text-xs text-gray-400 mb-1">${d.name}</div>`
-          : `<div class="font-semibold">${d.name}</div>`
+        const nameLabel = formatOrgLabel(d.name, d.displayName !== d.name ? d.displayName : undefined)
         tooltip.html(`
-          <div class="bg-slate-100 px-3 py-2 border-b border-slate-200 rounded-t-lg">
-            ${nameDisplay}
-            <div class="text-xs text-slate-600 mt-0.5">${d.type === 'provider' ? 'Provider' : 'Receiver'}</div>
+          <div class="bg-muted px-3 py-2 border-b border-border rounded-t-lg">
+            <div class="font-semibold text-foreground text-sm">${nameLabel}</div>
+            <div class="text-xs text-muted-foreground mt-0.5">${d.type === 'provider' ? 'Provider' : 'Receiver'}</div>
           </div>
           <div class="p-2">
             <table class="w-full text-sm">
               <tbody>
-                <tr class="border-b border-slate-100 last:border-b-0">
-                  <td class="py-1.5 pr-4 text-slate-700 font-medium">Amount</td>
-                  <td class="py-1.5 text-right font-semibold text-slate-900">${formatCurrency(d.value)}</td>
+                <tr class="border-b border-border last:border-b-0">
+                  <td class="py-1.5 pr-4 text-foreground font-medium">Amount</td>
+                  <td class="py-1.5 text-right font-semibold text-foreground">${formatCurrency(d.value)}</td>
                 </tr>
               </tbody>
             </table>
@@ -588,31 +590,49 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
         tooltip.style('opacity', 0)
       })
 
-    // Add node labels (using displayName - acronym if available)
-    nodeGroup.append('text')
-      .attr('x', d => d.type === 'provider' ? d.x0 - 8 : d.x1 + 8)
-      .attr('y', d => (d.y0 + d.y1) / 2)
-      .attr('dy', '0.35em')
-      .attr('text-anchor', d => d.type === 'provider' ? 'end' : 'start')
-      .attr('font-size', '12px')
-      .attr('font-weight', 'normal')
-      .attr('fill', '#374151')
-      .text(d => {
-        const maxLength = 28
-        const label = d.displayName || d.name
-        return label.length > maxLength ? label.substring(0, maxLength) + '...' : label
-      })
-      .style('pointer-events', 'none')
+    // Add node labels: "Name (ACRONYM)" with wrapping for long names
+    nodeGroup.each(function(d) {
+      const textEl = d3.select(this).append('text')
+        .attr('x', d.type === 'provider' ? d.x0 - 8 : d.x1 + 8)
+        .attr('text-anchor', d.type === 'provider' ? 'end' : 'start')
+        .attr('font-size', '11px')
+        .attr('font-weight', 'normal')
+        .attr('fill', '#374151')
+        .style('pointer-events', 'none')
 
-    // Add value labels below node names
-    nodeGroup.append('text')
-      .attr('x', d => d.type === 'provider' ? d.x0 - 8 : d.x1 + 8)
-      .attr('y', d => (d.y0 + d.y1) / 2 + 14)
-      .attr('text-anchor', d => d.type === 'provider' ? 'end' : 'start')
-      .attr('font-size', '10px')
-      .attr('fill', '#6b7280')
-      .text(d => formatCurrency(d.value))
-      .style('pointer-events', 'none')
+      // Build label: "Full Name (ACRONYM)" or just "Full Name"
+      const hasAcronym = d.displayName && d.displayName !== d.name
+      const label = hasAcronym ? `${d.name} (${d.displayName})` : d.name
+
+      // Word-wrap the label
+      const maxChars = 28
+      const lineHeight = 13
+      const words = label.split(' ')
+      const lines: string[] = []
+      let currentLine = ''
+      words.forEach((word: string) => {
+        if (currentLine.length === 0) {
+          currentLine = word
+        } else if ((currentLine + ' ' + word).length <= maxChars) {
+          currentLine += ' ' + word
+        } else {
+          lines.push(currentLine)
+          currentLine = word
+        }
+      })
+      if (currentLine) lines.push(currentLine)
+
+      // Center the text block vertically on the node
+      const totalHeight = lines.length * lineHeight
+      const startY = (d.y0 + d.y1) / 2 - totalHeight / 2 + lineHeight / 2
+
+      lines.forEach((line, i) => {
+        textEl.append('tspan')
+          .attr('x', d.type === 'provider' ? d.x0 - 8 : d.x1 + 8)
+          .attr('y', startY + i * lineHeight)
+          .text(line)
+      })
+    })
 
     // Cleanup tooltip on unmount
     return () => {
@@ -623,7 +643,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
 
   if (!data.providers || data.providers.length === 0) {
     return (
-      <div className="flex items-center justify-center h-96 text-gray-500">
+      <div className="flex items-center justify-center h-96 text-muted-foreground">
         <div className="text-center">
           <div className="text-lg font-medium">No funding source data available</div>
           <div className="text-sm mt-1">Add transactions or planned disbursements to see the flow</div>
@@ -635,8 +655,8 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
   return (
     <div className="w-full funding-source-chart py-4">
       <svg ref={svgRef} className="w-full" style={{ height: `${containerSize.height}px`, display: 'block' }} />
-      <div className="border-t border-slate-200 pt-4 mt-4">
-        <p className="text-xs text-slate-500 text-center">
+      <div className="border-t border-border pt-4 mt-4">
+        <p className="text-xs text-muted-foreground text-center">
           Flow width represents the funding amount from each provider to each receiver
           {data.providers.length > 8 && ` (showing top 8 of ${data.providers.length} providers)`}
         </p>
@@ -1151,9 +1171,9 @@ export default function FinancialAnalyticsTab({
 
     return (
       <div className="flex items-center gap-2 flex-wrap">
-        {label && <span className="text-xs font-medium text-slate-600">{label}</span>}
+        {label && <span className="text-xs font-medium text-muted-foreground">{label}</span>}
         <Select value={value} onValueChange={(val) => onChange(val as TimePeriod)}>
-          <SelectTrigger className="h-8 px-3 border rounded-lg text-sm font-medium bg-white">
+          <SelectTrigger className="h-8 px-3 border rounded-lg text-sm font-medium bg-card">
             <SelectValue placeholder="Select period">
               {selectedPeriod?.label || 'All Time'}
             </SelectValue>
@@ -1187,7 +1207,7 @@ export default function FinancialAnalyticsTab({
           className={`h-7 px-3 text-xs ${
             value === 'year' 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
-              : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+              : 'bg-card text-muted-foreground border-border hover:bg-muted/50'
           }`}
         >
           Year
@@ -1199,7 +1219,7 @@ export default function FinancialAnalyticsTab({
           className={`h-7 px-3 text-xs ${
             value === 'month' 
               ? 'bg-blue-600 text-white hover:bg-blue-700' 
-              : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+              : 'bg-card text-muted-foreground border-border hover:bg-muted/50'
           }`}
         >
           Month
@@ -1577,23 +1597,23 @@ export default function FinancialAnalyticsTab({
       const fullDate = payload[0]?.payload?.fullDate || label
 
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-            <p className="font-semibold text-slate-900 text-sm">{fullDate}</p>
+        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground text-sm">{fullDate}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
                 {nonZeroPayload.map((entry: any, index: number) => (
-                  <tr key={index} className="border-b border-slate-100 last:border-b-0">
+                  <tr key={index} className="border-b border-border last:border-b-0">
                     <td className="py-1.5 pr-4 flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-sm flex-shrink-0"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="text-slate-700 font-medium">{entry.name}</span>
+                      <span className="text-foreground font-medium">{entry.name}</span>
                     </td>
-                    <td className="py-1.5 text-right font-semibold text-slate-900">
+                    <td className="py-1.5 text-right font-semibold text-foreground">
                       {formatTooltipValue(entry.value)}
                     </td>
                   </tr>
@@ -2400,11 +2420,11 @@ export default function FinancialAnalyticsTab({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Cumulative Overview Chart - All Transaction Types, Planned Disbursements, and Budgets */}
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle className="text-lg font-semibold text-slate-900">
+              <CardTitle className="text-lg font-semibold text-foreground">
                 {isCumulative ? 'Cumulative' : 'Period-by-Period'} Financial Overview
               </CardTitle>
               <CardDescription>
@@ -2415,28 +2435,28 @@ export default function FinancialAnalyticsTab({
               </CardDescription>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
-                  variant={isCumulative ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setIsCumulative(true)}
-                  className="h-8"
+                  className={cn("h-8", isCumulative ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   Cumulative
                 </Button>
                 <Button
-                  variant={!isCumulative ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setIsCumulative(false)}
-                  className="h-8"
+                  className={cn("h-8", !isCumulative ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   Periodic
                 </Button>
               </div>
               {/* Allocation Method Toggle */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 bg-white">
-                  <Label htmlFor="allocation-toggle-overview" className="text-sm text-slate-700 cursor-pointer">
+                <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 bg-muted">
+                  <Label htmlFor="allocation-toggle-overview" className="text-sm text-foreground cursor-pointer">
                     {allocationMethod === 'proportional' ? 'Proportional' : 'Period Start'}
                   </Label>
                   <Switch
@@ -2453,48 +2473,48 @@ export default function FinancialAnalyticsTab({
                   }
                 />
               </div>
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
-                  variant={overviewChartType === 'line' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setOverviewChartType('line')}
-                  className="h-8 flex-shrink-0"
+                  className={cn("h-8 flex-shrink-0", overviewChartType === 'line' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   title="Line"
                 >
                   <LineChartIcon className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={overviewChartType === 'bar' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setOverviewChartType('bar')}
-                  className="h-8 flex-shrink-0"
+                  className={cn("h-8 flex-shrink-0", overviewChartType === 'bar' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   title="Bar"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={overviewChartType === 'area' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setOverviewChartType('area')}
-                  className="h-8 flex-shrink-0"
+                  className={cn("h-8 flex-shrink-0", overviewChartType === 'area' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   title="Area"
                 >
                   <TrendingUpIcon className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={overviewChartType === 'table' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setOverviewChartType('table')}
-                  className="h-8 flex-shrink-0"
+                  className={cn("h-8 flex-shrink-0", overviewChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   title="Table"
                 >
                   <TableIcon className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={overviewChartType === 'total' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setOverviewChartType('total')}
-                  className="h-8 flex-shrink-0"
+                  className={cn("h-8 flex-shrink-0", overviewChartType === 'total' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   title="Total"
                 >
                   <BarChart3 className="h-4 w-4" />
@@ -2561,58 +2581,58 @@ export default function FinancialAnalyticsTab({
                   </ResponsiveContainer>
                 </div>
               ) : overviewChartType === 'table' ? (
-                <div className="overflow-auto h-[500px] border border-slate-200 rounded-lg">
+                <div className="overflow-auto h-[500px] border border-border rounded-lg">
                   <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-white z-10">
-                      <tr className="border-b border-slate-200">
-                        <th className="text-left py-3 px-4 font-semibold text-slate-700 bg-white">Period</th>
+                    <thead className="sticky top-0 bg-card z-10">
+                      <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Period</th>
                         {activeSeries.has('Incoming Funds') && (
-                          <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Incoming Funds</th>
+                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Incoming Funds</th>
                         )}
                         {activeSeries.has('Incoming Commitments') && (
-                          <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Incoming Commitments</th>
+                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Incoming Commitments</th>
                         )}
                         {activeSeries.has('Outgoing Commitments') && (
-                          <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Outgoing Commitments</th>
+                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Outgoing Commitments</th>
                         )}
                         {activeSeries.has('Disbursements') && (
-                          <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Disbursements</th>
+                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Disbursements</th>
                         )}
                         {activeSeries.has('Expenditures') && (
-                          <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Expenditures</th>
+                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Expenditures</th>
                         )}
                         {activeSeries.has('Planned Disbursements') && (
-                          <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Planned Disbursements</th>
+                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Planned Disbursements</th>
                         )}
                         {activeSeries.has('Budgets') && (
-                          <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Budgets</th>
+                          <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Budgets</th>
                         )}
                       </tr>
                     </thead>
                     <tbody>
                       {filteredCumulativeOverviewData.map((row, index) => (
-                        <tr key={index} className="border-b border-slate-100 hover:bg-muted/50">
-                          <td className="py-2.5 px-4 font-medium text-slate-900">{row.displayDate}</td>
+                        <tr key={index} className="border-b border-border hover:bg-muted/50">
+                          <td className="py-2.5 px-4 font-medium text-foreground">{row.displayDate}</td>
                           {activeSeries.has('Incoming Funds') && (
-                            <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row['Incoming Funds'])}</td>
+                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Incoming Funds'])}</td>
                           )}
                           {activeSeries.has('Incoming Commitments') && (
-                            <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row['Incoming Commitments'])}</td>
+                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Incoming Commitments'])}</td>
                           )}
                           {activeSeries.has('Outgoing Commitments') && (
-                            <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row['Outgoing Commitments'])}</td>
+                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Outgoing Commitments'])}</td>
                           )}
                           {activeSeries.has('Disbursements') && (
-                            <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row['Disbursements'])}</td>
+                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Disbursements'])}</td>
                           )}
                           {activeSeries.has('Expenditures') && (
-                            <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row['Expenditures'])}</td>
+                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Expenditures'])}</td>
                           )}
                           {activeSeries.has('Planned Disbursements') && (
-                            <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row['Planned Disbursements'])}</td>
+                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Planned Disbursements'])}</td>
                           )}
                           {activeSeries.has('Budgets') && (
-                            <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row['Budgets'])}</td>
+                            <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row['Budgets'])}</td>
                           )}
                         </tr>
                       ))}
@@ -2630,28 +2650,28 @@ export default function FinancialAnalyticsTab({
                           'Budgets': periodicFiltered.reduce((sum, row) => sum + (row['Budgets'] || 0), 0)
                         }
                         return (
-                          <tr className="border-t-2 border-slate-300 bg-slate-50 font-semibold">
-                            <td className="py-2.5 px-4 text-slate-900">Total</td>
+                          <tr className="border-t-2 border-border bg-muted font-semibold">
+                            <td className="py-2.5 px-4 text-foreground">Total</td>
                             {activeSeries.has('Incoming Funds') && (
-                              <td className="text-right py-2.5 px-4 text-slate-900">{formatTooltipValue(totals['Incoming Funds'])}</td>
+                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Incoming Funds'])}</td>
                             )}
                             {activeSeries.has('Incoming Commitments') && (
-                              <td className="text-right py-2.5 px-4 text-slate-900">{formatTooltipValue(totals['Incoming Commitments'])}</td>
+                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Incoming Commitments'])}</td>
                             )}
                             {activeSeries.has('Outgoing Commitments') && (
-                              <td className="text-right py-2.5 px-4 text-slate-900">{formatTooltipValue(totals['Outgoing Commitments'])}</td>
+                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Outgoing Commitments'])}</td>
                             )}
                             {activeSeries.has('Disbursements') && (
-                              <td className="text-right py-2.5 px-4 text-slate-900">{formatTooltipValue(totals['Disbursements'])}</td>
+                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Disbursements'])}</td>
                             )}
                             {activeSeries.has('Expenditures') && (
-                              <td className="text-right py-2.5 px-4 text-slate-900">{formatTooltipValue(totals['Expenditures'])}</td>
+                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Expenditures'])}</td>
                             )}
                             {activeSeries.has('Planned Disbursements') && (
-                              <td className="text-right py-2.5 px-4 text-slate-900">{formatTooltipValue(totals['Planned Disbursements'])}</td>
+                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Planned Disbursements'])}</td>
                             )}
                             {activeSeries.has('Budgets') && (
-                              <td className="text-right py-2.5 px-4 text-slate-900">{formatTooltipValue(totals['Budgets'])}</td>
+                              <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals['Budgets'])}</td>
                             )}
                           </tr>
                         )
@@ -3038,7 +3058,7 @@ export default function FinancialAnalyticsTab({
               )}
             </>
           ) : (
-            <div className="flex items-center justify-center h-96 text-slate-400">
+            <div className="flex items-center justify-center h-96 text-muted-foreground">
               <div className="text-center">
                 <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="font-medium">No cumulative overview data available</p>
@@ -3053,11 +3073,11 @@ export default function FinancialAnalyticsTab({
       <ActivitySpendTrajectoryChart activityId={activityId} />
 
       {/* Budget vs Actual Spending - Full Width */}
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle className="text-lg font-semibold text-slate-900">
+              <CardTitle className="text-lg font-semibold text-foreground">
                 {isBudgetCumulative ? 'Cumulative' : 'Period-by-Period'} Budget vs Actual Spending by Year
               </CardTitle>
               <CardDescription>
@@ -3068,48 +3088,48 @@ export default function FinancialAnalyticsTab({
               </CardDescription>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
-                  variant={isBudgetCumulative ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setIsBudgetCumulative(true)}
-                  className="h-8"
+                  className={cn("h-8", isBudgetCumulative ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   Cumulative
                 </Button>
                 <Button
-                  variant={!isBudgetCumulative ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setIsBudgetCumulative(false)}
-                  className="h-8"
+                  className={cn("h-8", !isBudgetCumulative ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   Periodic
                 </Button>
               </div>
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
-                  variant={budgetChartType === 'line' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setBudgetChartType('line')}
-                  className="h-8"
+                  className={cn("h-8", budgetChartType === 'line' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   title="Line"
                 >
                   <TrendingUpIcon className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={budgetChartType === 'bar' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setBudgetChartType('bar')}
-                  className="h-8"
+                  className={cn("h-8", budgetChartType === 'bar' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   title="Bar"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={budgetChartType === 'table' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setBudgetChartType('table')}
-                  className="h-8"
+                  className={cn("h-8", budgetChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   title="Table"
                 >
                   <TableIcon className="h-4 w-4" />
@@ -3184,21 +3204,21 @@ export default function FinancialAnalyticsTab({
                 </ResponsiveContainer>
               </div>
             ) : budgetChartType === 'table' ? (
-              <div className="overflow-auto h-[500px] border border-slate-200 rounded-lg">
+              <div className="overflow-auto h-[500px] border border-border rounded-lg">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white z-10">
-                    <tr className="border-b border-slate-200">
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700 bg-white">Period</th>
-                      <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Budget</th>
-                      <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Actual Spending</th>
+                  <thead className="sticky top-0 bg-card z-10">
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Period</th>
+                      <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Budget</th>
+                      <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Actual Spending</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredBudgetVsActual.map((row, index) => (
-                      <tr key={index} className="border-b border-slate-100 hover:bg-muted/50">
-                        <td className="py-2.5 px-4 font-medium text-slate-900">{budgetGroupBy === 'year' ? row.year : row.period}</td>
-                        <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row.budget)}</td>
-                        <td className="text-right py-2.5 px-4 text-slate-700">{formatTooltipValue(row.actual)}</td>
+                      <tr key={index} className="border-b border-border hover:bg-muted/50">
+                        <td className="py-2.5 px-4 font-medium text-foreground">{budgetGroupBy === 'year' ? row.year : row.period}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row.budget)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row.actual)}</td>
                       </tr>
                     ))}
                     {/* Total Row - Use periodic data to avoid double counting */}
@@ -3210,10 +3230,10 @@ export default function FinancialAnalyticsTab({
                         actual: periodicFiltered.reduce((sum, row) => sum + (row.actual || 0), 0)
                       }
                       return (
-                        <tr className="border-t-2 border-slate-300 bg-slate-50 font-semibold">
-                          <td className="py-2.5 px-4 text-slate-900">Total</td>
-                          <td className="text-right py-2.5 px-4 text-slate-900">{formatTooltipValue(totals.budget)}</td>
-                          <td className="text-right py-2.5 px-4 text-slate-900">{formatTooltipValue(totals.actual)}</td>
+                        <tr className="border-t-2 border-border bg-muted font-semibold">
+                          <td className="py-2.5 px-4 text-foreground">Total</td>
+                          <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals.budget)}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals.actual)}</td>
                         </tr>
                       )
                     })()}
@@ -3320,7 +3340,7 @@ export default function FinancialAnalyticsTab({
               </div>
             )
           ) : (
-            <div className="flex items-center justify-center h-96 text-slate-400">
+            <div className="flex items-center justify-center h-96 text-muted-foreground">
               <div className="text-center">
                 <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="font-medium">No budget vs actual data available</p>
@@ -3332,29 +3352,29 @@ export default function FinancialAnalyticsTab({
       </Card>
 
       {/* Funding Source Breakdown */}
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle className="text-lg font-semibold text-slate-900">Funding Source Breakdown</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Funding Source Breakdown</CardTitle>
               <CardDescription>Distribution of funding by donor/provider</CardDescription>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {/* Source Type Toggle */}
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
-                  variant={fundingSourceType === 'transactions' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setFundingSourceType('transactions')}
-                  className="h-8"
+                  className={cn("h-8", fundingSourceType === 'transactions' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   Transactions
                 </Button>
                 <Button
-                  variant={fundingSourceType === 'planned' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setFundingSourceType('planned')}
-                  className="h-8"
+                  className={cn("h-8", fundingSourceType === 'planned' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   Planned
                 </Button>
@@ -3362,36 +3382,36 @@ export default function FinancialAnalyticsTab({
 
               {/* Transaction Type Filter (only show when viewing transactions) */}
               {fundingSourceType === 'transactions' && (
-                <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                <div className="flex gap-1 rounded-lg p-1 bg-muted">
                   <Button
-                    variant={fundingTransactionType === '1' ? 'default' : 'ghost'}
+                    variant="ghost"
                     size="sm"
                     onClick={() => setFundingTransactionType('1')}
-                    className="h-8 text-xs px-2"
+                    className={cn("h-8 text-xs px-2", fundingTransactionType === '1' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   >
                     Incoming
                   </Button>
                   <Button
-                    variant={fundingTransactionType === '2' ? 'default' : 'ghost'}
+                    variant="ghost"
                     size="sm"
                     onClick={() => setFundingTransactionType('2')}
-                    className="h-8 text-xs px-2"
+                    className={cn("h-8 text-xs px-2", fundingTransactionType === '2' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   >
                     Commitment
                   </Button>
                   <Button
-                    variant={fundingTransactionType === '3' ? 'default' : 'ghost'}
+                    variant="ghost"
                     size="sm"
                     onClick={() => setFundingTransactionType('3')}
-                    className="h-8 text-xs px-2"
+                    className={cn("h-8 text-xs px-2", fundingTransactionType === '3' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   >
                     Disbursement
                   </Button>
                   <Button
-                    variant={fundingTransactionType === '4' ? 'default' : 'ghost'}
+                    variant="ghost"
                     size="sm"
                     onClick={() => setFundingTransactionType('4')}
-                    className="h-8 text-xs px-2"
+                    className={cn("h-8 text-xs px-2", fundingTransactionType === '4' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                   >
                     Expenditure
                   </Button>
@@ -3399,20 +3419,20 @@ export default function FinancialAnalyticsTab({
               )}
 
               {/* View Toggle */}
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                 <Button
-                  variant={fundingChartType === 'chart' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setFundingChartType('chart')}
-                  className="h-8"
+                  className={cn("h-8", fundingChartType === 'chart' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   Chart
                 </Button>
                 <Button
-                  variant={fundingChartType === 'table' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setFundingChartType('table')}
-                  className="h-8"
+                  className={cn("h-8", fundingChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   Table
                 </Button>
@@ -3446,14 +3466,14 @@ export default function FinancialAnalyticsTab({
         <CardContent>
           {filteredFundingSourceData.providers && filteredFundingSourceData.providers.length > 0 ? (
             fundingChartType === 'table' ? (
-              <div className="overflow-auto h-[500px] border border-slate-200 rounded-lg">
+              <div className="overflow-auto h-[500px] border border-border rounded-lg">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white z-10">
-                    <tr className="border-b border-slate-200">
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700 bg-white">Provider</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700 bg-white">Receiver</th>
-                      <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Amount (USD)</th>
-                      <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Percentage</th>
+                  <thead className="sticky top-0 bg-card z-10">
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Provider</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Receiver</th>
+                      <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Amount (USD)</th>
+                      <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Percentage</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3461,15 +3481,15 @@ export default function FinancialAnalyticsTab({
                       const total = filteredFundingSourceData.providers.reduce((sum, s) => sum + s.value, 0)
                       const percentage = ((flow.value / total) * 100).toFixed(1)
                       return (
-                        <tr key={index} className="border-b border-slate-100 hover:bg-muted/50">
-                          <td className="py-2.5 px-4 font-medium text-slate-900" title={flow.provider}>
+                        <tr key={index} className="border-b border-border hover:bg-muted/50">
+                          <td className="py-2.5 px-4 font-medium text-foreground" title={flow.provider}>
                             {flow.providerDisplay || flow.provider}
                           </td>
-                          <td className="py-2.5 px-4 font-medium text-slate-700" title={flow.receiver}>
+                          <td className="py-2.5 px-4 font-medium text-foreground" title={flow.receiver}>
                             {flow.receiverDisplay || flow.receiver}
                           </td>
-                          <td className="text-right py-2.5 px-4 text-slate-700">{formatCurrency(flow.value)}</td>
-                          <td className="text-right py-2.5 px-4 text-slate-700">{percentage}%</td>
+                          <td className="text-right py-2.5 px-4 text-foreground">{formatCurrency(flow.value)}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground">{percentage}%</td>
                         </tr>
                       )
                     })}
@@ -3477,10 +3497,10 @@ export default function FinancialAnalyticsTab({
                     {(() => {
                       const total = filteredFundingSourceData.flows.reduce((sum, flow) => sum + flow.value, 0)
                       return (
-                        <tr className="border-t-2 border-slate-300 bg-slate-50 font-semibold">
-                          <td className="py-2.5 px-4 text-slate-900" colSpan={2}>Total</td>
-                          <td className="text-right py-2.5 px-4 text-slate-900">{formatCurrency(total)}</td>
-                          <td className="text-right py-2.5 px-4 text-slate-900">100.0%</td>
+                        <tr className="border-t-2 border-border bg-muted font-semibold">
+                          <td className="py-2.5 px-4 text-foreground" colSpan={2}>Total</td>
+                          <td className="text-right py-2.5 px-4 text-foreground">{formatCurrency(total)}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground">100.0%</td>
                         </tr>
                       )
                     })()}
@@ -3495,7 +3515,7 @@ export default function FinancialAnalyticsTab({
               />
             )
           ) : (
-            <div className="flex items-center justify-center h-96 text-slate-400">
+            <div className="flex items-center justify-center h-96 text-muted-foreground">
               <div className="text-center">
                 <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="font-medium">No funding source data available</p>

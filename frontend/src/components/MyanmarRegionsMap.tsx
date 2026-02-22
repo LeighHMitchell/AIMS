@@ -262,7 +262,7 @@ export default function MyanmarRegionsMap({
     return (
       <Card className="w-full h-full">
         <CardContent className="p-4 h-full flex items-center justify-center">
-          <div className="text-gray-500">Loading map...</div>
+          <div className="text-muted-foreground">Loading map...</div>
         </CardContent>
       </Card>
     )
@@ -272,7 +272,7 @@ export default function MyanmarRegionsMap({
     return (
       <Card className="w-full h-full">
         <CardContent className="p-4 h-full flex items-center justify-center">
-          <div className="text-gray-500">Failed to load map data</div>
+          <div className="text-muted-foreground">Failed to load map data</div>
         </CardContent>
       </Card>
     )
@@ -359,33 +359,33 @@ export default function MyanmarRegionsMap({
               const regionData = getHoveredRegionData()
               return (
                 <div
-                  className="absolute bg-white border border-slate-200 rounded-lg shadow-lg p-3 pointer-events-none z-50"
+                  className="absolute bg-card border border-border rounded-lg shadow-lg p-3 pointer-events-none z-50"
                   style={{
                     left: mousePosition.x + 15,
                     top: mousePosition.y - 10,
                     maxWidth: 280,
                   }}
                 >
-                  <h4 className="font-semibold text-slate-900 text-sm mb-2">{hoveredRegion}</h4>
+                  <h4 className="font-semibold text-foreground text-sm mb-2">{hoveredRegion}</h4>
                   <table className="w-full text-xs">
                     <tbody>
-                      <tr className="border-b border-slate-100">
-                        <td className="py-1 text-slate-500">Allocation</td>
-                        <td className="py-1 text-right font-medium text-slate-900">
+                      <tr className="border-b border-border">
+                        <td className="py-1 text-muted-foreground">Allocation</td>
+                        <td className="py-1 text-right font-medium text-foreground">
                           {regionData?.percentage.toFixed(1) ?? '0'}%
                         </td>
                       </tr>
                       {regionData?.value !== undefined && (
-                        <tr className="border-b border-slate-100">
-                          <td className="py-1 text-slate-500">Value</td>
-                          <td className="py-1 text-right font-medium text-slate-900">
+                        <tr className="border-b border-border">
+                          <td className="py-1 text-muted-foreground">Value</td>
+                          <td className="py-1 text-right font-medium text-foreground">
                             {formatCurrency(regionData.value)}
                           </td>
                         </tr>
                       )}
                       <tr>
-                        <td className="py-1 text-slate-500">Activities</td>
-                        <td className="py-1 text-right font-medium text-slate-900">
+                        <td className="py-1 text-muted-foreground">Activities</td>
+                        <td className="py-1 text-right font-medium text-foreground">
                           {regionData?.activityCount ?? 0}
                         </td>
                       </tr>
@@ -520,7 +520,7 @@ export default function MyanmarRegionsMap({
             </svg>
           </div>
 
-          <p className="text-sm text-slate-600 mt-4">
+          <p className="text-sm text-muted-foreground mt-4">
             This interactive map provides a geographic visualization of aid distribution across Myanmar.
             Darker shading indicates higher allocation percentages, making it easy to identify regional
             concentrations and gaps at a glance. Hover over regions to see exact percentages, helping

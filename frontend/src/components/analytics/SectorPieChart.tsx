@@ -10,7 +10,7 @@ import {
   Legend
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 
 interface SectorPieChartProps {
   dateRange: {
@@ -210,9 +210,7 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-[300px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 

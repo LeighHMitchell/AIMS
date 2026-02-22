@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Link2, Plus, X, ExternalLink, LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import ActivityCard from './ActivityCard';
 import LinkedActivityModal from './LinkedActivityModal';
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
 
 interface LinkedActivity {
   id: string;
@@ -175,7 +177,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
     if (!searchResults.length) {
       if (searchQuery.trim() && !searching) {
         return (
-          <div className="mt-4 text-center text-gray-500 py-4">
+          <div className="mt-4 text-center text-muted-foreground py-4">
             No activities found matching "{searchQuery}"
           </div>
         );
@@ -184,13 +186,13 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
     }
     
     return (
-      <div className="mt-4 border rounded-lg p-4 bg-gray-50 max-h-96 overflow-y-auto">
+      <div className="mt-4 border rounded-lg p-4 bg-muted max-h-96 overflow-y-auto">
         <h4 className="font-medium mb-3">Search Results ({searchResults.length})</h4>
         <div className="space-y-2">
           {searchResults.map((activity) => (
             <div
               key={activity.id}
-              className="p-3 bg-white rounded border hover:border-blue-500 cursor-pointer transition-colors"
+              className="p-3 bg-card rounded border hover:border-blue-500 cursor-pointer transition-colors"
               onClick={() => handleSelectActivity(activity)}
             >
               <div className="flex justify-between items-start">
@@ -198,7 +200,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                   {/* Activity Icon */}
                   <div className="flex-shrink-0 mt-0.5">
                     {activity.icon ? (
-                      <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                      <div className="w-8 h-8 rounded-full overflow-hidden border border-border">
                         <img 
                           src={activity.icon} 
                           alt="Activity icon" 
@@ -225,7 +227,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                   {/* Activity Details */}
                   <div className="flex-1 min-w-0">
                     <h5 className="font-medium text-sm truncate">{activity.title}</h5>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       IATI ID: {activity.iati_id || 'N/A'} | 
                       Status: {activity.activity_status}
                     </p>
@@ -247,10 +249,10 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
+              <div className="h-4 bg-muted rounded w-1/4 mb-3"></div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map(j => (
-                  <div key={j} className="h-32 bg-gray-100 rounded-lg"></div>
+                  <div key={j} className="h-32 bg-muted rounded-lg"></div>
                 ))}
               </div>
             </div>
@@ -261,7 +263,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
     
     if (!linkedActivities.length) {
       return (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           No linked activities yet. Use the search above to find and link related activities.
         </div>
       );
@@ -284,32 +286,32 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                 <Link2 className="w-4 h-4" />
                 {type} Activities ({activities.length})
               </h3>
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
+              <div className="bg-card rounded-lg shadow overflow-hidden">
+                <table className="min-w-full divide-y divide-border">
                   <thead className="bg-surface-muted">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Activity Title
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         IATI Identifier
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Direction
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Created
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-card divide-y divide-border">
                     {activities.map((la) => (
                       <tr key={la.id} className="hover:bg-muted/50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           {la.isExternal ? (
                             <div className="flex items-center gap-2">
                               <span className="text-sm">{la.activityTitle}</span>
-                              <ExternalLink className="w-3 h-3 text-gray-400" />
+                              <ExternalLink className="w-3 h-3 text-muted-foreground" />
                             </div>
                           ) : (
                             <a
@@ -322,13 +324,13 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">{la.iatiIdentifier}</span>
+                            <span className="text-sm text-muted-foreground">{la.iatiIdentifier}</span>
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
                                 navigator.clipboard.writeText(la.iatiIdentifier);
                               }}
-                              className="text-gray-400 hover:text-gray-600 transition-colors"
+                              className="text-muted-foreground hover:text-muted-foreground transition-colors"
                               title="Copy IATI ID"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -346,7 +348,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                             {la.direction}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                           <div className="flex items-center justify-between">
                             <span>{new Date(la.createdAt).toLocaleDateString()}</span>
                             {currentUserId && (
@@ -384,18 +386,18 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
               {activities.map((la) => (
                 <div key={la.id} className="relative">
                   {la.isExternal ? (
-                    <div className="p-4 border rounded-lg bg-gray-50">
+                    <div className="p-4 border rounded-lg bg-muted">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-medium text-sm">{la.activityTitle}</h4>
-                          <p className="text-xs text-gray-600 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             <span className="font-semibold">IATI Identifier:</span> {la.iatiIdentifier}
                           </p>
                         </div>
-                        <ExternalLink className="w-4 h-4 text-gray-400" />
+                        <ExternalLink className="w-4 h-4 text-muted-foreground" />
                       </div>
                       <div className="mt-2 flex justify-between items-center">
-                        <span className="text-xs text-gray-500">External Activity</span>
+                        <span className="text-xs text-muted-foreground">External Activity</span>
                         {currentUserId && (
                           <button
                             onClick={() => handleDeleteLink(la.id)}
@@ -429,7 +431,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                     {currentUserId && !la.isExternal && (
                       <button
                         onClick={() => handleDeleteLink(la.id)}
-                        className="bg-white rounded-full p-1 shadow-sm hover:shadow-md transition-shadow text-red-500 hover:text-red-700"
+                        className="bg-card rounded-full p-1 shadow-sm hover:shadow-md transition-shadow text-red-500 hover:text-red-700"
                         title="Remove link"
                       >
                         <X className="w-3 h-3" />
@@ -448,12 +450,12 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Search Section */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-card p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-4">Link Related Activities</h2>
         
         <div className="flex gap-2 items-center">
           <div className="flex-1 relative min-w-[480px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
             <input
               type="text"
               placeholder="Search by UUID, Activity ID, IATI Identifier, or Title..."
@@ -483,29 +485,33 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
       {/* View Toggle */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Linked Activities</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setViewMode('list')}
-            className={`px-3 py-1.5 rounded-l-md flex items-center gap-1 ${
+        <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
               viewMode === 'list'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700'
-            }`}
+                ? 'bg-card shadow-sm text-foreground hover:bg-card'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+            onClick={() => setViewMode('list')}
           >
             <TableIcon className="h-4 w-4" />
             Table
-          </button>
-          <button
-            onClick={() => setViewMode('card')}
-            className={`px-3 py-1.5 rounded-r-md flex items-center gap-1 ${
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
               viewMode === 'card'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700'
-            }`}
+                ? 'bg-card shadow-sm text-foreground hover:bg-card'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+            onClick={() => setViewMode('card')}
           >
             <LayoutGrid className="h-4 w-4" />
             Card
-          </button>
+          </Button>
         </div>
       </div>
       

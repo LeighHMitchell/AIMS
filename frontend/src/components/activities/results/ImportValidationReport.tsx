@@ -85,8 +85,8 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
   return (
     <div className="space-y-6">
       {/* IATI Element Coverage Table */}
-      <div className="border border-gray-300 rounded-lg overflow-hidden">
-        <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="bg-muted px-4 py-3 border-b border-border">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <FileCode className="h-4 w-4" />
             IATI Element Coverage
@@ -94,18 +94,18 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
         </div>
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50 border-b border-gray-300">
-              <TableHead className="border-r border-gray-200">Element Category</TableHead>
-              <TableHead className="text-center w-24 border-r border-gray-200">Coverage</TableHead>
+            <TableRow className="bg-muted border-b border-border">
+              <TableHead className="border-r border-border">Element Category</TableHead>
+              <TableHead className="text-center w-24 border-r border-border">Coverage</TableHead>
               <TableHead>Elements Found</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {coverageData.map((row, idx) => (
-              <TableRow key={idx} className="border-b border-gray-200">
-                <TableCell className="font-medium border-r border-gray-200">{row.category}</TableCell>
-                <TableCell className="text-center border-r border-gray-200">
-                  <span className="font-medium text-gray-700">
+              <TableRow key={idx} className="border-b border-border">
+                <TableCell className="font-medium border-r border-border">{row.category}</TableCell>
+                <TableCell className="text-center border-r border-border">
+                  <span className="font-medium text-foreground">
                     {row.coverage}%
                   </span>
                 </TableCell>
@@ -118,8 +118,8 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
                           key={element}
                           className={`inline-flex items-center text-xs px-2 py-0.5 rounded border ${
                             found 
-                              ? 'bg-gray-100 border-gray-300 text-gray-700' 
-                              : 'bg-white border-gray-200 text-gray-400'
+                              ? 'bg-muted border-border text-foreground' 
+                              : 'bg-card border-border text-muted-foreground'
                           }`}
                         >
                           {found && <Check className="h-3 w-3 mr-1" />}
@@ -137,27 +137,27 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
 
       {/* Errors Display */}
       {summary.errors.length > 0 && (
-        <div className="border border-gray-300 rounded-lg overflow-hidden">
-          <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
-            <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="bg-muted px-4 py-3 border-b border-border">
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <XCircle className="h-4 w-4" />
               Import Errors ({summary.errors.length})
             </h3>
           </div>
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50 border-b border-gray-200">
-                <TableHead className="w-12 border-r border-gray-200">#</TableHead>
-                <TableHead className="border-r border-gray-200">Error Message</TableHead>
+              <TableRow className="bg-muted border-b border-border">
+                <TableHead className="w-12 border-r border-border">#</TableHead>
+                <TableHead className="border-r border-border">Error Message</TableHead>
                 <TableHead className="w-48">Context</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {summary.errors.map((error, index) => (
-                <TableRow key={index} className="border-b border-gray-100">
-                  <TableCell className="text-gray-500 border-r border-gray-100">{index + 1}</TableCell>
-                  <TableCell className="font-medium text-gray-800 border-r border-gray-100">{error.message}</TableCell>
-                  <TableCell className="text-sm text-gray-600">
+                <TableRow key={index} className="border-b border-border">
+                  <TableCell className="text-muted-foreground border-r border-border">{index + 1}</TableCell>
+                  <TableCell className="font-medium text-foreground border-r border-border">{error.message}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
                     {error.context && <div>Context: {error.context}</div>}
                     {error.element && <div>Element: {error.element}</div>}
                   </TableCell>
@@ -170,27 +170,27 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
 
       {/* Warnings Display */}
       {summary.warnings && summary.warnings.length > 0 && (
-        <div className="border border-gray-300 rounded-lg overflow-hidden">
-          <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
-            <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="bg-muted px-4 py-3 border-b border-border">
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
               Warnings ({summary.warnings.length})
             </h3>
           </div>
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50 border-b border-gray-200">
-                <TableHead className="w-12 border-r border-gray-200">#</TableHead>
-                <TableHead className="border-r border-gray-200">Warning Message</TableHead>
+              <TableRow className="bg-muted border-b border-border">
+                <TableHead className="w-12 border-r border-border">#</TableHead>
+                <TableHead className="border-r border-border">Warning Message</TableHead>
                 <TableHead className="w-32">Element</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {summary.warnings.map((warning, index) => (
-                <TableRow key={index} className="border-b border-gray-100">
-                  <TableCell className="text-gray-500 border-r border-gray-100">{index + 1}</TableCell>
-                  <TableCell className="text-gray-700 border-r border-gray-100">{warning.message}</TableCell>
-                  <TableCell className="text-sm text-gray-600">{warning.element || '-'}</TableCell>
+                <TableRow key={index} className="border-b border-border">
+                  <TableCell className="text-muted-foreground border-r border-border">{index + 1}</TableCell>
+                  <TableCell className="text-foreground border-r border-border">{warning.message}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{warning.element || '-'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -200,9 +200,9 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
 
       {/* Success Message */}
       {summary.errors.length === 0 && (
-        <Alert className="border-gray-200 bg-gray-50">
-          <CheckCircle2 className="h-4 w-4 text-gray-600" />
-          <AlertDescription className="text-gray-700">
+        <Alert className="border-border bg-muted">
+          <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+          <AlertDescription className="text-foreground">
             <p className="font-semibold">Import Completed Successfully!</p>
             <p className="text-sm mt-1">
               All results data has been imported with {overallCoverage}% IATI element coverage. 

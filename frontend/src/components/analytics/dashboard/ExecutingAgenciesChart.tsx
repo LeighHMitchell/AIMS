@@ -330,7 +330,6 @@ export function ExecutingAgenciesChart({
     <>
       <div className="h-64">
         {renderContent(false)}
-        {renderControls(false)}
       </div>
 
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>

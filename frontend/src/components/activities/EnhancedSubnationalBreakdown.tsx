@@ -24,7 +24,7 @@ const SubnationalChoroplethMap = dynamic(
     loading: () => (
       <Card className="w-full h-full">
         <CardContent className="p-4 h-full flex items-center justify-center">
-          <div className="text-gray-500 flex items-center gap-2">
+          <div className="text-muted-foreground flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading map...
           </div>
@@ -625,7 +625,7 @@ export function EnhancedSubnationalBreakdown({
               </div>
 
               {/* Loading message */}
-              <div className="flex items-center justify-center mt-8 text-sm text-gray-500">
+              <div className="flex items-center justify-center mt-8 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 Loading subnational breakdown data...
               </div>
@@ -709,10 +709,10 @@ export function EnhancedSubnationalBreakdown({
                 <table className="w-full">
                   <thead className="bg-surface-muted">
                     <tr>
-                      <th className="text-left px-3 py-2 font-medium text-sm text-gray-700">Administrative Unit</th>
+                      <th className="text-left px-3 py-2 font-medium text-sm text-foreground">Administrative Unit</th>
                       <th className="px-3 py-2">
                         <div className="flex items-center justify-end gap-2">
-                          <span className="w-28 text-right font-medium text-sm text-gray-700">%</span>
+                          <span className="w-28 text-right font-medium text-sm text-foreground">%</span>
                           <span className="w-8"></span>
                         </div>
                       </th>
@@ -724,7 +724,7 @@ export function EnhancedSubnationalBreakdown({
                       <tr key={entry.id} className="border-t">
                         <td className={`px-3 py-2 ${isChild ? 'pl-8' : ''}`}>
                           <div className="flex items-center gap-2">
-                            <span className={`text-sm ${isParent ? 'font-semibold' : isChild ? 'font-normal text-gray-700' : 'font-medium'}`}>
+                            <span className={`text-sm ${isParent ? 'font-semibold' : isChild ? 'font-normal text-foreground' : 'font-medium'}`}>
                               {isChild ? entry.adminUnit.name : entry.adminUnit.fullName}
                             </span>
                             {entry.adminUnit.type === 'township' && (
@@ -745,7 +745,7 @@ export function EnhancedSubnationalBreakdown({
                               placeholder="0"
                               disabled={!canEdit}
                             />
-                            <span className="text-xs text-gray-500 w-8 text-left">%</span>
+                            <span className="text-xs text-muted-foreground w-8 text-left">%</span>
                           </div>
                         </td>
                         {canEdit && (
@@ -771,10 +771,10 @@ export function EnhancedSubnationalBreakdown({
                         </td>
                         <td className="px-3 py-2 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <span className="text-gray-700 font-semibold text-sm w-28 text-right">
+                            <span className="text-foreground font-semibold text-sm w-28 text-right">
                               {totalPercentage.toFixed(1)}
                             </span>
-                            <span className="text-xs text-gray-700 font-semibold w-8 text-left">%</span>
+                            <span className="text-xs text-foreground font-semibold w-8 text-left">%</span>
                           </div>
                         </td>
                         {canEdit && <td className="px-3 py-2"></td>}
@@ -784,7 +784,7 @@ export function EnhancedSubnationalBreakdown({
                 </table>
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500 border rounded-lg">
+              <div className="text-center py-8 text-muted-foreground border rounded-lg">
                 <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No administrative units selected yet.</p>
                 <p className="text-sm">Use the dropdown above or click on the map to add regions.</p>
@@ -794,7 +794,7 @@ export function EnhancedSubnationalBreakdown({
             {/* Save Status */}
             {entries.length > 0 && saving && (
               <div className="flex justify-end pt-4 border-t">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   Saving...
                 </div>
               </div>

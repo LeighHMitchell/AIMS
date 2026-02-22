@@ -12,7 +12,7 @@ import {
 import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { BarChartSkeleton } from "@/components/ui/skeleton-loader";
+import { LoadingText } from "@/components/ui/loading-text";
 
 interface AnalyticsFilters {
   donor: string;
@@ -146,7 +146,7 @@ export const FinanceTypeChart: React.FC<FinanceTypeChartProps> = ({
   };
 
   if (loading) {
-    return <BarChartSkeleton height="500px" bars={5} />;
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
   }
 
   if (error) {

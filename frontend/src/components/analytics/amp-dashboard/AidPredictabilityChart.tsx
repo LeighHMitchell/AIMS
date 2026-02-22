@@ -17,7 +17,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
@@ -338,7 +338,7 @@ export function AidPredictabilityChart() {
 
   const renderContent = (expanded: boolean = false) => {
     if (loading) {
-      return <Skeleton className={expanded ? "h-[500px] w-full" : "h-[300px] w-full"} />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (error) {

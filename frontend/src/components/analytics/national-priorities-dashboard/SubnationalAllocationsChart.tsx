@@ -10,11 +10,10 @@ import {
   ResponsiveContainer,
   Cell,
   CartesianGrid,
-  LabelList,
   PieChart,
   Pie,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -49,7 +48,7 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BarChartSkeleton } from "@/components/ui/skeleton-loader";
+import { LoadingText } from "@/components/ui/loading-text";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
@@ -299,12 +298,6 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
         <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={50}>
-          <LabelList
-            dataKey="value"
-            position="top"
-            formatter={(value: number) => formatCurrency(value)}
-            style={{ fontSize: 10, fontWeight: 500, fill: "#374151" }}
-          />
           {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
@@ -441,7 +434,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
     const chartHeight = expanded ? 400 : "100%";
 
     if (loading) {
-      return <BarChartSkeleton height="100%" bars={5} showLegend={false} />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (!data || data.length === 0) {
@@ -501,19 +494,6 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           </Button>
         </div>
 
-        {/* Expand button - only in compact view */}
-        {!expanded && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setIsExpanded(true)}
-            title="Expand"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        )}
-
         {/* Export button - only in expanded view */}
         {expanded && (
           <Button
@@ -534,20 +514,24 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
     <div className="flex flex-col h-[700px] gap-4">
       {/* Chart Card - takes remaining space */}
       <Card className="bg-white border-slate-200 flex-1 flex flex-col min-h-0">
-        <CardHeader className="pb-2 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Subnational Allocations
-            </CardTitle>
+        <CardHeader className="pb-1 pt-4 px-4 flex-shrink-0">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base font-medium text-slate-700 truncate">
+                Subnational Allocations
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                States and regions by financial allocation
+              </CardDescription>
+            </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0"
               onClick={() => setIsExpanded(true)}
-              title="Expand"
+              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4" />
+              <Maximize2 className="h-4 w-4 text-slate-500" />
             </Button>
           </div>
         </CardHeader>
@@ -588,10 +572,10 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-bold">
+                <DialogTitle className="text-2xl font-semibold text-slate-800">
                   Subnational Allocations
                 </DialogTitle>
-                <DialogDescription className="text-base mt-1">
+                <DialogDescription className="text-base mt-2">
                   Myanmar States & Regions by {METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()}.
                 </DialogDescription>
               </div>

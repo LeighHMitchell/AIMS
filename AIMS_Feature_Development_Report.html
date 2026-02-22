@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIMS Feature Development Report – Implementation Guide</title>
+  <style>
+    :root { --bg: #f8fafc; --card: #fff; --border: #e2e8f0; --text: #0f172a; --muted: #64748b; --accent: #0ea5e9; --green: #22c55e; --amber: #f59e0b; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 1.5rem; }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--muted); margin-bottom: 2rem; }
+    h2 { font-size: 1.25rem; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+    h3 { font-size: 1.05rem; margin-top: 1.25rem; color: var(--text); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    th { background: var(--bg); font-weight: 600; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
+    .badge-high { background: #dcfce7; color: #166534; }
+    .badge-mid { background: #fef3c7; color: #92400e; }
+    .badge-low { background: #e0e7ff; color: #3730a3; }
+    .badge-easy { background: #dbeafe; color: #1e40af; }
+    .badge-hard { background: #fee2e2; color: #991b1b; }
+    ul { margin: 0.5rem 0; padding-left: 1.25rem; }
+    code { background: var(--bg); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85em; }
+    .rank-table { margin-top: 1rem; }
+    .rank-table td:nth-child(1) { width: 2rem; }
+    .rank-table td:nth-child(2) { width: 28%; }
+    .rank-table td:nth-child(3) { width: 10%; }
+    .rank-table td:nth-child(4) { width: 10%; }
+    .rank-table td:nth-child(5) { width: 50%; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AIMS Feature Development Report</h1>
+    <p class="subtitle">Implementation guide for selected DFIMS gaps — code-based, aligned with current AIMS architecture and UI/UX patterns. Use as a basis for future feature development and iteration.</p>
+
+    <h2>1. UI/UX patterns and integration points used in AIMS</h2>
+    <div class="card">
+      <ul>
+        <li><strong>Layout:</strong> <code>MainLayout</code> + sidebar (<code>SidebarNav</code>), page-level headers with icon + title + description.</li>
+        <li><strong>Tabs:</strong> <code>Tabs</code>, <code>TabsList</code>, <code>TabsTrigger</code>, <code>TabsContent</code> (e.g. Data Clinic, Activity Editor sections, Reports).</li>
+        <li><strong>Cards:</strong> <code>Card</code>, <code>CardHeader</code>, <code>CardTitle</code>, <code>CardDescription</code>, <code>CardContent</code> for sections and report blocks.</li>
+        <li><strong>Modals/Dialogs:</strong> <code>Dialog</code>, <code>DialogContent</code>, <code>DialogHeader</code>, <code>DialogTitle</code> for forms and confirmations.</li>
+        <li><strong>Tables:</strong> <code>Table</code>, <code>TableHeader</code>, <code>TableBody</code>, <code>TableRow</code>, <code>TableCell</code>; sortable headers and filters where needed.</li>
+        <li><strong>Forms:</strong> <code>Label</code>, <code>Input</code>, <code>Select</code>, <code>Button</code>; <code>EnhancedSearchableSelect</code> for orgs/sectors/countries; autosave patterns (<code>autosave-input</code>, <code>field-save-status</code>).</li>
+        <li><strong>Reports:</strong> <code>ReportCard</code> + <code>ReportHeader</code> (config-driven), <code>CustomReportBuilder</code> (pivot), <code>SavedReportsManager</code> / <code>saved_pivot_reports</code>.</li>
+        <li><strong>Analytics:</strong> Recharts (Bar, Line, Area, XAxis, YAxis, Tooltip, Legend), <code>LoadingText</code>, view toggle (chart/table), export (CSV/PDF) where present.</li>
+        <li><strong>Data Clinic:</strong> Tabbed checks (activities, transactions, budgets, etc.), debug endpoint <code>/api/data-clinic/debug</code>, role-gated (<code>super_user</code> / <code>gov_partner_tier_1</code>).</li>
+        <li><strong>APIs:</strong> <code>requireAuth()</code>, <code>apiFetch</code>, Supabase from <code>getSupabaseAdmin()</code> server-side; RLS on all relevant tables.</li>
+      </ul>
+    </div>
+
+    <h2>2. Feature-by-feature implementation guide</h2>
+
+    <div class="card">
+      <h3>1. Complete IATI XML Export</h3>
+      <p><strong>Current state:</strong> Export lives in <code>frontend/src/app/api/activities/[id]/export-iati/route.ts</code>. It fetches activity, related_activities, activity_contributors, transactions and builds XML via <code>buildIATIXML()</code>. It does <em>not</em> include: budgets, planned disbursements, policy markers, tags, results framework, conditions, contact-info, document-links, country-budget-items, FSS, CRS-add (financing terms / loan status), humanitarian-scope, or activity-level sectors/recipient countries.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>In the same GET handler, add Supabase queries for: <code>activity_budgets</code>, <code>planned_disbursements</code>, <code>activity_policy_markers</code>, <code>activity_sectors</code>, <code>activity_recipient_countries</code>, <code>document_links</code>, <code>forward_spending_survey</code> + <code>fss_forecasts</code>, <code>activity_financing_terms</code>, <code>activity_loan_status</code>, tags. Use existing IATI builders (<code>iati-xml-generator.ts</code>, <code>iati/exportLocations.ts</code>, <code>iatiDocumentLink.ts</code>).</li>
+        <li>Extend <code>buildIATIXML()</code> (or delegate to <code>IATIXMLGenerator</code>) to append <code>&lt;budget&gt;</code>, <code>&lt;planned-disbursement&gt;</code>, <code>&lt;policy-marker&gt;</code>, <code>&lt;tag&gt;</code>, <code>&lt;result&gt;</code>, <code>&lt;document-link&gt;</code>, <code>&lt;recipient-country&gt;</code>, <code>&lt;sector&gt;</code>, <code>&lt;forward-spending-survey&gt;</code>, <code>&lt;loan-terms&gt;</code>, <code>&lt;loan-status&gt;</code>, etc., following IATI 2.03.</li>
+        <li>Optional: validation step (IATI Validator API or XSD via <code>validateIATIXML</code> in <code>iati/exportLocations.ts</code>).</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span> — Required for IATI compliance. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>3. OECD DAC CRS Reporting Module</h3>
+      <p><strong>Current state:</strong> CRS channel code on participating orgs; import supports DAC CRS and financing terms. No CRS++ report generation (DAC Table 1/2/5 or full CRS++ export).</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>New API routes under <code>frontend/src/app/api/reports/</code>: <code>crs-table-1/route.ts</code> (ODA by recipient), <code>crs-table-2/route.ts</code> (ODA by sector), <code>crs-table-5/route.ts</code> (by modality/channel). Each: requireAuth(), apply filters, query activities + transactions + sectors + recipient countries + participating orgs, aggregate, return JSON/CSV. Use <code>dac-codes.ts</code> / <code>dac-sectors.json</code> for labels.</li>
+        <li>CRS++ detail export route for flat/hierarchical OECD columns.</li>
+        <li>UI: New "CRS Reports" section on Reports page using <code>ReportCard</code> pattern; tabs for Table 1, 2, 5, CRS++ export; same filters as Custom Report Builder.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span> for DAC countries. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>6. Forward Spending Plan / MTEF Integration</h3>
+      <p><strong>Current state:</strong> FSS fully implemented (<code>forward_spending_survey</code>, <code>fss_forecasts</code>, <code>ForwardSpendingSurveyTab</code>, APIs). No dedicated Forward Spending dashboard or MTEF view.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>New route <code>/api/analytics/forward-spending/route.ts</code>: aggregate <code>fss_forecasts</code> + activities by year, sector, region, donor; filters as other analytics.</li>
+        <li>MTEF page or tab under Analytics: total forward spend by year, by sector, by region; Recharts + Card + LoadingText; CSV export. Reuse <code>PlannedVsActualDisbursements</code>, <code>CumulativeFinancialOverview</code> patterns.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span>. <strong>Ease:</strong> <span class="badge badge-easy">Easy</span></p>
+    </div>
+
+    <div class="card">
+      <h3>7. Counterpart / Co-Financing Tracking</h3>
+      <p><strong>Current state:</strong> No dedicated module for government counterpart funding.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>New table <code>activity_counterpart_commitments</code>: id, activity_id, commitment_date, amount, currency, fiscal_year, source_ministry, notes, created_at, updated_at. RLS as per activities.</li>
+        <li>API: <code>/api/activities/[id]/counterpart/route.ts</code> GET/POST/PUT/DELETE; optional <code>/api/analytics/counterpart-summary</code>.</li>
+        <li>UI: New "Counterpart" tab under Funding &amp; Delivery; table + add/edit modal; reuse <code>ForwardSpendingSurveyTab</code> / <code>PlannedDisbursementsTab</code> pattern; optional USD conversion.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span> for recipient countries. <strong>Ease:</strong> <span class="badge badge-easy">Easy</span></p>
+    </div>
+
+    <div class="card">
+      <h3>8. Disbursement Forecasting / Predictability Analysis</h3>
+      <p><strong>Current state:</strong> <code>PlannedVsActualDisbursements</code> and <code>AidPredictabilityChart</code> compare planned vs actual. No automated GPEDC 5b or forecasting.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Define predictability metric (e.g. share of disbursements that were planned). API: extend or add <code>/api/analytics/predictability/route.ts</code> — query planned_disbursements + transactions, align by period, compute ratio/variance; filters.</li>
+        <li>UI: "Predictability" card in Aid Effectiveness or Analytics; time series + Indicator 5b-style metric + table of activities with ratio; export.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>9. Loan Lifecycle Management</h3>
+      <p><strong>Current state:</strong> <code>activity_financing_terms</code> and <code>activity_loan_status</code> exist. No amortization schedule, grant-equivalent, or outstanding balance roll-forward.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Optional <code>loan_amortization_schedule</code> table or client-side computation from financing_terms + loan_status.</li>
+        <li>Concessionality: utility using rate_1, repayment dates, reference rate; compute grant-equivalent; expose via API.</li>
+        <li>UI: Amortization table, outstanding balance over time, concessionality summary card in Loan/Financing Terms section.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium–High</span>. <strong>Ease:</strong> <span class="badge badge-hard">Hard</span></p>
+    </div>
+
+    <div class="card">
+      <h3>10. Multi-Donor Trust Fund / Pooled Fund Management</h3>
+      <p><strong>Current state:</strong> <code>related_activities</code> supports parent/child. No financial roll-up or pooled fund hierarchy.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Use related_activities with type "fund"; optional <code>activity_fund_members</code> (activity_id, parent_fund_activity_id, contributor_org_id, committed_amount, etc.).</li>
+        <li>API: <code>/api/activities/[id]/fund-contributions</code>, <code>/api/activities/[id]/fund-disbursements</code>, <code>/api/analytics/pooled-funds</code>.</li>
+        <li>UI: "Pooled fund" view for fund activities — contributions by org, disbursements by child/sector/region; hierarchy view.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-hard">Hard</span></p>
+    </div>
+
+    <div class="card">
+      <h3>11. Donor Division of Labour / Fragmentation Analysis</h3>
+      <p><strong>Current state:</strong> Fragmentation heatmaps exist (sector, program, location). No division-of-labour report or Herfindahl.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Extend or add <code>/api/analytics/fragmentation/division-of-labour/route.ts</code>: donor count per sector, Herfindahl, optional "recommended" mapping.</li>
+        <li>UI: "Division of labour" tab in Fragmentation section; table "Sector → Donor count, Top 3, Herfindahl"; export. Reuse <code>FragmentationHeatmap</code>.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-easy">Easy</span></p>
+    </div>
+
+    <div class="card">
+      <h3>13. Excel/CSV Template-Based Bulk Data Entry</h3>
+      <p><strong>Current state:</strong> IATI XML import; no Excel template or bulk Excel/CSV upload.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Static or generated Excel templates in <code>public/templates/</code>; "Download template" on Reports or Bulk upload page.</li>
+        <li>API: <code>/api/bulk-import/excel/route.ts</code> — parse XLSX, validate, return preview + errors; optional Apply step to insert via existing APIs.</li>
+        <li>UI: Bulk upload page — select template, download, upload, preview + errors, confirm import. Reuse progress/toast from IATI bulk import.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>14. Procurement / Contract Tracking</h3>
+      <p><strong>Current state:</strong> None.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>New tables <code>activity_contracts</code>, <code>activity_tenders</code> with RLS. CRUD APIs under <code>/api/activities/[id]/contracts</code>, <code>tenders</code>.</li>
+        <li>UI: "Procurement" tab in Activity Editor; table + add/edit modal; <code>OrganizationCombobox</code> for contractor.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-easy">Easy</span></p>
+    </div>
+
+    <div class="card">
+      <h3>15. Climate Finance Tagging &amp; Reporting</h3>
+      <p><strong>Current state:</strong> Policy markers (Rio) and <code>PolicyMarkersChart</code>, <code>/api/analytics/policy-markers</code>. No dedicated climate dashboard.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Filter by climate policy marker (e.g. Rio 2). New <code>/api/analytics/climate-finance/route.ts</code> — aggregate by year, sector, donor, adaptation vs mitigation if stored.</li>
+        <li>UI: "Climate finance" dashboard — time series, by sector/donor, optional target progress. Reuse <code>PolicyMarkersChart</code> and dashboard patterns.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span>. <strong>Ease:</strong> <span class="badge badge-easy">Easy</span></p>
+    </div>
+
+    <div class="card">
+      <h3>16. Environmental &amp; Social Safeguards Tracking</h3>
+      <p><strong>Current state:</strong> None.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>New table <code>activity_safeguards</code> (activity_id, safeguard_type, status, assessment_date, notes, document_url, etc.). CRUD API.</li>
+        <li>UI: "Safeguards" tab — table + add/edit modal; completion tick when required safeguards recorded.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-easy">Easy</span></p>
+    </div>
+
+    <div class="card">
+      <h3>17. Results Aggregation &amp; Portfolio-Level Reporting</h3>
+      <p><strong>Current state:</strong> Per-activity results; <code>ReferencesSummaryTable</code> aggregates within activity. No cross-activity aggregation.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>New <code>/api/analytics/results-aggregation/route.ts</code>: query results/indicators/periods across activities (with filters); aggregate by result type, indicator, sector/country.</li>
+        <li>UI: "Portfolio results" page — tables by sector, result type, indicator; optional charts. Same filters as other analytics.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>18. Comprehensive Audit Log with Search &amp; Export</h3>
+      <p><strong>Current state:</strong> <code>activity_logs</code> table; GET with limit, userRole, userId; activity-logs page. No entity-wide filter, search, export, or field-level diff.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Extend GET: query params entityType, entityId, dateFrom, dateTo, action, search (in details). New <code>/api/activity-logs/export</code> for CSV.</li>
+        <li>UI: Filters, search box, Export button; optional "View diff" for old_value/new_value in metadata.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>19. Multi-Language UI (i18n)</h3>
+      <p><strong>Current state:</strong> <code>defaultLanguage</code> in system settings; UI is English-only.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Add <code>next-intl</code> or <code>react-i18next</code>; messages/en.json, fr.json, etc.; wrap app; replace strings with t(). Use defaultLanguage as default locale; optional locale segment or dropdown.</li>
+        <li>Phased: start with Dashboard, Activities list/detail, Reports.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span>. <strong>Ease:</strong> <span class="badge badge-hard">Hard</span></p>
+    </div>
+
+    <div class="card">
+      <h3>20. Offline Data Entry / PWA</h3>
+      <p><strong>Current state:</strong> No service worker or offline storage.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Add next-pwa/manifest; register service worker; cache static/API for read. IndexedDB queue for writes; sync when online; conflict handling. "Pending sync" UI and sync status.</li>
+        <li>Start with subset of forms (e.g. one activity edit, transaction add).</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-hard">Hard</span></p>
+    </div>
+
+    <div class="card">
+      <h3>22. South-South &amp; Triangular Cooperation Tracking</h3>
+      <p><strong>Current state:</strong> No SSC/triangular field.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Add <code>cooperation_type</code> on activities (north_south, south_south, triangular) or tag. Filter in list/report APIs. New <code>/api/analytics/ssc</code> for totals by year/sector/donor.</li>
+        <li>UI: Dropdown in Activity Editor; "SSC &amp; Triangular" card in Analytics.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-easy">Easy</span></p>
+    </div>
+
+    <div class="card">
+      <h3>23. ODA Eligibility Checker</h3>
+      <p><strong>Current state:</strong> None.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Implement DAC rules: recipient on list, concessionality, development intent. New <code>/api/activities/[id]/oda-eligibility</code> returns { eligible, reasons, details }.</li>
+        <li>UI: "ODA eligibility" card on activity detail; optional report of ineligible activities.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium–High</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>24. Debt Sustainability Integration</h3>
+      <p><strong>Current state:</strong> None.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Manual: attach DSA document/link and risk rating per country/activity. Or integrate external API for country DSA. Optional <code>country_debt_indicators</code> table.</li>
+        <li>UI: Show DSA rating in country/activity context; optional filter for high-risk countries.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>25. Outcome-Based / Results-Based Financing Tracking</h3>
+      <p><strong>Current state:</strong> Results exist; no RBF flag.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Add finance_type or tag for RBF/payment-by-results/DIB. Filter in list/analytics. New <code>/api/analytics/rbf</code>. UI: checkbox in Activity Editor; "RBF" card in Analytics.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-easy">Easy</span></p>
+    </div>
+
+    <div class="card">
+      <h3>26. Country Strategy / Partnership Framework Management</h3>
+      <p><strong>Current state:</strong> None.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>New table <code>country_strategies</code> (title, country_code, strategy_type, period_start/end, document_url, etc.); optional priorities table. Link activities via activity_country_strategy or tag. CRUD APIs; list activities by strategy.</li>
+        <li>UI: "Strategies" page; in Activity Editor "Link to strategy"; Analytics "Alignment to CPF".</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>27. Parliamentary Reporting Module</h3>
+      <p><strong>Current state:</strong> Reports exist; no parliament-specific layout.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Define 1–3 templates (summary, detail, annex). New routes <code>/api/reports/parliamentary-summary</code>, <code>parliamentary-detail</code>; optional PDF generation (Puppeteer/react-pdf).</li>
+        <li>UI: "Parliamentary reports" on Reports page; Generate summary/full report; Preview HTML + Download PDF.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium–High</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>28. Donor Self-Assessment Portal</h3>
+      <p><strong>Current state:</strong> Data Clinic is gov/super_user only.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Reuse Data Clinic checks scoped to current user's org (funder/accountable). New <code>/api/self-assessment</code> or <code>/api/donor-dashboard/quality</code>; return scores and failing activities. Optional snapshot table.</li>
+        <li>UI: "Self-assessment" page for donor users — scorecards, "Activities needing attention", Download report.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>29. Automated Data Quality Alerts</h3>
+      <p><strong>Current state:</strong> Data Clinic on-demand only.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Define thresholds (e.g. org has &gt; N activities with missing sectors). Cron (Vercel/Supabase) calls <code>/api/cron/data-quality-alerts</code>; run checks; create notification or send email; store last run.</li>
+        <li>UI: Alert settings (frequency, recipients); Alert history page.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-high">High</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <div class="card">
+      <h3>30. Historical Exchange Rate Gain/Loss Tracking</h3>
+      <p><strong>Current state:</strong> Currency conversion to USD; usd_amount, exchange_rate_used on transactions, budgets, planned_disbursements, FSS. No gain/loss tracking.</p>
+      <p><strong>How to implement:</strong></p>
+      <ul>
+        <li>Re-value commitments at reporting date; difference = gain/loss. Add columns (e.g. usd_value_at_commitment, usd_value_at_reporting) or nightly job into <code>currency_revaluations</code> table.</li>
+        <li>API: <code>/api/analytics/exchange-rate-gain-loss</code> by period/activity/org. UI: "Exchange rate impact" in Financial Analytics or Reports.</li>
+      </ul>
+      <p><strong>Importance:</strong> <span class="badge badge-mid">Medium</span>. <strong>Ease:</strong> <span class="badge badge-mid">Medium</span></p>
+    </div>
+
+    <h2>3. Priority matrix (importance × ease)</h2>
+    <table class="rank-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Feature</th>
+          <th>Importance</th>
+          <th>Ease</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Complete IATI XML Export</td><td>5</td><td>3</td><td>Unlocks Registry and compliance</td></tr>
+        <tr><td>3</td><td>OECD DAC CRS Reporting</td><td>5</td><td>3</td><td>Critical for DAC countries</td></tr>
+        <tr><td>6</td><td>Forward Spending / MTEF</td><td>5</td><td>1</td><td>FSS already there</td></tr>
+        <tr><td>7</td><td>Counterpart / Co-Financing</td><td>5</td><td>1</td><td>New table + tab</td></tr>
+        <tr><td>8</td><td>Disbursement Forecasting / Predictability</td><td>5</td><td>3</td><td>Extend planned vs actual</td></tr>
+        <tr><td>15</td><td>Climate Finance Tagging</td><td>5</td><td>1</td><td>Filter policy markers</td></tr>
+        <tr><td>17</td><td>Results Aggregation</td><td>5</td><td>3</td><td>Portfolio-level results</td></tr>
+        <tr><td>18</td><td>Comprehensive Audit Log</td><td>5</td><td>3</td><td>Search, export, diff</td></tr>
+        <tr><td>29</td><td>Automated Data Quality Alerts</td><td>5</td><td>3</td><td>Cron + Data Clinic</td></tr>
+        <tr><td>13</td><td>Excel/CSV Template Bulk Entry</td><td>4</td><td>3</td><td>Template + upload</td></tr>
+        <tr><td>11</td><td>Donor Division of Labour</td><td>4</td><td>1</td><td>Extend fragmentation</td></tr>
+        <tr><td>14</td><td>Procurement / Contract Tracking</td><td>3</td><td>1</td><td>New tables + CRUD</td></tr>
+        <tr><td>16</td><td>E&amp;S Safeguards</td><td>3</td><td>1</td><td>New table + tab</td></tr>
+        <tr><td>22</td><td>SSC &amp; Triangular Cooperation</td><td>3</td><td>1</td><td>Field + filter + view</td></tr>
+        <tr><td>25</td><td>RBF Tracking</td><td>3</td><td>1</td><td>Field + filter + view</td></tr>
+        <tr><td>27</td><td>Parliamentary Reporting</td><td>4</td><td>3</td><td>Templates + PDF</td></tr>
+        <tr><td>28</td><td>Donor Self-Assessment Portal</td><td>4</td><td>3</td><td>Data Clinic scoped by org</td></tr>
+        <tr><td>30</td><td>Exchange Rate Gain/Loss</td><td>3</td><td>3</td><td>Revaluation + report</td></tr>
+        <tr><td>9</td><td>Loan Lifecycle</td><td>4</td><td>5</td><td>Amortization + concessionality</td></tr>
+        <tr><td>10</td><td>Pooled Fund Management</td><td>3</td><td>5</td><td>Model + roll-up</td></tr>
+        <tr><td>19</td><td>Multi-Language UI</td><td>5</td><td>5</td><td>Phased rollout</td></tr>
+        <tr><td>20</td><td>Offline / PWA</td><td>3</td><td>5</td><td>Service worker + sync</td></tr>
+        <tr><td>23</td><td>ODA Eligibility Checker</td><td>4</td><td>3</td><td>Rules + concessionality</td></tr>
+        <tr><td>24</td><td>Debt Sustainability</td><td>3</td><td>3</td><td>Manual or API</td></tr>
+        <tr><td>26</td><td>Country Strategy / CPF</td><td>3</td><td>3</td><td>New entities + alignment</td></tr>
+      </tbody>
+    </table>
+
+    <h2>4. Suggested implementation order</h2>
+    <div class="card">
+      <ol>
+        <li><strong>6. Forward Spending / MTEF</strong> — FSS data exists; add aggregation API and dashboard.</li>
+        <li><strong>7. Counterpart / Co-Financing</strong> — New table + one tab; high value for recipient countries.</li>
+        <li><strong>15. Climate Finance</strong> — Policy markers + one analytics route and dashboard.</li>
+        <li><strong>11. Division of Labour</strong> — Extend fragmentation APIs and add concentration metrics.</li>
+        <li><strong>14. Procurement</strong>, <strong>16. E&amp;S Safeguards</strong>, <strong>22. SSC</strong>, <strong>25. RBF</strong> — New table/field + one view each.</li>
+        <li><strong>1. Complete IATI Export</strong> — Extend export route and XML builder; unblocks Registry.</li>
+        <li><strong>3. CRS Reporting</strong> — New report routes and ReportCard configs.</li>
+        <li><strong>8. Predictability</strong>, <strong>17. Results Aggregation</strong>, <strong>18. Audit Log</strong>, <strong>29. Data Quality Alerts</strong>.</li>
+        <li><strong>13. Excel bulk entry</strong>, <strong>27. Parliamentary</strong>, <strong>28. Self-Assessment</strong>, <strong>30. Exchange rate</strong>, <strong>23. ODA Eligibility</strong>, <strong>24. Debt</strong>, <strong>26. CPF</strong>.</li>
+        <li><strong>9. Loan lifecycle</strong>, <strong>10. Pooled funds</strong>, <strong>19. i18n</strong>, <strong>20. PWA</strong> — Larger projects.</li>
+      </ol>
+    </div>
+
+    <p class="subtitle" style="margin-top: 2rem;">Report generated for AIMS feature development. Aligned with current codebase: Next.js App Router, Supabase, existing UI components and API patterns.</p>
+  </div>
+</body>
+</html>

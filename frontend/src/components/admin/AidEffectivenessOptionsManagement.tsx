@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   MoreHorizontal,
@@ -30,8 +33,15 @@ import {
   AlertCircle,
   Save,
   ListChecks,
+  X,
 } from "lucide-react";
 import { apiFetch } from '@/lib/api-fetch';
+
+interface MinistryRef {
+  id: string;
+  code: string;
+  name: string;
+}
 
 interface AEOption {
   id: string;
@@ -40,8 +50,15 @@ interface AEOption {
   description: string | null;
   sort_order: number;
   is_active: boolean;
+  responsible_ministries: MinistryRef[];
   created_at: string;
   updated_at: string;
+}
+
+interface LineMinistry {
+  id: string;
+  code: string;
+  name: string;
 }
 
 const CATEGORIES = [
@@ -67,6 +84,10 @@ export function AidEffectivenessOptionsManagement() {
   const [formDescription, setFormDescription] = useState("");
   const [formSortOrder, setFormSortOrder] = useState(0);
   const [formIsActive, setFormIsActive] = useState(true);
+  const [formMinistries, setFormMinistries] = useState<MinistryRef[]>([]);
+
+  // Line ministries from budget classifications
+  const [lineMinistries, setLineMinistries] = useState<LineMinistry[]>([]);
 
   // Fetch options
   const fetchOptions = useCallback(async () => {
@@ -93,6 +114,28 @@ export function AidEffectivenessOptionsManagement() {
     fetchOptions();
   }, [fetchOptions]);
 
+  // Fetch line ministries (administrative budget classifications)
+  useEffect(() => {
+    const fetchMinistries = async () => {
+      try {
+        const response = await apiFetch("/api/admin/budget-classifications?type=administrative&flat=true&activeOnly=true");
+        const result = await response.json();
+        if (response.ok && result.data) {
+          setLineMinistries(
+            result.data.map((m: { id: string; code: string; name: string }) => ({
+              id: m.id,
+              code: m.code,
+              name: m.name,
+            }))
+          );
+        }
+      } catch (err) {
+        console.error("Error fetching line ministries:", err);
+      }
+    };
+    fetchMinistries();
+  }, []);
+
   // Filter options for current category
   const filteredOptions = options
     .filter(opt => opt.category === activeCategory)
@@ -104,6 +147,7 @@ export function AidEffectivenessOptionsManagement() {
     setFormDescription("");
     setFormSortOrder(0);
     setFormIsActive(true);
+    setFormMinistries([]);
     setEditingOption(null);
   };
 
@@ -123,6 +167,7 @@ export function AidEffectivenessOptionsManagement() {
     setFormDescription(option.description || "");
     setFormSortOrder(option.sort_order);
     setFormIsActive(option.is_active);
+    setFormMinistries(option.responsible_ministries || []);
     setDialogOpen(true);
   };
 
@@ -145,6 +190,7 @@ export function AidEffectivenessOptionsManagement() {
         description: formDescription.trim() || null,
         sortOrder: formSortOrder,
         isActive: formIsActive,
+        responsibleMinistries: formMinistries,
       };
 
       if (!editingOption) {
@@ -223,12 +269,17 @@ export function AidEffectivenessOptionsManagement() {
   return (
     <div className="space-y-4">
       {/* Category tabs */}
-      <div className="flex flex-wrap gap-2">
+      <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
         {CATEGORIES.map(cat => (
           <Button
             key={cat.value}
-            variant={activeCategory === cat.value ? "default" : "outline"}
+            variant="ghost"
             size="sm"
+            className={cn(
+              activeCategory === cat.value
+                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                : "text-slate-500 hover:text-slate-700"
+            )}
             onClick={() => setActiveCategory(cat.value)}
           >
             {cat.label}
@@ -275,6 +326,15 @@ export function AidEffectivenessOptionsManagement() {
                     {option.description}
                   </p>
                 )}
+                {option.responsible_ministries && option.responsible_ministries.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {option.responsible_ministries.map((m) => (
+                      <Badge key={m.id} variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {m.name} ({m.code})
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <DropdownMenu>
@@ -304,7 +364,7 @@ export function AidEffectivenessOptionsManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
               {editingOption ? "Edit Option" : "Add Option"}
@@ -339,6 +399,51 @@ export function AidEffectivenessOptionsManagement() {
                 rows={2}
               />
             </div>
+
+            {/* Responsible Ministry dropdown */}
+            {lineMinistries.length > 0 && (
+              <div className="space-y-2">
+                <Label>Responsible Ministry</Label>
+                {formMinistries.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {formMinistries.map((m) => (
+                      <Badge key={m.id} variant="secondary" className="text-xs gap-1 pr-1">
+                        {m.name} ({m.code})
+                        <button
+                          type="button"
+                          className="ml-0.5 hover:text-red-500"
+                          onClick={() => setFormMinistries(prev => prev.filter(x => x.id !== m.id))}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <Select
+                  value=""
+                  onValueChange={(value) => {
+                    const ministry = lineMinistries.find(m => m.id === value);
+                    if (ministry && !formMinistries.some(m => m.id === ministry.id)) {
+                      setFormMinistries(prev => [...prev, { id: ministry.id, code: ministry.code, name: ministry.name }]);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a ministry..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lineMinistries
+                      .filter(m => !formMinistries.some(s => s.id === m.id))
+                      .map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name} ({m.code})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="opt-sort">Sort Order</Label>

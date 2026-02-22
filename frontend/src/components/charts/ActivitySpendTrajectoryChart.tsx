@@ -13,10 +13,11 @@ import {
   Legend,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 // Colour palette as specified
 const COLOURS = {
@@ -274,7 +275,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
       
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
             <p className="font-semibold text-slate-900 text-sm">{formattedDate}</p>
           </div>
           <div className="p-2">
@@ -362,7 +363,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[400px] w-full" />
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </CardContent>
       </Card>
     )
@@ -452,10 +453,9 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
               </pattern>
             </defs>
             
-            <CartesianGrid 
-              strokeDasharray="3 3" 
-              stroke={COLOURS.paleSlate} 
-              opacity={0.5} 
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke={CHART_STRUCTURE_COLORS.grid}
             />
             <XAxis
               dataKey="timestamp"

@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle, Download, FileImage, TrendingUp, LineChart as LineChartIcon, BarChart3, Layers, Table as TableIcon } from 'lucide-react'
 import { SectorTimeSeriesFilters as FilterState, TimeSeriesChartType, TimeSeriesDataType } from '@/types/sector-analytics'
 import { useSectorTimeSeries } from './sectorTimeSeriesQueries'
@@ -13,6 +13,7 @@ import { SectorTimeSeriesLine } from './SectorTimeSeriesLine'
 import { SectorTimeSeriesBar } from './SectorTimeSeriesBar'
 import { SectorTimeSeriesTable } from './SectorTimeSeriesTable'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 export function SectorTimeSeriesPanel() {
   // State for toggles
@@ -167,20 +168,20 @@ export function SectorTimeSeriesPanel() {
           {/* Top-Level Toggles */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             {/* Data Type Toggle - Planned vs Actual */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
               <Button
-                variant={dataType === 'planned' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => handleDataTypeChange('planned')}
-                className="h-8"
+                className={cn("h-8", dataType === 'planned' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               >
                 Planned Disbursements
               </Button>
               <Button
-                variant={dataType === 'actual' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => handleDataTypeChange('actual')}
-                className="h-8"
+                className={cn("h-8", dataType === 'actual' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               >
                 Actual Disbursements
               </Button>
@@ -188,48 +189,48 @@ export function SectorTimeSeriesPanel() {
 
             {/* Chart Type Toggle */}
             <div className="flex items-center gap-2">
-              <div className="flex gap-1 border rounded-lg p-1 bg-white flex-wrap">
+              <div className="flex gap-1 rounded-lg p-1 bg-slate-100 flex-wrap">
                 <Button
-                  variant={chartType === 'area' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setChartType('area')}
-                  className="h-8"
+                  className={cn("h-8", chartType === 'area' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Area"
                 >
                   <TrendingUp className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={chartType === 'line' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setChartType('line')}
-                  className="h-8"
+                  className={cn("h-8", chartType === 'line' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Line"
                 >
                   <LineChartIcon className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={chartType === 'bar' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setChartType('bar')}
-                  className="h-8"
+                  className={cn("h-8", chartType === 'bar' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Bar"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={chartType === 'stacked-bar' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setChartType('stacked-bar')}
-                  className="h-8"
+                  className={cn("h-8", chartType === 'stacked-bar' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Stacked Bar"
                 >
                   <Layers className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={chartType === 'table' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setChartType('table')}
-                  className="h-8"
+                  className={cn("h-8", chartType === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Table"
                 >
                   <TableIcon className="h-4 w-4" />
@@ -275,9 +276,7 @@ export function SectorTimeSeriesPanel() {
       <CardContent>
         {/* Loading State */}
         {loading && (
-          <div className="space-y-4">
-            <Skeleton className="h-[500px] w-full" />
-          </div>
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         )}
 
         {/* Error State */}

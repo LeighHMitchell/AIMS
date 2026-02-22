@@ -7,6 +7,7 @@ import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui
 import { cn } from "@/lib/utils";
 import { LANGUAGES } from "@/data/languages";
 import { useDropdownState } from "@/contexts/DropdownContext";
+import { useDefaultLanguage } from "@/contexts/SystemSettingsContext";
 
 type Option = {
   code: string;
@@ -46,30 +47,36 @@ export function LanguageSearchableSelect({
   // Use shared dropdown state if dropdownId is provided
   const { isOpen, setOpen } = useDropdownState(dropdownId);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const defaultLanguage = useDefaultLanguage();
+
+  const BASE_COMMON_CODES = ["en", "fr", "es", "pt", "ar"];
+  const commonCodes = React.useMemo(() => {
+    if (defaultLanguage && !BASE_COMMON_CODES.includes(defaultLanguage)) {
+      return [...BASE_COMMON_CODES, defaultLanguage];
+    }
+    return BASE_COMMON_CODES;
+  }, [defaultLanguage]);
 
   const selectedOption = allOptions.find(option => option.code === value);
 
   const filteredOptions = React.useMemo(() => {
     if (!searchQuery) return allOptions;
-    
+
     const query = searchQuery.toLowerCase();
-    return allOptions.filter(option => 
+    return allOptions.filter(option =>
       option.code.toLowerCase().includes(query) ||
       option.name.toLowerCase().includes(query) ||
       option.description.toLowerCase().includes(query)
     );
   }, [searchQuery]);
 
-  const groupedOptions = React.useMemo(() => {
-    const groups: { [key: string]: Option[] } = {};
-    filteredOptions.forEach(option => {
-      if (!groups[option.group]) {
-        groups[option.group] = [];
-      }
-      groups[option.group].push(option);
-    });
-    return groups;
-  }, [filteredOptions]);
+  const commonLanguages = React.useMemo(() => {
+    return filteredOptions.filter(opt => commonCodes.includes(opt.code));
+  }, [filteredOptions, commonCodes]);
+
+  const otherLanguages = React.useMemo(() => {
+    return filteredOptions.filter(opt => !commonCodes.includes(opt.code));
+  }, [filteredOptions, commonCodes]);
 
   return (
     <div className={cn("pb-6", className)}>
@@ -142,12 +149,10 @@ export function LanguageSearchableSelect({
               )}
             </div>
             <CommandList>
-              {Object.entries(groupedOptions).map(([groupName, options]) => (
-                <CommandGroup key={groupName}>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
-                    {groupName}
-                  </div>
-                  {options.map((option) => (
+              {searchQuery ? (
+                // Flat filtered list when searching
+                <CommandGroup>
+                  {filteredOptions.map((option) => (
                     <CommandItem
                       key={option.code}
                       onSelect={() => {
@@ -172,8 +177,72 @@ export function LanguageSearchableSelect({
                     </CommandItem>
                   ))}
                 </CommandGroup>
-              ))}
-              {Object.keys(groupedOptions).length === 0 && (
+              ) : (
+                <>
+                  {/* Common Languages section */}
+                  {commonLanguages.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">Common Languages</div>
+                      <CommandGroup>
+                        {commonLanguages.map((option) => (
+                          <CommandItem
+                            key={option.code}
+                            onSelect={() => {
+                              onValueChange?.(option.code);
+                              setOpen(false);
+                              setSearchQuery("");
+                            }}
+                            className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                value === option.code ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
+                                <span className="font-medium text-foreground">{option.name}</span>
+                              </div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      <div className="border-t border-muted my-1" />
+                    </>
+                  )}
+                  {/* All Languages section */}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">All Languages</div>
+                  <CommandGroup>
+                    {otherLanguages.map((option) => (
+                      <CommandItem
+                        key={option.code}
+                        onSelect={() => {
+                          onValueChange?.(option.code);
+                          setOpen(false);
+                          setSearchQuery("");
+                        }}
+                        className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            value === option.code ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
+                            <span className="font-medium text-foreground">{option.name}</span>
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </>
+              )}
+              {filteredOptions.length === 0 && (
                 <div className="py-8 text-center">
                   <div className="text-sm text-muted-foreground">
                     No languages found.

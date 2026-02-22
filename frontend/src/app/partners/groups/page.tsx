@@ -110,10 +110,10 @@ export default function ManageGroupsPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <div className="h-8 bg-gray-200 rounded w-64 animate-pulse"></div>
-              <div className="h-4 bg-gray-200 rounded w-96 mt-2 animate-pulse"></div>
+              <div className="h-8 bg-muted rounded w-64 animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-96 mt-2 animate-pulse"></div>
             </div>
-            <div className="h-10 bg-gray-200 rounded w-40 animate-pulse"></div>
+            <div className="h-10 bg-muted rounded w-40 animate-pulse"></div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -121,13 +121,13 @@ export default function ManageGroupsPage() {
               <Card key={i}>
                 <CardContent className="p-6">
                   <div className="animate-pulse">
-                    <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
+                    <div className="h-6 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-muted rounded w-full mb-4"></div>
                     <div className="flex gap-2 mb-4">
-                      <div className="h-6 bg-gray-200 rounded w-16"></div>
-                      <div className="h-6 bg-gray-200 rounded w-16"></div>
+                      <div className="h-6 bg-muted rounded w-16"></div>
+                      <div className="h-6 bg-muted rounded w-16"></div>
                     </div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-4 bg-muted rounded w-1/2"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -144,8 +144,8 @@ export default function ManageGroupsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Custom Groups</h1>
-            <p className="text-gray-600 mt-1">Manage custom organization groupings and consortiums</p>
+            <h1 className="text-3xl font-bold text-foreground">Custom Groups</h1>
+            <p className="text-muted-foreground mt-1">Manage custom organization groupings and consortiums</p>
           </div>
           
           <Button 
@@ -159,7 +159,7 @@ export default function ManageGroupsPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search groups by name, description, or tags..."
             value={searchTerm}
@@ -189,7 +189,7 @@ export default function ManageGroupsPage() {
                         <img
                           src={group.logo}
                           alt={`${group.name} logo`}
-                          className="w-10 h-10 object-contain rounded border bg-white p-0.5 flex-shrink-0"
+                          className="w-10 h-10 object-contain rounded border bg-card p-0.5 flex-shrink-0"
                         />
                       ) : (
                         <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
@@ -199,7 +199,7 @@ export default function ManageGroupsPage() {
                       <div className="min-w-0">
                         <CardTitle className="text-lg">{group.name}</CardTitle>
                         {group.group_code && (
-                          <p className="text-sm text-gray-500 mt-1">{group.group_code}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{group.group_code}</p>
                         )}
                       </div>
                     </div>
@@ -229,13 +229,13 @@ export default function ManageGroupsPage() {
                   )}
 
                   {/* Member count */}
-                  <div className="flex items-center gap-1 text-sm text-gray-600 mb-4">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground mb-4">
                     <Users className="h-4 w-4" />
                     <span>{group.member_count} member{group.member_count !== 1 ? 's' : ''}</span>
                   </div>
 
                   {/* Metadata */}
-                  <div className="text-xs text-gray-500 mb-4">
+                  <div className="text-xs text-muted-foreground mb-4">
                     Created by {group.created_by_name || 'Unknown'} • {formatRelativeDate(group.created_at)}
                   </div>
 
@@ -275,11 +275,11 @@ export default function ManageGroupsPage() {
         ) : (
           <Card className="text-center py-12">
             <CardContent>
-              <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 {searchTerm ? 'No groups found' : 'No custom groups yet'}
               </h3>
-              <p className="text-gray-500 mb-4">
+              <p className="text-muted-foreground mb-4">
                 {searchTerm 
                   ? 'Try adjusting your search terms.' 
                   : 'Create your first custom group to organize partners by specific criteria.'}

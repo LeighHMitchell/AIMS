@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +15,7 @@ import {
   Hash,
   AlertCircle
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { exportChartToJPG } from '@/lib/chart-export'
 import {
   Table,
@@ -349,14 +350,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-        <Skeleton className="h-[500px]" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -385,19 +379,19 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
             : data.summary.byRole.implementing
 
           return (
-            <Card key={role} className="bg-white">
+            <Card key={role} className="bg-card">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: ROLE_COLORS[role] }}
                   />
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-sm font-medium text-foreground">
                     {ROLE_LABELS[role]}
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-slate-900">{count}</p>
-                <p className="text-xs text-slate-500">{ROLE_DESCRIPTIONS[role]}</p>
+                <p className="text-2xl font-bold text-foreground">{count}</p>
+                <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[role]}</p>
               </CardContent>
             </Card>
           )
@@ -419,7 +413,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
           {/* Controls */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-700">Metric:</span>
+              <span className="text-sm font-medium text-foreground">Metric:</span>
               <div className="flex gap-1">
                 <Button
                   variant={metricMode === 'count' ? 'default' : 'outline'}
@@ -441,20 +435,20 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="flex">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
                 <Button
-                  variant={viewMode === 'sankey' ? 'default' : 'outline'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewMode('sankey')}
-                  className="rounded-r-none"
+                  className={cn(viewMode === 'sankey' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   <Activity className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewMode('table')}
-                  className="rounded-l-none"
+                  className={cn(viewMode === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>
@@ -474,23 +468,23 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
           </div>
 
           {/* Summary Stats */}
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
             <div className="flex items-center gap-6">
               <div>
-                <span className="text-sm text-slate-600">Total Activities:</span>
-                <span className="ml-2 font-bold text-slate-900">
+                <span className="text-sm text-muted-foreground">Total Activities:</span>
+                <span className="ml-2 font-bold text-foreground">
                   {formatNumber(data.summary.totalActivities)}
                 </span>
               </div>
               <div>
-                <span className="text-sm text-slate-600">Organizations:</span>
-                <span className="ml-2 font-bold text-slate-900">
+                <span className="text-sm text-muted-foreground">Organizations:</span>
+                <span className="ml-2 font-bold text-foreground">
                   {formatNumber(data.summary.totalOrganizations)}
                 </span>
               </div>
               <div>
-                <span className="text-sm text-slate-600">Total Budget:</span>
-                <span className="ml-2 font-bold text-slate-900">
+                <span className="text-sm text-muted-foreground">Total Budget:</span>
+                <span className="ml-2 font-bold text-foreground">
                   {formatCurrency(data.summary.totalBudget)}
                 </span>
               </div>
@@ -499,10 +493,10 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
 
           {/* Chart / Table */}
           {viewMode === 'sankey' ? (
-            <div className="overflow-x-auto bg-white rounded-lg border p-4">
+            <div className="overflow-x-auto bg-card rounded-lg border p-4">
               {!hasNodes ? (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-500">
-                  <AlertCircle className="h-12 w-12 mb-4 text-slate-300" />
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
                   <p className="text-lg font-medium">No Organizations Found</p>
                   <p className="text-sm mt-2 text-center max-w-md">
                     No participating organizations found for this dataset.
@@ -605,7 +599,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                   </g>
                 </svg>
               ) : (
-                <div className="flex items-center justify-center py-12 text-slate-500">
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
                   <p>Unable to render Sankey diagram</p>
                 </div>
               )}
@@ -628,7 +622,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                 <TableBody>
                   {data.links.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={metricMode === 'value' ? 6 : 5} className="text-center py-8 text-slate-500">
+                      <TableCell colSpan={metricMode === 'value' ? 6 : 5} className="text-center py-8 text-muted-foreground">
                         No role flows found. Activities need organizations in consecutive roles to create flows.
                       </TableCell>
                     </TableRow>
@@ -680,7 +674,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                 </TableBody>
               </Table>
               {data.links.length > 50 && (
-                <p className="text-sm text-slate-500 mt-2 text-center">
+                <p className="text-sm text-muted-foreground mt-2 text-center">
                   Showing top 50 of {data.links.length} flows
                 </p>
               )}
@@ -695,7 +689,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                   className="w-4 h-4 rounded"
                   style={{ backgroundColor: ROLE_COLORS[role] }}
                 />
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-muted-foreground">
                   {ROLE_LABELS[role]} ({role})
                 </span>
               </div>

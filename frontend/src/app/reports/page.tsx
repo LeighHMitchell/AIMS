@@ -16,6 +16,8 @@ import {
   AlertCircle,
   ShieldCheck,
   BarChart3,
+  Wallet,
+  Users,
 } from "lucide-react"
 
 // Report configurations
@@ -129,6 +131,54 @@ const organizationReports: ReportConfig[] = [
   },
 ]
 
+const fundReports: ReportConfig[] = [
+  {
+    title: "Fund Utilisation Report",
+    description: "Summary of all pooled funds showing contributions, disbursements, balance, utilisation rate, and child activity counts.",
+    icon: Wallet,
+    apiEndpoint: "/api/reports/fund-utilisation",
+    filename: "fund_utilisation",
+    headers: [
+      { key: "fund_name", label: "Fund Name" },
+      { key: "total_contributions", label: "Total Contributions (USD)" },
+      { key: "total_disbursements", label: "Total Disbursements (USD)" },
+      { key: "balance", label: "Balance (USD)" },
+      { key: "utilisation_percent", label: "Utilisation (%)" },
+      { key: "child_activities", label: "Child Activities" },
+      { key: "status", label: "Status" },
+    ],
+  },
+  {
+    title: "Donor Contribution Summary",
+    description: "All contributions across all pooled funds, grouped by donor organisation with pledged, committed, and received breakdowns.",
+    icon: Users,
+    apiEndpoint: "/api/reports/fund-donor-contributions",
+    filename: "fund_donor_contributions",
+    headers: [
+      { key: "donor_name", label: "Donor Name" },
+      { key: "fund_name", label: "Fund Name" },
+      { key: "pledged", label: "Pledged (USD)" },
+      { key: "committed", label: "Committed (USD)" },
+      { key: "received", label: "Received (USD)" },
+      { key: "total", label: "Total (USD)" },
+    ],
+  },
+  {
+    title: "Fund Sector Allocation",
+    description: "How fund disbursements are distributed across sectors via child activities, showing amounts and percentage of fund total.",
+    icon: PieChart,
+    apiEndpoint: "/api/reports/fund-sector-allocation",
+    filename: "fund_sector_allocation",
+    headers: [
+      { key: "fund_name", label: "Fund Name" },
+      { key: "sector", label: "Sector" },
+      { key: "disbursed_amount", label: "Disbursed Amount (USD)" },
+      { key: "percent_of_fund", label: "% of Fund Total" },
+      { key: "activity_count", label: "Activities" },
+    ],
+  },
+]
+
 const dataQualityReports: ReportConfig[] = [
   {
     title: "Data Quality Report",
@@ -195,11 +245,11 @@ export default function ReportsPage() {
         {/* Tabs for Standard vs Custom Reports */}
         <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="standard" className="gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
               <FileText className="h-4 w-4" />
               Standard Reports
             </TabsTrigger>
-            <TabsTrigger value="custom" className="group gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="custom" className="group gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
               <BarChart3 className="h-4 w-4" />
               Design Your Own
               <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-[#3C6255] text-white group-data-[state=active]:bg-white group-data-[state=active]:text-[#3C6255]">
@@ -257,6 +307,26 @@ export default function ReportsPage() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {organizationReports.map((report) => (
+                  <ReportCard
+                    key={report.filename}
+                    title={report.title}
+                    description={report.description}
+                    icon={report.icon}
+                    apiEndpoint={report.apiEndpoint}
+                    filename={report.filename}
+                    headers={report.headers}
+                  />
+                ))}
+              </div>
+            </section>
+
+            {/* Fund Reports */}
+            <section>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                Pooled Fund Reports
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {fundReports.map((report) => (
                   <ReportCard
                     key={report.filename}
                     title={report.title}

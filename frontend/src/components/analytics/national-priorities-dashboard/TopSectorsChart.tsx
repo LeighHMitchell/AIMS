@@ -9,13 +9,13 @@ import {
   YAxis,
   Tooltip,
   Cell,
-  LabelList,
   PieChart,
   Pie,
+  CartesianGrid,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import {
   Select,
   SelectContent,
@@ -211,20 +211,28 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
     if (active && payload && payload.length) {
       const item = payload[0].payload as SectorData & { fill: string; sectorCode: string; sectorName: string };
     return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-1">
-            {item.sectorCode && <span className="font-mono bg-muted px-1 rounded mr-2">{item.sectorCode}</span>}
-            {item.sectorName}
-          </p>
-          <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-sm font-medium text-gray-900">
-              {formatCurrency(item.value)}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+            <p className="font-semibold text-slate-900 text-sm">
+              {item.sectorCode && <span className="font-mono bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-xs mr-1.5">{item.sectorCode}</span>}
+              {item.sectorName}
             </p>
-            {item.activityCount > 0 && (
-              <p className="text-xs text-gray-500">
-                {item.activityCount} activities
-              </p>
-            )}
+          </div>
+          <div className="p-2">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-slate-100 last:border-b-0">
+                  <td className="py-1 pr-4 text-slate-700 font-medium">Amount</td>
+                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
+                </tr>
+                {item.activityCount > 0 && (
+                  <tr>
+                    <td className="py-1 pr-4 text-slate-700 font-medium">Activities</td>
+                    <td className="py-1 text-right font-semibold text-slate-900">{item.activityCount}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
       </div>
     );
@@ -322,6 +330,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
           data={chartData}
         margin={{ top: 25, right: 5, left: 5, bottom: 5 }}
         >
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis
           dataKey="shortName"
           stroke={CHART_STRUCTURE_COLORS.axis}
@@ -335,12 +344,6 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
         <YAxis hide />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
         <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={60}>
-          <LabelList
-            dataKey="value"
-            position="top"
-            formatter={(value: number) => formatCurrency(value)}
-            style={{ fontSize: 11, fontWeight: 500, fill: "#374151" }}
-          />
             {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.fill} />
             ))}
@@ -430,7 +433,7 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
     const chartHeight = expanded ? 300 : "100%";
 
     if (loading) {
-      return <Skeleton className="w-full h-[280px]" />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (!data || data.length === 0) {
@@ -500,19 +503,6 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
           </Button>
         </div>
 
-        {/* Expand button - only in compact view */}
-        {!expanded && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setIsExpanded(true)}
-            title="Expand"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        )}
-
         {/* Export button - only in expanded view */}
         {expanded && (
           <Button
@@ -551,23 +541,28 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
       {/* Compact Card View */}
       <Card className="bg-white border-slate-200 h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base font-medium text-slate-700 truncate">
                 Top Sectors
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
                 Top 5 DAC sectors by financial allocation
-              </p>
+              </CardDescription>
             </div>
-            <span className="text-lg font-bold text-slate-500">
-              {formatCurrencyWithSymbol(grandTotal)}
-            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(true)}
+              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              title="Expand to full screen"
+            >
+              <Maximize2 className="h-4 w-4 text-slate-500" />
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
-          {renderControls(false)}
         </CardContent>
       </Card>
 
@@ -577,16 +572,13 @@ export function TopSectorsChart({ refreshKey = 0 }: TopSectorsChartProps) {
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-bold uppercase tracking-wide">
+                <DialogTitle className="text-2xl font-semibold text-slate-800">
                   Top Sectors
                 </DialogTitle>
-                <DialogDescription className="text-base mt-1">
+                <DialogDescription className="text-base mt-2">
                   Top 5 DAC sectors by {METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()}, with remaining sectors aggregated.
                 </DialogDescription>
               </div>
-              <span className="text-2xl font-bold text-slate-500">
-                {formatCurrencyWithSymbol(grandTotal)}
-              </span>
             </div>
           </DialogHeader>
 

@@ -21,21 +21,21 @@ export function DashboardFilters({
         <TabsList className="bg-muted">
           <TabsTrigger
             value="disbursements"
-            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
           >
             <Wallet className="h-4 w-4" />
             Disbursements
           </TabsTrigger>
           <TabsTrigger
             value="commitments"
-            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
           >
             <FileCheck className="h-4 w-4" />
             Commitments
           </TabsTrigger>
           <TabsTrigger
             value="budgets"
-            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
           >
             <DollarSign className="h-4 w-4" />
             Budgets

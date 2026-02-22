@@ -11,8 +11,9 @@ import {
   Cell,
   PieChart,
   Pie,
-  LabelList,
+  CartesianGrid,
 } from "recharts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,7 +45,7 @@ import {
   Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BarChartSkeleton } from "@/components/ui/skeleton-loader";
+import { LoadingText } from "@/components/ui/loading-text";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
@@ -173,6 +174,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
         data={chartData}
         margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
       >
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
           dataKey="acronym"
           stroke={CHART_STRUCTURE_COLORS.axis}
@@ -188,12 +190,6 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
         <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={60}>
-          <LabelList
-            dataKey="value"
-            position="top"
-            formatter={(value: number) => formatCurrency(value)}
-            style={{ fontSize: 10, fontWeight: 500, fill: "#374151" }}
-          />
           {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
@@ -285,7 +281,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
 
   const renderContent = (expanded: boolean = false) => {
     if (loading) {
-      return <BarChartSkeleton height="280px" bars={5} showLegend={false} />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (!data || data.length === 0) {
@@ -354,19 +350,6 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
           </Button>
         </div>
 
-        {/* Expand button - only in compact view */}
-        {!expanded && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setIsExpanded(true)}
-            title="Expand"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        )}
-
         {/* Export button - only in expanded view */}
         {expanded && (
           <Button
@@ -385,10 +368,32 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
 
   return (
     <>
-      <div className="flex flex-col">
-        {renderContent(false)}
-        {renderControls(false)}
-      </div>
+      <Card className="bg-white border-slate-200 h-full flex flex-col">
+        <CardHeader className="pb-1 pt-4 px-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base font-medium text-slate-700 truncate">
+                Recipient Government Bodies
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                Government bodies receiving funds
+              </CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(true)}
+              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              title="Expand to full screen"
+            >
+              <Maximize2 className="h-4 w-4 text-slate-500" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
+          {renderContent(false)}
+        </CardContent>
+      </Card>
 
       {/* Expanded Dialog View */}
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
@@ -396,16 +401,13 @@ export function RecipientGovBodiesChart({ refreshKey = 0 }: RecipientGovBodiesCh
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-xl">
-                  RECIPIENT GOVERNMENT BODIES
+                <DialogTitle className="text-2xl font-semibold text-slate-800">
+                  Recipient Government Bodies
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-base mt-2">
                   Government bodies receiving {METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()}.
                 </DialogDescription>
               </div>
-              <span className="text-2xl font-bold text-slate-500">
-                {formatCurrencyFull(data.reduce((sum, d) => sum + d.value, 0))}
-              </span>
             </div>
           </DialogHeader>
 

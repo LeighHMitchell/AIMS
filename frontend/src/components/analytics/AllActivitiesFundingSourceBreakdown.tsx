@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle, Download, Camera } from 'lucide-react'
 import { toast } from 'sonner'
 import { FundingSourceSankey } from '@/components/activities/FinancialAnalyticsTab'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
 
 // Transaction type options for multi-select (IATI Standard v2.03)
 const TRANSACTION_TYPE_OPTIONS = [
@@ -209,11 +210,11 @@ export function AllActivitiesFundingSourceBreakdown({
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
-      return <Skeleton className="h-full w-full" />
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (error || !fundingSourceData.providers || fundingSourceData.providers.length === 0) {
       return (
-        <div className="h-full w-full flex items-center justify-center text-slate-500">
+        <div className="h-full w-full flex items-center justify-center text-muted-foreground">
           <p className="text-sm">{error || 'No data available'}</p>
         </div>
       )
@@ -231,9 +232,9 @@ export function AllActivitiesFundingSourceBreakdown({
 
   if (loading) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Funding Source Breakdown
           </CardTitle>
           <CardDescription>
@@ -241,7 +242,7 @@ export function AllActivitiesFundingSourceBreakdown({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[500px] w-full" />
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </CardContent>
       </Card>
     )
@@ -249,9 +250,9 @@ export function AllActivitiesFundingSourceBreakdown({
 
   if (error) {
     return (
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Funding Source Breakdown
           </CardTitle>
           <CardDescription>
@@ -259,7 +260,7 @@ export function AllActivitiesFundingSourceBreakdown({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">{error}</p>
@@ -271,29 +272,29 @@ export function AllActivitiesFundingSourceBreakdown({
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <CardTitle className="text-lg font-semibold text-slate-900">Funding Source Breakdown</CardTitle>
+            <CardTitle className="text-lg font-semibold text-foreground">Funding Source Breakdown</CardTitle>
             <CardDescription>Distribution of funding by donor/provider across all activities</CardDescription>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {/* Source Type Toggle */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
               <Button
-                variant={fundingSourceType === 'transactions' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setFundingSourceType('transactions')}
-                className="h-8"
+                className={cn("h-8", fundingSourceType === 'transactions' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               >
                 Transactions
               </Button>
               <Button
-                variant={fundingSourceType === 'planned' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setFundingSourceType('planned')}
-                className="h-8"
+                className={cn("h-8", fundingSourceType === 'planned' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               >
                 Planned Disbursements
               </Button>
@@ -332,20 +333,20 @@ export function AllActivitiesFundingSourceBreakdown({
             )}
 
             {/* View Toggle */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
               <Button
-                variant={fundingChartType === 'chart' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setFundingChartType('chart')}
-                className="h-8"
+                className={cn("h-8", fundingChartType === 'chart' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               >
                 Chart
               </Button>
               <Button
-                variant={fundingChartType === 'table' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setFundingChartType('table')}
-                className="h-8"
+                className={cn("h-8", fundingChartType === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               >
                 Table
               </Button>
@@ -379,14 +380,14 @@ export function AllActivitiesFundingSourceBreakdown({
       <CardContent>
         {fundingSourceData.providers && fundingSourceData.providers.length > 0 ? (
           fundingChartType === 'table' ? (
-            <div className="overflow-auto h-[500px] border border-slate-200 rounded-lg">
+            <div className="overflow-auto h-[500px] border border-border rounded-lg">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white z-10">
-                  <tr className="border-b border-slate-200">
-                    <th className="text-left py-3 px-4 font-semibold text-slate-700 bg-white">Provider</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-700 bg-white">Receiver</th>
-                    <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Amount (USD)</th>
-                    <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-white">Percentage</th>
+                <thead className="sticky top-0 bg-card z-10">
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Provider</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground bg-card">Receiver</th>
+                    <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Amount (USD)</th>
+                    <th className="text-right py-3 px-4 font-semibold text-foreground bg-card">Percentage</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -394,11 +395,11 @@ export function AllActivitiesFundingSourceBreakdown({
                     const total = fundingSourceData.providers.reduce((sum, s) => sum + s.value, 0)
                     const percentage = ((flow.value / total) * 100).toFixed(1)
                     return (
-                      <tr key={index} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-2.5 px-4 font-medium text-slate-900">{flow.provider}</td>
-                        <td className="py-2.5 px-4 font-medium text-slate-700">{flow.receiver}</td>
-                        <td className="text-right py-2.5 px-4 text-slate-700">{formatCurrency(flow.value)}</td>
-                        <td className="text-right py-2.5 px-4 text-slate-700">{percentage}%</td>
+                      <tr key={index} className="border-b border-border hover:bg-muted/50">
+                        <td className="py-2.5 px-4 font-medium text-foreground">{flow.provider}</td>
+                        <td className="py-2.5 px-4 font-medium text-foreground">{flow.receiver}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground">{formatCurrency(flow.value)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground">{percentage}%</td>
                       </tr>
                     )
                   })}
@@ -406,10 +407,10 @@ export function AllActivitiesFundingSourceBreakdown({
                   {(() => {
                     const total = fundingSourceData.flows.reduce((sum, flow) => sum + flow.value, 0)
                     return (
-                      <tr className="border-t-2 border-slate-300 bg-slate-50 font-semibold">
-                        <td className="py-2.5 px-4 text-slate-900" colSpan={2}>Total</td>
-                        <td className="text-right py-2.5 px-4 text-slate-900">{formatCurrency(total)}</td>
-                        <td className="text-right py-2.5 px-4 text-slate-900">100.0%</td>
+                      <tr className="border-t-2 border-border bg-muted font-semibold">
+                        <td className="py-2.5 px-4 text-foreground" colSpan={2}>Total</td>
+                        <td className="text-right py-2.5 px-4 text-foreground">{formatCurrency(total)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground">100.0%</td>
                       </tr>
                     )
                   })()}
@@ -424,7 +425,7 @@ export function AllActivitiesFundingSourceBreakdown({
             />
           )
         ) : (
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No funding source data available</p>

@@ -15,10 +15,11 @@ import {
 } from 'recharts'
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, getYear, getQuarter } from 'date-fns'
 import { supabase } from '@/lib/supabase'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays, BarChart3, LineChart, Table } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 interface HumanitarianChartProps {
   dateRange: {
@@ -222,11 +223,11 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
   // Compact mode renders just the chart without filters
   if (compact) {
     if (loading) {
-      return <Skeleton className="h-full w-full" />
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (!data || data.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-slate-500">
+        <div className="h-full flex items-center justify-center text-muted-foreground">
           <p className="text-sm">No data available</p>
         </div>
       )
@@ -235,7 +236,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis
               dataKey="period"
               stroke="#94A3B8"
@@ -283,12 +284,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <div className="flex justify-between items-center mb-4">
-          <Skeleton className="h-9 w-40 bg-slate-100" />
-        </div>
-        <Skeleton className="h-[300px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -298,7 +294,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
         {/* Controls Row */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-            <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
+            <SelectTrigger className="w-48 h-9 bg-card border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -325,13 +321,13 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           
           <div className="flex items-center gap-3">
             {groupBy === 'fiscal' && (
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-muted-foreground">
                 Financial Year: July–June
               </div>
             )}
             
             {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
               <Button
                 variant={viewMode === 'area' ? 'default' : 'ghost'}
                 size="sm"
@@ -361,10 +357,10 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
         </div>
         
         {/* Empty State */}
-        <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg">
+        <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
           <div className="text-center">
-            <p className="text-slate-600">No humanitarian/development aid data available</p>
-            <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+            <p className="text-muted-foreground">No humanitarian/development aid data available</p>
+            <p className="text-sm text-muted-foreground mt-2">Try adjusting your date range or filters</p>
           </div>
         </div>
       </div>
@@ -379,21 +375,21 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
       >
         <CartesianGrid 
           strokeDasharray="3 3" 
-          stroke="#e2e8f0" 
+          stroke={CHART_STRUCTURE_COLORS.grid}
           vertical={false}
         />
-        <XAxis 
-          dataKey="period" 
+        <XAxis
+          dataKey="period"
           tick={{ fill: '#64748b', fontSize: 12 }}
           axisLine={{ stroke: '#94a3b8' }}
         />
-        <YAxis 
+        <YAxis
           tickFormatter={formatCurrency}
           tick={{ fill: '#64748b', fontSize: 12 }}
           axisLine={{ stroke: '#94a3b8' }}
           allowDecimals={false}
         />
-        <Tooltip 
+        <Tooltip
           formatter={(value: number) => formatCurrency(value)}
           contentStyle={{
             backgroundColor: '#1e293b',
@@ -403,24 +399,24 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
           }}
           labelStyle={{ color: '#94a3b8' }}
         />
-        <Legend 
+        <Legend
           wrapperStyle={{
             paddingTop: '20px',
             color: '#64748b'
           }}
           iconType="rect"
         />
-        <Area 
-          type="monotone" 
-          dataKey="development" 
+        <Area
+          type="monotone"
+          dataKey="development"
           stackId="1"
           stroke="#1E4D6B"
           fill="#1E4D6B"
           name="Development"
         />
-        <Area 
-          type="monotone" 
-          dataKey="humanitarian" 
+        <Area
+          type="monotone"
+          dataKey="humanitarian"
           stackId="1"
           stroke="#DC2626"
           fill="#DC2626"
@@ -432,13 +428,13 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
 
   const renderBarChart = () => (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart 
+      <BarChart
         data={data}
         margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
       >
-        <CartesianGrid 
-          strokeDasharray="3 3" 
-          stroke="#e2e8f0" 
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke={CHART_STRUCTURE_COLORS.grid}
           vertical={false}
         />
         <XAxis 
@@ -490,33 +486,33 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-slate-200">
-            <th className="text-left py-3 px-4 font-semibold text-slate-700">Period</th>
-            <th className="text-right py-3 px-4 font-semibold text-slate-700">Development</th>
+          <tr className="border-b border-border">
+            <th className="text-left py-3 px-4 font-semibold text-foreground">Period</th>
+            <th className="text-right py-3 px-4 font-semibold text-foreground">Development</th>
             <th className="text-right py-3 px-4 font-semibold text-red-700">Humanitarian</th>
-            <th className="text-right py-3 px-4 font-semibold text-slate-700">Total</th>
+            <th className="text-right py-3 px-4 font-semibold text-foreground">Total</th>
           </tr>
         </thead>
         <tbody>
           {data.map((row, idx) => (
-            <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-              <td className="py-3 px-4 text-slate-800">{row.period}</td>
-              <td className="text-right py-3 px-4 text-slate-600">{formatCurrencyFull(row.development)}</td>
+            <tr key={idx} className="border-b border-border hover:bg-muted/50">
+              <td className="py-3 px-4 text-foreground">{row.period}</td>
+              <td className="text-right py-3 px-4 text-muted-foreground">{formatCurrencyFull(row.development)}</td>
               <td className="text-right py-3 px-4 text-red-600">{formatCurrencyFull(row.humanitarian)}</td>
-              <td className="text-right py-3 px-4 text-slate-800 font-medium">{formatCurrencyFull(row.development + row.humanitarian)}</td>
+              <td className="text-right py-3 px-4 text-foreground font-medium">{formatCurrencyFull(row.development + row.humanitarian)}</td>
             </tr>
           ))}
         </tbody>
         <tfoot>
-          <tr className="bg-slate-50">
-            <td className="py-3 px-4 font-semibold text-slate-800">Total</td>
-            <td className="text-right py-3 px-4 font-semibold text-slate-800">
+          <tr className="bg-muted">
+            <td className="py-3 px-4 font-semibold text-foreground">Total</td>
+            <td className="text-right py-3 px-4 font-semibold text-foreground">
               {formatCurrencyFull(data.reduce((sum, row) => sum + row.development, 0))}
             </td>
             <td className="text-right py-3 px-4 font-semibold text-red-700">
               {formatCurrencyFull(data.reduce((sum, row) => sum + row.humanitarian, 0))}
             </td>
-            <td className="text-right py-3 px-4 font-semibold text-slate-800">
+            <td className="text-right py-3 px-4 font-semibold text-foreground">
               {formatCurrencyFull(data.reduce((sum, row) => sum + row.development + row.humanitarian, 0))}
             </td>
           </tr>
@@ -531,7 +527,7 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
       <div className="flex items-center justify-between flex-wrap gap-3">
         {/* Aggregation Mode Selector */}
         <Select value={groupBy} onValueChange={(value) => setGroupBy(value as GroupByMode)}>
-          <SelectTrigger className="w-48 h-9 bg-white border-slate-200">
+          <SelectTrigger className="w-48 h-9 bg-card border-border">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -558,13 +554,13 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
 
         <div className="flex items-center gap-3">
           {groupBy === 'fiscal' && (
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-muted-foreground">
               Financial Year: July–June
             </div>
           )}
           
           {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             <Button
               variant={viewMode === 'area' ? 'default' : 'ghost'}
               size="sm"

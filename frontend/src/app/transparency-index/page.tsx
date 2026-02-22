@@ -168,11 +168,11 @@ export default function TransparencyIndexPage() {
     <MainLayout>
       <div className="space-y-8">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <ShieldCheck className="h-8 w-8 text-blue-600" />
           Country-Level Transparency Index
         </h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-muted-foreground mt-2">
           Automated assessment of data quality based on the 2026 Aid Transparency Index methodology.
         </p>
       </header>
@@ -187,45 +187,45 @@ export default function TransparencyIndexPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-100 rounded-lg">
               <TrendingUp className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Average Score</p>
-              <p className="text-2xl font-bold text-gray-900">{averageScore} / 100</p>
+              <p className="text-sm font-medium text-muted-foreground">Average Score</p>
+              <p className="text-2xl font-bold text-foreground">{averageScore} / 100</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-purple-100 rounded-lg">
               <FileText className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Projects Assessed</p>
-              <p className="text-2xl font-bold text-gray-900">{projects.length}</p>
+              <p className="text-sm font-medium text-muted-foreground">Projects Assessed</p>
+              <p className="text-2xl font-bold text-foreground">{projects.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-100 rounded-lg">
               <ShieldCheck className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">In "Good" Standing</p>
-              <p className="text-2xl font-bold text-gray-900">{goodStandingPercent}%</p>
+              <p className="text-sm font-medium text-muted-foreground">In "Good" Standing</p>
+              <p className="text-2xl font-bold text-foreground">{goodStandingPercent}%</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Chart Section */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
         <h3 className="text-lg font-semibold mb-6">Score Distribution</h3>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -245,22 +245,22 @@ export default function TransparencyIndexPage() {
       </div>
 
       {/* Detailed List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="font-semibold text-gray-700">Project Assessments</h3>
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+        <div className="px-6 py-4 border-b border-border bg-muted">
+          <h3 className="font-semibold text-foreground">Project Assessments</h3>
         </div>
         
-        <div className="divide-y divide-gray-200">
+        <div className="divide-y divide-border">
           {projects.map((project) => (
             <div key={project.id} className="group">
               {/* Project Row */}
               <div 
                 onClick={() => toggleExpand(project.id)}
-                className="p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer transition-colors"
+                className="p-4 flex items-center justify-between hover:bg-muted/50 cursor-pointer transition-colors"
               >
                 <div className="flex-1 min-w-0 pr-4">
-                  <h4 className="text-sm font-medium text-gray-900 truncate">{project.title}</h4>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                  <h4 className="text-sm font-medium text-foreground truncate">{project.title}</h4>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                     <span>{project.partner_name}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
@@ -275,27 +275,27 @@ export default function TransparencyIndexPage() {
                     {project.total_score}
                   </div>
                   {expandedProject === project.id ? (
-                    <ChevronUp className="h-5 w-5 text-gray-400" />
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
                   ) : (
-                    <ChevronDown className="h-5 w-5 text-gray-400" />
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
               </div>
 
               {/* Drill-down Details */}
               {expandedProject === project.id && (
-                <div className="px-4 pb-4 pt-0 bg-gray-50/50">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-4 border-t border-gray-100">
+                <div className="px-4 pb-4 pt-0 bg-muted/50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-4 border-t border-border">
                     
                     {/* Multiplier Badge */}
                     <div className="lg:col-span-5 mb-2 flex items-center gap-2 text-sm">
-                      <span className="font-medium text-gray-700">Timeliness Multiplier:</span>
+                      <span className="font-medium text-foreground">Timeliness Multiplier:</span>
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                         project.breakdown.multiplier === 1.0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                       }`}>
                         x{project.breakdown.multiplier}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         (Based on last update date)
                       </span>
                     </div>
@@ -316,19 +316,19 @@ export default function TransparencyIndexPage() {
 
         <TabsContent value="donors" className="space-y-8">
           {/* Donor Rankings Header */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Trophy className="h-6 w-6 text-yellow-600" />
-                <h2 className="text-2xl font-bold text-gray-900">Data Completeness Leaderboard</h2>
+                <h2 className="text-2xl font-bold text-foreground">Data Completeness Leaderboard</h2>
               </div>
               {donors.length > 0 && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   {donors.length} organization{donors.length !== 1 ? 's' : ''} ranked
                 </div>
               )}
             </div>
-            <p className="text-gray-600 text-sm">
+            <p className="text-muted-foreground text-sm">
               Organizations ranked by average transparency score of their reported activities. 
               Higher scores indicate better data completeness and quality.
             </p>
@@ -336,7 +336,7 @@ export default function TransparencyIndexPage() {
 
           {/* Top Donors Chart */}
           {!isLoadingDonors && !donorError && donors.length > 0 && (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
               <h3 className="text-lg font-semibold mb-6">Top 10 Donors by Average Score</h3>
               <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -369,10 +369,10 @@ export default function TransparencyIndexPage() {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload
                           return (
-                            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
-                              <p className="font-semibold text-gray-900 mb-2">{data.fullName}</p>
-                              <p className="text-sm text-gray-600">Average Score: <span className="font-bold">{data.score}</span></p>
-                              <p className="text-sm text-gray-600">Projects: <span className="font-bold">{data.projects}</span></p>
+                            <div className="bg-card border border-border rounded-lg shadow-lg p-3">
+                              <p className="font-semibold text-foreground mb-2">{data.fullName}</p>
+                              <p className="text-sm text-muted-foreground">Average Score: <span className="font-bold">{data.score}</span></p>
+                              <p className="text-sm text-muted-foreground">Projects: <span className="font-bold">{data.projects}</span></p>
                             </div>
                           )
                         }
@@ -398,13 +398,13 @@ export default function TransparencyIndexPage() {
           )}
 
           {/* Donor Rankings Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 className="font-semibold text-gray-700">Complete Rankings</h3>
+          <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+            <div className="px-6 py-4 border-b border-border bg-muted">
+              <h3 className="font-semibold text-foreground">Complete Rankings</h3>
             </div>
             
             {isLoadingDonors ? (
-              <div className="p-8 text-center text-gray-500">Loading donor rankings...</div>
+              <div className="p-8 text-center text-muted-foreground">Loading donor rankings...</div>
             ) : donorError ? (
               <div className="p-8 text-center">
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -416,17 +416,17 @@ export default function TransparencyIndexPage() {
                 </div>
               </div>
             ) : donors.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <Building2 className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+              <div className="p-8 text-center text-muted-foreground">
+                <Building2 className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                 <p className="font-medium">No donor data available</p>
                 <p className="text-sm mt-1">Organizations will appear here once they have activities with transparency scores.</p>
-                <p className="text-xs mt-2 text-gray-400">
+                <p className="text-xs mt-2 text-muted-foreground">
                   Tip: Activities need a reporting_org_id to appear in donor rankings.
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-200">
-                <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <div className="divide-y divide-border">
+                <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   <div className="col-span-1">Rank</div>
                   <div className="col-span-4">Organization</div>
                   <div className="col-span-2 text-center">Projects</div>
@@ -435,22 +435,22 @@ export default function TransparencyIndexPage() {
                   <div className="col-span-1 text-center">%</div>
                 </div>
                 {donors.map((donor) => (
-                  <div key={donor.org_id} className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <div key={donor.org_id} className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-muted/50 transition-colors">
                     <div className="col-span-1 flex items-center">
                       <span className={`text-lg font-bold ${
                         donor.rank === 1 ? 'text-yellow-600' : 
-                        donor.rank <= 3 ? 'text-gray-700' : 
-                        'text-gray-400'
+                        donor.rank <= 3 ? 'text-foreground' : 
+                        'text-muted-foreground'
                       }`}>
                         #{donor.rank}
                       </span>
                     </div>
                     <div className="col-span-4 flex items-center">
-                      <Building2 className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                      <span className="font-medium text-gray-900 truncate">{donor.org_name}</span>
+                      <Building2 className="h-4 w-4 text-muted-foreground mr-2 flex-shrink-0" />
+                      <span className="font-medium text-foreground truncate">{donor.org_name}</span>
                     </div>
                     <div className="col-span-2 text-center flex items-center justify-center">
-                      <span className="text-gray-700">{donor.project_count}</span>
+                      <span className="text-foreground">{donor.project_count}</span>
                     </div>
                     <div className="col-span-2 text-center flex items-center justify-center">
                       <span className={`px-3 py-1 rounded-full text-sm font-bold border ${getScoreColor(donor.average_score)}`}>
@@ -458,10 +458,10 @@ export default function TransparencyIndexPage() {
                       </span>
                     </div>
                     <div className="col-span-2 text-center flex items-center justify-center">
-                      <span className="text-gray-700">{donor.projects_good_standing} / {donor.project_count}</span>
+                      <span className="text-foreground">{donor.projects_good_standing} / {donor.project_count}</span>
                     </div>
                     <div className="col-span-1 text-center flex items-center justify-center">
-                      <span className="text-sm text-gray-600">{donor.good_standing_percent.toFixed(0)}%</span>
+                      <span className="text-sm text-muted-foreground">{donor.good_standing_percent.toFixed(0)}%</span>
                     </div>
                   </div>
                 ))}
@@ -477,18 +477,18 @@ export default function TransparencyIndexPage() {
 
 function ScoreCardSection({ title, data }: { title: string, data: ScoreCategory }) {
   return (
-    <div className="bg-white p-3 rounded border border-gray-200 text-sm">
-      <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
-        <span className="font-semibold text-gray-800">{title}</span>
+    <div className="bg-card p-3 rounded border border-border text-sm">
+      <div className="flex justify-between items-center mb-2 pb-2 border-b border-border">
+        <span className="font-semibold text-foreground">{title}</span>
         <span className="font-bold text-blue-600">{data.score} pts</span>
       </div>
       <ul className="space-y-1.5">
         {data.details.map((detail, idx) => (
           <li key={idx} className="flex justify-between items-start text-xs">
-            <span className={`${detail.points > 0 ? 'text-gray-600' : 'text-red-500'}`}>
+            <span className={`${detail.points > 0 ? 'text-muted-foreground' : 'text-red-500'}`}>
               {detail.label}
             </span>
-            <span className="font-medium text-gray-400">
+            <span className="font-medium text-muted-foreground">
               {detail.points}/{detail.max}
             </span>
           </li>

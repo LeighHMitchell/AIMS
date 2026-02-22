@@ -19,9 +19,9 @@ export interface TableSkeletonProps {
  */
 export function TableSkeleton({ rows = 5, columns = 6 }: TableSkeletonProps) {
   return (
-    <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-card rounded-md shadow-sm border border-border overflow-hidden">
       {/* Header skeleton */}
-      <div className="border-b border-gray-200 bg-muted/30">
+      <div className="border-b border-border bg-muted/30">
         <div className="flex items-center gap-4 px-4 py-3">
           {Array.from({ length: columns }).map((_, i) => (
             <Skeleton
@@ -33,7 +33,7 @@ export function TableSkeleton({ rows = 5, columns = 6 }: TableSkeletonProps) {
         </div>
       </div>
       {/* Row skeletons */}
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-border">
         {Array.from({ length: rows }).map((_, rowIndex) => (
           <div key={`row-${rowIndex}`} className="flex items-center gap-4 px-4 py-3">
             {Array.from({ length: columns }).map((_, colIndex) => (

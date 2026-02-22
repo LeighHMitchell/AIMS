@@ -9,7 +9,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  CartesianGrid,
 } from "recharts";
+import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,6 +29,41 @@ interface TopDonorGroupsChartProps {
 }
 
 const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#6b7280"];
+
+function WrapTick({ x, y, payload, width }: { x: number; y: number; payload: { value: string }; width: number }) {
+  const maxWidth = width || 75;
+  const text = payload.value || "";
+  // Split text into lines that fit within the available width (~7px per char at font-size 11)
+  const charsPerLine = Math.max(Math.floor(maxWidth / 6.5), 8);
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  words.forEach((word) => {
+    if (currentLine.length === 0) {
+      currentLine = word;
+    } else if ((currentLine + " " + word).length <= charsPerLine) {
+      currentLine += " " + word;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+
+  const lineHeight = 13;
+  const startY = y - ((lines.length - 1) * lineHeight) / 2;
+
+  return (
+    <text x={x} y={startY} textAnchor="end" fontSize={11} fill="currentColor">
+      {lines.map((line, i) => (
+        <tspan key={i} x={x} dy={i === 0 ? 0 : lineHeight}>
+          {line}
+        </tspan>
+      ))}
+    </text>
+  );
+}
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) {
@@ -69,8 +106,9 @@ export function TopDonorGroupsChart({
       <BarChart
         data={chartData}
         layout="vertical"
-        margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+        margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
       >
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
           type="number"
           tickFormatter={(v) => formatCurrency(v)}
@@ -79,17 +117,32 @@ export function TopDonorGroupsChart({
         <YAxis
           type="category"
           dataKey="name"
-          width={75}
-          tick={{ fontSize: 11 }}
-          tickFormatter={(v) => (v.length > 12 ? `${v.slice(0, 12)}...` : v)}
+          width={100}
+          tick={(props: Record<string, unknown>) => <WrapTick {...props as { x: number; y: number; payload: { value: string }; width: number }} width={100} />}
         />
         <Tooltip
-          formatter={(value: number) => [formatCurrency(value), "Value"]}
-          contentStyle={{
-            backgroundColor: "hsl(var(--background))",
-            border: "1px solid hsl(var(--border))",
-            borderRadius: "6px",
-            fontSize: "12px",
+          content={({ active, payload }: any) => {
+            if (active && payload && payload.length) {
+              const item = payload[0].payload;
+              return (
+                <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                  <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+                    <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
+                  </div>
+                  <div className="p-2">
+                    <table className="w-full text-sm">
+                      <tbody>
+                        <tr>
+                          <td className="py-1 pr-4 text-slate-700 font-medium">Value</td>
+                          <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            }
+            return null;
           }}
         />
         <Bar dataKey="value" radius={[0, 4, 4, 0]}>

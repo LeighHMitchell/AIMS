@@ -7,7 +7,6 @@ import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHea
 
 // Import the tab components
 import SDGAlignmentSection from "@/components/SDGAlignmentSection"
-import BudgetMappingTab from "@/components/activities/BudgetMappingTab"
 import TagsSection from "@/components/TagsSection"
 import WorkingGroupsSection from "@/components/WorkingGroupsSection"
 import PolicyMarkersSectionIATIWithCustom from "@/components/PolicyMarkersSectionIATIWithCustom"
@@ -15,7 +14,6 @@ import PolicyMarkersSectionIATIWithCustom from "@/components/PolicyMarkersSectio
 // Section IDs for the Strategic Alignment group
 export const STRATEGIC_ALIGNMENT_SECTIONS = [
   'sdg',
-  'country-budget',
   'tags',
   'working_groups',
   'policy_markers'
@@ -71,12 +69,6 @@ interface StrategicAlignmentGroupProps {
   sdgMappings: any[]
   onSdgMappingsChange: (mappings: any[]) => void
 
-  // Budget Mapping props
-  general: any
-  setGeneral: (fn: (prev: any) => any) => void
-  onCountryBudgetItemsChange: (count: number) => void
-  totalBudgetUSD: number
-
   // Tags props
   tags: any[]
   onTagsChange: (tags: any[]) => void
@@ -113,12 +105,6 @@ export function StrategicAlignmentGroup({
   sdgMappings,
   onSdgMappingsChange,
 
-  // Budget Mapping props
-  general,
-  setGeneral,
-  onCountryBudgetItemsChange,
-  totalBudgetUSD,
-
   // Tags props
   tags,
   onTagsChange,
@@ -135,7 +121,6 @@ export function StrategicAlignmentGroup({
 
   // Create refs for each section
   const sdgRef = useRef<HTMLElement>(null)
-  const countryBudgetRef = useRef<HTMLElement>(null)
   const tagsRef = useRef<HTMLElement>(null)
   const workingGroupsRef = useRef<HTMLElement>(null)
   const policyMarkersRef = useRef<HTMLElement>(null)
@@ -146,7 +131,6 @@ export function StrategicAlignmentGroup({
   // Build section refs array for scroll spy (only if activityCreated)
   const sectionRefs: SectionRef[] = activityCreated ? [
     { id: 'sdg', ref: sdgRef },
-    { id: 'country-budget', ref: countryBudgetRef },
     { id: 'tags', ref: tagsRef },
     { id: 'working_groups', ref: workingGroupsRef },
     { id: 'policy_markers', ref: policyMarkersRef },
@@ -246,7 +230,6 @@ export function StrategicAlignmentGroup({
     // Observe all section elements
     const sectionElements = [
       sdgRef.current,
-      countryBudgetRef.current,
       tagsRef.current,
       workingGroupsRef.current,
       policyMarkersRef.current
@@ -264,7 +247,7 @@ export function StrategicAlignmentGroup({
     if (!activityCreated || !enablePreloading) return
 
     // Preload all sections with minimal staggering
-    const sectionsToPreload = ['sdg', 'country-budget', 'tags', 'working_groups', 'policy_markers']
+    const sectionsToPreload = ['sdg', 'tags', 'working_groups', 'policy_markers']
 
     sectionsToPreload.forEach((sectionId, index) => {
       setTimeout(() => {
@@ -309,38 +292,6 @@ export function StrategicAlignmentGroup({
               </div>
             ) : (
               <SectionSkeleton sectionId="sdg" />
-            )}
-          </section>
-
-          {/* Country Budget Mapping Section */}
-          <section
-            id="country-budget"
-            ref={countryBudgetRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
-          >
-            {isSectionActive('country-budget') || activeSections.has('country-budget') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <SectionHeader
-                  id="country-budget"
-                  title={getSectionLabel('country-budget')}
-                  helpText={getSectionHelpText('country-budget')}
-                  showDivider={false}
-                />
-                <BudgetMappingTab
-                  activityId={activityId}
-                  userId={userId}
-                  budgetStatus={general.budgetStatus}
-                  onBudgetPercentage={general.onBudgetPercentage}
-                  budgetStatusNotes={general.budgetStatusNotes}
-                  onActivityChange={(field, value) => {
-                    setGeneral((g: any) => ({ ...g, [field]: value }))
-                  }}
-                  onDataChange={onCountryBudgetItemsChange}
-                  totalBudgetUSD={totalBudgetUSD}
-                />
-              </div>
-            ) : (
-              <SectionSkeleton sectionId="country-budget" />
             )}
           </section>
 

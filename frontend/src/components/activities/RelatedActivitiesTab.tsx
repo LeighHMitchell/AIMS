@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   Table,
   TableBody,
@@ -44,14 +45,14 @@ interface RelatedActivitiesTabProps {
 }
 
 const getStatusColor = (status?: string) => {
-  if (!status) return 'bg-slate-100 text-slate-800';
+  if (!status) return 'bg-muted text-foreground';
   
   const statusNum = parseInt(status);
   if (statusNum === 2) return 'bg-green-100 text-green-800'; // Active
   if (statusNum === 3) return 'bg-blue-100 text-blue-800'; // Completed
   if (statusNum === 1) return 'bg-yellow-100 text-yellow-800'; // Pipeline
   if (statusNum === 5) return 'bg-red-100 text-red-800'; // Cancelled
-  return 'bg-slate-100 text-slate-800';
+  return 'bg-muted text-foreground';
 };
 
 const getStatusLabel = (status?: string) => {
@@ -197,7 +198,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -217,8 +218,8 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
       <>
         <Card>
           <CardContent className="py-12">
-            <div className="text-center text-slate-500">
-              <Link2 className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+            <div className="text-center text-muted-foreground">
+              <Link2 className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
               <p className="text-sm mb-4">No related activities found</p>
               {!readOnly && (
                 <Button onClick={() => setShowAddModal(true)}>
@@ -286,21 +287,21 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                   Sync External Links
                 </Button>
               )}
-              <div className="flex">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
                 <Button
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewMode('table')}
-                  className="rounded-r-none"
+                  className={cn(viewMode === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   <List className="h-4 w-4 mr-2" />
                   Table
                 </Button>
                 <Button
-                  variant={viewMode === 'graph' ? 'default' : 'outline'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewMode('graph')}
-                  className="rounded-l-none"
+                  className={cn(viewMode === 'graph' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 >
                   <Network className="h-4 w-4 mr-2" />
                   Network Graph
@@ -315,7 +316,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50">
+                    <TableRow className="bg-muted">
                       <TableHead className="w-[50px]">Direction</TableHead>
                       <TableHead>Activity</TableHead>
                       <TableHead>IATI Identifier</TableHead>
@@ -338,23 +339,23 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-medium text-slate-900">
+                            <span className="font-medium text-foreground">
                               {activity.title}
                             </span>
                             {activity.acronym && (
-                              <span className="text-xs text-slate-500">
+                              <span className="text-xs text-muted-foreground">
                                 {activity.acronym}
                               </span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <code className="text-xs bg-slate-100 px-2 py-1 rounded">
+                          <code className="text-xs bg-muted px-2 py-1 rounded">
                             {activity.iatiIdentifier || 'N/A'}
                           </code>
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm text-slate-700">
+                          <div className="text-sm text-foreground">
                             {activity.organizationAcronym || activity.organizationName || 'N/A'}
                           </div>
                         </TableCell>
@@ -368,11 +369,11 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="text-sm font-medium text-slate-900">
+                            <span className="text-sm font-medium text-foreground">
                               {activity.relationshipType}
                             </span>
                             {activity.relationshipNarrative && (
-                              <span className="text-xs text-slate-500 mt-1">
+                              <span className="text-xs text-muted-foreground mt-1">
                                 {activity.relationshipNarrative}
                               </span>
                             )}
@@ -380,7 +381,7 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs text-slate-600">
+                            <span className="text-xs text-muted-foreground">
                               {activity.source}
                             </span>
                             {activity.isExternal && (
@@ -422,8 +423,8 @@ export function RelatedActivitiesTab({ activityId, activityTitle = 'Current Acti
                 </Table>
               </div>
 
-              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
-                <p className="text-xs text-slate-600">
+              <div className="px-6 py-4 border-t border-border bg-muted">
+                <p className="text-xs text-muted-foreground">
                   Showing {relatedActivities.length} related {relatedActivities.length === 1 ? 'activity' : 'activities'}
                 </p>
               </div>

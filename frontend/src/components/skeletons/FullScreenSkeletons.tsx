@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 // Analytics Dashboard Skeleton
 export function AnalyticsDashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50" aria-busy="true" aria-label="Loading analytics dashboard">
+    <div className="min-h-screen bg-muted" aria-busy="true" aria-label="Loading analytics dashboard">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -15,7 +15,7 @@ export function AnalyticsDashboardSkeleton() {
         </div>
 
         {/* Filter Section */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="bg-card rounded-lg shadow-sm p-4 mb-6">
           <div className="flex flex-wrap gap-4">
             <Skeleton variant="rounded" width="150px" height="40px" />
             <Skeleton variant="rounded" width="150px" height="40px" />
@@ -64,7 +64,7 @@ export function AnalyticsDashboardSkeleton() {
 // IATI XML Import Skeleton
 export function IATIImportSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50" aria-busy="true" aria-label="Loading IATI import">
+    <div className="min-h-screen bg-muted" aria-busy="true" aria-label="Loading IATI import">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -107,7 +107,7 @@ export function IATIImportSkeleton() {
           <CardContent>
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="border-l-4 border-gray-200 pl-4 py-2">
+                <div key={i} className="border-l-4 border-border pl-4 py-2">
                   <Skeleton variant="text" width="60%" height="1rem" className="mb-1" />
                   <Skeleton variant="text" width="80%" height="0.875rem" />
                 </div>
@@ -123,7 +123,7 @@ export function IATIImportSkeleton() {
 // Transactions List Skeleton
 export function TransactionsListSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50" aria-busy="true" aria-label="Loading transactions">
+    <div className="min-h-screen bg-muted" aria-busy="true" aria-label="Loading transactions">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -171,7 +171,7 @@ export function TransactionsListSkeleton() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-border">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <tr key={i}>
                     <td className="px-4 py-3">
@@ -221,7 +221,7 @@ export function TransactionsListSkeleton() {
 // Partner Funding Summary Skeleton
 export function PartnerFundingSummarySkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50" aria-busy="true" aria-label="Loading partner funding summary">
+    <div className="min-h-screen bg-muted" aria-busy="true" aria-label="Loading partner funding summary">
       <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
         {/* Header */}
         <div className="mb-6">
@@ -252,7 +252,7 @@ export function PartnerFundingSummarySkeleton() {
               </div>
 
               {/* Transaction Type Toggle */}
-              <div className="flex items-center bg-white border border-gray-200 rounded-md">
+              <div className="flex items-center bg-card border border-border rounded-md">
                 <Skeleton variant="rounded" width="110px" height="32px" className="mr-1" />
                 <Skeleton variant="rounded" width="110px" height="32px" />
               </div>
@@ -267,8 +267,8 @@ export function PartnerFundingSummarySkeleton() {
           <TabsContent value="type" className="space-y-4">
             {/* Group Cards */}
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="bg-white border border-gray-200">
-                <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors py-4">
+              <Card key={i} className="bg-card border border-border">
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Skeleton variant="circular" width="16px" height="16px" />
@@ -286,7 +286,7 @@ export function PartnerFundingSummarySkeleton() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-200">
+                        <tr className="border-b border-border">
                           <th className="text-left py-3 px-2">
                             <Skeleton variant="text" width="140px" height="0.875rem" />
                           </th>
@@ -302,7 +302,7 @@ export function PartnerFundingSummarySkeleton() {
                       </thead>
                       <tbody>
                         {[1, 2, 3, 4].map((j) => (
-                          <tr key={j} className="border-b border-gray-200 hover:bg-blue-50 bg-gray-50">
+                          <tr key={j} className="border-b border-border hover:bg-blue-50 bg-muted">
                             <td className="py-3 px-2">
                               <div className="flex items-center gap-2">
                                 <Skeleton variant="circular" width="16px" height="16px" />
@@ -329,7 +329,7 @@ export function PartnerFundingSummarySkeleton() {
 
           <TabsContent value="custom" className="space-y-4">
             {/* Custom Groups or Empty State */}
-            <Card className="bg-white border border-gray-200">
+            <Card className="bg-card border border-border">
               <CardContent className="py-12 text-center">
                 <Skeleton variant="circular" width="48px" height="48px" className="mx-auto mb-4" />
                 <Skeleton variant="text" width="200px" height="1.125rem" className="mx-auto mb-2" />
@@ -347,7 +347,7 @@ export function PartnerFundingSummarySkeleton() {
 // Rolodex (Organization Directory) Skeleton
 export function RolodexSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50" aria-busy="true" aria-label="Loading organization directory">
+    <div className="min-h-screen bg-muted" aria-busy="true" aria-label="Loading organization directory">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -356,7 +356,7 @@ export function RolodexSkeleton() {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="bg-card rounded-lg shadow-sm p-4 mb-6">
           <div className="flex flex-wrap gap-4">
             <Skeleton variant="rounded" width="300px" height="40px" />
             <Skeleton variant="rounded" width="150px" height="40px" />
@@ -404,7 +404,7 @@ export function RolodexSkeleton() {
 // User Management Panel Skeleton
 export function UserManagementSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50" aria-busy="true" aria-label="Loading user management">
+    <div className="min-h-screen bg-muted" aria-busy="true" aria-label="Loading user management">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -443,7 +443,7 @@ export function UserManagementSkeleton() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-border">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <tr key={i}>
                     <td className="px-4 py-3">

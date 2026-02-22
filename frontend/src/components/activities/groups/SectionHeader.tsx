@@ -80,6 +80,11 @@ export const SECTION_LABELS: Record<string, string> = {
   "forward-spending-survey": "Forward Spending Survey",
   "financing-terms": "Financing Terms",
   conditions: "Conditions",
+  "fund-overview": "Fund Overview",
+  "fund-contributions": "Contributions",
+  "fund-disbursements": "Disbursements",
+  "fund-reconciliation": "Reconciliation",
+  "fund-suggestions": "Suggested Links",
   "xml-import": "IATI Import",
   readiness_checklist: "Government Readiness Checklist",
 }
@@ -109,6 +114,11 @@ export const SECTION_HELP_TEXTS: Record<string, string> = {
   readiness_checklist: "Track preparatory milestones and ensure project readiness before validation. Complete each checklist item by uploading supporting documents and marking the status. All required items must be completed before signing off each stage.",
   humanitarian: "This section captures humanitarian-specific information for the activity, including emergency type, GLIDE number, and humanitarian scope classifications. These details help identify activities that respond to humanitarian crises and enable proper categorisation in humanitarian coordination systems.",
   "country-region": "This section defines the geographic scope of the activity at the country and region level. You can specify recipient countries with percentage allocations showing how the budget is distributed across locations. Regional classifications help group activities by broader geographic areas.",
+  "fund-overview": "A summary dashboard showing the fund's balance (total contributions minus total disbursements), key metrics such as number of donors and child activities, top contributors, top sectors, and a quarterly disbursement trend.",
+  "fund-contributions": "View all contributions into this fund by donor organisation. Shows pledged, committed, and received amounts with year-by-year breakdowns. Data is drawn from incoming transactions and participating organisations with a funding role.",
+  "fund-disbursements": "View all disbursements from this fund to child activities. Includes breakdowns by child activity, sector, and region, with committed versus disbursed comparisons and planned versus actual analysis.",
+  "fund-reconciliation": "Compare fund-side outgoing transactions with child-side incoming transactions to identify matches, mismatches, and unmatched records. Helps fund managers ensure both sides of each transfer are properly recorded.",
+  "fund-suggestions": "Discover activities that may be children of this fund based on transaction references, funding organisation matches, or title similarity. Link suggested activities or dismiss them.",
 }
 
 /**

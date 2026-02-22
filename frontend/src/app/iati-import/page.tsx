@@ -278,11 +278,11 @@ function HistoryTab() {
 
   const getItemActionIcon = (action: string) => {
     switch (action) {
-      case 'create': return <Plus className="h-3.5 w-3.5 text-gray-700" />
-      case 'update': return <RefreshCw className="h-3.5 w-3.5 text-gray-700" />
-      case 'skip': return <SkipForward className="h-3.5 w-3.5 text-gray-400" />
+      case 'create': return <Plus className="h-3.5 w-3.5 text-foreground" />
+      case 'update': return <RefreshCw className="h-3.5 w-3.5 text-foreground" />
+      case 'skip': return <SkipForward className="h-3.5 w-3.5 text-muted-foreground" />
       case 'fail': return <XCircle className="h-3.5 w-3.5 text-red-500" />
-      default: return <Clock className="h-3.5 w-3.5 text-gray-400" />
+      default: return <Clock className="h-3.5 w-3.5 text-muted-foreground" />
     }
   }
 
@@ -301,7 +301,7 @@ function HistoryTab() {
         {/* Filters */}
         <div className="flex items-center gap-3 mb-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by organisation or file name..."
               value={searchQuery}
@@ -328,7 +328,7 @@ function HistoryTab() {
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span className="text-gray-500">Loading history...</span>
+              <span className="text-muted-foreground">Loading history...</span>
             </div>
           ) : historyError ? (
             <div className="text-center py-8">
@@ -336,7 +336,7 @@ function HistoryTab() {
               <Button variant="outline" size="sm" className="mt-2" onClick={fetchHistory}>Retry</Button>
             </div>
           ) : historyData.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No import history found</p>
+            <p className="text-center text-muted-foreground py-8">No import history found</p>
           ) : (
             historyData.map((record) => {
               const isExpanded = expandedBatchId === record.id
@@ -349,9 +349,9 @@ function HistoryTab() {
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       {isExpanded ? (
-                        <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                       )}
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -363,17 +363,17 @@ function HistoryTab() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           By {record.userName} · {formatDistanceToNow(new Date(record.timestamp), { addSuffix: true })}
-                          <span className="hidden sm:inline text-gray-400 ml-1" title={new Date(record.timestamp).toLocaleString()}>
+                          <span className="hidden sm:inline text-muted-foreground ml-1" title={new Date(record.timestamp).toLocaleString()}>
                             ({new Date(record.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
                           </span>
                         </p>
                         <div className="flex gap-3 mt-1.5 text-xs">
-                          <span className="text-gray-700 font-mono bg-muted px-1.5 py-0.5 rounded">{record.totalActivities} total</span>
-                          {record.createdCount > 0 && <span className="text-gray-700">{record.createdCount} created</span>}
-                          {record.updatedCount > 0 && <span className="text-gray-700">{record.updatedCount} updated</span>}
-                          {record.skippedCount > 0 && <span className="text-gray-500">{record.skippedCount} skipped</span>}
+                          <span className="text-foreground font-mono bg-muted px-1.5 py-0.5 rounded">{record.totalActivities} total</span>
+                          {record.createdCount > 0 && <span className="text-foreground">{record.createdCount} created</span>}
+                          {record.updatedCount > 0 && <span className="text-foreground">{record.updatedCount} updated</span>}
+                          {record.skippedCount > 0 && <span className="text-muted-foreground">{record.skippedCount} skipped</span>}
                           {record.failedCount > 0 && <span className="text-red-600">{record.failedCount} failed</span>}
                         </div>
                         {record.errorMessage && (
@@ -387,7 +387,7 @@ function HistoryTab() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 ml-1"
+                        className="text-muted-foreground hover:text-foreground hover:bg-muted ml-1"
                         title="Export CSV"
                         disabled={exportingBatchId === record.id}
                         onClick={(e) => exportBatchCsv(record.id, e)}
@@ -403,7 +403,7 @@ function HistoryTab() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                          className="text-muted-foreground hover:text-red-600 hover:bg-red-50"
                           title="Delete import history"
                           disabled={deletingBatchId === record.id}
                           onClick={(e) => deleteBatch(record.id, record.reportingOrgName || record.fileName, e)}
@@ -454,13 +454,13 @@ function HistoryTab() {
                       {loadingItems ? (
                         <div className="flex items-center justify-center py-4">
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          <span className="text-sm text-gray-500">Loading activities...</span>
+                          <span className="text-sm text-muted-foreground">Loading activities...</span>
                         </div>
                       ) : batchItems.length === 0 ? (
-                        <p className="text-sm text-gray-500 text-center py-4">No activity details available</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">No activity details available</p>
                       ) : (
                         <div className="space-y-1">
-                          <div className="grid grid-cols-[1fr_200px_100px] gap-2 text-xs font-medium text-gray-500 uppercase px-2 py-1">
+                          <div className="grid grid-cols-[1fr_200px_100px] gap-2 text-xs font-medium text-muted-foreground uppercase px-2 py-1">
                             <div>Activity</div>
                             <div>Import Details</div>
                             <div className="text-right">Action</div>
@@ -469,16 +469,16 @@ function HistoryTab() {
                             {batchItems.map((item: any) => (
                               <div
                                 key={item.id}
-                                className="grid grid-cols-[1fr_200px_100px] gap-2 px-2 py-2 border-b border-gray-100 last:border-b-0 items-center"
+                                className="grid grid-cols-[1fr_200px_100px] gap-2 px-2 py-2 border-b border-border last:border-b-0 items-center"
                               >
                                 <div className="min-w-0">
                                   <p className="text-sm truncate">{item.activityTitle || item.iatiIdentifier}</p>
-                                  <span className="text-xs font-mono bg-white px-1.5 py-0.5 rounded text-gray-500 border">{item.iatiIdentifier}</span>
+                                  <span className="text-xs font-mono bg-card px-1.5 py-0.5 rounded text-muted-foreground border">{item.iatiIdentifier}</span>
                                   {item.errorMessage && (
                                     <p className="text-xs text-red-500 mt-0.5">{item.errorMessage}</p>
                                   )}
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-muted-foreground">
                                   {(() => {
                                     const pl = (n: number, s: string) => `${n} ${n === 1 ? s : s + 's'}`;
                                     const parts: string[] = [];
@@ -499,7 +499,7 @@ function HistoryTab() {
                                 </div>
                                 <div className="text-right flex items-center justify-end gap-1.5">
                                   {getItemActionIcon(item.action)}
-                                  <span className="text-xs text-gray-600 capitalize">{item.action === 'fail' ? 'Failed' : item.action}</span>
+                                  <span className="text-xs text-muted-foreground capitalize">{item.action === 'fail' ? 'Failed' : item.action}</span>
                                 </div>
                               </div>
                             ))}
@@ -516,9 +516,9 @@ function HistoryTab() {
 
         {/* Pagination */}
         {!loading && totalCount > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mt-4">
+          <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Showing {Math.min(startIndex + 1, totalCount)} to {Math.min(endIndex, totalCount)} of {totalCount} imports
               </div>
 
@@ -589,7 +589,7 @@ function HistoryTab() {
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Per page:</label>
+                <label className="text-sm text-muted-foreground">Per page:</label>
                 <Select
                   value={pageLimit.toString()}
                   onValueChange={(value) => handlePageLimitChange(Number(value))}
@@ -1143,8 +1143,8 @@ export default function IATIImportPage() {
       <MainLayout>
         <div className="max-w-screen-2xl mx-auto px-6 py-4">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">IATI Import Tool</h1>
-            <p className="text-gray-600 mt-2">Sequential import process for IATI data</p>
+            <h1 className="text-3xl font-bold text-foreground">IATI Import Tool</h1>
+            <p className="text-muted-foreground mt-2">Sequential import process for IATI data</p>
           </div>
 
           <Card>
@@ -1155,7 +1155,7 @@ export default function IATIImportPage() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="font-medium">Parsing XML file...</span>
                   </div>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-muted-foreground">
                     {parsingProgress}%
                   </span>
                 </div>
@@ -1163,7 +1163,7 @@ export default function IATIImportPage() {
                   value={parsingProgress} 
                   className="h-2"
                 />
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Please wait while we process your IATI XML file. This may take a few moments for large files.
                 </p>
               </div>
@@ -1178,17 +1178,17 @@ export default function IATIImportPage() {
     <MainLayout>
       <div className="max-w-screen-2xl mx-auto px-6 py-4">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">IATI Import Tool</h1>
-          <p className="text-gray-600 mt-2">Sequential import process for IATI data</p>
+          <h1 className="text-3xl font-bold text-foreground">IATI Import Tool</h1>
+          <p className="text-muted-foreground mt-2">Sequential import process for IATI data</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap" data-tour="import-tabs">
-            <TabsTrigger value="bulk-import" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="bulk-import" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Database className="h-4 w-4" />
               Bulk Import
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="history" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <History className="h-4 w-4" />
               History
             </TabsTrigger>
@@ -1218,17 +1218,17 @@ export default function IATIImportPage() {
                       <div className={`
                         w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium mb-2
                         ${isActive ? 'bg-blue-600 text-white' : 
-                          isPast ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'}
+                          isPast ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}
                       `}>
                         {isPast ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                       </div>
-                      <span className={`text-xs ${isActive ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+                      <span className={`text-xs ${isActive ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>
                         {s.label}
                       </span>
                     </div>
                     {index < 6 && (
                       <div className={`w-14 h-1 mx-2 mb-6 ${
-                        isPast ? 'bg-green-600' : 'bg-gray-200'
+                        isPast ? 'bg-green-600' : 'bg-muted'
                       }`} />
                     )}
                   </div>
@@ -1282,20 +1282,20 @@ export default function IATIImportPage() {
                         className={`
                           border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
                           transition-colors duration-200
-                          ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
+                          ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-border hover:border-border'}
                         `}
                       >
                         <input {...getInputProps()} />
-                        <FileCode className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <FileCode className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                         {isDragActive ? (
                           <p className="text-lg font-medium text-blue-600">Drop the file here...</p>
                         ) : (
                           <>
-                            <p className="text-lg font-medium text-gray-700">
+                            <p className="text-lg font-medium text-foreground">
                               Drop your IATI XML file here
                             </p>
-                            <p className="text-sm text-gray-500 mt-2">or click to select file</p>
-                            <p className="text-xs text-gray-400 mt-4">Supports IATI 2.03 format</p>
+                            <p className="text-sm text-muted-foreground mt-2">or click to select file</p>
+                            <p className="text-xs text-muted-foreground mt-4">Supports IATI 2.03 format</p>
                           </>
                         )}
                       </div>
@@ -1444,7 +1444,7 @@ export default function IATIImportPage() {
                           onChange={(e) => setSnippetContent(e.target.value)}
                           className="font-mono text-sm min-h-[300px]"
                         />
-                        <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{snippetContent.length} characters</span>
                           <Button
                             variant="ghost"
@@ -1470,14 +1470,14 @@ export default function IATIImportPage() {
                         <AlertDescription>
                           <p className="font-medium mb-2">Snippet Import supports:</p>
                           <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;transaction&gt;</code> - Individual or multiple transactions</li>
-                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-xs bg-gray-100 px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
-                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;location&gt;</code> - Location data</li>
-                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
-                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-xs bg-gray-100 px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
-                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;policy-marker&gt;</code> - Policy markers</li>
-                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;budget&gt;</code> - Budget information</li>
-                            <li><code className="text-xs bg-gray-100 px-1 rounded">&lt;iati-activity&gt;</code> - Full activities</li>
+                            <li><code className="text-xs bg-muted px-1 rounded">&lt;transaction&gt;</code> - Individual or multiple transactions</li>
+                            <li><code className="text-xs bg-muted px-1 rounded">&lt;participating-org&gt;</code> / <code className="text-xs bg-muted px-1 rounded">&lt;reporting-org&gt;</code> - Organizations</li>
+                            <li><code className="text-xs bg-muted px-1 rounded">&lt;location&gt;</code> - Location data</li>
+                            <li><code className="text-xs bg-muted px-1 rounded">&lt;sector&gt;</code> - Sector allocations</li>
+                            <li><code className="text-xs bg-muted px-1 rounded">&lt;recipient-country&gt;</code> / <code className="text-xs bg-muted px-1 rounded">&lt;recipient-region&gt;</code> - Geographic data</li>
+                            <li><code className="text-xs bg-muted px-1 rounded">&lt;policy-marker&gt;</code> - Policy markers</li>
+                            <li><code className="text-xs bg-muted px-1 rounded">&lt;budget&gt;</code> - Budget information</li>
+                            <li><code className="text-xs bg-muted px-1 rounded">&lt;iati-activity&gt;</code> - Full activities</li>
                           </ul>
                           <p className="mt-2 text-sm">
                             The system will automatically detect the type of snippet and parse it accordingly.
@@ -1497,7 +1497,7 @@ export default function IATIImportPage() {
                   <div className="text-center py-12">
                     <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
                     <h3 className="text-lg font-medium">Parsing IATI File...</h3>
-                    <p className="text-gray-500 mt-2">Analyzing data and checking for existing records</p>
+                    <p className="text-muted-foreground mt-2">Analyzing data and checking for existing records</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1520,8 +1520,8 @@ export default function IATIImportPage() {
                         <div className="text-center">
                           <Building2 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                           <p className="text-3xl font-bold">{parsedData.organizations.length}</p>
-                          <p className="text-sm text-gray-600">Organizations</p>
-                          <div className="mt-2 text-xs text-gray-500">
+                          <p className="text-sm text-muted-foreground">Organizations</p>
+                          <div className="mt-2 text-xs text-muted-foreground">
                             <p>{parsedData.organizations.filter(o => o.matched).length} existing</p>
                             <p>{parsedData.organizations.filter(o => !o.matched).length} new</p>
                           </div>
@@ -1534,8 +1534,8 @@ export default function IATIImportPage() {
                         <div className="text-center">
                           <Activity className="h-8 w-8 mx-auto mb-2 text-green-600" />
                           <p className="text-3xl font-bold">{parsedData.activities.length}</p>
-                          <p className="text-sm text-gray-600">Activities</p>
-                          <div className="mt-2 text-xs text-gray-500">
+                          <p className="text-sm text-muted-foreground">Activities</p>
+                          <div className="mt-2 text-xs text-muted-foreground">
                             <p>{parsedData.activities.filter(a => a.matched).length} existing</p>
                             <p>{parsedData.activities.filter(a => !a.matched).length} new</p>
                           </div>
@@ -1548,8 +1548,8 @@ export default function IATIImportPage() {
                         <div className="text-center">
                           <CreditCard className="h-8 w-8 mx-auto mb-2 text-purple-600" />
                           <p className="text-3xl font-bold">{(parsedData.transactions || []).length}</p>
-                          <p className="text-sm text-gray-600">Transactions</p>
-                          <div className="mt-2 text-xs text-gray-500">
+                          <p className="text-sm text-muted-foreground">Transactions</p>
+                          <div className="mt-2 text-xs text-muted-foreground">
                             <p>Total value:</p>
                             <p className="font-medium">
                               {(parsedData.transactions || []).reduce((sum, t) => sum + t.value, 0).toLocaleString()} USD
@@ -1624,25 +1624,25 @@ export default function IATIImportPage() {
                 <CardContent>
                   {/* Summary Stats */}
                   <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium text-sm text-gray-700 mb-3">Data Found in XML File:</h4>
+                    <h4 className="font-medium text-sm text-foreground mb-3">Data Found in XML File:</h4>
                     <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-blue-600">{parsedData.organizations.length}</p>
-                        <p className="text-sm text-gray-600">Organizations</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-sm text-muted-foreground">Organizations</p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           {parsedData.organizations.filter(o => !o.matched).length} new
                         </p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-green-600">{parsedData.activities.length}</p>
-                        <p className="text-sm text-gray-600">Activities</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-sm text-muted-foreground">Activities</p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           {parsedData.activities.filter(a => !a.matched).length} new
                         </p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-purple-600">{(parsedData.transactions || []).length}</p>
-                        <p className="text-sm text-gray-600">Transactions</p>
+                        <p className="text-sm text-muted-foreground">Transactions</p>
                       </div>
                     </div>
                   </div>
@@ -1689,7 +1689,7 @@ export default function IATIImportPage() {
                               />
                               <div className="flex-1">
                                 <p className="font-medium">{org.name}</p>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-muted-foreground">
                                   Ref: {org.ref} • Type: {org.type}
                                   {org.acronym && ` • ${org.acronym}`}
                                 </p>
@@ -1804,11 +1804,11 @@ export default function IATIImportPage() {
                               />
                               <div className="flex-1">
                                 <p className="font-medium">{activity.title}</p>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-muted-foreground">
                                   ID: <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs">{activity.iatiIdentifier}</span> • Status: {activity.status}
                                 </p>
                                 {activity.description && (
-                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                     {activity.description}
                                   </p>
                                 )}
@@ -1891,7 +1891,7 @@ export default function IATIImportPage() {
                   {importState.transactions.phase === 'review' && (
                     <>
                       <div className="mb-4 flex items-center justify-between">
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-muted-foreground">
                           {(parsedData.transactions || []).length} transactions found
                         </span>
                         <Button
@@ -1919,12 +1919,12 @@ export default function IATIImportPage() {
                                 <p className="font-medium">
                                   {transaction.type} - {transaction.currency} {transaction.value.toLocaleString()}
                                 </p>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-muted-foreground">
                                   Date: {new Date(transaction.date).toLocaleDateString()} • 
                                   Activity: {transaction.activityRef}
                                 </p>
                                 {transaction.description && (
-                                  <p className="text-sm text-gray-600 mt-1">
+                                  <p className="text-sm text-muted-foreground mt-1">
                                     {transaction.description}
                                   </p>
                                 )}
@@ -2004,10 +2004,10 @@ export default function IATIImportPage() {
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm text-gray-600">Organizations</p>
+                              <p className="text-sm text-muted-foreground">Organizations</p>
                               <p className="text-2xl font-bold">{importState.organizations.imported.length}</p>
                             </div>
-                            <Building2 className="h-8 w-8 text-gray-400" />
+                            <Building2 className="h-8 w-8 text-muted-foreground" />
                           </div>
                         </CardContent>
                       </Card>
@@ -2016,10 +2016,10 @@ export default function IATIImportPage() {
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm text-gray-600">Activities</p>
+                              <p className="text-sm text-muted-foreground">Activities</p>
                               <p className="text-2xl font-bold">{importState.activities.imported.length}</p>
                             </div>
-                            <Activity className="h-8 w-8 text-gray-400" />
+                            <Activity className="h-8 w-8 text-muted-foreground" />
                           </div>
                         </CardContent>
                       </Card>
@@ -2028,10 +2028,10 @@ export default function IATIImportPage() {
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm text-gray-600">Transactions</p>
+                              <p className="text-sm text-muted-foreground">Transactions</p>
                               <p className="text-2xl font-bold">{importState.transactions.imported.length}</p>
                             </div>
-                            <CreditCard className="h-8 w-8 text-gray-400" />
+                            <CreditCard className="h-8 w-8 text-muted-foreground" />
                           </div>
                         </CardContent>
                       </Card>

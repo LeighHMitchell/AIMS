@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     // Only include activities that have received at least one vote
     let query = supabase
       .from('activities')
-      .select('id, iati_identifier, title_narrative, activity_status, reporting_org_id, vote_score, upvote_count, downvote_count')
+      .select('id, iati_identifier, title_narrative, acronym, activity_status, reporting_org_id, vote_score, upvote_count, downvote_count')
       .or('upvote_count.gt.0,downvote_count.gt.0')
 
     // Filter by org type if specified
@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
         id: activity.id,
         iatiIdentifier: activity.iati_identifier || null,
         title: activity.title_narrative || 'Untitled Activity',
+        acronym: activity.acronym || null,
         voteScore: activity.vote_score || 0,
         upvoteCount: activity.upvote_count || 0,
         downvoteCount: activity.downvote_count || 0,

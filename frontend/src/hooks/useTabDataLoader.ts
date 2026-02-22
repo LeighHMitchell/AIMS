@@ -13,10 +13,11 @@ import { supabase } from '@/lib/supabase';
 // Tab group definitions - when visiting any tab in a group, load data for all tabs in that group
 export const TAB_GROUPS = {
   'activity-overview': ['general', 'sectors', 'humanitarian', 'country-region', 'locations'],
-  'stakeholders': ['organisations', 'contacts', 'focal_points', 'linked_activities'],
-  'funding-delivery': ['finances', 'planned-disbursements', 'budgets', 'forward-spending-survey', 'results', 'capital-spend', 'financing-terms', 'conditions'],
-  'strategic-alignment': ['sdg', 'country-budget', 'tags', 'working-groups', 'policy-markers'],
+  'stakeholders': ['organisations', 'contacts', 'focal_points'],
+  'funding-delivery': ['finances', 'planned-disbursements', 'budgets'],
+  'strategic-alignment': ['sdg', 'tags', 'working-groups', 'policy-markers'],
   'supporting-info': ['documents', 'subnational_breakdown'],
+  'advanced': ['linked_activities', 'results', 'forward-spending-survey', 'capital-spend', 'financing-terms', 'conditions', 'country-budget'],
   'administration': ['metadata']
 } as const;
 

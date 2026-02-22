@@ -226,27 +226,27 @@ export default function OrganisationsSection({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-3xl font-semibold text-gray-900">Participating Organisations</CardTitle>
+              <CardTitle className="text-3xl font-semibold text-foreground">Participating Organisations</CardTitle>
             </div>
-            <div className="h-9 w-40 bg-gray-200 animate-pulse rounded-md" />
+            <div className="h-9 w-40 bg-muted animate-pulse rounded-md" />
           </div>
         </CardHeader>
         <CardContent>
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50">
+                <TableRow className="bg-muted">
                   <TableHead className="w-[40%]">
-                    <div className="h-4 w-24 bg-gray-200 animate-pulse rounded" />
+                    <div className="h-4 w-24 bg-muted animate-pulse rounded" />
                   </TableHead>
                   <TableHead className="w-[20%]">
-                    <div className="h-4 w-16 bg-gray-200 animate-pulse rounded" />
+                    <div className="h-4 w-16 bg-muted animate-pulse rounded" />
                   </TableHead>
                   <TableHead className="w-[26%]">
-                    <div className="h-4 w-28 bg-gray-200 animate-pulse rounded" />
+                    <div className="h-4 w-28 bg-muted animate-pulse rounded" />
                   </TableHead>
                   <TableHead className="w-[14%] text-right">
-                    <div className="h-4 w-16 bg-gray-200 animate-pulse rounded ml-auto" />
+                    <div className="h-4 w-16 bg-muted animate-pulse rounded ml-auto" />
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -255,23 +255,23 @@ export default function OrganisationsSection({
                   <TableRow key={i}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-200 animate-pulse rounded" />
+                        <div className="w-8 h-8 bg-muted animate-pulse rounded" />
                         <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-gray-200 animate-pulse rounded w-3/4" />
-                          <div className="h-3 bg-gray-200 animate-pulse rounded w-1/2" />
+                          <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+                          <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="h-6 w-24 bg-gray-200 animate-pulse rounded-full" />
+                      <div className="h-6 w-24 bg-muted animate-pulse rounded-full" />
                     </TableCell>
                     <TableCell>
-                      <div className="h-6 w-28 bg-gray-200 animate-pulse rounded" />
+                      <div className="h-6 w-28 bg-muted animate-pulse rounded" />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
-                        <div className="h-8 w-8 bg-gray-200 animate-pulse rounded" />
-                        <div className="h-8 w-8 bg-gray-200 animate-pulse rounded" />
+                        <div className="h-8 w-8 bg-muted animate-pulse rounded" />
+                        <div className="h-8 w-8 bg-muted animate-pulse rounded" />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -290,9 +290,9 @@ export default function OrganisationsSection({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-3xl font-semibold text-gray-900">Participating Organisations</CardTitle>
+              <CardTitle className="text-3xl font-semibold text-foreground">Participating Organisations</CardTitle>
               <HelpTextTooltip content={getSectionHelpText('organisations')}>
-                <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+                <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
               </HelpTextTooltip>
             </div>
             <Button onClick={handleAdd} size="sm">
@@ -303,10 +303,10 @@ export default function OrganisationsSection({
         </CardHeader>
         <CardContent>
           {participatingOrganizations.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-white">
-              <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-600 font-medium mb-2">No participating organizations added yet</p>
-              <p className="text-sm text-gray-500">
+            <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-card">
+              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground font-medium mb-2">No participating organizations added yet</p>
+              <p className="text-sm text-muted-foreground">
                 Add organizations to define who is funding, implementing, or managing this activity
               </p>
             </div>
@@ -315,9 +315,9 @@ export default function OrganisationsSection({
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-50">
+                    <TableRow className="bg-muted">
                       <TableHead
-                        className="w-[40%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
+                        className="w-[40%] font-semibold cursor-pointer hover:bg-muted select-none"
                         onClick={() => handleSort('organization')}
                       >
                         <div className="flex items-center">
@@ -326,7 +326,7 @@ export default function OrganisationsSection({
                         </div>
                       </TableHead>
                       <TableHead
-                        className="w-[20%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
+                        className="w-[20%] font-semibold cursor-pointer hover:bg-muted select-none"
                         onClick={() => handleSort('role')}
                       >
                         <div className="flex items-center">
@@ -335,7 +335,7 @@ export default function OrganisationsSection({
                         </div>
                       </TableHead>
                       <TableHead
-                        className="w-[26%] font-semibold cursor-pointer hover:bg-gray-100 select-none"
+                        className="w-[26%] font-semibold cursor-pointer hover:bg-muted select-none"
                         onClick={() => handleSort('type')}
                       >
                         <div className="flex items-center">
@@ -348,7 +348,7 @@ export default function OrganisationsSection({
                   </TableHeader>
                   <TableBody>
                     {sortedOrganizations.map((participatingOrg: any) => (
-                      <TableRow key={participatingOrg.id} className="hover:bg-gray-50">
+                      <TableRow key={participatingOrg.id} className="hover:bg-muted">
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="flex-shrink-0">
@@ -364,8 +364,8 @@ export default function OrganisationsSection({
                                   }}
                                 />
                               ) : (
-                                <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
-                                  <Building2 className="h-4 w-4 text-gray-500" />
+                                <div className="w-8 h-8 bg-muted rounded flex items-center justify-center">
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
                                 </div>
                               )}
                             </div>
@@ -373,7 +373,7 @@ export default function OrganisationsSection({
                                 {participatingOrg.organization_id ? (
                                   <Link
                                     href={`/organizations/${participatingOrg.organization_id}`}
-                                    className="font-medium text-gray-900 hover:text-gray-700 transition-colors"
+                                    className="font-medium text-foreground hover:text-foreground transition-colors"
                                   >
                                     {participatingOrg.narrative ||
                                      participatingOrg.organization?.name ||
@@ -382,7 +382,7 @@ export default function OrganisationsSection({
                                      ` (${participatingOrg.organization.acronym})`}
                                   </Link>
                                 ) : (
-                                  <span className="font-medium text-gray-900">
+                                  <span className="font-medium text-foreground">
                                     {participatingOrg.narrative ||
                                      participatingOrg.organization?.name ||
                                      'Unknown Organization'}
@@ -391,7 +391,7 @@ export default function OrganisationsSection({
                                   </span>
                                 )}
                               {(participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id) && (
-                                <span className="text-xs text-gray-500 font-mono bg-muted px-1.5 py-0.5 rounded">
+                                <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
                                   {participatingOrg.iati_org_ref || participatingOrg.organization?.iati_org_id}
                                 </span>
                               )}
@@ -402,15 +402,15 @@ export default function OrganisationsSection({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-gray-700">
+                          <span className="text-sm text-foreground">
                             {getOrganizationRoleName(participatingOrg.iati_role_code)}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-muted-foreground">
                             {participatingOrg.organization?.Organisation_Type_Name || 
                              (participatingOrg.organization?.Organisation_Type_Code ? getOrganizationTypeName(participatingOrg.organization.Organisation_Type_Code) : null) || 
-                             <span className="text-gray-400">Not set</span>}
+                             <span className="text-muted-foreground">Not set</span>}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
@@ -421,7 +421,7 @@ export default function OrganisationsSection({
                               onClick={() => handleEdit(participatingOrg)}
                               className="hover:bg-blue-50 hover:text-blue-600"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
                             <Button
                               variant="ghost"

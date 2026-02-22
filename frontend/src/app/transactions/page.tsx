@@ -700,8 +700,8 @@ export default function TransactionsPage() {
         {/* Header */}
         <div className="flex flex-wrap justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">Transactions</h1>
-            <p className="text-slate-500">View and manage all financial transactions</p>
+            <h1 className="text-2xl font-semibold text-foreground">Transactions</h1>
+            <p className="text-muted-foreground">View and manage all financial transactions</p>
           </div>
           <div className="flex items-center space-x-4">
             {transactions.data.length > 0 && (
@@ -718,7 +718,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Search, Filters, and View Controls - All in One Row */}
-        <div className="flex items-end gap-3 py-3 bg-slate-50 rounded-lg px-3 border border-gray-200" data-tour="transactions-filters">
+        <div className="flex items-end gap-3 py-3 bg-muted rounded-lg px-3 border border-border" data-tour="transactions-filters">
           {/* Search */}
           <div className="flex flex-col gap-1">
             <Label className="text-xs text-muted-foreground">Search</Label>
@@ -873,11 +873,11 @@ export default function TransactionsPage() {
         {loading || (transactions?.total || 0) === 0 ? (
           <TransactionsListSkeleton />
         ) : error ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+          <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Transactions</h3>
-                <p className="text-slate-500 mb-4">{error}</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">Unable to Load Transactions</h3>
+                <p className="text-muted-foreground mb-4">{error}</p>
                 <Button onClick={() => window.location.reload()} variant="outline">
                   Try Again
                 </Button>
@@ -885,11 +885,11 @@ export default function TransactionsPage() {
             </div>
           </div>
         ) : sortedTransactions.length === 0 && (searchQuery || filters.transactionTypes.length > 0 || filters.statuses.length > 0 || filters.organizations.length > 0 || filters.financeTypes.length > 0) ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
-            <div className="text-slate-500">No matching transactions found</div>
+          <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
+            <div className="text-muted-foreground">No matching transactions found</div>
           </div>
         ) : (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden" data-tour="transactions-table">
+          <div className="bg-card rounded-md shadow-sm border border-border overflow-hidden" data-tour="transactions-table">
             <div className="overflow-x-auto">
               <TransactionTable
                 transactions={sortedTransactions}
@@ -919,7 +919,7 @@ export default function TransactionsPage() {
           <Card data-tour="transactions-pagination">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalTransactions)} to {Math.min(endIndex, totalTransactions)} of {totalTransactions} transactions
                 </div>
                 
@@ -997,7 +997,7 @@ export default function TransactionsPage() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Items per page:</label>
+                  <label className="text-sm text-muted-foreground">Items per page:</label>
                   <Select 
                     value={pageLimit.toString()} 
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

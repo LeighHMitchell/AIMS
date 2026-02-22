@@ -13,9 +13,10 @@ import {
 } from 'recharts'
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, getYear, getQuarter } from 'date-fns'
 import { supabase } from '@/lib/supabase'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, DollarSign, CalendarDays } from 'lucide-react'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { 
   splitBudgetAcrossYears, 
   splitTransactionAcrossYears 
@@ -241,12 +242,7 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <div className="flex justify-between items-center mb-4">
-          <Skeleton className="h-9 w-40 bg-slate-100" />
-        </div>
-        <Skeleton className="h-[400px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -297,9 +293,9 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
           key={`budget-vs-actual-${allocationMethod}-${groupBy}`}
         >
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke="#e2e8f0" 
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke={CHART_STRUCTURE_COLORS.grid}
             vertical={false}
           />
           <XAxis 

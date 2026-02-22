@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIMS Feature Specifications — Non-Technical Guide</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #fff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #0ea5e9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      margin: 0;
+      padding: 1.5rem 1rem 3rem;
+    }
+    .container { max-width: 820px; margin: 0 auto; }
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    .intro {
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+      font-size: 0.95rem;
+    }
+    .feature {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .feature h2 {
+      font-size: 1.2rem;
+      margin: 0 0 1rem 0;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .feature h3 {
+      font-size: 0.95rem;
+      margin: 1.25rem 0 0.5rem 0;
+      color: var(--text);
+    }
+    .feature p { margin: 0.5rem 0; }
+    .feature ul {
+      margin: 0.5rem 0;
+      padding-left: 1.35rem;
+    }
+    .feature li { margin: 0.35rem 0; }
+    .feature strong { font-weight: 600; }
+    .footer {
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AIMS Feature Specifications — Non-Technical Guide</h1>
+    <p class="intro">This document describes <strong>how each feature would work</strong> from the perspective of someone using or managing the system. It is written for people familiar with <strong>aid effectiveness</strong>, <strong>ODA</strong>, and <strong>development finance</strong> but not with software development. For each feature you will find: what it is, why it matters, what users would see and do, what data would be captured or shown, and how it fits with the rest of AIMS.</p>
+
+    <div class="feature" id="1">
+      <h2>1. Complete IATI XML Export</h2>
+      <h3>What it is</h3>
+      <p>Today, when you “Export to IATI XML” for an activity, the system produces a file that contains the activity’s basic details, participating organisations, and transactions. That file is <strong>incomplete</strong> by IATI’s full standard: it does not yet include budgets, planned disbursements, policy markers (e.g. gender, climate), tags, the results framework, conditions, contact information, document links, recipient countries and sectors at activity level, forward spending survey (FSS) data, or loan terms and loan status (CRS-add). Many of these are already stored and edited in AIMS; they are simply not yet written into the export file.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>IATI compliance and validation:</strong> A complete export allows the file to pass IATI validation and be accepted by the IATI Registry and by partners who consume IATI data.</li>
+        <li><strong>Transparency and reporting:</strong> Donors and countries that publish to IATI need the full picture (financial plans, results, policy markers, documents) in the export, not only in the system.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>Data already in AIMS:</strong> We would connect the export process to every relevant part of the activity that already exists: budgets, planned disbursements, FSS forecasts, policy markers, tags, results and indicators, document links, recipient countries and sectors, financing terms and loan status, and (where applicable) conditions and contact info.</li>
+        <li><strong>One export, one file:</strong> When a user clicks “Export to IATI XML,” the system would gather all of that information for that activity and produce a <strong>single</strong> IATI 2.03–compliant XML file that includes every supported element.</li>
+        <li><strong>Optional check before export:</strong> We could add a “Check before export” step that runs the file against IATI’s rules and shows a short report so users can fix issues in AIMS before publishing.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Export includes: activity identity and titles/descriptions; participating organisations (with roles and CRS channel where used); activity status and dates; recipient countries and regions; sectors; budgets; planned disbursements; forward spending survey; transactions; policy markers; tags; results and indicators; document links; conditions; contact info; loan terms and yearly loan status; humanitarian flag and scope where used.</li>
+        <li>Optional pre-export validation report. Filename and content follow IATI 2.03 for Registry or other tools.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="2">
+      <h2>2. OECD DAC CRS Reporting Module</h2>
+      <h3>What it is</h3>
+      <p>The <strong>Creditor Reporting System (CRS)</strong> is how DAC members and many other reporters send detailed ODA data to the OECD. Reports are structured into standard tables: <strong>Table 1</strong> (ODA by recipient country), <strong>Table 2</strong> (ODA by sector), and <strong>Table 5</strong> (ODA by channel/modality). Today AIMS holds much of the underlying data but there is <strong>no dedicated CRS report</strong> to generate these tables or the full CRS++ detail file.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Reporting to the OECD:</strong> Countries and agencies that report to the DAC need Table 1, Table 2, Table 5, and often the full CRS++ submission. Doing this manually is slow and error-prone.</li>
+        <li><strong>Consistency:</strong> Building these reports from the same data that drives IATI and internal dashboards keeps figures consistent.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>Same data, new reports:</strong> Use what AIMS already has: which activities go to which recipient countries, which DAC sectors they use, what amounts were committed and disbursed, and (where recorded) channel codes and flow/finance types. The system would aggregate by the dimensions required for each table.</li>
+        <li><strong>Filters:</strong> Users would choose a time period and optionally filter by organisation, country, or sector—same as existing AIMS reports.</li>
+        <li><strong>Three main tables plus detail:</strong> Table 1 (ODA by recipient); Table 2 (ODA by sector); Table 5 (ODA by modality/channel); and a full CRS++ row-by-row export for OECD submission.</li>
+        <li>A new section on the existing <strong>Reports</strong> page, e.g. “CRS Reports,” with one option per table plus “Full CRS++ export,” with “Run report” and “Download” (Excel or CSV).</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Report “Table 1 — ODA by recipient,” “Table 2 — ODA by sector,” “Table 5 — ODA by modality/channel” with period and optional filters; downloadable table.</li>
+        <li>“Full CRS++ export” for OECD submission. All figures from the same activity and transaction data; optional short guidance on the Reports page.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="3">
+      <h2>3. Forward Spending Plan / MTEF Integration</h2>
+      <h3>What it is</h3>
+      <p><strong>Forward spending</strong> is the multi-year view of expected aid flows. AIMS already has a <strong>Forward Spend</strong> tab per activity. What is missing is a <strong>portfolio-level view</strong>: a single place where government or donors can see total expected flows by year, and optionally by sector, region, or donor, for <strong>Medium-Term Expenditure Framework (MTEF)</strong> and budget planning.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Budget planning:</strong> Finance and line ministries need to know how much aid is expected in the next 3–5 years.</li>
+        <li><strong>Predictability:</strong> Forward spending visibility supports aid predictability (e.g. GPEDC Indicator 5) and dialogue.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>No new data entry:</strong> Use existing FSS and planned disbursement data; add a “Forward Spending” or “MTEF” view that <strong>aggregates</strong> across activities.</li>
+        <li><strong>What users would see:</strong> By year (total expected disbursements for current and next several years); by sector; by region (if AIMS has location data); optionally by donor. A dedicated page with charts (e.g. bar by year, stacked by sector) and tables; switch between chart and table; download for MTEF tools.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>One consolidated view of forward spending (FSS + planned disbursements) for the whole portfolio or filtered subset. Totals by future year with optional breakdown by sector, region, and donor. Charts and tables; option to download data. No duplicate data entry.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="4">
+      <h2>4. Counterpart / Co-Financing Tracking</h2>
+      <h3>What it is</h3>
+      <p><strong>Counterpart funding</strong> (or co-financing) is the government’s own commitment to fund part of a project alongside donor money. Many recipient-country AIMS need to record and monitor these: how much was committed, by which ministry or department, and (optionally) how much has been disbursed. Today AIMS does not have a dedicated place for this.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>National ownership and accountability:</strong> Tracking counterpart funding shows how seriously government is backing each programme.</li>
+        <li><strong>Donor dialogue:</strong> Donors often want to see that government is co-investing.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>For each activity, add a <strong>Counterpart funding</strong> (or <strong>Co-financing</strong>) section. Users record one or more counterpart commitments (e.g. ministry, amount, fiscal year, date committed; optional disbursed amount). New tab under “Funding &amp; delivery” next to Budgets and Planned disbursements.</li>
+        <li>Table of commitments with add/edit/remove; optional conversion to a standard currency (e.g. USD). Optional report: total counterpart commitments by year or by ministry across activities.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Per-activity list of counterpart (government) commitments: amount, currency, fiscal year, committing ministry/department, date, optional notes. Optional tracking of “disbursed so far.” Add, edit, delete; optional USD conversion. Optional portfolio-level summary by year or ministry.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="5">
+      <h2>5. Disbursement Forecasting / Predictability Analysis</h2>
+      <h3>What it is</h3>
+      <p><strong>Predictability</strong> here means: how much of what was <strong>planned</strong> to be disbursed actually <strong>was</strong> disbursed. AIMS already has screens that compare planned vs actual. We would add a clear <strong>predictability metric</strong> (e.g. in the spirit of GPEDC Indicator 5b) and a dedicated place to see it (e.g. “In 2024, 78% of planned disbursements were delivered”), plus which activities or donors are above or below that average.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Aid effectiveness:</strong> Predictability is a core Busan/GPEDC commitment.</li>
+        <li><strong>Planning:</strong> Knowing how reliable past plans were helps improve future planning and dialogue.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>Fix a simple rule, e.g. for a given period compare total actual disbursements to total planned; the ratio is predictability. Using existing data, the system would sum planned and actual amounts (with filters), compute the ratio, and optionally break down by activity or donor.</li>
+        <li>A dedicated <strong>Predictability</strong> section (e.g. Aid Effectiveness or Analytics): headline number, time series, table (activity or donor, planned, actual, ratio, “on track” / “below plan”), and option to download for GPEDC or other reports.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>One clear predictability metric at portfolio level with documented definition. Time series and optional breakdown by sector or donor. Table of activities (or donors) with planned vs actual and ratio. Download of data. All figures from existing planned disbursement and transaction data.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="6">
+      <h2>6. Loan Lifecycle Management</h2>
+      <h3>What it is</h3>
+      <p>AIMS already stores <strong>loan terms</strong> and <strong>loan status</strong> per year for loan activities. What is missing is a <strong>lifecycle</strong> view: an amortisation schedule, the evolution of <strong>outstanding balance</strong> over time, and (for ODA reporting) <strong>concessionality</strong> / grant equivalent.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>ODA and DAC:</strong> Since 2018, DAC reports ODA loans in grant-equivalent terms.</li>
+        <li><strong>Debt management:</strong> Finance ministries need repayment schedules and outstanding balances.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>Amortisation schedule:</strong> From existing loan terms, the system would calculate a schedule (principal and interest per period, outstanding balance); users see it as a table and optionally chart. Where actual loan status exists, show “planned” and “actual” side by side.</li>
+        <li><strong>Outstanding balance over time:</strong> Table or chart of balance year by year.</li>
+        <li><strong>Concessionality / grant equivalent:</strong> A calculation (DAC methodology) using the loan’s rate and repayment profile and a reference rate; show “Grant equivalent: $X” on the activity and use in reports. Document methodology.</li>
+        <li>All in or next to the existing Loan terms / Financing terms area. Optional report: “All loan activities with outstanding balance and grant equivalent.”</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Amortisation schedule from loan terms (table and optional chart). View of outstanding balance over time. Concessionality / grant-equivalent calculation per loan with documented methodology. Display on activity and use in ODA/CRS-style reports. Optional portfolio-level list or export.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="7">
+      <h2>7. Multi-Donor Trust Fund / Pooled Fund Management</h2>
+      <h3>What it is</h3>
+      <p>A <strong>pooled fund</strong> receives money from several donors and disburses to downstream projects. Today AIMS can link activities but does not <strong>aggregate</strong> the financial picture: who gave how much to the fund, and how much the fund passed on to which sectors or regions.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Accountability:</strong> Fund managers need to report to contributors and to government.</li>
+        <li><strong>Planning:</strong> Government needs to see flows through funds by sector/region.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>Use existing linking (e.g. parent/child activities). A <strong>pooled fund</strong> is an activity marked as “fund” with <strong>child</strong> activities. Use same transactions and planned disbursements, interpreted as (1) money <strong>into</strong> the fund and (2) money <strong>out</strong> to child activities.</li>
+        <li>For a fund activity: <strong>Contributions</strong> view (by donor organisation, amounts, optional by year); <strong>Disbursements</strong> view (by child activity, optionally by sector/region). Optional <strong>Pooled funds</strong> list/dashboard with total contributions and disbursements per fund.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Mark activity as “pooled fund” and link child activities. Per fund: Contributions view and Disbursements view. Optional Pooled funds overview. All figures from existing transactions, planned disbursements, and activity links.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="8">
+      <h2>8. Donor Division of Labour / Fragmentation Analysis</h2>
+      <h3>What it is</h3>
+      <p><strong>Fragmentation</strong> means many donors in the same sector or region. <strong>Division of labour</strong> is donors and government agreeing who does what. AIMS already has fragmentation views (e.g. heatmap donors × sectors). We would add a clearer <strong>division of labour</strong> angle: per sector (or region), how many donors, how concentrated funding is (e.g. concentration index), and optionally comparison to an agreed “ideal.”</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Paris/Busan:</strong> Reducing fragmentation and improving division of labour is a long-standing commitment.</li>
+        <li><strong>Dialogue:</strong> A “sector X has 12 donors, sector Y has 3” view supports rebalancing discussions.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>Use the same data as fragmentation heatmaps. Add per sector (and optionally region): number of donors, total funding, share per donor, and a <strong>concentration index</strong> (e.g. Herfindahl). No new data entry.</li>
+        <li>A <strong>Division of labour</strong> (or “Fragmentation summary”) view: table (one row per sector: number of donors, total amount, top 3 donors, concentration index); optional chart; same filters as elsewhere; download for strategy and dialogue. Optional later: column comparing actual vs recommended division of labour if configured.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Per sector (and optionally region): number of donors, total funding, top donors and shares, concentration index. Single view with filters and download. Optional later: comparison to agreed “ideal” if configured.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="9">
+      <h2>9. Excel/CSV Template-Based Bulk Data Entry</h2>
+      <h3>What it is</h3>
+      <p>Today bulk data often enters via <strong>IATI XML</strong> import. Many partners prefer to submit in <strong>Excel</strong> or <strong>CSV</strong> using a fixed template. This feature would provide: (1) <strong>downloadable templates</strong> (e.g. Activities, Transactions, Budgets) with clear columns and instructions, and (2) an <strong>upload and check</strong> process: partners upload, the system checks (required fields, valid codes) and either imports or shows errors so they can fix and re-upload.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Inclusivity:</strong> Not all partners use IATI; Excel is universal.</li>
+        <li><strong>Quality:</strong> Standard template and automated checks reduce missing or invalid data.</li>
+        <li><strong>Efficiency:</strong> Bulk upload is faster than entering many items one by one.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>Templates:</strong> Define Excel (or CSV) templates with fixed columns and an instruction sheet (required fields, codes). Users download from a “Bulk upload” or “Templates” page.</li>
+        <li><strong>Upload:</strong> User selects template type, uploads file. System checks every row (e.g. Activity ID filled, sector valid DAC code, date format). User sees: how many valid rows, list of errors (row, column, message). They fix and re-upload or “Import only valid rows.”</li>
+        <li><strong>Import:</strong> On confirm, system creates/updates activities, transactions, or budgets using the same validation as the rest of AIMS. Summary (“80 activities created,” “2 skipped”) and link to view imported items. Governance: who can use bulk upload; “new only” vs “update existing” per template.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Downloadable templates for at least Activities, Transactions, Budgets (and optionally Planned disbursements, Participating organisations) with instruction sheet. Upload page with automatic check and clear error report. Option to import only valid rows with summary. Consistency with existing AIMS rules.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="10">
+      <h2>10. Procurement / Contract Tracking</h2>
+      <h3>What it is</h3>
+      <p>Many activities involve <strong>procurement</strong>: tenders, contracts, and contractors. Today AIMS does not record these. This feature would add a simple way to record per activity: <strong>tenders</strong> (reference, title, procedure type, deadline, status) and <strong>contracts</strong> (reference, title, contractor, value, start/end date, status) to support implementation monitoring and accountability.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Implementation oversight:</strong> Project managers and government need to see how procurement is progressing.</li>
+        <li><strong>Transparency:</strong> “Who got the contract?” can be answered in one place with the activity.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>Each activity gets an optional <strong>Procurement</strong> (or <strong>Contracts</strong>) section with two lists: <strong>Tenders</strong> and <strong>Contracts</strong>. Tenders: reference, title, procedure type, status, deadline, notes; add/edit/remove. Contracts: reference, title, contractor (from organisation list or text), value, currency, start/end date, status, notes; add/edit/remove.</li>
+        <li>Optional report: “Total contract value by activity” or “Contracts by contractor” with filters. Same look and feel as other AIMS sections (tables, add/edit buttons).</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Per-activity Tenders list and Contracts list with add, edit, delete. Optional portfolio-level summary (total contract value, by contractor or activity) with filters.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="11">
+      <h2>11. Climate Finance Tagging and Reporting</h2>
+      <h3>What it is</h3>
+      <p><strong>Climate finance</strong> is ODA that targets climate mitigation or adaptation. AIMS already has <strong>policy markers</strong> (e.g. Rio Markers) including climate; what is missing is a <strong>dedicated climate finance view</strong>: one place to see total climate-tagged funding over time, by sector, by donor, and optionally adaptation vs mitigation.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Reporting:</strong> Countries and donors report climate finance to UNFCCC, OECD, and others.</li>
+        <li><strong>$100B and beyond:</strong> Tracking progress toward climate finance goals requires consistent tagging and aggregation.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>Use existing policy marker for climate (e.g. Rio Marker); activities/transactions with that marker count as “climate finance.” No new field from scratch. If adaptation vs mitigation is stored, use it; otherwise start with “total climate.”</li>
+        <li>A new <strong>Climate finance</strong> section (Analytics or Aid Effectiveness): over time (chart and table); by sector; by donor; adaptation vs mitigation if data allows; optional target progress. Export for UNFCCC, OECD, or national reports. Document definitions.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Definition based on existing policy markers; no duplicate tagging. Climate finance dashboard: totals over time, by sector, by donor, adaptation vs mitigation if data allows. Charts and tables; download. Optional progress toward climate finance target. Same filters as rest of AIMS.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="12">
+      <h2>12. Environmental and Social Safeguards Tracking</h2>
+      <h3>What it is</h3>
+      <p><strong>E&amp;S safeguards</strong> are assessments and measures to avoid or mitigate harm (e.g. environmental impact assessments, grievance mechanisms). Some donors and governments require a record per activity: type of safeguard, whether assessment was done, status (e.g. planned, in progress, completed), and optionally a link to the document. Today AIMS does not capture this.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Compliance:</strong> Donors and regulations often require evidence that safeguards have been considered and implemented.</li>
+        <li><strong>Risk management:</strong> A central view of “which activities have completed E&amp;S assessments” helps track gaps.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>Each activity gets an optional <strong>Safeguards</strong> (or <strong>E&amp;S safeguards</strong>) section. Users record one or more safeguard records: <strong>type</strong> (e.g. environmental assessment, social assessment, grievance mechanism), <strong>status</strong> (not applicable, planned, in progress, completed), <strong>date</strong>, <strong>notes</strong>, optional document link. Table with add/edit/remove.</li>
+        <li>Optional portfolio view: “Activities with incomplete safeguards” or “Safeguards by type and status” with filters. Types could be configurable to align with country or donor taxonomies.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Per-activity Safeguards section: list of records (type, status, date, notes, optional document link). Configurable types; status options. Add, edit, delete; optional portfolio-level view with filters.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="13">
+      <h2>13. Results Aggregation and Portfolio-Level Reporting</h2>
+      <h3>What it is</h3>
+      <p>AIMS already has a <strong>results framework</strong> per activity (results and indicators with targets and actuals). What is missing is a <strong>portfolio-level</strong> view: across many activities (e.g. all health sector), “how many clinics were built?” or “what is the aggregate progress on indicator X?” This feature would add reports that <strong>aggregate</strong> results and indicators across activities by sector, country, or other dimension.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Sector reporting:</strong> Sectors need to report “across all projects we achieved X.”</li>
+        <li><strong>SDG and national targets:</strong> Linking aggregated results to national or global indicators requires consistent summing or averaging.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>Use existing result and indicator data. Users choose a <strong>filter</strong> (e.g. sector “Health,” region, organisation) and the system <strong>aggregates</strong>: by result type; by indicator (sum or average actuals where comparable); by sector or country. Document aggregation rules (e.g. sum for count, average for percentage).</li>
+        <li>A new <strong>Portfolio results</strong> (or <strong>Results overview</strong>) page: filter choice; tables (e.g. “Results by sector,” “Indicators by type”); optional charts; download for sector or SDG reports. No change to activity-level results—only a layer of aggregation on top.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Portfolio results view with filters. Tables by sector and by indicator; clear rules for sum vs average and short documentation. Optional charts and download. All data from existing activity results and indicators.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="14">
+      <h2>14. Comprehensive Audit Log with Search and Export</h2>
+      <h3>What it is</h3>
+      <p>AIMS already keeps an <strong>activity log</strong> (who did what and when). What is missing is <strong>search</strong> (e.g. “all changes to activity A in the last month,” “all actions by user B”), <strong>filter</strong> by type of action or date range, and <strong>export</strong> for auditors. Some users also want to see <strong>what changed</strong> (e.g. “Budget changed from $1m to $1.2m”) not just “Budget was edited.”</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Accountability:</strong> Auditors and oversight need to trace who changed what and when.</li>
+        <li><strong>Compliance:</strong> Some regulations require keeping and producing an audit trail.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>Search and filters:</strong> Add to the existing Activity log / Audit log page: date range, type of action, who (user), which entity (e.g. activity); and a search box for free text in the log description. Results as list/table, most recent first.</li>
+        <li><strong>Export:</strong> Button to export the <strong>filtered</strong> log to Excel or CSV for auditors.</li>
+        <li><strong>What changed (optional):</strong> Where we store old/new value for an edit, add a “View details” or “View change” per row (e.g. “Budget: $1,000,000 → $1,200,000”). If we don’t yet store field-level changes, we could add that for key fields in future; phased: first search and export, then field-level diff where feasible.</li>
+        <li>Document retention and who can access the log.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Filters (date range, action type, user, entity) and search in log descriptions. Export of filtered log to Excel or CSV. Optional “View change” for edit actions where old/new value is stored. Documentation on retention and access.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="15">
+      <h2>15. Multi-Language User Interface (i18n)</h2>
+      <h3>What it is</h3>
+      <p>Today the AIMS <strong>interface</strong> (menus, buttons, labels, messages) is in <strong>English</strong> only. <strong>Multi-language support</strong> means users (or an administrator) choose a preferred language and every label, button, and message is shown in that language. The <strong>data</strong> (activity titles, descriptions) can already be in any language; this feature is only about the <strong>interface</strong> language.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Inclusivity:</strong> National staff and partners often prefer to work in the national language.</li>
+        <li><strong>Uptake:</strong> Lower barrier when the tool “speaks” the user’s language.</li>
+        <li><strong>Compliance:</strong> Some countries require government systems in the official language(s).</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>Choice of language:</strong> Add a language selector (header or profile): dropdown of supported languages (e.g. English, French, Spanish). On selection, the entire interface switches; choice is remembered (e.g. in user profile or browser).</li>
+        <li><strong>What gets translated:</strong> Every <strong>fixed</strong> text: navigation, page titles, form labels, table headers, buttons, validation messages, report names. We would <strong>not</strong> translate user-entered content (titles, descriptions)—only the “frame” of the application.</li>
+        <li><strong>Phased rollout:</strong> Start with most used parts (main menu, Dashboard, Activities list and detail, Reports); then extend to Organisations, Data Clinic, Admin. Show “This page is available in English and French” until all pages are done. Translations from professional or bilingual staff; if a translation is missing, fall back to English. Same term translated the same way everywhere for consistency and manuals.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Language selector in header or profile; choice remembered. Full translation of interface text for at least two languages, option to add more. Phased rollout with indication where translation is complete. No translation of user content; fallback to default language; consistent terminology.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="16">
+      <h2>16. Offline Data Entry / Progressive Web App (PWA)</h2>
+      <h3>What it is</h3>
+      <p>Today AIMS requires an <strong>internet connection</strong>. <strong>Offline support</strong> would let users open AIMS and enter or edit data when offline; the system would store that work locally and send it to the server when connection is back (e.g. complete a monitoring form in a village with no signal, sync next day in the office).</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Field use:</strong> Monitoring and partner meetings often happen where internet is unreliable.</li>
+        <li><strong>Resilience:</strong> When network or power is down, work is not lost if saved locally first.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>What works offline:</strong> A subset of AIMS—e.g. view and edit one activity (the one “prepared for offline”), add a transaction or result, or add a new activity with basic fields. When online, user “prepares for offline” (downloads that activity and code lists); when offline, data is available from the device and they can edit/add within that scope. Full search might stay online-only.</li>
+        <li><strong>Saving offline:</strong> “Save” while offline stores the change in a local queue; message: “Saved locally. Will sync when you’re back online.” Optional indicator: “3 changes pending sync.”</li>
+        <li><strong>Sync when online:</strong> System automatically sends queued changes. If server accepts, queue is cleared and user sees “Synced.” If server rejects (e.g. someone else changed the same activity), show “1 change could not be synced: conflict on Activity X” and let user choose (e.g. “Use my version” or “Use server version” or “Edit again”). No data loss.</li>
+        <li>Document limits (e.g. only a few activities prepared; no real-time collaboration; large reports online-only). Data on device protected (e.g. only when logged in; cleared on logout or after inactivity).</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Offline preparation of one or a few activities and code lists. Offline editing and “Save” with “Saved locally, will sync later” message. Sync when online; conflict handling. Clear scope of what works offline and what doesn’t; documented. Security: offline data tied to session, cleared on logout or inactivity.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="17">
+      <h2>17. South–South and Triangular Cooperation Tracking</h2>
+      <h3>What it is</h3>
+      <p><strong>South–South cooperation (SSC)</strong> is when one developing country supports another. <strong>Triangular cooperation</strong> is when a traditional donor supports that. Reporting often treats these differently from traditional North–South ODA. Today AIMS does not explicitly flag whether an activity is SSC or triangular. We would add a single <strong>classification</strong> per activity (e.g. North–South, South–South, Triangular) so reports and dashboards can show “how much is SSC?” and “how much is triangular?”</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Reporting:</strong> Many countries and agencies report SSC and triangular separately to the UN, OECD, or regional bodies.</li>
+        <li><strong>Policy:</strong> National strategies often set targets or priorities for SSC.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>Add a <strong>Cooperation type</strong> (or “Modality”) field to the activity: e.g. “North–South (traditional ODA),” “South–South,” “Triangular,” and possibly “Other” or “Not specified.” Users choose one when creating or editing (e.g. in General or Classification). Field optional so existing activities are not forced to be reclassified immediately.</li>
+        <li>Add <strong>filters</strong> to activity list and key reports (e.g. “Filter by cooperation type: South–South”). Add a <strong>dashboard</strong> or report card: “Cooperation type breakdown” (totals by type, e.g. North–South: $X, South–South: $Y, Triangular: $Z) with chart and optional download. Same list of options everywhere; optional short guidance (e.g. “South–South = developing country to developing country”) in help text.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Cooperation type field per activity (North–South, South–South, Triangular, optional Other/Not specified); optional. Filter on activity list and reports. Dashboard/report “Cooperation type breakdown” with chart and download. Consistent list and labels; optional help text.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="18">
+      <h2>18. ODA Eligibility Checker</h2>
+      <h3>What it is</h3>
+      <p>Not all aid counts as <strong>ODA</strong>. The DAC has rules: recipient on ODA-eligible list, flow concessional enough (grant or grant-equivalent above threshold), purpose development. Today AIMS does not check whether an activity <strong>qualifies as ODA</strong>. An <strong>ODA eligibility checker</strong> would run a simple check per activity (or portfolio) and show “Eligible” or “Not eligible” with short reasons (e.g. “Recipient not on ODA list,” “Concessionality below threshold”).</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Reporting:</strong> Countries and agencies that report to the DAC need to know which activities count as ODA before submitting.</li>
+        <li><strong>Quality:</strong> Catching ineligible activities early avoids corrections and reputational risk.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>Rules:</strong> (1) Recipient: at least one on current DAC ODA-eligible list (updated periodically). (2) Concessionality: for grants assume eligible; for loans use grant equivalent (from Loan lifecycle feature if implemented) and check DAC threshold; if not calculated, show “Cannot assess—loan terms or grant equivalent missing.” (3) Purpose: activity has development-relevant sector; if none or non-ODA sector, flag “Purpose not clearly development.” Document rules.</li>
+        <li>On each <strong>activity</strong>, a small <strong>ODA eligibility</strong> block (e.g. Summary or Classification): Result “Eligible” (green) or “Not eligible” (red/amber) and Reasons (e.g. Recipient: OK. Concessionality: OK. Purpose: OK.).</li>
+        <li>A <strong>report</strong> “ODA eligibility”: list all activities (or filtered) with Activity ID, Title, ODA eligible, Reasons; optional filter “Show only not eligible”; optional download. Checker does not delete or hide ineligible activities—only flags them (some may be intentionally non-ODA).</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Per-activity ODA eligibility (Eligible/Not eligible and reasons) using current DAC rules. Portfolio report with filter “not eligible only” and optional download. Documented rules. No automatic removal of ineligible activities.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="19">
+      <h2>19. Debt Sustainability Integration</h2>
+      <h3>What it is</h3>
+      <p><strong>Debt sustainability</strong> refers to whether a country can service its debt; the IMF and World Bank produce <strong>DSAs</strong> and assign risk ratings (e.g. low, moderate, high, in debt distress). Today AIMS does not link to this. The feature would <strong>show</strong> the current DSA rating (and optionally a link to the assessment) for each <strong>recipient country</strong>, so when users look at loans or activities in that country they see the context (e.g. “This country is in high risk of debt distress”).</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Loan decisions:</strong> Government and donors need to know the country’s debt situation when considering new loans.</li>
+        <li><strong>Reporting:</strong> Debt sustainability is often reported alongside aid and loan data.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>For each <strong>country</strong> (in country summary or when viewing activities there), show: <strong>Debt sustainability:</strong> e.g. “Moderate risk (IMF–World Bank DSA, January 2025)” and optionally a link to the full DSA. Data source: (1) <strong>Manual:</strong> Designated person enters/updates DSA rating and link per country in a “Country settings” or “DSA” list. (2) <strong>Automatic (later):</strong> If IMF/World Bank provide a public feed, we could pull it periodically. Start with manual.</li>
+        <li>Display on country page and optionally on activity when single recipient country. Optional report or filter: “Activities in countries at high risk of debt distress.” No change to how activities or loans are entered—only extra context (the rating) next to the country.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>DSA rating and link shown per recipient country. Data entry/update of rating and link per country (manual, by authorised user), with date and source. Optional automatic update from external DSA feed. Display on country view and optionally activity view; optional report/filter “Activities in high debt-risk countries.” No change to loan or activity data.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="20">
+      <h2>20. Outcome-Based / Results-Based Financing (RBF) Tracking</h2>
+      <h3>What it is</h3>
+      <p><strong>Results-based financing (RBF)</strong> includes payment by results (PbR), development impact bonds (DIBs), outcome funding—often reported separately from standard grants or loans. Today AIMS records finance types and results but has no explicit <strong>flag</strong> for “this activity is RBF.” Adding a flag would allow filtering and reporting “how much is RBF?” and “which activities use RBF?”</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Reporting:</strong> Donors and countries increasingly report RBF separately in ODA and aid effectiveness reports.</li>
+        <li><strong>Learning:</strong> Tracking which activities use RBF supports evaluation and policy dialogue.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>Add a way to mark an activity (or optionally a transaction) as <strong>results-based financing</strong>: e.g. a checkbox (“This activity uses results-based financing (e.g. payment by results, DIB)”) or an “RBF type” dropdown. In the activity form, Funding or Classification section, with short help text.</li>
+        <li>Add <strong>filter</strong> on activity list and reports (“RBF only”). Add <strong>dashboard</strong> or report card: “RBF volume” (total commitments or disbursements for RBF activities, by year or sector) with chart and optional download. Optional later: short summary “Results linked to this RBF activity” where both RBF and results exist.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>RBF flag or type per activity (e.g. checkbox or RBF option); optional short list (PbR, DIB, other). Filter on activity list and reports. Dashboard/report “RBF volume” with chart and download. Optional link to results/indicators for RBF activities. Consistent definition in help text or documentation.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="21">
+      <h2>21. Country Strategy / Partnership Framework Management</h2>
+      <h3>What it is</h3>
+      <p>Many countries have <strong>Country Partnership Frameworks (CPF)</strong>, <strong>Country Strategy Papers (CSP)</strong>, or <strong>Joint Country Strategies</strong> that set priorities. Today AIMS does not store these or link activities to them. This feature would: (1) <strong>Record</strong> each strategy (title, country, type, period, summary, document link), and (2) <strong>Link</strong> activities to one or more strategies (or to priorities within a strategy), so reports can show “How much aid is aligned to the CPF?” or “Which activities support Priority 1?”</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Alignment:</strong> Government and donors want to see whether aid is aligned with agreed country strategies.</li>
+        <li><strong>Reporting:</strong> “Alignment to CPF” is a common ask in aid effectiveness and dialogue.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>Strategy record:</strong> A <strong>Strategies</strong> (or <strong>Partnership frameworks</strong>) area where authorised users create and edit strategies: Title, Country, Type (e.g. CPF, CSP, JCS), Period (start/end), Summary, Document link; optionally Priorities (e.g. “Priority 1: Health”).</li>
+        <li><strong>Linking activities:</strong> When editing an activity, add “Link to strategy” (or “Alignment”): user selects one or more strategies and optionally which priority. Stored for reporting.</li>
+        <li><strong>Where users see it:</strong> Strategies page (list with title, country, type, period); on the activity (“Aligned to: CPF Kenya 2023–2027, Priority 1”); and a report/dashboard “Alignment to CPF” (funding or activity count by priority for a chosen strategy/country) with optional chart and download. Clear roles for who manages strategies vs who links activities.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Strategy register: create and edit strategies (title, country, type, period, summary, document link, optional priorities). Link activities to strategies (and optionally priority) from activity form. Strategies page; optional list of activities per strategy. Alignment report (funding or count by priority or linked vs not linked) with optional chart and download. Clear roles.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="22">
+      <h2>22. Parliamentary Reporting Module</h2>
+      <h3>What it is</h3>
+      <p>Many countries present aid data to <strong>parliament</strong> in a standard format: executive summary (totals, by sector, by donor), detailed table of activities, and annex (methodology, data quality). Today AIMS has general reports but no <strong>parliament-specific</strong> layout or template. This feature would provide one or more <strong>report templates</strong> for parliamentary use with fixed structure, clear titles, and optional <strong>PDF export</strong> for printing or formal submission.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Accountability:</strong> Parliament holds government to account on aid; a standard report format supports that.</li>
+        <li><strong>Efficiency:</strong> Producing the report from AIMS avoids rebuilding it in Word or Excel every time.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>Content:</strong> Agreed with user (e.g. Ministry of Finance): (1) Cover and title (e.g. “Aid Report to Parliament, Fiscal Year 2024”), (2) Executive summary (total ODA, top sectors, top donors, key messages), (3) Detail table (activities with Activity ID, Title, Donor, Sector, Commitment, Disbursement, Status), (4) Annex (methodology, data quality). All figures generated from AIMS data.</li>
+        <li>On <strong>Reports</strong> page, new section “Parliamentary reports” with “Executive summary” and “Full report.” User chooses reporting period and optional filters, clicks “Generate report.” System fills template; result shown on screen (HTML) for review; “Download PDF” produces print-friendly PDF (headers, page numbers, optional TOC). Template design (headings, logo, disclaimer) agreed for formal submission; configurable title for different countries.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Parliamentary report template(s): at least Executive summary + Detail table + Annex, with cover and title. Generate from AIMS (live data); user selects period and optional filters. Preview on screen before download. Download as PDF with print-friendly layout. Configurable title and basic branding.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="23">
+      <h2>23. Donor Self-Assessment Portal</h2>
+      <h3>What it is</h3>
+      <p><strong>Data Clinic</strong> today lets authorised users see data quality issues across the whole database. Donors often want to see <strong>their own</strong> data quality: “How complete and timely is the data for activities where we are the funder?” A <strong>donor self-assessment</strong> would give each donor organisation a dedicated view: scorecards (e.g. “Completeness: 85%,” “Timeliness: 90%”) and a list of <strong>their</strong> activities that need attention, so they can improve data before government validates it, without seeing other donors’ data.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Quality:</strong> When donors see their own gaps, they fix them faster; reduces validation burden on government.</li>
+        <li><strong>Fairness:</strong> Each donor sees only their own data and scores.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>Self-assessment shows data <strong>only for activities where the current user’s organisation is funder or accountable</strong>. (1) <strong>Scorecards:</strong> e.g. Completeness (% with all required fields), Timeliness (% with transaction in last 12 months), Sector coverage (% with at least one sector); optional traffic lights (green/amber/red). (2) <strong>List of activities needing attention:</strong> e.g. “15 activities with missing sector,” “8 with no transaction in 12 months,” with links to open and fix. Reuse same Data Clinic checks; only filter by organisation and new page are new.</li>
+        <li>“Self-assessment” or “My organisation’s data quality” page (or Dashboard tab for donor users). Government/super users still see full Data Clinic. Optional: monthly snapshot of scores; download of self-assessment report (PDF/Excel) for headquarters or government.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Donor-only view (per organisation). Scorecards (Completeness, Timeliness, Sector coverage; optional traffic lights). List of activities needing attention with links. Reuse of Data Clinic checks; filter by organisation. Optional monthly snapshot and download of self-assessment report.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="24">
+      <h2>24. Automated Data Quality Alerts</h2>
+      <h3>What it is</h3>
+      <p>Today users must <strong>open the Data Clinic</strong> to see data quality issues. <strong>Automated alerts</strong> would <strong>proactively</strong> notify the right people when quality drops (e.g. “Organisation X has 15 activities with missing sectors” or “Your portfolio has 10 activities with no transaction in 12 months”). Alerts could be sent by <strong>email</strong> or shown in the application, on a <strong>schedule</strong> (e.g. every Monday) or when a <strong>threshold</strong> is crossed.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Proactive quality:</strong> Problems are fixed sooner when people are reminded automatically.</li>
+        <li><strong>Accountability:</strong> Regular alerts create a habit of “we check our data every week.”</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li><strong>Rules:</strong> e.g. (1) Every Monday run same checks as Data Clinic and for each organisation with issues send an email to that organisation’s contact(s): “You have X activities with missing sector; here is the list.” (2) Or: when issue count for an organisation goes above 10, send alert immediately. (3) Or: every month send government a summary (“Total activities with issues: 50; by organisation: A 10, B 15, …”). Start with one or two rules (e.g. weekly email per organisation).</li>
+        <li>Each <strong>organisation</strong> has one or more <strong>alert recipients</strong> (email addresses), configurable by admin or lead user. Email content short and actionable: what is wrong, how many, “Please log in to AIMS and review Data Clinic (or Self-assessment). List of activity IDs: …” Optional link “View full report in AIMS.” Configuration: “Send organisation alerts: Weekly Monday 9am,” “Send summary to government: Monthly 1st”; optional “Alert only when issue count &gt; N.” System runs checks in the background (scheduled task) and sends emails. Optional log of alerts sent to avoid duplicate sends.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Scheduled alerts (weekly or monthly) running same quality checks as Data Clinic. Per-organisation alerts (email or in-app) listing their activities with issues and links to AIMS. Configurable recipients and optional summary alert for government. Optional thresholds and alert history. Short, actionable message content.</li>
+      </ul>
+    </div>
+
+    <div class="feature" id="25">
+      <h2>25. Historical Exchange Rate Gain/Loss Tracking</h2>
+      <h3>What it is</h3>
+      <p>When a commitment (or planned disbursement) is in <strong>another currency</strong>, AIMS converts it to <strong>USD</strong> using the rate on a given date. Over time, rates change, so the <strong>USD value</strong> of that same commitment can change—that is <strong>exchange rate gain or loss</strong>. Today AIMS does not track this. The feature would <strong>re-value</strong> commitments (and optionally planned disbursements) at a <strong>reporting date</strong> and show the <strong>difference</strong> from the original USD value so finance and audit can see “we had $X gain/loss due to exchange rates” and reconcile with treasury.</p>
+      <h3>Why it matters</h3>
+      <ul>
+        <li><strong>Financial reporting:</strong> Many countries report aid in USD; “exchange rate effect” explains why totals changed.</li>
+        <li><strong>Reconciliation:</strong> Treasury and aid units need to reconcile AIMS with other systems; exchange rate gains/losses are often a line item.</li>
+      </ul>
+      <h3>How we would build it</h3>
+      <ul>
+        <li>For each <strong>commitment</strong> (and optionally planned disbursement) in non-USD: (1) <strong>Original USD value</strong> (at commitment date—what AIMS already does), (2) <strong>USD value at reporting date</strong> (using rate on a chosen date, e.g. 31 Dec 2024). <strong>Difference</strong> = gain or loss per line. <strong>Aggregate</strong> across all such commitments: total gain, total loss, net. Use same exchange rate source as AIMS (e.g. central bank). User chooses reporting date when running the report.</li>
+        <li>New <strong>“Exchange rate impact”</strong> (or “Revaluation”) section under Financial Analytics or Reports: table (by period or activity: Original USD, Re-valued USD, Gain/Loss); total line (net gain or loss); optional chart. User selects reporting date and filters; download (Excel) for financial reports or audit. Apply to commitments first; optionally extend to planned disbursements. No change to daily data entry—only an analytical report.</li>
+      </ul>
+      <h3>Features included</h3>
+      <ul>
+        <li>Re-value commitments (and optionally planned disbursements) in non-USD to USD at a user-selected reporting date, using same rate source as AIMS. Calculate gain/loss per line and aggregate (total gain, total loss, net). Report “Exchange rate impact”: table, total net gain/loss, optional chart; filters and download. No change to day-to-day entry; documentation of which rate is used for audit.</li>
+      </ul>
+    </div>
+
+    <p class="footer">End of feature specifications. This document is intended for product owners, aid coordination units, and reporting officers to understand what each feature would do and how it would be used, without technical implementation detail.</p>
+  </div>
+</body>
+</html>

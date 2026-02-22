@@ -219,7 +219,7 @@ function HelpTooltip({ helpKey, className }: { helpKey: string; className?: stri
     <TooltipProvider>
       <UITooltip delayDuration={200}>
         <TooltipTrigger asChild>
-          <HelpCircle className={`h-4 w-4 cursor-help shrink-0 ${className || 'text-slate-400 hover:text-slate-600'}`} />
+          <HelpCircle className={`h-4 w-4 cursor-help shrink-0 ${className || 'text-muted-foreground hover:text-foreground'}`} />
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
           {text}
@@ -540,7 +540,7 @@ export default function AidEffectivenessDashboard() {
             <Shield className="h-8 w-8 text-[#F37021]" />
             <div>
               <h1 className="text-3xl font-bold text-[#F37021]">Aid Effectiveness Dashboard</h1>
-              <p className="text-slate-600">GPEDC Compliance & Development Effectiveness Analytics</p>
+              <p className="text-muted-foreground">GPEDC Compliance & Development Effectiveness Analytics</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={handleRefresh}>
@@ -566,7 +566,7 @@ export default function AidEffectivenessDashboard() {
                     <label className="text-sm font-medium text-white mb-2 block">Calendar</label>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-9 gap-1 bg-white">
+                        <Button variant="outline" size="sm" className="h-9 gap-1 bg-card">
                           {customYears.find(cy => cy.id === calendarType)?.name || 'Select calendar'}
                           <ChevronDown className="h-4 w-4 opacity-50" />
                         </Button>
@@ -575,7 +575,7 @@ export default function AidEffectivenessDashboard() {
                         {customYears.map(cy => (
                           <DropdownMenuItem
                             key={cy.id}
-                            className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                            className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                             onClick={() => setCalendarType(cy.id)}
                           >
                             {cy.name}
@@ -590,7 +590,7 @@ export default function AidEffectivenessDashboard() {
                     <div className="flex flex-col gap-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-9 gap-1 bg-white">
+                          <Button variant="outline" size="sm" className="h-9 gap-1 bg-card">
                             <CalendarIcon className="h-4 w-4" />
                             {selectedYears.length === 0
                               ? 'All Years'
@@ -602,14 +602,14 @@ export default function AidEffectivenessDashboard() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="p-3 w-auto">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                            <span className="text-xs font-medium text-foreground">Select Year Range</span>
                           </div>
                           <button
                             onClick={() => setSelectedYears([])}
                             className={`w-full mb-2 px-2 py-1.5 text-xs font-medium rounded transition-colors ${
                               selectedYears.length === 0
                                 ? 'bg-primary text-primary-foreground'
-                                : 'text-slate-600 hover:bg-slate-100 border border-slate-200'
+                                : 'text-muted-foreground hover:bg-muted border border-border'
                             }`}
                           >
                             All Years
@@ -629,7 +629,7 @@ export default function AidEffectivenessDashboard() {
                                       ? 'bg-primary text-primary-foreground'
                                       : inRange
                                         ? 'bg-primary/20 text-primary'
-                                        : 'text-slate-600 hover:bg-slate-100'
+                                        : 'text-muted-foreground hover:bg-muted'
                                     }
                                   `}
                                 >
@@ -638,13 +638,13 @@ export default function AidEffectivenessDashboard() {
                               )
                             })}
                           </div>
-                          <p className="text-[10px] text-slate-400 mt-2 text-center">
+                          <p className="text-[10px] text-muted-foreground mt-2 text-center">
                             Click start year, then click end year
                           </p>
                         </DropdownMenuContent>
                       </DropdownMenu>
                       {effectiveDateRange && (
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-muted-foreground">
                           {format(effectiveDateRange.from, 'MMM d, yyyy')} – {format(effectiveDateRange.to, 'MMM d, yyyy')}
                         </span>
                       )}
@@ -658,7 +658,7 @@ export default function AidEffectivenessDashboard() {
                 <label className="text-sm font-medium text-white mb-2 block">Reporting Organisation</label>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 gap-2 bg-white w-full justify-between">
+                    <Button variant="outline" size="sm" className="h-9 gap-2 bg-card w-full justify-between">
                       {selectedReportingOrg === 'all' ? (
                         <span>All Organisations</span>
                       ) : (
@@ -670,7 +670,7 @@ export default function AidEffectivenessDashboard() {
                               <>
                                 <Avatar className="h-5 w-5 shrink-0">
                                   {org.logo ? <AvatarImage src={org.logo} alt={org.name} /> : null}
-                                  <AvatarFallback className="text-[8px] bg-slate-200">{(org.acronym || org.name).substring(0, 2).toUpperCase()}</AvatarFallback>
+                                  <AvatarFallback className="text-[8px] bg-muted">{(org.acronym || org.name).substring(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <span className="truncate">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
                                 <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{org.id.substring(0, 8)}</span>
@@ -684,7 +684,7 @@ export default function AidEffectivenessDashboard() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-[420px] max-h-[300px] overflow-auto">
                     <DropdownMenuItem
-                      className={selectedReportingOrg === 'all' ? 'bg-slate-100 font-medium' : ''}
+                      className={selectedReportingOrg === 'all' ? 'bg-muted font-medium' : ''}
                       onClick={() => setSelectedReportingOrg('all')}
                     >
                       All Organisations
@@ -692,13 +692,13 @@ export default function AidEffectivenessDashboard() {
                     {reportingOrgs.map(org => (
                       <DropdownMenuItem
                         key={org.id}
-                        className={selectedReportingOrg === org.id ? 'bg-slate-100 font-medium' : ''}
+                        className={selectedReportingOrg === org.id ? 'bg-muted font-medium' : ''}
                         onClick={() => setSelectedReportingOrg(org.id)}
                       >
                         <div className="flex items-center gap-2 w-full">
                           <Avatar className="h-6 w-6 shrink-0">
                             {org.logo ? <AvatarImage src={org.logo} alt={org.name} /> : null}
-                            <AvatarFallback className="text-[9px] bg-slate-200">{(org.acronym || org.name).substring(0, 2).toUpperCase()}</AvatarFallback>
+                            <AvatarFallback className="text-[9px] bg-muted">{(org.acronym || org.name).substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className="text-sm truncate">{org.name}{org.acronym ? ` (${org.acronym})` : ''}</span>
                           <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0 ml-auto">{org.id.substring(0, 8)}</span>
@@ -715,7 +715,7 @@ export default function AidEffectivenessDashboard() {
                 <SectorHierarchyFilter
                   selected={sectorSelection}
                   onChange={setSectorSelection}
-                  className="bg-white"
+                  className="bg-card"
                 />
               </div>
 
@@ -725,7 +725,7 @@ export default function AidEffectivenessDashboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 text-white/70 hover:text-white hover:bg-white/10"
+                    className="h-9 text-white/70 hover:text-white hover:bg-card/10"
                     onClick={() => {
                       setSelectedYears([])
                       setSelectedReportingOrg('all')
@@ -756,7 +756,7 @@ export default function AidEffectivenessDashboard() {
                     </div>
                     <Shield className="h-7 w-7 text-white/50" />
                   </div>
-                  <Progress value={metrics.overallScore} className="mt-3 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
+                  <Progress value={metrics.overallScore} className="mt-3 bg-card/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
                   <p className="text-xs font-semibold text-white mt-1">{metrics.total} activities assessed</p>
                 </CardContent>
               </Card>
@@ -772,7 +772,7 @@ export default function AidEffectivenessDashboard() {
                     </div>
                     <CheckCircle2 className="h-7 w-7 text-white/50" />
                   </div>
-                  <Progress value={metrics.complianceRate} className="mt-3 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
+                  <Progress value={metrics.complianceRate} className="mt-3 bg-card/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
                   <p className="text-xs font-semibold text-white mt-1">{metrics.gpedcCompliant} of {metrics.total} (60%+ threshold)</p>
                 </CardContent>
               </Card>
@@ -788,7 +788,7 @@ export default function AidEffectivenessDashboard() {
                     </div>
                     <Building2 className="h-7 w-7 text-white/50" />
                   </div>
-                  <Progress value={metrics.sectionScores.ownership} className="mt-3 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
+                  <Progress value={metrics.sectionScores.ownership} className="mt-3 bg-card/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
                   <p className="text-xs font-semibold text-white mt-1">GPEDC Indicator 1</p>
                 </CardContent>
               </Card>
@@ -804,7 +804,7 @@ export default function AidEffectivenessDashboard() {
                     </div>
                     <Handshake className="h-7 w-7 text-white/50" />
                   </div>
-                  <Progress value={metrics.tiedAid[0].pct} className="mt-3 bg-white/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
+                  <Progress value={metrics.tiedAid[0].pct} className="mt-3 bg-card/30" style={{ '--progress-foreground': '#ffffff' } as React.CSSProperties} />
                   <p className="text-xs font-semibold text-white mt-1">GPEDC Indicator 10</p>
                 </CardContent>
               </Card>
@@ -838,7 +838,7 @@ export default function AidEffectivenessDashboard() {
               <TabsContent value="ownership" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SectionDetail
                   title="Government Ownership & Strategic Alignment"
-                  icon={<Building2 className="h-5 w-5 text-slate-500" />}
+                  icon={<Building2 className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicator 1"
                   fields={metrics.fieldCounts.ownership}
                   total={metrics.total}
@@ -847,7 +847,7 @@ export default function AidEffectivenessDashboard() {
                 />
                 <SectionDetail
                   title="Use of Country Public Financial & Procurement Systems"
-                  icon={<Globe className="h-5 w-5 text-slate-500" />}
+                  icon={<Globe className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicator 5a"
                   fields={metrics.fieldCounts.countrySystems}
                   total={metrics.total}
@@ -857,10 +857,10 @@ export default function AidEffectivenessDashboard() {
                 <GovWhyNotSection activities={filteredActivities} />
 
                 {/* Outcome indicators */}
-                <Card className="bg-white border-slate-200">
+                <Card className="bg-card border-border">
                   <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
-                      <Target className="h-5 w-5 text-slate-500" />
+                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                      <Target className="h-5 w-5 text-muted-foreground" />
                       Outcome Indicators Distribution
                       <HelpTooltip helpKey="outcomeIndicators" />
                     </CardTitle>
@@ -885,7 +885,7 @@ export default function AidEffectivenessDashboard() {
               <TabsContent value="transparency" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SectionDetail
                   title="Predictability & Aid Characteristics"
-                  icon={<Calendar className="h-5 w-5 text-slate-500" />}
+                  icon={<Calendar className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicators 5b, 6, 10"
                   fields={metrics.fieldCounts.predictability}
                   total={metrics.total}
@@ -893,10 +893,10 @@ export default function AidEffectivenessDashboard() {
                   helpKey="predictability"
                 />
                 {/* Tied Aid Pie */}
-                <Card className="bg-white border-slate-200">
+                <Card className="bg-card border-border">
                   <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
-                      <Globe className="h-5 w-5 text-slate-500" />
+                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                      <Globe className="h-5 w-5 text-muted-foreground" />
                       Aid Tying Status
                       <HelpTooltip helpKey="tiedAid" />
                     </CardTitle>
@@ -915,7 +915,7 @@ export default function AidEffectivenessDashboard() {
                 </Card>
                 <SectionDetail
                   title="Transparency & Timely Reporting"
-                  icon={<Eye className="h-5 w-5 text-slate-500" />}
+                  icon={<Eye className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicator 4"
                   fields={metrics.fieldCounts.transparency}
                   total={metrics.total}
@@ -924,7 +924,7 @@ export default function AidEffectivenessDashboard() {
                 />
                 <SectionDetail
                   title="Mutual Accountability"
-                  icon={<Handshake className="h-5 w-5 text-slate-500" />}
+                  icon={<Handshake className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicator 7"
                   fields={metrics.fieldCounts.accountability}
                   total={metrics.total}
@@ -937,7 +937,7 @@ export default function AidEffectivenessDashboard() {
               <TabsContent value="engagement" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <SectionDetail
                   title="Civil Society & Private Sector Engagement"
-                  icon={<Users className="h-5 w-5 text-slate-500" />}
+                  icon={<Users className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicators 2 & 3"
                   fields={metrics.fieldCounts.civilSociety}
                   total={metrics.total}
@@ -946,7 +946,7 @@ export default function AidEffectivenessDashboard() {
                 />
                 <SectionDetail
                   title="Gender Equality & Inclusion"
-                  icon={<Heart className="h-5 w-5 text-slate-500" />}
+                  icon={<Heart className="h-5 w-5 text-muted-foreground" />}
                   badge="GPEDC Indicator 8"
                   fields={metrics.fieldCounts.gender}
                   total={metrics.total}
@@ -958,9 +958,9 @@ export default function AidEffectivenessDashboard() {
               {/* ===== GPEDC Compliance Tab ===== */}
               <TabsContent value="compliance" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Full radar */}
-                <Card className="bg-white border-slate-200">
+                <Card className="bg-card border-border">
                   <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
+                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
                       GPEDC Section Radar
                       <HelpTooltip helpKey="complianceRadar" />
                     </CardTitle>
@@ -981,10 +981,10 @@ export default function AidEffectivenessDashboard() {
                 </Card>
 
                 {/* Section Performance Bars */}
-                <Card className="bg-white border-slate-200">
+                <Card className="bg-card border-border">
                   <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-slate-500" />
+                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-muted-foreground" />
                       Section Performance
                       <HelpTooltip helpKey="sectionBars" />
                     </CardTitle>
@@ -1005,9 +1005,9 @@ export default function AidEffectivenessDashboard() {
                 </Card>
 
                 {/* All sections summary */}
-                <Card className="bg-white border-slate-200">
+                <Card className="bg-card border-border">
                   <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
+                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
                       All Sections Breakdown
                       <HelpTooltip helpKey="allSections" />
                     </CardTitle>
@@ -1016,13 +1016,13 @@ export default function AidEffectivenessDashboard() {
                     <div className="space-y-3">
                       {Object.entries(SECTION_FIELDS).map(([key, section]) => (
                         <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                          <span className="font-medium text-slate-800">{section.label}</span>
+                          <span className="font-medium text-foreground">{section.label}</span>
                           <div className="flex items-center gap-3">
-                            <Progress value={metrics.sectionScores[key]} className="w-32 bg-slate-200" style={{ '--progress-foreground': '#F37021' } as React.CSSProperties} />
+                            <Progress value={metrics.sectionScores[key]} className="w-32 bg-muted" style={{ '--progress-foreground': '#F37021' } as React.CSSProperties} />
                             <Badge className={
                               metrics.sectionScores[key] >= 70 ? "bg-[#F37021] text-white" :
-                              metrics.sectionScores[key] >= 50 ? "bg-slate-200 text-slate-800" :
-                              "bg-slate-100 text-slate-500"
+                              metrics.sectionScores[key] >= 50 ? "bg-muted text-foreground" :
+                              "bg-muted text-muted-foreground"
                             }>
                               {metrics.sectionScores[key]}%
                             </Badge>
@@ -1034,10 +1034,10 @@ export default function AidEffectivenessDashboard() {
                 </Card>
 
                 {/* Implementing Partners */}
-                <Card className="bg-white border-slate-200">
+                <Card className="bg-card border-border">
                   <CardHeader>
-                    <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
-                      <Users className="h-5 w-5 text-slate-500" />
+                    <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                      <Users className="h-5 w-5 text-muted-foreground" />
                       Implementing Partners
                       <HelpTooltip helpKey="partners" />
                     </CardTitle>
@@ -1050,11 +1050,11 @@ export default function AidEffectivenessDashboard() {
             </Tabs>
           </>
         ) : (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-card border-border">
             <CardContent className="p-12 text-center">
-              <Shield className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-700">No Aid Effectiveness Data</h3>
-              <p className="text-slate-500 mt-1">No activities match the selected filters or have aid effectiveness data.</p>
+              <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground">No Aid Effectiveness Data</h3>
+              <p className="text-muted-foreground mt-1">No activities match the selected filters or have aid effectiveness data.</p>
             </CardContent>
           </Card>
         )}
@@ -1075,10 +1075,10 @@ function SectionDetail({ title, icon, badge, fields, total, score, helpKey }: {
   helpKey?: string
 }) {
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-card border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
+          <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
             {icon}
             {title}
             {helpKey && <HelpTooltip helpKey={helpKey} />}
@@ -1087,8 +1087,8 @@ function SectionDetail({ title, icon, badge, fields, total, score, helpKey }: {
             <Badge variant="outline" className="text-xs">{badge}</Badge>
             <Badge className={
               score >= 70 ? "bg-[#F37021] text-white" :
-              score >= 50 ? "bg-slate-200 text-slate-800" :
-              "bg-slate-100 text-slate-500"
+              score >= 50 ? "bg-muted text-foreground" :
+              "bg-muted text-muted-foreground"
             }>{score}%</Badge>
           </div>
         </div>
@@ -1124,7 +1124,7 @@ function PartnerChart({ partnerCounts, orgMap, total }: {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10)
 
-  if (data.length === 0) return <p className="text-slate-500 text-center py-8">No implementing partner data</p>
+  if (data.length === 0) return <p className="text-muted-foreground text-center py-8">No implementing partner data</p>
 
   return (
     <ResponsiveContainer width="100%" height={Math.max(250, data.length * 40)}>
@@ -1158,9 +1158,9 @@ function GovWhyNotSection({ activities }: { activities: ActivityRow[] }) {
     .sort((a, b) => b.count - a.count)
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-lg font-medium text-slate-700 flex items-center gap-2">
+        <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
           Reasons for Not Using Government Systems
           <HelpTooltip helpKey="govWhyNot" />
         </CardTitle>
@@ -1169,8 +1169,8 @@ function GovWhyNotSection({ activities }: { activities: ActivityRow[] }) {
         <div className="space-y-3">
           {data.map(item => (
             <div key={item.reason} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-              <span className="text-sm text-slate-700">{item.reason}</span>
-              <Badge variant="secondary" className="bg-slate-200 text-slate-700">{item.count}</Badge>
+              <span className="text-sm text-foreground">{item.reason}</span>
+              <Badge variant="secondary" className="bg-muted text-foreground">{item.count}</Badge>
             </div>
           ))}
         </div>

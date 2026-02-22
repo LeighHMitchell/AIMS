@@ -529,29 +529,29 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-wrap">
           {/* Year Type Toggle */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
             <Button
-              variant={yearType === 'calendar' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setYearType('calendar')}
               className={cn(
                 'h-7 px-3 text-xs',
                 yearType === 'calendar'
-                  ? 'bg-slate-900 text-white hover:bg-slate-800'
-                  : ''
+                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                  : 'text-slate-500 hover:text-slate-700'
               )}
             >
               Calendar Year
             </Button>
             <Button
-              variant={yearType === 'financial' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setYearType('financial')}
               className={cn(
                 'h-7 px-3 text-xs',
                 yearType === 'financial'
-                  ? 'bg-slate-900 text-white hover:bg-slate-800'
-                  : ''
+                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                  : 'text-slate-500 hover:text-slate-700'
               )}
             >
               Financial Year

@@ -290,7 +290,7 @@ export default function PartnerProfilePage() {
           <Card className="mb-6">
             <CardContent className="p-8">
               <div className="flex items-start gap-6 mb-6">
-                <div className="bg-slate-100 p-4 rounded-lg">
+                <div className="bg-muted p-4 rounded-lg">
                   {partner.logo ? (
                     <img 
                       src={partner.logo} 
@@ -298,13 +298,13 @@ export default function PartnerProfilePage() {
                       className="h-16 w-16 object-contain"
                     />
                   ) : (
-                    <Building2 className="h-16 w-16 text-slate-600" />
+                    <Building2 className="h-16 w-16 text-muted-foreground" />
                   )}
                 </div>
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-slate-900 mb-2">{partner.name}</h1>
-                  <div className="flex items-center gap-4 text-sm text-slate-600">
-                    <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                  <h1 className="text-3xl font-bold text-foreground mb-2">{partner.name}</h1>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <Badge variant="secondary" className="bg-muted text-foreground">
                       {partner.type === 'bilateral' ? 'Bilateral Partner' : 
                        partner.type === 'partner_government' ? 'Partner Government' :
                        partner.type === 'development_partner' ? 'Development Partner' : 'Other'}
@@ -320,29 +320,29 @@ export default function PartnerProfilePage() {
                 </div>
                 {permissions.canManageUsers && (
                   <Button variant="outline" onClick={() => setShowEditDialog(true)}>
-                    <Pencil className="h-4 w-4 mr-2 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                    <Pencil className="h-4 w-4 mr-2 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
                     Edit Profile
                   </Button>
                 )}
               </div>
 
               {/* Key Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-6 border-t border-b border-slate-200">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-6 border-t border-b border-border">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-900">${(totalFunding / 1000000).toFixed(1)}M</div>
-                  <div className="text-sm text-slate-600">Total Funding</div>
+                  <div className="text-2xl font-bold text-foreground">${(totalFunding / 1000000).toFixed(1)}M</div>
+                  <div className="text-sm text-muted-foreground">Total Funding</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-900">{activeProjects}</div>
-                  <div className="text-sm text-slate-600">Active Projects</div>
+                  <div className="text-2xl font-bold text-foreground">{activeProjects}</div>
+                  <div className="text-sm text-muted-foreground">Active Projects</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-900">{completedProjects}</div>
-                  <div className="text-sm text-slate-600">Completed Projects</div>
+                  <div className="text-2xl font-bold text-foreground">{completedProjects}</div>
+                  <div className="text-sm text-muted-foreground">Completed Projects</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-slate-900">{teamMembers.length}</div>
-                  <div className="text-sm text-slate-600">Team Members</div>
+                  <div className="text-2xl font-bold text-foreground">{teamMembers.length}</div>
+                  <div className="text-sm text-muted-foreground">Team Members</div>
                 </div>
               </div>
 
@@ -350,7 +350,7 @@ export default function PartnerProfilePage() {
               <div className="mt-6 space-y-3">
                 {partner.website && (
                   <div className="flex items-center gap-3">
-                    <Globe className="h-4 w-4 text-slate-400" />
+                    <Globe className="h-4 w-4 text-muted-foreground" />
                     <a 
                       href={partner.website} 
                       target="_blank" 
@@ -363,7 +363,7 @@ export default function PartnerProfilePage() {
                 )}
                 {partner.email && (
                   <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-slate-400" />
+                    <Mail className="h-4 w-4 text-muted-foreground" />
                     <a 
                       href={`mailto:${partner.email}`}
                       className="text-blue-600 hover:underline"
@@ -374,13 +374,13 @@ export default function PartnerProfilePage() {
                 )}
                 {partner.phone && (
                   <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 text-slate-400" />
+                    <Phone className="h-4 w-4 text-muted-foreground" />
                     <span>{partner.phone}</span>
                   </div>
                 )}
                 {partner.address && (
                   <div className="flex items-start gap-3">
-                    <MapPin className="h-4 w-4 text-slate-400 mt-0.5" />
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                     <span>{partner.address}</span>
                   </div>
                 )}
@@ -391,19 +391,19 @@ export default function PartnerProfilePage() {
           {/* Tabs Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-              <TabsTrigger value="about" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="about" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 <Building2 className="h-4 w-4" />
                 About
               </TabsTrigger>
-              <TabsTrigger value="financials" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="financials" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 <DollarSign className="h-4 w-4" />
                 Financials
               </TabsTrigger>
-              <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 <Activity className="h-4 w-4" />
                 Activities
               </TabsTrigger>
-              <TabsTrigger value="people" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="people" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 <Users className="h-4 w-4" />
                 People
               </TabsTrigger>
@@ -416,7 +416,7 @@ export default function PartnerProfilePage() {
                   <CardTitle>Background</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-slate-600 leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed">
                     {partner.description || "No description available."}
                   </p>
                 </CardContent>
@@ -433,7 +433,7 @@ export default function PartnerProfilePage() {
                   <CardContent>
                     <div className="space-y-4">
                       <div>
-                        <p className="text-sm text-slate-600">Total Commitments</p>
+                        <p className="text-sm text-muted-foreground">Total Commitments</p>
                         <p className="text-2xl font-bold">${totalFunding.toLocaleString()}</p>
                       </div>
                       <div className="h-64">
@@ -461,8 +461,8 @@ export default function PartnerProfilePage() {
 
                           if (chartData.length === 0) {
                             return (
-                              <div className="h-full flex items-center justify-center bg-slate-50 rounded-lg">
-                                <p className="text-slate-500">No transaction data available</p>
+                              <div className="h-full flex items-center justify-center bg-muted rounded-lg">
+                                <p className="text-muted-foreground">No transaction data available</p>
                               </div>
                             );
                           }
@@ -497,11 +497,11 @@ export default function PartnerProfilePage() {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-slate-600">Active Projects</span>
+                        <span className="text-sm text-muted-foreground">Active Projects</span>
                         <span className="font-bold">{activeProjects}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-slate-600">Completed Projects</span>
+                        <span className="text-sm text-muted-foreground">Completed Projects</span>
                         <span className="font-bold">{completedProjects}</span>
                       </div>
                       <div className="h-48">
@@ -513,8 +513,8 @@ export default function PartnerProfilePage() {
 
                           if (statusData.length === 0) {
                             return (
-                              <div className="h-full flex items-center justify-center bg-slate-50 rounded-lg">
-                                <p className="text-slate-500">No project data available</p>
+                              <div className="h-full flex items-center justify-center bg-muted rounded-lg">
+                                <p className="text-muted-foreground">No project data available</p>
                               </div>
                             );
                           }
@@ -570,13 +570,13 @@ export default function PartnerProfilePage() {
                       .map((activity) => (
                         <div 
                           key={activity.id} 
-                          className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 cursor-pointer"
+                          className="border border-border rounded-lg p-4 hover:bg-muted cursor-pointer"
                           onClick={() => router.push(`/activities/${activity.id}`)}
                         >
                           <div className="flex items-start justify-between">
                             <div>
-                              <h4 className="font-semibold text-slate-900">{activity.title}</h4>
-                              <div className="mt-2 space-y-1 text-sm text-slate-600">
+                              <h4 className="font-semibold text-foreground">{activity.title}</h4>
+                              <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                                 <p>
                                   <span className="font-medium">Activity Status:</span> {
                                     activity.activityStatus || 
@@ -612,7 +612,7 @@ export default function PartnerProfilePage() {
                         t.providerOrg === partner.name || t.receiverOrg === partner.name
                       )
                     ).length === 0 && (
-                      <p className="text-center text-slate-500 py-8">No activities found for this partner.</p>
+                      <p className="text-center text-muted-foreground py-8">No activities found for this partner.</p>
                     )}
                   </div>
                 </CardContent>
@@ -628,24 +628,24 @@ export default function PartnerProfilePage() {
                 <CardContent>
                   <div className="space-y-4">
                     {teamMembers.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                      <div key={member.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                         <div className="flex items-center gap-4">
-                          <div className="bg-slate-100 p-3 rounded-full">
-                            <Users className="h-5 w-5 text-slate-600" />
+                          <div className="bg-muted p-3 rounded-full">
+                            <Users className="h-5 w-5 text-muted-foreground" />
                           </div>
                           <div>
-                            <p className="font-medium text-slate-900">{member.name}</p>
-                            <p className="text-sm text-slate-600">{member.title || member.role}</p>
+                            <p className="font-medium text-foreground">{member.name}</p>
+                            <p className="text-sm text-muted-foreground">{member.title || member.role}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-slate-600">{member.email}</p>
-                          {member.phone && <p className="text-sm text-slate-600">{member.phone}</p>}
+                          <p className="text-sm text-muted-foreground">{member.email}</p>
+                          {member.phone && <p className="text-sm text-muted-foreground">{member.phone}</p>}
                         </div>
                       </div>
                     ))}
                     {teamMembers.length === 0 && (
-                      <p className="text-center text-slate-500 py-8">No team members found.</p>
+                      <p className="text-center text-muted-foreground py-8">No team members found.</p>
                     )}
                   </div>
                 </CardContent>

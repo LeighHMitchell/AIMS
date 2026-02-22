@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Download, AlertCircle } from 'lucide-react'
 import { SDG_GOALS } from '@/data/sdg-targets'
 import { apiFetch } from '@/lib/api-fetch';
@@ -185,7 +185,7 @@ export function SDGTable({
           <CardDescription>Detailed view of SDG coverage data</CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[400px] w-full" />
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </CardContent>
       </Card>
     )

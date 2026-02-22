@@ -185,7 +185,7 @@ function ExpandableTextarea({
       <button
         type="button"
         onClick={toggleExpand}
-        className="absolute right-1 top-1 p-1 text-slate-400 hover:text-slate-600 rounded"
+        className="absolute right-1 top-1 p-1 text-muted-foreground hover:text-muted-foreground rounded"
         title={isExpanded ? "Collapse" : "Expand"}
       >
         {isExpanded ? (
@@ -678,15 +678,15 @@ export function InterventionTreeMap() {
     <div ref={containerRef} className="relative w-full">
       {/* Breadcrumbs and Zoom Controls */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 text-sm text-slate-600">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           {breadcrumbs.map((crumb, idx) => (
             <React.Fragment key={idx}>
-              {idx > 0 && <span className="text-slate-400">/</span>}
+              {idx > 0 && <span className="text-muted-foreground">/</span>}
               <span
                 className={
                   idx === breadcrumbs.length - 1
-                    ? "font-semibold text-slate-900"
-                    : "hover:text-slate-900 cursor-pointer transition-colors"
+                    ? "font-semibold text-foreground"
+                    : "hover:text-foreground cursor-pointer transition-colors"
                 }
                 onClick={() => handleBreadcrumbClick(idx)}
               >
@@ -723,14 +723,14 @@ export function InterventionTreeMap() {
 
       {/* Legend - Direction-based */}
       <div className="flex flex-wrap items-center gap-4 mb-4 text-xs">
-        <span className="text-slate-600 font-medium">Direction:</span>
+        <span className="text-muted-foreground font-medium">Direction:</span>
         {DIRECTION_LEVELS.map((level) => (
           <div key={level} className="flex items-center gap-1">
             <div
-              className="w-4 h-4 rounded border border-slate-300"
+              className="w-4 h-4 rounded border border-border"
               style={{ backgroundColor: DIRECTION_COLORS[level] }}
             />
-            <span className="text-slate-600">{level}</span>
+            <span className="text-muted-foreground">{level}</span>
           </div>
         ))}
       </div>
@@ -740,7 +740,7 @@ export function InterventionTreeMap() {
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
-        className="border border-slate-200 rounded-lg bg-slate-50"
+        className="border border-border rounded-lg bg-muted"
       />
 
       {/* Tooltip */}
@@ -755,7 +755,7 @@ export function InterventionTreeMap() {
           <div className="font-semibold text-base mb-2">{tooltip.content.name}</div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-slate-400">Direction:</span>
+              <span className="text-muted-foreground">Direction:</span>
               <span
                 className={
                   tooltip.content.direction === "Favorable & Significant"
@@ -780,14 +780,14 @@ export function InterventionTreeMap() {
       )}
 
       {/* Instructions */}
-      <p className="text-xs text-slate-500 mt-3 text-center">
+      <p className="text-xs text-muted-foreground mt-3 text-center">
         Click on a category to zoom in. Use the breadcrumbs or Zoom Out button to navigate back.
       </p>
 
       {/* Data Table */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-900">Intervention Data</h3>
+          <h3 className="text-lg font-semibold text-foreground">Intervention Data</h3>
           <Button onClick={addRow} size="sm" className="flex items-center gap-1">
             <Plus className="h-4 w-4" />
             Add Intervention
@@ -797,7 +797,7 @@ export function InterventionTreeMap() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-muted">
                   <TableHead className="w-[130px] text-left">Violence Type</TableHead>
                   <TableHead className="w-[140px] text-left">Intervention Type</TableHead>
                   <TableHead className="w-[220px] text-left">Intervention Name</TableHead>
@@ -838,7 +838,7 @@ export function InterventionTreeMap() {
                       >
                         <SelectTrigger className="h-auto min-h-[40px] text-xs text-left justify-start">
                           <SelectValue>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-foreground">
                               {row.interventionType}
                             </span>
                           </SelectValue>
@@ -846,7 +846,7 @@ export function InterventionTreeMap() {
                         <SelectContent align="start">
                           {INTERVENTION_TYPES.map((type) => (
                             <SelectItem key={type} value={type} className="text-xs">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-foreground">
                                 {type}
                               </span>
                             </SelectItem>
@@ -931,7 +931,7 @@ export function InterventionTreeMap() {
             </Table>
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs text-muted-foreground mt-2">
           Edit the table above to update the tree map visualization. The "Sample Size" column determines the size of each intervention block.
         </p>
       </div>

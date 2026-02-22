@@ -101,7 +101,7 @@ const getFormatIcon = (format?: string) => {
   if (f.includes('doc') || f.includes('text') || f.includes('odt')) {
     return <FileText className="h-4 w-4 text-blue-600" />;
   }
-  return <File className="h-4 w-4 text-slate-400" />;
+  return <File className="h-4 w-4 text-muted-foreground" />;
 };
 
 // Get localized string from multilingual object
@@ -312,7 +312,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
 
   if (flattenedDocuments.length === 0) {
     return (
-      <div className={cn("flex flex-col items-center justify-center py-12 text-slate-400", className)}>
+      <div className={cn("flex flex-col items-center justify-center py-12 text-muted-foreground", className)}>
         <FolderOpen className="h-12 w-12 mb-4" />
         <p className="text-lg font-medium">No documents attached</p>
         <p className="text-sm">Results have no linked documents</p>
@@ -325,7 +325,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search documents..."
             value={searchTerm}
@@ -367,7 +367,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
       <div className="border rounded-md overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50">
+            <TableRow className="bg-muted">
               <TableHead className="font-semibold w-[300px]">Document</TableHead>
               <TableHead className="font-semibold">Format</TableHead>
               <TableHead className="font-semibold">Category</TableHead>
@@ -385,7 +385,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
                     <div>
                       <div className="font-medium">{doc.title}</div>
                       {doc.description && (
-                        <div className="text-xs text-slate-500 line-clamp-1">
+                        <div className="text-xs text-muted-foreground line-clamp-1">
                           {doc.description}
                         </div>
                       )}
@@ -398,7 +398,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
                       {doc.format.split('/').pop()?.toUpperCase() || doc.format}
                     </Badge>
                   ) : (
-                    <span className="text-slate-400">—</span>
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -407,21 +407,21 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
                       {doc.categoryCode}
                     </span>
                   ) : (
-                    <span className="text-slate-400">—</span>
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
                     <Badge 
                       variant="outline" 
-                      className="text-xs font-normal mr-2 bg-muted text-muted-foreground border-slate-300 font-mono"
+                      className="text-xs font-normal mr-2 bg-muted text-muted-foreground border-border font-mono"
                     >
                       {doc.attachedToType}
                     </Badge>
-                    <span className="text-slate-600">{doc.attachedTo}</span>
+                    <span className="text-muted-foreground">{doc.attachedTo}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-sm text-slate-600">
+                <TableCell className="text-sm text-muted-foreground">
                   {formatDate(doc.documentDate)}
                 </TableCell>
                 <TableCell>
@@ -443,7 +443,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
       </div>
 
       {filteredDocuments.length === 0 && (searchTerm || categoryFilter !== 'all' || typeFilter !== 'all') && (
-        <div className="text-center py-8 text-slate-400">
+        <div className="text-center py-8 text-muted-foreground">
           No documents match your filters
         </div>
       )}

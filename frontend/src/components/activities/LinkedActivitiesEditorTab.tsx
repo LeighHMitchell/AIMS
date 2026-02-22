@@ -331,9 +331,31 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     }
   };
 
-  // Handle delete
+  // Handle delete with pooled fund warning
   const handleDelete = async (linkedActivityId: string) => {
-    if (!confirm('Are you sure you want to remove this link?')) return;
+    const link = linkedActivities.find(l => l.id === linkedActivityId);
+    let confirmMessage = 'Are you sure you want to remove this link?';
+
+    // Check if this is a parent/child relationship involving a pooled fund
+    if (link && (link.relationshipType === '1' || link.relationshipType === '2')) {
+      try {
+        const parentId = link.relationshipType === '1' ? activityId : link.activityId;
+        if (parentId) {
+          const checkRes = await apiFetch(`/api/activities/${parentId}/fund-summary`);
+          if (checkRes.ok) {
+            const fundData = await checkRes.json();
+            if (fundData.totalDisbursements > 0) {
+              const childTitle = link.relationshipType === '1' ? link.activityTitle : 'this activity';
+              confirmMessage = `Unlinking "${childTitle}" will remove it from the fund's disbursement tracking (fund has $${fundData.totalDisbursements.toLocaleString()} in total disbursements). Continue?`;
+            }
+          }
+        }
+      } catch {
+        // If fund check fails, proceed with standard confirmation
+      }
+    }
+
+    if (!confirm(confirmMessage)) return;
     
     try {
       setSaving(true);

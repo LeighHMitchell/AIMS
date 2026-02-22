@@ -16,12 +16,13 @@ import {
   Legend,
   LabelList,
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle } from 'lucide-react'
 import { getOrgTypeLabel } from '@/lib/org-type-mappings'
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 /**
  * Organizational Positioning Map
@@ -259,7 +260,7 @@ export function OrganizationalPositioningMap({
 
   // Render loading state
   if (loading) {
-    return <Skeleton className="w-full h-full min-h-[300px]" />
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
   }
 
   // Render error state
@@ -288,7 +289,7 @@ export function OrganizationalPositioningMap({
       <div className="w-full h-full">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 20, right: 20, bottom: 30, left: 30 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis
               type="number"
               dataKey="x"
@@ -349,7 +350,7 @@ export function OrganizationalPositioningMap({
       <div className="rounded-lg p-4" style={{ backgroundColor: '#ffffff', border: '1px solid #cfd0d5' }}>
         <ResponsiveContainer width="100%" height={500}>
           <ScatterChart margin={{ top: 30, right: 40, bottom: 50, left: 60 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#cfd0d5" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis
               type="number"
               dataKey="x"

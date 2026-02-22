@@ -14,6 +14,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { BarChart3, TrendingUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TimeSeriesData {
   year: number;
@@ -89,21 +90,29 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
           <CardTitle className="text-lg font-semibold text-slate-900">
             Aid Over Time
           </CardTitle>
-          <div className="flex">
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
             <Button
-              variant={viewMode === 'detailed' ? 'default' : 'outline'}
+              variant="ghost"
               size="sm"
+              className={cn(
+                viewMode === 'detailed'
+                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                  : 'text-slate-500 hover:text-slate-700'
+              )}
               onClick={() => setViewMode('detailed')}
-              className={`rounded-r-none ${viewMode === 'detailed' ? 'bg-slate-600 hover:bg-slate-700' : ''}`}
             >
               <TrendingUp className="h-4 w-4 mr-2" />
               Detailed
             </Button>
             <Button
-              variant={viewMode === 'comparison' ? 'default' : 'outline'}
+              variant="ghost"
               size="sm"
+              className={cn(
+                viewMode === 'comparison'
+                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                  : 'text-slate-500 hover:text-slate-700'
+              )}
               onClick={() => setViewMode('comparison')}
-              className={`rounded-l-none ${viewMode === 'comparison' ? 'bg-slate-600 hover:bg-slate-700' : ''}`}
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Comparison

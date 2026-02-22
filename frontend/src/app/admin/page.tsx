@@ -116,7 +116,7 @@ function AdminPageContent() {
       <div className="w-full">
         <div className="mb-8">
           <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-gray-700" />
+            <Shield className="h-8 w-8 text-foreground" />
             <div>
               <h1 className="text-3xl font-bold">Admin Panel</h1>
               <p className="text-muted-foreground mt-1">Manage users, view logs, and handle validations</p>
@@ -126,47 +126,47 @@ function AdminPageContent() {
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Users className="h-4 w-4" />
               User Management
             </TabsTrigger>
-            <TabsTrigger value="user-activity" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="user-activity" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Activity className="h-4 w-4" />
               User Activity
             </TabsTrigger>
-            <TabsTrigger value="import-logs" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="import-logs" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <FileText className="h-4 w-4" />
               IATI Import Logs
             </TabsTrigger>
-            <TabsTrigger value="validations" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="validations" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <AlertCircle className="h-4 w-4" />
               Pending Validations
             </TabsTrigger>
-            <TabsTrigger value="feedback" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="feedback" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <MessageSquare className="h-4 w-4" />
               Feedback
             </TabsTrigger>
-            <TabsTrigger value="faq" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="faq" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <HelpCircle className="h-4 w-4" />
               FAQ
             </TabsTrigger>
-            <TabsTrigger value="systems" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="systems" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Settings className="h-4 w-4" />
               Systems Settings
             </TabsTrigger>
-            <TabsTrigger value="chart-of-accounts" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="chart-of-accounts" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Landmark className="h-4 w-4" />
               Chart of Accounts
             </TabsTrigger>
-            <TabsTrigger value="project-references" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="project-references" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <FileCode2 className="h-4 w-4" />
               Project References
             </TabsTrigger>
-            <TabsTrigger value="emergencies" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="emergencies" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <AlertTriangle className="h-4 w-4" />
               Emergencies
             </TabsTrigger>
-            <TabsTrigger value="calendar-events" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="calendar-events" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Calendar className="h-4 w-4" />
               Calendar Events
             </TabsTrigger>
@@ -203,23 +203,23 @@ function AdminPageContent() {
           <TabsContent value="chart-of-accounts" className="space-y-6">
             <Tabs value={activeSubTab} onValueChange={handleSubTabChange}>
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-4">
-                <TabsTrigger value="classifications" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="classifications" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   <Landmark className="h-4 w-4" />
                   Classifications
                 </TabsTrigger>
-                <TabsTrigger value="sector-mappings" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="sector-mappings" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   <Map className="h-4 w-4" />
                   Sector Mappings
                 </TabsTrigger>
-                <TabsTrigger value="country-sectors" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="country-sectors" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   <Book className="h-4 w-4" />
                   Country Sectors
                 </TabsTrigger>
-                <TabsTrigger value="domestic-budget" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="domestic-budget" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   <DollarSign className="h-4 w-4" />
                   Domestic Budget
                 </TabsTrigger>
-                <TabsTrigger value="national-priorities" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="national-priorities" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   <Target className="h-4 w-4" />
                   National Priorities
                 </TabsTrigger>

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingText } from '@/components/ui/loading-text';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/format';
@@ -453,7 +453,7 @@ export function AidOnBudgetChart({ dateRange, refreshKey }: AidOnBudgetChartProp
           <CardDescription>Aid distribution by budget classification</CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[700px] w-full" />
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </CardContent>
       </Card>
     );

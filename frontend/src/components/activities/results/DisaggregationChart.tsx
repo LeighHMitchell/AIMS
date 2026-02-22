@@ -159,7 +159,7 @@ export function DisaggregationChart({
   // No data state
   if (availableDimensions.length === 0) {
     return (
-      <div className={cn("flex items-center justify-center text-slate-400 py-8", className)}>
+      <div className={cn("flex items-center justify-center text-muted-foreground py-8", className)}>
         No disaggregation data available
       </div>
     );
@@ -171,7 +171,7 @@ export function DisaggregationChart({
     <div className={cn("space-y-4", className)}>
       {/* Dimension selector */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-slate-600">Disaggregate by:</span>
+        <span className="text-sm text-muted-foreground">Disaggregate by:</span>
         <Select value={selectedDimension} onValueChange={setSelectedDimension}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select dimension" />
@@ -230,7 +230,7 @@ export function DisaggregationChart({
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="h-64 flex items-center justify-center text-slate-400">
+        <div className="h-64 flex items-center justify-center text-muted-foreground">
           No data for selected dimension
         </div>
       )}
@@ -239,14 +239,14 @@ export function DisaggregationChart({
       {chartData.length > 0 && (
         <div className="border rounded-md overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50">
+            <thead className="bg-muted">
               <tr>
-                <th className="text-left py-2 px-3 font-medium text-slate-700">
+                <th className="text-left py-2 px-3 font-medium text-foreground">
                   {selectedDimension.charAt(0).toUpperCase() + selectedDimension.slice(1)}
                 </th>
-                <th className="text-right py-2 px-3 font-medium text-slate-700">Target</th>
-                <th className="text-right py-2 px-3 font-medium text-slate-700">Actual</th>
-                <th className="text-right py-2 px-3 font-medium text-slate-700">%</th>
+                <th className="text-right py-2 px-3 font-medium text-foreground">Target</th>
+                <th className="text-right py-2 px-3 font-medium text-foreground">Actual</th>
+                <th className="text-right py-2 px-3 font-medium text-foreground">%</th>
               </tr>
             </thead>
             <tbody>
@@ -255,7 +255,7 @@ export function DisaggregationChart({
                   ? Math.round((row.actual / row.target) * 100) 
                   : null;
                 return (
-                  <tr key={row.value} className="border-t border-slate-100">
+                  <tr key={row.value} className="border-t border-border">
                     <td className="py-2 px-3">
                       <div className="flex items-center gap-2">
                         <div 
@@ -265,7 +265,7 @@ export function DisaggregationChart({
                         {row.value}
                       </div>
                     </td>
-                    <td className="text-right py-2 px-3 text-slate-600">
+                    <td className="text-right py-2 px-3 text-muted-foreground">
                       {formatValue(row.target, measure)}
                     </td>
                     <td className="text-right py-2 px-3 font-medium">

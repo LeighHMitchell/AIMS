@@ -13,9 +13,10 @@ import {
   Label
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle } from 'lucide-react'
 import { SDG_GOALS } from '@/data/sdg-targets'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 interface SDGCoverageChartProps {
   organizationId: string
@@ -277,7 +278,7 @@ export function SDGCoverageChart({
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
-      return <Skeleton className="h-full w-full" />
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (chartData.length === 0) {
       return (
@@ -294,7 +295,7 @@ export function SDGCoverageChart({
             layout="vertical"
             margin={{ top: 5, right: 10, left: 5, bottom: 25 }}
           >
-            <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal vertical={false} />
             <XAxis
               type="number"
               fontSize={9}
@@ -336,7 +337,7 @@ export function SDGCoverageChart({
           <CardDescription>Number of activities and financial weight mapped to each SDG</CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[400px] w-full" />
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </CardContent>
       </Card>
     )
@@ -377,7 +378,7 @@ export function SDGCoverageChart({
             layout="vertical"
             margin={{ top: 5, right: 20, left: 10, bottom: 30 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
             <XAxis
               type="number"
               tickFormatter={metric === 'activities' ? (v) => v.toFixed(1) : formatCurrency}

@@ -131,7 +131,7 @@ export function IATIOrgImportFieldsTable({
     if (field.hasConflict) {
       return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">DIFF</Badge>
     }
-    return <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">SAME</Badge>
+    return <Badge variant="outline" className="bg-muted text-muted-foreground border-border">SAME</Badge>
   }
 
   // Copy to clipboard
@@ -206,7 +206,7 @@ export function IATIOrgImportFieldsTable({
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search fields..."
             value={searchQuery}
@@ -219,7 +219,7 @@ export function IATIOrgImportFieldsTable({
             checked={showConflictsOnly}
             onCheckedChange={setShowConflictsOnly}
           />
-          <label className="text-sm text-gray-600">Show conflicts only</label>
+          <label className="text-sm text-muted-foreground">Show conflicts only</label>
         </div>
         {onSelectAll && (
           <Button variant="outline" size="sm" onClick={onSelectAll}>
@@ -258,18 +258,18 @@ export function IATIOrgImportFieldsTable({
               return (
                 <React.Fragment key={category}>
                   {/* Category Header */}
-                  <TableRow className="bg-gray-50 hover:bg-gray-50">
+                  <TableRow className="bg-muted hover:bg-muted/50">
                     <TableCell colSpan={5} className="p-0">
                       <Collapsible open={isExpanded} onOpenChange={() => toggleCategory(category)}>
-                        <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-100 transition-colors">
+                        <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted transition-colors">
                           <div className="flex items-center gap-2">
                             {isExpanded ? (
-                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
                             ) : (
-                              <ChevronRight className="h-4 w-4 text-gray-500" />
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
                             )}
                             {getCategoryIcon(category)}
-                            <span className="font-medium text-gray-900">
+                            <span className="font-medium text-foreground">
                               {getCategoryDisplayName(category)}
                             </span>
                             <Badge variant="outline" className="ml-2">
@@ -286,7 +286,7 @@ export function IATIOrgImportFieldsTable({
                                   type="checkbox"
                                   checked={field.selected}
                                   onChange={(e) => onFieldToggle(field, e.target.checked)}
-                                  className="rounded border-gray-300"
+                                  className="rounded border-border"
                                 />
                               </TableCell>
                               <TableCell className="font-medium">
@@ -329,7 +329,7 @@ export function IATIOrgImportFieldsTable({
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-600">
+                                  <span className="text-sm text-muted-foreground">
                                     {formatValue(field.currentValue, field)}
                                   </span>
                                   {field.currentValue && (
@@ -346,7 +346,7 @@ export function IATIOrgImportFieldsTable({
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  <span className={`text-sm ${field.isNew ? 'text-green-700 font-medium' : field.hasConflict ? 'text-yellow-700 font-medium' : 'text-gray-600'}`}>
+                                  <span className={`text-sm ${field.isNew ? 'text-green-700 font-medium' : field.hasConflict ? 'text-yellow-700 font-medium' : 'text-muted-foreground'}`}>
                                     {formatValue(field.importValue, field)}
                                   </span>
                                   {field.importValue && (
@@ -376,7 +376,7 @@ export function IATIOrgImportFieldsTable({
 
             {filteredFields.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-gray-500 py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   No fields match your filters
                 </TableCell>
               </TableRow>

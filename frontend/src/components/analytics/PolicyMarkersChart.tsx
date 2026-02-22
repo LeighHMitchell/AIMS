@@ -12,7 +12,7 @@ import {
   Legend,
   Cell
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -32,6 +32,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 interface PolicyMarker {
   id: string
@@ -420,10 +421,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-[400px] w-full" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -527,7 +525,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
             </div>
 
             {/* Value Chart Toggle */}
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="show-value-chart"
@@ -538,7 +536,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                   Show Value of Activities Chart
                 </Label>
               </div>
-              <div className="flex items-center gap-2 text-xs text-slate-600">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Info className="h-3 w-3" />
                 <span>Values based on Total Activity Budget only</span>
               </div>
@@ -592,7 +590,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
             </CardHeader>
             <CardContent>
               {chartData.length === 0 ? (
-                <div className="flex items-center justify-center h-[400px] text-slate-500">
+                <div className="flex items-center justify-center h-[400px] text-muted-foreground">
                   No data available
                 </div>
               ) : (
@@ -601,7 +599,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                     data={chartData}
                     margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                     <XAxis
                       dataKey="markerName"
                       angle={-45}
@@ -659,7 +657,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
               </CardHeader>
               <CardContent>
                 {chartData.length === 0 ? (
-                  <div className="flex items-center justify-center h-[400px] text-slate-500">
+                  <div className="flex items-center justify-center h-[400px] text-muted-foreground">
                     No data available
                   </div>
                 ) : (
@@ -668,7 +666,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                       data={chartData}
                       margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                       <XAxis
                         dataKey="markerName"
                         angle={-45}
@@ -730,16 +728,16 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
           </CardHeader>
           <CardContent>
             {data.length === 0 ? (
-              <div className="flex items-center justify-center h-[400px] text-slate-500">
+              <div className="flex items-center justify-center h-[400px] text-muted-foreground">
                 No data available
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200">
+                    <tr className="border-b border-border">
                       <th 
-                        className="text-left py-3 px-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-50 select-none"
+                        className="text-left py-3 px-4 font-semibold text-foreground cursor-pointer hover:bg-muted/50 select-none"
                         onClick={() => handleSort('marker')}
                       >
                         <div className="flex items-center gap-2">
@@ -750,7 +748,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         </div>
                       </th>
                       <th 
-                        className="text-left py-3 px-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-50 select-none"
+                        className="text-left py-3 px-4 font-semibold text-foreground cursor-pointer hover:bg-muted/50 select-none"
                         onClick={() => handleSort('significance')}
                       >
                         <div className="flex items-center gap-2">
@@ -761,7 +759,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         </div>
                       </th>
                       <th 
-                        className="text-right py-3 px-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-50 select-none"
+                        className="text-right py-3 px-4 font-semibold text-foreground cursor-pointer hover:bg-muted/50 select-none"
                         onClick={() => handleSort('activity_count')}
                       >
                         <div className="flex items-center justify-end gap-2">
@@ -772,7 +770,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         </div>
                       </th>
                       <th 
-                        className="text-right py-3 px-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-50 select-none"
+                        className="text-right py-3 px-4 font-semibold text-foreground cursor-pointer hover:bg-muted/50 select-none"
                         onClick={() => handleSort('budget')}
                       >
                         <div className="flex items-center justify-end gap-2">
@@ -786,8 +784,8 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                   </thead>
                   <tbody>
                     {sortedData.map((row, idx) => (
-                      <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-3 px-4 text-slate-800">{row.policy_marker_name}</td>
+                      <tr key={idx} className="border-b border-border hover:bg-muted/50">
+                        <td className="py-3 px-4 text-foreground">{row.policy_marker_name}</td>
                         <td className="py-3 px-4">
                           <Badge
                             variant="outline"
@@ -799,20 +797,20 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                             {SIGNIFICANCE_LABELS[row.significance].label}
                           </Badge>
                         </td>
-                        <td className="text-right py-3 px-4 text-slate-600">{row.activity_count}</td>
-                        <td className="text-right py-3 px-4 text-slate-600">
+                        <td className="text-right py-3 px-4 text-muted-foreground">{row.activity_count}</td>
+                        <td className="text-right py-3 px-4 text-muted-foreground">
                           {row.total_budget_usd > 0 ? formatCurrencyFull(row.total_budget_usd) : '-'}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="bg-slate-50">
-                      <td colSpan={2} className="py-3 px-4 font-semibold text-slate-800">Total</td>
-                      <td className="text-right py-3 px-4 font-semibold text-slate-800">
+                    <tr className="bg-muted">
+                      <td colSpan={2} className="py-3 px-4 font-semibold text-foreground">Total</td>
+                      <td className="text-right py-3 px-4 font-semibold text-foreground">
                         {sortedData.reduce((sum, row) => sum + row.activity_count, 0)}
                       </td>
-                      <td className="text-right py-3 px-4 font-semibold text-slate-800">
+                      <td className="text-right py-3 px-4 font-semibold text-foreground">
                         {formatCurrencyFull(sortedData.reduce((sum, row) => sum + row.total_budget_usd, 0))}
                       </td>
                     </tr>
@@ -859,58 +857,58 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
               </div>
             </div>
             {timeSeriesData.length === 0 ? (
-              <div className="flex items-center justify-center h-[400px] text-slate-500">
+              <div className="flex items-center justify-center h-[400px] text-muted-foreground">
                 No data available
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200">
-                      <th className="text-left py-3 px-4 font-semibold text-slate-700 sticky left-0 bg-white z-10">
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-4 font-semibold text-foreground sticky left-0 bg-card z-10">
                         Policy Marker
                       </th>
                       {timeSeriesYears.map(year => (
-                        <th key={year} className="text-right py-3 px-4 font-semibold text-slate-700">
+                        <th key={year} className="text-right py-3 px-4 font-semibold text-foreground">
                           Spend {year}
                         </th>
                       ))}
-                      <th className="text-right py-3 px-4 font-semibold text-slate-700 bg-slate-50">
+                      <th className="text-right py-3 px-4 font-semibold text-foreground bg-muted">
                         Total
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {timeSeriesData.map((row, idx) => (
-                      <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-3 px-4 text-slate-800 font-medium sticky left-0 bg-white z-10">
+                      <tr key={idx} className="border-b border-border hover:bg-muted/50">
+                        <td className="py-3 px-4 text-foreground font-medium sticky left-0 bg-card z-10">
                           {row.policy_marker_name}
                         </td>
                         {timeSeriesYears.map(year => (
-                          <td key={year} className="text-right py-3 px-4 text-slate-600">
+                          <td key={year} className="text-right py-3 px-4 text-muted-foreground">
                             {row.years[year] ? formatCurrencyFull(row.years[year]) : '-'}
                           </td>
                         ))}
-                        <td className="text-right py-3 px-4 text-slate-800 font-semibold bg-slate-50">
+                        <td className="text-right py-3 px-4 text-foreground font-semibold bg-muted">
                           {formatCurrencyFull(row.total)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="bg-slate-50">
-                      <td className="py-3 px-4 font-semibold text-slate-800 sticky left-0 bg-slate-50 z-10">
+                    <tr className="bg-muted">
+                      <td className="py-3 px-4 font-semibold text-foreground sticky left-0 bg-muted z-10">
                         Total
                       </td>
                       {timeSeriesYears.map(year => {
                         const yearTotal = timeSeriesData.reduce((sum, row) => sum + (row.years[year] || 0), 0)
                         return (
-                          <td key={year} className="text-right py-3 px-4 font-semibold text-slate-800">
+                          <td key={year} className="text-right py-3 px-4 font-semibold text-foreground">
                             {formatCurrencyFull(yearTotal)}
                           </td>
                         )
                       })}
-                      <td className="text-right py-3 px-4 font-semibold text-slate-800 bg-slate-100">
+                      <td className="text-right py-3 px-4 font-semibold text-foreground bg-muted">
                         {formatCurrencyFull(timeSeriesData.reduce((sum, row) => sum + row.total, 0))}
                       </td>
                     </tr>

@@ -132,8 +132,8 @@ export async function GET(request: NextRequest) {
 
     const orgMap = new Map(orgs?.map((o: any) => [o.id, { name: o.name, acronym: o.acronym }]) || []);
 
-    // Convert to array, sort, and limit
-    const result = Array.from(orgProjectCounts.entries())
+    // Convert to array and sort
+    const sorted = Array.from(orgProjectCounts.entries())
       .map(([orgId, activitySet]) => {
         const org = orgMap.get(orgId);
         return {
@@ -143,13 +143,14 @@ export async function GET(request: NextRequest) {
           projectCount: activitySet.size
         };
       })
-      .sort((a, b) => b.projectCount - a.projectCount)
-      .slice(0, limit);
+      .sort((a, b) => b.projectCount - a.projectCount);
 
-    // Calculate "Others" count if there are more organizations
-    const othersCount = Array.from(orgProjectCounts.entries())
+    // Take top N and calculate "Others" from the rest
+    const result = sorted.slice(0, limit);
+
+    const othersCount = sorted
       .slice(limit)
-      .reduce((sum, [, activitySet]) => sum + activitySet.size, 0);
+      .reduce((sum, item) => sum + item.projectCount, 0);
 
     if (othersCount > 0) {
       result.push({

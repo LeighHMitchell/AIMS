@@ -107,7 +107,7 @@ interface SimpleHeroCardProps {
 
 function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
   return (
-    <div className="p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+    <div className="p-4 border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
           <div className="text-sm text-muted-foreground">{title}</div>
@@ -1473,7 +1473,7 @@ export default function PlannedDisbursementsTab({
         {/* Financial Summary Cards Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="p-4 border rounded-xl bg-white shadow-sm">
+            <div key={i} className="p-4 border rounded-xl bg-card shadow-sm">
               <Skeleton className="h-4 w-24 mb-2" />
               <Skeleton className="h-8 w-20 mb-2" />
               <Skeleton className="h-3 w-32" />
@@ -1538,8 +1538,8 @@ export default function PlannedDisbursementsTab({
   if (!activityId) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 mb-2">Please save the activity first before adding planned disbursements.</p>
-        <p className="text-sm text-gray-400">Planned disbursements can only be added to saved activities.</p>
+        <p className="text-muted-foreground mb-2">Please save the activity first before adding planned disbursements.</p>
+        <p className="text-sm text-muted-foreground">Planned disbursements can only be added to saved activities.</p>
       </div>
     );
   }
@@ -1570,7 +1570,7 @@ export default function PlannedDisbursementsTab({
               {!readOnly && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button disabled={isReadOnly} className="bg-gray-900 hover:bg-gray-800 text-white">
+                    <Button disabled={isReadOnly} className="bg-foreground hover:bg-foreground/90 text-white">
                       <Plus className="h-4 w-4 mr-1" />
                       Add Planned Disbursement
                     </Button>
@@ -1792,7 +1792,7 @@ export default function PlannedDisbursementsTab({
                           {sortColumn === 'period' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
@@ -1805,7 +1805,7 @@ export default function PlannedDisbursementsTab({
                           {sortColumn === 'status' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
@@ -1818,7 +1818,7 @@ export default function PlannedDisbursementsTab({
                           {sortColumn === 'provider' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
@@ -1831,7 +1831,7 @@ export default function PlannedDisbursementsTab({
                           {sortColumn === 'amount' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
@@ -1844,7 +1844,7 @@ export default function PlannedDisbursementsTab({
                           {sortColumn === 'value_date' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
@@ -1857,7 +1857,7 @@ export default function PlannedDisbursementsTab({
                           {sortColumn === 'usd_value' ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       </TableHead>
@@ -1966,7 +1966,7 @@ export default function PlannedDisbursementsTab({
                                       size="sm"
                                     />
                                     <OrganizationHoverCard organization={provider} side="top" align="start">
-                                      <span className="truncate cursor-pointer hover:text-gray-700 transition-colors">{providerDisplay}</span>
+                                      <span className="truncate cursor-pointer hover:text-foreground transition-colors">{providerDisplay}</span>
                                     </OrganizationHoverCard>
                                   </div>
                                   <span className="text-muted-foreground flex-shrink-0">→</span>
@@ -1977,7 +1977,7 @@ export default function PlannedDisbursementsTab({
                                       size="sm"
                                     />
                                     <OrganizationHoverCard organization={receiver} side="top" align="start">
-                                      <span className="truncate cursor-pointer hover:text-gray-700 transition-colors">{receiverDisplay}</span>
+                                      <span className="truncate cursor-pointer hover:text-foreground transition-colors">{receiverDisplay}</span>
                                     </OrganizationHoverCard>
                                   </div>
                                 </div>
@@ -2063,7 +2063,7 @@ export default function PlannedDisbursementsTab({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => openModal(disbursement)} disabled={isReadOnly}>
-                                    <Pencil className="mr-2 h-4 w-4 text-slate-500" />
+                                    <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
                                     Edit
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleDuplicate(disbursement)} disabled={isReadOnly}>
@@ -2192,7 +2192,7 @@ export default function PlannedDisbursementsTab({
                                 {disbursement.notes && (
                                   <div className="border-t pt-3 mt-3">
                                     <div className="text-xs text-muted-foreground font-semibold mb-2">Notes:</div>
-                                    <p className="ml-4 text-gray-700 text-xs leading-relaxed">{disbursement.notes}</p>
+                                    <p className="ml-4 text-foreground text-xs leading-relaxed">{disbursement.notes}</p>
                                   </div>
                                 )}
                                 
@@ -2231,7 +2231,7 @@ export default function PlannedDisbursementsTab({
                     })}
                     {/* Total Row */}
                     {sortedFilteredDisbursements.length > 0 && (
-                      <TableRow className="bg-slate-50 border-t-2 border-slate-300 font-semibold">
+                      <TableRow className="bg-muted border-t-2 border-border font-semibold">
                         <TableCell colSpan={readOnly ? 6 : 7} className="py-3 px-4 text-right">
                           Total:
                         </TableCell>
@@ -2648,7 +2648,7 @@ export default function PlannedDisbursementsTab({
                           setModalExchangeRate(isNaN(value) ? null : value);
                         }}
                         disabled={!modalExchangeRateManual || isLoadingModalRate}
-                        className={!modalExchangeRateManual ? 'bg-gray-100' : ''}
+                        className={!modalExchangeRateManual ? 'bg-muted' : ''}
                         placeholder={isLoadingModalRate ? 'Loading...' : 'Enter rate'}
                       />
                       {isLoadingModalRate && (
@@ -2666,7 +2666,7 @@ export default function PlannedDisbursementsTab({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm">USD Value</Label>
-                    <div className="h-10 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-medium text-green-700">
+                    <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center font-medium text-green-700">
                       {modalCalculatedUsdValue !== null ? (
                         <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                       ) : (

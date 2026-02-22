@@ -38,6 +38,7 @@ import { OrganizationSearchableSelect } from "@/components/ui/organization-searc
 import { ActivityCombobox } from "@/components/ui/activity-combobox";
 import { type Organization } from "@/components/ui/organization-searchable-select";
 import { usePartners } from "@/hooks/usePartners";
+import { useParticipatingOrganizations } from "@/hooks/use-participating-organizations";
 import { useIATIReferenceValues } from "@/hooks/useIATIReferenceValues";
 import { useUser } from "@/hooks/useUser";
 import { getUserPermissions } from "@/types/user";
@@ -346,6 +347,7 @@ export default function TransactionModal({
   activitySectors = []
 }: TransactionModalProps) {
   const { partners } = usePartners();
+  const { participatingOrganizations } = useParticipatingOrganizations({ activityId });
   const { data: iatiValues, loading: iatiLoading, getFieldValues, error: iatiError } = useIATIReferenceValues();
   const { user } = useUser();
   const isEditing = !!transaction;
@@ -480,6 +482,12 @@ export default function TransactionModal({
     }
   }, [transaction?.uuid, transaction?.id, createdTransactionId, open]);
 
+  // Set of org IDs that are participating in this activity (for prioritizing in dropdowns)
+  const participatingOrgIds = React.useMemo(
+    () => new Set(participatingOrganizations.map(po => po.organization_id)),
+    [participatingOrganizations]
+  );
+
   // Transform partners to organizations format for OrganizationSearchableSelect
   const organizations: Organization[] = React.useMemo(() => {
     const orgs = partners.map(partner => ({
@@ -494,9 +502,14 @@ export default function TransactionModal({
       country: partner.countryRepresented,
       logo: partner.logo // Include logo field for displaying organization logos
     }));
-    
-    return orgs;
-  }, [partners]);
+
+    // Sort: participating orgs first, then the rest
+    return orgs.sort((a, b) => {
+      const aIsParticipating = participatingOrgIds.has(a.id) ? 0 : 1;
+      const bIsParticipating = participatingOrgIds.has(b.id) ? 0 : 1;
+      return aIsParticipating - bIsParticipating;
+    });
+  }, [partners, participatingOrgIds]);
 
   // Org type mapping modal for handling legacy organization type codes
   const orgTypeMappingModal = useOrgTypeMappingModal();
@@ -782,6 +795,9 @@ export default function TransactionModal({
     });
     
     if (transaction) {
+      // Editing existing transaction — prevent any auto-defaulting of org fields
+      providerAutoDefaulted.current = true;
+      receiverAutoDefaulted.current = true;
       // Set the created transaction ID when editing an existing transaction
       setCreatedTransactionId(transaction.id || transaction.uuid || null);
       // Editing existing transaction
@@ -845,6 +861,9 @@ export default function TransactionModal({
         setShowValueDate(true);
       }
     } else {
+      // Creating new transaction — provider is auto-defaulted (Disbursement), receiver is not yet
+      providerAutoDefaulted.current = true;
+      receiverAutoDefaulted.current = false;
       // Creating new transaction - reset the created transaction ID and use activity defaults
       setCreatedTransactionId(null);
       console.log('[TransactionModal] Setting form data for new transaction with defaults:', {
@@ -1298,6 +1317,10 @@ export default function TransactionModal({
   // Debounced timeout ref for create transaction
   const createTransactionTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  // Track whether org fields have been auto-defaulted (to avoid re-defaulting on subsequent type switches)
+  const providerAutoDefaulted = useRef(true);   // true on open because Disbursement default sets provider
+  const receiverAutoDefaulted = useRef(false);   // false on open — first switch to incoming type will set receiver
+
   // Debounced autosave for creating transaction - WITH REQUEST DEDUPLICATION
   const debouncedCreateTransaction = React.useCallback(async (data: Partial<Transaction>) => {
     // Clear any existing timeout
@@ -1512,8 +1535,45 @@ export default function TransactionModal({
                             <React.Fragment key={opt.code}>
                               <CommandItem
                                 onSelect={() => {
-                                  setFormData({ ...formData, transaction_type: opt.code as TransactionType });
-                                  transactionTypeAutosave.triggerFieldSave(opt.code);
+                                  const newType = opt.code;
+                                  const incomingTypes = ['1', '11'];
+                                  const outgoingTypes = ['2', '3', '4'];
+                                  const reportingOrgId = user?.organizationId || undefined;
+                                  const reportingOrgName = reportingOrgId
+                                    ? (organizations.find(o => o.id === reportingOrgId)?.acronym || organizations.find(o => o.id === reportingOrgId)?.name || '')
+                                    : '';
+                                  const reportingOrgRef = reportingOrgId
+                                    ? (organizations.find(o => o.id === reportingOrgId)?.iati_identifier || organizations.find(o => o.id === reportingOrgId)?.iati_org_id || '')
+                                    : '';
+
+                                  let orgUpdates: Partial<Transaction> = {};
+
+                                  if (incomingTypes.includes(newType) && !receiverAutoDefaulted.current) {
+                                    // First switch to incoming type: set receiver = reporting org, clear provider
+                                    orgUpdates = {
+                                      receiver_org_id: reportingOrgId,
+                                      receiver_org_name: reportingOrgName,
+                                      receiver_org_ref: reportingOrgRef,
+                                      provider_org_id: undefined,
+                                      provider_org_name: '',
+                                      provider_org_ref: '',
+                                    };
+                                    receiverAutoDefaulted.current = true;
+                                  } else if (outgoingTypes.includes(newType) && !providerAutoDefaulted.current) {
+                                    // First switch to outgoing type: set provider = reporting org, clear receiver
+                                    orgUpdates = {
+                                      provider_org_id: reportingOrgId,
+                                      provider_org_name: reportingOrgName,
+                                      provider_org_ref: reportingOrgRef,
+                                      receiver_org_id: undefined,
+                                      receiver_org_name: '',
+                                      receiver_org_ref: '',
+                                    };
+                                    providerAutoDefaulted.current = true;
+                                  }
+
+                                  setFormData({ ...formData, transaction_type: newType as TransactionType, ...orgUpdates });
+                                  transactionTypeAutosave.triggerFieldSave(newType);
                                   setTransactionTypePopoverOpen(false);
                                   setTransactionTypeSearch("");
                                 }}

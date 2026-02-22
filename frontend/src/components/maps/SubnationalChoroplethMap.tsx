@@ -592,34 +592,34 @@ function MapTooltip({
 
   return (
     <div
-      className="absolute bg-white border border-slate-200 rounded-lg shadow-lg p-3 pointer-events-none z-50"
+      className="absolute bg-card border border-border rounded-lg shadow-lg p-3 pointer-events-none z-50"
       style={{
         left: position.x + 15,
         top: position.y - 10,
         maxWidth: 280,
       }}
     >
-      <h4 className="font-semibold text-slate-900 text-sm mb-2">{tooltipData.name}</h4>
+      <h4 className="font-semibold text-foreground text-sm mb-2">{tooltipData.name}</h4>
       <table className="w-full text-xs">
         <tbody>
-          <tr className="border-b border-slate-100">
-            <td className="py-1 text-slate-500">Allocation</td>
-            <td className="py-1 text-right font-medium text-slate-900">
+          <tr className="border-b border-border">
+            <td className="py-1 text-muted-foreground">Allocation</td>
+            <td className="py-1 text-right font-medium text-foreground">
               {tooltipData.percentage.toFixed(1)}%
             </td>
           </tr>
           {tooltipData.value !== undefined && (
-            <tr className="border-b border-slate-100">
-              <td className="py-1 text-slate-500">Value</td>
-              <td className="py-1 text-right font-medium text-slate-900">
+            <tr className="border-b border-border">
+              <td className="py-1 text-muted-foreground">Value</td>
+              <td className="py-1 text-right font-medium text-foreground">
                 {formatCurrency(tooltipData.value)}
               </td>
             </tr>
           )}
           {tooltipData.activityCount !== undefined && (
             <tr>
-              <td className="py-1 text-slate-500">Activities</td>
-              <td className="py-1 text-right font-medium text-slate-900">
+              <td className="py-1 text-muted-foreground">Activities</td>
+              <td className="py-1 text-right font-medium text-foreground">
                 {tooltipData.activityCount}
               </td>
             </tr>
@@ -703,7 +703,7 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="2D View"
-          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+          className="bg-card shadow-md border-border h-9 px-2.5"
         >
           <MapIcon className="h-4 w-4 mr-1.5" />
           <span className="text-xs">2D</span>
@@ -714,7 +714,7 @@ function Map3DController({
           variant="outline"
           size="sm"
           title="3D View"
-          className="bg-white shadow-md border-gray-300 h-9 px-2.5"
+          className="bg-card shadow-md border-border h-9 px-2.5"
         >
           <Mountain className="h-4 w-4 mr-1.5" />
           <span className="text-xs">3D</span>
@@ -727,20 +727,20 @@ function Map3DController({
         variant="outline"
         size="sm"
         title="Reset view"
-        className="bg-white shadow-md border-gray-300 h-9 w-9 p-0"
+        className="bg-card shadow-md border-border h-9 w-9 p-0"
       >
         <RotateCcw className="h-4 w-4" />
       </Button>
 
       {/* Stats Display */}
-      <div className="rounded-md bg-white/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-gray-300 shadow-md flex items-center gap-3 whitespace-nowrap">
-        <span className="text-gray-600">Zoom: {zoom}</span>
+      <div className="rounded-md bg-card/90 backdrop-blur px-2.5 py-1.5 text-[10px] font-mono border border-border shadow-md flex items-center gap-3 whitespace-nowrap">
+        <span className="text-muted-foreground">Zoom: {zoom}</span>
         {is3DMode && (
           <>
-            <span className="text-gray-400">|</span>
-            <span className="text-gray-600">Pitch: {pitch}°</span>
-            <span className="text-gray-400">|</span>
-            <span className="text-gray-600">Bearing: {bearing}°</span>
+            <span className="text-muted-foreground">|</span>
+            <span className="text-muted-foreground">Pitch: {pitch}°</span>
+            <span className="text-muted-foreground">|</span>
+            <span className="text-muted-foreground">Bearing: {bearing}°</span>
           </>
         )}
       </div>
@@ -971,7 +971,7 @@ function SubnationalChoroplethMapComponent({
             {mapContent}
           </div>
 
-          <p className="text-sm text-slate-600 mt-4">
+          <p className="text-sm text-muted-foreground mt-4">
             This interactive map provides a geographic visualization of aid distribution across Myanmar.
             Darker shading indicates higher allocation percentages, making it easy to identify regional
             concentrations and gaps at a glance. Toggle between Region view (15 States/Regions) and

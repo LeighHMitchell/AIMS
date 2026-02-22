@@ -12,6 +12,7 @@ import {
   Legend,
 } from 'recharts'
 import { ChartDataPoint, formatCurrency, formatTooltipCurrency } from './sectorTimeSeriesQueries'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { generateSectorColorMap } from './sectorColorMap'
 
 interface SectorTimeSeriesLineProps {
@@ -47,7 +48,7 @@ export function SectorTimeSeriesLine({
 
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-md text-sm">
-          <div className="bg-slate-50 px-4 py-2 border-b border-slate-200">
+          <div className="bg-surface-muted px-4 py-2 border-b border-slate-200">
             <p className="font-semibold text-slate-900">Year: {label}</p>
             <p className="text-slate-600">
               Total: <span className="font-bold text-slate-900">{formatTooltipCurrency(total)}</span>
@@ -126,7 +127,7 @@ export function SectorTimeSeriesLine({
           data={data}
           margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           
           <XAxis
             dataKey="year"

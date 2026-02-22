@@ -9,10 +9,9 @@ import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHea
 import OrganisationsSection from "@/components/OrganisationsSection"
 import ContactsTab from "@/components/contacts/ContactsTab"
 import FocalPointsTab from "@/components/activities/FocalPointsTab"
-import LinkedActivitiesEditorTab from "@/components/activities/LinkedActivitiesEditorTab"
 
 // Section IDs for the Stakeholders group
-export const STAKEHOLDERS_SECTIONS = ['organisations', 'contacts', 'focal_points', 'linked_activities'] as const
+export const STAKEHOLDERS_SECTIONS = ['organisations', 'contacts', 'focal_points'] as const
 export type StakeholdersSectionId = typeof STAKEHOLDERS_SECTIONS[number]
 
 /**
@@ -44,9 +43,6 @@ interface StakeholdersGroupProps {
   // Activity context
   activityId: string
 
-  // Current user context (for LinkedActivitiesEditorTab)
-  currentUserId?: string
-
   // Permissions
   permissions: {
     canEditActivity?: boolean
@@ -73,7 +69,6 @@ interface StakeholdersGroupProps {
   onParticipatingOrganizationsChange?: (count: number) => void
   onContactsChange?: (contacts: any[]) => void
   onFocalPointsChange?: (focalPoints: any[]) => void
-  onLinkedActivitiesCountChange?: (count: number) => void
 }
 
 /**
@@ -83,7 +78,6 @@ interface StakeholdersGroupProps {
 export function StakeholdersGroup({
   // Activity context
   activityId,
-  currentUserId,
   permissions,
 
   // Scroll integration
@@ -105,14 +99,12 @@ export function StakeholdersGroup({
   onParticipatingOrganizationsChange,
   onContactsChange,
   onFocalPointsChange,
-  onLinkedActivitiesCountChange,
 }: StakeholdersGroupProps) {
 
   // Create refs for each section
   const organisationsRef = useRef<HTMLElement>(null)
   const contactsRef = useRef<HTMLElement>(null)
   const focalPointsRef = useRef<HTMLElement>(null)
-  const linkedActivitiesRef = useRef<HTMLElement>(null)
 
   // Track if initial scroll has happened (to prevent re-scrolling when scroll spy updates)
   const hasInitiallyScrolled = useRef(false)
@@ -122,7 +114,6 @@ export function StakeholdersGroup({
     { id: 'organisations', ref: organisationsRef },
     { id: 'contacts', ref: contactsRef },
     { id: 'focal_points', ref: focalPointsRef },
-    { id: 'linked_activities', ref: linkedActivitiesRef },
   ] : []
 
   // Use scroll spy to track visible section
@@ -221,7 +212,6 @@ export function StakeholdersGroup({
       organisationsRef.current,
       contactsRef.current,
       focalPointsRef.current,
-      linkedActivitiesRef.current
     ]
     sectionElements.forEach((el) => {
       if (el) observer.observe(el)
@@ -236,7 +226,7 @@ export function StakeholdersGroup({
     if (!activityCreated || !enablePreloading) return
 
     // Preload all sections with minimal staggering
-    const sectionsToPreload = ['organisations', 'contacts', 'focal_points', 'linked_activities']
+    const sectionsToPreload = ['organisations', 'contacts', 'focal_points']
 
     sectionsToPreload.forEach((sectionId, index) => {
       setTimeout(() => {
@@ -329,31 +319,6 @@ export function StakeholdersGroup({
             )}
           </section>
 
-          {/* Linked Activities Section */}
-          <section
-            id="linked_activities"
-            ref={linkedActivitiesRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pt-16 pb-16"
-          >
-            {isSectionActive('linked_activities') || activeSections.has('linked_activities') ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-                <SectionHeader
-                  id="linked_activities"
-                  title={getSectionLabel('linked_activities')}
-                  helpText={getSectionHelpText('linked_activities')}
-                  showDivider={false}
-                />
-                <LinkedActivitiesEditorTab
-                  activityId={activityId}
-                  currentUserId={currentUserId}
-                  canEdit={permissions?.canEditActivity ?? true}
-                  onCountChange={onLinkedActivitiesCountChange}
-                />
-              </div>
-            ) : (
-              <SectionSkeleton sectionId="linked_activities" />
-            )}
-          </section>
         </div>
       )}
     </div>

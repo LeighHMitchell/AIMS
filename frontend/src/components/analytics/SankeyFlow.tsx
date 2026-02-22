@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { ArrowRight, Download, BarChart3, LineChart as LineChartIcon, Table as TableIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -22,7 +22,7 @@ import {
 import { ExpandableCard } from '@/components/ui/expandable-card'
 import { exportToCSV } from '@/lib/csv-export'
 import { exportChartToJPG } from '@/lib/chart-export'
-import { CHART_COLORS } from '@/lib/chart-colors'
+import { CHART_COLORS, CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import {
   Table,
   TableBody,
@@ -304,9 +304,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-[400px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -317,14 +315,14 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
       <div className="grid grid-cols-5 gap-4 h-full">
         {/* Donors Column */}
         <div className="col-span-2">
-          <h4 className="text-sm font-medium text-slate-600 mb-3">Top Donors</h4>
+          <h4 className="text-sm font-medium text-muted-foreground mb-3">Top Donors</h4>
           <div className="space-y-3">
             {donors.map(donor => (
               <div key={donor.name}>
-                <div className="text-sm font-medium text-slate-700 truncate">
+                <div className="text-sm font-medium text-foreground truncate">
                   {donor.name}
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-muted-foreground">
                   {formatCurrency(donor.total)}
                 </div>
               </div>
@@ -370,14 +368,14 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
 
         {/* Sectors Column */}
         <div className="col-span-2">
-          <h4 className="text-sm font-medium text-slate-600 mb-3">Top Sectors</h4>
+          <h4 className="text-sm font-medium text-muted-foreground mb-3">Top Sectors</h4>
           <div className="space-y-3">
             {sectors.map(sector => (
               <div key={sector.name}>
-                <div className="text-sm font-medium text-slate-700 truncate">
+                <div className="text-sm font-medium text-foreground truncate">
                   {sector.name}
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-muted-foreground">
                   {formatCurrency(sector.total)}
                 </div>
               </div>
@@ -387,7 +385,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
       </div>
 
       <div className="mt-4 border-t pt-4">
-        <p className="text-xs text-slate-500 text-center">
+        <p className="text-xs text-muted-foreground text-center">
           Flow width represents disbursement amount from donor to sector
         </p>
       </div>
@@ -397,7 +395,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
   const renderLineChart = () => (
     <ResponsiveContainer width="100%" height={400}>
       <LineChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis dataKey="period" />
         <YAxis tickFormatter={(value) => formatCurrency(value)} />
         <Tooltip formatter={(value: any) => formatCurrencyFull(value)} />
@@ -419,7 +417,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
   const renderBarChart = () => (
     <ResponsiveContainer width="100%" height={400}>
       <BarChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis dataKey="period" />
         <YAxis tickFormatter={(value) => formatCurrency(value)} />
         <Tooltip formatter={(value: any) => formatCurrencyFull(value)} />
@@ -467,7 +465,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
               </TableRow>
             )
           })}
-          <TableRow className="font-semibold bg-slate-50">
+          <TableRow className="font-semibold bg-muted">
             <TableCell>Total</TableCell>
             {sectors.map(sector => {
               const columnTotal = chartData.reduce((sum, point) => sum + (point[sector.name] as number || 0), 0)
@@ -488,7 +486,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
 
   return (
     <ExpandableCard
-      className="bg-white border-slate-200 lg:col-span-2"
+      className="bg-card border-border lg:col-span-2"
       title={
         <div className="flex items-center gap-2">
           <ArrowRight className="h-5 w-5" />
@@ -525,7 +523,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">Display:</span>
+            <span className="text-sm font-medium text-foreground">Display:</span>
             <div className="flex gap-1">
               <Button
                 variant={chartType === 'sankey' ? 'default' : 'outline'}
@@ -579,9 +577,9 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
         </div>
 
         {/* Total Display */}
-        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-          <span className="text-sm font-medium text-slate-600">Total Disbursements:</span>
-          <span className="text-lg font-bold text-slate-900">{formatCurrencyFull(totalAmount)}</span>
+        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+          <span className="text-sm font-medium text-muted-foreground">Total Disbursements:</span>
+          <span className="text-lg font-bold text-foreground">{formatCurrencyFull(totalAmount)}</span>
         </div>
 
         {/* Chart Display */}

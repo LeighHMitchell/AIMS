@@ -601,7 +601,7 @@ export async function POST(request: NextRequest) {
         .insert({
           name: reportingOrgName,
           iati_org_id: reportingOrgRef,
-          type: 'other', // Default type, can be updated later
+          type: '90', // Default type (IATI code for "Other"), can be updated later
           country: 'MM', // Default country
           alias_refs: [reportingOrgRef]
         })
@@ -2218,7 +2218,7 @@ export async function POST(request: NextRequest) {
                     name: orgName,
                     iati_org_id: orgRef,
                     alias_refs: orgRef ? [orgRef] : [],
-                    type: org.type || 'other',
+                    type: org.type || '90',
                     country: null
                   })
                   .select('id, name')

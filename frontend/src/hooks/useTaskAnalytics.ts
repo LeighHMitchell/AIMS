@@ -334,7 +334,7 @@ export function getCompletionRateColor(rate: number): string {
 }
 
 export function getOverdueCountColor(count: number, total: number): string {
-  if (total === 0) return 'text-slate-600';
+  if (total === 0) return 'text-muted-foreground';
   const percentage = (count / total) * 100;
   if (percentage <= 5) return 'text-green-600';
   if (percentage <= 15) return 'text-amber-600';

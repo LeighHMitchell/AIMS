@@ -11,9 +11,10 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { BarChart3, DollarSign } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 interface Top10TotalFinancialValueChartProps {
   dateRange: {
@@ -131,9 +132,7 @@ export function Top10TotalFinancialValueChart({
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-[400px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -156,9 +155,9 @@ export function Top10TotalFinancialValueChart({
         layout="vertical"
         margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
       >
-        <CartesianGrid 
-          strokeDasharray="3 3" 
-          stroke="#e2e8f0" 
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke={CHART_STRUCTURE_COLORS.grid}
           horizontal={false}
         />
         <XAxis 

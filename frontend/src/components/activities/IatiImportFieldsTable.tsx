@@ -591,8 +591,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           
           return (
             <span key={index} className="inline-flex items-center gap-1">
-              {index > 0 && <span className="text-gray-400">|</span>}
-              <span className="text-xs text-gray-600">{key}:</span>
+              {index > 0 && <span className="text-muted-foreground">|</span>}
+              <span className="text-xs text-muted-foreground">{key}:</span>
               {isDate ? (
                 <span className="text-xs">{formatDateDisplay(valueStr)}</span>
               ) : isCodeValue ? (
@@ -657,11 +657,11 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       
       return (
         <div className="group relative">
-          <div className="bg-gray-50/50 rounded-md p-2 border border-gray-200 space-y-2">
+          <div className="bg-muted/50 rounded-md p-2 border border-border space-y-2">
             {/* Type badge */}
             {type && (
               <div className="flex items-center gap-1">
-                <Tag className="h-3 w-3 text-gray-500" />
+                <Tag className="h-3 w-3 text-muted-foreground" />
                 <Badge variant="outline" className="text-xs">
                   {type}
                 </Badge>
@@ -673,27 +673,27 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               <div className="space-y-1">
                 {(data['Start'] || data['Period Start']) && (
                   <div className="flex items-center gap-2 text-xs">
-                    <Calendar className="h-3 w-3 text-gray-500 flex-shrink-0" />
-                    <span className="text-gray-600 font-medium">Start:</span>
-                    <span className="text-sm text-gray-900">
+                    <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    <span className="text-muted-foreground font-medium">Start:</span>
+                    <span className="text-sm text-foreground">
                       {formatDateDisplay(data['Start'] || data['Period Start'] || '')}
                     </span>
                   </div>
                 )}
                 {(data['End'] || data['Period End']) && (
                   <div className="flex items-center gap-2 text-xs">
-                    <Calendar className="h-3 w-3 text-gray-500 flex-shrink-0" />
-                    <span className="text-gray-600 font-medium">End:</span>
-                    <span className="text-sm text-gray-900">
+                    <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    <span className="text-muted-foreground font-medium">End:</span>
+                    <span className="text-sm text-foreground">
                       {formatDateDisplay(data['End'] || data['Period End'] || '')}
                     </span>
                   </div>
                 )}
                 {data['Value Date'] && (
                   <div className="flex items-center gap-2 text-xs">
-                    <Calendar className="h-3 w-3 text-gray-500 flex-shrink-0" />
-                    <span className="text-gray-600 font-medium">Value Date:</span>
-                    <span className="text-sm text-gray-900">
+                    <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    <span className="text-muted-foreground font-medium">Value Date:</span>
+                    <span className="text-sm text-foreground">
                       {formatDateDisplay(data['Value Date'])}
                     </span>
                   </div>
@@ -705,7 +705,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {data['Status'] && (
                 <div className="flex items-center gap-1">
-                  <span className="text-gray-600">Status:</span>
+                  <span className="text-muted-foreground">Status:</span>
                   <Badge variant="outline" className="text-xs">
                     {data['Status']}
                   </Badge>
@@ -713,8 +713,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               )}
               {data['Amount'] && (
                 <div className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3 text-gray-500" />
-                  <span className="text-gray-600">Amount:</span>
+                  <DollarSign className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-muted-foreground">Amount:</span>
                   {(() => {
                     // Parse amount to show currency before value (e.g., "0 EUR" -> "EUR 0")
                     const amountStr = data['Amount'];
@@ -771,16 +771,16 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                   
                   return (
                     <div key={partIndex} className="flex items-start">
-                      <span className="text-gray-600 font-medium min-w-[100px] flex-shrink-0 tabular-nums">{key}:</span>
+                      <span className="text-muted-foreground font-medium min-w-[100px] flex-shrink-0 tabular-nums">{key}:</span>
                       <span className="ml-4 flex-1">
                         {isDate ? (
-                          <span className="text-xs text-gray-900">{formatDateDisplay(value)}</span>
+                          <span className="text-xs text-foreground">{formatDateDisplay(value)}</span>
                         ) : isCodeValue ? (
                           <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                             {value}
                           </code>
                         ) : (
-                          <span className="text-xs text-gray-900">{value}</span>
+                          <span className="text-xs text-foreground">{value}</span>
                         )}
                       </span>
                     </div>
@@ -790,7 +790,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                 // Plain text without colon
                 const isCode = detectCodePattern(part);
                 return (
-                  <div key={partIndex} className="text-xs text-gray-900">
+                  <div key={partIndex} className="text-xs text-foreground">
                     {isCode ? (
                       <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {part}
@@ -830,9 +830,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       // Show date with narrative inline (if exists) in smaller gray font
       return (
         <div className="flex items-baseline gap-2">
-          <span className="text-sm text-gray-900">{formatDateDisplay(dateValue)}</span>
+          <span className="text-sm text-foreground">{formatDateDisplay(dateValue)}</span>
           {narratives.length > 0 && narratives[0].text && (
-            <span className="text-xs text-gray-500">{narratives[0].text}</span>
+            <span className="text-xs text-muted-foreground">{narratives[0].text}</span>
           )}
         </div>
       );
@@ -862,8 +862,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
             return (
               <div key={idx} className="flex items-baseline gap-2">
-                <span className="text-sm text-gray-900">{typeLabel}</span>
-                <span className="text-xs text-gray-500">{narrativeText}</span>
+                <span className="text-sm text-foreground">{typeLabel}</span>
+                <span className="text-xs text-muted-foreground">{narrativeText}</span>
               </div>
             );
           })}
@@ -901,10 +901,10 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                     </code>
                   )}
                   {sectorName && (
-                    <span className="text-gray-900">{sectorName}</span>
+                    <span className="text-foreground">{sectorName}</span>
                   )}
                   {percentage !== '' && (
-                    <span className="text-gray-600">({percentage}%)</span>
+                    <span className="text-muted-foreground">({percentage}%)</span>
                   )}
                 </div>
               );
@@ -935,7 +935,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               const docTitle = doc.title || doc.title?.[0]?.text || 'Untitled';
               
               return (
-                <div key={idx} className="text-xs text-gray-900">
+                <div key={idx} className="text-xs text-foreground">
                   {docTitle}
                 </div>
               );
@@ -952,11 +952,11 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         const docTitle = value.title || 'Untitled';
         
         if (!docTitle || docTitle === 'Untitled') {
-          return <span className="text-gray-400 italic">—</span>;
+          return <span className="text-muted-foreground italic">—</span>;
         }
         
         return (
-          <span className="text-sm text-gray-900">{docTitle}</span>
+          <span className="text-sm text-foreground">{docTitle}</span>
         );
       }
     }
@@ -970,10 +970,10 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           .join(', ');
         
         if (!countryNames) {
-          return <span className="text-gray-400 italic">—</span>;
+          return <span className="text-muted-foreground italic">—</span>;
         }
         
-        return <span className="text-sm text-gray-900">{countryNames}</span>;
+        return <span className="text-sm text-foreground">{countryNames}</span>;
       }
     }
 
@@ -983,7 +983,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         return (
           <div className="flex flex-col gap-1">
             {field.fssData.forecasts.map((f: any, idx: number) => (
-              <span key={idx} className="text-sm text-gray-900">
+              <span key={idx} className="text-sm text-foreground">
                 {f.year} · <span className="text-xs text-muted-foreground">{f.currency}</span> {f.value?.toLocaleString()}
               </span>
             ))}
@@ -994,7 +994,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         return (
           <div className="flex flex-col gap-1">
             {value.forecasts.map((f: any, idx: number) => (
-              <span key={idx} className="text-sm text-gray-900">
+              <span key={idx} className="text-sm text-foreground">
                 {f.year} · <span className="text-xs text-muted-foreground">{f.currency}</span> {f.value?.toLocaleString()}
               </span>
             ))}
@@ -1011,13 +1011,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         const orgRef = value.ref || value.validated_ref || value.original_ref || '';
         
         if (!orgName && !orgRef) {
-          return <span className="text-gray-400 italic">—</span>;
+          return <span className="text-muted-foreground italic">—</span>;
         }
         
         return (
           <div className="flex flex-col gap-1 text-xs">
             {orgName && (
-              <div className="text-gray-900 font-medium">{orgName}</div>
+              <div className="text-foreground font-medium">{orgName}</div>
             )}
             {orgRef && (
               <code className="inline-block text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded w-fit">
@@ -1039,7 +1039,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         const roleLabel = roleCode ? getOrganizationRoleName(roleCode) : '';
         
         if (!orgName && !orgRef && !roleLabel) {
-          return <span className="text-gray-400 italic">—</span>;
+          return <span className="text-muted-foreground italic">—</span>;
         }
         
         const parts = [];
@@ -1051,13 +1051,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             {parts.map((part, index) => (
               <React.Fragment key={index}>
-                {index > 0 && <span className="text-gray-400">•</span>}
+                {index > 0 && <span className="text-muted-foreground">•</span>}
                 {part.type === 'ref' ? (
                   <code className="inline-block text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded w-fit">
                     {part.content}
                   </code>
                 ) : (
-                  <span className={part.type === 'name' ? 'text-gray-900 font-medium' : 'text-gray-600'}>
+                  <span className={part.type === 'name' ? 'text-foreground font-medium' : 'text-muted-foreground'}>
                     {part.content}
                   </span>
                 )}
@@ -1076,13 +1076,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         const ref = value.ref || '';
 
         if (!relationshipType && !ref) {
-          return <span className="text-gray-400 italic">—</span>;
+          return <span className="text-muted-foreground italic">—</span>;
         }
 
         return (
           <span className="text-sm">
-            {relationshipType && <span className="text-gray-900">{relationshipType}</span>}
-            {relationshipType && ref && <span className="mx-2 text-gray-400">•</span>}
+            {relationshipType && <span className="text-foreground">{relationshipType}</span>}
+            {relationshipType && ref && <span className="mx-2 text-muted-foreground">•</span>}
             {ref && (
               <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                 {ref}
@@ -1140,7 +1140,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       };
 
       if (!code && !vocabularyCode) {
-        return <span className="text-gray-400 italic">—</span>;
+        return <span className="text-muted-foreground italic">—</span>;
       }
 
       return (
@@ -1151,7 +1151,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               <code className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0">
                 {code}
               </code>
-              <span className="text-gray-900">{getPolicyMarkerName(code)}</span>
+              <span className="text-foreground">{getPolicyMarkerName(code)}</span>
             </div>
           )}
           {significance && (
@@ -1180,11 +1180,11 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         }
         
         if (parts.length === 0) {
-          return <span className="text-gray-400 italic">—</span>;
+          return <span className="text-muted-foreground italic">—</span>;
         }
         
         return (
-          <span className="text-xs text-gray-900">
+          <span className="text-xs text-foreground">
             {parts.join(' • ')}
           </span>
         );
@@ -1197,7 +1197,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       const locData = column === 'import' ? field.locationData : value;
       
       if (!locData || typeof locData !== 'object') {
-        return <span className="text-gray-400 italic">—</span>;
+        return <span className="text-muted-foreground italic">—</span>;
       }
       
       const locationCode = locData.country_code || locData.ref || locData.location_ref || '';
@@ -1213,7 +1213,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               {locationCode}
             </span>
           )}
-          <span className="text-sm font-medium text-gray-900">
+          <span className="text-sm font-medium text-foreground">
             {locationName}
           </span>
           {coordinates && (
@@ -1234,10 +1234,10 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
         : value.code || '';
       
       if (!narrativeText) {
-        return <span className="text-gray-400 italic">—</span>;
+        return <span className="text-muted-foreground italic">—</span>;
       }
       
-      return <span className="text-sm text-gray-900">{narrativeText}</span>;
+      return <span className="text-sm text-foreground">{narrativeText}</span>;
     }
     
     // Special handling for Tags field - render as badges
@@ -1294,7 +1294,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       };
 
       if (tags.length === 0) {
-        return <span className="text-gray-400 italic">—</span>;
+        return <span className="text-muted-foreground italic">—</span>;
       }
 
       return (
@@ -1328,7 +1328,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       }
 
       if (!budgetItem) {
-        return <span className="text-gray-400 italic">—</span>;
+        return <span className="text-muted-foreground italic">—</span>;
       }
 
       // Get vocabulary label
@@ -1342,12 +1342,12 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 
       return (
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-gray-600">{vocabLabel}</span>
+          <span className="text-muted-foreground">{vocabLabel}</span>
           <code className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
             {budgetItem.code}
           </code>
           {budgetItem.percentage !== undefined && (
-            <span className="text-gray-900">{budgetItem.percentage}%</span>
+            <span className="text-foreground">{budgetItem.percentage}%</span>
           )}
         </div>
       );
@@ -1358,7 +1358,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
     
     // Empty state - show blank (not "Empty") for blank fields
     if (formatted.isEmpty) {
-      return <span className="text-gray-400 italic">—</span>;
+      return <span className="text-muted-foreground italic">—</span>;
     }
     
     // Special handling for Other Identifier fields - show just the identifier code
@@ -1424,7 +1424,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
             <span className={currency ? "ml-2" : ""}>{typeof amount === 'number' ? amount.toLocaleString() : amount}</span>
           )}
           {!currency && amount === undefined && (
-            <span className="text-gray-400 italic">—</span>
+            <span className="text-muted-foreground italic">—</span>
           )}
         </span>
       );
@@ -1530,15 +1530,15 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
               const value = currencyMatch[1].trim();
               const currency = currencyMatch[2];
               return (
-                <span className="text-sm text-gray-900">
+                <span className="text-sm text-foreground">
                   <span className="text-xs text-muted-foreground">{currency}</span> {value}
                 </span>
               );
             }
             // If no currency pattern, display as-is
             return (
-              <span className="text-sm text-gray-900">
-                <span className="text-gray-600">{amountStr}</span>
+              <span className="text-sm text-foreground">
+                <span className="text-muted-foreground">{amountStr}</span>
               </span>
           );
         }
@@ -2250,11 +2250,11 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
   // Render sort indicator
   const SortIndicator = ({ column }: { column: SortColumn }) => {
     if (sortColumn !== column) {
-      return <ArrowUpDown className="ml-1 h-3 w-3 text-gray-400" />;
+      return <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground" />;
     }
     return sortDirection === 'asc' 
-      ? <ArrowUp className="ml-1 h-3 w-3 text-gray-400" />
-      : <ArrowDown className="ml-1 h-3 w-3 text-gray-400" />;
+      ? <ArrowUp className="ml-1 h-3 w-3 text-muted-foreground" />
+      : <ArrowDown className="ml-1 h-3 w-3 text-muted-foreground" />;
   };
 
   const selectedCount = sortedFields.filter(f => f.selected).length;
@@ -2263,9 +2263,9 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
   return (
     <div className="space-y-4">
       {/* Search and Filter Controls */}
-      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+      <div className="flex items-center gap-4 p-4 bg-muted rounded-lg border border-border">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search fields by name, path, or description..."
@@ -2276,7 +2276,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-muted-foreground transition-colors"
               aria-label="Clear search"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -2316,7 +2316,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       </div>
 
       {/* Results count */}
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-muted-foreground">
         Showing {totalCount} field{totalCount !== 1 ? 's' : ''} ({selectedCount} selected)
         {searchQuery && ` matching "${searchQuery}"`}
       </div>
@@ -2325,7 +2325,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50">
+            <TableRow className="bg-muted">
               <TableHead className="w-12"></TableHead>
               <TableHead className="w-12"></TableHead>
               <TableHead 
@@ -2369,7 +2369,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
           <TableBody>
             {sortedFields.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No fields found matching your criteria
                 </TableCell>
               </TableRow>
@@ -2420,10 +2420,10 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                   <React.Fragment key={sectionGroup.sectionName}>
                     {/* Section Header */}
                     <TableRow className="bg-gray-100 hover:bg-gray-100 sticky top-0 z-10">
-                      <TableCell colSpan={6} className="py-2 px-4 border-b-2 border-gray-300">
+                      <TableCell colSpan={6} className="py-2 px-4 border-b-2 border-border">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-sm text-gray-900">{sectionGroup.sectionName}</h3>
-                          <span className="text-xs text-gray-600">
+                          <h3 className="font-semibold text-sm text-foreground">{sectionGroup.sectionName}</h3>
+                          <span className="text-xs text-muted-foreground">
                             {sectionGroup.fields.length} field{sectionGroup.fields.length !== 1 ? 's' : ''}
                           </span>
                         </div>
@@ -2435,11 +2435,11 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                       <React.Fragment key={`${sectionGroup.sectionName}-${categoryName}`}>
                         {/* Sub-section Header (only show if there's more than one category in the section) */}
                         {categoryArray.length > 1 && (
-                          <TableRow className="bg-gray-50 hover:bg-gray-50">
-                            <TableCell colSpan={6} className="py-1.5 px-4 pl-8 border-b border-gray-200">
+                          <TableRow className="bg-muted hover:bg-muted/50">
+                            <TableCell colSpan={6} className="py-1.5 px-4 pl-8 border-b border-border">
                               <div className="flex items-center justify-between">
                                 <h4 className="font-medium text-xs text-gray-700">{categoryName}</h4>
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-muted-foreground">
                                   {categoryFields.length} field{categoryFields.length !== 1 ? 's' : ''}
                                 </span>
                               </div>
@@ -2521,7 +2521,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                       {/* Expanded details row */}
                       {isExpanded && (
                         <TableRow>
-                          <TableCell colSpan={6} className="bg-gray-50 p-4">
+                          <TableCell colSpan={6} className="bg-muted p-4">
                             {/* Detailed Data Display */}
                             {(() => {
                               // Individual Recipient Country items
@@ -2530,8 +2530,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 const xmlSnippet = `<recipient-country code="${country.code || ''}"${country.percentage !== undefined ? ` percentage="${country.percentage}"` : ''} />`;
                                 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
                                       Recipient Country Details
                                     </div>
@@ -2539,7 +2539,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-muted-foreground overflow-x-auto whitespace-pre-wrap break-all bg-muted p-2 rounded">
 {xmlSnippet}
@@ -2547,24 +2547,24 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
                                             <tr className="border-b border-gray-100 align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
-                                              <td className="py-1.5 text-gray-900">
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                              <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{country.code}</code>
                                               </td>
                                             </tr>
                                             <tr className="border-b border-gray-100 align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Country:</td>
-                                              <td className="py-1.5 text-gray-900">{country.name}</td>
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Country:</td>
+                                              <td className="py-1.5 text-foreground">{country.name}</td>
                                             </tr>
                                             {country.percentage !== undefined && (
                                               <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
-                                                <td className="py-1.5 text-gray-900">{country.percentage}%</td>
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Percentage:</td>
+                                                <td className="py-1.5 text-foreground">{country.percentage}%</td>
                                               </tr>
                                             )}
                                           </tbody>
@@ -2572,31 +2572,31 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentValue ? (
                                           <table className="w-full text-xs">
                                             <tbody>
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code || '—'}</code>
                                                 </td>
                                               </tr>
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Country:</td>
-                                                <td className="py-1.5 text-gray-900">{field.currentValue.name || '—'}</td>
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Country:</td>
+                                                <td className="py-1.5 text-foreground">{field.currentValue.name || '—'}</td>
                                               </tr>
                                               {field.currentValue.percentage !== undefined && (
                                                 <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
-                                                  <td className="py-1.5 text-gray-900">{field.currentValue.percentage}%</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Percentage:</td>
+                                                  <td className="py-1.5 text-foreground">{field.currentValue.percentage}%</td>
                                                 </tr>
                                               )}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -2612,8 +2612,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 const vocabName = region.vocabulary === '1' ? 'OECD DAC' : region.vocabulary === '2' ? 'UN' : region.vocabulary === '99' ? 'Custom' : `Vocabulary ${region.vocabulary}`;
                                 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
                                       Recipient Region Details
                                     </div>
@@ -2621,7 +2621,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-muted-foreground overflow-x-auto whitespace-pre-wrap break-all bg-muted p-2 rounded">
 {xmlSnippet}
@@ -2629,28 +2629,28 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
                                             <tr className="border-b border-gray-100 align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
-                                              <td className="py-1.5 text-gray-900">
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                              <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{region.code}</code>
                                               </td>
                                             </tr>
                                             <tr className="border-b border-gray-100 align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Region:</td>
-                                              <td className="py-1.5 text-gray-900">{region.name}</td>
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Region:</td>
+                                              <td className="py-1.5 text-foreground">{region.name}</td>
                                             </tr>
                                             <tr className="border-b border-gray-100 align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                              <td className="py-1.5 text-gray-900">{vocabName}</td>
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                              <td className="py-1.5 text-foreground">{vocabName}</td>
                                             </tr>
                                             {region.percentage !== undefined && (
                                               <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
-                                                <td className="py-1.5 text-gray-900">{region.percentage}%</td>
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Percentage:</td>
+                                                <td className="py-1.5 text-foreground">{region.percentage}%</td>
                                               </tr>
                                             )}
                                           </tbody>
@@ -2658,35 +2658,35 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentValue ? (
                                           <table className="w-full text-xs">
                                             <tbody>
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{field.currentValue.code || '—'}</code>
                                                 </td>
                                               </tr>
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Region:</td>
-                                                <td className="py-1.5 text-gray-900">{field.currentValue.name || '—'}</td>
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Region:</td>
+                                                <td className="py-1.5 text-foreground">{field.currentValue.name || '—'}</td>
                                               </tr>
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                                <td className="py-1.5 text-gray-900">{field.currentValue.vocabularyName || field.currentValue.vocabulary || '—'}</td>
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                                <td className="py-1.5 text-foreground">{field.currentValue.vocabularyName || field.currentValue.vocabulary || '—'}</td>
                                               </tr>
                                               {field.currentValue.percentage !== undefined && (
                                                 <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
-                                                  <td className="py-1.5 text-gray-900">{field.currentValue.percentage}%</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Percentage:</td>
+                                                  <td className="py-1.5 text-foreground">{field.currentValue.percentage}%</td>
                                                 </tr>
                                               )}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -2721,8 +2721,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 }
                                 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
                                       {field.fieldName} Details
                                     </div>
@@ -2730,7 +2730,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet || '—'}
@@ -2738,7 +2738,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {importData.length > 0 ? (
                                           <table className="w-full text-xs">
@@ -2747,8 +2747,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <React.Fragment key={idx}>
                                                   {item.code && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {item.code}
                                                         </code>
@@ -2757,20 +2757,20 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   )}
                                                   {item.name && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
-                                                      <td className="py-1.5 text-gray-900">{item.name}</td>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
+                                                      <td className="py-1.5 text-foreground">{item.name}</td>
                                                     </tr>
                                                   )}
                                                   {item.vocabulary && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                                      <td className="py-1.5 text-gray-900">{item.vocabulary}</td>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                                      <td className="py-1.5 text-foreground">{item.vocabulary}</td>
                                                     </tr>
                                                   )}
                                                   {item.percentage !== undefined && (
-                                                    <tr className={idx < importData.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
-                                                      <td className="py-1.5 text-gray-900">{item.percentage}%</td>
+                                                    <tr className={idx < importData.length - 1 ? "border-b-2 border-border align-top" : "align-top"}>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Percentage:</td>
+                                                      <td className="py-1.5 text-foreground">{item.percentage}%</td>
                                                     </tr>
                                                   )}
                                                 </React.Fragment>
@@ -2778,12 +2778,12 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No import value</div>
+                                          <div className="text-xs text-muted-foreground italic">No import value</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {currentData.length > 0 ? (
                                           <table className="w-full text-xs">
@@ -2792,8 +2792,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <React.Fragment key={idx}>
                                                   {item.code && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {item.code}
                                                         </code>
@@ -2802,20 +2802,20 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   )}
                                                   {item.name && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
-                                                      <td className="py-1.5 text-gray-900">{item.name}</td>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
+                                                      <td className="py-1.5 text-foreground">{item.name}</td>
                                                     </tr>
                                                   )}
                                                   {item.vocabulary && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                                      <td className="py-1.5 text-gray-900">{item.vocabulary}</td>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                                      <td className="py-1.5 text-foreground">{item.vocabulary}</td>
                                                     </tr>
                                                   )}
                                                   {item.percentage !== undefined && (
-                                                    <tr className={idx < currentData.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Percentage:</td>
-                                                      <td className="py-1.5 text-gray-900">{item.percentage}%</td>
+                                                    <tr className={idx < currentData.length - 1 ? "border-b-2 border-border align-top" : "align-top"}>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Percentage:</td>
+                                                      <td className="py-1.5 text-foreground">{item.percentage}%</td>
                                                     </tr>
                                                   )}
                                                 </React.Fragment>
@@ -2823,7 +2823,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -2858,8 +2858,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 }
                                 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <DollarSign className="h-4 w-4" />
                                       Forward Spending Survey Details
                                     </div>
@@ -2867,7 +2867,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet || '—'}
@@ -2875,7 +2875,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {fssData ? (
                                           <div className="space-y-4">
@@ -2886,8 +2886,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tbody>
                                                   {fssData.extractionDate && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Extraction Date</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Extraction Date</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {fssData.extractionDate}
                                                         </code>
@@ -2896,8 +2896,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   )}
                                                   {fssData.priority && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Priority</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Priority</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                           {fssData.priority}
                                                         </code>
@@ -2907,8 +2907,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   )}
                                                   {fssData.phaseoutYear && (
                                                     <tr className="align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Phaseout Year</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Phaseout Year</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {fssData.phaseoutYear}
                                                         </code>
@@ -2926,8 +2926,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <table className="w-full text-xs">
                                                   <tbody>
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Year</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Year</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {f.year}
                                                         </code>
@@ -2935,8 +2935,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     </tr>
                                                     {f.valueDate && (
                                                       <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date</td>
-                                                        <td className="py-1.5 text-gray-900">
+                                                        <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date</td>
+                                                        <td className="py-1.5 text-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {f.valueDate}
                                                           </code>
@@ -2944,8 +2944,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                       </tr>
                                                     )}
                                                     <tr className="align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Currency and Amount</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Currency and Amount</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                           {f.currency}
                                                         </code>
@@ -2958,12 +2958,12 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             ))}
                                           </div>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No import value</div>
+                                          <div className="text-xs text-muted-foreground italic">No import value</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {currentFss ? (
                                           <div className="space-y-4">
@@ -2974,8 +2974,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <tbody>
                                                   {currentFss.extractionDate && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Extraction Date</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Extraction Date</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {currentFss.extractionDate}
                                                         </code>
@@ -2984,8 +2984,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   )}
                                                   {currentFss.priority && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Priority</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Priority</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                           {currentFss.priority}
                                                         </code>
@@ -2995,8 +2995,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   )}
                                                   {currentFss.phaseoutYear && (
                                                     <tr className="align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Phaseout Year</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Phaseout Year</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {currentFss.phaseoutYear}
                                                         </code>
@@ -3014,8 +3014,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <table className="w-full text-xs">
                                                   <tbody>
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Year</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Year</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {f.year}
                                                         </code>
@@ -3023,8 +3023,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     </tr>
                                                     {f.valueDate && (
                                                       <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date</td>
-                                                        <td className="py-1.5 text-gray-900">
+                                                        <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date</td>
+                                                        <td className="py-1.5 text-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {f.valueDate}
                                                           </code>
@@ -3032,8 +3032,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                       </tr>
                                                     )}
                                                     <tr className="align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Currency and Amount</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Currency and Amount</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                           {f.currency}
                                                         </code>
@@ -3046,7 +3046,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             ))}
                                           </div>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -3087,7 +3087,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 // Helper to render scope details as table
                                 const renderScopeTable = (scope: any) => {
                                   if (!scope) {
-                                    return <div className="text-xs text-gray-500 italic">No value</div>;
+                                    return <div className="text-xs text-muted-foreground italic">No value</div>;
                                   }
                                   
                                   const narrativeText = scope.narratives?.map((n: any) => n.text || n.narrative || '').filter(Boolean).join('; ') || scope.code || '—';
@@ -3096,24 +3096,24 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     <table className="w-full text-xs">
                                       <tbody>
                                         <tr className="border-b border-gray-100 align-top">
-                                          <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
-                                          <td className="py-1.5 text-gray-900">{getTypeLabel(scope.type)}</td>
+                                          <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
+                                          <td className="py-1.5 text-foreground">{getTypeLabel(scope.type)}</td>
                                         </tr>
                                         <tr className="border-b border-gray-100 align-top">
-                                          <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                          <td className="py-1.5 text-gray-900">{getVocabLabel(scope.vocabulary)}</td>
+                                          <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                          <td className="py-1.5 text-foreground">{getVocabLabel(scope.vocabulary)}</td>
                                         </tr>
                                         <tr className="border-b border-gray-100 align-top">
-                                          <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
-                                          <td className="py-1.5 text-gray-900">
+                                          <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                          <td className="py-1.5 text-foreground">
                                             <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                               {scope.code || '—'}
                                             </code>
                                           </td>
                                         </tr>
                                         <tr className="align-top">
-                                          <td className="py-1.5 pr-2 font-medium text-gray-600">Narrative:</td>
-                                          <td className="py-1.5 text-gray-900">{narrativeText}</td>
+                                          <td className="py-1.5 pr-2 font-medium text-muted-foreground">Narrative:</td>
+                                          <td className="py-1.5 text-foreground">{narrativeText}</td>
                                         </tr>
                                       </tbody>
                                     </table>
@@ -3121,8 +3121,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                 };
                                 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <AlertCircle className="h-4 w-4" />
                                       Humanitarian Scope Details
                                     </div>
@@ -3130,7 +3130,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet || '—'}
@@ -3138,13 +3138,13 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {renderScopeTable(importScope)}
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {renderScopeTable(currentScope)}
                                       </div>
@@ -3166,8 +3166,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 </participating-org>`;
 
                                   return (
-                                    <div className="mb-6 border-b border-gray-200 pb-6">
-                                      <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                    <div className="mb-6 border-b border-border pb-6">
+                                      <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                         <Building2 className="h-4 w-4" />
                                         Participating Organization Details
                                       </div>
@@ -3175,7 +3175,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       {/* 3-column layout */}
                                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                         {/* Column 1: Raw XML */}
-                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="bg-muted rounded-md p-3 border border-border">
                                           <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                           <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -3183,20 +3183,20 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         </div>
 
                                         {/* Column 2: Import Value */}
-                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="bg-muted rounded-md p-3 border border-border">
                                           <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {orgData.name && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
-                                                  <td className="py-1.5 text-gray-900">{orgData.name}</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
+                                                  <td className="py-1.5 text-foreground">{orgData.name}</td>
                                                 </tr>
                                               )}
                                               {orgData.ref && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Ref:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.ref}
                                                     </code>
@@ -3205,8 +3205,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {orgData.validated_ref && orgData.validated_ref !== orgData.ref && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Validated Ref:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Validated Ref:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.validated_ref}
                                                     </code>
@@ -3215,8 +3215,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {orgData.role && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Role:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Role:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.role}
                                                     </code>
@@ -3226,8 +3226,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {orgData.type && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.type}
                                                     </code>
@@ -3236,8 +3236,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {orgData.activityId && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Activity ID:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Activity ID:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.activityId}
                                                     </code>
@@ -3246,8 +3246,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {orgData.crsChannelCode && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">DAC CRS Reporting:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">DAC CRS Reporting:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {orgData.crsChannelCode}
                                                     </code>
@@ -3256,8 +3256,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {orgData.narrative && orgData.narrative !== orgData.name && (
                                                 <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Narrative:</td>
-                                                  <td className="py-1.5 text-gray-900">{orgData.narrative}</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Narrative:</td>
+                                                  <td className="py-1.5 text-foreground">{orgData.narrative}</td>
                                                 </tr>
                                               )}
                                             </tbody>
@@ -3265,21 +3265,21 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         </div>
 
                                         {/* Column 3: Current Value */}
-                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="bg-muted rounded-md p-3 border border-border">
                                           <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                           {field.currentValue ? (
                                             <table className="w-full text-xs">
                                               <tbody>
                                                 {field.currentValue.name && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
-                                                    <td className="py-1.5 text-gray-900">{field.currentValue.name}</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
+                                                    <td className="py-1.5 text-foreground">{field.currentValue.name}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.ref && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Ref:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.ref}
                                                       </code>
@@ -3288,8 +3288,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 )}
                                                 {field.currentValue.role && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Role:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Role:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.role}
                                                       </code>
@@ -3299,8 +3299,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 )}
                                                 {field.currentValue.type && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.type}
                                                       </code>
@@ -3310,7 +3310,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               </tbody>
                                             </table>
                                           ) : (
-                                            <div className="text-xs text-gray-500 italic">No existing value</div>
+                                            <div className="text-xs text-muted-foreground italic">No existing value</div>
                                           )}
                                         </div>
                                       </div>
@@ -3330,8 +3330,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                   const xmlSnippet = `<related-activity ref="${relatedActivityData.ref || ''}" type="${relatedActivityData.type || ''}" />`;
 
                                   return (
-                                    <div className="mb-6 border-b border-gray-200 pb-6">
-                                      <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                    <div className="mb-6 border-b border-border pb-6">
+                                      <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                         <ExternalLink className="h-4 w-4" />
                                         Related Activity Details
                                       </div>
@@ -3339,7 +3339,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       {/* 3-column layout */}
                                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                         {/* Column 1: Raw XML */}
-                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="bg-muted rounded-md p-3 border border-border">
                                           <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                           <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -3347,14 +3347,14 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         </div>
 
                                         {/* Column 2: Import Value */}
-                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="bg-muted rounded-md p-3 border border-border">
                                           <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {relatedActivityData.ref && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Ref:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {relatedActivityData.ref}
                                                     </code>
@@ -3363,8 +3363,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {relatedActivityData.type && (
                                                 <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Type & Relationship:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type & Relationship:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {relatedActivityData.type}
                                                     </code>
@@ -3379,15 +3379,15 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         </div>
 
                                         {/* Column 3: Current Value */}
-                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="bg-muted rounded-md p-3 border border-border">
                                           <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                           {field.currentValue ? (
                                             <table className="w-full text-xs">
                                               <tbody>
                                                 {field.currentValue.ref && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Ref:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Ref:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.ref}
                                                       </code>
@@ -3396,8 +3396,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 )}
                                                 {field.currentValue.type && (
                                                   <tr className="align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type & Relationship:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type & Relationship:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.type}
                                                       </code>
@@ -3410,7 +3410,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               </tbody>
                                             </table>
                                           ) : (
-                                            <div className="text-xs text-gray-500 italic">No existing value</div>
+                                            <div className="text-xs text-muted-foreground italic">No existing value</div>
                                           )}
                                         </div>
                                       </div>
@@ -3449,8 +3449,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 </contact-info>`;
 
                                   return (
-                                    <div className="mb-6 border-b border-gray-200 pb-6">
-                                      <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                    <div className="mb-6 border-b border-border pb-6">
+                                      <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                         <Building2 className="h-4 w-4" />
                                         Contact Details
                                       </div>
@@ -3458,7 +3458,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       {/* 3-column layout */}
                                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                         {/* Column 1: Raw XML */}
-                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="bg-muted rounded-md p-3 border border-border">
                                           <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                           <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -3466,14 +3466,14 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         </div>
 
                                         {/* Column 2: Import Value */}
-                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="bg-muted rounded-md p-3 border border-border">
                                           <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {contactData.type && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {contactData.type}
                                                     </code>
@@ -3482,44 +3482,44 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {contactData.organization && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Organization:</td>
-                                                  <td className="py-1.5 text-gray-900">{contactData.organization}</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Organization:</td>
+                                                  <td className="py-1.5 text-foreground">{contactData.organization}</td>
                                                 </tr>
                                               )}
                                               {contactData.personName && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Person Name:</td>
-                                                  <td className="py-1.5 text-gray-900">{contactData.personName}</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Person Name:</td>
+                                                  <td className="py-1.5 text-foreground">{contactData.personName}</td>
                                                 </tr>
                                               )}
                                               {contactData.jobTitle && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Job Title:</td>
-                                                  <td className="py-1.5 text-gray-900">{contactData.jobTitle}</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Job Title:</td>
+                                                  <td className="py-1.5 text-foreground">{contactData.jobTitle}</td>
                                                 </tr>
                                               )}
                                               {contactData.department && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Department:</td>
-                                                  <td className="py-1.5 text-gray-900">{contactData.department}</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Department:</td>
+                                                  <td className="py-1.5 text-foreground">{contactData.department}</td>
                                                 </tr>
                                               )}
                                               {contactData.email && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Email:</td>
-                                                  <td className="py-1.5 text-gray-900">{contactData.email}</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Email:</td>
+                                                  <td className="py-1.5 text-foreground">{contactData.email}</td>
                                                 </tr>
                                               )}
                                               {contactData.telephone && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Telephone:</td>
-                                                  <td className="py-1.5 text-gray-900">{contactData.telephone}</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Telephone:</td>
+                                                  <td className="py-1.5 text-foreground">{contactData.telephone}</td>
                                                 </tr>
                                               )}
                                               {contactData.website && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Website:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Website:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <a href={contactData.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline break-all">
                                                       {contactData.website}
                                                     </a>
@@ -3528,8 +3528,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               )}
                                               {contactData.mailingAddress && (
                                                 <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Mailing Address:</td>
-                                                  <td className="py-1.5 text-gray-900">{contactData.mailingAddress}</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Mailing Address:</td>
+                                                  <td className="py-1.5 text-foreground">{contactData.mailingAddress}</td>
                                                 </tr>
                                               )}
                                             </tbody>
@@ -3537,15 +3537,15 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                         </div>
 
                                         {/* Column 3: Current Value */}
-                                        <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                        <div className="bg-muted rounded-md p-3 border border-border">
                                           <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                           {field.currentValue ? (
                                             <table className="w-full text-xs">
                                               <tbody>
                                                 {field.currentValue.type && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.type}
                                                       </code>
@@ -3554,44 +3554,44 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 )}
                                                 {field.currentValue.organization && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Organization:</td>
-                                                    <td className="py-1.5 text-gray-900">{field.currentValue.organization}</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Organization:</td>
+                                                    <td className="py-1.5 text-foreground">{field.currentValue.organization}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.personName && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Person Name:</td>
-                                                    <td className="py-1.5 text-gray-900">{field.currentValue.personName}</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Person Name:</td>
+                                                    <td className="py-1.5 text-foreground">{field.currentValue.personName}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.jobTitle && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Job Title:</td>
-                                                    <td className="py-1.5 text-gray-900">{field.currentValue.jobTitle}</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Job Title:</td>
+                                                    <td className="py-1.5 text-foreground">{field.currentValue.jobTitle}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.email && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Email:</td>
-                                                    <td className="py-1.5 text-gray-900">{field.currentValue.email}</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Email:</td>
+                                                    <td className="py-1.5 text-foreground">{field.currentValue.email}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.telephone && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Telephone:</td>
-                                                    <td className="py-1.5 text-gray-900">{field.currentValue.telephone}</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Telephone:</td>
+                                                    <td className="py-1.5 text-foreground">{field.currentValue.telephone}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.department && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Department:</td>
-                                                    <td className="py-1.5 text-gray-900">{field.currentValue.department}</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Department:</td>
+                                                    <td className="py-1.5 text-foreground">{field.currentValue.department}</td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.website && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Website:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Website:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <a href={field.currentValue.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline break-all">
                                                         {field.currentValue.website}
                                                       </a>
@@ -3600,14 +3600,14 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 )}
                                                 {field.currentValue.mailingAddress && (
                                                   <tr className="align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Mailing Address:</td>
-                                                    <td className="py-1.5 text-gray-900">{field.currentValue.mailingAddress}</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Mailing Address:</td>
+                                                    <td className="py-1.5 text-foreground">{field.currentValue.mailingAddress}</td>
                                                   </tr>
                                                 )}
                                               </tbody>
                                             </table>
                                           ) : (
-                                            <div className="text-xs text-gray-500 italic">No existing value</div>
+                                            <div className="text-xs text-muted-foreground italic">No existing value</div>
                                           )}
                                         </div>
                                       </div>
@@ -3667,8 +3667,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
 </document-link>${field.documentData.length > 1 ? `\n... and ${field.documentData.length - 1} more document${field.documentData.length - 1 !== 1 ? 's' : ''}` : ''}`;
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <FileText className="h-4 w-4" />
                                       Document Details
                                     </div>
@@ -3676,7 +3676,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -3684,7 +3684,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <div className="space-y-3">
                                           {field.documentData.map((doc: any, docIndex: number) => (
@@ -3692,26 +3692,26 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                               <table className="w-full text-xs">
                                                 <tbody>
                                                   <tr className="align-top">
-                                                    <td className="py-1 pr-2 font-medium text-gray-600">Title:</td>
-                                                    <td className="py-1 text-gray-900">{doc.title || doc.title?.[0]?.text || 'Untitled'}</td>
+                                                    <td className="py-1 pr-2 font-medium text-muted-foreground">Title:</td>
+                                                    <td className="py-1 text-foreground">{doc.title || doc.title?.[0]?.text || 'Untitled'}</td>
                                                   </tr>
                                                   {doc.category_code && (
                                                     <tr className="align-top">
-                                                      <td className="py-1 pr-2 font-medium text-gray-600">Category:</td>
-                                                      <td className="py-1 text-gray-900">
+                                                      <td className="py-1 pr-2 font-medium text-muted-foreground">Category:</td>
+                                                      <td className="py-1 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {doc.category_code}
                                                         </code>
                                                         {getDocumentCategoryName(doc.category_code) && (
-                                                          <span className="ml-1.5 text-gray-600">{getDocumentCategoryName(doc.category_code)}</span>
+                                                          <span className="ml-1.5 text-muted-foreground">{getDocumentCategoryName(doc.category_code)}</span>
                                                         )}
                                                       </td>
                                                     </tr>
                                                   )}
                                                   {doc.url && (
                                                     <tr className="align-top">
-                                                      <td className="py-1 pr-2 font-medium text-gray-600">URL:</td>
-                                                      <td className="py-1 text-gray-900 break-all">
+                                                      <td className="py-1 pr-2 font-medium text-muted-foreground">URL:</td>
+                                                      <td className="py-1 text-foreground break-all">
                                                         <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-xs break-all">
                                                           {doc.url}
                                                         </a>
@@ -3720,8 +3720,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                   )}
                                                   {doc.format && (
                                                     <tr className="align-top">
-                                                      <td className="py-1 pr-2 font-medium text-gray-600">Format:</td>
-                                                      <td className="py-1 text-gray-900 break-all">
+                                                      <td className="py-1 pr-2 font-medium text-muted-foreground">Format:</td>
+                                                      <td className="py-1 text-foreground break-all">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded break-all whitespace-normal">
                                                           {doc.format}
                                                         </code>
@@ -3736,7 +3736,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentValue ? (
                                           <div className="space-y-3">
@@ -3746,26 +3746,26 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                 <table className="w-full text-xs">
                                                   <tbody>
                                                     <tr className="align-top">
-                                                      <td className="py-1 pr-2 font-medium text-gray-600">Title:</td>
-                                                      <td className="py-1 text-gray-900">{doc.title || 'Untitled'}</td>
+                                                      <td className="py-1 pr-2 font-medium text-muted-foreground">Title:</td>
+                                                      <td className="py-1 text-foreground">{doc.title || 'Untitled'}</td>
                                                     </tr>
                                                     {doc.category_code && (
                                                       <tr className="align-top">
-                                                        <td className="py-1 pr-2 font-medium text-gray-600">Category:</td>
-                                                        <td className="py-1 text-gray-900">
+                                                        <td className="py-1 pr-2 font-medium text-muted-foreground">Category:</td>
+                                                        <td className="py-1 text-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {doc.category_code}
                                                           </code>
                                                           {getDocumentCategoryName(doc.category_code) && (
-                                                            <span className="ml-1.5 text-gray-600">{getDocumentCategoryName(doc.category_code)}</span>
+                                                            <span className="ml-1.5 text-muted-foreground">{getDocumentCategoryName(doc.category_code)}</span>
                                                           )}
                                                         </td>
                                                       </tr>
                                                     )}
                                                     {doc.url && (
                                                       <tr className="align-top">
-                                                        <td className="py-1 pr-2 font-medium text-gray-600">URL:</td>
-                                                        <td className="py-1 text-gray-900 break-all">
+                                                        <td className="py-1 pr-2 font-medium text-muted-foreground">URL:</td>
+                                                        <td className="py-1 text-foreground break-all">
                                                           <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-xs break-all">
                                                             {doc.url}
                                                           </a>
@@ -3774,8 +3774,8 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                                     )}
                                                     {doc.format && (
                                                       <tr className="align-top">
-                                                        <td className="py-1 pr-2 font-medium text-gray-600">Format:</td>
-                                                        <td className="py-1 text-gray-900 break-all">
+                                                        <td className="py-1 pr-2 font-medium text-muted-foreground">Format:</td>
+                                                        <td className="py-1 text-foreground break-all">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded break-all whitespace-normal">
                                                             {doc.format}
                                                           </code>
@@ -3788,7 +3788,7 @@ export function IatiImportFieldsTable({ fields, sections, onFieldToggle, onSelec
                                             ))}
                                           </div>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing documents</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing documents</div>
                                         )}
                                       </div>
                                     </div>
@@ -3858,8 +3858,8 @@ ${importTags.map((tag: any) => {
 <!--tag ends-->` : '<tag />';
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Tag Details
                                     </div>
@@ -3867,7 +3867,7 @@ ${importTags.map((tag: any) => {
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -3875,7 +3875,7 @@ ${importTags.map((tag: any) => {
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {importTags.length > 0 ? (
                                           <>
@@ -3885,8 +3885,8 @@ ${importTags.map((tag: any) => {
                                                   <React.Fragment key={idx}>
                                                     {tag.vocabulary && (
                                                       <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-400">Vocabulary:</td>
-                                                        <td className="py-1.5 text-gray-400">
+                                                        <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                                        <td className="py-1.5 text-muted-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {tag.vocabulary}
                                                           </code>
@@ -3896,39 +3896,39 @@ ${importTags.map((tag: any) => {
                                                     )}
                                                     {tag.vocabularyUri && (
                                                       <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary URI:</td>
-                                                        <td className="py-1.5 text-gray-900 break-all">{tag.vocabularyUri}</td>
+                                                        <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary URI:</td>
+                                                        <td className="py-1.5 text-foreground break-all">{tag.vocabularyUri}</td>
                                                       </tr>
                                                     )}
                                                     {tag.code && (
                                                       <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-400">Code:</td>
-                                                        <td className="py-1.5 text-gray-400">
+                                                        <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                                        <td className="py-1.5 text-muted-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {tag.code}
                                                           </code>
                                                         </td>
                                                       </tr>
                                                     )}
-                                                    <tr className={idx < importTags.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Narrative:</td>
-                                                      <td className="py-1.5 text-gray-900">{tag.narrative || '—'}</td>
+                                                    <tr className={idx < importTags.length - 1 ? "border-b-2 border-border align-top" : "align-top"}>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Narrative:</td>
+                                                      <td className="py-1.5 text-foreground">{tag.narrative || '—'}</td>
                                                     </tr>
                                                   </React.Fragment>
                                                 ))}
                                               </tbody>
                                             </table>
-                                            <div className="mt-2 text-xs text-gray-500 italic">
+                                            <div className="mt-2 text-xs text-muted-foreground italic">
                                               Note: Grayed-out fields are recognized but not currently imported by the system
                                             </div>
                                           </>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No tags to import</div>
+                                          <div className="text-xs text-muted-foreground italic">No tags to import</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {(() => {
                                           // Find matching existing tag based on import tag's vocabulary and code
@@ -3944,8 +3944,8 @@ ${importTags.map((tag: any) => {
                                                 <tbody>
                                                   {matchingTag.vocabulary && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-400">Vocabulary:</td>
-                                                      <td className="py-1.5 text-gray-400">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                                      <td className="py-1.5 text-muted-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {matchingTag.vocabulary}
                                                         </code>
@@ -3955,14 +3955,14 @@ ${importTags.map((tag: any) => {
                                                   )}
                                                   {matchingTag.vocabulary_uri && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary URI:</td>
-                                                      <td className="py-1.5 text-gray-900 break-all">{matchingTag.vocabulary_uri}</td>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary URI:</td>
+                                                      <td className="py-1.5 text-foreground break-all">{matchingTag.vocabulary_uri}</td>
                                                     </tr>
                                                   )}
                                                   {matchingTag.code && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-400">Code:</td>
-                                                      <td className="py-1.5 text-gray-400">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                                      <td className="py-1.5 text-muted-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {matchingTag.code}
                                                         </code>
@@ -3970,14 +3970,14 @@ ${importTags.map((tag: any) => {
                                                     </tr>
                                                   )}
                                                   <tr className="align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Narrative:</td>
-                                                    <td className="py-1.5 text-gray-900">{matchingTag.name || matchingTag.narrative || '—'}</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Narrative:</td>
+                                                    <td className="py-1.5 text-foreground">{matchingTag.name || matchingTag.narrative || '—'}</td>
                                                   </tr>
                                                 </tbody>
                                               </table>
                                             );
                                           } else {
-                                            return <div className="text-xs text-gray-500 italic">No matching existing tag</div>;
+                                            return <div className="text-xs text-muted-foreground italic">No matching existing tag</div>;
                                           }
                                         })()}
                                       </div>
@@ -4003,8 +4003,8 @@ ${importTags.map((tag: any) => {
 </location>`;
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
                                       Location Details
                                     </div>
@@ -4012,7 +4012,7 @@ ${importTags.map((tag: any) => {
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -4020,20 +4020,20 @@ ${importTags.map((tag: any) => {
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
                                             {loc.name && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
-                                                <td className="py-1.5 text-gray-900">{loc.name}</td>
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
+                                                <td className="py-1.5 text-foreground">{loc.name}</td>
                                               </tr>
                                             )}
                                             {loc.latitude && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Latitude:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Latitude:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {loc.latitude}
                                                   </code>
@@ -4042,8 +4042,8 @@ ${importTags.map((tag: any) => {
                                             )}
                                             {loc.longitude && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Longitude:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Longitude:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {loc.longitude}
                                                   </code>
@@ -4052,8 +4052,8 @@ ${importTags.map((tag: any) => {
                                             )}
                                             {loc.country_code && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Country:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Country:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {loc.country_code}
                                                   </code>
@@ -4062,8 +4062,8 @@ ${importTags.map((tag: any) => {
                                             )}
                                             {loc.location_type_code && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {loc.location_type_code}
                                                   </code>
@@ -4072,8 +4072,8 @@ ${importTags.map((tag: any) => {
                                             )}
                                             {loc.address && (
                                               <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Address:</td>
-                                                <td className="py-1.5 text-gray-900">{loc.address}</td>
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Address:</td>
+                                                <td className="py-1.5 text-foreground">{loc.address}</td>
                                               </tr>
                                             )}
                                           </tbody>
@@ -4081,21 +4081,21 @@ ${importTags.map((tag: any) => {
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentValue ? (
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {field.currentValue.name && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Name:</td>
-                                                  <td className="py-1.5 text-gray-900">{field.currentValue.name}</td>
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Name:</td>
+                                                  <td className="py-1.5 text-foreground">{field.currentValue.name}</td>
                                                 </tr>
                                               )}
                                               {field.currentValue.latitude && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Latitude:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Latitude:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.latitude}
                                                     </code>
@@ -4104,8 +4104,8 @@ ${importTags.map((tag: any) => {
                                               )}
                                               {field.currentValue.longitude && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Longitude:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Longitude:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.longitude}
                                                     </code>
@@ -4114,8 +4114,8 @@ ${importTags.map((tag: any) => {
                                               )}
                                               {field.currentValue.country_code && (
                                                 <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Country:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Country:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.country_code}
                                                     </code>
@@ -4125,7 +4125,7 @@ ${importTags.map((tag: any) => {
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -4182,8 +4182,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                 }
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <DollarSign className="h-4 w-4" />
                                       {itemLabel} Details
                                     </div>
@@ -4191,7 +4191,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -4199,7 +4199,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {field.itemType === 'countryBudgetItems' ? (
                                           // Special display for country budget items - show each mapping as a complete row
@@ -4209,8 +4209,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 <React.Fragment key={biIdx}>
                                                   {item.vocabulary && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {item.vocabulary}
                                                         </code>
@@ -4225,8 +4225,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                     </tr>
                                                   )}
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Item Code:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Item Code:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {bi.code}
                                                       </code>
@@ -4234,13 +4234,13 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   </tr>
                                                   {bi.percentage !== undefined && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">% of Activity Budget:</td>
-                                                      <td className="py-1.5 text-gray-900">{bi.percentage}%</td>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">% of Activity Budget:</td>
+                                                      <td className="py-1.5 text-foreground">{bi.percentage}%</td>
                                                     </tr>
                                                   )}
-                                                  <tr className={biIdx < item.budget_items.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Description:</td>
-                                                    <td className="py-1.5 text-gray-900">{bi.description || '—'}</td>
+                                                  <tr className={biIdx < item.budget_items.length - 1 ? "border-b-2 border-border align-top" : "align-top"}>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Description:</td>
+                                                    <td className="py-1.5 text-foreground">{bi.description || '—'}</td>
                                                   </tr>
                                                 </React.Fragment>
                                               ))}
@@ -4253,8 +4253,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tbody>
                                                 {item.value !== undefined && item.currency && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Amount:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {item.currency}
                                                       </code>
@@ -4264,8 +4264,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 )}
                                                 {(item.transaction_date || item.date) && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Date:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {item.transaction_date || item.date}
                                                       </code>
@@ -4274,8 +4274,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 )}
                                                 {(item.value_date || item.valueDate) && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {item.value_date || item.valueDate}
                                                       </code>
@@ -4284,8 +4284,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 )}
                                                 {(item.transaction_type || item.type) && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {item.transaction_type || item.type}
                                                       </code>
@@ -4297,28 +4297,28 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 )}
                                                 {(item.providerOrg?.ref || item.providerOrg?.name) && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Provider organisation:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       {item.providerOrg?.ref ? (
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {item.providerOrg.ref}
                                                         </code>
                                                       ) : (
-                                                        <span className="text-gray-500 italic">No ref</span>
+                                                        <span className="text-muted-foreground italic">No ref</span>
                                                       )}
                                                     </td>
                                                   </tr>
                                                 )}
                                                 {(item.receiverOrg?.ref || item.receiverOrg?.name) && (
                                                   <tr className="align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Receiver organisation:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       {item.receiverOrg?.ref ? (
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {item.receiverOrg.ref}
                                                         </code>
                                                       ) : (
-                                                        <span className="text-gray-500 italic">No ref</span>
+                                                        <span className="text-muted-foreground italic">No ref</span>
                                                       )}
                                                     </td>
                                                   </tr>
@@ -4331,8 +4331,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                           <tbody>
                                             {item.value !== undefined && item.currency && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Amount:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.currency}
                                                   </code>
@@ -4342,8 +4342,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                             {(item.period?.start || item.start) && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Start:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Start:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.period?.start || item.start}
                                                   </code>
@@ -4352,8 +4352,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                             {(item.period?.end || item.end) && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">End:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">End:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.period?.end || item.end}
                                                   </code>
@@ -4362,8 +4362,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                             {(item.transaction_date || item.date) && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Date:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.transaction_date || item.date}
                                                   </code>
@@ -4372,8 +4372,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                             {(item.value_date || item.valueDate) && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.value_date || item.valueDate}
                                                   </code>
@@ -4382,8 +4382,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                             {item.status && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Status:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Status:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.status}
                                                   </code>
@@ -4395,8 +4395,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                             {item.type && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.type}
                                                   </code>
@@ -4408,8 +4408,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                             {item.transaction_type && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Type:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Type:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {item.transaction_type}
                                                   </code>
@@ -4421,28 +4421,28 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                             {(item.providerOrg?.ref || item.providerOrg?.name) && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Provider organisation:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   {item.providerOrg?.ref ? (
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {item.providerOrg.ref}
                                                     </code>
                                                   ) : (
-                                                    <span className="text-gray-500 italic">No ref</span>
+                                                    <span className="text-muted-foreground italic">No ref</span>
                                                   )}
                                                 </td>
                                               </tr>
                                             )}
                                             {(item.receiverOrg?.ref || item.receiverOrg?.name) && (
                                               <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Receiver organisation:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   {item.receiverOrg?.ref ? (
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {item.receiverOrg.ref}
                                                     </code>
                                                   ) : (
-                                                    <span className="text-gray-500 italic">No ref</span>
+                                                    <span className="text-muted-foreground italic">No ref</span>
                                                   )}
                                                 </td>
                                               </tr>
@@ -4454,7 +4454,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentValue ? (
                                           // Country Budget Items-specific display
@@ -4465,8 +4465,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                   <React.Fragment key={biIdx}>
                                                     {field.currentValue.vocabulary && (
                                                       <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                                        <td className="py-1.5 text-gray-900">
+                                                        <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                                        <td className="py-1.5 text-foreground">
                                                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                             {field.currentValue.vocabulary}
                                                           </code>
@@ -4482,8 +4482,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                       </tr>
                                                     )}
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Item Code:</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Item Code:</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {bi.code}
                                                         </code>
@@ -4491,13 +4491,13 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                     </tr>
                                                     {bi.percentage !== undefined && (
                                                       <tr className="border-b border-gray-100 align-top">
-                                                        <td className="py-1.5 pr-2 font-medium text-gray-600">% of Activity Budget:</td>
-                                                        <td className="py-1.5 text-gray-900">{bi.percentage}%</td>
+                                                        <td className="py-1.5 pr-2 font-medium text-muted-foreground">% of Activity Budget:</td>
+                                                        <td className="py-1.5 text-foreground">{bi.percentage}%</td>
                                                       </tr>
                                                     )}
-                                                    <tr className={biIdx < field.currentValue.budget_items.length - 1 ? "border-b-2 border-gray-300 align-top" : "align-top"}>
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Description:</td>
-                                                      <td className="py-1.5 text-gray-900">{bi.description || '—'}</td>
+                                                    <tr className={biIdx < field.currentValue.budget_items.length - 1 ? "border-b-2 border-border align-top" : "align-top"}>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Description:</td>
+                                                      <td className="py-1.5 text-foreground">{bi.description || '—'}</td>
                                                     </tr>
                                                   </React.Fragment>
                                                 ))}
@@ -4510,8 +4510,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               <tbody>
                                                 {(field.currentValue.value !== undefined || field.currentValue.currency) && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Amount:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       {field.currentValue.currency && (
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentValue.currency}
@@ -4523,15 +4523,15 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                         </span>
                                                       )}
                                                       {field.currentValue.value === undefined && !field.currentValue.currency && (
-                                                        <span className="text-gray-500 italic">No value</span>
+                                                        <span className="text-muted-foreground italic">No value</span>
                                                       )}
                                                     </td>
                                                   </tr>
                                                 )}
                                                 {field.currentValue.transaction_date && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Date:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.transaction_date}
                                                       </code>
@@ -4540,8 +4540,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 )}
                                                 {field.currentValue.value_date && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.value_date}
                                                       </code>
@@ -4550,8 +4550,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 )}
                                                 {(field.currentValue.transaction_type || field.currentValue.type) && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.transaction_type || field.currentValue.type}
                                                       </code>
@@ -4563,28 +4563,28 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                                 )}
                                                 {(field.currentValue.provider_org_ref || field.currentValue.provider_org_name) && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Provider organisation:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       {field.currentValue.provider_org_ref ? (
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentValue.provider_org_ref}
                                                         </code>
                                                       ) : (
-                                                        <span className="text-gray-500 italic">No ref</span>
+                                                        <span className="text-muted-foreground italic">No ref</span>
                                                       )}
                                                     </td>
                                                   </tr>
                                                 )}
                                                 {(field.currentValue.receiver_org_ref || field.currentValue.receiver_org_name) && (
                                                   <tr className="align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Receiver organisation:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       {field.currentValue.receiver_org_ref ? (
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentValue.receiver_org_ref}
                                                         </code>
                                                       ) : (
-                                                        <span className="text-gray-500 italic">No ref</span>
+                                                        <span className="text-muted-foreground italic">No ref</span>
                                                       )}
                                                     </td>
                                                   </tr>
@@ -4597,8 +4597,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             <tbody>
                                               {field.currentValue.value !== undefined && field.currentValue.currency && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Amount:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Amount:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.currency}
                                                     </code>
@@ -4608,8 +4608,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {(field.currentValue.period?.start || field.currentValue.start) && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Start:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Start:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.period?.start || field.currentValue.start}
                                                     </code>
@@ -4618,8 +4618,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {(field.currentValue.period?.end || field.currentValue.end) && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">End:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">End:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.period?.end || field.currentValue.end}
                                                     </code>
@@ -4628,8 +4628,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {field.currentValue.transaction_date && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Date:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Date:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.transaction_date}
                                                     </code>
@@ -4638,8 +4638,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {field.currentValue.value_date && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Value Date:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value Date:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.value_date}
                                                     </code>
@@ -4648,8 +4648,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {field.currentValue.status !== undefined && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Status:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Status:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.status}
                                                     </code>
@@ -4661,8 +4661,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {field.currentValue.transaction_type !== undefined && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Transaction Type:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Transaction Type:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.transaction_type}
                                                     </code>
@@ -4674,8 +4674,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {(field.currentValue.type || field.currentValue.typeName) && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Type:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Type:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.type}
                                                     </code>
@@ -4687,28 +4687,28 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {(field.currentValue.provider_org_ref || field.currentValue.provider_org_name) && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Provider organisation:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Provider organisation:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     {field.currentValue.provider_org_ref ? (
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.provider_org_ref}
                                                       </code>
                                                     ) : (
-                                                      <span className="text-gray-500 italic">No ref</span>
+                                                      <span className="text-muted-foreground italic">No ref</span>
                                                     )}
                                                   </td>
                                                 </tr>
                                               )}
                                               {(field.currentValue.receiver_org_ref || field.currentValue.receiver_org_name) && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Receiver organisation:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Receiver organisation:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     {field.currentValue.receiver_org_ref ? (
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {field.currentValue.receiver_org_ref}
                                                       </code>
                                                     ) : (
-                                                      <span className="text-gray-500 italic">No ref</span>
+                                                      <span className="text-muted-foreground italic">No ref</span>
                                                     )}
                                                   </td>
                                                 </tr>
@@ -4717,7 +4717,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                           </table>
                                           )
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -4773,8 +4773,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                 const xmlSnippet = `<policy-marker vocabulary="${pm.vocabulary || '1'}" code="${pm.code || ''}" significance="${pm.significance || ''}" />`;
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Policy Marker Details
                                     </div>
@@ -4782,7 +4782,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -4790,13 +4790,13 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
                                             <tr className="border-b border-gray-100 align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                              <td className="py-1.5 text-gray-900">
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                              <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                   {pm.vocabulary || '1'}
                                                 </code>
@@ -4805,8 +4805,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             </tr>
                                             {pm.code && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                     {pm.code}
                                                   </code>
@@ -4816,8 +4816,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             )}
                                             {pm.significance && (
                                               <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Significance:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                     {pm.significance}
                                                   </code>
@@ -4830,15 +4830,15 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentValue ? (
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {field.currentValue.vocabulary && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Vocabulary:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Vocabulary:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                       {field.currentValue.vocabulary}
                                                     </code>
@@ -4848,8 +4848,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {field.currentValue.code && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Code:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Code:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                       {field.currentValue.code}
                                                     </code>
@@ -4859,8 +4859,8 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                               )}
                                               {field.currentValue.significance && (
                                                 <tr className="align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Significance:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-2">
                                                       {field.currentValue.significance}
                                                     </code>
@@ -4871,7 +4871,7 @@ ${budgetItems.map((bi: any) => `  <budget-item code="${bi.code || ''}"${bi.perce
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -4913,8 +4913,8 @@ ${narrativeLines}
 <!--conditions ends-->`;
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <AlertCircle className="h-4 w-4" />
                                       Conditions Details
                                     </div>
@@ -4922,7 +4922,7 @@ ${narrativeLines}
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -4930,13 +4930,13 @@ ${narrativeLines}
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
                                             <tr className="border-b border-gray-100 align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Conditions:</td>
-                                              <td className="py-1.5 text-gray-900">
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Conditions:</td>
+                                              <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                   {cond.attached ? '1' : '0'}
                                                 </code>
@@ -4950,10 +4950,10 @@ ${narrativeLines}
 
                                               return (
                                                 <tr key={idx} className={idx < conditionCount - 1 ? "border-b border-gray-100 align-top" : "align-top"}>
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">
                                                     Condition Type:
                                                   </td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {condition.type}
                                                     </code>
@@ -4975,11 +4975,11 @@ ${narrativeLines}
 
                                                 return (
                                                   <tr key={`narrative-${idx}-${lang}`} className={isLastNarrative ? "align-top" : "border-b border-gray-100 align-top"}>
-                                                    <td className={`py-1.5 pr-2 font-medium ${isNonEnglish ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                    <td className={`py-1.5 pr-2 font-medium ${isNonEnglish ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                                                       {isNonEnglish ? `Narrative (${lang.toUpperCase()}):` : 'Narrative:'}
                                                     </td>
-                                                    <td className={`py-1.5 ${isNonEnglish ? 'text-gray-400' : 'text-gray-900'}`}>
-                                                      {text || <span className="text-gray-500 italic">No description</span>}
+                                                    <td className={`py-1.5 ${isNonEnglish ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                                      {text || <span className="text-muted-foreground italic">No description</span>}
                                                     </td>
                                                   </tr>
                                                 );
@@ -4992,21 +4992,21 @@ ${narrativeLines}
                                           const narratives = condition.narrative || {};
                                           return Object.keys(narratives).some(lang => lang && lang !== 'en');
                                         }) && (
-                                          <div className="mt-2 text-xs text-gray-500 italic">
+                                          <div className="mt-2 text-xs text-muted-foreground italic">
                                             Note: Grayed-out languages are recognized but not currently imported by the system
                                           </div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentConditionsData ? (
                                           <table className="w-full text-xs">
                                             <tbody>
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Conditions:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Conditions:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {field.currentConditionsData.attached ? '1' : '0'}
                                                   </code>
@@ -5015,10 +5015,10 @@ ${narrativeLines}
                                               </tr>
                                               {field.currentConditionsData.conditions.map((condition: any, idx: number) => (
                                                 <tr key={idx} className={idx < field.currentConditionsData.conditions.length - 1 ? "border-b border-gray-100 align-top" : "align-top"}>
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">
                                                     Condition Type:
                                                   </td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {condition.type}
                                                     </code>
@@ -5038,11 +5038,11 @@ ${narrativeLines}
 
                                                   return (
                                                     <tr key={`current-narrative-${idx}-${lang}`} className={isLastNarrative ? "align-top" : "border-b border-gray-100 align-top"}>
-                                                      <td className={`py-1.5 pr-2 font-medium ${isNonEnglish ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                      <td className={`py-1.5 pr-2 font-medium ${isNonEnglish ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                                                         {isNonEnglish ? `Narrative (${lang.toUpperCase()}):` : 'Narrative:'}
                                                       </td>
-                                                      <td className={`py-1.5 ${isNonEnglish ? 'text-gray-400' : 'text-gray-900'}`}>
-                                                        {text || <span className="text-gray-500 italic">No description</span>}
+                                                      <td className={`py-1.5 ${isNonEnglish ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                                        {text || <span className="text-muted-foreground italic">No description</span>}
                                                       </td>
                                                     </tr>
                                                   );
@@ -5051,7 +5051,7 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing conditions</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing conditions</div>
                                         )}
                                       </div>
                                     </div>
@@ -5066,8 +5066,8 @@ ${narrativeLines}
                                 const sectionTitle = field.fieldName === 'Financing Terms' ? 'Financing Terms' : 'DAC CRS Reporting Details';
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <DollarSign className="h-4 w-4" />
                                       {sectionTitle}
                                     </div>
@@ -5075,7 +5075,7 @@ ${narrativeLines}
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -5083,14 +5083,14 @@ ${narrativeLines}
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
                                             {crsData.channel_code && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Channel Code:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Channel Code:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {crsData.channel_code}
                                                   </code>
@@ -5101,20 +5101,20 @@ ${narrativeLines}
                                               <React.Fragment>
                                                 {crsData.loanTerms.rate_1 !== undefined && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Rate 1:</td>
-                                                    <td className="py-1.5 text-gray-900">{crsData.loanTerms.rate_1}%</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Rate 1:</td>
+                                                    <td className="py-1.5 text-foreground">{crsData.loanTerms.rate_1}%</td>
                                                   </tr>
                                                 )}
                                                 {crsData.loanTerms.rate_2 !== undefined && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Rate 2:</td>
-                                                    <td className="py-1.5 text-gray-900">{crsData.loanTerms.rate_2}%</td>
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Rate 2:</td>
+                                                    <td className="py-1.5 text-foreground">{crsData.loanTerms.rate_2}%</td>
                                                   </tr>
                                                 )}
                                                 {crsData.loanTerms.repayment_type_code && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Type:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Type:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {crsData.loanTerms.repayment_type_code}
                                                       </code>
@@ -5123,8 +5123,8 @@ ${narrativeLines}
                                                 )}
                                                 {crsData.loanTerms.repayment_plan_code && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Plan:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Plan:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {crsData.loanTerms.repayment_plan_code}
                                                       </code>
@@ -5133,8 +5133,8 @@ ${narrativeLines}
                                                 )}
                                                 {crsData.loanTerms.commitment_date && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Commitment Date:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Commitment Date:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {crsData.loanTerms.commitment_date}
                                                       </code>
@@ -5143,8 +5143,8 @@ ${narrativeLines}
                                                 )}
                                                 {crsData.loanTerms.repayment_first_date && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment First Date:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment First Date:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {crsData.loanTerms.repayment_first_date}
                                                       </code>
@@ -5153,8 +5153,8 @@ ${narrativeLines}
                                                 )}
                                                 {crsData.loanTerms.repayment_final_date && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Final Date:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Final Date:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {crsData.loanTerms.repayment_final_date}
                                                       </code>
@@ -5165,8 +5165,8 @@ ${narrativeLines}
                                             )}
                                             {crsData.loanStatuses && crsData.loanStatuses.length > 0 && (
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Loan Statuses:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Loan Statuses:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   {crsData.loanStatuses.length} year(s) of loan status data
                                                 </td>
                                               </tr>
@@ -5174,16 +5174,16 @@ ${narrativeLines}
                                             {crsData.other_flags && crsData.other_flags.length > 0 && crsData.other_flags.map((flag: any, idx: number) => (
                                               <React.Fragment key={idx}>
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Other Flags Code:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Other Flags Code:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {flag.code}
                                                     </code>
                                                   </td>
                                                 </tr>
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Significance:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {flag.significance}
                                                     </code>
@@ -5196,15 +5196,15 @@ ${narrativeLines}
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentCrsData ? (
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {field.currentCrsData.channel_code && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Channel Code:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Channel Code:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentCrsData.channel_code}
                                                     </code>
@@ -5215,20 +5215,20 @@ ${narrativeLines}
                                                 <React.Fragment>
                                                   {field.currentCrsData.loanTerms.rate_1 !== null && field.currentCrsData.loanTerms.rate_1 !== undefined && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Rate 1:</td>
-                                                      <td className="py-1.5 text-gray-900">{field.currentCrsData.loanTerms.rate_1}%</td>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Rate 1:</td>
+                                                      <td className="py-1.5 text-foreground">{field.currentCrsData.loanTerms.rate_1}%</td>
                                                     </tr>
                                                   )}
                                                   {field.currentCrsData.loanTerms.rate_2 !== null && field.currentCrsData.loanTerms.rate_2 !== undefined && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Rate 2:</td>
-                                                      <td className="py-1.5 text-gray-900">{field.currentCrsData.loanTerms.rate_2}%</td>
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Rate 2:</td>
+                                                      <td className="py-1.5 text-foreground">{field.currentCrsData.loanTerms.rate_2}%</td>
                                                     </tr>
                                                   )}
                                                   {field.currentCrsData.loanTerms.repayment_type_code && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Type:</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Type:</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentCrsData.loanTerms.repayment_type_code}
                                                         </code>
@@ -5237,8 +5237,8 @@ ${narrativeLines}
                                                   )}
                                                   {field.currentCrsData.loanTerms.repayment_plan_code && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Plan:</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Plan:</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentCrsData.loanTerms.repayment_plan_code}
                                                         </code>
@@ -5247,8 +5247,8 @@ ${narrativeLines}
                                                   )}
                                                   {field.currentCrsData.loanTerms.commitment_date && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Commitment Date:</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Commitment Date:</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentCrsData.loanTerms.commitment_date}
                                                         </code>
@@ -5257,8 +5257,8 @@ ${narrativeLines}
                                                   )}
                                                   {field.currentCrsData.loanTerms.repayment_first_date && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment First Date:</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment First Date:</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentCrsData.loanTerms.repayment_first_date}
                                                         </code>
@@ -5267,8 +5267,8 @@ ${narrativeLines}
                                                   )}
                                                   {field.currentCrsData.loanTerms.repayment_final_date && (
                                                     <tr className="border-b border-gray-100 align-top">
-                                                      <td className="py-1.5 pr-2 font-medium text-gray-600">Repayment Final Date:</td>
-                                                      <td className="py-1.5 text-gray-900">
+                                                      <td className="py-1.5 pr-2 font-medium text-muted-foreground">Repayment Final Date:</td>
+                                                      <td className="py-1.5 text-foreground">
                                                         <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                           {field.currentCrsData.loanTerms.repayment_final_date}
                                                         </code>
@@ -5279,8 +5279,8 @@ ${narrativeLines}
                                               )}
                                               {field.currentCrsData.loanStatuses && field.currentCrsData.loanStatuses.length > 0 && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600">Loan Statuses:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground">Loan Statuses:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     {field.currentCrsData.loanStatuses.length} year(s) of loan status data
                                                   </td>
                                                 </tr>
@@ -5288,16 +5288,16 @@ ${narrativeLines}
                                               {field.currentCrsData.otherFlags && field.currentCrsData.otherFlags.length > 0 && field.currentCrsData.otherFlags.map((flag: any, idx: number) => (
                                                 <React.Fragment key={idx}>
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Other Flags Code:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Other Flags Code:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {flag.code}
                                                       </code>
                                                     </td>
                                                   </tr>
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600">Significance:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground">Significance:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {flag.significance}
                                                       </code>
@@ -5308,7 +5308,7 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No CRS data saved</div>
+                                          <div className="text-xs text-muted-foreground italic">No CRS data saved</div>
                                         )}
                                       </div>
                                     </div>
@@ -5324,8 +5324,8 @@ ${narrativeLines}
                                 const xmlSnippet = extractXmlSnippet(field.iatiPath, field.itemIndex);
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground flex items-center gap-2">
                                       <Tag className="h-4 w-4" />
                                       Other Identifier Details
                                     </div>
@@ -5333,7 +5333,7 @@ ${narrativeLines}
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
@@ -5341,36 +5341,36 @@ ${narrativeLines}
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         <table className="w-full text-xs">
                                           <tbody>
                                             <tr className="border-b border-gray-100 align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Code:</td>
-                                              <td className="py-1.5 text-gray-900">
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Identifier Code:</td>
+                                              <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                   {identifier.code || '—'}
                                                 </code>
                                               </td>
                                             </tr>
                                             <tr className="border-b border-gray-100 align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Type:</td>
-                                              <td className="py-1.5 text-gray-900">
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Identifier Type:</td>
+                                              <td className="py-1.5 text-foreground">
                                                 <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                   {identifier.type || '—'}
                                                 </code>
                                                 {identifier.name && (
-                                                  <span className="text-xs text-gray-500 ml-2">{identifier.name}</span>
+                                                  <span className="text-xs text-muted-foreground ml-2">{identifier.name}</span>
                                                 )}
                                               </td>
                                             </tr>
                                             <tr className="border-b border-gray-100 align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Owner Org Name:</td>
-                                              <td className="py-1.5 text-gray-900">{identifier.ownerOrg?.narrative || '—'}</td>
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Owner Org Name:</td>
+                                              <td className="py-1.5 text-foreground">{identifier.ownerOrg?.narrative || '—'}</td>
                                             </tr>
                                             <tr className="align-top">
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600">Owner Org Ref:</td>
-                                              <td className="py-1.5 text-gray-900">
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground">Owner Org Ref:</td>
+                                              <td className="py-1.5 text-foreground">
                                                 {identifier.ownerOrg?.ref ? (
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {identifier.ownerOrg.ref}
@@ -5385,37 +5385,37 @@ ${narrativeLines}
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {field.currentValue ? (
                                           <table className="w-full text-xs">
                                             <tbody>
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Code:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Identifier Code:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {field.currentValue.code || '—'}
                                                   </code>
                                                 </td>
                                               </tr>
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Identifier Type:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Identifier Type:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {field.currentValue.type || '—'}
                                                   </code>
                                                   {field.currentValue.name && (
-                                                    <span className="text-xs text-gray-500 ml-2">{field.currentValue.name}</span>
+                                                    <span className="text-xs text-muted-foreground ml-2">{field.currentValue.name}</span>
                                                   )}
                                                 </td>
                                               </tr>
                                               <tr className="border-b border-gray-100 align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Owner Org Name:</td>
-                                                <td className="py-1.5 text-gray-900">{field.currentValue.ownerOrg?.narrative || '—'}</td>
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Owner Org Name:</td>
+                                                <td className="py-1.5 text-foreground">{field.currentValue.ownerOrg?.narrative || '—'}</td>
                                               </tr>
                                               <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Owner Org Ref:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Owner Org Ref:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   {field.currentValue.ownerOrg?.ref ? (
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {field.currentValue.ownerOrg.ref}
@@ -5428,7 +5428,7 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -5499,7 +5499,7 @@ ${narrativeLines}
                                                   </code>
                                                 )}
                                                 {sector.name && (
-                                                  <span className="text-xs text-gray-900">{sector.name}</span>
+                                                  <span className="text-xs text-foreground">{sector.name}</span>
                                                 )}
                                                 {sector.vocabulary && (
                                                   <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">
@@ -5531,7 +5531,7 @@ ${narrativeLines}
                                                     </code>
                                                   )}
                                                   {sector.name && (
-                                                    <span className="text-xs text-gray-900">{sector.name}</span>
+                                                    <span className="text-xs text-foreground">{sector.name}</span>
                                                   )}
                                                 </div>
                                               </div>
@@ -5571,72 +5571,72 @@ ${narrativeLines}
                                 }
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground">
                                       Activity Scope Details
                                     </div>
 
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         {xmlSnippet ? (
                                           <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                           </pre>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">
+                                          <div className="text-xs text-muted-foreground italic">
                                             See IATI Path below for XML structure
                                           </div>
                                         )}
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {importCode ? (
                                           <table className="w-full text-xs">
                                             <tbody>
                                               <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {importCode}
                                                   </code>
                                                   {importName && (
-                                                    <span className="ml-2 text-gray-600">{importName}</span>
+                                                    <span className="ml-2 text-muted-foreground">{importName}</span>
                                                   )}
                                                 </td>
                                               </tr>
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No import value</div>
+                                          <div className="text-xs text-muted-foreground italic">No import value</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {currentCode ? (
                                           <table className="w-full text-xs">
                                             <tbody>
                                               <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {currentCode}
                                                   </code>
                                                   {currentName && (
-                                                    <span className="ml-2 text-gray-600">{currentName}</span>
+                                                    <span className="ml-2 text-muted-foreground">{currentName}</span>
                                                   )}
                                                 </td>
                                               </tr>
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -5725,29 +5725,29 @@ ${narrativeLines}
                                 }
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground">
                                       Field Details
                                     </div>
 
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         {xmlSnippet ? (
                                           <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                           </pre>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">
+                                          <div className="text-xs text-muted-foreground italic">
                                             See IATI Path below for XML structure
                                           </div>
                                         )}
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {(dateType || isoDate || allXmlNarratives.length > 0) ? (
                                           <table className="w-full text-xs">
@@ -5755,13 +5755,13 @@ ${narrativeLines}
                                               {/* Show date type (grayed out - redundant with field name) */}
                                               {dateType && (
                                                 <tr className="border-b border-gray-100 align-top" style={{ opacity: 0.4 }}>
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">Date Type:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">Date Type:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {dateType}
                                                     </code>
                                                     {dateTypeName && (
-                                                      <span className="ml-2 text-gray-600">{dateTypeName}</span>
+                                                      <span className="ml-2 text-muted-foreground">{dateTypeName}</span>
                                                     )}
                                                   </td>
                                                 </tr>
@@ -5769,8 +5769,8 @@ ${narrativeLines}
                                               {/* Show iso-date */}
                                               {isoDate && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">ISO Date:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">ISO Date:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {isoDate}
                                                     </code>
@@ -5784,16 +5784,16 @@ ${narrativeLines}
                                                   className="border-b border-gray-100 align-top last:border-b-0"
                                                   style={{ opacity: idx === 0 ? 1 : 0.4 }}
                                                 >
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">
                                                     {narrative.lang ? `Narrative (${narrative.lang.toUpperCase()}):` : 'Narrative (Default):'}
                                                   </td>
-                                                  <td className="py-1.5 text-gray-900">{narrative.text}</td>
+                                                  <td className="py-1.5 text-foreground">{narrative.text}</td>
                                                 </tr>
                                               ))}
                                               {(dateType || allXmlNarratives.length > 1) && (
                                                 <tr>
                                                   <td colSpan={2} className="pt-2">
-                                                    <div className="text-xs text-gray-500 italic">
+                                                    <div className="text-xs text-muted-foreground italic">
                                                       Note: Grayed out items are {dateType && allXmlNarratives.length > 1 ? 'redundant or ' : dateType ? 'redundant' : ''}not imported by default
                                                     </div>
                                                   </td>
@@ -5802,20 +5802,20 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No import value</div>
+                                          <div className="text-xs text-muted-foreground italic">No import value</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {currentIsoDate ? (
                                           <table className="w-full text-xs">
                                             <tbody>
                                               {/* Show iso-date */}
                                               <tr className="align-top">
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">ISO Date:</td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">ISO Date:</td>
+                                                <td className="py-1.5 text-foreground">
                                                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                     {currentIsoDate}
                                                   </code>
@@ -5824,7 +5824,7 @@ ${narrativeLines}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -5958,29 +5958,29 @@ ${narrativeLines}
                                 }
 
                                 return (
-                                  <div className="mb-6 border-b border-gray-200 pb-6">
-                                    <div className="text-sm font-semibold mb-3 text-gray-900">
+                                  <div className="mb-6 border-b border-border pb-6">
+                                    <div className="text-sm font-semibold mb-3 text-foreground">
                                       {field.fieldName} Details
                                     </div>
 
                                     {/* 3-column layout */}
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                       {/* Column 1: Raw XML */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                         {xmlSnippet ? (
                                           <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                           </pre>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">
+                                          <div className="text-xs text-muted-foreground italic">
                                             See IATI Path below for XML structure
                                           </div>
                                         )}
                                       </div>
 
                                       {/* Column 2: Import Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                         {displayNarratives.length > 0 || (isDescription && descriptionType) ? (
                                           <div className="space-y-2">
@@ -5989,13 +5989,13 @@ ${narrativeLines}
                                                 {/* Show description type for description fields */}
                                                 {isDescription && descriptionType && (
                                                   <tr className="border-b border-gray-100 align-top">
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">Description Type:</td>
-                                                    <td className="py-1.5 text-gray-900">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">Description Type:</td>
+                                                    <td className="py-1.5 text-foreground">
                                                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                         {descriptionType}
                                                       </code>
                                                       {descriptionTypeName && (
-                                                        <span className="ml-2 text-gray-600">{descriptionTypeName}</span>
+                                                        <span className="ml-2 text-muted-foreground">{descriptionTypeName}</span>
                                                       )}
                                                     </td>
                                                   </tr>
@@ -6003,27 +6003,27 @@ ${narrativeLines}
                                                 {/* Show narratives */}
                                                 {displayNarratives.map((narrative, idx) => (
                                                   <tr key={idx} className={`border-b border-gray-100 align-top last:border-b-0 ${!narrative.isImported ? 'opacity-50' : ''}`}>
-                                                    <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
+                                                    <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">
                                                       {narrative.lang ? `Narrative (${narrative.lang.toUpperCase()}):` : 'Narrative (Default):'}
                                                     </td>
-                                                    <td className="py-1.5 text-gray-900">{narrative.text}</td>
+                                                    <td className="py-1.5 text-foreground">{narrative.text}</td>
                                                   </tr>
                                                 ))}
                                               </tbody>
                                             </table>
                                             {displayNarratives.some(n => !n.isImported) && (
-                                              <div className="text-xs text-gray-500 italic mt-2 pt-2 border-t border-gray-200">
+                                              <div className="text-xs text-muted-foreground italic mt-2 pt-2 border-t border-border">
                                                 Note: Grayed-out languages are recognized but not currently imported by the system
                                               </div>
                                             )}
                                           </div>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No import value</div>
+                                          <div className="text-xs text-muted-foreground italic">No import value</div>
                                         )}
                                       </div>
 
                                       {/* Column 3: Current Value */}
-                                      <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                      <div className="bg-muted rounded-md p-3 border border-border">
                                         <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                         {currentNarratives.length > 0 || (isDescription && currentDescriptionType) ? (
                                           <table className="w-full text-xs">
@@ -6031,13 +6031,13 @@ ${narrativeLines}
                                               {/* Show description type for description fields */}
                                               {isDescription && currentDescriptionType && (
                                                 <tr className="border-b border-gray-100 align-top">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">Description Type:</td>
-                                                  <td className="py-1.5 text-gray-900">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">Description Type:</td>
+                                                  <td className="py-1.5 text-foreground">
                                                     <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                       {currentDescriptionType}
                                                     </code>
                                                     {currentDescriptionTypeName && (
-                                                      <span className="ml-2 text-gray-600">{currentDescriptionTypeName}</span>
+                                                      <span className="ml-2 text-muted-foreground">{currentDescriptionTypeName}</span>
                                                     )}
                                                   </td>
                                                 </tr>
@@ -6045,16 +6045,16 @@ ${narrativeLines}
                                               {/* Show narratives */}
                                               {currentNarratives.map((narrative, idx) => (
                                                 <tr key={idx} className="border-b border-gray-100 align-top last:border-b-0">
-                                                  <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
+                                                  <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">
                                                     {narrative.lang ? `Narrative (${narrative.lang.toUpperCase()}):` : 'Narrative (Default):'}
                                                   </td>
-                                                  <td className="py-1.5 text-gray-900">{narrative.text}</td>
+                                                  <td className="py-1.5 text-foreground">{narrative.text}</td>
                                                 </tr>
                                               ))}
                                             </tbody>
                                           </table>
                                         ) : (
-                                          <div className="text-xs text-gray-500 italic">No existing value</div>
+                                          <div className="text-xs text-muted-foreground italic">No existing value</div>
                                         )}
                                       </div>
                                     </div>
@@ -6083,7 +6083,7 @@ ${narrativeLines}
                               // Helper function to render result details
                               const renderResultDetails = (resultData: any) => {
                                 if (!resultData) {
-                                  return <div className="text-xs text-gray-500 italic">No value</div>;
+                                  return <div className="text-xs text-muted-foreground italic">No value</div>;
                                 }
 
                                 const rows: Array<{ label: string; value: string }> = [];
@@ -6164,7 +6164,7 @@ ${narrativeLines}
                                 }
 
                                 if (rows.length === 0) {
-                                  return <div className="text-xs text-gray-500 italic">No value</div>;
+                                  return <div className="text-xs text-muted-foreground italic">No value</div>;
                                 }
 
                                 return (
@@ -6172,10 +6172,10 @@ ${narrativeLines}
                                     <tbody>
                                       {rows.map((row, idx) => (
                                         <tr key={idx} className={`align-top ${idx < rows.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                          <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
+                                          <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">
                                             {row.label}:
                                           </td>
-                                          <td className="py-1.5 text-gray-900 break-words">
+                                          <td className="py-1.5 text-foreground break-words">
                                             {row.value}
                                           </td>
                                         </tr>
@@ -6197,7 +6197,7 @@ ${narrativeLines}
                                 }
 
                                 if (value === undefined || value === null || value === '') {
-                                  return <div className="text-xs text-gray-500 italic">No value</div>;
+                                  return <div className="text-xs text-muted-foreground italic">No value</div>;
                                 }
 
                                 // If it's a simple string or number, show as single row
@@ -6206,8 +6206,8 @@ ${narrativeLines}
                                     <table className="w-full text-xs">
                                       <tbody>
                                         <tr className="align-top">
-                                          <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
-                                          <td className="py-1.5 text-gray-900">
+                                          <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value:</td>
+                                          <td className="py-1.5 text-foreground">
                                             {typeof value === 'string' && value.length > 100 ? (
                                               <div className="break-words">{value}</div>
                                             ) : (
@@ -6226,7 +6226,7 @@ ${narrativeLines}
                                 if (typeof value === 'object' && !Array.isArray(value)) {
                                   const entries = Object.entries(value).filter(([k, v]) => v !== null && v !== undefined && v !== '');
                                   if (entries.length === 0) {
-                                    return <div className="text-xs text-gray-500 italic">No value</div>;
+                                    return <div className="text-xs text-muted-foreground italic">No value</div>;
                                   }
 
                                   // Check if this is a code/name pair - if so, display on same line
@@ -6241,12 +6241,12 @@ ${narrativeLines}
                                       <table className="w-full text-xs">
                                         <tbody>
                                           <tr className="align-top">
-                                            <td className="py-1.5 pr-2 font-medium text-gray-600">Value:</td>
-                                            <td className="py-1.5 text-gray-900">
+                                            <td className="py-1.5 pr-2 font-medium text-muted-foreground">Value:</td>
+                                            <td className="py-1.5 text-foreground">
                                               <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
                                                 {String(code)}
                                               </code>
-                                              <span className="ml-2 text-gray-600">{String(name)}</span>
+                                              <span className="ml-2 text-muted-foreground">{String(name)}</span>
                                             </td>
                                           </tr>
                                         </tbody>
@@ -6265,10 +6265,10 @@ ${narrativeLines}
                                                 key={`${idx}-narrative-${nIdx}`} 
                                                 className={`align-top ${nIdx < val.length - 1 || idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}
                                               >
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600 whitespace-nowrap">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground whitespace-nowrap">
                                                   {narrative.language ? `Narrative (${narrative.language.toUpperCase()}):` : 'Narrative:'}
                                                 </td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 text-foreground">
                                                   {narrative.text || narrative.narrative || ''}
                                                 </td>
                                               </tr>
@@ -6286,10 +6286,10 @@ ${narrativeLines}
 
                                             return (
                                               <tr key={idx} className={`align-top ${idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                                <td className="py-1.5 pr-2 font-medium text-gray-600 capitalize whitespace-nowrap">
+                                                <td className="py-1.5 pr-2 font-medium text-muted-foreground capitalize whitespace-nowrap">
                                                   {key.replace(/_/g, ' ')}:
                                                 </td>
-                                                <td className="py-1.5 text-gray-900">
+                                                <td className="py-1.5 text-foreground">
                                                   <div className="break-words">{arrayText || '—'}</div>
                                                 </td>
                                               </tr>
@@ -6299,10 +6299,10 @@ ${narrativeLines}
                                           // Default handling for non-array values
                                           return (
                                             <tr key={idx} className={`align-top ${idx < entries.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                              <td className="py-1.5 pr-2 font-medium text-gray-600 capitalize whitespace-nowrap">
+                                              <td className="py-1.5 pr-2 font-medium text-muted-foreground capitalize whitespace-nowrap">
                                                 {key.replace(/_/g, ' ')}:
                                               </td>
-                                              <td className="py-1.5 text-gray-900">
+                                              <td className="py-1.5 text-foreground">
                                                 {typeof val === 'string' && val.length > 100 ? (
                                                   <div className="break-words">{val}</div>
                                                 ) : (
@@ -6321,42 +6321,42 @@ ${narrativeLines}
 
                                 // For arrays or other complex types, fall back to renderValue
                                 return (
-                                  <div className="text-sm text-gray-900 break-words">
+                                  <div className="text-sm text-foreground break-words">
                                     {renderValue(value, `${rowId}-default-fallback`, 'import', fieldName, field)}
                                   </div>
                                 );
                               };
 
                               return (
-                                <div className="mb-6 border-b border-gray-200 pb-6">
-                                  <div className="text-sm font-semibold mb-3 text-gray-900">
+                                <div className="mb-6 border-b border-border pb-6">
+                                  <div className="text-sm font-semibold mb-3 text-foreground">
                                     Field Details
                                   </div>
 
                                   {/* 3-column layout */}
                                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                     {/* Column 1: Raw XML */}
-                                    <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                    <div className="bg-muted rounded-md p-3 border border-border">
                                       <div className="text-xs font-semibold text-gray-700 mb-2">Raw XML</div>
                                       {xmlSnippet ? (
                                         <pre className="text-xs font-mono text-gray-800 overflow-x-auto whitespace-pre-wrap break-all">
 {xmlSnippet}
                                         </pre>
                                       ) : (
-                                        <div className="text-xs text-gray-500 italic">
+                                        <div className="text-xs text-muted-foreground italic">
                                           See IATI Path below for XML structure
                                         </div>
                                       )}
                                     </div>
 
                                     {/* Column 2: Import Value */}
-                                    <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                    <div className="bg-muted rounded-md p-3 border border-border">
                                       <div className="text-xs font-semibold text-gray-700 mb-2">Import Value</div>
                                       {renderValueInTable(field.importValue, field.fieldName, false)}
                                     </div>
 
                                     {/* Column 3: Current Value */}
-                                    <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                                    <div className="bg-muted rounded-md p-3 border border-border">
                                       <div className="text-xs font-semibold text-gray-700 mb-2">Current Value</div>
                                       {renderValueInTable(field.currentValue, field.fieldName, true)}
                                     </div>
@@ -6456,7 +6456,7 @@ ${narrativeLines}
                     {/* Expanded details row */}
                     {isExpanded && (
                       <TableRow>
-                        <TableCell colSpan={6} className="bg-gray-50 p-4">
+                        <TableCell colSpan={6} className="bg-muted p-4">
                           {/* Field metadata */}
                           <div className="mt-4 text-sm flex items-center gap-2">
                             <span className="font-semibold">IATI Standard Reference:</span>

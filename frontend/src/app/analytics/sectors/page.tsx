@@ -150,15 +150,15 @@ export default function SectorAnalyticsPage() {
   if (loading && data.length === 0) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-white">
-          <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-4 py-3">
+        <div className="min-h-screen bg-card">
+          <div className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
             <div className="mx-auto px-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <PieChart className="h-6 w-6 text-slate-700" />
+                  <PieChart className="h-6 w-6 text-foreground" />
                   <div>
-                    <h1 className="text-xl font-semibold text-slate-900">Sector Analytics</h1>
-                    <p className="text-sm text-slate-600">Loading sector data...</p>
+                    <h1 className="text-xl font-semibold text-foreground">Sector Analytics</h1>
+                    <p className="text-sm text-muted-foreground">Loading sector data...</p>
                   </div>
                 </div>
               </div>
@@ -183,15 +183,15 @@ export default function SectorAnalyticsPage() {
   if (error && data.length === 0) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-white">
-          <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-4 py-3">
+        <div className="min-h-screen bg-card">
+          <div className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
             <div className="mx-auto px-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <PieChart className="h-6 w-6 text-slate-700" />
+                  <PieChart className="h-6 w-6 text-foreground" />
                   <div>
-                    <h1 className="text-xl font-semibold text-slate-900">Sector Analytics</h1>
-                    <p className="text-sm text-slate-600">Error loading data</p>
+                    <h1 className="text-xl font-semibold text-foreground">Sector Analytics</h1>
+                    <p className="text-sm text-muted-foreground">Error loading data</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleRefresh}>
@@ -221,16 +221,16 @@ export default function SectorAnalyticsPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-card">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-50 bg-white border-b border-slate-200 px-4 py-3">
+        <div className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
           <div className="mx-auto px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <PieChart className="h-6 w-6 text-slate-700" />
+                <PieChart className="h-6 w-6 text-foreground" />
                 <div>
-                  <h1 className="text-xl font-semibold text-slate-900">Sector Analytics</h1>
-                  <p className="text-sm text-slate-600">
+                  <h1 className="text-xl font-semibold text-foreground">Sector Analytics</h1>
+                  <p className="text-sm text-muted-foreground">
                     Comprehensive analysis of aid flows by DAC sector categories
                   </p>
                 </div>

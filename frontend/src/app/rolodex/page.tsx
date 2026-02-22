@@ -260,7 +260,7 @@ export default function RolodexPage() {
         </div>
 
         {/* Table Skeleton */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
           <table className="w-full table-auto border-collapse">
             <thead className="bg-surface-muted border-b border-border">
               <tr>
@@ -274,7 +274,7 @@ export default function RolodexPage() {
                 <th className="h-12 px-4 py-3"><Skeleton className="h-4 w-16" /></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-border bg-white">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
                 <tr key={i}>
                   <td className="px-4 py-3"><Skeleton className="h-8 w-8 rounded-full" /></td>
@@ -320,21 +320,21 @@ export default function RolodexPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <div className="flex border border-slate-200 rounded-md">
+            <div className="flex border border-border rounded-md">
               <Button
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className="rounded-r-none"
+                className={`rounded-r-none ${viewMode === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                 title="Table view"
               >
                 <TableIcon className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('grid')}
-                className="rounded-l-none"
+                className={`rounded-l-none ${viewMode === 'grid' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                 title="Grid view"
               >
                 <LayoutGrid className="h-4 w-4" />
@@ -398,9 +398,9 @@ export default function RolodexPage() {
         ) : people.length === 0 && !loading ? (
           <Card>
             <CardContent className="p-12 text-center">
-              <Users className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-900 mb-2">No people found</h3>
-              <p className="text-slate-600 mb-4">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No people found</h3>
+              <p className="text-muted-foreground mb-4">
                 {filters.search || filters.organization || filters.activity || filters.orgType || filters.role
                   ? 'No people match your current filters. Try adjusting your filter criteria.'
                   : 'No people are currently in the system.'
@@ -425,7 +425,7 @@ export default function RolodexPage() {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full table-auto border-collapse">
                     <thead className="bg-surface-muted border-b border-border">
@@ -480,7 +480,7 @@ export default function RolodexPage() {
                         <th className="h-12 px-4 py-3 text-left align-middle text-sm font-medium text-muted-foreground w-[80px]">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 bg-white">
+                    <tbody className="divide-y divide-border bg-white">
                       {people.map((person) => (
                         <tr key={person.id} className="group hover:bg-muted transition-colors">
                           <td className="px-4 py-2 align-middle">
@@ -561,7 +561,7 @@ export default function RolodexPage() {
                               variant="secondary" 
                               className={`text-xs ${
                                 person.source === 'user' 
-                                  ? 'bg-slate-100 text-slate-600' 
+                                  ? 'bg-muted text-muted-foreground' 
                                   : 'bg-purple-100 text-purple-700'
                               }`}
                             >
@@ -617,7 +617,7 @@ export default function RolodexPage() {
             {loading && (
               <div className="relative">
                 <div className="absolute inset-0 bg-white/75 flex items-center justify-center z-10">
-                  <div className="flex items-center space-x-2 text-slate-600">
+                  <div className="flex items-center space-x-2 text-muted-foreground">
                     <RefreshCw className="h-5 w-5 animate-spin" />
                     <LoadingText>Loading contacts...</LoadingText>
                   </div>
@@ -627,7 +627,7 @@ export default function RolodexPage() {
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+              <div className="bg-white rounded-lg border border-border shadow-sm p-4">
                 {renderPaginationControls()}
               </div>
             )}

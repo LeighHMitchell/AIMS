@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils'
 import {
   ArrowLeft,
   Pencil,
@@ -1343,15 +1344,15 @@ export default function ActivityDetailPage() {
     return (
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Card className="max-w-md mx-auto border-slate-200 bg-white">
+          <Card className="max-w-md mx-auto border-border bg-card">
             <CardContent className="pt-6">
               <div className="text-center">
                 <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">Activity Not Found</h3>
-                <p className="text-slate-600 mb-4">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Activity Not Found</h3>
+                <p className="text-muted-foreground mb-4">
                   The activity you are looking for could not be found.
                 </p>
-                <Button onClick={() => router.push("/activities")} className="bg-slate-600 hover:bg-slate-700">
+                <Button onClick={() => router.push("/activities")} className="bg-primary hover:bg-primary/90">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Activities
                 </Button>
@@ -1377,11 +1378,11 @@ export default function ActivityDetailPage() {
   // Helper function to render label with help tooltip
   const LabelWithHelp = ({ label, helpText }: { label: string; helpText: string }) => (
     <div className="flex items-center gap-1">
-      <p className="text-xs font-medium text-slate-600">{label}</p>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
-            <HelpCircle className="h-3 w-3 text-slate-400 hover:text-slate-600 cursor-help" />
+            <HelpCircle className="h-3 w-3 text-muted-foreground hover:text-muted-foreground cursor-help" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
             <div className="text-sm whitespace-pre-line">{helpText}</div>
@@ -1404,30 +1405,30 @@ export default function ActivityDetailPage() {
       <div className="space-y-2 text-sm">
         {activity.plannedStartDate && (
           <div className="flex items-center gap-2">
-            <Calendar className="h-3 w-3 text-gray-400" />
-            <span className="font-medium text-gray-900">Planned Start:</span>
-            <span className="text-slate-700">{formatDate(activity.plannedStartDate)}</span>
+            <Calendar className="h-3 w-3 text-muted-foreground" />
+            <span className="font-medium text-foreground">Planned Start:</span>
+            <span className="text-foreground">{formatDate(activity.plannedStartDate)}</span>
           </div>
         )}
         {isPipeline && activity.plannedEndDate && (
           <div className="flex items-center gap-2">
-            <Calendar className="h-3 w-3 text-gray-400" />
-            <span className="font-medium text-gray-900">Planned End:</span>
-            <span className="text-slate-700">{formatDate(activity.plannedEndDate)}</span>
+            <Calendar className="h-3 w-3 text-muted-foreground" />
+            <span className="font-medium text-foreground">Planned End:</span>
+            <span className="text-foreground">{formatDate(activity.plannedEndDate)}</span>
           </div>
         )}
         {(isActive || isClosed) && activity.actualStartDate && (
           <div className="flex items-center gap-2">
-            <Calendar className="h-3 w-3 text-gray-400" />
-            <span className="font-medium text-gray-900">Actual Start:</span>
-            <span className="text-slate-700">{formatDate(activity.actualStartDate)}</span>
+            <Calendar className="h-3 w-3 text-muted-foreground" />
+            <span className="font-medium text-foreground">Actual Start:</span>
+            <span className="text-foreground">{formatDate(activity.actualStartDate)}</span>
           </div>
         )}
         {isClosed && activity.actualEndDate && (
           <div className="flex items-center gap-2">
             <Calendar className="h-3 w-3 text-green-500" />
-            <span className="font-medium text-gray-900">Actual End:</span>
-            <span className="text-slate-700">{formatDate(activity.actualEndDate)}</span>
+            <span className="font-medium text-foreground">Actual End:</span>
+            <span className="text-foreground">{formatDate(activity.actualEndDate)}</span>
           </div>
         )}
         {/* Unified Date History Button */}
@@ -1490,7 +1491,7 @@ export default function ActivityDetailPage() {
             <Button 
               variant="ghost" 
               onClick={() => router.push('/activities')}
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Activities
@@ -1501,7 +1502,7 @@ export default function ActivityDetailPage() {
                 <Button 
                   variant="outline" 
                   onClick={() => setShowEditBanner(true)}
-                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                  className="border-border text-foreground hover:bg-muted"
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Add Banner
@@ -1511,7 +1512,7 @@ export default function ActivityDetailPage() {
                 <Button 
                   variant="outline" 
                   onClick={() => setShowEditIcon(true)}
-                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                  className="border-border text-foreground hover:bg-muted"
                 >
                   <ImageIcon className="h-4 w-4 mr-2" />
                   Add Icon/Logo
@@ -1520,7 +1521,7 @@ export default function ActivityDetailPage() {
               <CommentsDrawer activityId={activity.id}>
                 <Button 
                   variant="outline"
-                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                  className="border-border text-foreground hover:bg-muted"
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Comments
@@ -1530,7 +1531,7 @@ export default function ActivityDetailPage() {
                 <DropdownMenuTrigger asChild>
               <Button 
                 variant="outline"
-                className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                className="border-border text-foreground hover:bg-muted"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export Profile
@@ -1569,13 +1570,13 @@ export default function ActivityDetailPage() {
               </DropdownMenu>
               <Button
                 variant="outline"
-                className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                className="border-border text-foreground hover:bg-muted"
                 onClick={() => activity?.id && toggleBookmark(activity.id)}
                 disabled={isToggling || !activity?.id}
               >
                 {activity?.id && isBookmarked(activity.id) ? (
                   <>
-                    <BookmarkCheck className="h-4 w-4 mr-2 text-slate-600" />
+                    <BookmarkCheck className="h-4 w-4 mr-2 text-muted-foreground" />
                     Bookmarked
                   </>
                 ) : (
@@ -1585,7 +1586,7 @@ export default function ActivityDetailPage() {
                   </>
                 )}
               </Button>
-              <div className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 h-10 hover:bg-slate-100 transition-colors">
+              <div className="inline-flex items-center justify-center rounded-md border border-border px-4 h-10 hover:bg-muted transition-colors">
                 <ActivityVote
                   activityId={activity?.id || ''}
                   userId={user?.id}
@@ -1597,7 +1598,7 @@ export default function ActivityDetailPage() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-300 px-4 h-10 text-sm text-slate-600">
+                      <div className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-4 h-10 text-sm text-muted-foreground">
                         <Eye className="h-4 w-4" />
                         <span className="font-medium tabular-nums">{viewCount}</span>
                       </div>
@@ -1680,7 +1681,7 @@ export default function ActivityDetailPage() {
                       <div className="flex-shrink-0">
                         {/* Icon/Logo */}
                         {(activity.icon || localIcon) && (
-                          <div className="w-20 h-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+                          <div className="w-20 h-20 rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center">
                             <img
                               src={activity.icon || localIcon || ""}
                               alt={`${activity.title} icon`}
@@ -1697,7 +1698,7 @@ export default function ActivityDetailPage() {
                         {/* Country/Region Pills */}
                         {(countryAllocations.length > 0 || regionAllocations.length > 0) && (
                           <div className={`${(activity.icon || localIcon) ? 'mt-3' : ''} w-full max-w-[12rem]`}>
-                            <div className="text-slate-500 mb-2 text-xs font-medium">Locations</div>
+                            <div className="text-muted-foreground mb-2 text-xs font-medium">Locations</div>
                             <div className="flex flex-wrap gap-1.5">
                               {countryAllocations.map((countryAlloc: any) => (
                                 <div 
@@ -1710,7 +1711,7 @@ export default function ActivityDetailPage() {
                                     className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
                                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                   />
-                                  <span className="text-slate-900">
+                                  <span className="text-foreground">
                                     {countryAlloc.country?.name || countryAlloc.country?.code || 'Unknown Country'}
                                   </span>
                                 </div>
@@ -1729,34 +1730,34 @@ export default function ActivityDetailPage() {
                         )}
                         {/* Divider between Locations and Classification Fields */}
                         {(countryAllocations.length > 0 || regionAllocations.length > 0) && (activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) && (
-                          <div className="mt-3 mb-3 border-b border-slate-200"></div>
+                          <div className="mt-3 mb-3 border-b border-border"></div>
                         )}
                         {/* Activity Classification Fields */}
                         {(activity.activityScope || activity.collaborationType || activity.defaultAidType || activity.defaultFinanceType || activity.defaultFlowType || activity.defaultTiedStatus || activity.hierarchy) && (
-                          <div className={`${(activity.icon || localIcon) || (countryAllocations.length > 0 || regionAllocations.length > 0) ? 'mt-3' : ''} w-full max-w-[12rem] ${(activity.tags && activity.tags.length > 0) ? 'pb-3 border-b border-slate-200' : ''}`}>
+                          <div className={`${(activity.icon || localIcon) || (countryAllocations.length > 0 || regionAllocations.length > 0) ? 'mt-3' : ''} w-full max-w-[12rem] ${(activity.tags && activity.tags.length > 0) ? 'pb-3 border-b border-border' : ''}`}>
                             <div className="flex flex-col gap-y-2 text-xs">
                               {activity.hierarchy && (
-                                <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Hierarchy</div>
-                                  <div className="font-medium text-slate-900 break-words">
+                                <div className="text-muted-foreground">
+                                  <div className="text-muted-foreground mb-1">Hierarchy</div>
+                                  <div className="font-medium text-foreground break-words">
                                     {getHierarchyLabel(activity.hierarchy) || `Level ${activity.hierarchy}`}
                                   </div>
                                 </div>
                               )}
                               {activity.collaborationType && (
-                                <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Collaboration Type:</div>
-                                  <div className="font-medium text-slate-900 break-words">
+                                <div className="text-muted-foreground">
+                                  <div className="text-muted-foreground mb-1">Collaboration Type:</div>
+                                  <div className="font-medium text-foreground break-words">
                                     {getCollaborationTypeLabel(activity.collaborationType) || activity.collaborationType}
                                   </div>
                                 </div>
                               )}
                               {activity.defaultFlowType && (
-                                <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Default Flow Type</div>
-                                  <div className="font-medium text-slate-900 break-words">
+                                <div className="text-muted-foreground">
+                                  <div className="text-muted-foreground mb-1">Default Flow Type</div>
+                                  <div className="font-medium text-foreground break-words">
                                     {activity.defaultFlowType === '0' || activity.defaultFlowType === 0 ? (
-                                      <span className="text-slate-400 italic text-sm font-normal">Blank</span>
+                                      <span className="text-muted-foreground italic text-sm font-normal">Blank</span>
                                     ) : (
                                       <CodelistTooltip
                                         type="flow_type"
@@ -1768,11 +1769,11 @@ export default function ActivityDetailPage() {
                                 </div>
                               )}
                               {activity.defaultFinanceType && (
-                                <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Default Finance Type</div>
-                                  <div className="font-medium text-slate-900 break-words">
+                                <div className="text-muted-foreground">
+                                  <div className="text-muted-foreground mb-1">Default Finance Type</div>
+                                  <div className="font-medium text-foreground break-words">
                                     {activity.defaultFinanceType === '0' || activity.defaultFinanceType === 0 ? (
-                                      <span className="text-slate-400 italic text-sm font-normal">Blank</span>
+                                      <span className="text-muted-foreground italic text-sm font-normal">Blank</span>
                                     ) : (
                                       <CodelistTooltip
                                         type="finance_type"
@@ -1784,11 +1785,11 @@ export default function ActivityDetailPage() {
                                 </div>
                               )}
                               {activity.defaultAidType && (
-                                <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Default Aid Type</div>
-                                  <div className="font-medium text-slate-900 break-words">
+                                <div className="text-muted-foreground">
+                                  <div className="text-muted-foreground mb-1">Default Aid Type</div>
+                                  <div className="font-medium text-foreground break-words">
                                     {activity.defaultAidType === '0' || activity.defaultAidType === 0 ? (
-                                      <span className="text-slate-400 italic text-sm font-normal">Blank</span>
+                                      <span className="text-muted-foreground italic text-sm font-normal">Blank</span>
                                     ) : (
                                       <CodelistTooltip
                                         type="aid_type"
@@ -1800,11 +1801,11 @@ export default function ActivityDetailPage() {
                                 </div>
                               )}
                               {activity.defaultTiedStatus && (
-                                <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Default Tied Status</div>
-                                  <div className="font-medium text-slate-900 break-words">
+                                <div className="text-muted-foreground">
+                                  <div className="text-muted-foreground mb-1">Default Tied Status</div>
+                                  <div className="font-medium text-foreground break-words">
                                     {activity.defaultTiedStatus === '0' || activity.defaultTiedStatus === 0 ? (
-                                      <span className="text-slate-400 italic text-sm font-normal">Blank</span>
+                                      <span className="text-muted-foreground italic text-sm font-normal">Blank</span>
                                     ) : (
                                       <CodelistTooltip
                                         type="tied_status"
@@ -1816,11 +1817,11 @@ export default function ActivityDetailPage() {
                                 </div>
                               )}
                               {activity.activityScope && (
-                                <div className="text-slate-600">
-                                  <div className="text-slate-500 mb-1">Scope</div>
-                                  <div className="font-medium text-slate-900 break-words">
+                                <div className="text-muted-foreground">
+                                  <div className="text-muted-foreground mb-1">Scope</div>
+                                  <div className="font-medium text-foreground break-words">
                                     {activity.activityScope === '0' || activity.activityScope === 0 ? (
-                                      <span className="text-slate-400 italic text-sm font-normal">Blank</span>
+                                      <span className="text-muted-foreground italic text-sm font-normal">Blank</span>
                                     ) : (
                                       getActivityScopeLabel(activity.activityScope) || activity.activityScope
                                     )}
@@ -1845,24 +1846,24 @@ export default function ActivityDetailPage() {
 
                     {/* Activity Info */}
                     <div className="flex-1">
-                      <h1 className="text-3xl font-bold text-slate-900 mb-3 group">
+                      <h1 className="text-3xl font-bold text-foreground mb-3 group">
                         {activity.title}{activity.acronym && <span> ({activity.acronym})</span>}{' '}
                         <button
                           onClick={() => copyToClipboard(activity.title || '', 'activityTitle')}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex items-center align-middle"
                           title="Copy Activity Title"
                         >
                           {copiedId === 'activityTitle' ? (
                             <Check className="w-5 h-5 text-green-600" />
                           ) : (
-                            <Copy className="w-5 h-5 text-slate-400" />
+                            <Copy className="w-5 h-5 text-muted-foreground" />
                           )}
                         </button>
                       </h1>
                       
                       <div className="space-y-3">
                         {/* First Row: Activity ID, IATI ID and Status Badges */}
-                        <div className="flex flex-wrap items-center gap-3 py-3 border-y border-slate-200">
+                        <div className="flex flex-wrap items-center gap-3 py-3 border-y border-border">
                           {activity.partnerId && (
                             <div className="flex items-center gap-1 group">
                               <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
@@ -1870,7 +1871,7 @@ export default function ActivityDetailPage() {
                               </code>
                               <button
                                 onClick={() => copyToClipboard(activity.partnerId || '', 'activityId')}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 flex-shrink-0 p-1"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0 p-1"
                                 title="Copy Activity ID"
                               >
                                 {copiedId === 'activityId' ? (
@@ -1888,7 +1889,7 @@ export default function ActivityDetailPage() {
                               </code>
                               <button
                                 onClick={() => copyToClipboard(activity.iatiIdentifier || '', 'iatiIdentifier')}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 flex-shrink-0 p-1"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0 p-1"
                                 title="Copy IATI Identifier"
                               >
                                 {copiedId === 'iatiIdentifier' ? (
@@ -1904,7 +1905,7 @@ export default function ActivityDetailPage() {
                               activity.activityStatus === "completed" || activity.activityStatus === "4" ? "bg-green-100 text-green-800 hover:bg-green-200" : 
                               activity.activityStatus === "implementation" || activity.activityStatus === "2" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" :
                               activity.activityStatus === "cancelled" || activity.activityStatus === "5" ? "bg-red-100 text-red-800 hover:bg-red-200" : 
-                              "bg-slate-100 text-slate-800 hover:bg-slate-200"
+                              "bg-muted text-foreground hover:bg-muted"
                             }
                           >
                             {activity.activityStatus === "2" ? "Implementation" :
@@ -1922,7 +1923,7 @@ export default function ActivityDetailPage() {
                               className={
                                 activity.publicationStatus === 'published' 
                                   ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                  : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
+                                  : 'bg-muted text-foreground hover:bg-muted'
                               }
                             >
                               {activity.publicationStatus === 'published' ? 'Published' : 'Unpublished'}
@@ -1938,7 +1939,7 @@ export default function ActivityDetailPage() {
                                     <Badge
                                       variant={activity.autoSync && (activity.syncStatus === 'live' || activity.syncStatus === 'outdated') ? "outline" : undefined}
                                       className={activity.autoSync && (activity.syncStatus === 'live' || activity.syncStatus === 'outdated')
-                                        ? "border-slate-300 text-slate-700 hover:bg-slate-50"
+                                        ? "border-border text-foreground hover:bg-muted/50"
                                         : "bg-[#124e5f] text-white hover:bg-[#0d3a47]"}
                                     >
                                       {activity.autoSync && activity.syncStatus === 'live' ? (
@@ -1983,20 +1984,20 @@ export default function ActivityDetailPage() {
                         </div>
 
                         {/* Third Row: Timeline Dates - Responsive Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 pb-3 border-b border-slate-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 pb-3 border-b border-border">
                           {/* Column 1: Start Dates */}
                           <div className="space-y-1.5 min-w-0">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
-                              <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                              <span className="text-slate-500 flex-shrink-0">Planned Start:</span>
-                              <span className="font-medium text-slate-900 truncate">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground flex-shrink-0">Planned Start:</span>
+                              <span className="font-medium text-foreground truncate">
                                 {activity.plannedStartDate ? formatDate(activity.plannedStartDate) : '—'}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
-                              <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                              <span className="text-slate-500 flex-shrink-0">Actual Start:</span>
-                              <span className="font-medium text-slate-900 truncate">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground flex-shrink-0">Actual Start:</span>
+                              <span className="font-medium text-foreground truncate">
                                 {activity.actualStartDate ? formatDate(activity.actualStartDate) : '—'}
                               </span>
                             </div>
@@ -2004,17 +2005,17 @@ export default function ActivityDetailPage() {
 
                           {/* Column 2: End Dates */}
                           <div className="space-y-1.5 min-w-0">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
-                              <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                              <span className="text-slate-500 flex-shrink-0">Planned End:</span>
-                              <span className="font-medium text-slate-900 truncate">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground flex-shrink-0">Planned End:</span>
+                              <span className="font-medium text-foreground truncate">
                                 {activity.plannedEndDate ? formatDate(activity.plannedEndDate) : '—'}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
-                              <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                              <span className="text-slate-500 flex-shrink-0">Actual End:</span>
-                              <span className="font-medium text-slate-900 truncate">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+                              <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground flex-shrink-0">Actual End:</span>
+                              <span className="font-medium text-foreground truncate">
                                 {activity.actualEndDate ? formatDate(activity.actualEndDate) : '—'}
                               </span>
                             </div>
@@ -2022,13 +2023,13 @@ export default function ActivityDetailPage() {
 
                           {/* Column 3: Created/Updated + History Button */}
                           <div className="space-y-1.5 min-w-0">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
-                              <span className="text-slate-500 flex-shrink-0">Created:</span>
-                              <span className="font-medium text-slate-900 truncate">{formatDate(activity.createdAt)}</span>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+                              <span className="text-muted-foreground flex-shrink-0">Created:</span>
+                              <span className="font-medium text-foreground truncate">{formatDate(activity.createdAt)}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 min-w-0">
-                              <span className="text-slate-500 flex-shrink-0">Updated:</span>
-                              <span className="font-medium text-slate-900 whitespace-nowrap">{formatDate(activity.updatedAt)}</span>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+                              <span className="text-muted-foreground flex-shrink-0">Updated:</span>
+                              <span className="font-medium text-foreground whitespace-nowrap">{formatDate(activity.updatedAt)}</span>
                               <AllDatesHistory
                                 activityId={activity.id}
                                 dates={{
@@ -2047,15 +2048,15 @@ export default function ActivityDetailPage() {
                         {activity.customDates && activity.customDates.length > 0 && (
                           <div className="flex flex-wrap items-center gap-3 pt-2">
                             {activity.customDates.map((customDate, index) => (
-                              <div key={index} className="flex items-center gap-1.5 text-xs text-slate-600">
-                                <Calendar className="h-3 w-3 text-slate-400" />
-                                <span className="text-slate-500">{customDate.label}:</span>
-                                <span className="font-medium text-slate-900">{formatDate(customDate.date)}</span>
+                              <div key={index} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-muted-foreground">{customDate.label}:</span>
+                                <span className="font-medium text-foreground">{formatDate(customDate.date)}</span>
                                 {customDate.description && (
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <HelpCircle className="h-3 w-3 text-slate-400" />
+                                        <HelpCircle className="h-3 w-3 text-muted-foreground" />
                                       </TooltipTrigger>
                                       <TooltipContent>{customDate.description}</TooltipContent>
                                     </Tooltip>
@@ -2095,49 +2096,49 @@ export default function ActivityDetailPage() {
                                 <SafeHtml 
                                   html={description} 
                                   level="rich"
-                                  className="text-slate-600 leading-relaxed"
+                                  className="text-muted-foreground leading-relaxed"
                                 />
                               </div>
                             )}
 
                             {/* Objectives Section */}
                             {objectives && (
-                              <div className="mt-4 border-t border-slate-200 pt-3">
-                                <h4 className="text-sm font-medium text-slate-700 mb-2">
+                              <div className="mt-4 border-t border-border pt-3">
+                                <h4 className="text-sm font-medium text-foreground mb-2">
                                   Objectives
                                 </h4>
                                 <SafeHtml 
                                   html={objectives} 
                                   level="rich"
-                                  className="text-slate-600 leading-relaxed"
+                                  className="text-muted-foreground leading-relaxed"
                                 />
                               </div>
                             )}
 
                             {/* Target Groups Section */}
                             {targetGroups && (
-                              <div className="mt-4 border-t border-slate-200 pt-3">
-                                <h4 className="text-sm font-medium text-slate-700 mb-2">
+                              <div className="mt-4 border-t border-border pt-3">
+                                <h4 className="text-sm font-medium text-foreground mb-2">
                                   Target Groups
                                 </h4>
                                 <SafeHtml 
                                   html={targetGroups} 
                                   level="rich"
-                                  className="text-slate-600 leading-relaxed"
+                                  className="text-muted-foreground leading-relaxed"
                                 />
                               </div>
                             )}
 
                             {/* Other Section */}
                             {other && (
-                              <div className="mt-4 border-t border-slate-200 pt-3">
-                                <h4 className="text-sm font-medium text-slate-700 mb-2">
+                              <div className="mt-4 border-t border-border pt-3">
+                                <h4 className="text-sm font-medium text-foreground mb-2">
                                   Other
                                 </h4>
                                 <SafeHtml 
                                   html={other} 
                                   level="rich"
-                                  className="text-slate-600 leading-relaxed"
+                                  className="text-muted-foreground leading-relaxed"
                                 />
                               </div>
                             )}
@@ -2164,7 +2165,7 @@ export default function ActivityDetailPage() {
                                   }
                                 }
                               }}
-                              className="flex items-center gap-1 text-slate-600 hover:text-slate-900 mt-2 text-sm font-medium transition-colors"
+                              className="flex items-center gap-1 text-muted-foreground hover:text-foreground mt-2 text-sm font-medium transition-colors"
                             >
                               {isDescriptionExpanded ? (
                                 <>
@@ -2188,12 +2189,12 @@ export default function ActivityDetailPage() {
 
                 {/* Organizations Sidebar - Column 4 */}
                 <div className="lg:col-span-1">
-                  <div className="bg-white">
+                  <div className="bg-card">
                     <div className="space-y-3">
                       {/* Reporting Organisation */}
                       {reportingOrg && (
-                        <div className="pb-3 border-b border-slate-200">
-                          <div className="text-slate-500 mb-2 text-xs font-medium">Reporting Organisation</div>
+                        <div className="pb-3 border-b border-border">
+                          <div className="text-muted-foreground mb-2 text-xs font-medium">Reporting Organisation</div>
                           <div className="flex items-start gap-3">
                             {/* Logo/Icon */}
                             {reportingOrg.logo && (
@@ -2201,18 +2202,18 @@ export default function ActivityDetailPage() {
                                 <img
                                   src={reportingOrg.logo}
                                   alt={`${reportingOrg.name} logo`}
-                                  className="w-10 h-10 rounded object-cover bg-white"
+                                  className="w-10 h-10 rounded object-cover bg-card"
                                 />
                               </div>
                             )}
                             
                             {/* Organization Name, IATI ID */}
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm text-slate-900">
+                              <div className="text-sm text-foreground">
                                 {reportingOrg.id ? (
                                   <Link 
                                     href={`/organizations/${reportingOrg.id}`}
-                                    className="font-medium hover:text-slate-700 transition-colors"
+                                    className="font-medium hover:text-foreground transition-colors"
                                   >
                                     {reportingOrg.name || 'Unknown'}
                                     {reportingOrg.acronym && reportingOrg.acronym !== reportingOrg.name && (
@@ -2241,7 +2242,7 @@ export default function ActivityDetailPage() {
                       {/* All Participating Organizations */}
                       {participatingOrgs.length > 0 && (
                         <>
-                          <div className="text-slate-500 mb-2 text-xs font-medium">Participating Organisations</div>
+                          <div className="text-muted-foreground mb-2 text-xs font-medium">Participating Organisations</div>
                           <div className="space-y-3">
                             {(showAllSidebarPartners ? participatingOrgs : participatingOrgs.slice(0, 4)).map((org, idx) => (
                               <div key={idx} className="pb-3 last:pb-0">
@@ -2252,18 +2253,18 @@ export default function ActivityDetailPage() {
                                       <img
                                         src={org.organization.logo}
                                         alt={`${org.organization.name} logo`}
-                                        className="w-10 h-10 rounded object-cover bg-white"
+                                        className="w-10 h-10 rounded object-cover bg-card"
                                       />
                                     </div>
                                   )}
                                   
                                   {/* Organization Name, IATI ID, and Role Badge - Same Line */}
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-sm text-slate-900">
+                                    <div className="text-sm text-foreground">
                                       {org.organization?.id ? (
                                         <Link 
                                           href={`/organizations/${org.organization.id}`}
-                                          className="font-medium hover:text-slate-700 transition-colors"
+                                          className="font-medium hover:text-foreground transition-colors"
                                         >
                                           {org.organization.name || org.narrative || 'Unknown'}
                                           {org.organization.acronym && org.organization.acronym !== org.organization.name && (
@@ -2291,7 +2292,7 @@ export default function ActivityDetailPage() {
                                           org.role_type === 'extending' ? 'bg-[#7b95a7]/10 text-[#7b95a7]' :
                                           org.role_type === 'government' ? 'bg-[#4c5568]/10 text-[#4c5568]' :
                                           org.role_type === 'implementing' ? 'bg-[#7b95a7]/10 text-[#7b95a7]' :
-                                          'bg-slate-100 text-slate-700'
+                                          'bg-muted text-foreground'
                                         }`}
                                       >
                                         {org.role_type === 'government' ? 'Accountable' :
@@ -2320,7 +2321,7 @@ export default function ActivityDetailPage() {
                                   }
                                 }
                               }}
-                              className="w-full mt-2 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors flex items-center justify-start gap-2"
+                              className="w-full mt-2 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors flex items-center justify-start gap-2"
                             >
                               {showAllSidebarPartners ? (
                                 <>
@@ -2340,8 +2341,8 @@ export default function ActivityDetailPage() {
                     </div>
                     {/* SDG Icons Below Partners */}
                     {sdgMappings && sdgMappings.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-slate-200">
-                        <div className="text-xs font-medium text-slate-600 mb-2">SDG Alignment</div>
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="text-xs font-medium text-muted-foreground mb-2">SDG Alignment</div>
                         <SDGImageGrid 
                           sdgCodes={sdgMappings.map((m: any) => m.sdgGoal || m.sdg_goal)} 
                           size="sm" 
@@ -2353,8 +2354,8 @@ export default function ActivityDetailPage() {
                     
                     {/* Policy Markers Below SDG */}
                     {activity.policyMarkers && activity.policyMarkers.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-slate-200">
-                        <div className="text-xs font-medium text-slate-600 mb-2">Policy Markers</div>
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="text-xs font-medium text-muted-foreground mb-2">Policy Markers</div>
                         <div className="flex flex-wrap gap-2">
                           {activity.policyMarkers.map((marker: any, index: number) => {
                             // Get specific icon for each policy marker based on IATI code or code name
@@ -2414,10 +2415,10 @@ export default function ActivityDetailPage() {
                                   <TooltipTrigger asChild>
                                     <Link
                                       href={`/policy-markers/${markerUuid}`}
-                                      className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer"
+                                      className="flex items-center justify-center w-8 h-8 rounded-full bg-muted border border-border hover:bg-muted transition-colors cursor-pointer"
                                       onClick={(e) => e.stopPropagation()}
                                     >
-                                      <IconComponent className="w-4 h-4 text-slate-600" />
+                                      <IconComponent className="w-4 h-4 text-muted-foreground" />
                                     </Link>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -2447,7 +2448,7 @@ export default function ActivityDetailPage() {
 
           {/* Key Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-border bg-card">
               <CardContent className="p-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 w-full">
@@ -2456,7 +2457,7 @@ export default function ActivityDetailPage() {
                         label="Total Budgeted" 
                         helpText="The total amount of funds allocated for this activity across all budget periods. This represents the planned spending for the entire activity lifecycle."
                       />
-                                               <p className="text-lg font-bold text-slate-900">
+                                               <p className="text-lg font-bold text-foreground">
                           ${formatCompactNumber(budgets?.length > 0 ? budgets.reduce((sum: number, b: any) => {
                             // Use usd_value if available (primary source)
                             if (b.usd_value != null && b.usd_value > 0) {
@@ -2472,22 +2473,22 @@ export default function ActivityDetailPage() {
                           }, 0) : 0)}
                          </p>
                   </div>
-                    <div className="border-t border-slate-200 pt-2">
+                    <div className="border-t border-border pt-2">
                     <LabelWithHelp 
                       label="Total Committed" 
                       helpText="The total amount of funds promised or obligated for this activity from commitments (IATI transaction type 2). This represents what has been pledged but may not yet be disbursed."
                     />
-                    <p className="text-lg font-bold text-slate-900">
+                    <p className="text-lg font-bold text-foreground">
                       ${formatCompactNumber(financials.totalCommitment)}
                     </p>
                   </div>
                   </div>
-                  <DollarSign className="h-6 w-6 text-slate-400 flex-shrink-0" />
+                  <DollarSign className="h-6 w-6 text-muted-foreground flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-border bg-card">
               <CardContent className="p-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 w-full">
@@ -2496,29 +2497,29 @@ export default function ActivityDetailPage() {
                         label="Total Spent"
                         helpText="The total amount of funds disbursed and expended (IATI transaction types 3 + 4). This represents the combined total of money paid out to implementers and money spent on project activities."
                       />
-                      <p className="text-lg font-bold text-slate-900">
+                      <p className="text-lg font-bold text-foreground">
                       ${formatCompactNumber(financials.totalDisbursement + financials.totalExpenditure)}
                     </p>
                   </div>
-                    <div className="border-t border-slate-200 pt-2">
+                    <div className="border-t border-border pt-2">
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <p className="text-slate-500">Disbursed</p>
-                          <p className="font-semibold text-slate-700">${formatCompactNumber(financials.totalDisbursement)}</p>
+                          <p className="text-muted-foreground">Disbursed</p>
+                          <p className="font-semibold text-foreground">${formatCompactNumber(financials.totalDisbursement)}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500">Expended</p>
-                          <p className="font-semibold text-slate-700">${formatCompactNumber(financials.totalExpenditure)}</p>
+                          <p className="text-muted-foreground">Expended</p>
+                          <p className="font-semibold text-foreground">${formatCompactNumber(financials.totalExpenditure)}</p>
                         </div>
                       </div>
                   </div>
                   </div>
-                  <Wallet className="h-6 w-6 text-slate-400 flex-shrink-0" />
+                  <Wallet className="h-6 w-6 text-muted-foreground flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-border bg-card">
               <CardContent className="p-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2 w-full">
@@ -2527,12 +2528,12 @@ export default function ActivityDetailPage() {
                         label="Percentage of Committed Funds Spent"
                         helpText="This metric shows how much of the formal, committed funding for the activity has been utilized. The calculation compares actual spending against the committed funds: (Disbursed Funds + Expended Funds) / Committed Funds × 100"
                       />
-                      <p className="text-lg font-bold text-slate-900">{financialDeliveryPercent}%</p>
+                      <p className="text-lg font-bold text-foreground">{financialDeliveryPercent}%</p>
                     </div>
 
                     {/* Progress Bar */}
                     <div className="w-full">
-                      <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div
                           className="h-2 rounded-full transition-all duration-300"
                           style={{ width: `${Math.min(financialDeliveryPercent, 100)}%`, backgroundColor: '#4c5568' }}
@@ -2540,19 +2541,19 @@ export default function ActivityDetailPage() {
                       </div>
                     </div>
 
-                    <div className="border-t border-slate-200 pt-2">
+                    <div className="border-t border-border pt-2">
                     <LabelWithHelp
                       label="Percentage of Budgeted Funds Spent"
                       helpText="This figure shows what portion of the total planned budget has been converted into actual spending. The calculation compares actual spending against the planned budget: (Disbursed Funds + Expended Funds) / Budgeted Funds × 100"
                     />
-                    <p className="text-lg font-bold text-slate-900">
+                    <p className="text-lg font-bold text-foreground">
                       {implementationVsPlanPercent}%
                     </p>
                   </div>
                   
                     {/* Progress Bar */}
                     <div className="w-full">
-                      <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div 
                           className="h-2 rounded-full transition-all duration-300" 
                           style={{ width: `${Math.min(implementationVsPlanPercent, 100)}%`, backgroundColor: '#4c5568' }}
@@ -2565,10 +2566,10 @@ export default function ActivityDetailPage() {
             </Card>
 
             {/* Budget by Year Chart */}
-            <Card className="border-slate-200 bg-white flex flex-col">
+            <Card className="border-border bg-card flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <CardTitle className="text-xs font-semibold text-slate-900">Budget by Year</CardTitle>
+                  <CardTitle className="text-xs font-semibold text-foreground">Budget by Year</CardTitle>
                   <HelpTextTooltip 
                     content="Allocates budget amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
                   />
@@ -2643,7 +2644,7 @@ export default function ActivityDetailPage() {
 
                   if (budgetData.length === 0) {
                     return (
-                      <div className="flex-1 min-h-24 flex items-center justify-center text-slate-400 text-xs">
+                      <div className="flex-1 min-h-24 flex items-center justify-center text-muted-foreground text-xs">
                         <p>No budget data</p>
                 </div>
                     )
@@ -2654,23 +2655,23 @@ export default function ActivityDetailPage() {
                       <div className="flex-1 min-h-24 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
-                            <tr className="border-b border-slate-200">
-                              <th className="text-left py-1 text-slate-600 font-medium">Year</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Budget</th>
+                            <tr className="border-b border-border">
+                              <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
+                              <th className="text-right py-1 text-muted-foreground font-medium">Budget</th>
                             </tr>
                           </thead>
                           <tbody>
                             {budgetData.map((item) => (
-                              <tr key={item.year} className="border-b border-slate-100">
-                                <td className="py-1 text-slate-900">{item.year}</td>
-                                <td className="text-right py-1 text-slate-900 font-medium">
+                              <tr key={item.year} className="border-b border-border">
+                                <td className="py-1 text-foreground">{item.year}</td>
+                                <td className="text-right py-1 text-foreground font-medium">
                                   {formatCurrencyShort(item.amount)}
                                 </td>
                               </tr>
                             ))}
-                            <tr className="border-t-2 border-slate-300 bg-slate-50">
-                              <td className="py-1 text-slate-900 font-semibold">Total</td>
-                              <td className="text-right py-1 text-slate-900 font-semibold">
+                            <tr className="border-t-2 border-border bg-muted">
+                              <td className="py-1 text-foreground font-semibold">Total</td>
+                              <td className="text-right py-1 text-foreground font-semibold">
                                 {formatCurrencyShort(budgetData.reduce((sum, item) => sum + item.amount, 0))}
                               </td>
                             </tr>
@@ -2710,18 +2711,18 @@ export default function ActivityDetailPage() {
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 return (
-                                  <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                  <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                     <table className="text-xs w-full border-collapse">
                                       <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-200">
-                                          <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
-                                          <th className="text-right px-3 py-2 text-slate-600 font-semibold">Budget</th>
+                                        <tr className="bg-muted border-b border-border">
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Budget</th>
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        <tr className="border-b border-slate-100">
-                                          <td className="px-3 py-2 text-slate-600">Budget</td>
-                                          <td className="text-right px-3 py-2 font-medium text-slate-900">{formatCurrencyShort(payload[0].value as number)}</td>
+                                        <tr className="border-b border-border">
+                                          <td className="px-3 py-2 text-muted-foreground">Budget</td>
+                                          <td className="text-right px-3 py-2 font-medium text-foreground">{formatCurrencyShort(payload[0].value as number)}</td>
                                         </tr>
                                       </tbody>
                                     </table>
@@ -2750,10 +2751,10 @@ export default function ActivityDetailPage() {
             </Card>
 
             {/* Planned vs Actual */}
-            <Card className="border-slate-200 bg-white flex flex-col">
+            <Card className="border-border bg-card flex flex-col">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <CardTitle className="text-xs font-semibold text-slate-900">Planned vs Actual</CardTitle>
+                  <CardTitle className="text-xs font-semibold text-foreground">Planned vs Actual</CardTitle>
                   <HelpTextTooltip 
                     content="Allocates budget and planned disbursement amounts proportionally across calendar years based on the number of days. For example, a budget spanning July 2024 to June 2025 will be split between 2024 and 2025."
                     side="top"
@@ -2887,7 +2888,7 @@ export default function ActivityDetailPage() {
 
                   if (chartData.length === 0) {
                     return (
-                      <div className="flex-1 min-h-24 flex items-center justify-center text-slate-400 text-xs">
+                      <div className="flex-1 min-h-24 flex items-center justify-center text-muted-foreground text-xs">
                         <p>No financial data</p>
                 </div>
                     )
@@ -2898,24 +2899,24 @@ export default function ActivityDetailPage() {
                       <div className="flex-1 min-h-24 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
-                            <tr className="border-b border-slate-200">
-                              <th className="text-left py-1 text-slate-600 font-medium">Year</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Planned</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Disb.</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Exp.</th>
+                            <tr className="border-b border-border">
+                              <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
+                              <th className="text-right py-1 text-muted-foreground font-medium">Planned</th>
+                              <th className="text-right py-1 text-muted-foreground font-medium">Disb.</th>
+                              <th className="text-right py-1 text-muted-foreground font-medium">Exp.</th>
                             </tr>
                           </thead>
                           <tbody>
                             {chartData.map((item) => (
-                              <tr key={item.year} className="border-b border-slate-100">
-                                <td className="py-1 text-slate-900">{item.year}</td>
+                              <tr key={item.year} className="border-b border-border">
+                                <td className="py-1 text-foreground">{item.year}</td>
                                 <td className="text-right py-1 font-medium" style={{ color: '#cfd0d5' }}>{formatCurrencyShort(item.plannedDisbursements)}</td>
                                 <td className="text-right py-1 font-medium" style={{ color: '#7b95a7' }}>{formatCurrencyShort(item.disbursements)}</td>
                                 <td className="text-right py-1 font-medium" style={{ color: '#dc2625' }}>{formatCurrencyShort(item.expenditures)}</td>
                               </tr>
                             ))}
-                            <tr className="border-t-2 border-slate-300 bg-slate-50">
-                              <td className="py-1 text-slate-900 font-semibold">Total</td>
+                            <tr className="border-t-2 border-border bg-muted">
+                              <td className="py-1 text-foreground font-semibold">Total</td>
                               <td className="text-right py-1 font-semibold" style={{ color: '#cfd0d5' }}>
                                 {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.plannedDisbursements, 0))}
                               </td>
@@ -2964,26 +2965,26 @@ export default function ActivityDetailPage() {
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 return (
-                                  <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                  <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                     <table className="text-xs w-full border-collapse">
                                       <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-200">
-                                          <th className="text-left px-3 py-2 text-slate-600 font-semibold">{payload[0].payload.year}</th>
-                                          <th className="text-right px-3 py-2 text-slate-600 font-semibold">Amount</th>
+                                        <tr className="bg-muted border-b border-border">
+                                          <th className="text-left px-3 py-2 text-muted-foreground font-semibold">{payload[0].payload.year}</th>
+                                          <th className="text-right px-3 py-2 text-muted-foreground font-semibold">Amount</th>
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        <tr className="border-b border-slate-100">
-                                          <td className="px-3 py-2 text-slate-600">Planned Disbursements</td>
-                                          <td className="text-right px-3 py-2 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
+                                        <tr className="border-b border-border">
+                                          <td className="px-3 py-2 text-muted-foreground">Planned Disbursements</td>
+                                          <td className="text-right px-3 py-2 font-medium text-foreground">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
                                         </tr>
-                                        <tr className="border-b border-slate-100">
-                                          <td className="px-3 py-2 text-slate-600">Disbursements</td>
-                                          <td className="text-right px-3 py-2 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
+                                        <tr className="border-b border-border">
+                                          <td className="px-3 py-2 text-muted-foreground">Disbursements</td>
+                                          <td className="text-right px-3 py-2 font-medium text-foreground">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
                                         </tr>
                                         <tr>
-                                          <td className="px-3 py-2 text-slate-600">Expenditures</td>
-                                          <td className="text-right px-3 py-2 font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
+                                          <td className="px-3 py-2 text-muted-foreground">Expenditures</td>
+                                          <td className="text-right px-3 py-2 font-medium text-foreground">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
                                         </tr>
                                       </tbody>
                                     </table>
@@ -3030,9 +3031,9 @@ export default function ActivityDetailPage() {
             </Card>
 
             {/* Finance Type Breakdown */}
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="text-xs font-semibold text-slate-900">Finance Types</CardTitle>
+                <CardTitle className="text-xs font-semibold text-foreground">Finance Types</CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <FinanceTypeDonut 
@@ -3048,40 +3049,40 @@ export default function ActivityDetailPage() {
           <Card className="border-0">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap justify-center">
-                <TabsTrigger value="finances" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="finances" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Finances
                 </TabsTrigger>
-                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Financial Analytics
                 </TabsTrigger>
-                <TabsTrigger value="sectors" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="sectors" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Sectors
                 </TabsTrigger>
-                <TabsTrigger value="partnerships" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="partnerships" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Partnerships
                 </TabsTrigger>
-                <TabsTrigger value="geography" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="geography" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Locations
                 </TabsTrigger>
-                <TabsTrigger value="results" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="results" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Results
                 </TabsTrigger>
-                <TabsTrigger value="sdg" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="sdg" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   SDG Alignment
                 </TabsTrigger>
-                <TabsTrigger value="policy-markers" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="policy-markers" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Policy Markers
                 </TabsTrigger>
-                <TabsTrigger value="library" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="library" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Activity Library
                 </TabsTrigger>
-                <TabsTrigger value="related-activities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="related-activities" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Related Activities
                 </TabsTrigger>
-                <TabsTrigger value="contacts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="contacts" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Contacts
                 </TabsTrigger>
-                <TabsTrigger value="discussion" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="discussion" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Discussion
                 </TabsTrigger>
               </TabsList>
@@ -3092,21 +3093,21 @@ export default function ActivityDetailPage() {
                   <div className="space-y-6">
                   {/* Budgets */}
                   <div className={`border rounded-lg ${budgets !== undefined && budgets.length === 0 ? 'opacity-50' : ''}`}>
-                    <div className="px-4 py-3 border-b border-slate-200">
+                    <div className="px-4 py-3 border-b border-border">
                       <div className="flex items-start justify-between gap-4">
                         <button
                           onClick={() => {
                             const hasBudgets = budgets === undefined || budgets.length > 0;
                             if (hasBudgets) setIsBudgetsOpen(!isBudgetsOpen);
                           }}
-                          className={`flex items-center gap-2 text-left transition-colors ${budgets !== undefined && budgets.length === 0 ? 'cursor-not-allowed' : 'hover:text-slate-900'}`}
+                          className={`flex items-center gap-2 text-left transition-colors ${budgets !== undefined && budgets.length === 0 ? 'cursor-not-allowed' : 'hover:text-foreground'}`}
                           aria-label={isBudgetsOpen ? 'Collapse Budgets' : 'Expand Budgets'}
                           disabled={budgets !== undefined && budgets.length === 0}
                         >
-                          {isBudgetsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
+                          {isBudgetsOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           <div>
-                            <p className="text-lg font-bold text-slate-900">Budgets</p>
-                            <p className="text-xs text-slate-500 mt-1">
+                            <p className="text-lg font-bold text-foreground">Budgets</p>
+                            <p className="text-xs text-muted-foreground mt-1">
                               {budgets !== undefined && budgets.length === 0 ? 'No budgets recorded' : 'Activity budget allocations by period'}
                             </p>
                           </div>
@@ -3144,21 +3145,21 @@ export default function ActivityDetailPage() {
 
                   {/* Planned Disbursements */}
                   <div className={`border rounded-lg ${plannedDisbursements !== undefined && plannedDisbursements.length === 0 ? 'opacity-50' : ''}`}>
-                    <div className="px-4 py-3 border-b border-slate-200">
+                    <div className="px-4 py-3 border-b border-border">
                       <div className="flex items-start justify-between gap-4">
                         <button
                           onClick={() => {
                             const hasPlanned = plannedDisbursements === undefined || plannedDisbursements.length > 0;
                             if (hasPlanned) setIsPlannedOpen(!isPlannedOpen);
                           }}
-                          className={`flex items-center gap-2 text-left transition-colors ${plannedDisbursements !== undefined && plannedDisbursements.length === 0 ? 'cursor-not-allowed' : 'hover:text-slate-900'}`}
+                          className={`flex items-center gap-2 text-left transition-colors ${plannedDisbursements !== undefined && plannedDisbursements.length === 0 ? 'cursor-not-allowed' : 'hover:text-foreground'}`}
                           aria-label={isPlannedOpen ? 'Collapse Planned Disbursements' : 'Expand Planned Disbursements'}
                           disabled={plannedDisbursements !== undefined && plannedDisbursements.length === 0}
                         >
-                          {isPlannedOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
+                          {isPlannedOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           <div>
-                            <p className="text-lg font-bold text-slate-900">Planned Disbursements</p>
-                            <p className="text-xs text-slate-500 mt-1">
+                            <p className="text-lg font-bold text-foreground">Planned Disbursements</p>
+                            <p className="text-xs text-muted-foreground mt-1">
                               {plannedDisbursements !== undefined && plannedDisbursements.length === 0 ? 'No planned disbursements recorded' : 'Scheduled future disbursements'}
                             </p>
                           </div>
@@ -3196,21 +3197,21 @@ export default function ActivityDetailPage() {
 
                   {/* Transactions */}
                   <div className={`border rounded-lg ${activity.transactions !== undefined && activity.transactions.length === 0 ? 'opacity-50' : ''}`}>
-                    <div className="px-4 py-3 border-b border-slate-200">
+                    <div className="px-4 py-3 border-b border-border">
                       <div className="flex items-start justify-between gap-4">
                         <button
                           onClick={() => {
                             const hasTransactions = activity.transactions === undefined || activity.transactions.length > 0;
                             if (hasTransactions) setIsTransactionsOpen(!isTransactionsOpen);
                           }}
-                          className={`flex items-center gap-2 text-left transition-colors ${activity.transactions !== undefined && activity.transactions.length === 0 ? 'cursor-not-allowed' : 'hover:text-slate-900'}`}
+                          className={`flex items-center gap-2 text-left transition-colors ${activity.transactions !== undefined && activity.transactions.length === 0 ? 'cursor-not-allowed' : 'hover:text-foreground'}`}
                           aria-label={isTransactionsOpen ? 'Collapse Transactions' : 'Expand Transactions'}
                           disabled={activity.transactions !== undefined && activity.transactions.length === 0}
                         >
-                          {isTransactionsOpen ? <ChevronUp className="h-4 w-4 text-slate-600 flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-600 flex-shrink-0" />}
+                          {isTransactionsOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           <div>
-                            <p className="text-lg font-bold text-slate-900">Transactions</p>
-                            <p className="text-xs text-slate-500 mt-1">
+                            <p className="text-lg font-bold text-foreground">Transactions</p>
+                            <p className="text-xs text-muted-foreground mt-1">
                               {activity.transactions !== undefined && activity.transactions.length === 0 ? 'No transactions recorded' : 'Commitments, disbursements, and expenditures'}
                             </p>
                           </div>
@@ -3270,11 +3271,11 @@ export default function ActivityDetailPage() {
                   {activity.sectors && activity.sectors.length > 0 ? (
                     <div className="space-y-6">
                       {/* Sector Flow Visualization - Full Width */}
-                      <Card className="border-slate-200">
+                      <Card className="border-border">
                         <CardHeader>
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                             <div>
-                              <CardTitle className="text-lg font-semibold text-slate-900">
+                              <CardTitle className="text-lg font-semibold text-foreground">
                                 Sector Flow Visualization
                               </CardTitle>
                               <CardDescription>
@@ -3283,37 +3284,37 @@ export default function ActivityDetailPage() {
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
                               {/* View Type Buttons */}
-                              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                              <div className="flex gap-1 rounded-lg p-1 bg-muted">
                                 <Button
-                                  variant={sectorViewMode === 'sankey' ? 'default' : 'ghost'}
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => setSectorViewMode('sankey')}
-                                  className="h-8"
+                                  className={cn("h-8", sectorViewMode === 'sankey' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                 >
                                   <GitBranch className="h-4 w-4 mr-1.5" />
                                   Flow
                                 </Button>
                                 <Button
-                                  variant={sectorViewMode === 'pie' ? 'default' : 'ghost'}
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => setSectorViewMode('pie')}
-                                  className="h-8"
+                                  className={cn("h-8", sectorViewMode === 'pie' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                 >
                                   <PieChartIcon className="h-4 w-4" />
                                 </Button>
                                 <Button
-                                  variant={sectorViewMode === 'bar' ? 'default' : 'ghost'}
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => setSectorViewMode('bar')}
-                                  className="h-8"
+                                  className={cn("h-8", sectorViewMode === 'bar' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                 >
                                   <BarChart3Icon className="h-4 w-4" />
                                 </Button>
                                 <Button
-                                  variant={sectorViewMode === 'table' ? 'default' : 'ghost'}
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => setSectorViewMode('table')}
-                                  className="h-8"
+                                  className={cn("h-8", sectorViewMode === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                 >
                                   <TableIcon className="h-4 w-4" />
                                 </Button>
@@ -3321,28 +3322,28 @@ export default function ActivityDetailPage() {
 
                               {/* Bar grouping buttons - only show when bar view is active */}
                               {sectorViewMode === 'bar' && (
-                                <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                                <div className="flex gap-1 rounded-lg p-1 bg-muted">
                                   <Button
-                                    variant={sectorBarGroupingMode === 'group' ? 'default' : 'ghost'}
+                                    variant="ghost"
                                     size="sm"
                                     onClick={() => setSectorBarGroupingMode('group')}
-                                    className="h-7 text-xs px-3"
+                                    className={cn("h-7 text-xs px-3", sectorBarGroupingMode === 'group' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                   >
                                     Sector Category
                                   </Button>
                                   <Button
-                                    variant={sectorBarGroupingMode === 'category' ? 'default' : 'ghost'}
+                                    variant="ghost"
                                     size="sm"
                                     onClick={() => setSectorBarGroupingMode('category')}
-                                    className="h-7 text-xs px-3"
+                                    className={cn("h-7 text-xs px-3", sectorBarGroupingMode === 'category' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                   >
                                     Sector
                                   </Button>
                                   <Button
-                                    variant={sectorBarGroupingMode === 'sector' ? 'default' : 'ghost'}
+                                    variant="ghost"
                                     size="sm"
                                     onClick={() => setSectorBarGroupingMode('sector')}
-                                    className="h-7 text-xs px-3"
+                                    className={cn("h-7 text-xs px-3", sectorBarGroupingMode === 'sector' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                                   >
                                     Sub Sector
                                   </Button>
@@ -3459,10 +3460,10 @@ export default function ActivityDetailPage() {
 
                     </div>
                   ) : (
-                    <Card className="border-slate-200">
+                    <Card className="border-border">
                       <CardContent className="text-center py-12">
-                        <PieChartIcon className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No sectors have been allocated for this activity.</p>
+                        <PieChartIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No sectors have been allocated for this activity.</p>
                       </CardContent>
                     </Card>
                   )}
@@ -3587,14 +3588,14 @@ export default function ActivityDetailPage() {
 
                   // Helper function for role badge colors
                   const getRoleBadgeColor = (roleCode: number | undefined) => {
-                    if (!roleCode) return 'bg-gray-100 text-gray-800 border-gray-300';
+                    if (!roleCode) return 'bg-muted text-foreground border-border';
                     const colors: Record<number, string> = {
                       1: 'bg-yellow-100 text-yellow-800 border-yellow-300',     // Funding
                       2: 'bg-purple-100 text-purple-800 border-purple-300',     // Accountable/Government
                       3: 'bg-blue-100 text-blue-800 border-blue-300',           // Extending
                       4: 'bg-green-100 text-green-800 border-green-300'         // Implementing
                     };
-                    return colors[roleCode] || 'bg-gray-100 text-gray-800 border-gray-300';
+                    return colors[roleCode] || 'bg-muted text-foreground border-border';
                   };
 
                   // Sorting logic for participating organizations
@@ -3609,11 +3610,11 @@ export default function ActivityDetailPage() {
 
                   const getPartnershipsSortIcon = (field: string) => {
                     if (partnershipsSortField !== field) {
-                      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+                      return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
                     }
                     return partnershipsSortDirection === 'asc'
-                      ? <ArrowUp className="h-4 w-4 text-gray-400" />
-                      : <ArrowDown className="h-4 w-4 text-gray-400" />;
+                      ? <ArrowUp className="h-4 w-4 text-muted-foreground" />
+                      : <ArrowDown className="h-4 w-4 text-muted-foreground" />;
                   };
 
                   const sortedParticipatingOrgs = [...participatingOrgs].sort((a, b) => {
@@ -3650,9 +3651,9 @@ export default function ActivityDetailPage() {
                 <div className="space-y-6">
                   {/* Reporting Organisation */}
                   {reportingOrg && (
-                  <Card className="border-slate-200">
+                  <Card className="border-border">
                     <CardHeader>
-                      <CardTitle className="text-slate-900 flex items-center gap-2">
+                      <CardTitle className="text-foreground flex items-center gap-2">
                           <Building2 className="h-5 w-5" />
                           Reporting Organisation
                       </CardTitle>
@@ -3680,19 +3681,19 @@ export default function ActivityDetailPage() {
                                         <img
                                           src={reportingOrg.logo}
                                           alt={reportingOrg.name || 'Organization logo'}
-                                          className="w-10 h-10 rounded object-cover bg-white"
+                                          className="w-10 h-10 rounded object-cover bg-card"
                                           onError={(e) => {
                                             (e.target as HTMLImageElement).style.display = 'none';
                                           }}
                                         />
                                       ) : (
-                                        <div className="w-10 h-10 bg-slate-100 rounded flex items-center justify-center">
-                                          <Building2 className="h-5 w-5 text-slate-400" />
+                                        <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                                          <Building2 className="h-5 w-5 text-muted-foreground" />
                                         </div>
                                       )}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                      <div className="font-medium text-slate-900">
+                                      <div className="font-medium text-foreground">
                                         {reportingOrg.id ? (
                                           <Link
                                             href={`/organizations/${reportingOrg.id}`}
@@ -3709,7 +3710,7 @@ export default function ActivityDetailPage() {
                                         )}
                                       </div>
                                       {reportingOrg.iati_org_id && (
-                                        <div className="text-xs text-slate-500 font-mono mt-1">
+                                        <div className="text-xs text-muted-foreground font-mono mt-1">
                                           {reportingOrg.iati_org_id}
                                         </div>
                                       )}
@@ -3717,23 +3718,23 @@ export default function ActivityDetailPage() {
                                   </div>
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
-                                  <span className="text-sm text-slate-600">
+                                  <span className="text-sm text-muted-foreground">
                                     Reporting
                                   </span>
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
-                                  <span className="text-sm text-slate-600">
+                                  <span className="text-sm text-muted-foreground">
                                     {reportingOrg.organisation_type
                                       ? getOrganizationTypeName(reportingOrg.organisation_type)
-                                      : <span className="text-slate-400">Not set</span>
+                                      : <span className="text-muted-foreground">Not set</span>
                                     }
                                   </span>
                                 </TableCell>
                                 <TableCell className="py-3 px-4 whitespace-nowrap">
                                   {reportingOrg.country ? (
-                                    <span className="text-sm text-slate-600">{reportingOrg.country}</span>
+                                    <span className="text-sm text-muted-foreground">{reportingOrg.country}</span>
                                   ) : (
-                                    <span className="text-slate-400 text-sm">—</span>
+                                    <span className="text-muted-foreground text-sm">—</span>
                                   )}
                                 </TableCell>
                               </TableRow>
@@ -3745,9 +3746,9 @@ export default function ActivityDetailPage() {
                   )}
                   {/* Participating Organizations Table */}
                   {participatingOrgs.length > 0 && (
-                  <Card className="border-slate-200">
+                  <Card className="border-border">
                     <CardHeader>
-                      <CardTitle className="text-slate-900 flex items-center gap-2">
+                      <CardTitle className="text-foreground flex items-center gap-2">
                         <Users className="h-5 w-5" />
                           Participating Organizations
                       </CardTitle>
@@ -3812,19 +3813,19 @@ export default function ActivityDetailPage() {
                                     <img
                                       src={org.organization.logo}
                                             alt={org.organization.name || 'Organization logo'}
-                                            className="w-10 h-10 rounded object-cover bg-white"
+                                            className="w-10 h-10 rounded object-cover bg-card"
                                             onError={(e) => {
                                               (e.target as HTMLImageElement).style.display = 'none';
                                             }}
                                           />
                                         ) : (
-                                          <div className="w-10 h-10 bg-slate-100 rounded flex items-center justify-center">
-                                            <Building2 className="h-5 w-5 text-slate-400" />
+                                          <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                                            <Building2 className="h-5 w-5 text-muted-foreground" />
                                   </div>
                                 )}
                                       </div>
                                       <div className="min-w-0 flex-1">
-                                        <div className="font-medium text-slate-900">
+                                        <div className="font-medium text-foreground">
                                     {org.organization?.id ? (
                                             <Link
                                               href={`/organizations/${org.organization.id}`}
@@ -3849,23 +3850,23 @@ export default function ActivityDetailPage() {
                                     </div>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
-                                    <span className="text-sm text-slate-600">
+                                    <span className="text-sm text-muted-foreground">
                                       {getOrganizationRoleName(org.iati_role_code || getRoleCodeFromType(org.role_type))}
                                     </span>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
-                                    <span className="text-sm text-slate-600">
+                                    <span className="text-sm text-muted-foreground">
                                       {org.org_type || org.organization?.Organisation_Type_Code
                                         ? getOrganizationTypeName(org.org_type || org.organization?.Organisation_Type_Code || '')
-                                        : <span className="text-slate-400">Not set</span>
+                                        : <span className="text-muted-foreground">Not set</span>
                                       }
                                     </span>
                                   </TableCell>
                                   <TableCell className="py-3 px-4 whitespace-nowrap">
                                     {org.organization?.country ? (
-                                      <span className="text-sm text-slate-600">{org.organization.country}</span>
+                                      <span className="text-sm text-muted-foreground">{org.organization.country}</span>
                                     ) : (
-                                      <span className="text-slate-400 text-sm">—</span>
+                                      <span className="text-muted-foreground text-sm">—</span>
                                     )}
                                   </TableCell>
                                 </TableRow>
@@ -3879,11 +3880,11 @@ export default function ActivityDetailPage() {
 
                   {/* Organizational Network Graph */}
                   {(reportingOrg || participatingOrgs.length > 0) && (
-                    <Card className="border-slate-200">
+                    <Card className="border-border">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div>
-                            <CardTitle className="text-slate-900 flex items-center gap-2">
+                            <CardTitle className="text-foreground flex items-center gap-2">
                               <Building2 className="h-5 w-5" />
                               Organizational Network
                             </CardTitle>
@@ -3980,20 +3981,20 @@ export default function ActivityDetailPage() {
                       </CardHeader>
                       <CardContent>
                         {/* Legend */}
-                        <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white rounded-lg">
+                        <div className="flex flex-wrap gap-4 mb-6 p-4 bg-card rounded-lg">
                           {[
-                            { roleCode: 0, color: 'bg-slate-700', label: 'Reporting' },
-                            { roleCode: 1, color: 'bg-slate-500', label: 'Funding' },
+                            { roleCode: 0, color: 'bg-foreground', label: 'Reporting' },
+                            { roleCode: 1, color: 'bg-muted0', label: 'Funding' },
                             { roleCode: 2, color: 'bg-blue-600', label: 'Accountable' },
-                            { roleCode: 3, color: 'bg-slate-600', label: 'Extending' },
-                            { roleCode: 4, color: 'bg-slate-400', label: 'Implementing' },
+                            { roleCode: 3, color: 'bg-foreground/80', label: 'Extending' },
+                            { roleCode: 4, color: 'bg-foreground/60', label: 'Implementing' },
                           ].map(({ roleCode, color, label }) => {
                             const isHidden = hiddenRoles.has(roleCode);
                             return (
                               <div
                                 key={roleCode}
                                 className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition-all ${
-                                  isHidden ? 'opacity-40 hover:opacity-60' : 'hover:bg-slate-50'
+                                  isHidden ? 'opacity-40 hover:opacity-60' : 'hover:bg-muted/50'
                                 }`}
                                 onClick={() => {
                                   const newHiddenRoles = new Set(hiddenRoles);
@@ -4006,7 +4007,7 @@ export default function ActivityDetailPage() {
                                 }}
                               >
                                 <div className={`w-4 h-4 rounded-full ${color} ${isHidden ? 'opacity-50' : ''}`}></div>
-                                <span className={`text-sm font-medium text-slate-700 ${isHidden ? 'line-through' : ''}`}>
+                                <span className={`text-sm font-medium text-foreground ${isHidden ? 'line-through' : ''}`}>
                                   {label}
                                 </span>
                               </div>
@@ -4015,7 +4016,7 @@ export default function ActivityDetailPage() {
                         </div>
 
                         {/* Network Graph Canvas */}
-                        <div className="relative w-full h-[600px] bg-white rounded-lg border border-slate-200 overflow-hidden">
+                        <div className="relative w-full h-[600px] bg-card rounded-lg border border-border overflow-hidden">
                           {(() => {
                             // Build nodes
                             const nodes: any[] = [];
@@ -4387,9 +4388,9 @@ export default function ActivityDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {/* Map Section - Takes first 2 columns */}
                   <div className="md:col-span-2">
-                    <Card className="border-slate-200 h-full">
+                    <Card className="border-border h-full">
                       <CardHeader>
-                        <CardTitle className="text-slate-900 flex items-center gap-2">
+                        <CardTitle className="text-foreground flex items-center gap-2">
                           <MapPin className="h-5 w-5" />
                           Activity Locations Map
                         </CardTitle>
@@ -4398,7 +4399,7 @@ export default function ActivityDetailPage() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="h-96 rounded-md overflow-hidden border border-slate-200">
+                        <div className="h-96 rounded-md overflow-hidden border border-border">
                           <ActivityLocationsMapViewV2
                             locations={activityLocations.map(loc => ({
                               id: loc.id,
@@ -4425,28 +4426,28 @@ export default function ActivityDetailPage() {
 
                   {/* Location Cards Section - Takes last 2 columns */}
                   <div className="md:col-span-2">
-                    <Card className="border-slate-200 h-full">
+                    <Card className="border-border h-full">
                       <CardHeader>
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-slate-900 flex items-center gap-2">
+                          <CardTitle className="text-foreground flex items-center gap-2">
                             <MapPin className="h-5 w-5" />
                             Activity Locations
                           </CardTitle>
                           {allActivityLocations.length > 0 && (
                             <div className="flex items-center gap-1 border rounded-md p-1">
                               <Button
-                                variant={locationsView === 'cards' ? 'secondary' : 'ghost'}
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => setLocationsView('cards')}
-                                className="h-7 px-2"
+                                className={`h-7 px-2 ${locationsView === 'cards' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                               >
                                 <LayoutGrid className="h-4 w-4" />
                               </Button>
                               <Button
-                                variant={locationsView === 'table' ? 'secondary' : 'ghost'}
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => setLocationsView('table')}
-                                className="h-7 px-2"
+                                className={`h-7 px-2 ${locationsView === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                               >
                                 <TableIcon className="h-4 w-4" />
                               </Button>
@@ -4544,8 +4545,8 @@ export default function ActivityDetailPage() {
                           )
                         ) : (
                           <div className="text-center py-12">
-                            <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                            <p className="text-slate-500">No locations have been added to this activity yet.</p>
+                            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground">No locations have been added to this activity yet.</p>
                           </div>
                         )}
                       </CardContent>
@@ -4562,9 +4563,9 @@ export default function ActivityDetailPage() {
                     />
                   </div>
                 ) : (
-                  <Card className="border-slate-200">
+                  <Card className="border-border">
                     <CardHeader>
-                      <CardTitle className="text-slate-900 flex items-center gap-2">
+                      <CardTitle className="text-foreground flex items-center gap-2">
                         <MapPin className="h-5 w-5" />
                         States/Regions Coverage
                       </CardTitle>
@@ -4573,10 +4574,10 @@ export default function ActivityDetailPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="h-96 flex items-center justify-center bg-surface-muted rounded-md border border-slate-200">
+                      <div className="h-96 flex items-center justify-center bg-surface-muted rounded-md border border-border">
                         <div className="text-center">
-                          <MapPin className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                          <p className="text-slate-500">No regional breakdown data available</p>
+                          <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No regional breakdown data available</p>
                         </div>
                       </div>
                     </CardContent>
@@ -4599,9 +4600,9 @@ export default function ActivityDetailPage() {
               {/* SDG Alignment Tab */}
               <TabsContent value="sdg" className="p-6 border-0">
                 {activeTab === "sdg" && (
-                  <Card className="border-slate-200">
+                  <Card className="border-border">
                   <CardHeader>
-                    <CardTitle className="text-slate-900">SDG Alignment</CardTitle>
+                    <CardTitle className="text-foreground">SDG Alignment</CardTitle>
                     <CardDescription>
                       Sustainable Development Goals that this activity contributes to
                     </CardDescription>
@@ -4618,8 +4619,8 @@ export default function ActivityDetailPage() {
 
                         {/* Detailed SDG Explanations and Targets */}
                         {sdgMappings.some(m => m.notes || (m.sdgTarget || m.sdg_target)) && (
-                          <div className="mt-8 pt-6 border-t border-slate-200">
-                            <h4 className="text-sm font-semibold text-slate-700 mb-4">SDG Alignment Details</h4>
+                          <div className="mt-8 pt-6 border-t border-border">
+                            <h4 className="text-sm font-semibold text-foreground mb-4">SDG Alignment Details</h4>
                             <div className="grid gap-4">
                               {(() => {
                                 // Group mappings by goal
@@ -4645,7 +4646,7 @@ export default function ActivityDetailPage() {
                                     if (!goal) return null;
 
                                     return (
-                                      <div key={goalId} className="flex gap-4 p-4 bg-slate-50 rounded-lg">
+                                      <div key={goalId} className="flex gap-4 p-4 bg-muted rounded-lg">
                                         <div className="flex-shrink-0 w-16 h-16">
                                           <SDGImageGrid
                                             sdgCodes={[parseInt(goalId)]}
@@ -4655,17 +4656,17 @@ export default function ActivityDetailPage() {
                                           />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                          <h5 className="font-medium text-slate-900">
+                                          <h5 className="font-medium text-foreground">
                                             Goal {goal.id}: {goal.name}
                                           </h5>
                                           {data.notes && (
-                                            <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
+                                            <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
                                               {data.notes}
                                             </p>
                                           )}
                                           {data.targets.length > 0 && (
                                             <div className="mt-2">
-                                              <p className="text-xs font-medium text-slate-500 mb-1">Specific Targets:</p>
+                                              <p className="text-xs font-medium text-muted-foreground mb-1">Specific Targets:</p>
                                               <div className="flex flex-wrap gap-1.5">
                                                 {data.targets.map((targetId: string) => {
                                                   const target = SDG_TARGETS.find(t => t.id === targetId);
@@ -4698,8 +4699,8 @@ export default function ActivityDetailPage() {
                       </div>
                     ) : (
                       <div className="text-center py-12">
-                        <Globe className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No SDG alignments have been configured for this activity.</p>
+                        <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No SDG alignments have been configured for this activity.</p>
                       </div>
                     )}
                   </CardContent>

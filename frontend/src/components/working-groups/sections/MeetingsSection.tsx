@@ -34,7 +34,7 @@ import { format } from 'date-fns'
 // Dynamic import LocationPicker (uses MapLibre GL which needs window)
 const LocationPicker = dynamic(
   () => import('./LocationPicker'),
-  { ssr: false, loading: () => <div className="h-[280px] bg-gray-100 rounded-lg animate-pulse" /> }
+  { ssr: false, loading: () => <div className="h-[280px] bg-muted rounded-lg animate-pulse" /> }
 )
 
 interface Meeting {
@@ -211,7 +211,7 @@ function EditMeetingModal({
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
       <DialogContent className="sm:max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden p-0">
-        <DialogHeader className="sticky top-0 bg-white z-10 px-6 pt-6 pb-4 border-b">
+        <DialogHeader className="sticky top-0 bg-card z-10 px-6 pt-6 pb-4 border-b">
           <DialogTitle>Edit Meeting</DialogTitle>
           <DialogDescription>Update meeting details, location, and documents</DialogDescription>
         </DialogHeader>
@@ -319,19 +319,19 @@ function EditMeetingModal({
             />
 
             {loadingDocs ? (
-              <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Loading documents...
               </div>
             ) : docs.length === 0 ? (
-              <p className="text-sm text-gray-400 italic py-2">No documents attached</p>
+              <p className="text-sm text-muted-foreground italic py-2">No documents attached</p>
             ) : (
               <div className="space-y-1">
                 {docs.map(doc => (
-                  <div key={doc.id} className="flex items-center justify-between bg-gray-50 border rounded px-3 py-2">
+                  <div key={doc.id} className="flex items-center justify-between bg-muted border rounded px-3 py-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <span className="text-sm text-gray-800 truncate">{doc.title}</span>
+                      <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm text-foreground truncate">{doc.title}</span>
                       <Badge variant="secondary" className="text-xs flex-shrink-0">{doc.document_type}</Badge>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -339,14 +339,14 @@ function EditMeetingModal({
                         href={doc.file_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                        className="p-1 text-muted-foreground hover:text-blue-600 transition-colors"
                         title="Download"
                       >
                         <Download className="h-4 w-4" />
                       </a>
                       <button
                         onClick={() => handleDeleteDoc(doc.id)}
-                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        className="p-1 text-muted-foreground hover:text-red-600 transition-colors"
                         title="Remove"
                       >
                         <X className="h-4 w-4" />
@@ -359,7 +359,7 @@ function EditMeetingModal({
           </div>
         </div>
 
-        <DialogFooter className="sticky bottom-0 bg-white z-10 px-6 py-4 border-t flex items-center justify-between sm:justify-between">
+        <DialogFooter className="sticky bottom-0 bg-card z-10 px-6 py-4 border-t flex items-center justify-between sm:justify-between">
           <Button
             variant="outline"
             size="sm"
@@ -396,28 +396,28 @@ function MeetingsTable({ meetings, workingGroupId, onEdit }: MeetingsTableProps)
     <div className="border rounded-lg overflow-hidden">
       <table className="w-full">
         <thead>
-          <tr className="bg-gray-50 border-b">
-            <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Title</th>
-            <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Date</th>
-            <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Time</th>
-            <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Location</th>
-            <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Status</th>
-            <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Actions</th>
+          <tr className="bg-muted border-b">
+            <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Title</th>
+            <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Date</th>
+            <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Time</th>
+            <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Location</th>
+            <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Status</th>
+            <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-border">
           {meetings.map((meeting) => (
-            <tr key={meeting.id} className="hover:bg-gray-50">
-              <td className="px-4 py-3 text-sm font-medium text-gray-900">{meeting.title}</td>
-              <td className="px-4 py-3 text-sm text-gray-600">
+            <tr key={meeting.id} className="hover:bg-muted/50">
+              <td className="px-4 py-3 text-sm font-medium text-foreground">{meeting.title}</td>
+              <td className="px-4 py-3 text-sm text-muted-foreground">
                 {format(new Date(meeting.meeting_date), 'MMM d, yyyy')}
               </td>
-              <td className="px-4 py-3 text-sm text-gray-600">
+              <td className="px-4 py-3 text-sm text-muted-foreground">
                 {meeting.start_time
                   ? `${meeting.start_time}${meeting.end_time ? ` – ${meeting.end_time}` : ''}`
                   : '—'}
               </td>
-              <td className="px-4 py-3 text-sm text-gray-600">
+              <td className="px-4 py-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   {meeting.latitude && meeting.longitude && (
                     <MapPin className="h-3 w-3 text-blue-500 flex-shrink-0" />
@@ -425,15 +425,15 @@ function MeetingsTable({ meetings, workingGroupId, onEdit }: MeetingsTableProps)
                   <span className="truncate max-w-[200px]">{meeting.location || '—'}</span>
                 </div>
               </td>
-              <td className="px-4 py-3 text-sm text-gray-600 capitalize">{meeting.status}</td>
+              <td className="px-4 py-3 text-sm text-muted-foreground capitalize">{meeting.status}</td>
               <td className="px-4 py-3 text-right">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onEdit(meeting)}
-                  className="text-gray-600 hover:text-blue-700"
+                  className="text-muted-foreground hover:text-blue-700"
                 >
-                  <Pencil className="h-4 w-4 mr-1 text-slate-500" />
+                  <Pencil className="h-4 w-4 mr-1 text-muted-foreground" />
                   Edit
                 </Button>
               </td>
@@ -547,15 +547,15 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
   }
 
   if (loading) {
-    return <div className="animate-pulse space-y-4"><div className="h-24 bg-gray-100 rounded" /><div className="h-24 bg-gray-100 rounded" /></div>
+    return <div className="animate-pulse space-y-4"><div className="h-24 bg-muted rounded" /><div className="h-24 bg-muted rounded" /></div>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Meetings & Minutes</h2>
-          <p className="text-sm text-gray-500 mt-1">Schedule meetings, take attendance, and record minutes</p>
+          <h2 className="text-xl font-semibold text-foreground">Meetings & Minutes</h2>
+          <p className="text-sm text-muted-foreground mt-1">Schedule meetings, take attendance, and record minutes</p>
         </div>
         <Button onClick={() => setShowAddDialog(true)} className="gap-2">
           <Plus className="h-4 w-4" />
@@ -565,7 +565,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
 
       {meetings.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg">
-          <Calendar className="h-12 w-12 text-gray-300 mb-3" />
+          <Calendar className="h-12 w-12 text-muted-foreground mb-3" />
           <p className="text-sm text-muted-foreground">No meetings scheduled</p>
           <p className="text-xs text-muted-foreground mt-1">Create your first meeting to get started</p>
           <Button onClick={() => setShowAddDialog(true)} variant="outline" className="mt-4 gap-2">
@@ -583,12 +583,12 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
             return (
               <>
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
                     Upcoming Meetings
-                    {upcoming.length > 0 && <span className="ml-2 text-gray-400 font-normal">({upcoming.length})</span>}
+                    {upcoming.length > 0 && <span className="ml-2 text-muted-foreground font-normal">({upcoming.length})</span>}
                   </h3>
                   {upcoming.length === 0 ? (
-                    <p className="text-sm text-gray-400 italic py-4 text-center border rounded-lg">No upcoming meetings</p>
+                    <p className="text-sm text-muted-foreground italic py-4 text-center border rounded-lg">No upcoming meetings</p>
                   ) : (
                     <MeetingsTable
                       meetings={upcoming}
@@ -599,12 +599,12 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
                     Past Meetings
-                    {past.length > 0 && <span className="ml-2 text-gray-400 font-normal">({past.length})</span>}
+                    {past.length > 0 && <span className="ml-2 text-muted-foreground font-normal">({past.length})</span>}
                   </h3>
                   {past.length === 0 ? (
-                    <p className="text-sm text-gray-400 italic py-4 text-center border rounded-lg">No past meetings</p>
+                    <p className="text-sm text-muted-foreground italic py-4 text-center border rounded-lg">No past meetings</p>
                   ) : (
                     <MeetingsTable
                       meetings={past}
@@ -634,7 +634,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
       {/* Add Meeting Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden p-0">
-          <DialogHeader className="sticky top-0 bg-white z-10 px-6 pt-6 pb-4 border-b">
+          <DialogHeader className="sticky top-0 bg-card z-10 px-6 pt-6 pb-4 border-b">
             <DialogTitle>Schedule Meeting</DialogTitle>
             <DialogDescription>Create a new meeting for this working group</DialogDescription>
           </DialogHeader>
@@ -694,7 +694,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
               />
             </div>
           </div>
-          <DialogFooter className="sticky bottom-0 bg-white z-10 px-6 py-4 border-t">
+          <DialogFooter className="sticky bottom-0 bg-card z-10 px-6 py-4 border-t">
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
             <Button onClick={handleAddMeeting} disabled={saving || !newTitle.trim() || !newDate}>
               {saving ? 'Creating...' : 'Create Meeting'}

@@ -211,7 +211,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
 
   if (aggregatedReferences.length === 0) {
     return (
-      <div className={cn("flex flex-col items-center justify-center py-12 text-slate-400", className)}>
+      <div className={cn("flex flex-col items-center justify-center py-12 text-muted-foreground", className)}>
         <BookOpen className="h-12 w-12 mb-4" />
         <p className="text-lg font-medium">No external references</p>
         <p className="text-sm">Results and indicators have no linked frameworks</p>
@@ -242,7 +242,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search references..."
           value={searchTerm}
@@ -255,7 +255,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
       <div className="border rounded-md overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50">
+            <TableRow className="bg-muted">
               <TableHead className="font-semibold">Framework</TableHead>
               <TableHead className="font-semibold">Code</TableHead>
               <TableHead className="font-semibold">Linked Indicators</TableHead>
@@ -267,7 +267,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
               <TableRow key={`${ref.vocabulary}-${ref.code}-${index}`}>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-slate-400" />
+                    <Target className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{ref.vocabularyLabel}</span>
                     {ref.vocabularyUri && (
                       <a 
@@ -282,7 +282,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
                   </div>
                 </TableCell>
                 <TableCell>
-                  <code className="text-sm bg-slate-100 px-2 py-0.5 rounded">
+                  <code className="text-sm bg-muted px-2 py-0.5 rounded">
                     {ref.code}
                   </code>
                   {ref.indicatorUri && (
@@ -300,13 +300,13 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
                   <div className="space-y-1">
                     {ref.linkedIndicators.slice(0, 3).map(li => (
                       <div key={li.indicatorId} className="text-sm">
-                        <span className="text-slate-600">{li.resultTitle}</span>
-                        <span className="text-slate-400 mx-1">›</span>
+                        <span className="text-muted-foreground">{li.resultTitle}</span>
+                        <span className="text-muted-foreground mx-1">›</span>
                         <span>{li.indicatorTitle}</span>
                       </div>
                     ))}
                     {ref.linkedIndicators.length > 3 && (
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-muted-foreground">
                         +{ref.linkedIndicators.length - 3} more
                       </div>
                     )}
@@ -326,7 +326,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
                       {ref.avgAchievement}%
                     </Badge>
                   ) : (
-                    <span className="text-slate-400">—</span>
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
               </TableRow>
@@ -336,7 +336,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
       </div>
 
       {filteredReferences.length === 0 && searchTerm && (
-        <div className="text-center py-8 text-slate-400">
+        <div className="text-center py-8 text-muted-foreground">
           No references match your search
         </div>
       )}

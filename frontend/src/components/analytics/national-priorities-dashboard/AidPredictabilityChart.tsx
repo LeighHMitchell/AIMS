@@ -15,9 +15,9 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
@@ -366,7 +366,7 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
 
   const renderContent = (expanded: boolean = false) => {
     if (loading) {
-      return <Skeleton className={expanded ? "h-[500px] w-full" : "h-[320px] w-full"} />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (error) {
@@ -495,22 +495,22 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
       <Card className="bg-white border-slate-200 h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
           <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-base font-semibold">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base font-medium text-slate-700 truncate">
                 Aid Predictability
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                Compare planned vs actual disbursements by year. Assess funding predictability to identify gaps between commitments and delivery for better resource planning.
-              </p>
+              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                Planned vs actual disbursements by year
+              </CardDescription>
             </div>
             <Button
               variant="ghost"
-              size="icon"
-              className="h-8 w-8"
+              size="sm"
               onClick={() => setIsExpanded(true)}
-              title="Expand chart"
+              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              title="Expand to full screen"
             >
-              <Maximize2 className="h-4 w-4" />
+              <Maximize2 className="h-4 w-4 text-slate-500" />
             </Button>
           </div>
         </CardHeader>
@@ -523,10 +523,10 @@ export function AidPredictabilityChart({ organizationId }: AidPredictabilityChar
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-2xl font-bold uppercase tracking-wide">
+            <DialogTitle className="text-2xl font-semibold text-slate-800">
               Aid Predictability
             </DialogTitle>
-            <DialogDescription className="text-base mt-1">
+            <DialogDescription className="text-base mt-2">
               Comparing planned disbursements against actual disbursements by year
             </DialogDescription>
           </DialogHeader>

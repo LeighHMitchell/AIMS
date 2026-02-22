@@ -89,8 +89,8 @@ export default function PolicyMarkersListingPage() {
             <Card>
               <CardContent className="p-8 text-center">
                 <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">Error Loading Policy Markers</h2>
-                <p className="text-slate-600">{error}</p>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Policy Markers</h2>
+                <p className="text-muted-foreground">{error}</p>
               </CardContent>
             </Card>
           </div>
@@ -108,8 +108,8 @@ export default function PolicyMarkersListingPage() {
         <div className="w-full p-6">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-slate-900 mb-1">Policy Markers</h1>
-            <p className="text-sm text-slate-500">
+            <h1 className="text-2xl font-bold text-foreground mb-1">Policy Markers</h1>
+            <p className="text-sm text-muted-foreground">
               {totalMarkers} markers across {totalActivities} activity alignments
             </p>
           </div>
@@ -121,7 +121,7 @@ export default function PolicyMarkersListingPage() {
 
             return (
               <div key={group.key} className="mb-8">
-                <h2 className="text-lg font-semibold text-slate-800 mb-3">{group.label}</h2>
+                <h2 className="text-lg font-semibold text-foreground mb-3">{group.label}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {markers.map((marker: PolicyMarker) => {
                     const IconComponent = getIconForMarker(marker.iati_code)
@@ -132,12 +132,12 @@ export default function PolicyMarkersListingPage() {
                         <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center">
-                                <IconComponent className="w-5 h-5 text-slate-600" />
+                              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center">
+                                <IconComponent className="w-5 h-5 text-muted-foreground" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-semibold text-slate-900 text-sm leading-tight truncate">
+                                  <h3 className="font-semibold text-foreground text-sm leading-tight truncate">
                                     {marker.name}
                                   </h3>
                                   {marker.activityCount > 0 && (
@@ -146,7 +146,7 @@ export default function PolicyMarkersListingPage() {
                                     </Badge>
                                   )}
                                 </div>
-                                <p className="text-xs text-slate-500 line-clamp-2 mb-2">
+                                <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                                   {marker.description}
                                 </p>
                                 <div className="flex items-center gap-1.5">
@@ -162,7 +162,7 @@ export default function PolicyMarkersListingPage() {
                                   )}
                                 </div>
                               </div>
-                              <ArrowRight className="h-4 w-4 text-slate-300 flex-shrink-0 mt-1" />
+                              <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
                             </div>
                           </CardContent>
                         </Card>
@@ -178,7 +178,7 @@ export default function PolicyMarkersListingPage() {
           {totalMarkers === 0 && (
             <Card>
               <CardContent className="p-8 text-center">
-                <p className="text-slate-500">No policy markers found. Add policy markers to activities to see them here.</p>
+                <p className="text-muted-foreground">No policy markers found. Add policy markers to activities to see them here.</p>
               </CardContent>
             </Card>
           )}

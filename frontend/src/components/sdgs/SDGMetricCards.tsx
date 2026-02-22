@@ -61,22 +61,22 @@ export function SDGMetricCards({ metrics, yoyStats, donorCount }: SDGMetricCards
   return (
     <div className="flex flex-wrap lg:flex-nowrap gap-4 mb-8">
       {/* Activities */}
-      <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-slate-600 truncate">Activities</p>
-        <p className="text-2xl font-bold text-slate-900">
-          {metrics.activeActivities} <span className="text-sm font-normal text-slate-500">Active</span>
+      <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+        <p className="text-xs font-medium text-muted-foreground truncate">Activities</p>
+        <p className="text-2xl font-bold text-foreground">
+          {metrics.activeActivities} <span className="text-sm font-normal text-muted-foreground">Active</span>
         </p>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-muted-foreground">
           <p>{metrics.pipelineActivities || 0} Pipeline</p>
           <p>{metrics.closedActivities || 0} Closed/Suspended</p>
         </div>
       </div>
 
       {/* Total Committed */}
-      <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-slate-600 truncate">Total Committed</p>
-        <p className="text-2xl font-bold text-slate-900">{formatCurrencyShort(metrics.commitments)}</p>
-        <div className="text-xs text-slate-500">
+      <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+        <p className="text-xs font-medium text-muted-foreground truncate">Total Committed</p>
+        <p className="text-2xl font-bold text-foreground">{formatCurrencyShort(metrics.commitments)}</p>
+        <div className="text-xs text-muted-foreground">
           <p className="flex items-center gap-1">
             {yoyStats.commitmentChange >= 0 ? <TriangleUp /> : <TriangleDown />}
             <span>{yoyStats.commitmentChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.commitmentChange)} vs last year</span>
@@ -86,10 +86,10 @@ export function SDGMetricCards({ metrics, yoyStats, donorCount }: SDGMetricCards
       </div>
 
       {/* Total Disbursed */}
-      <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-slate-600 truncate">Total Disbursed</p>
-        <p className="text-2xl font-bold text-slate-900">{formatCurrencyShort(metrics.disbursements)}</p>
-        <div className="text-xs text-slate-500">
+      <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+        <p className="text-xs font-medium text-muted-foreground truncate">Total Disbursed</p>
+        <p className="text-2xl font-bold text-foreground">{formatCurrencyShort(metrics.disbursements)}</p>
+        <div className="text-xs text-muted-foreground">
           <p className="flex items-center gap-1">
             {yoyStats.disbursementChange >= 0 ? <TriangleUp /> : <TriangleDown />}
             <span>{yoyStats.disbursementChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.disbursementChange)} vs last year</span>
@@ -99,19 +99,19 @@ export function SDGMetricCards({ metrics, yoyStats, donorCount }: SDGMetricCards
       </div>
 
       {/* % Disbursed */}
-      <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-slate-600 truncate">% Disbursed</p>
-        <p className="text-2xl font-bold text-slate-900">{disbursedPercent}%</p>
-        <div className="text-xs text-slate-500">
+      <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+        <p className="text-xs font-medium text-muted-foreground truncate">% Disbursed</p>
+        <p className="text-2xl font-bold text-foreground">{disbursedPercent}%</p>
+        <div className="text-xs text-muted-foreground">
           <p>of total commitments</p>
         </div>
       </div>
 
       {/* Total Expended */}
-      <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-slate-600 truncate">Total Expended</p>
-        <p className="text-2xl font-bold text-slate-900">{formatCurrencyShort(metrics.expenditures)}</p>
-        <div className="text-xs text-slate-500">
+      <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+        <p className="text-xs font-medium text-muted-foreground truncate">Total Expended</p>
+        <p className="text-2xl font-bold text-foreground">{formatCurrencyShort(metrics.expenditures)}</p>
+        <div className="text-xs text-muted-foreground">
           <p className="flex items-center gap-1">
             {yoyStats.expenditureChange >= 0 ? <TriangleUp /> : <TriangleDown />}
             <span>{yoyStats.expenditureChange >= 0 ? '+' : ''}{formatCurrencyShort(yoyStats.expenditureChange)} vs last year</span>
@@ -121,10 +121,10 @@ export function SDGMetricCards({ metrics, yoyStats, donorCount }: SDGMetricCards
       </div>
 
       {/* Organizations */}
-      <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-        <p className="text-xs font-medium text-slate-600 truncate">Organizations</p>
-        <p className="text-2xl font-bold text-slate-900">{metrics.totalOrganizations}</p>
-        <div className="text-xs text-slate-500">
+      <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+        <p className="text-xs font-medium text-muted-foreground truncate">Organizations</p>
+        <p className="text-2xl font-bold text-foreground">{metrics.totalOrganizations}</p>
+        <div className="text-xs text-muted-foreground">
           <p>{donorCount} donor{donorCount !== 1 ? 's' : ''}</p>
         </div>
       </div>

@@ -12,10 +12,11 @@ import {
   LabelList,
   PieChart,
   Pie,
+  CartesianGrid,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import {
   Select,
   SelectContent,
@@ -49,6 +50,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 type MetricType = "commitments" | "disbursements";
 type ViewMode = "bar" | "pie" | "table";
@@ -167,20 +169,25 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
     if (active && payload && payload.length) {
       const item = payload[0].payload as AgencyData;
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-1">{item.name}</p>
-          {item.acronym !== item.name && (
-            <p className="text-xs text-gray-500 mb-1">{item.acronym}</p>
-          )}
-          <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-sm font-medium text-gray-900">
-              {formatCurrency(item.value)}
-            </p>
-            {item.activityCount > 0 && (
-              <p className="text-xs text-gray-500">
-                {item.activityCount} activities
-              </p>
-            )}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+            <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
+          </div>
+          <div className="p-2">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-slate-100 last:border-b-0">
+                  <td className="py-1 pr-4 text-slate-700 font-medium">Amount</td>
+                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
+                </tr>
+                {item.activityCount > 0 && (
+                  <tr>
+                    <td className="py-1 pr-4 text-slate-700 font-medium">Activities</td>
+                    <td className="py-1 text-right font-semibold text-slate-900">{item.activityCount}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       );
@@ -200,6 +207,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
         data={chartData}
         margin={{ top: 5, right: 5, left: 5, bottom: 80 }}
       >
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
           dataKey="name"
           stroke="#6b7280"
@@ -346,7 +354,7 @@ export function ImplementingAgenciesChart({ refreshKey = 0 }: ImplementingAgenci
     const chartHeight = expanded ? 400 : "100%";
 
     if (loading) {
-      return <Skeleton className="w-full flex-1 min-h-[180px]" />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (!data || data.length === 0) {

@@ -124,17 +124,17 @@ export async function GET(request: NextRequest) {
 
       const result = {
         providers: Object.entries(byOrg)
-          .map(([name, value]) => ({ name, value }))
+          .map(([name, value]) => ({ name, displayName: name, value }))
           .sort((a, b) => b.value - a.value),
         receivers: Object.entries(byReceiver)
-          .map(([name, value]) => ({ name, value }))
+          .map(([name, value]) => ({ name, displayName: name, value }))
           .sort((a, b) => b.value - a.value),
         flows
       }
-      
+
       // Cache the result
       setCache(cacheKey, result)
-      
+
       return NextResponse.json(result)
     } else {
       // Fetch transactions for all activities
@@ -154,8 +154,8 @@ export async function GET(request: NextRequest) {
           receiver_org_id,
           receiver_org_ref,
           receiver_org_name,
-          provider_organization:organizations!provider_org_id(name),
-          receiver_organization:organizations!receiver_org_id(name)
+          provider_organization:organizations!provider_org_id(name, acronym),
+          receiver_organization:organizations!receiver_org_id(name, acronym)
         `)
         .eq('status', 'actual')
 
@@ -188,6 +188,7 @@ export async function GET(request: NextRequest) {
       // Group by provider and receiver
       const byOrg: { [key: string]: number } = {}
       const byReceiver: { [key: string]: number } = {}
+      const orgAcronyms: { [key: string]: string } = {} // name -> acronym
       const flowsMap = new Map<string, number>() // Key: "provider|||receiver"
 
       // Process transactions - use only USD-converted values, no fallback
@@ -196,13 +197,21 @@ export async function GET(request: NextRequest) {
         const provider = t.provider_organization?.name || t.provider_org_name || t.provider_org_ref || 'Unknown Provider'
         const receiver = t.receiver_organization?.name || t.receiver_org_name || t.receiver_org_ref || 'Unknown Receiver'
 
+        // Track acronyms from the organizations table
+        if (t.provider_organization?.acronym) {
+          orgAcronyms[provider] = t.provider_organization.acronym
+        }
+        if (t.receiver_organization?.acronym) {
+          orgAcronyms[receiver] = t.receiver_organization.acronym
+        }
+
         // Use only stored USD values - no fallback to original currency
         const amount = parseFloat(t.value_usd) || 0
 
         if (amount > 0) {
           byOrg[provider] = (byOrg[provider] || 0) + amount
           byReceiver[receiver] = (byReceiver[receiver] || 0) + amount
-          
+
           // Aggregate flows by provider-receiver pair
           const flowKey = `${provider}|||${receiver}`
           flowsMap.set(flowKey, (flowsMap.get(flowKey) || 0) + amount)
@@ -219,10 +228,10 @@ export async function GET(request: NextRequest) {
 
       const result = {
         providers: Object.entries(byOrg)
-          .map(([name, value]) => ({ name, value }))
+          .map(([name, value]) => ({ name, displayName: orgAcronyms[name] || name, value }))
           .sort((a, b) => b.value - a.value),
         receivers: Object.entries(byReceiver)
-          .map(([name, value]) => ({ name, value }))
+          .map(([name, value]) => ({ name, displayName: orgAcronyms[name] || name, value }))
           .sort((a, b) => b.value - a.value),
         flows: aggregatedFlowsArray
       }

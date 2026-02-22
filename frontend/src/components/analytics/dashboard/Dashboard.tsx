@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -78,16 +78,7 @@ export function Dashboard() {
   }, [fetchData]);
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-12 w-96" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-80" />
-          ))}
-        </div>
-      </div>
-    );
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
   }
 
   if (error) {
@@ -126,14 +117,14 @@ export function Dashboard() {
         <TabsList className="bg-muted p-1 h-auto gap-1 border">
           <TabsTrigger
             value="bar-charts"
-            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
           >
             <BarChart3 className="h-4 w-4" />
             Bar Charts
           </TabsTrigger>
           <TabsTrigger
             value="fragmentation"
-            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
           >
             <Grid3X3 className="h-4 w-4" />
             Fragmentation
@@ -220,20 +211,7 @@ export function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-slate-200">
-              <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
-                  Recipient Government Bodies
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Government bodies receiving disbursements</p>
-              </CardHeader>
-              <CardContent className="pt-0 px-4 pb-3">
-                <RecipientGovBodiesChart
-                  data={data?.recipientGovBodies || []}
-                  grandTotal={data?.grandTotal || 0}
-                />
-              </CardContent>
-            </Card>
+            <RecipientGovBodiesChart />
 
             {/* Funding Over Time Chart */}
             <FundingByModalityChart />

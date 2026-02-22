@@ -161,8 +161,8 @@ export default function SectorsListingPage() {
             <Card>
               <CardContent className="p-8 text-center">
                 <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">Error Loading Sectors</h2>
-                <p className="text-slate-600">{error}</p>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Sectors</h2>
+                <p className="text-muted-foreground">{error}</p>
               </CardContent>
             </Card>
           </div>
@@ -179,43 +179,43 @@ export default function SectorsListingPage() {
         <div className="w-full p-6">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900 mb-1">Sectors</h1>
-            <p className="text-sm text-slate-500">
+            <h1 className="text-2xl font-bold text-foreground mb-1">Sectors</h1>
+            <p className="text-sm text-muted-foreground">
               DAC CRS Purpose Codes — {data.totals.activeSectors} active sectors across {data.totals.totalActivities} activities
             </p>
           </div>
 
           {/* Summary stat cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card className="border-slate-200">
+            <Card className="border-border">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="h-8 w-8 text-slate-400" />
+                  <DollarSign className="h-8 w-8 text-muted-foreground" />
                   <div>
-                    <p className="text-xs font-medium text-slate-600">Total Funding</p>
-                    <p className="text-xl font-bold text-slate-900">{formatCurrencyShort(data.totals.totalFunding)}</p>
+                    <p className="text-xs font-medium text-muted-foreground">Total Funding</p>
+                    <p className="text-xl font-bold text-foreground">{formatCurrencyShort(data.totals.totalFunding)}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-slate-200">
+            <Card className="border-border">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <BarChart3 className="h-8 w-8 text-slate-400" />
+                  <BarChart3 className="h-8 w-8 text-muted-foreground" />
                   <div>
-                    <p className="text-xs font-medium text-slate-600">Active Sectors</p>
-                    <p className="text-xl font-bold text-slate-900">{data.totals.activeSectors}</p>
+                    <p className="text-xs font-medium text-muted-foreground">Active Sectors</p>
+                    <p className="text-xl font-bold text-foreground">{data.totals.activeSectors}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-slate-200">
+            <Card className="border-border">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <Activity className="h-8 w-8 text-slate-400" />
+                  <Activity className="h-8 w-8 text-muted-foreground" />
                   <div>
-                    <p className="text-xs font-medium text-slate-600">Top Sector Group</p>
-                    <p className="text-xl font-bold text-slate-900 truncate">{topGroup?.name || 'N/A'}</p>
+                    <p className="text-xs font-medium text-muted-foreground">Top Sector Group</p>
+                    <p className="text-xl font-bold text-foreground truncate">{topGroup?.name || 'N/A'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -224,7 +224,7 @@ export default function SectorsListingPage() {
 
           {/* Search bar */}
           <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name or code..."
               value={searchTerm}
@@ -243,20 +243,20 @@ export default function SectorsListingPage() {
                 <div key={group.code}>
                   {/* Group level */}
                   <div
-                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
                     style={{ borderLeft: `4px solid ${groupColor}` }}
                   >
                     <button onClick={() => toggleGroup(group.code)} className="flex-shrink-0">
                       {isGroupExpanded ? (
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
                     </button>
-                    <code className="text-xs font-mono font-bold text-slate-500 flex-shrink-0 w-8">{group.code}</code>
+                    <code className="text-xs font-mono font-bold text-muted-foreground flex-shrink-0 w-8">{group.code}</code>
                     <Link
                       href={`/sectors/${group.code}`}
-                      className="font-semibold text-slate-900 text-sm flex-1 text-left hover:text-blue-600"
+                      className="font-semibold text-foreground text-sm flex-1 text-left hover:text-blue-600"
                     >
                       {group.name}
                     </Link>
@@ -267,7 +267,7 @@ export default function SectorsListingPage() {
                         </Badge>
                       )}
                       {group.totalValue > 0 && (
-                        <span className="text-xs font-medium text-slate-500">{formatCurrencyShort(group.totalValue)}</span>
+                        <span className="text-xs font-medium text-muted-foreground">{formatCurrencyShort(group.totalValue)}</span>
                       )}
                     </div>
                   </div>
@@ -282,31 +282,31 @@ export default function SectorsListingPage() {
                           <div key={cat.code}>
                             <button
                               onClick={() => toggleCategory(cat.code)}
-                              className="w-full flex items-center gap-3 p-2.5 rounded-md hover:bg-slate-50 transition-colors ml-2"
+                              className="w-full flex items-center gap-3 p-2.5 rounded-md hover:bg-muted/50 transition-colors ml-2"
                             >
                               {cat.sectors && cat.sectors.length > 0 ? (
                                 isCatExpanded ? (
-                                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                                 ) : (
-                                  <ChevronRight className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                                 )
                               ) : (
                                 <div className="w-3.5" />
                               )}
-                              <code className="text-xs font-mono text-slate-400 flex-shrink-0 w-8">{cat.code}</code>
+                              <code className="text-xs font-mono text-muted-foreground flex-shrink-0 w-8">{cat.code}</code>
                               <Link
                                 href={`/sectors/${cat.code}`}
                                 onClick={e => e.stopPropagation()}
-                                className="font-medium text-slate-700 text-sm flex-1 text-left hover:text-blue-600"
+                                className="font-medium text-foreground text-sm flex-1 text-left hover:text-blue-600"
                               >
                                 {cat.name}
                               </Link>
                               <div className="flex items-center gap-3 flex-shrink-0">
                                 {cat.activityCount > 0 && (
-                                  <span className="text-[10px] text-slate-400">{cat.activityCount}</span>
+                                  <span className="text-[10px] text-muted-foreground">{cat.activityCount}</span>
                                 )}
                                 {cat.totalValue > 0 && (
-                                  <span className="text-xs text-slate-400">{formatCurrencyShort(cat.totalValue)}</span>
+                                  <span className="text-xs text-muted-foreground">{formatCurrencyShort(cat.totalValue)}</span>
                                 )}
                               </div>
                             </button>
@@ -318,16 +318,16 @@ export default function SectorsListingPage() {
                                   <Link
                                     key={sector.code}
                                     href={`/sectors/${sector.code}`}
-                                    className="flex items-center gap-3 p-2 rounded-md hover:bg-slate-50 transition-colors ml-4"
+                                    className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors ml-4"
                                   >
-                                    <code className="text-xs font-mono text-slate-400 flex-shrink-0 w-12">{sector.code}</code>
-                                    <span className="text-sm text-slate-600 flex-1">{sector.name}</span>
+                                    <code className="text-xs font-mono text-muted-foreground flex-shrink-0 w-12">{sector.code}</code>
+                                    <span className="text-sm text-muted-foreground flex-1">{sector.name}</span>
                                     <div className="flex items-center gap-3 flex-shrink-0">
                                       {sector.activityCount > 0 && (
-                                        <span className="text-[10px] text-slate-400">{sector.activityCount}</span>
+                                        <span className="text-[10px] text-muted-foreground">{sector.activityCount}</span>
                                       )}
                                       {sector.totalValue > 0 && (
-                                        <span className="text-xs text-slate-400">{formatCurrencyShort(sector.totalValue)}</span>
+                                        <span className="text-xs text-muted-foreground">{formatCurrencyShort(sector.totalValue)}</span>
                                       )}
                                     </div>
                                   </Link>
@@ -346,7 +346,7 @@ export default function SectorsListingPage() {
             {filteredGroups.length === 0 && (
               <Card>
                 <CardContent className="p-8 text-center">
-                  <p className="text-slate-500">
+                  <p className="text-muted-foreground">
                     {searchTerm ? `No sectors matching "${searchTerm}"` : 'No sector data found'}
                   </p>
                 </CardContent>

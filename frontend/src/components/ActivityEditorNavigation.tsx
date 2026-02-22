@@ -17,7 +17,8 @@ import {
   isStakeholdersSection,
   isFundingDeliverySection,
   isStrategicAlignmentSection,
-  isSupportingInfoSection
+  isSupportingInfoSection,
+  isAdvancedSection
 } from "@/components/activities/groups"
 
 interface NavigationSection {
@@ -55,13 +56,13 @@ export default function ActivityEditorNavigation({
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Helper to check if a section belongs to any scrollable group
   const isScrollableSection = (sectionId: string) => {
     return isActivityOverviewSection(sectionId) ||
            isStakeholdersSection(sectionId) ||
            isFundingDeliverySection(sectionId) ||
            isStrategicAlignmentSection(sectionId) ||
-           isSupportingInfoSection(sectionId)
+           isSupportingInfoSection(sectionId) ||
+           isAdvancedSection(sectionId)
   }
 
   // Helper to get the linked scroll group for a section
@@ -72,7 +73,8 @@ export default function ActivityEditorNavigation({
         isStakeholdersSection(sectionId) ||
         isFundingDeliverySection(sectionId) ||
         isStrategicAlignmentSection(sectionId) ||
-        isSupportingInfoSection(sectionId)) {
+        isSupportingInfoSection(sectionId) ||
+        isAdvancedSection(sectionId)) {
       return 'main-editor-scroll'
     }
     return null
@@ -146,7 +148,6 @@ export default function ActivityEditorNavigation({
         { id: "organisations", label: "Organisations" },
         { id: "contacts", label: "Contacts" },
         { id: "focal_points", label: "Focal Points" },
-        { id: "linked_activities", label: "Linked Activities" }
       ]
     },
     {
@@ -155,18 +156,12 @@ export default function ActivityEditorNavigation({
         { id: "finances", label: "Transactions" },
         { id: "planned-disbursements", label: "Planned Disbursements" },
         { id: "budgets", label: "Budgets" },
-        { id: "forward-spending-survey", label: "Forward Spend" },
-        { id: "results", label: "Results" },
-        { id: "capital-spend", label: "Capital Spend" },
-        { id: "financing-terms", label: "Financing Terms" },
-        { id: "conditions", label: "Conditions" }
       ]
     },
     {
       title: "Strategic Alignment",
       sections: [
         { id: "sdg", label: "SDG Alignment" },
-        { id: "country-budget", label: "Budget Mapping" },
         { id: "tags", label: "Tags" },
         { id: "working_groups", label: "Working Groups" },
         { id: "policy_markers", label: "Policy Markers" }
@@ -177,6 +172,18 @@ export default function ActivityEditorNavigation({
       sections: [
         { id: "documents", label: "Documents & Images" },
         { id: "aid_effectiveness", label: "Aid Effectiveness" }
+      ]
+    },
+    {
+      title: "Advanced",
+      sections: [
+        { id: "linked_activities", label: "Linked Activities" },
+        { id: "results", label: "Results" },
+        { id: "forward-spending-survey", label: "Forward Spend" },
+        { id: "capital-spend", label: "Capital Spend" },
+        { id: "financing-terms", label: "Financing Terms" },
+        { id: "conditions", label: "Conditions" },
+        { id: "country-budget", label: "Budget Mapping" },
       ]
     },
     {
@@ -230,7 +237,7 @@ export default function ActivityEditorNavigation({
                 // Add subtle visual indicator for linked scrollable groups
                 (group.title === "Activity Overview" || group.title === "Stakeholders" ||
                  group.title === "Funding & Delivery" || group.title === "Strategic Alignment" ||
-                 group.title === "Supporting Info") && "border-l border-gray-100 pl-1"
+                 group.title === "Supporting Info" || group.title === "Advanced") && "border-l border-gray-100 pl-1"
               )}>
                 {group.sections.map((section) => {
                   const isLocked = !activityCreated && section.id !== "general" && section.id !== "xml-import"

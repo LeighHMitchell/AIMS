@@ -14,7 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { DATA_COLORS, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
-import { BarChartSkeleton } from "@/components/ui/skeleton-loader";
+import { LoadingText } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 
 interface AnalyticsFilters {
@@ -136,7 +136,7 @@ export const BudgetVsSpendingChart: React.FC<BudgetVsSpendingChartProps> = ({
 
   // Loading state
   if (loading) {
-    return <BarChartSkeleton height="500px" bars={8} />;
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
   }
 
   // Error state

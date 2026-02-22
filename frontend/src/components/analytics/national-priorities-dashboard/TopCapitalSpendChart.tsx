@@ -9,11 +9,11 @@ import {
   YAxis,
   Tooltip,
   Cell,
-  LabelList,
+  CartesianGrid,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import {
   Select,
   SelectContent,
@@ -209,23 +209,30 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
     if (active && payload && payload.length) {
       const item = payload[0].payload as ActivityCapitalSpend;
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg max-w-xs">
-          <p className="font-semibold text-gray-900 mb-1 break-words">{item.title}</p>
-          {item.iatiIdentifier && (
-            <p className="text-xs text-muted-foreground mb-1 font-mono bg-muted px-1.5 py-0.5 rounded inline-block">{item.iatiIdentifier}</p>
-          )}
-          <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-sm">
-              <span className="text-gray-500">Capital Spend %:</span>{" "}
-              <span className="font-medium">{item.capitalSpendPercentage.toFixed(1)}%</span>
-            </p>
-            <p className="text-sm">
-              <span className="text-gray-500">Base Value:</span>{" "}
-              <span className="font-medium">{formatCurrency(item.baseValue)}</span>
-            </p>
-            <p className="text-sm font-medium" style={{ color: TOP_CAPITAL_PALETTE[0] }}>
-              Capital Spend: {formatCurrency(item.capitalSpendValue)}
-            </p>
+        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-xs">
+          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+            <p className="font-semibold text-slate-900 text-sm break-words">{item.title}</p>
+            {item.iatiIdentifier && (
+              <p className="text-xs text-muted-foreground mt-0.5 font-mono bg-slate-200 px-1.5 py-0.5 rounded inline-block">{item.iatiIdentifier}</p>
+            )}
+          </div>
+          <div className="p-2">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-slate-100">
+                  <td className="py-1 pr-4 text-slate-700 font-medium">Capital Spend %</td>
+                  <td className="py-1 text-right font-semibold text-slate-900">{item.capitalSpendPercentage.toFixed(1)}%</td>
+                </tr>
+                <tr className="border-b border-slate-100">
+                  <td className="py-1 pr-4 text-slate-700 font-medium">Base Value</td>
+                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.baseValue)}</td>
+                </tr>
+                <tr>
+                  <td className="py-1 pr-4 text-slate-700 font-medium">Capital Spend</td>
+                  <td className="py-1 text-right font-semibold" style={{ color: TOP_CAPITAL_PALETTE[0] }}>{formatCurrency(item.capitalSpendValue)}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       );
@@ -309,6 +316,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
         layout="vertical"
         margin={{ top: 5, right: 60, left: 5, bottom: 5 }}
       >
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
           type="number"
           stroke={CHART_STRUCTURE_COLORS.axis}
@@ -329,12 +337,6 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
         <Bar dataKey="capitalSpendValue" radius={[0, 4, 4, 0]} maxBarSize={40}>
-          <LabelList
-            dataKey="capitalSpendValue"
-            position="right"
-            formatter={(value: number) => formatCurrency(value)}
-            style={{ fontSize: 10, fontWeight: 500, fill: "#374151" }}
-          />
           {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.fill} />
           ))}
@@ -383,7 +385,7 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
     const chartHeight = expanded ? 350 : "100%";
 
     if (loading) {
-      return <Skeleton className="w-full h-[280px]" />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (!data || data.length === 0) {
@@ -442,19 +444,6 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
           </Button>
         </div>
 
-        {/* Expand button - only in compact view */}
-        {!expanded && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setIsExpanded(true)}
-            title="Expand"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        )}
-
         {/* Export button - only in expanded view */}
         {expanded && (
           <Button
@@ -493,23 +482,28 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
       {/* Compact Card View */}
       <Card className="bg-white border-slate-200 h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base font-medium text-slate-700 truncate">
                 Top Activities by Capital Spend
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
                 Ranked by capital spend value
-              </p>
+              </CardDescription>
             </div>
-            <span className="text-lg font-bold text-slate-500">
-              {formatCurrencyUSD(grandTotal)}
-            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(true)}
+              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              title="Expand to full screen"
+            >
+              <Maximize2 className="h-4 w-4 text-slate-500" />
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
-          {renderControls(false)}
         </CardContent>
       </Card>
 
@@ -519,16 +513,13 @@ export function TopCapitalSpendChart({ refreshKey = 0 }: TopCapitalSpendChartPro
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-bold uppercase tracking-wide">
+                <DialogTitle className="text-2xl font-semibold text-slate-800">
                   Top Activities by Capital Spend
                 </DialogTitle>
-                <DialogDescription className="text-base mt-1">
+                <DialogDescription className="text-base mt-2">
                   Activities ranked by capital spend value ({METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()})
                 </DialogDescription>
               </div>
-              <span className="text-2xl font-bold text-slate-500">
-                {formatCurrencyUSD(grandTotal)}
-              </span>
             </div>
           </DialogHeader>
 

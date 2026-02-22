@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -302,7 +302,7 @@ export function TopLocationsChart() {
     const chartHeight = expanded ? 400 : 280;
 
     if (loading) {
-      return <Skeleton className="w-full h-[280px]" />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (error) {

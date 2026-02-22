@@ -39,6 +39,7 @@ import { EnhancedSearchableSelect } from '@/components/ui/enhanced-searchable-se
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiFetch } from '@/lib/api-fetch';
+import { useHomeCountry } from '@/contexts/SystemSettingsContext';
 
 export interface CountryAllocation {
   id: string;
@@ -114,6 +115,7 @@ export default function CountriesRegionsTab({
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const homeCountryCode = useHomeCountry();
 
   // Close all dropdowns when clicking outside the form
   const closeAllDropdowns = () => {
@@ -1183,29 +1185,86 @@ export default function CountriesRegionsTab({
                             </div>
                             <CommandList>
                               <CommandEmpty>No {selectedType === 'country' ? 'countries' : 'regions'} found.</CommandEmpty>
-                              <CommandGroup className="max-h-[200px] overflow-y-auto">
-                                {filteredItems.map((item) => (
-                                  <CommandItem
-                                    key={item.code}
-                                    value={item.code}
-                                    onSelect={() => {
-                                      handleItemChange(item.code);
-                                      setItemSearchQuery("");
-                                    }}
-                                    className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
-                                  >
-                                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                      {item.code}
-                                    </span>
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">{item.name}</span>
-                                      {item.description && (
-                                        <span className="text-xs text-muted-foreground">{item.description}</span>
-                                      )}
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
+                              {selectedType === 'country' && !itemSearchQuery && homeCountryCode ? (() => {
+                                const hostItem = filteredItems.find(item => item.code === homeCountryCode);
+                                const otherItems = filteredItems.filter(item => item.code !== homeCountryCode);
+                                return (
+                                  <div className="max-h-[200px] overflow-y-auto">
+                                    {hostItem && (
+                                      <>
+                                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">Host Country</div>
+                                        <CommandGroup>
+                                          <CommandItem
+                                            key={hostItem.code}
+                                            value={hostItem.code}
+                                            onSelect={() => {
+                                              handleItemChange(hostItem.code);
+                                              setItemSearchQuery("");
+                                            }}
+                                            className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                                          >
+                                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                              {hostItem.code}
+                                            </span>
+                                            <div className="flex flex-col">
+                                              <span className="font-medium">{hostItem.name}</span>
+                                            </div>
+                                          </CommandItem>
+                                        </CommandGroup>
+                                        <div className="border-t border-muted my-1" />
+                                      </>
+                                    )}
+                                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">All Countries</div>
+                                    <CommandGroup>
+                                      {otherItems.map((item) => (
+                                        <CommandItem
+                                          key={item.code}
+                                          value={item.code}
+                                          onSelect={() => {
+                                            handleItemChange(item.code);
+                                            setItemSearchQuery("");
+                                          }}
+                                          className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                                        >
+                                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                            {item.code}
+                                          </span>
+                                          <div className="flex flex-col">
+                                            <span className="font-medium">{item.name}</span>
+                                            {item.description && (
+                                              <span className="text-xs text-muted-foreground">{item.description}</span>
+                                            )}
+                                          </div>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </div>
+                                );
+                              })() : (
+                                <CommandGroup className="max-h-[200px] overflow-y-auto">
+                                  {filteredItems.map((item) => (
+                                    <CommandItem
+                                      key={item.code}
+                                      value={item.code}
+                                      onSelect={() => {
+                                        handleItemChange(item.code);
+                                        setItemSearchQuery("");
+                                      }}
+                                      className="flex items-center gap-2 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                                    >
+                                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                        {item.code}
+                                      </span>
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{item.name}</span>
+                                        {item.description && (
+                                          <span className="text-xs text-muted-foreground">{item.description}</span>
+                                        )}
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
                             </CommandList>
                           </Command>
                         </PopoverContent>

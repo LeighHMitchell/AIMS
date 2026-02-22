@@ -256,7 +256,7 @@ export function HumanitarianTab({
           </CardHeader>
           <CardContent className="space-y-4">
             {scopes.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No humanitarian scopes defined. Click "Add Scope" to link to a specific emergency or appeal.
               </div>
             )}
@@ -286,7 +286,7 @@ export function HumanitarianTab({
                             {getScopeTypeName(scope.type)}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-600 align-top whitespace-nowrap">
+                        <TableCell className="text-sm text-muted-foreground align-top whitespace-nowrap">
                           {getVocabularyName(scope.vocabulary)}
                         </TableCell>
                         <TableCell className="align-top">
@@ -295,7 +295,7 @@ export function HumanitarianTab({
                               <code className="px-2 py-1 bg-muted rounded text-sm font-mono whitespace-nowrap">
                                 {scope.code}
                               </code>
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium text-foreground">
                                 {emergencyMap[scope.code].name}
                               </div>
                             </div>
@@ -316,14 +316,14 @@ export function HumanitarianTab({
                             </code>
                           )}
                         </TableCell>
-                        <TableCell className="align-top text-sm text-gray-600">
+                        <TableCell className="align-top text-sm text-muted-foreground">
                           {scope.vocabulary === '98' && emergencyMap[scope.code]?.location ? (
                             <span>{emergencyMap[scope.code].location}</span>
                           ) : (
                             <span className="text-gray-400">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="align-top text-sm text-gray-600 whitespace-nowrap">
+                        <TableCell className="align-top text-sm text-muted-foreground whitespace-nowrap">
                           {scope.vocabulary === '98' && emergencyMap[scope.code] && formatEmergencyDateRange(emergencyMap[scope.code]) ? (
                             <span>{formatEmergencyDateRange(emergencyMap[scope.code])}</span>
                           ) : (
@@ -335,11 +335,11 @@ export function HumanitarianTab({
                             {scope.narratives.map((narrative, idx) => (
                               <div key={idx} className="text-sm">
                                 {scope.narratives.length > 1 && (
-                                  <span className="font-medium text-gray-600">
+                                  <span className="font-medium text-muted-foreground">
                                     {formatLanguageDisplay(narrative.language)}:
                                   </span>
                                 )}{' '}
-                                <span className="text-gray-700">{narrative.narrative}</span>
+                                <span className="text-foreground">{narrative.narrative}</span>
                               </div>
                             ))}
                           </div>

@@ -9,8 +9,10 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  CartesianGrid,
 } from "recharts";
 import { RankedItem } from "@/types/national-priorities";
+import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 
 interface TopDonorAgenciesChartProps {
   data: RankedItem[];
@@ -61,6 +63,7 @@ export function TopDonorAgenciesChart({
           layout="vertical"
           margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
         >
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis
             type="number"
             tickFormatter={(v) => formatCurrency(v)}

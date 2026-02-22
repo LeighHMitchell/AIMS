@@ -647,7 +647,7 @@ export default function AnalyticsDashboardPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-card">
         {/* Main Dashboard Content */}
         <div className="mx-auto p-6">
           {/* Error Display */}
@@ -661,14 +661,14 @@ export default function AnalyticsDashboardPage() {
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                 <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-                  <TabsTrigger value="portfolio-summary" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Portfolio Summary</TabsTrigger>
-                  <TabsTrigger value="aid-on-budget" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Aid on Budget</TabsTrigger>
-                  <TabsTrigger value="humanitarian" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Humanitarian</TabsTrigger>
-                  <TabsTrigger value="sector-thematic" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Sector & Thematic</TabsTrigger>
-                  <TabsTrigger value="partner-network" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Partner Network</TabsTrigger>
-                  <TabsTrigger value="aid-ecosystem" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Aid Ecosystem</TabsTrigger>
-                  <TabsTrigger value="operations" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Operations</TabsTrigger>
-                  <TabsTrigger value="tree-map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Tree Map</TabsTrigger>
+                  <TabsTrigger value="portfolio-summary" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Portfolio Summary</TabsTrigger>
+                  <TabsTrigger value="aid-on-budget" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Aid on Budget</TabsTrigger>
+                  <TabsTrigger value="humanitarian" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Humanitarian</TabsTrigger>
+                  <TabsTrigger value="sector-thematic" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Sector & Thematic</TabsTrigger>
+                  <TabsTrigger value="partner-network" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Partner Network</TabsTrigger>
+                  <TabsTrigger value="aid-ecosystem" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Aid Ecosystem</TabsTrigger>
+                  <TabsTrigger value="operations" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Operations</TabsTrigger>
+                  <TabsTrigger value="tree-map" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Tree Map</TabsTrigger>
                 </TabsList>
 
                 {/* ==================== PORTFOLIO SUMMARY TAB ==================== */}
@@ -677,8 +677,8 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     {/* Main Overview Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Overview</h2>
-                      <p className="text-gray-600 mb-4">Key financial metrics and portfolio performance at a glance</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Overview</h2>
+                      <p className="text-muted-foreground mb-4">Key financial metrics and portfolio performance at a glance</p>
                       
                       {/* Full-width Financial Totals Chart */}
                       <div className="mb-6">
@@ -777,7 +777,7 @@ export default function AnalyticsDashboardPage() {
 
                         <CompactChartCard
                           title="Funding Source Breakdown"
-                          shortDescription="Sankey diagram showing provider-to-receiver financial flows"
+                          shortDescription="Sankey diagram showing provider-to-receiver disbursement flows"
                           fullDescription="Distribution of funding by donor/provider across all activities"
                         >
                           <AllActivitiesFundingSourceBreakdown
@@ -800,8 +800,8 @@ export default function AnalyticsDashboardPage() {
 
                     {/* Top 10 Rankings Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Top 10 Rankings</h2>
-                      <p className="text-gray-600 mb-4">Leading organizations by various performance metrics</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Top 10 Rankings</h2>
+                      <p className="text-muted-foreground mb-4">Leading organizations by various performance metrics</p>
                       <ChartGrid>
                         <CompactChartCard
                           title="Top 10 by Active Projects"
@@ -845,8 +845,8 @@ export default function AnalyticsDashboardPage() {
 
                     {/* National Priorities Dashboard Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">National Priorities Dashboard</h2>
-                      <p className="text-gray-600 mb-4">Comprehensive view of alignment with national development priorities</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">National Priorities Dashboard</h2>
+                      <p className="text-muted-foreground mb-4">Comprehensive view of alignment with national development priorities</p>
                       <NationalPrioritiesDashboard />
                     </div>
                   </div>
@@ -857,8 +857,8 @@ export default function AnalyticsDashboardPage() {
                 <TabsContent value="aid-on-budget">
                   <div className="space-y-8">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Aid on Budget</h2>
-                      <p className="text-gray-600 mb-4">Compare domestic government spending with on-budget and off-budget aid by fiscal year</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid on Budget</h2>
+                      <p className="text-muted-foreground mb-4">Compare domestic government spending with on-budget and off-budget aid by fiscal year</p>
                       <EnhancedAidOnBudgetChart
                         refreshKey={refreshKey}
                       />
@@ -871,8 +871,8 @@ export default function AnalyticsDashboardPage() {
                 <TabsContent value="humanitarian">
                   <div className="space-y-8">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Humanitarian Aid</h2>
-                      <p className="text-gray-600 mb-4">Analysis of humanitarian aid flows and their share of total assistance</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Humanitarian Aid</h2>
+                      <p className="text-muted-foreground mb-4">Analysis of humanitarian aid flows and their share of total assistance</p>
                       <ChartGrid>
                         <CompactChartCard
                           title="Share of Humanitarian Aid"
@@ -908,8 +908,8 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     {/* Sectors Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Sector Analysis</h2>
-                      <p className="text-gray-600 mb-4">Financial flows and coordination across development sectors</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Sector Analysis</h2>
+                      <p className="text-muted-foreground mb-4">Financial flows and coordination across development sectors</p>
 
                       {/* Sector Filters */}
                       <SectorFilters
@@ -961,8 +961,8 @@ export default function AnalyticsDashboardPage() {
 
                     {/* SDGs Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Sustainable Development Goals</h2>
-                      <p className="text-gray-600 mb-4">Activity alignment with the UN Sustainable Development Goals</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Sustainable Development Goals</h2>
+                      <p className="text-muted-foreground mb-4">Activity alignment with the UN Sustainable Development Goals</p>
                       <SDGAnalytics
                         dateRange={dateRange}
                         onDateRangeChange={setDateRange}
@@ -972,8 +972,8 @@ export default function AnalyticsDashboardPage() {
 
                     {/* Policy Markers Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Policy Markers</h2>
-                      <p className="text-gray-600 mb-4">Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation.</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Policy Markers</h2>
+                      <p className="text-muted-foreground mb-4">Analyze activities by policy marker and significance level. Policy markers reflect policy intent, not financial allocation.</p>
                       <PolicyMarkersChart refreshKey={refreshKey} />
                     </div>
                   </div>
@@ -985,8 +985,8 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     {/* Network Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Aid Flow Network</h2>
-                      <p className="text-gray-600 mb-4">Interactive visualization of aid flows between donors and recipients</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Flow Network</h2>
+                      <p className="text-muted-foreground mb-4">Interactive visualization of aid flows between donors and recipients</p>
                       <div className="w-full">
                         <AidFlowMap height={500} />
                       </div>
@@ -994,8 +994,8 @@ export default function AnalyticsDashboardPage() {
 
                     {/* Participating Organizations Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Participating Organizations Flow</h2>
-                      <p className="text-gray-600 mb-4">
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Participating Organizations Flow</h2>
+                      <p className="text-muted-foreground mb-4">
                         4-tier Sankey visualization showing the flow of organizations across IATI participating-org roles:
                         Funding (1) → Extending (3) → Accountable (2) → Implementing (4)
                       </p>
@@ -1010,8 +1010,8 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     {/* Aid Ecosystem Charts - Two Column Layout */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Aid Ecosystem Analysis</h2>
-                      <p className="text-gray-600 mb-4">Visualizing organizational roles and financial gravity in the aid system</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Ecosystem Analysis</h2>
+                      <p className="text-muted-foreground mb-4">Visualizing organizational roles and financial gravity in the aid system</p>
                       <ChartGrid>
                         <CompactChartCard
                           title="Organizational Positioning Map"
@@ -1045,8 +1045,8 @@ export default function AnalyticsDashboardPage() {
                   <div className="space-y-8">
                     {/* Activity Status Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Activity Status</h2>
-                      <p className="text-gray-600 mb-4">Distribution of activities by status and transaction analysis</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Activity Status</h2>
+                      <p className="text-muted-foreground mb-4">Distribution of activities by status and transaction analysis</p>
                       <ChartGrid>
                         <CompactChartCard
                           title="Activity Status Distribution"
@@ -1076,8 +1076,8 @@ export default function AnalyticsDashboardPage() {
 
                     {/* Transaction Calendar Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Transaction Calendar</h2>
-                      <p className="text-gray-600 mb-4">Daily transaction activity heatmap showing patterns and trends over time</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Transaction Calendar</h2>
+                      <p className="text-muted-foreground mb-4">Daily transaction activity heatmap showing patterns and trends over time</p>
                       <TransactionActivityCalendar
                         dateRange={dateRange}
                         refreshKey={refreshKey}
@@ -1086,12 +1086,12 @@ export default function AnalyticsDashboardPage() {
 
                     {/* Additional Analytics Section */}
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Additional Analytics</h2>
-                      <p className="text-gray-600 mb-4">Extended analytics and visualizations</p>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Additional Analytics</h2>
+                      <p className="text-muted-foreground mb-4">Extended analytics and visualizations</p>
                       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* Aid by Sector */}
               <ExpandableCard
-                className="bg-white border-slate-200"
+                className="bg-card border-border"
                 title="Aid Distribution by Sector"
                 description="Breakdown of funding across sectors"
                 exportData={sectorPieData}
@@ -1105,7 +1105,7 @@ export default function AnalyticsDashboardPage() {
 
               {/* Time Series Chart */}
               <ExpandableCard
-                className="bg-white border-slate-200 lg:col-span-2"
+                className="bg-card border-border lg:col-span-2"
                 title={
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5" />
@@ -1123,7 +1123,7 @@ export default function AnalyticsDashboardPage() {
 
               {/* Reporting Organization Chart */}
               <ExpandableCard
-                className="bg-white border-slate-200"
+                className="bg-card border-border"
                 title={
                   <div className="flex items-center gap-2">
                     <Building2 className="h-5 w-5" />
@@ -1141,7 +1141,7 @@ export default function AnalyticsDashboardPage() {
 
               {/* Aid Type Chart */}
               <ExpandableCard
-                className="bg-white border-slate-200"
+                className="bg-card border-border"
                 title={
                   <div className="flex items-center gap-2">
                     <Info className="h-5 w-5" />
@@ -1159,7 +1159,7 @@ export default function AnalyticsDashboardPage() {
 
               {/* Finance Type Chart */}
               <ExpandableCard
-                className="bg-white border-slate-200"
+                className="bg-card border-border"
                 title={
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-5 w-5" />
@@ -1177,7 +1177,7 @@ export default function AnalyticsDashboardPage() {
 
               {/* Organization Type Chart */}
               <ExpandableCard
-                className="bg-white border-slate-200"
+                className="bg-card border-border"
                 title={
                   <div className="flex items-center gap-2">
                     <Users className="h-5 w-5" />
@@ -1195,7 +1195,7 @@ export default function AnalyticsDashboardPage() {
 
               {/* Sector Analysis Chart */}
               <ExpandableCard
-                className="bg-white border-slate-200"
+                className="bg-card border-border"
                 title={
                   <div className="flex items-center gap-2">
                     <Target className="h-5 w-5" />
@@ -1214,7 +1214,7 @@ export default function AnalyticsDashboardPage() {
               {/* Trends Section */}
               {/* Commitments vs Disbursements Chart */}
               <ExpandableCard
-                className="bg-white border-slate-200 lg:col-span-2"
+                className="bg-card border-border lg:col-span-2"
                 title="Commitments vs Disbursements Over Time"
                 description="Track funding commitments and actual disbursements by period"
                 exportData={commitmentsData}
@@ -1240,7 +1240,7 @@ export default function AnalyticsDashboardPage() {
 
               {/* Budget vs Actual Chart */}
               <ExpandableCard
-                className="bg-white border-slate-200"
+                className="bg-card border-border"
                 title="Budget vs Actual Spending"
                 description="Compare planned budgets with actual expenditures"
                 exportData={budgetVsActualData}
@@ -1254,7 +1254,7 @@ export default function AnalyticsDashboardPage() {
 
               {/* ODA by Flow Type Chart */}
               <ExpandableCard
-                className="bg-white border-slate-200"
+                className="bg-card border-border"
                 title="ODA by Flow Type"
                 description="Composition of Official Development Assistance (ODA) flows by type of financial flow"
                 exportData={odaByFlowTypeData}
@@ -1281,7 +1281,7 @@ export default function AnalyticsDashboardPage() {
               {/* Top 10 Section */}
               {/* Chart 1: Total Financial Value (Default) */}
               <ExpandableCard
-                className="bg-white border-slate-200"
+                className="bg-card border-border"
                 title="Top 10 Development Partners by Total Disbursements (USD)"
                 description="Sum of all commitments and disbursements made by each donor (funding organisation)"
                 exportData={top10TotalFinancialData}
@@ -1294,9 +1294,9 @@ export default function AnalyticsDashboardPage() {
               </ExpandableCard>
 
               {/* Chart 3: Disbursement-to-Commitment Ratio - Temporarily disabled due to data issue */}
-              {/* <Card className="bg-white border-slate-200">
+              {/* <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium text-slate-700">
+                  <CardTitle className="text-lg font-medium text-foreground">
                     Top 10 Partners by Delivery Rate (% of Commitments Disbursed)
                   </CardTitle>
                   <CardDescription>
@@ -1324,12 +1324,12 @@ export default function AnalyticsDashboardPage() {
                 <TabsContent value="tree-map">
                   <div className="space-y-8">
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Intervention Tree Map</h2>
-                      <p className="text-gray-600 mb-4">
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Intervention Tree Map</h2>
+                      <p className="text-muted-foreground mb-4">
                         Explore interventions by violence type, approach, and specific programs.
                         Click on categories to drill down into the hierarchy.
                       </p>
-                      <Card className="bg-white border-slate-200">
+                      <Card className="bg-card border-border">
                         <CardContent className="p-6">
                           <InterventionTreeMap />
                         </CardContent>

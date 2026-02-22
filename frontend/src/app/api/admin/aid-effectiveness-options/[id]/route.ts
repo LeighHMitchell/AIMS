@@ -23,7 +23,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const { label, description, sortOrder, isActive } = body;
+    const { label, description, sortOrder, isActive, responsibleMinistries } = body;
 
     const updateData: Record<string, unknown> = {};
 
@@ -47,6 +47,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (isActive !== undefined) {
       updateData.is_active = isActive;
+    }
+
+    if (responsibleMinistries !== undefined) {
+      const ministriesJson = Array.isArray(responsibleMinistries)
+        ? responsibleMinistries.map((m: { id: string; code: string; name: string }) => ({
+            id: m.id,
+            code: m.code,
+            name: m.name,
+          }))
+        : [];
+      updateData.responsible_ministries = ministriesJson;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -81,6 +92,26 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         { error: "Failed to update option", details: error.message },
         { status: 500 }
       );
+    }
+
+    // Sync junction table if ministries were provided
+    if (responsibleMinistries !== undefined) {
+      // Delete existing junction rows
+      await supabase
+        .from("ae_option_ministries")
+        .delete()
+        .eq("ae_option_id", id);
+
+      // Re-insert
+      const ministriesJson = Array.isArray(responsibleMinistries)
+        ? responsibleMinistries.map((m: { id: string }) => ({
+            ae_option_id: id,
+            budget_classification_id: m.id,
+          }))
+        : [];
+      if (ministriesJson.length > 0) {
+        await supabase.from("ae_option_ministries").insert(ministriesJson);
+      }
     }
 
     return NextResponse.json({

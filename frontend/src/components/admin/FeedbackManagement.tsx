@@ -21,6 +21,7 @@ import { useUser } from '@/hooks/useUser';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FeedbackModal } from '@/components/ui/feedback-modal';
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
 
 interface Feedback {
   id: string;
@@ -646,20 +647,28 @@ export function FeedbackManagement() {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">View</label>
-              <div className="flex">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
                 <Button
-                  variant={!showArchived ? "default" : "outline"}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setShowArchived(false)}
-                  className="flex-1 rounded-r-none"
+                  className={cn(
+                    !showArchived
+                      ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
                 >
                   Active
                 </Button>
                 <Button
-                  variant={showArchived ? "default" : "outline"}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setShowArchived(true)}
-                  className="flex-1 rounded-l-none"
+                  className={cn(
+                    showArchived
+                      ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
                 >
                   <Archive className="h-4 w-4 mr-1" />
                   Archived

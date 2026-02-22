@@ -115,20 +115,20 @@ export default function IATIImportPage() {
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">IATI Data Import</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-8">IATI Data Import</h1>
 
         {/* File Upload Section */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <div className="bg-card shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Step 1: Upload IATI File</h2>
           
           <div className="flex items-center justify-center w-full">
-            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-border border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted">
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <Upload className="w-10 h-10 mb-3 text-gray-400" />
-                <p className="mb-2 text-sm text-gray-500">
+                <Upload className="w-10 h-10 mb-3 text-muted-foreground" />
+                <p className="mb-2 text-sm text-muted-foreground">
                   <span className="font-semibold">Click to upload</span> or drag and drop
                 </p>
-                <p className="text-xs text-gray-500">IATI XML files only</p>
+                <p className="text-xs text-muted-foreground">IATI XML files only</p>
               </div>
               <input
                 type="file"
@@ -142,8 +142,8 @@ export default function IATIImportPage() {
           {file && (
             <div className="mt-4">
               <div className="flex items-center">
-                <FileText className="w-5 h-5 text-gray-400 mr-2" />
-                <span className="text-sm text-gray-600">{file.name}</span>
+                <FileText className="w-5 h-5 text-muted-foreground mr-2" />
+                <span className="text-sm text-muted-foreground">{file.name}</span>
                 <button
                   onClick={handleParse}
                   disabled={isUploading}
@@ -171,7 +171,7 @@ export default function IATIImportPage() {
                       console.error('Debug error:', err);
                     }
                   }}
-                  className="mt-2 text-sm text-gray-500 hover:text-gray-700 underline"
+                  className="mt-2 text-sm text-muted-foreground hover:text-foreground underline"
                 >
                   Debug Transaction Structure
                 </button>
@@ -182,7 +182,7 @@ export default function IATIImportPage() {
 
         {/* Parse Results */}
         {parseResult && (
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
+          <div className="bg-card shadow rounded-lg p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Step 2: Review Parsed Data</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -220,20 +220,20 @@ export default function IATIImportPage() {
             {/* Details */}
             {parseResult.activities.length > 0 && (
               <div className="mb-4">
-                <h3 className="font-medium text-gray-700 mb-2">Activities:</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
+                <h3 className="font-medium text-foreground mb-2">Activities:</h3>
+                <ul className="text-sm text-muted-foreground space-y-1">
                   {parseResult.activities.slice(0, 5).map((activity, idx) => (
                     <li key={idx} className="flex items-center">
                       {activity.matched ? (
                         <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-gray-400 mr-2" />
+                        <XCircle className="w-4 h-4 text-muted-foreground mr-2" />
                       )}
                       {activity.title}
                     </li>
                   ))}
                   {parseResult.activities.length > 5 && (
-                    <li className="text-gray-400">... and {parseResult.activities.length - 5} more</li>
+                    <li className="text-muted-foreground">... and {parseResult.activities.length - 5} more</li>
                   )}
                 </ul>
               </div>
@@ -262,7 +262,7 @@ export default function IATIImportPage() {
 
         {/* Import Results */}
         {importResult && (
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-card shadow rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Import Results</h2>
             
             {importResult.success ? (
@@ -272,7 +272,7 @@ export default function IATIImportPage() {
                   <span className="font-medium">Import completed successfully!</span>
                 </div>
                 
-                <ul className="text-sm text-gray-600 space-y-1 ml-7">
+                <ul className="text-sm text-muted-foreground space-y-1 ml-7">
                   {importResult.results.organizationsCreated > 0 && (
                     <li>Created {importResult.results.organizationsCreated} organizations</li>
                   )}

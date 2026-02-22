@@ -21,6 +21,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
 import { DocumentCard } from '@/components/library/DocumentCard';
 import { DocumentTable } from '@/components/library/DocumentTable';
 import type { UnifiedDocument, LibraryResponse } from '@/types/library-document';
@@ -184,19 +185,27 @@ export function BookmarkedDocumentsView({
         </div>
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex items-center border rounded-md">
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
             <Button
-              variant={viewMode === 'card' ? 'secondary' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className="rounded-r-none"
+              className={cn(
+                viewMode === 'card'
+                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                  : 'text-slate-500 hover:text-slate-700'
+              )}
               onClick={() => setViewMode('card')}
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className="rounded-l-none"
+              className={cn(
+                viewMode === 'table'
+                  ? 'bg-white shadow-sm text-slate-900 hover:bg-white'
+                  : 'text-slate-500 hover:text-slate-700'
+              )}
               onClick={() => setViewMode('table')}
             >
               <TableIcon className="h-4 w-4" />

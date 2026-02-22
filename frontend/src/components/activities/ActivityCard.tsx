@@ -99,6 +99,7 @@ interface ActivityCardProps {
     created_by_org_acronym?: string;
     totalBudget?: number;
     totalDisbursed?: number;
+    is_pooled_fund?: boolean;
   };
   className?: string;
   onEdit?: (activityId: string) => void;
@@ -395,6 +396,11 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                   className="text-xs font-medium leading-tight capitalize"
                 >
                   {activity.activity_status}
+                </Badge>
+              )}
+              {activity.is_pooled_fund && (
+                <Badge className="text-xs font-medium leading-tight bg-[#3C6255] text-white">
+                  Fund
                 </Badge>
               )}
               {activity.submission_status && (

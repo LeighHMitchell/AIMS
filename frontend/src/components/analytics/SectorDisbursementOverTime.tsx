@@ -34,6 +34,8 @@ import { Download, TrendingUp, LineChart as LineChartIcon, Table as TableIcon, C
 import { LoadingText } from '@/components/ui/loading-text'
 import html2canvas from 'html2canvas'
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 // Color palette based on brand colors - distinct colors for data visualization
 // Brand colors: Primary Scarlet, Blue Slate, Cool Steel, Deep Teal, Soft Ochre, Pale Slate
@@ -709,8 +711,11 @@ export function SectorDisbursementOverTime({
     return (
       <div className="bg-white border rounded-lg shadow-lg min-w-[300px] max-w-[420px]">
         {/* Header - Fixed */}
-        <div className="p-3 pb-2 border-b bg-white rounded-t-lg">
+        <div className="p-3 pb-2 border-b bg-surface-muted rounded-t-lg">
           <span className="font-semibold text-sm">{label}</span>
+          {customYears.find(cy => cy.id === calendarType)?.name && (
+            <p className="text-xs text-slate-400">{customYears.find(cy => cy.id === calendarType)!.name}</p>
+          )}
           <div className="text-xs text-gray-500 mt-1">
             Total: <span className="font-bold text-gray-900">{formatCurrencyCompact(total)}</span>
           </div>
@@ -734,20 +739,20 @@ export function SectorDisbursementOverTime({
               .map((entry: any, idx: number) => {
                 const item = aggregatedData.find(d => d.code === entry.dataKey)
                 return (
-                  <div key={idx} className="flex items-center justify-between py-1">
-                    <div className="flex items-center gap-2">
+                  <div key={idx} className="flex items-start justify-between gap-2 py-1">
+                    <div className="flex items-start gap-2 min-w-0">
                       <div
-                        className="w-3 h-3 rounded-sm flex-shrink-0"
+                        className="w-3 h-3 rounded-sm flex-shrink-0 mt-0.5"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="font-mono text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">
+                      <span className="font-mono text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-700 flex-shrink-0">
                         {entry.dataKey}
                       </span>
-                      <span className="text-sm text-slate-700 truncate max-w-[180px]" title={item?.name}>
+                      <span className="text-sm text-slate-700">
                         {item?.name}
                       </span>
                     </div>
-                    <span className="text-sm font-semibold text-slate-900 ml-2">
+                    <span className="text-sm font-semibold text-slate-900 flex-shrink-0">
                       {formatCurrencyCompact(entry.value)}
                     </span>
                   </div>
@@ -770,20 +775,20 @@ export function SectorDisbursementOverTime({
                   {Array.from(group.categories.values())
                     .sort((a, b) => b.categoryTotal - a.categoryTotal)
                     .map(cat => (
-                      <div key={cat.categoryCode} className="flex items-center justify-between py-0.5">
-                        <div className="flex items-center gap-1.5">
+                      <div key={cat.categoryCode} className="flex items-start justify-between gap-2 py-0.5">
+                        <div className="flex items-start gap-1.5 min-w-0">
                           <div
-                            className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                            className="w-2.5 h-2.5 rounded-sm flex-shrink-0 mt-0.5"
                             style={{ backgroundColor: colorMap.get(cat.categoryCode) }}
                           />
-                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground flex-shrink-0">
                             {cat.categoryCode}
                           </span>
-                          <span className="text-xs text-slate-600 truncate max-w-[150px]" title={cat.categoryName}>
+                          <span className="text-xs text-slate-600">
                             {cat.categoryName}
                           </span>
                         </div>
-                        <span className="text-xs font-medium text-slate-700 ml-2">
+                        <span className="text-xs font-medium text-slate-700 flex-shrink-0">
                           {formatCurrencyCompact(cat.categoryTotal)}
                         </span>
                       </div>
@@ -822,17 +827,17 @@ export function SectorDisbursementOverTime({
                           {category.items
                             .sort((a, b) => b.value - a.value)
                             .map(item => (
-                              <div key={item.code} className="flex items-center justify-between">
-                                <div className="flex items-center gap-1">
+                              <div key={item.code} className="flex items-start justify-between gap-2">
+                                <div className="flex items-start gap-1 min-w-0">
                                   <div
-                                    className="w-2 h-2 rounded-sm flex-shrink-0"
+                                    className="w-2 h-2 rounded-sm flex-shrink-0 mt-0.5"
                                     style={{ backgroundColor: item.color }}
                                   />
-                                  <span className="text-xs text-gray-600 truncate max-w-[160px]" title={item.name}>
+                                  <span className="text-xs text-gray-600">
                                     {item.name}
                                   </span>
                                 </div>
-                                <span className="text-xs font-medium text-gray-700 ml-2">
+                                <span className="text-xs font-medium text-gray-700 flex-shrink-0">
                                   {formatCurrencyCompact(item.value)}
                                 </span>
                               </div>
@@ -899,7 +904,7 @@ export function SectorDisbursementOverTime({
       <div ref={chartRef} className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={timeSeriesData} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis
               dataKey="calendarYear"
               fontSize={10}
@@ -1066,19 +1071,19 @@ export function SectorDisbursementOverTime({
           {/* Controls - Right Side */}
           <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
             {/* Data Mode Toggle */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
               <Button
-                variant={dataMode === 'planned' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", dataMode === 'planned' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 onClick={() => setDataMode('planned')}
               >
                 Planned
               </Button>
               <Button
-                variant={dataMode === 'actual' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", dataMode === 'actual' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 onClick={() => setDataMode('actual')}
               >
                 Actual
@@ -1086,27 +1091,27 @@ export function SectorDisbursementOverTime({
             </div>
 
             {/* Aggregation Level Toggle */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
               <Button
-                variant={aggregationLevel === 'group' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", aggregationLevel === 'group' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 onClick={() => setAggregationLevel('group')}
               >
                 Sector Category
               </Button>
               <Button
-                variant={aggregationLevel === 'category' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", aggregationLevel === 'category' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 onClick={() => setAggregationLevel('category')}
               >
                 Sector
               </Button>
               <Button
-                variant={aggregationLevel === 'sector' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", aggregationLevel === 'sector' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 onClick={() => setAggregationLevel('sector')}
               >
                 Sub-sector
@@ -1223,29 +1228,29 @@ export function SectorDisbursementOverTime({
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
               <Button
-                variant={viewMode === 'area' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", viewMode === 'area' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 onClick={() => setViewMode('area')}
                 title="Area"
               >
                 <TrendingUp className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'line' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", viewMode === 'line' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 onClick={() => setViewMode('line')}
                 title="Line"
               >
                 <LineChartIcon className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", viewMode === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 onClick={() => setViewMode('table')}
                 title="Table"
               >
@@ -1284,7 +1289,7 @@ export function SectorDisbursementOverTime({
             ) : (
               <ResponsiveContainer width="100%" height={400}>
                 <AreaChart data={timeSeriesData} margin={{ top: 10, right: 30, left: 50, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                   <XAxis
                     dataKey="calendarYear"
                     fontSize={11}
@@ -1329,7 +1334,7 @@ export function SectorDisbursementOverTime({
             ) : (
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={timeSeriesData} margin={{ top: 10, right: 30, left: 50, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                   <XAxis
                     dataKey="calendarYear"
                     fontSize={11}

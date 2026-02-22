@@ -315,8 +315,8 @@ export default function SDGProfilePage() {
             <Card>
               <CardContent className="p-8 text-center">
                 <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-slate-900 mb-2">Error Loading SDG Profile</h2>
-                <p className="text-slate-600 mb-4">{error || 'Failed to load SDG profile data'}</p>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading SDG Profile</h2>
+                <p className="text-muted-foreground mb-4">{error || 'Failed to load SDG profile data'}</p>
                 <Button onClick={() => router.push('/sdgs')}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to SDGs
@@ -342,7 +342,7 @@ export default function SDGProfilePage() {
               variant="ghost"
               size="sm"
               onClick={() => router.push('/sdgs')}
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               <ArrowLeft className="h-4 w-4 mr-1.5" />
               SDGs
@@ -367,9 +367,9 @@ export default function SDGProfilePage() {
           {/* Chart Cards Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Funding Trends */}
-            <Card className="border-slate-200">
+            <Card className="border-border">
               <CardHeader className="py-2 px-3">
-                <CardTitle className="text-xs font-medium text-slate-600">Funding Trends</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">Funding Trends</CardTitle>
               </CardHeader>
               <CardContent className="px-1 pb-2">
                 {transactionsByYear.length > 0 ? (
@@ -389,9 +389,9 @@ export default function SDGProfilePage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-slate-900 mb-1">{payload[0]?.payload?.year}</p>
+                                  <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
                                   {payload.map((entry: any, i: number) => (
-                                    <p key={i} className="text-xs text-slate-600">
+                                    <p key={i} className="text-xs text-muted-foreground">
                                       {entry.name}: {formatCurrencyShort(entry.value)}
                                     </p>
                                   ))}
@@ -407,15 +407,15 @@ export default function SDGProfilePage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No data</div>
                 )}
               </CardContent>
             </Card>
 
             {/* Target Coverage */}
-            <Card className="border-slate-200">
+            <Card className="border-border">
               <CardHeader className="py-2 px-3">
-                <CardTitle className="text-xs font-medium text-slate-600">Target Coverage</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">Target Coverage</CardTitle>
               </CardHeader>
               <CardContent className="px-1 pb-2">
                 {targetBreakdown.filter(t => t.totalValue > 0).length > 0 ? (
@@ -433,8 +433,8 @@ export default function SDGProfilePage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-slate-900">{payload[0]?.payload?.targetId}: {payload[0]?.payload?.targetText}</p>
-                                  <p className="text-xs text-slate-600">{formatCurrencyShort(payload[0]?.value as number)}</p>
+                                  <p className="font-medium text-xs text-foreground">{payload[0]?.payload?.targetId}: {payload[0]?.payload?.targetText}</p>
+                                  <p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p>
                                 </div>
                               )
                             }
@@ -446,15 +446,15 @@ export default function SDGProfilePage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No target data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No target data</div>
                 )}
               </CardContent>
             </Card>
 
             {/* Top Donors */}
-            <Card className="border-slate-200">
+            <Card className="border-border">
               <CardHeader className="py-2 px-3">
-                <CardTitle className="text-xs font-medium text-slate-600">Top Donors</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">Top Donors</CardTitle>
               </CardHeader>
               <CardContent className="px-1 pb-2">
                 {donorRankings.length > 0 ? (
@@ -476,8 +476,8 @@ export default function SDGProfilePage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-slate-900">{payload[0]?.payload?.fullName}</p>
-                                  <p className="text-xs text-slate-600">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p>
+                                  <p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p>
+                                  <p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p>
                                 </div>
                               )
                             }
@@ -489,15 +489,15 @@ export default function SDGProfilePage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No donor data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No donor data</div>
                 )}
               </CardContent>
             </Card>
 
             {/* Geographic Spread */}
-            <Card className="border-slate-200">
+            <Card className="border-border">
               <CardHeader className="py-2 px-3">
-                <CardTitle className="text-xs font-medium text-slate-600">Geographic Spread</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">Geographic Spread</CardTitle>
               </CardHeader>
               <CardContent className="px-1 pb-2">
                 {geographicDistribution.length > 0 ? (
@@ -519,8 +519,8 @@ export default function SDGProfilePage() {
                             if (active && payload && payload.length) {
                               return (
                                 <div className={TOOLTIP_CLASSES}>
-                                  <p className="font-medium text-xs text-slate-900">{payload[0]?.payload?.fullName}</p>
-                                  <p className="text-xs text-slate-600">{formatCurrencyShort(payload[0]?.value as number)}</p>
+                                  <p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p>
+                                  <p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p>
                                 </div>
                               )
                             }
@@ -532,7 +532,7 @@ export default function SDGProfilePage() {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No geo data</div>
+                  <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No geo data</div>
                 )}
               </CardContent>
             </Card>
@@ -558,19 +558,19 @@ export default function SDGProfilePage() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <p className="text-xs font-medium text-slate-600 mb-1">Aligned Activities</p>
-                      <p className="text-3xl font-bold text-slate-900">{formatNumber(metrics.totalActivities)}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">contributing to this goal</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Aligned Activities</p>
+                      <p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalActivities)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">contributing to this goal</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-600 mb-1">Organizations</p>
-                      <p className="text-3xl font-bold text-slate-900">{formatNumber(metrics.totalOrganizations)}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">working on this goal</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Organizations</p>
+                      <p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalOrganizations)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">working on this goal</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-600 mb-1">Total Financial Value</p>
-                      <p className="text-3xl font-bold text-slate-900">{formatCurrencyShort(metrics.totalValue)}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">across all transactions</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Total Financial Value</p>
+                      <p className="text-3xl font-bold text-foreground">{formatCurrencyShort(metrics.totalValue)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">across all transactions</p>
                     </div>
                   </div>
                 </CardContent>
@@ -599,7 +599,7 @@ export default function SDGProfilePage() {
                       </span>
                     ))}
                   </div>
-                  <p className="text-xs text-slate-400 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     {targetBreakdown.filter(t => t.totalValue > 0 && t.targetId !== 'general').length} of {targetBreakdown.filter(t => t.targetId !== 'general').length} targets funded
                   </p>
                 </CardContent>
@@ -615,10 +615,10 @@ export default function SDGProfilePage() {
                         <Link
                           key={activity.id}
                           href={`/activities/${activity.id}`}
-                          className="flex items-start justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                          className="flex items-start justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
                         >
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm text-slate-900 truncate">
+                            <h3 className="font-medium text-sm text-foreground truncate">
                               {activity.title_narrative || 'Untitled Activity'}
                             </h3>
                             <div className="flex items-center gap-2 mt-0.5">
@@ -631,8 +631,8 @@ export default function SDGProfilePage() {
                             </div>
                           </div>
                           <div className="text-right ml-3 flex-shrink-0">
-                            <p className="text-sm font-semibold text-slate-900">{formatCurrencyShort(activity.totalValue)}</p>
-                            <p className="text-[10px] text-slate-500">{activity.transactionCount} tx</p>
+                            <p className="text-sm font-semibold text-foreground">{formatCurrencyShort(activity.totalValue)}</p>
+                            <p className="text-[10px] text-muted-foreground">{activity.transactionCount} tx</p>
                           </div>
                         </Link>
                       ))}
@@ -711,9 +711,9 @@ export default function SDGProfilePage() {
                                 if (active && payload && payload.length) {
                                   return (
                                     <div className={TOOLTIP_CLASSES}>
-                                      <p className="font-medium text-xs text-slate-900 mb-1">{payload[0]?.payload?.year}</p>
+                                      <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
                                       {payload.map((entry: any, i: number) => (
-                                        <p key={i} className="text-xs text-slate-600">
+                                        <p key={i} className="text-xs text-muted-foreground">
                                           <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: entry.stroke || entry.fill }} />
                                           {entry.name}: {formatCurrencyShort(entry.value)}
                                         </p>
@@ -732,7 +732,7 @@ export default function SDGProfilePage() {
                         </ResponsiveContainer>
                       </div>
                     ) : (
-                      <div className="h-72 flex items-center justify-center text-slate-400 text-sm">No time-series data available</div>
+                      <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No time-series data available</div>
                     )}
                   </CardContent>
                 </Card>
@@ -765,7 +765,7 @@ export default function SDGProfilePage() {
                         </ResponsiveContainer>
                       </div>
                     ) : (
-                      <div className="h-72 flex items-center justify-center text-slate-400 text-sm">No transaction data</div>
+                      <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No transaction data</div>
                     )}
                   </CardContent>
                 </Card>
@@ -777,20 +777,20 @@ export default function SDGProfilePage() {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <p className="text-xs text-slate-600 mb-1">Commitments</p>
-                      <p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.commitments)}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Commitments</p>
+                      <p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.commitments)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-600 mb-1">Disbursements</p>
-                      <p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.disbursements)}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Disbursements</p>
+                      <p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.disbursements)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-600 mb-1">Expenditures</p>
-                      <p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.expenditures)}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Expenditures</p>
+                      <p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.expenditures)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-600 mb-1">Inflows</p>
-                      <p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.inflows)}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Inflows</p>
+                      <p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.inflows)}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -815,7 +815,7 @@ export default function SDGProfilePage() {
                       className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
                         activityStatusFilter === f.key
                           ? 'text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          : 'bg-muted text-muted-foreground hover:bg-muted'
                       }`}
                       style={activityStatusFilter === f.key ? { backgroundColor: sdg.color } : undefined}
                     >
@@ -828,7 +828,7 @@ export default function SDGProfilePage() {
                   <select
                     value={activitySort}
                     onChange={e => setActivitySort(e.target.value)}
-                    className="text-xs border border-slate-200 rounded-md px-2 py-1 text-slate-600"
+                    className="text-xs border border-border rounded-md px-2 py-1 text-muted-foreground"
                   >
                     <option value="value">Sort by Value</option>
                     <option value="committed">Sort by Committed</option>
@@ -836,25 +836,29 @@ export default function SDGProfilePage() {
                     <option value="title">Sort by Title</option>
                   </select>
 
-                  <div className="flex border border-slate-200 rounded-md overflow-hidden">
-                    <button
+                  <div className="flex border border-border rounded-md">
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setActivityView('card')}
-                      className={`p-1.5 ${activityView === 'card' ? 'bg-slate-100' : 'bg-white'}`}
+                      className={`rounded-r-none h-7 px-2 ${activityView === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                     >
-                      <LayoutGrid className="h-3.5 w-3.5 text-slate-600" />
-                    </button>
-                    <button
+                      <LayoutGrid className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setActivityView('table')}
-                      className={`p-1.5 ${activityView === 'table' ? 'bg-slate-100' : 'bg-white'}`}
+                      className={`rounded-l-none h-7 px-2 ${activityView === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                     >
-                      <TableIcon className="h-3.5 w-3.5 text-slate-600" />
-                    </button>
+                      <TableIcon className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
               </div>
 
               {/* Activity Count */}
-              <p className="text-xs text-slate-500">{filteredActivities.length} activit{filteredActivities.length === 1 ? 'y' : 'ies'}</p>
+              <p className="text-xs text-muted-foreground">{filteredActivities.length} activit{filteredActivities.length === 1 ? 'y' : 'ies'}</p>
 
               {/* Card View */}
               {activityView === 'card' ? (
@@ -867,26 +871,26 @@ export default function SDGProfilePage() {
                             <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">
                               {getStatusLabel(activity.activity_status)}
                             </Badge>
-                            <ExternalLink className="h-3 w-3 text-slate-300" />
+                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
                           </div>
-                          <h3 className="font-medium text-sm text-slate-900 line-clamp-2 mb-2">
+                          <h3 className="font-medium text-sm text-foreground line-clamp-2 mb-2">
                             {activity.title_narrative || 'Untitled Activity'}
                           </h3>
                           {activity.iati_identifier && (
-                            <code className="text-[10px] font-mono text-slate-400 block mb-2 truncate">{activity.iati_identifier}</code>
+                            <code className="text-[10px] font-mono text-muted-foreground block mb-2 truncate">{activity.iati_identifier}</code>
                           )}
-                          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
                             <div>
-                              <p className="text-[10px] text-slate-500">Committed</p>
-                              <p className="text-xs font-semibold text-slate-900">{formatCurrencyShort(activity.commitments)}</p>
+                              <p className="text-[10px] text-muted-foreground">Committed</p>
+                              <p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p>
                             </div>
                             <div>
-                              <p className="text-[10px] text-slate-500">Disbursed</p>
-                              <p className="text-xs font-semibold text-slate-900">{formatCurrencyShort(activity.disbursements)}</p>
+                              <p className="text-[10px] text-muted-foreground">Disbursed</p>
+                              <p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p>
                             </div>
                           </div>
                           {activity.commitments > 0 && (
-                            <div className="w-full bg-slate-100 rounded-full h-1 mt-2">
+                            <div className="w-full bg-muted rounded-full h-1 mt-2">
                               <div
                                 className="h-1 rounded-full"
                                 style={{
@@ -908,34 +912,34 @@ export default function SDGProfilePage() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="border-b border-slate-200 bg-slate-50">
-                            <th className="text-left py-2.5 px-3 text-slate-600 font-medium">Title</th>
-                            <th className="text-left py-2.5 px-3 text-slate-600 font-medium">IATI ID</th>
-                            <th className="text-center py-2.5 px-3 text-slate-600 font-medium">Status</th>
-                            <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Committed</th>
-                            <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Disbursed</th>
-                            <th className="text-right py-2.5 px-3 text-slate-600 font-medium">% Disbursed</th>
+                          <tr className="border-b border-border bg-muted">
+                            <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Title</th>
+                            <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">IATI ID</th>
+                            <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Status</th>
+                            <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Committed</th>
+                            <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Disbursed</th>
+                            <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">% Disbursed</th>
                           </tr>
                         </thead>
                         <tbody>
                           {paginatedActivities.map(activity => {
                             const pct = activity.commitments > 0 ? ((activity.disbursements / activity.commitments) * 100).toFixed(1) : '—'
                             return (
-                              <tr key={activity.id} className="border-b border-slate-100 hover:bg-slate-50">
+                              <tr key={activity.id} className="border-b border-border hover:bg-muted/50">
                                 <td className="py-2 px-3">
-                                  <Link href={`/activities/${activity.id}`} className="font-medium text-slate-900 hover:underline">
+                                  <Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline">
                                     {(activity.title_narrative || 'Untitled').substring(0, 60)}
                                   </Link>
                                 </td>
-                                <td className="py-2 px-3 text-slate-500 font-mono">{activity.iati_identifier || '—'}</td>
+                                <td className="py-2 px-3 text-muted-foreground font-mono">{activity.iati_identifier || '—'}</td>
                                 <td className="py-2 px-3 text-center">
                                   <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">
                                     {getStatusLabel(activity.activity_status)}
                                   </Badge>
                                 </td>
-                                <td className="py-2 px-3 text-right text-slate-900">{formatCurrencyShort(activity.commitments)}</td>
-                                <td className="py-2 px-3 text-right text-slate-900">{formatCurrencyShort(activity.disbursements)}</td>
-                                <td className="py-2 px-3 text-right text-slate-500">{pct}{pct !== '—' ? '%' : ''}</td>
+                                <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(activity.commitments)}</td>
+                                <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(activity.disbursements)}</td>
+                                <td className="py-2 px-3 text-right text-muted-foreground">{pct}{pct !== '—' ? '%' : ''}</td>
                               </tr>
                             )
                           })}
@@ -958,7 +962,7 @@ export default function SDGProfilePage() {
                   >
                     Previous
                   </Button>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-muted-foreground">
                     Page {activityPage} of {totalPages}
                   </span>
                   <Button
@@ -996,7 +1000,7 @@ export default function SDGProfilePage() {
                       className={`text-xs px-2.5 py-1 rounded-md transition-colors capitalize ${
                         orgRoleFilter === role
                           ? 'text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          : 'bg-muted text-muted-foreground hover:bg-muted'
                       }`}
                       style={orgRoleFilter === role ? { backgroundColor: sdg.color } : undefined}
                     >
@@ -1007,7 +1011,7 @@ export default function SDGProfilePage() {
                 <select
                   value={orgSort}
                   onChange={e => setOrgSort(e.target.value)}
-                  className="text-xs border border-slate-200 rounded-md px-2 py-1 text-slate-600"
+                  className="text-xs border border-border rounded-md px-2 py-1 text-muted-foreground"
                 >
                   <option value="value">Sort by Value</option>
                   <option value="activities">Sort by Activities</option>
@@ -1015,7 +1019,7 @@ export default function SDGProfilePage() {
                 </select>
               </div>
 
-              <p className="text-xs text-slate-500">{filteredOrgs.length} organization{filteredOrgs.length !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-muted-foreground">{filteredOrgs.length} organization{filteredOrgs.length !== 1 ? 's' : ''}</p>
 
               {filteredOrgs.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1035,11 +1039,11 @@ export default function SDGProfilePage() {
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-sm text-slate-900 truncate">{org.name}</h3>
-                              {org.acronym && <p className="text-[10px] text-slate-500">{org.acronym}</p>}
+                              <h3 className="font-medium text-sm text-foreground truncate">{org.name}</h3>
+                              {org.acronym && <p className="text-[10px] text-muted-foreground">{org.acronym}</p>}
                               <div className="flex items-center gap-3 mt-1.5">
-                                <span className="text-xs font-semibold text-slate-900">{formatCurrencyShort(org.totalValue)}</span>
-                                <span className="text-[10px] text-slate-400">{org.activityCount} activit{org.activityCount === 1 ? 'y' : 'ies'}</span>
+                                <span className="text-xs font-semibold text-foreground">{formatCurrencyShort(org.totalValue)}</span>
+                                <span className="text-[10px] text-muted-foreground">{org.activityCount} activit{org.activityCount === 1 ? 'y' : 'ies'}</span>
                               </div>
                               {org.contributionTypes.length > 0 && (
                                 <div className="flex gap-1 mt-1">
@@ -1060,7 +1064,7 @@ export default function SDGProfilePage() {
               ) : (
                 <Card>
                   <CardContent className="p-8 text-center">
-                    <p className="text-slate-500 text-sm">No organizations found</p>
+                    <p className="text-muted-foreground text-sm">No organizations found</p>
                   </CardContent>
                 </Card>
               )}
@@ -1124,8 +1128,8 @@ export default function SDGProfilePage() {
                               if (active && payload && payload.length) {
                                 return (
                                   <div className={TOOLTIP_CLASSES}>
-                                    <p className="font-medium text-xs text-slate-900">{payload[0]?.payload?.fullName}</p>
-                                    <p className="text-xs text-slate-600">{formatCurrencyShort(payload[0]?.value as number)}</p>
+                                    <p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p>
+                                    <p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p>
                                   </div>
                                 )
                               }
@@ -1141,13 +1145,13 @@ export default function SDGProfilePage() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="border-b border-slate-200">
-                            <th className="text-left py-2 px-2 text-slate-500 font-medium">#</th>
-                            <th className="text-left py-2 px-2 text-slate-500 font-medium">Country</th>
-                            <th className="text-right py-2 px-2 text-slate-500 font-medium">Committed</th>
-                            <th className="text-right py-2 px-2 text-slate-500 font-medium">Disbursed</th>
-                            <th className="text-right py-2 px-2 text-slate-500 font-medium">Activities</th>
-                            <th className="text-right py-2 px-2 text-slate-500 font-medium">% of Total</th>
+                          <tr className="border-b border-border">
+                            <th className="text-left py-2 px-2 text-muted-foreground font-medium">#</th>
+                            <th className="text-left py-2 px-2 text-muted-foreground font-medium">Country</th>
+                            <th className="text-right py-2 px-2 text-muted-foreground font-medium">Committed</th>
+                            <th className="text-right py-2 px-2 text-muted-foreground font-medium">Disbursed</th>
+                            <th className="text-right py-2 px-2 text-muted-foreground font-medium">Activities</th>
+                            <th className="text-right py-2 px-2 text-muted-foreground font-medium">% of Total</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1155,19 +1159,19 @@ export default function SDGProfilePage() {
                             const totalGeoValue = geographicDistribution.reduce((s, g) => s + g.value, 0)
                             const pctOfTotal = totalGeoValue > 0 ? ((geo.value / totalGeoValue) * 100).toFixed(1) : '0.0'
                             return (
-                              <tr key={geo.countryCode} className="border-b border-slate-100 hover:bg-slate-50">
-                                <td className="py-2 px-2 text-slate-400">{i + 1}</td>
+                              <tr key={geo.countryCode} className="border-b border-border hover:bg-muted/50">
+                                <td className="py-2 px-2 text-muted-foreground">{i + 1}</td>
                                 <td className="py-2 px-2">
                                   <div className="flex items-center gap-2">
                                     <Flag code={geo.countryCode} style={{ width: 18, height: 13, objectFit: 'cover' }} fallback={<span className="text-[10px]">{geo.countryCode}</span>} />
-                                    <span className="font-medium text-slate-900">{geo.countryName}</span>
-                                    <span className="text-slate-400">{geo.countryCode}</span>
+                                    <span className="font-medium text-foreground">{geo.countryName}</span>
+                                    <span className="text-muted-foreground">{geo.countryCode}</span>
                                   </div>
                                 </td>
-                                <td className="py-2 px-2 text-right text-slate-600">{formatCurrencyShort(geo.commitments)}</td>
-                                <td className="py-2 px-2 text-right font-medium text-slate-900">{formatCurrencyShort(geo.disbursements)}</td>
-                                <td className="py-2 px-2 text-right text-slate-600">{geo.activityCount}</td>
-                                <td className="py-2 px-2 text-right text-slate-500">{pctOfTotal}%</td>
+                                <td className="py-2 px-2 text-right text-muted-foreground">{formatCurrencyShort(geo.commitments)}</td>
+                                <td className="py-2 px-2 text-right font-medium text-foreground">{formatCurrencyShort(geo.disbursements)}</td>
+                                <td className="py-2 px-2 text-right text-muted-foreground">{geo.activityCount}</td>
+                                <td className="py-2 px-2 text-right text-muted-foreground">{pctOfTotal}%</td>
                               </tr>
                             )
                           })}

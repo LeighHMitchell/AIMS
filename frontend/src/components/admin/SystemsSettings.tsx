@@ -394,8 +394,8 @@ export function SystemsSettings() {
         </CardContent>
       </Card>
 
-      {/* Aid Effectiveness Options Card - full width */}
-      <Card className="md:col-span-3">
+      {/* Aid Effectiveness Options Card - two columns wide */}
+      <Card className="md:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />

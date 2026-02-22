@@ -421,12 +421,12 @@ export default function LibraryPage() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="all" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="all" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
               <LibraryIcon className="h-4 w-4" />
               All Documents
             </TabsTrigger>
             {hasOrganization && (
-              <TabsTrigger value="reading_room" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="reading_room" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                 <BookOpen className="h-4 w-4" />
                 Reading Room
                 {readingRoomBookmarks.length > 0 && (
@@ -436,7 +436,7 @@ export default function LibraryPage() {
                 )}
               </TabsTrigger>
             )}
-            <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
               <Bookmark className="h-4 w-4" />
               My Library
               {personalBookmarks.length > 0 && (
@@ -493,17 +493,17 @@ export default function LibraryPage() {
                   {/* View Toggle */}
                   <div className="flex items-center border rounded-md">
                     <Button
-                      variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       size="sm"
-                      className="rounded-r-none"
+                      className={`rounded-r-none ${viewMode === 'table' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
                       onClick={() => setViewMode('table')}
                     >
                       <TableIcon className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant={viewMode === 'card' ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       size="sm"
-                      className="rounded-l-none"
+                      className={`rounded-l-none ${viewMode === 'card' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
                       onClick={() => setViewMode('card')}
                     >
                       <LayoutGrid className="h-4 w-4" />

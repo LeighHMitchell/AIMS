@@ -1,9 +1,9 @@
-import type { SelectIATIGroup } from '@/components/ui/enhanced-searchable-select';
+import type { EnhancedSelectGroup } from '@/components/ui/enhanced-searchable-select';
 
 // IATI Location Type Codelist - Complete Implementation
 // Source: https://iatistandard.org/fr/iati-standard/203/codelists/locationtype/
 
-export const IATI_LOCATION_TYPE_GROUPS: SelectIATIGroup[] = [
+export const IATI_LOCATION_TYPE_GROUPS: EnhancedSelectGroup[] = [
   {
     label: 'Administrative Features',
     options: [

@@ -147,15 +147,15 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
   };
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             All Projects ({filteredAndSortedProjects.length})
           </CardTitle>
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search by name or ID..."
@@ -249,7 +249,7 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
               <TableBody>
                 {paginatedProjects.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       No projects found
                     </TableCell>
                   </TableRow>
@@ -283,17 +283,17 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
                           {STATUS_LABELS[project.status] || project.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600 max-w-xs">
+                      <TableCell className="text-sm text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.sectors}>
                           {project.sectors || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600 max-w-xs">
+                      <TableCell className="text-sm text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.developmentPartners}>
                           {project.developmentPartners || '-'}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-slate-600 max-w-xs">
+                      <TableCell className="text-sm text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.executingAgencies}>
                           {project.executingAgencies || '-'}
                         </div>
@@ -315,7 +315,7 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-slate-600">
+            <div className="text-sm text-muted-foreground">
               Showing {((currentPage - 1) * itemsPerPage) + 1} to{' '}
               {Math.min(currentPage * itemsPerPage, filteredAndSortedProjects.length)} of{' '}
               {filteredAndSortedProjects.length} projects

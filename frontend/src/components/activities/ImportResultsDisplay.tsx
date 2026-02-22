@@ -68,22 +68,22 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle className="h-4 w-4 text-gray-700" />;
+        return <CheckCircle className="h-4 w-4 text-foreground" />;
       case 'partial':
-        return <AlertTriangle className="h-4 w-4 text-gray-500" />;
+        return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
       case 'failed':
-        return <XCircle className="h-4 w-4 text-gray-700" />;
+        return <XCircle className="h-4 w-4 text-foreground" />;
       case 'empty':
-        return <MinusCircle className="h-4 w-4 text-gray-400" />;
+        return <MinusCircle className="h-4 w-4 text-muted-foreground" />;
       default:
         return null;
     }
   };
 
   const getStatusBadgeClass = (successful: number, attempted: number, failed: number = 0) => {
-    if (attempted === 0) return 'bg-gray-100 text-gray-600';
-    if (failed > 0) return 'bg-gray-200 text-gray-700';
-    return 'bg-gray-100 text-gray-700';
+    if (attempted === 0) return 'bg-muted text-muted-foreground';
+    if (failed > 0) return 'bg-muted text-foreground';
+    return 'bg-muted text-foreground';
   };
 
   const formatCount = (successful: number, attempted: number, failed: number = 0, skipped: number = 0) => {
@@ -110,24 +110,24 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
     if (!section) return null;
 
     return (
-      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 space-y-3">
+      <div className="px-4 py-3 bg-muted border-t border-border space-y-3">
         {/* Additional Stats */}
         {((section?.totalAmount !== undefined && section.totalAmount > 0) || 
           (section?.totalPercentage !== undefined && section.totalPercentage > 0)) && (
-          <table className="w-full text-sm border border-gray-200 rounded">
+          <table className="w-full text-sm border border-border rounded">
             <tbody>
               {section?.totalAmount !== undefined && section.totalAmount > 0 && (
-                <tr className="border-b border-gray-200">
-                  <td className="px-3 py-2 font-medium text-gray-600 bg-gray-100 w-40">Total Amount</td>
-                  <td className="px-3 py-2 text-gray-800">
+                <tr className="border-b border-border">
+                  <td className="px-3 py-2 font-medium text-muted-foreground bg-muted w-40">Total Amount</td>
+                  <td className="px-3 py-2 text-foreground">
                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(section.totalAmount)}
                   </td>
                 </tr>
               )}
               {section?.totalPercentage !== undefined && section.totalPercentage > 0 && (
                 <tr>
-                  <td className="px-3 py-2 font-medium text-gray-600 bg-gray-100 w-40">Total Percentage</td>
-                  <td className="px-3 py-2 text-gray-800">{section.totalPercentage.toFixed(2)}%</td>
+                  <td className="px-3 py-2 font-medium text-muted-foreground bg-muted w-40">Total Percentage</td>
+                  <td className="px-3 py-2 text-foreground">{section.totalPercentage.toFixed(2)}%</td>
                 </tr>
               )}
             </tbody>
@@ -137,20 +137,20 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* Success Details - Table Format */}
         {section?.details && section.details.length > 0 && (
           <div>
-            <div className="text-sm font-medium text-gray-700 mb-1">Successfully Imported ({section.details.length})</div>
-            <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
+            <div className="text-sm font-medium text-foreground mb-1">Successfully Imported ({section.details.length})</div>
+            <div className="border border-border rounded overflow-hidden max-h-48 overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="bg-surface-muted sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Details</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">#</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">Details</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white">
+                <tbody className="bg-card">
                   {section.details.slice(0, 30).map((detail: any, idx: number) => (
-                    <tr key={idx} className="border-b border-gray-100 last:border-0">
-                      <td className="px-3 py-1.5 text-gray-500 w-12">{idx + 1}</td>
-                      <td className="px-3 py-1.5 font-mono text-gray-800">
+                    <tr key={idx} className="border-b border-border last:border-0">
+                      <td className="px-3 py-1.5 text-muted-foreground w-12">{idx + 1}</td>
+                      <td className="px-3 py-1.5 font-mono text-foreground">
                         {typeof detail === 'string' ? detail : JSON.stringify(detail)}
                       </td>
                     </tr>
@@ -158,7 +158,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
                 </tbody>
               </table>
               {section.details.length > 30 && (
-                <div className="text-xs text-gray-500 italic px-3 py-2 bg-gray-50 border-t border-gray-200">
+                <div className="text-xs text-muted-foreground italic px-3 py-2 bg-muted border-t border-border">
                   ... and {section.details.length - 30} more
                 </div>
               )}
@@ -169,24 +169,24 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* List Items - Table Format */}
         {section?.list && section.list.length > 0 && (
           <div>
-            <div className="text-sm font-medium text-gray-700 mb-1">Imported Items ({section.list.length})</div>
-            <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
+            <div className="text-sm font-medium text-foreground mb-1">Imported Items ({section.list.length})</div>
+            <div className="border border-border rounded overflow-hidden max-h-48 overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="bg-surface-muted sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Name</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Code</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-700 border-b border-gray-200">Value</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">#</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">Name</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">Code</th>
+                    <th className="px-3 py-2 text-right font-medium text-foreground border-b border-border">Value</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white">
+                <tbody className="bg-card">
                   {section.list.slice(0, 30).map((item: any, idx: number) => (
-                    <tr key={idx} className="border-b border-gray-100 last:border-0">
-                      <td className="px-3 py-1.5 text-gray-500 w-12">{idx + 1}</td>
-                      <td className="px-3 py-1.5 font-medium text-gray-800">{item.name || '-'}</td>
-                      <td className="px-3 py-1.5 text-gray-600">{item.code || '-'}</td>
-                      <td className="px-3 py-1.5 text-right text-gray-600">
+                    <tr key={idx} className="border-b border-border last:border-0">
+                      <td className="px-3 py-1.5 text-muted-foreground w-12">{idx + 1}</td>
+                      <td className="px-3 py-1.5 font-medium text-foreground">{item.name || '-'}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{item.code || '-'}</td>
+                      <td className="px-3 py-1.5 text-right text-muted-foreground">
                         {item.percentage !== undefined ? `${item.percentage}%` : 
                          item.significance !== undefined ? `Sig: ${item.significance}` :
                          item.value !== undefined ? item.value : '-'}
@@ -196,7 +196,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
                 </tbody>
               </table>
               {section.list.length > 30 && (
-                <div className="text-xs text-gray-500 italic px-3 py-2 bg-gray-50 border-t border-gray-200">
+                <div className="text-xs text-muted-foreground italic px-3 py-2 bg-muted border-t border-border">
                   ... and {section.list.length - 30} more
                 </div>
               )}
@@ -207,24 +207,24 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* Failures - Table Format */}
         {section?.failures && section.failures.length > 0 && (
           <div>
-            <div className="text-sm font-medium text-gray-700 mb-1">Failed ({section.failures.length})</div>
-            <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
+            <div className="text-sm font-medium text-foreground mb-1">Failed ({section.failures.length})</div>
+            <div className="border border-border rounded overflow-hidden max-h-48 overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="bg-surface-muted sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Item</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Reason</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">#</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">Item</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">Reason</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white">
+                <tbody className="bg-card">
                   {section.failures.map((failure: any, idx: number) => (
-                    <tr key={idx} className="border-b border-gray-100 last:border-0">
-                      <td className="px-3 py-1.5 text-gray-500 w-12">{idx + 1}</td>
-                      <td className="px-3 py-1.5 font-medium text-gray-800">
+                    <tr key={idx} className="border-b border-border last:border-0">
+                      <td className="px-3 py-1.5 text-muted-foreground w-12">{idx + 1}</td>
+                      <td className="px-3 py-1.5 font-medium text-foreground">
                         {failure.code || failure.name || '-'}
                       </td>
-                      <td className="px-3 py-1.5 text-gray-600">
+                      <td className="px-3 py-1.5 text-muted-foreground">
                         {failure.reason || failure.error || '-'}
                       </td>
                     </tr>
@@ -238,20 +238,20 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* Warnings - Table Format */}
         {section?.warnings && section.warnings.length > 0 && (
           <div>
-            <div className="text-sm font-medium text-gray-700 mb-1">Warnings ({section.warnings.length})</div>
-            <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
+            <div className="text-sm font-medium text-foreground mb-1">Warnings ({section.warnings.length})</div>
+            <div className="border border-border rounded overflow-hidden max-h-48 overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="bg-surface-muted sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Warning</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">#</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">Warning</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white">
+                <tbody className="bg-card">
                   {section.warnings.map((warning: string, idx: number) => (
-                    <tr key={idx} className="border-b border-gray-100 last:border-0">
-                      <td className="px-3 py-1.5 text-gray-500 w-12">{idx + 1}</td>
-                      <td className="px-3 py-1.5 text-gray-700">{warning}</td>
+                    <tr key={idx} className="border-b border-border last:border-0">
+                      <td className="px-3 py-1.5 text-muted-foreground w-12">{idx + 1}</td>
+                      <td className="px-3 py-1.5 text-foreground">{warning}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -263,24 +263,24 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
         {/* Matching Details - Table Format */}
         {section?.matchingDetails && section.matchingDetails.length > 0 && (
           <div>
-            <div className="text-sm font-medium text-gray-700 mb-1">Matching Details ({section.matchingDetails.length})</div>
-            <div className="border border-gray-200 rounded overflow-hidden max-h-48 overflow-y-auto">
+            <div className="text-sm font-medium text-foreground mb-1">Matching Details ({section.matchingDetails.length})</div>
+            <div className="border border-border rounded overflow-hidden max-h-48 overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="bg-surface-muted sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">#</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Code</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Matched To</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200">Strategy</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">#</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">Code</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">Matched To</th>
+                    <th className="px-3 py-2 text-left font-medium text-foreground border-b border-border">Strategy</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white">
+                <tbody className="bg-card">
                   {section.matchingDetails.map((detail: any, idx: number) => (
-                    <tr key={idx} className="border-b border-gray-100 last:border-0">
-                      <td className="px-3 py-1.5 text-gray-500 w-12">{idx + 1}</td>
-                      <td className="px-3 py-1.5 font-medium text-gray-800">{detail.code}</td>
-                      <td className="px-3 py-1.5 text-gray-700">{detail.matchedTo || '-'}</td>
-                      <td className="px-3 py-1.5 text-gray-600">{detail.matchingStrategy || '-'}</td>
+                    <tr key={idx} className="border-b border-border last:border-0">
+                      <td className="px-3 py-1.5 text-muted-foreground w-12">{idx + 1}</td>
+                      <td className="px-3 py-1.5 font-medium text-foreground">{detail.code}</td>
+                      <td className="px-3 py-1.5 text-foreground">{detail.matchedTo || '-'}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{detail.matchingStrategy || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -362,16 +362,16 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
   }
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden">
-      <div className="bg-gray-50 px-4 py-3 border-b border-gray-300">
+    <div className="border border-border rounded-lg overflow-hidden">
+      <div className="bg-muted px-4 py-3 border-b border-border">
         <h3 className="text-lg font-semibold">Detailed Import Results</h3>
       </div>
       <Table>
         <TableHeader>
-          <TableRow className="bg-gray-50 border-b border-gray-300">
-            <TableHead className="w-8 border-r border-gray-200"></TableHead>
-            <TableHead className="w-8 border-r border-gray-200">Status</TableHead>
-            <TableHead className="border-r border-gray-200">Category</TableHead>
+          <TableRow className="bg-muted border-b border-border">
+            <TableHead className="w-8 border-r border-border"></TableHead>
+            <TableHead className="w-8 border-r border-border">Status</TableHead>
+            <TableHead className="border-r border-border">Category</TableHead>
             <TableHead className="text-right w-32">Result</TableHead>
           </TableRow>
         </TableHeader>
@@ -384,20 +384,20 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
             return (
               <React.Fragment key={item.id}>
                 <TableRow 
-                  className={`border-b border-gray-200 ${canExpand ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                  className={`border-b border-border ${canExpand ? 'cursor-pointer hover:bg-muted/50' : ''}`}
                   onClick={() => canExpand && toggleRow(item.id)}
                 >
-                  <TableCell className="w-8 px-2 border-r border-gray-200">
+                  <TableCell className="w-8 px-2 border-r border-border">
                     {canExpand && (
                       isExpanded 
-                        ? <ChevronDown className="h-4 w-4 text-gray-400" />
-                        : <ChevronRight className="h-4 w-4 text-gray-400" />
+                        ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        : <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     )}
                   </TableCell>
-                  <TableCell className="w-8 border-r border-gray-200">
+                  <TableCell className="w-8 border-r border-border">
                     {getStatusIcon(status)}
                   </TableCell>
-                  <TableCell className="font-medium border-r border-gray-200">
+                  <TableCell className="font-medium border-r border-border">
                     {item.title}
                   </TableCell>
                   <TableCell className="text-right">
@@ -420,7 +420,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
                 </TableRow>
                 {isExpanded && (
                   <TableRow>
-                    <TableCell colSpan={4} className="p-0 border-b border-gray-200">
+                    <TableCell colSpan={4} className="p-0 border-b border-border">
                       {renderExpandedDetails(item.section, item.title)}
                     </TableCell>
                   </TableRow>

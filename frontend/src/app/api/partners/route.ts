@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     // Prepare data for organizations table
     const organizationData = {
       name: body.name,
-      type: body.type || 'development_partner',
+      type: body.type || '40',
       country: body.country || null,
       email: body.email || null,
       phone: body.phone || null,

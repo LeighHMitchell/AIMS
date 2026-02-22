@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { MapPin } from 'lucide-react'
 
 interface AidMapProps {
@@ -142,17 +142,15 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-[500px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
   if (data.length === 0) {
     return (
-      <div className="h-full bg-slate-50 rounded-lg p-8 flex flex-col items-center justify-center">
-        <MapPin className="h-12 w-12 text-slate-400 mb-4" />
-        <p className="text-slate-600">No location data available for the selected filters</p>
+      <div className="h-full bg-muted rounded-lg p-8 flex flex-col items-center justify-center">
+        <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
+        <p className="text-muted-foreground">No location data available for the selected filters</p>
       </div>
     )
   }
@@ -162,32 +160,32 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-200">
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Location</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Country</th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-slate-600">Projects</th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-slate-600">Total Disbursed</th>
+            <tr className="border-b border-border">
+              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Location</th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Country</th>
+              <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Projects</th>
+              <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Total Disbursed</th>
             </tr>
           </thead>
           <tbody>
             {data.map((location, index) => (
               <tr 
                 key={index}
-                className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
+                className={index % 2 === 0 ? 'bg-card' : 'bg-muted'}
               >
-                <td className="py-3 px-4 text-sm text-slate-700 font-medium">
+                <td className="py-3 px-4 text-sm text-foreground font-medium">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-3 w-3 text-slate-400" />
+                    <MapPin className="h-3 w-3 text-muted-foreground" />
                     {location.location}
                   </div>
                 </td>
-                <td className="py-3 px-4 text-sm text-slate-600">
+                <td className="py-3 px-4 text-sm text-muted-foreground">
                   {location.country}
                 </td>
-                <td className="py-3 px-4 text-sm text-slate-700 text-right">
+                <td className="py-3 px-4 text-sm text-foreground text-right">
                   {location.projectCount}
                 </td>
-                <td className="py-3 px-4 text-sm text-slate-700 text-right font-medium">
+                <td className="py-3 px-4 text-sm text-foreground text-right font-medium">
                   {formatCurrency(location.totalDisbursement)}
                 </td>
               </tr>
@@ -197,7 +195,7 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
       </div>
       
       <div className="mt-4 text-center">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted-foreground">
           Showing top 15 locations by disbursement amount
         </p>
       </div>

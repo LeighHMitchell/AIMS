@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { DollarSign, Wallet, Calendar, Download, FileImage, Table as TableIcon, AlertCircle, CalendarIcon, RotateCcw, SlidersHorizontal, Check, Search } from 'lucide-react'
@@ -23,8 +23,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { format } from 'date-fns'
-import { IATI_ORGANIZATION_TYPES, getOrganizationTypeName } from '@/data/iati-organization-types'
+import { IATI_ORGANIZATION_TYPES, getOrganizationTypeName, getOrganizationTypeCode } from '@/data/iati-organization-types'
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
@@ -605,6 +607,16 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
     return { rows, allDonorKeys, donorInfo }
   }, [chartData, chartViewMode])
 
+  // Custom Y-axis tick that never wraps text
+  const NoWrapTick = ({ x, y, payload }: any) => {
+    const label = payload?.value || ''
+    return (
+      <text x={x} y={y} textAnchor="end" dominantBaseline="central" fill="#64748b" fontSize={11}>
+        {label}
+      </text>
+    )
+  }
+
   // Single color for non-stacked bar chart (all bars same color)
   const barColor = '#334155' // slate-700
 
@@ -635,14 +647,16 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-            <p className="font-semibold text-slate-900 text-sm">{orgDisplay}</p>
+          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+            <p className="font-semibold text-slate-900 text-sm max-w-[280px] break-words">{orgDisplay}</p>
             {data.type && (
               <div className="flex items-center gap-1.5 mt-1">
-                <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-xs">
-                  {data.type}
-                </code>
-                <span className="text-xs text-slate-600">{data.typeName}</span>
+                {getOrganizationTypeCode(data.type) && (
+                  <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-xs">
+                    {getOrganizationTypeCode(data.type)}
+                  </code>
+                )}
+                <span className="text-xs text-slate-600">{getOrganizationTypeName(data.type)}</span>
               </div>
             )}
           </div>
@@ -769,7 +783,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
-      return <Skeleton className="h-full w-full" />
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (!chartData || chartData.length === 0) {
       return (
@@ -788,13 +802,13 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
             layout="vertical"
             margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis type="number" tickFormatter={formatCurrency} fontSize={10} />
             <YAxis
               type="category"
               dataKey="name"
               width={55}
-              tick={{ fontSize: 9 }}
+              tick={<NoWrapTick />}
               interval={0}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -811,10 +825,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
   if (loading || customYearsLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-[500px] w-full" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -1095,28 +1106,28 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
           </Select>
 
           {/* Sector Filter */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
             {/* Sector Aggregation Level Toggle */}
             <Button
-              variant={sectorAggregationLevel === 'group' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className="h-8 text-xs"
+              className={cn("h-8 text-xs", sectorAggregationLevel === 'group' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               onClick={() => setSectorAggregationLevel('group')}
             >
               Category
             </Button>
             <Button
-              variant={sectorAggregationLevel === 'category' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className="h-8 text-xs"
+              className={cn("h-8 text-xs", sectorAggregationLevel === 'category' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               onClick={() => setSectorAggregationLevel('category')}
             >
               Sector
             </Button>
             <Button
-              variant={sectorAggregationLevel === 'sector' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className="h-8 text-xs"
+              className={cn("h-8 text-xs", sectorAggregationLevel === 'sector' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               onClick={() => setSectorAggregationLevel('sector')}
             >
               Sub-sector
@@ -1247,12 +1258,12 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               </SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
             <Button
-              variant={chartViewMode === 'bar' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setChartViewMode('bar')}
-              className="h-8"
+              className={cn("h-8", chartViewMode === 'bar' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               title="Horizontal Bar Chart"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1262,10 +1273,10 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               </svg>
             </Button>
             <Button
-              variant={chartViewMode === 'stacked' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setChartViewMode('stacked')}
-              className="h-8"
+              className={cn("h-8", chartViewMode === 'stacked' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               title="Stacked by Org Type"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1279,10 +1290,10 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               </svg>
             </Button>
             <Button
-              variant={chartViewMode === 'table' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setChartViewMode('table')}
-              className="h-8"
+              className={cn("h-8", chartViewMode === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               title="Table View"
             >
               <TableIcon className="h-4 w-4" />
@@ -1369,7 +1380,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="#e2e8f0"
+                  stroke={CHART_STRUCTURE_COLORS.grid}
                   horizontal={false}
                 />
                 <XAxis
@@ -1381,7 +1392,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fill: '#64748b', fontSize: 11 }}
+                  tick={<NoWrapTick />}
                   axisLine={{ stroke: '#cbd5e1' }}
                   width={170}
                 />
@@ -1402,7 +1413,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
 
                       return (
                         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-md">
-                          <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+                          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
                             <div className="flex items-center gap-2">
                               <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-xs">
                                 {dataPoint?.typeCode}
@@ -1454,7 +1465,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="#e2e8f0"
+                  stroke={CHART_STRUCTURE_COLORS.grid}
                   horizontal={false}
                 />
                 <XAxis
@@ -1466,7 +1477,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fill: '#64748b', fontSize: 11 }}
+                  tick={<NoWrapTick />}
                   axisLine={{ stroke: '#cbd5e1' }}
                   width={140}
                 />

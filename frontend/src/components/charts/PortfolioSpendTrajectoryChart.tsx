@@ -13,11 +13,12 @@ import {
   Legend,
   ReferenceLine,
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle, Info, CalendarIcon, Download, FileImage, BarChart3, Table as TableIcon } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import html2canvas from 'html2canvas'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,7 @@ import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/cust
 import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 // Colour palette as specified
 const COLOURS = {
@@ -672,7 +674,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
 
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
+          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
             <p className="font-semibold text-slate-900 text-sm">{formattedDate}</p>
           </div>
           <div className="p-2">
@@ -726,7 +728,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
   // Compact mode check FIRST - before any Card returns
   if (compact) {
     if (loading) {
-      return <Skeleton className="h-full w-full" />
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (error || !data || displayData.length === 0) {
       return (
@@ -764,7 +766,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                 <line x1="0" y1="0" x2="0" y2="8" stroke="#9ca3af" strokeWidth="2" />
               </pattern>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={COLOURS.paleSlate} opacity={0.5} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis
               dataKey="timestamp"
               type="number"
@@ -823,7 +825,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
-        <Skeleton className="h-full w-full" />
+        <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
       </div>
     )
   }
@@ -980,21 +982,21 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
         {/* Right side - View Toggle & Export Buttons */}
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex">
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
             <Button
-              variant={viewMode === 'chart' ? 'default' : 'outline'}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode('chart')}
-              className="h-8 rounded-r-none"
+              className={cn("h-8", viewMode === 'chart' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               title="Chart view"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'table' ? 'default' : 'outline'}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode('table')}
-              className="h-8 rounded-l-none"
+              className={cn("h-8", viewMode === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               title="Table view"
             >
               <TableIcon className="h-4 w-4" />
@@ -1051,10 +1053,9 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
               </pattern>
             </defs>
             
-            <CartesianGrid 
-              strokeDasharray="3 3" 
-              stroke={COLOURS.paleSlate} 
-              opacity={0.5} 
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke={CHART_STRUCTURE_COLORS.grid}
             />
             <XAxis
               dataKey="timestamp"

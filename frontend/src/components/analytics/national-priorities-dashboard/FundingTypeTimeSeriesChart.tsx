@@ -9,8 +9,10 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  CartesianGrid,
 } from "recharts";
 import { FundingByType } from "@/types/national-priorities";
+import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 
 interface FundingTypeTimeSeriesChartProps {
   data: FundingByType[];
@@ -79,6 +81,7 @@ export function FundingTypeTimeSeriesChart({
           data={chartData}
           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
         >
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis
             dataKey="year"
             tick={{ fontSize: 11 }}

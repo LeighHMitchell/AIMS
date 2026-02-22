@@ -25,7 +25,7 @@ export default function ActionMenuDemoPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-muted p-8">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Action Menu Demo</h1>
           <p className="text-muted-foreground mb-8">
@@ -47,7 +47,7 @@ export default function ActionMenuDemoPage() {
               <div className="flex items-center gap-4">
                 <span className="text-sm">Click the menu to see available actions:</span>
                 <Popover>
-                  <PopoverTrigger className="p-0 h-auto hover:bg-gray-100 rounded-sm">
+                  <PopoverTrigger className="p-0 h-auto hover:bg-muted rounded-sm">
                     <MoreVertical className="h-4 w-4" />
                   </PopoverTrigger>
                   <PopoverContent className="w-32 p-1">
@@ -55,7 +55,7 @@ export default function ActionMenuDemoPage() {
                       className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
                       onClick={() => handleAction('Edit', 'demo')}
                     >
-                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
+                      <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
                     </button>
                     <button 
                       className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
@@ -91,7 +91,7 @@ export default function ActionMenuDemoPage() {
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           item.status === 'Active' ? 'bg-green-100 text-green-800' :
-                          item.status === 'Draft' ? 'bg-gray-100 text-gray-800' :
+                          item.status === 'Draft' ? 'bg-muted text-foreground' :
                           item.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
                           'bg-orange-100 text-orange-800'
                         }`}>
@@ -102,7 +102,7 @@ export default function ActionMenuDemoPage() {
                       <TableCell>
                         <div className="flex justify-end">
                           <Popover>
-                            <PopoverTrigger className="p-0 h-auto hover:bg-gray-100 rounded-sm">
+                            <PopoverTrigger className="p-0 h-auto hover:bg-muted rounded-sm">
                               <MoreVertical className="h-4 w-4" />
                             </PopoverTrigger>
                             <PopoverContent className="w-32 p-1">
@@ -116,7 +116,7 @@ export default function ActionMenuDemoPage() {
                                 className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
                                 onClick={() => handleAction('Edit', item.id)}
                               >
-                                <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
+                                <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
                               </button>
                               <button 
                                 className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
@@ -144,7 +144,7 @@ export default function ActionMenuDemoPage() {
               <div className="flex items-center gap-4">
                 <span className="text-sm">Example with more actions:</span>
                 <Popover>
-                  <PopoverTrigger className="p-0 h-auto hover:bg-gray-100 rounded-sm">
+                  <PopoverTrigger className="p-0 h-auto hover:bg-muted rounded-sm">
                     <MoreVertical className="h-4 w-4" />
                   </PopoverTrigger>
                   <PopoverContent className="w-40 p-1">
@@ -158,7 +158,7 @@ export default function ActionMenuDemoPage() {
                       className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
                       onClick={() => handleAction('Edit', 'extended')}
                     >
-                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
+                      <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
                     </button>
                     <button 
                       className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm"
@@ -178,7 +178,7 @@ export default function ActionMenuDemoPage() {
                     >
                       <Copy className="h-4 w-4" /> Copy Link
                     </button>
-                    <div className="border-t border-gray-200 my-1" />
+                    <div className="border-t border-border my-1" />
                     <button 
                       className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm"
                       onClick={() => handleAction('Delete', 'extended')}
@@ -205,12 +205,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button"
 
 <Popover>
-  <PopoverTrigger className="p-0 h-auto hover:bg-gray-100 rounded-sm">
+  <PopoverTrigger className="p-0 h-auto hover:bg-muted rounded-sm">
     <MoreVertical className="h-4 w-4" />
   </PopoverTrigger>
   <PopoverContent className="w-32 p-1">
     <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-sm" onClick={handleEdit}>
-      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" /> Edit
+      <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" /> Edit
     </button>
     <button className="flex items-center gap-2 w-full p-2 hover:bg-muted rounded-sm text-red-600 text-sm" onClick={handleDelete}>
       <Trash2 className="h-4 w-4 text-red-500" /> Delete

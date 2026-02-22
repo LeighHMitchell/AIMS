@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { DisbursementsBySectorChart } from '@/components/activities/DisbursementsBySectorChart'
 import { DisbursementsOverTimeChart } from '@/components/activities/DisbursementsOverTimeChart'
 import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
 import { apiFetch } from '@/lib/api-fetch';
 
 interface DateRange {

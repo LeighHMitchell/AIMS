@@ -110,7 +110,7 @@ export function ValidationTableSkeleton() {
           </thead>
           <tbody>
             {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
+              <tr key={i} className="border-b hover:bg-muted/50 transition-colors">
                 <td className="p-4">
                   <Skeleton variant="text" width="200px" height="1rem" className="mb-1" />
                   <Skeleton variant="text" width="150px" height="0.75rem" />

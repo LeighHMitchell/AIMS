@@ -95,7 +95,7 @@ export const CHART_CONFIG = {
 /**
  * Standard tooltip class names
  */
-export const TOOLTIP_CLASSES = "bg-white p-3 border border-slate-200 rounded-lg shadow-lg";
+export const TOOLTIP_CLASSES = "bg-card p-3 border border-border rounded-lg shadow-lg";
 
 /**
  * Standard empty state class names

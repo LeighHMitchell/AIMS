@@ -99,7 +99,7 @@ export default function Dashboard() {
 
               {/* Activity Lists Skeleton */}
               <div className="grid gap-6 lg:grid-cols-2">
-                <Card className="bg-white">
+                <Card className="bg-card">
                   <CardHeader>
                     <Skeleton className="h-6 w-40 mb-2" />
                     <Skeleton className="h-4 w-48" />
@@ -112,7 +112,7 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="bg-white">
+                <Card className="bg-card">
                   <CardHeader>
                     <Skeleton className="h-6 w-40 mb-2" />
                     <Skeleton className="h-4 w-48" />
@@ -140,7 +140,7 @@ export default function Dashboard() {
         <div className="min-h-screen">
           <div className="p-8">
             <div className="flex items-center justify-center min-h-[60vh]">
-              <Card className="max-w-lg bg-white">
+              <Card className="max-w-lg bg-card">
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-2">
                     <AlertCircle className="h-6 w-6 text-orange-500" />
@@ -170,7 +170,7 @@ export default function Dashboard() {
         <div className="min-h-screen">
           <div className="p-8">
             <div className="flex items-center justify-center min-h-[60vh]">
-              <Card className="max-w-lg bg-white">
+              <Card className="max-w-lg bg-card">
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-2">
                     <AlertCircle className="h-6 w-6 text-orange-500" />
@@ -224,14 +224,14 @@ export default function Dashboard() {
               {user.profilePicture ? (
                 <Avatar className="h-24 w-24 ring-2 ring-slate-200">
                   <AvatarImage src={user.profilePicture} alt={user.name} className="object-cover" />
-                  <AvatarFallback className="bg-slate-100 text-slate-600 text-2xl font-semibold">
+                  <AvatarFallback className="bg-muted text-muted-foreground text-2xl font-semibold">
                     {(user.firstName || user.name.split(' ')[0]).slice(0, 1).toUpperCase()}
                     {(user.lastName || user.name.split(' ').slice(-1)[0]).slice(0, 1).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               ) : (
                 <Avatar className="h-24 w-24 ring-2 ring-slate-200">
-                  <AvatarFallback className="bg-slate-100 text-slate-600 text-2xl font-semibold">
+                  <AvatarFallback className="bg-muted text-muted-foreground text-2xl font-semibold">
                     {(user.firstName || user.name.split(' ')[0]).slice(0, 1).toUpperCase()}
                     {(user.lastName || user.name.split(' ').slice(-1)[0]).slice(0, 1).toUpperCase()}
                   </AvatarFallback>
@@ -242,7 +242,7 @@ export default function Dashboard() {
               <div>
                 {/* Welcome message with role badge on same line */}
                 <div className="flex items-center gap-3">
-                  <p className="text-2xl text-slate-700">
+                  <p className="text-2xl text-foreground">
                     Welcome, <span className="font-semibold">
                       {user.firstName || user.name.split(' ')[0]}
                     </span>
@@ -278,9 +278,9 @@ export default function Dashboard() {
 
                 {/* Position and department */}
                 {(user.jobTitle || user.department) && (
-                  <p className="text-base font-semibold text-slate-700 mt-2">
+                  <p className="text-base font-semibold text-foreground mt-2">
                     {user.jobTitle && user.department
-                      ? <>{user.jobTitle} <span className="text-slate-400 font-normal">&middot;</span> {user.department}</>
+                      ? <>{user.jobTitle} <span className="text-muted-foreground font-normal">&middot;</span> {user.department}</>
                       : user.jobTitle || user.department}
                   </p>
                 )}
@@ -291,14 +291,14 @@ export default function Dashboard() {
                     {user.organization.logo ? (
                       <Avatar className="h-6 w-6">
                         <AvatarImage src={user.organization.logo} alt={user.organization.name} className="object-cover" />
-                        <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px] font-semibold">
+                        <AvatarFallback className="bg-muted text-muted-foreground text-[10px] font-semibold">
                           {user.organization.acronym?.slice(0, 2) || user.organization.name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     ) : (
-                      <Building2 className="h-5 w-5 text-slate-400 shrink-0" />
+                      <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
                     )}
-                    <p className="text-xl font-medium text-slate-900">
+                    <p className="text-xl font-medium text-foreground">
                       {user.organization.name}
                       {user.organization.acronym && (
                         <span> ({user.organization.acronym})</span>
@@ -324,21 +324,21 @@ export default function Dashboard() {
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap" data-tour="dashboard-tabs">
                 <TabsTrigger
                   value="overview"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   Overview
                 </TabsTrigger>
                 <TabsTrigger
                   value="my-portfolio"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
                   <Briefcase className="h-4 w-4" />
                   My Portfolio
                 </TabsTrigger>
                 <TabsTrigger
                   value="notifications"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
                   <Bell className="h-4 w-4" />
                   Notifications
@@ -350,42 +350,42 @@ export default function Dashboard() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="activities"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
                   <ListTodo className="h-4 w-4" />
                   Activities
                 </TabsTrigger>
                 <TabsTrigger
                   value="locations"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
                   <MapPin className="h-4 w-4" />
                   Locations
                 </TabsTrigger>
                 <TabsTrigger
                   value="flows"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
                   <ArrowRightLeft className="h-4 w-4" />
                   Aid Flows
                 </TabsTrigger>
                 <TabsTrigger
                   value="data-clinic"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
                   <ClipboardCheck className="h-4 w-4" />
                   Validation Rules Check
                 </TabsTrigger>
                 <TabsTrigger
                   value="bookmarks"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
                   <Bookmark className="h-4 w-4" />
                   Bookmarks
                 </TabsTrigger>
                 <TabsTrigger
                   value="tasks"
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                 >
                   <ClipboardList className="h-4 w-4" />
                   Tasking

@@ -951,7 +951,7 @@ export default function OrganizationProfilePage() {
 
   const getTypeColor = (type: string) => {
     // Monochrome color scheme
-    return 'bg-slate-100 text-slate-800 border-slate-200'
+    return 'bg-muted text-foreground border-border'
   }
 
   const getActivityStatusLabel = (status: string) => {
@@ -1127,11 +1127,11 @@ export default function OrganizationProfilePage() {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Organization Not Found</h3>
-                  <p className="text-slate-600 mb-4">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Organization Not Found</h3>
+                  <p className="text-muted-foreground mb-4">
                     {error || 'The organization you are looking for could not be found.'}
                   </p>
-                  <Button onClick={() => router.push('/organizations')} className="bg-slate-600 hover:bg-slate-700">
+                  <Button onClick={() => router.push('/organizations')} className="bg-primary hover:bg-primary/90">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Organizations
                   </Button>
@@ -1266,25 +1266,25 @@ export default function OrganizationProfilePage() {
             <Button 
               variant="ghost" 
               onClick={() => router.push('/organizations')}
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Organizations
             </Button>
             
             <div className="flex gap-2 items-center" data-tour="org-actions">
-              <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
+              <Button variant="outline" className="border-border text-foreground hover:bg-muted">
                 <Download className="h-4 w-4 mr-2" />
                 Export Profile
               </Button>
               <Button
                 variant="outline"
-                className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                className="border-border text-foreground hover:bg-muted"
                 onClick={() => toggleBookmark(id)}
               >
                 {isBookmarked(id) ? (
                   <>
-                    <BookmarkCheck className="h-4 w-4 mr-2 text-slate-600" />
+                    <BookmarkCheck className="h-4 w-4 mr-2 text-muted-foreground" />
                     Bookmarked
                   </>
                 ) : (
@@ -1305,7 +1305,7 @@ export default function OrganizationProfilePage() {
                 hasMore={hasMoreLikes}
               />
               <Link href={`/organizations/${id}/edit`}>
-                <Button className="bg-black hover:bg-gray-800">
+                <Button className="bg-black hover:bg-primary/90">
                   <Pencil className="h-4 w-4 mr-2 text-white" />
                   Edit Organization
                 </Button>
@@ -1351,7 +1351,7 @@ export default function OrganizationProfilePage() {
                           >
                             {organization.alias_refs && organization.alias_refs.length > 0 && (
                               <div>
-                                <p className="text-xs font-medium text-slate-500 mb-1">Legacy Codes:</p>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Legacy Codes:</p>
                                 <div className="flex flex-wrap gap-1">
                                   {organization.alias_refs.map((ref, idx) => (
                                     <code key={idx} className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-mono border border-blue-200">
@@ -1368,24 +1368,24 @@ export default function OrganizationProfilePage() {
 
                     {/* Organization Info */}
                     <div className="flex-1">
-                      <h1 className="text-3xl font-bold text-slate-900 mb-3 group">
+                      <h1 className="text-3xl font-bold text-foreground mb-3 group">
                         {organization.name}
                         {organization.acronym && <span> ({organization.acronym})</span>}{' '}
                         <button
                           onClick={() => copyToClipboard(organization.name || '', 'orgName')}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 inline-flex items-center align-middle"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground inline-flex items-center align-middle"
                           title="Copy Organization Name"
                         >
                           {copiedId === 'orgName' ? (
                             <Check className="w-5 h-5 text-green-600" />
                           ) : (
-                            <Copy className="w-5 h-5 text-slate-400" />
+                            <Copy className="w-5 h-5 text-muted-foreground" />
                           )}
                         </button>
                       </h1>
 
                       {/* ID and Badges Row */}
-                      <div className="flex flex-wrap items-center gap-3 py-3 border-y border-slate-200">
+                      <div className="flex flex-wrap items-center gap-3 py-3 border-y border-border">
                         {organization.iati_org_id && (
                           <div className="flex items-center gap-1 group">
                             <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
@@ -1393,7 +1393,7 @@ export default function OrganizationProfilePage() {
                             </code>
                             <button
                               onClick={() => copyToClipboard(organization.iati_org_id || '', 'iatiOrgId')}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-slate-700 flex-shrink-0 p-1"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-foreground flex-shrink-0 p-1"
                               title="Copy IATI Org ID"
                             >
                               {copiedId === 'iatiOrgId' ? (
@@ -1405,7 +1405,7 @@ export default function OrganizationProfilePage() {
                           </div>
                         )}
                         {organization.country && (
-                          <Badge variant="outline" className="border-slate-300 text-slate-700 flex items-center gap-1.5">
+                          <Badge variant="outline" className="border-border text-foreground flex items-center gap-1.5">
                             {getCountryCode(organization.country) && (
                               <Flag
                                 code={getCountryCode(organization.country)!}
@@ -1459,33 +1459,33 @@ export default function OrganizationProfilePage() {
                               <>
                                 {mostRecentTransactionDate && (
                                   <div>
-                                    <span className="text-slate-500">Most recent transaction:</span>{' '}
-                                    <span className="text-slate-900 font-medium">{formatDate(mostRecentTransactionDate)}</span>
+                                    <span className="text-muted-foreground">Most recent transaction:</span>{' '}
+                                    <span className="text-foreground font-medium">{formatDate(mostRecentTransactionDate)}</span>
                                   </div>
                                 )}
                                 {lastDataUpdate && (
                                   <div>
-                                    <span className="text-slate-500">Last data update:</span>{' '}
-                                    <span className="text-slate-900 font-medium">{formatDate(lastDataUpdate)}</span>
+                                    <span className="text-muted-foreground">Last data update:</span>{' '}
+                                    <span className="text-foreground font-medium">{formatDate(lastDataUpdate)}</span>
                                   </div>
                                 )}
                                 {organization.default_currency && (
                                   <div>
-                                    <span className="text-slate-500">Default currency:</span>{' '}
-                                    <span className="text-slate-900 font-medium">{organization.default_currency}</span>
+                                    <span className="text-muted-foreground">Default currency:</span>{' '}
+                                    <span className="text-foreground font-medium">{organization.default_currency}</span>
                                   </div>
                                 )}
                               </>
                             );
                           })()}
                         </div>
-                        <div className="border-b border-slate-200 mt-3"></div>
+                        <div className="border-b border-border mt-3"></div>
                         </div>
                       )}
 
                       {organization.description && (
                         <div className="mt-3">
-                          <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                          <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                             {isDescriptionExpanded 
                               ? organization.description 
                               : organization.description.length > 700
@@ -1496,7 +1496,7 @@ export default function OrganizationProfilePage() {
                           {organization.description.length > 700 && (
                             <button
                               onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                              className="flex items-center gap-1 text-slate-600 hover:text-slate-900 mt-2 text-sm font-medium transition-colors"
+                              className="flex items-center gap-1 text-muted-foreground hover:text-foreground mt-2 text-sm font-medium transition-colors"
                             >
                               {isDescriptionExpanded ? (
                                 <>
@@ -1519,20 +1519,20 @@ export default function OrganizationProfilePage() {
 
                 {/* Contact & Metadata Card - Column 4 */}
                 <div className="lg:col-span-1 self-start" data-tour="org-contact">
-                  <Card className="border-slate-200 bg-white">
+                  <Card className="border-border bg-card">
                     <CardContent className="p-4">
                       <div className="space-y-3">
                       {/* Contact Information - Always Visible */}
                       {(organization.website || organization.email || organization.phone || organization.address) && (
                         <>
-                          <p className="text-xs font-semibold text-slate-900">Contact</p>
+                          <p className="text-xs font-semibold text-foreground">Contact</p>
                           <div className="space-y-2">
                             {organization.website && (
                               <a
                                 href={organization.website}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
                               >
                                 <Globe className="h-3 w-3 flex-shrink-0" />
                                 <span className="truncate">Website</span>
@@ -1542,7 +1542,7 @@ export default function OrganizationProfilePage() {
                             {organization.email && (
                               <a
                                 href={`mailto:${organization.email}`}
-                                className="flex items-start gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                                className="flex items-start gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
                               >
                                 <Mail className="h-3 w-3 flex-shrink-0 mt-0.5" />
                                 <span className="break-all">{organization.email}</span>
@@ -1551,14 +1551,14 @@ export default function OrganizationProfilePage() {
                             {organization.phone && (
                               <a
                                 href={`tel:${organization.phone}`}
-                                className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
+                                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
                               >
                                 <Phone className="h-3 w-3 flex-shrink-0" />
                                 <span>{organization.phone}</span>
                               </a>
                             )}
                             {organization.address && (
-                              <div className="flex items-start gap-2 text-xs text-slate-600">
+                              <div className="flex items-start gap-2 text-xs text-muted-foreground">
                                 <MapPin className="h-3 w-3 flex-shrink-0 mt-0.5" />
                                 <span>{organization.address}</span>
                               </div>
@@ -1569,7 +1569,7 @@ export default function OrganizationProfilePage() {
 
                       {/* Social Media Links */}
                       {(organization.twitter || organization.facebook || organization.linkedin || organization.instagram || organization.youtube) && (
-                        <div className="pt-3 border-t border-slate-200">
+                        <div className="pt-3 border-t border-border">
                           <div className="flex flex-wrap gap-2">
                             {organization.twitter && (
                               <Button
@@ -1690,22 +1690,22 @@ export default function OrganizationProfilePage() {
           {/* Financial Summary Cards - Single Row */}
           <div className="flex flex-wrap lg:flex-nowrap gap-4 mb-8">
             {/* Activities */}
-            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg p-3">
-              <p className="text-xs font-medium text-slate-600 truncate">Activities</p>
-              <p className="text-2xl font-bold text-slate-900">{totals.activeActivities} <span className="text-sm font-normal text-slate-500">Active</span></p>
-              <div className="text-xs text-slate-500">
+            <div className="flex-1 min-w-0 bg-card border border-border rounded-lg p-3">
+              <p className="text-xs font-medium text-muted-foreground truncate">Activities</p>
+              <p className="text-2xl font-bold text-foreground">{totals.activeActivities} <span className="text-sm font-normal text-muted-foreground">Active</span></p>
+              <div className="text-xs text-muted-foreground">
                 <p>{totals.pipelineActivities || 0} Pipeline/Identification</p>
                 <p>{totals.closedActivities || 0} Closed/Suspended</p>
               </div>
             </div>
 
             {/* Total Committed */}
-            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-              <p className="text-xs font-medium text-slate-600 truncate">Total Committed</p>
-              <p className="text-3xl font-bold text-slate-900">
+            <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+              <p className="text-xs font-medium text-muted-foreground truncate">Total Committed</p>
+              <p className="text-3xl font-bold text-foreground">
                 {formatCurrencyShort(totals.totalPortfolioValue)}
               </p>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-muted-foreground">
                 <p className="flex items-center gap-1">
                   {yoyStats.commitmentChange >= 0 ? (
                     <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
@@ -1719,12 +1719,12 @@ export default function OrganizationProfilePage() {
             </div>
 
             {/* Total Disbursed */}
-            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-              <p className="text-xs font-medium text-slate-600 truncate">Total Disbursed</p>
-              <p className="text-3xl font-bold text-slate-900">
+            <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+              <p className="text-xs font-medium text-muted-foreground truncate">Total Disbursed</p>
+              <p className="text-3xl font-bold text-foreground">
                 {formatCurrencyShort(totals.totalDisbursements)}
               </p>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-muted-foreground">
                 <p className="flex items-center gap-1">
                   {yoyStats.disbursementChange >= 0 ? (
                     <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
@@ -1738,9 +1738,9 @@ export default function OrganizationProfilePage() {
             </div>
 
             {/* % Disbursed - calculated from totals */}
-            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-              <p className="text-xs font-medium text-slate-600 truncate">% Disbursed</p>
-              <p className="text-3xl font-bold text-slate-900">
+            <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+              <p className="text-xs font-medium text-muted-foreground truncate">% Disbursed</p>
+              <p className="text-3xl font-bold text-foreground">
                 {(() => {
                   const committed = totals.totalPortfolioValue || 0
                   const disbursed = totals.totalDisbursements || 0
@@ -1748,7 +1748,7 @@ export default function OrganizationProfilePage() {
                   return ((disbursed / committed) * 100).toFixed(1)
                 })()}%
               </p>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-muted-foreground">
                 <p className="flex items-center gap-1">
                   {yoyStats.disbursedPercentChange >= 0 ? (
                     <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
@@ -1762,12 +1762,12 @@ export default function OrganizationProfilePage() {
             </div>
 
             {/* Total Expended */}
-            <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-              <p className="text-xs font-medium text-slate-600 truncate">Total Expended</p>
-              <p className="text-3xl font-bold text-slate-900">
+            <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+              <p className="text-xs font-medium text-muted-foreground truncate">Total Expended</p>
+              <p className="text-3xl font-bold text-foreground">
                 {formatCurrencyShort(totals.totalExpenditures)}
               </p>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-muted-foreground">
                 <p className="flex items-center gap-1">
                   {yoyStats.expenditureChange >= 0 ? (
                     <svg className="w-2.5 h-2.5" style={{ color: '#4C5568' }} fill="currentColor" viewBox="0 0 10 10"><polygon points="5,0 10,10 0,10" /></svg>
@@ -1784,33 +1784,33 @@ export default function OrganizationProfilePage() {
             {roleMetrics && roleDistribution && (
               roleMetrics.isFundingOrg ? (
                 <>
-                  <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-                    <p className="text-xs font-medium text-slate-600 truncate">Implementing Partners</p>
-                    <p className="text-3xl font-bold text-slate-900">
+                  <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+                    <p className="text-xs font-medium text-muted-foreground truncate">Implementing Partners</p>
+                    <p className="text-3xl font-bold text-foreground">
                       {roleMetrics.uniqueImplementingPartners || 0}
                     </p>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-muted-foreground">
                       <p>Across {yoyStats.activitiesCount} activities</p>
                     </div>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-                    <p className="text-xs font-medium text-slate-600 truncate">Inbound Funding</p>
-                    <p className="text-3xl font-bold text-slate-900">
+                  <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+                    <p className="text-xs font-medium text-muted-foreground truncate">Inbound Funding</p>
+                    <p className="text-3xl font-bold text-foreground">
                       {formatCurrencyShort(roleMetrics.totalInboundFunding || 0)}
                     </p>
                   </div>
-                  <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-                    <p className="text-xs font-medium text-slate-600 truncate">Donors</p>
-                    <p className="text-3xl font-bold text-slate-900">
+                  <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+                    <p className="text-xs font-medium text-muted-foreground truncate">Donors</p>
+                    <p className="text-3xl font-bold text-foreground">
                       {roleMetrics.uniqueDonors || 0}
                     </p>
                   </div>
-                  <div className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-2 px-3">
-                    <p className="text-xs font-medium text-slate-600 truncate">Avg. Activity</p>
-                    <p className="text-3xl font-bold text-slate-900">
+                  <div className="flex-1 min-w-0 bg-card border border-border rounded-lg py-2 px-3">
+                    <p className="text-xs font-medium text-muted-foreground truncate">Avg. Activity</p>
+                    <p className="text-3xl font-bold text-foreground">
                       {formatCurrencyShort(roleMetrics.averageActivitySize || 0)}
                     </p>
                   </div>
@@ -1822,9 +1822,9 @@ export default function OrganizationProfilePage() {
           {/* Charts Section - Row 2: Chart Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Active Projects Timeline Chart */}
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-semibold text-slate-900">Projects Timeline</CardTitle>
+                <CardTitle className="text-xs font-semibold text-foreground">Projects Timeline</CardTitle>
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -1863,18 +1863,18 @@ export default function OrganizationProfilePage() {
                       <div className="h-36 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
-                            <tr className="border-b border-slate-200">
-                              <th className="text-left py-1 text-slate-600 font-medium">Year</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Count</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Value</th>
+                            <tr className="border-b border-border">
+                              <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
+                              <th className="text-right py-1 text-muted-foreground font-medium">Count</th>
+                              <th className="text-right py-1 text-muted-foreground font-medium">Value</th>
                             </tr>
                           </thead>
                           <tbody>
                             {years.map((year) => (
-                              <tr key={year} className="border-b border-slate-100">
-                                <td className="py-1 text-slate-900">{year}</td>
-                                <td className="text-right py-1 text-slate-900 font-medium">{projectsByYear[year].count}</td>
-                                <td className="text-right py-1 text-slate-900 font-medium">{formatCurrencyShort(projectsByYear[year].totalValue)}</td>
+                              <tr key={year} className="border-b border-border">
+                                <td className="py-1 text-foreground">{year}</td>
+                                <td className="text-right py-1 text-foreground font-medium">{projectsByYear[year].count}</td>
+                                <td className="text-right py-1 text-foreground font-medium">{formatCurrencyShort(projectsByYear[year].totalValue)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1981,7 +1981,7 @@ export default function OrganizationProfilePage() {
 
                         {hoveredPoint && (
                           <div
-                            className="absolute bg-white border border-gray-200 rounded shadow-lg overflow-hidden pointer-events-none z-10"
+                            className="absolute bg-card border border-border rounded shadow-lg overflow-hidden pointer-events-none z-10"
                             style={{
                               left: `${(hoveredPoint.x / 300) * 100}%`,
                               top: `${(hoveredPoint.y / 100) * 100 - 30}%`,
@@ -1997,8 +1997,8 @@ export default function OrganizationProfilePage() {
                               </thead>
                               <tbody>
                                 <tr>
-                                  <td className="px-3 py-1.5 text-slate-700">Active Activities</td>
-                                  <td className="px-3 py-1.5 text-right font-medium text-slate-900">{hoveredPoint.count}</td>
+                                  <td className="px-3 py-1.5 text-foreground">Active Activities</td>
+                                  <td className="px-3 py-1.5 text-right font-medium text-foreground">{hoveredPoint.count}</td>
                                 </tr>
                               </tbody>
                             </table>
@@ -2011,9 +2011,9 @@ export default function OrganizationProfilePage() {
             </Card>
 
             {/* Budget by Year Chart */}
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-semibold text-slate-900">Budget by Year</CardTitle>
+                <CardTitle className="text-xs font-semibold text-foreground">Budget by Year</CardTitle>
                 <div className="flex gap-1">
                   {budgetView === 'chart' && (
                     <Button
@@ -2056,21 +2056,21 @@ export default function OrganizationProfilePage() {
                     <div className="h-36 overflow-auto">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="border-b border-slate-200">
-                            <th className="text-left py-1 text-slate-600 font-medium">Year</th>
-                            <th className="text-right py-1 text-slate-600 font-medium">Budget</th>
+                          <tr className="border-b border-border">
+                            <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
+                            <th className="text-right py-1 text-muted-foreground font-medium">Budget</th>
                           </tr>
                         </thead>
                         <tbody>
                           {budgetsByYear.map((item) => (
-                            <tr key={item.year} className="border-b border-slate-100">
-                              <td className="py-1 text-slate-900">{item.year}</td>
-                              <td className="text-right py-1 text-slate-900 font-medium">{formatCurrencyShort(item.amount)}</td>
+                            <tr key={item.year} className="border-b border-border">
+                              <td className="py-1 text-foreground">{item.year}</td>
+                              <td className="text-right py-1 text-foreground font-medium">{formatCurrencyShort(item.amount)}</td>
                             </tr>
                           ))}
                           <tr className="border-t-2 border-border bg-surface-muted">
-                            <td className="py-1 text-slate-900 font-semibold">Total</td>
-                            <td className="text-right py-1 text-slate-900 font-semibold">
+                            <td className="py-1 text-foreground font-semibold">Total</td>
+                            <td className="text-right py-1 text-foreground font-semibold">
                               {formatCurrencyShort(budgetsByYear.reduce((sum, item) => sum + item.amount, 0))}
                             </td>
                           </tr>
@@ -2104,7 +2104,7 @@ export default function OrganizationProfilePage() {
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 return (
-                                  <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                  <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                     <table className="text-xs w-full border-collapse">
                                       <thead>
                                         <tr className="bg-surface-muted border-b border-border">
@@ -2114,8 +2114,8 @@ export default function OrganizationProfilePage() {
                                       </thead>
                                       <tbody>
                                         <tr>
-                                          <td className="px-3 py-1.5 text-slate-700">Amount</td>
-                                          <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].value as number)}</td>
+                                          <td className="px-3 py-1.5 text-foreground">Amount</td>
+                                          <td className="px-3 py-1.5 text-right font-medium text-foreground">{formatCurrencyShort(payload[0].value as number)}</td>
                                         </tr>
                                       </tbody>
                                     </table>
@@ -2151,7 +2151,7 @@ export default function OrganizationProfilePage() {
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 return (
-                                  <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                  <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                     <table className="text-xs w-full border-collapse">
                                       <thead>
                                         <tr className="bg-surface-muted border-b border-border">
@@ -2161,8 +2161,8 @@ export default function OrganizationProfilePage() {
                                       </thead>
                                       <tbody>
                                         <tr>
-                                          <td className="px-3 py-1.5 text-slate-700">Amount</td>
-                                          <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].value as number)}</td>
+                                          <td className="px-3 py-1.5 text-foreground">Amount</td>
+                                          <td className="px-3 py-1.5 text-right font-medium text-foreground">{formatCurrencyShort(payload[0].value as number)}</td>
                                         </tr>
                                       </tbody>
                                     </table>
@@ -2183,7 +2183,7 @@ export default function OrganizationProfilePage() {
                   </div>
                   )
                 ) : (
-                  <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
+                  <div className="h-24 flex items-center justify-center text-muted-foreground text-xs">
                     <p>No data</p>
                   </div>
                 )}
@@ -2191,10 +2191,10 @@ export default function OrganizationProfilePage() {
             </Card>
 
             {/* Expenditure Trend */}
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3">
                 <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-xs font-semibold text-slate-900">Budget vs Actuals</CardTitle>
+                  <CardTitle className="text-xs font-semibold text-foreground">Budget vs Actuals</CardTitle>
                   <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -2267,31 +2267,31 @@ export default function OrganizationProfilePage() {
                       <div className="h-36 overflow-auto">
                         <table className="w-full text-xs">
                           <thead>
-                            <tr className="border-b border-slate-200">
-                              <th className="text-left py-1 text-slate-600 font-medium">Year</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Planned Disbursements</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Disbursements</th>
-                              <th className="text-right py-1 text-slate-600 font-medium">Expenditures</th>
+                            <tr className="border-b border-border">
+                              <th className="text-left py-1 text-muted-foreground font-medium">Year</th>
+                              <th className="text-right py-1 text-muted-foreground font-medium">Planned Disbursements</th>
+                              <th className="text-right py-1 text-muted-foreground font-medium">Disbursements</th>
+                              <th className="text-right py-1 text-muted-foreground font-medium">Expenditures</th>
                             </tr>
                           </thead>
                           <tbody>
                             {chartData.map((item) => (
-                              <tr key={item.year} className="border-b border-slate-100">
-                                <td className="py-1 text-slate-900">{item.year}</td>
-                                <td className="text-right py-1 text-slate-700">{formatCurrencyShort(item.plannedDisbursements)}</td>
-                                <td className="text-right py-1 text-slate-900 font-medium">{formatCurrencyShort(item.disbursements)}</td>
-                                <td className="text-right py-1 text-slate-900 font-medium">{formatCurrencyShort(item.expenditures)}</td>
+                              <tr key={item.year} className="border-b border-border">
+                                <td className="py-1 text-foreground">{item.year}</td>
+                                <td className="text-right py-1 text-foreground">{formatCurrencyShort(item.plannedDisbursements)}</td>
+                                <td className="text-right py-1 text-foreground font-medium">{formatCurrencyShort(item.disbursements)}</td>
+                                <td className="text-right py-1 text-foreground font-medium">{formatCurrencyShort(item.expenditures)}</td>
                               </tr>
                             ))}
                             <tr className="border-t-2 border-border bg-surface-muted">
-                              <td className="py-1 text-slate-900 font-semibold">Total</td>
-                              <td className="text-right py-1 font-semibold text-slate-700">
+                              <td className="py-1 text-foreground font-semibold">Total</td>
+                              <td className="text-right py-1 font-semibold text-foreground">
                                 {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.plannedDisbursements, 0))}
                               </td>
-                              <td className="text-right py-1 text-slate-900 font-semibold">
+                              <td className="text-right py-1 text-foreground font-semibold">
                                 {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.disbursements, 0))}
                               </td>
-                              <td className="text-right py-1 text-slate-900 font-semibold">
+                              <td className="text-right py-1 text-foreground font-semibold">
                                 {formatCurrencyShort(chartData.reduce((sum, item) => sum + item.expenditures, 0))}
                               </td>
                             </tr>
@@ -2319,7 +2319,7 @@ export default function OrganizationProfilePage() {
                               content={({ active, payload }) => {
                                 if (active && payload && payload.length) {
                                   return (
-                                    <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                    <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                       <table className="text-xs w-full border-collapse">
                                         <thead>
                                           <tr className="bg-surface-muted border-b border-border">
@@ -2328,26 +2328,26 @@ export default function OrganizationProfilePage() {
                                           </tr>
                                         </thead>
                                         <tbody>
-                                          <tr className="border-b border-slate-100">
-                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                          <tr className="border-b border-border">
+                                            <td className="px-3 py-1.5 text-foreground flex items-center gap-1.5">
                                               <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#DC2625' }}></span>
                                               Planned Disbursements
                                             </td>
-                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-foreground">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
                                           </tr>
-                                          <tr className="border-b border-slate-100">
-                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                          <tr className="border-b border-border">
+                                            <td className="px-3 py-1.5 text-foreground flex items-center gap-1.5">
                                               <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#7B95A7' }}></span>
                                               Disbursements
                                             </td>
-                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-foreground">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
                                           </tr>
                                           <tr>
-                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                            <td className="px-3 py-1.5 text-foreground flex items-center gap-1.5">
                                               <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#CFD0D5' }}></span>
                                               Expenditures
                                             </td>
-                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-foreground">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
                                           </tr>
                                         </tbody>
                                       </table>
@@ -2393,7 +2393,7 @@ export default function OrganizationProfilePage() {
                               content={({ active, payload }) => {
                                 if (active && payload && payload.length) {
                                   return (
-                                    <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden">
+                                    <div className="bg-card border border-border rounded shadow-lg overflow-hidden">
                                       <table className="text-xs w-full border-collapse">
                                         <thead>
                                           <tr className="bg-surface-muted border-b border-border">
@@ -2402,26 +2402,26 @@ export default function OrganizationProfilePage() {
                                           </tr>
                                         </thead>
                                         <tbody>
-                                          <tr className="border-b border-slate-100">
-                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                          <tr className="border-b border-border">
+                                            <td className="px-3 py-1.5 text-foreground flex items-center gap-1.5">
                                               <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#DC2625' }}></span>
                                               Planned Disbursements
                                             </td>
-                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-foreground">{formatCurrencyShort(payload[0].payload.plannedDisbursements)}</td>
                                           </tr>
-                                          <tr className="border-b border-slate-100">
-                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                          <tr className="border-b border-border">
+                                            <td className="px-3 py-1.5 text-foreground flex items-center gap-1.5">
                                               <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#7B95A7' }}></span>
                                               Disbursements
                                             </td>
-                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-foreground">{formatCurrencyShort(payload[0].payload.disbursements)}</td>
                                           </tr>
                                           <tr>
-                                            <td className="px-3 py-1.5 text-slate-700 flex items-center gap-1.5">
+                                            <td className="px-3 py-1.5 text-foreground flex items-center gap-1.5">
                                               <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#CFD0D5' }}></span>
                                               Expenditures
                                             </td>
-                                            <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
+                                            <td className="px-3 py-1.5 text-right font-medium text-foreground">{formatCurrencyShort(payload[0].payload.expenditures)}</td>
                                           </tr>
                                         </tbody>
                                       </table>
@@ -2439,7 +2439,7 @@ export default function OrganizationProfilePage() {
                       </ResponsiveContainer>
                     </div>
                   ) : (
-                    <div className="h-40 flex items-center justify-center text-slate-400 text-xs">
+                    <div className="h-40 flex items-center justify-center text-muted-foreground text-xs">
                       <p>No data</p>
                     </div>
                   )
@@ -2448,10 +2448,10 @@ export default function OrganizationProfilePage() {
             </Card>
 
             {/* Aid Modality Composition */}
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-border bg-card">
               <CardHeader className="pb-2 pt-3 px-3">
                 <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-xs font-semibold text-slate-900">Aid Modality Composition</CardTitle>
+                  <CardTitle className="text-xs font-semibold text-foreground">Aid Modality Composition</CardTitle>
                   <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -2486,10 +2486,10 @@ export default function OrganizationProfilePage() {
                     <div className="h-24 overflow-auto">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="border-b border-slate-200">
-                            <th className="text-left py-1 text-slate-600 font-medium">Finance Type</th>
-                            <th className="text-right py-1 text-slate-600 font-medium">Value</th>
-                            <th className="text-right py-1 text-slate-600 font-medium">%</th>
+                          <tr className="border-b border-border">
+                            <th className="text-left py-1 text-muted-foreground font-medium">Finance Type</th>
+                            <th className="text-right py-1 text-muted-foreground font-medium">Value</th>
+                            <th className="text-right py-1 text-muted-foreground font-medium">%</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2497,15 +2497,15 @@ export default function OrganizationProfilePage() {
                             const total = modalityComposition.reduce((sum, i) => sum + i.value, 0)
                             const percentage = ((item.value / total) * 100).toFixed(1)
                             return (
-                              <tr key={item.name} className="border-b border-slate-100">
-                                <td className="py-1 text-slate-900 flex items-center gap-1">
+                              <tr key={item.name} className="border-b border-border">
+                                <td className="py-1 text-foreground flex items-center gap-1">
                                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
                                   <span>{item.name}</span>
                                 </td>
-                                <td className="text-right py-1 text-slate-900 font-medium">
+                                <td className="text-right py-1 text-foreground font-medium">
                                   {formatCurrencyShort(item.value)}
                                 </td>
-                                <td className="text-right py-1 text-slate-700">{percentage}%</td>
+                                <td className="text-right py-1 text-foreground">{percentage}%</td>
                               </tr>
                             )
                           })}
@@ -2542,7 +2542,7 @@ export default function OrganizationProfilePage() {
                                   >
                                     {/* Hover tooltip */}
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                                      <div className="bg-white border border-gray-200 rounded shadow-lg overflow-hidden whitespace-nowrap">
+                                      <div className="bg-card border border-border rounded shadow-lg overflow-hidden whitespace-nowrap">
                                         <table className="text-xs border-collapse">
                                           <thead>
                                             <tr className="bg-surface-muted border-b border-border">
@@ -2550,17 +2550,17 @@ export default function OrganizationProfilePage() {
                                             </tr>
                                           </thead>
                                           <tbody>
-                                            <tr className="border-b border-slate-100">
-                                              <td className="px-3 py-1.5 text-slate-700">Value</td>
-                                              <td className="px-3 py-1.5 text-right font-medium text-slate-900">{formatCurrencyShort(item.value)}</td>
+                                            <tr className="border-b border-border">
+                                              <td className="px-3 py-1.5 text-foreground">Value</td>
+                                              <td className="px-3 py-1.5 text-right font-medium text-foreground">{formatCurrencyShort(item.value)}</td>
                                             </tr>
-                                            <tr className="border-b border-slate-100">
-                                              <td className="px-3 py-1.5 text-slate-700">Share</td>
-                                              <td className="px-3 py-1.5 text-right font-medium text-slate-900">{percentage.toFixed(1)}%</td>
+                                            <tr className="border-b border-border">
+                                              <td className="px-3 py-1.5 text-foreground">Share</td>
+                                              <td className="px-3 py-1.5 text-right font-medium text-foreground">{percentage.toFixed(1)}%</td>
                                             </tr>
                                             <tr>
-                                              <td className="px-3 py-1.5 text-slate-700">Projects</td>
-                                              <td className="px-3 py-1.5 text-right font-medium text-slate-900">{projectCount}</td>
+                                              <td className="px-3 py-1.5 text-foreground">Projects</td>
+                                              <td className="px-3 py-1.5 text-right font-medium text-foreground">{projectCount}</td>
                                             </tr>
                                           </tbody>
                                         </table>
@@ -2575,7 +2575,7 @@ export default function OrganizationProfilePage() {
                               {modalityCompositionByValue.map((item) => (
                                 <div key={item.name} className="flex items-center gap-1 text-xs">
                                   <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: item.color }} />
-                                  <span className="text-slate-600 truncate">{item.name}</span>
+                                  <span className="text-muted-foreground truncate">{item.name}</span>
                                 </div>
                               ))}
                             </div>
@@ -2585,7 +2585,7 @@ export default function OrganizationProfilePage() {
                     </div>
                   )
                 ) : (
-                  <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
+                  <div className="h-24 flex items-center justify-center text-muted-foreground text-xs">
                     <p>No finance type data</p>
                   </div>
                 )}
@@ -2597,37 +2597,37 @@ export default function OrganizationProfilePage() {
           <Card className="border-0 shadow-none">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap justify-center" data-tour="org-tabs">
-                <TabsTrigger value="activities" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="activities" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Activities
                 </TabsTrigger>
-                <TabsTrigger value="budgets" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="budgets" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Budgets
                 </TabsTrigger>
-                <TabsTrigger value="planned-disbursements" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="planned-disbursements" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Planned Disbursements
                 </TabsTrigger>
-                <TabsTrigger value="transactions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="transactions" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Transactions
                 </TabsTrigger>
-                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="financial-analytics" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Portfolio Analytics
                 </TabsTrigger>
-                <TabsTrigger value="sectors" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="sectors" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Sectors
                 </TabsTrigger>
-                <TabsTrigger value="sdgs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="sdgs" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   SDGs
                 </TabsTrigger>
-                <TabsTrigger value="partnerships" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="partnerships" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Partnerships
                 </TabsTrigger>
-                <TabsTrigger value="geography" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="geography" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Locations
                 </TabsTrigger>
-                <TabsTrigger value="contacts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="contacts" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Contacts
                 </TabsTrigger>
-                <TabsTrigger value="documents" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="documents" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                   Documents
                 </TabsTrigger>
               </TabsList>
@@ -2637,22 +2637,22 @@ export default function OrganizationProfilePage() {
                   <Card className="border-0 shadow-none">
                     <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-slate-900">Activities Portfolio</CardTitle>
+                      <CardTitle className="text-foreground">Activities Portfolio</CardTitle>
                       <div className="flex items-center gap-3">
-                        <div className="flex">
+                        <div className="flex border rounded-md">
                           <Button
-                            variant={activitiesView === 'card' ? 'default' : 'outline'}
+                            variant="ghost"
                             size="sm"
                             onClick={() => setActivitiesView('card')}
-                            className="rounded-r-none"
+                            className={`rounded-r-none ${activitiesView === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                           >
                             <LayoutGrid className="h-4 w-4" />
                           </Button>
                           <Button
-                            variant={activitiesView === 'table' ? 'default' : 'outline'}
+                            variant="ghost"
                             size="sm"
                             onClick={() => setActivitiesView('table')}
-                            className="rounded-l-none"
+                            className={`rounded-l-none ${activitiesView === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                           >
                             <TableIcon className="h-4 w-4" />
                           </Button>
@@ -2728,7 +2728,7 @@ export default function OrganizationProfilePage() {
                           <TableHeader>
                             <TableRow>
                               <TableHead
-                                className="cursor-pointer hover:bg-slate-100 w-[45%]"
+                                className="cursor-pointer hover:bg-muted w-[45%]"
                                 onClick={() => {
                                   if (activitiesSortColumn === 'title') {
                                     setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
@@ -2741,12 +2741,12 @@ export default function OrganizationProfilePage() {
                                 <div className="flex items-center gap-1">
                                   Title
                                   {activitiesSortColumn === 'title' && (
-                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                    <span className="text-muted-foreground">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
                                   )}
                                 </div>
                               </TableHead>
                               <TableHead
-                                className="cursor-pointer hover:bg-slate-100"
+                                className="cursor-pointer hover:bg-muted"
                                 onClick={() => {
                                   if (activitiesSortColumn === 'status') {
                                     setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
@@ -2759,12 +2759,12 @@ export default function OrganizationProfilePage() {
                                 <div className="flex items-center gap-1">
                                   Status
                                   {activitiesSortColumn === 'status' && (
-                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                    <span className="text-muted-foreground">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
                                   )}
                                 </div>
                               </TableHead>
                               <TableHead
-                                className="cursor-pointer hover:bg-slate-100"
+                                className="cursor-pointer hover:bg-muted"
                                 onClick={() => {
                                   if (activitiesSortColumn === 'start') {
                                     setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
@@ -2777,12 +2777,12 @@ export default function OrganizationProfilePage() {
                                 <div className="flex items-center gap-1">
                                   Start Date
                                   {activitiesSortColumn === 'start' && (
-                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                    <span className="text-muted-foreground">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
                                   )}
                                 </div>
                               </TableHead>
                               <TableHead
-                                className="cursor-pointer hover:bg-slate-100"
+                                className="cursor-pointer hover:bg-muted"
                                 onClick={() => {
                                   if (activitiesSortColumn === 'end') {
                                     setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
@@ -2795,12 +2795,12 @@ export default function OrganizationProfilePage() {
                                 <div className="flex items-center gap-1">
                                   End Date
                                   {activitiesSortColumn === 'end' && (
-                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                    <span className="text-muted-foreground">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
                                   )}
                                 </div>
                               </TableHead>
                               <TableHead
-                                className="text-right cursor-pointer hover:bg-slate-100"
+                                className="text-right cursor-pointer hover:bg-muted"
                                 onClick={() => {
                                   if (activitiesSortColumn === 'budget') {
                                     setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
@@ -2813,12 +2813,12 @@ export default function OrganizationProfilePage() {
                                 <div className="flex items-center justify-end gap-1">
                                   Total Budget
                                   {activitiesSortColumn === 'budget' && (
-                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                    <span className="text-muted-foreground">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
                                   )}
                                 </div>
                               </TableHead>
                               <TableHead
-                                className="text-right cursor-pointer hover:bg-slate-100"
+                                className="text-right cursor-pointer hover:bg-muted"
                                 onClick={() => {
                                   if (activitiesSortColumn === 'disbursed') {
                                     setActivitiesSortDirection(activitiesSortDirection === 'asc' ? 'desc' : 'asc')
@@ -2831,7 +2831,7 @@ export default function OrganizationProfilePage() {
                                 <div className="flex items-center justify-end gap-1">
                                   Disbursed
                                   {activitiesSortColumn === 'disbursed' && (
-                                    <span className="text-slate-400">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
+                                    <span className="text-muted-foreground">{activitiesSortDirection === 'asc' ? '↑' : '↓'}</span>
                                   )}
                                 </div>
                               </TableHead>
@@ -2892,7 +2892,7 @@ export default function OrganizationProfilePage() {
                                               e.stopPropagation();
                                               navigator.clipboard.writeText(activity.iati_identifier);
                                             }}
-                                            className="hover:text-slate-900 transition-colors"
+                                            className="hover:text-foreground transition-colors"
                                             title="Copy ID"
                                           >
                                             <Copy className="w-3 h-3" />
@@ -2902,14 +2902,14 @@ export default function OrganizationProfilePage() {
                                     </div>
                                     {/* Activity description */}
                                     {activity.description && (
-                                      <p className="text-xs text-slate-500 line-clamp-4 mt-1">
+                                      <p className="text-xs text-muted-foreground line-clamp-4 mt-1">
                                         {activity.description}
                                       </p>
                                     )}
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <span className="text-sm text-slate-700">
+                                  <span className="text-sm text-foreground">
                                     {getActivityStatusLabel(activity.activity_status)}
                                   </span>
                                 </TableCell>
@@ -2960,7 +2960,7 @@ export default function OrganizationProfilePage() {
                                       <DropdownMenuItem 
                                         onClick={() => handleEditActivity(activity.id)}
                                       >
-                                        <Pencil className="mr-2 h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                                        <Pencil className="mr-2 h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
                                         Edit
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
@@ -2981,8 +2981,8 @@ export default function OrganizationProfilePage() {
                       )
                     ) : (
                       <div className="text-center py-12">
-                        <Activity className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No activities found</p>
+                        <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No activities found</p>
                       </div>
                       )}
                     </CardContent>
@@ -3072,10 +3072,10 @@ export default function OrganizationProfilePage() {
               <TabsContent value="sectors" className="p-6 data-[state=inactive]:hidden" forceMount>
                 <div className="space-y-6">
                   {/* Sector Financial Trends Chart */}
-                  <Card className="border-slate-200">
+                  <Card className="border-border">
                     <CardHeader>
-                      <CardTitle className="text-slate-900">Sector Financial Trends</CardTitle>
-                      <p className="text-sm text-slate-600 mt-2">
+                      <CardTitle className="text-foreground">Sector Financial Trends</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-2">
                         Disbursements by sector over time
                       </p>
                     </CardHeader>
@@ -3091,10 +3091,10 @@ export default function OrganizationProfilePage() {
                   </Card>
 
                   {/* Sector Distribution Visualization */}
-                  <Card className="border-slate-200">
+                  <Card className="border-border">
                     <CardHeader>
-                      <CardTitle className="text-slate-900">Sector Distribution</CardTitle>
-                      <p className="text-sm text-slate-600 mt-2">
+                      <CardTitle className="text-foreground">Sector Distribution</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-2">
                         Aggregated sector allocations across all activities ({sectorAllocations.length} unique sectors)
                       </p>
                     </CardHeader>
@@ -3123,9 +3123,9 @@ export default function OrganizationProfilePage() {
                       </Tabs>
                     ) : (
                       <div className="text-center py-12">
-                        <PieChart className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No sector data available</p>
-                        <p className="text-xs text-slate-400 mt-2">Activities need sector allocations to display visualization</p>
+                        <PieChart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No sector data available</p>
+                        <p className="text-xs text-muted-foreground mt-2">Activities need sector allocations to display visualization</p>
                       </div>
                     )}
                   </CardContent>
@@ -3135,10 +3135,10 @@ export default function OrganizationProfilePage() {
 
               <TabsContent value="sdgs" className="p-6 data-[state=inactive]:hidden" forceMount>
                 <div className="space-y-6">
-                  <Card className="border-slate-200">
+                  <Card className="border-border">
                     <CardHeader>
-                      <CardTitle className="text-slate-900">Sustainable Development Goals</CardTitle>
-                      <p className="text-sm text-slate-600 mt-2">
+                      <CardTitle className="text-foreground">Sustainable Development Goals</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-2">
                         SDG coverage and concentration across organization activities
                       </p>
                     </CardHeader>
@@ -3252,7 +3252,7 @@ export default function OrganizationProfilePage() {
                       'Extending': 'bg-blue-100 text-blue-800 border-blue-300',
                       'Implementing': 'bg-green-100 text-green-800 border-green-300',
                     };
-                    return colors[role] || 'bg-gray-100 text-gray-800 border-gray-300';
+                    return colors[role] || 'bg-muted text-foreground border-border';
                   };
 
                   return (
@@ -3260,13 +3260,13 @@ export default function OrganizationProfilePage() {
                       {/* Partner Organizations Pivot Table */}
                       {partnerships.length > 0 ? (
                         <>
-                        <Card className="border-slate-200">
+                        <Card className="border-border">
                           <CardHeader>
-                            <CardTitle className="text-slate-900 flex items-center gap-2">
+                            <CardTitle className="text-foreground flex items-center gap-2">
                               <Users className="h-5 w-5" />
                               Partnership Analysis
                             </CardTitle>
-                            <p className="text-sm text-slate-500">
+                            <p className="text-sm text-muted-foreground">
                               Interactive pivot table showing partnership patterns across {activitiesWithPartnerData.length} activities
                             </p>
                           </CardHeader>
@@ -3464,7 +3464,7 @@ export default function OrganizationProfilePage() {
 
                               // All data cells are white
                               const getCellColor = (value: number) => {
-                                return 'bg-white';
+                                return 'bg-card';
                               };
 
                               const columnLabel = pivotColumnDimension === 'role' ? 'Role' :
@@ -3473,9 +3473,9 @@ export default function OrganizationProfilePage() {
                               return (
                                 <div className="rounded-md border overflow-x-auto">
                                   <Table>
-                                    <TableHeader className="bg-white border-b-2 border-slate-300">
+                                    <TableHeader className="bg-card border-b-2 border-border">
                                       <TableRow>
-                                        <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap sticky left-0 bg-white z-10">
+                                        <TableHead className="text-sm font-medium text-foreground/90 py-3 px-4 whitespace-nowrap sticky left-0 bg-card z-10">
                                           {pivotRowDimension === 'organization' ? 'Organization' :
                                            pivotRowDimension === 'orgType' ? 'Organization Type' :
                                            pivotRowDimension === 'country' ? 'Country' : 'Role'}
@@ -3485,7 +3485,7 @@ export default function OrganizationProfilePage() {
                                             {col}
                                           </TableHead>
                                         ))}
-                                        <TableHead className="text-sm font-bold text-foreground py-3 px-4 text-center whitespace-nowrap bg-[#f1f4f8] min-w-[80px] border-l-2 border-slate-300">
+                                        <TableHead className="text-sm font-bold text-foreground py-3 px-4 text-center whitespace-nowrap bg-[#f1f4f8] min-w-[80px] border-l-2 border-border">
                                           Total
                                         </TableHead>
                                       </TableRow>
@@ -3493,7 +3493,7 @@ export default function OrganizationProfilePage() {
                                     <TableBody>
                                       {rowValues.map((row) => (
                                         <TableRow key={row.key} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
-                                          <TableCell className="py-3 px-4 font-medium text-slate-900 sticky left-0 bg-white z-10">
+                                          <TableCell className="py-3 px-4 font-medium text-foreground sticky left-0 bg-card z-10">
                                             {row.orgId ? (
                                               <Link
                                                 href={`/organizations/${row.orgId}`}
@@ -3513,29 +3513,29 @@ export default function OrganizationProfilePage() {
                                                 className={`py-3 px-4 text-center ${getCellColor(value)}`}
                                               >
                                                 {value > 0 ? (
-                                                  <span className="font-medium text-slate-900">{value}</span>
+                                                  <span className="font-medium text-foreground">{value}</span>
                                                 ) : (
-                                                  <span className="text-slate-300">—</span>
+                                                  <span className="text-muted-foreground">—</span>
                                                 )}
                                               </TableCell>
                                             );
                                           })}
-                                          <TableCell className="py-3 px-4 text-center font-bold bg-[#f1f4f8] text-slate-900 border-l-2 border-slate-300">
+                                          <TableCell className="py-3 px-4 text-center font-bold bg-[#f1f4f8] text-foreground border-l-2 border-border">
                                             {getRowTotal(row.key)}
                                           </TableCell>
                                         </TableRow>
                                       ))}
                                       {/* Column totals row */}
-                                      <TableRow className="bg-[#f1f4f8] font-bold border-t-2 border-slate-300">
-                                        <TableCell className="py-3 px-4 font-bold text-slate-900 sticky left-0 bg-[#f1f4f8] z-10">
+                                      <TableRow className="bg-[#f1f4f8] font-bold border-t-2 border-border">
+                                        <TableCell className="py-3 px-4 font-bold text-foreground sticky left-0 bg-[#f1f4f8] z-10">
                                           Total
                                         </TableCell>
                                         {columnValues.map(col => (
-                                          <TableCell key={col} className="py-3 px-4 text-center font-bold text-slate-900 bg-[#f1f4f8]">
+                                          <TableCell key={col} className="py-3 px-4 text-center font-bold text-foreground bg-[#f1f4f8]">
                                             {getColumnTotal(col)}
                                           </TableCell>
                                         ))}
-                                        <TableCell className="py-3 px-4 text-center font-bold text-slate-900 bg-[#f1f4f8] border-l-2 border-slate-300">
+                                        <TableCell className="py-3 px-4 text-center font-bold text-foreground bg-[#f1f4f8] border-l-2 border-border">
                                           {getGrandTotal()}
                                         </TableCell>
                                       </TableRow>
@@ -3548,15 +3548,15 @@ export default function OrganizationProfilePage() {
                         </Card>
 
                         {/* Organizational Network Graph */}
-                        <Card className="border-slate-200">
+                        <Card className="border-border">
                           <CardHeader>
                             <div className="flex items-center justify-between">
                               <div>
-                                <CardTitle className="text-slate-900 flex items-center gap-2">
+                                <CardTitle className="text-foreground flex items-center gap-2">
                                   <Building2 className="h-5 w-5" />
                                   Organizational Network
                                 </CardTitle>
-                                <p className="text-sm text-slate-500 mt-1">
+                                <p className="text-sm text-muted-foreground mt-1">
                                   Interactive network showing organizational relationships and roles across all activities
                                 </p>
                               </div>
@@ -3564,7 +3564,7 @@ export default function OrganizationProfilePage() {
                           </CardHeader>
                           <CardContent>
                             {/* Legend */}
-                            <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white rounded-lg border border-slate-100">
+                            <div className="flex flex-wrap gap-4 mb-6 p-4 bg-card rounded-lg border border-border">
                               {[
                                 { roleCode: 0, color: 'bg-[#4c5568]', label: 'This Organization' },
                                 { roleCode: 1, color: 'bg-[#dc2625]', label: 'Funding' },
@@ -3577,7 +3577,7 @@ export default function OrganizationProfilePage() {
                                   <div
                                     key={roleCode}
                                     className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-md transition-all ${
-                                      isHidden ? 'opacity-40 hover:opacity-60' : 'hover:bg-slate-50'
+                                      isHidden ? 'opacity-40 hover:opacity-60' : 'hover:bg-muted/50'
                                     }`}
                                     onClick={() => {
                                       const newHiddenRoles = new Set(hiddenRoles);
@@ -3590,7 +3590,7 @@ export default function OrganizationProfilePage() {
                                     }}
                                   >
                                     <div className={`w-4 h-4 rounded-full ${color} ${isHidden ? 'opacity-50' : ''}`}></div>
-                                    <span className={`text-sm font-medium text-slate-700 ${isHidden ? 'line-through' : ''}`}>
+                                    <span className={`text-sm font-medium text-foreground ${isHidden ? 'line-through' : ''}`}>
                                       {label}
                                     </span>
                                   </div>
@@ -3599,7 +3599,7 @@ export default function OrganizationProfilePage() {
                             </div>
 
                             {/* Network Graph Canvas */}
-                            <div className="relative w-full h-[500px] bg-white rounded-lg border border-slate-200 overflow-hidden">
+                            <div className="relative w-full h-[500px] bg-card rounded-lg border border-border overflow-hidden">
                               {(() => {
                                 // Build nodes from partnerships
                                 const nodes: any[] = [];
@@ -3822,14 +3822,14 @@ export default function OrganizationProfilePage() {
                         </Card>
                         </>
                       ) : (
-                        <Card className="border-slate-200">
+                        <Card className="border-border">
                           <CardHeader>
-                            <CardTitle className="text-slate-900">Partnership Network</CardTitle>
+                            <CardTitle className="text-foreground">Partnership Network</CardTitle>
                           </CardHeader>
                           <CardContent>
                             <div className="text-center py-12">
-                              <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                              <p className="text-slate-500">No partnership data available</p>
+                              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                              <p className="text-muted-foreground">No partnership data available</p>
                             </div>
                           </CardContent>
                         </Card>
@@ -3842,24 +3842,24 @@ export default function OrganizationProfilePage() {
               <TabsContent value="geography" className="p-6 data-[state=inactive]:hidden" forceMount>
                 <Tabs defaultValue="activity-locations" className="w-full">
                   <TabsList className="mb-4">
-                    <TabsTrigger value="activity-locations" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <TabsTrigger value="activity-locations" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                       <MapPin className="h-4 w-4 mr-2" />
                       Activity Locations
                     </TabsTrigger>
-                    <TabsTrigger value="subnational-allocation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <TabsTrigger value="subnational-allocation" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                       <BarChart3 className="h-4 w-4 mr-2" />
                       Subnational Allocation
                     </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="activity-locations" className="mt-0">
-                    <Card className="border-slate-200">
+                    <Card className="border-border">
                       <CardHeader>
-                        <CardTitle className="text-slate-900 flex items-center gap-2">
+                        <CardTitle className="text-foreground flex items-center gap-2">
                           <MapPin className="h-5 w-5" />
                           Activity Locations
                         </CardTitle>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-muted-foreground">
                           Map showing all locations where this organization has reported activities
                         </p>
                       </CardHeader>
@@ -3882,17 +3882,17 @@ export default function OrganizationProfilePage() {
               </TabsContent>
 
               <TabsContent value="contacts" className="p-6 data-[state=inactive]:hidden" forceMount>
-                <Card className="border-slate-200">
+                <Card className="border-border">
                   <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-slate-900">Organization Contacts</CardTitle>
+                    <CardTitle className="text-foreground">Organization Contacts</CardTitle>
                     {organizationContacts.length > 0 && (
-                      <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                      <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
                         <button
                           onClick={() => setContactsView('card')}
                           className={`p-2 rounded-md transition-colors ${
                             contactsView === 'card'
-                              ? 'bg-white shadow-sm text-slate-900'
-                              : 'text-slate-500 hover:text-slate-700'
+                              ? 'bg-card shadow-sm text-foreground'
+                              : 'text-muted-foreground hover:text-foreground'
                           }`}
                           title="Card view"
                         >
@@ -3902,8 +3902,8 @@ export default function OrganizationProfilePage() {
                           onClick={() => setContactsView('table')}
                           className={`p-2 rounded-md transition-colors ${
                             contactsView === 'table'
-                              ? 'bg-white shadow-sm text-slate-900'
-                              : 'text-slate-500 hover:text-slate-700'
+                              ? 'bg-card shadow-sm text-foreground'
+                              : 'text-muted-foreground hover:text-foreground'
                           }`}
                           title="Table view"
                         >
@@ -3915,8 +3915,8 @@ export default function OrganizationProfilePage() {
                   <CardContent>
                     {organizationContacts.length === 0 ? (
                       <div className="text-center py-12">
-                        <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No contacts available</p>
+                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No contacts available</p>
                       </div>
                     ) : contactsView === 'card' ? (
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -3933,7 +3933,7 @@ export default function OrganizationProfilePage() {
                           return (
                             <div
                               key={contact.id}
-                              className="relative border border-slate-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-white"
+                              className="relative border border-border rounded-2xl p-6 hover:shadow-lg transition-all duration-200 bg-card"
                             >
                               {contact.isPrimary && (
                                 <div className="absolute top-4 left-4">
@@ -3952,11 +3952,11 @@ export default function OrganizationProfilePage() {
                                 />
 
                                 <div className="flex-1 min-w-0 space-y-1">
-                                  <h3 className="text-lg font-semibold text-slate-900 leading-tight break-words">
+                                  <h3 className="text-lg font-semibold text-foreground leading-tight break-words">
                                     {fullName}
                                   </h3>
                                   {jobLine && (
-                                    <p className="text-sm text-slate-600 break-words">{jobLine}</p>
+                                    <p className="text-sm text-muted-foreground break-words">{jobLine}</p>
                                   )}
                                   {organization && (
                                     <div className="flex items-center gap-2 mt-1">
@@ -3967,13 +3967,13 @@ export default function OrganizationProfilePage() {
                                           className="w-5 h-5 object-contain rounded"
                                         />
                                       ) : (
-                                        <div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center">
-                                          <span className="text-[10px] font-medium text-slate-500">
+                                        <div className="w-5 h-5 bg-muted rounded flex items-center justify-center">
+                                          <span className="text-[10px] font-medium text-muted-foreground">
                                             {organization.acronym?.charAt(0) || organization.name?.charAt(0)}
                                           </span>
                                         </div>
                                       )}
-                                      <span className="text-sm text-slate-500">
+                                      <span className="text-sm text-muted-foreground">
                                         {organization.name}
                                         {organization.acronym && ` (${organization.acronym})`}
                                       </span>
@@ -3985,10 +3985,10 @@ export default function OrganizationProfilePage() {
                               <div className="mt-4 space-y-2">
                                 {contact.email && (
                                   <div className="flex items-center space-x-2">
-                                    <Mail className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                                    <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                     <a
                                       href={`mailto:${contact.email}`}
-                                      className="text-sm text-slate-700 hover:text-blue-600 transition-colors truncate"
+                                      className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
                                     >
                                       {contact.email}
                                     </a>
@@ -3997,8 +3997,8 @@ export default function OrganizationProfilePage() {
 
                                 {(contact.phone || contact.phoneNumber) && (
                                   <div className="flex items-center space-x-2">
-                                    <Phone className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                                    <span className="text-sm text-slate-700">
+                                    <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                    <span className="text-sm text-foreground">
                                       {contact.countryCode ? `${contact.countryCode} ` : ''}{contact.phoneNumber || contact.phone}
                                     </span>
                                   </div>
@@ -4006,12 +4006,12 @@ export default function OrganizationProfilePage() {
 
                                 {contact.website && (
                                   <div className="flex items-center space-x-2">
-                                    <Globe className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                                    <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                     <a
                                       href={contact.website}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-sm text-slate-700 hover:text-blue-600 transition-colors truncate"
+                                      className="text-sm text-foreground hover:text-blue-600 transition-colors truncate"
                                     >
                                       {contact.website.replace(/^https?:\/\//, '')}
                                     </a>
@@ -4020,7 +4020,7 @@ export default function OrganizationProfilePage() {
                               </div>
 
                               <div className="mt-4">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
                                   {typeLabels[contact.type] || 'Contact'}
                                 </span>
                               </div>
@@ -4032,13 +4032,13 @@ export default function OrganizationProfilePage() {
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
-                            <tr className="border-b border-slate-200">
-                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Contact</th>
-                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Role</th>
-                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Organization</th>
-                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Email</th>
-                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Phone</th>
-                              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Type</th>
+                            <tr className="border-b border-border">
+                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Contact</th>
+                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Role</th>
+                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Organization</th>
+                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
+                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Phone</th>
+                              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Type</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -4053,7 +4053,7 @@ export default function OrganizationProfilePage() {
                               }
 
                               return (
-                                <tr key={contact.id} className="border-b border-slate-100 hover:bg-slate-50">
+                                <tr key={contact.id} className="border-b border-border hover:bg-muted/50">
                                   <td className="py-3 px-4">
                                     <div className="flex items-center gap-3">
                                       <UserAvatar
@@ -4063,7 +4063,7 @@ export default function OrganizationProfilePage() {
                                         size="md"
                                       />
                                       <div>
-                                        <p className="text-sm font-medium text-slate-900">{fullName}</p>
+                                        <p className="text-sm font-medium text-foreground">{fullName}</p>
                                         {contact.isPrimary && (
                                           <span className="text-xs text-blue-600">Primary Contact</span>
                                         )}
@@ -4071,7 +4071,7 @@ export default function OrganizationProfilePage() {
                                     </div>
                                   </td>
                                   <td className="py-3 px-4">
-                                    <p className="text-sm text-slate-700">{jobLine || '—'}</p>
+                                    <p className="text-sm text-foreground">{jobLine || '—'}</p>
                                   </td>
                                   <td className="py-3 px-4">
                                     {organization ? (
@@ -4083,41 +4083,41 @@ export default function OrganizationProfilePage() {
                                             className="w-5 h-5 object-contain rounded"
                                           />
                                         ) : (
-                                          <div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center">
-                                            <span className="text-[10px] font-medium text-slate-500">
+                                          <div className="w-5 h-5 bg-muted rounded flex items-center justify-center">
+                                            <span className="text-[10px] font-medium text-muted-foreground">
                                               {organization.acronym?.charAt(0) || organization.name?.charAt(0)}
                                             </span>
                                           </div>
                                         )}
-                                        <span className="text-sm text-slate-600">
+                                        <span className="text-sm text-muted-foreground">
                                           {organization.acronym || organization.name}
                                         </span>
                                       </div>
                                     ) : (
-                                      <span className="text-sm text-slate-400">—</span>
+                                      <span className="text-sm text-muted-foreground">—</span>
                                     )}
                                   </td>
                                   <td className="py-3 px-4">
                                     {contact.email ? (
                                       <a
                                         href={`mailto:${contact.email}`}
-                                        className="text-sm text-slate-700 hover:text-blue-600"
+                                        className="text-sm text-foreground hover:text-blue-600"
                                       >
                                         {contact.email}
                                       </a>
                                     ) : (
-                                      <span className="text-sm text-slate-400">—</span>
+                                      <span className="text-sm text-muted-foreground">—</span>
                                     )}
                                   </td>
                                   <td className="py-3 px-4">
-                                    <span className="text-sm text-slate-700">
+                                    <span className="text-sm text-foreground">
                                       {contact.phone || contact.phoneNumber
                                         ? `${contact.countryCode ? contact.countryCode + ' ' : ''}${contact.phoneNumber || contact.phone}`
                                         : '—'}
                                     </span>
                                   </td>
                                   <td className="py-3 px-4">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
                                       {typeLabels[contact.type] || 'Contact'}
                                     </span>
                                   </td>
@@ -4133,25 +4133,25 @@ export default function OrganizationProfilePage() {
               </TabsContent>
 
               <TabsContent value="documents" className="p-6 data-[state=inactive]:hidden" forceMount>
-                <Card className="border-slate-200">
+                <Card className="border-border">
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-slate-900">Documents</CardTitle>
+                      <CardTitle className="text-foreground">Documents</CardTitle>
                       {(organizationDocuments.length > 0 || activityDocuments.length > 0) && (
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-slate-500">
+                          <span className="text-sm text-muted-foreground">
                             {organizationDocuments.length + activityDocuments.reduce((sum, a) => sum + a.documents.length, 0)} document{(organizationDocuments.length + activityDocuments.reduce((sum, a) => sum + a.documents.length, 0)) !== 1 ? 's' : ''}
                           </span>
                           <div className="flex border rounded-md">
                             <button
                               onClick={() => setDocumentsViewMode('card')}
-                              className={`px-3 py-1.5 text-sm ${documentsViewMode === 'card' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'} rounded-l-md transition-colors`}
+                              className={`px-3 py-1.5 text-sm ${documentsViewMode === 'card' ? 'bg-foreground text-white' : 'bg-card text-muted-foreground hover:bg-muted/50'} rounded-l-md transition-colors`}
                             >
                               <LayoutGrid className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => setDocumentsViewMode('table')}
-                              className={`px-3 py-1.5 text-sm ${documentsViewMode === 'table' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'} rounded-r-md transition-colors`}
+                              className={`px-3 py-1.5 text-sm ${documentsViewMode === 'table' ? 'bg-foreground text-white' : 'bg-card text-muted-foreground hover:bg-muted/50'} rounded-r-md transition-colors`}
                             >
                               <TableIcon className="h-4 w-4" />
                             </button>
@@ -4167,10 +4167,10 @@ export default function OrganizationProfilePage() {
                           {/* Organization Documents - Card View */}
                           {organizationDocuments.length > 0 && (
                             <div>
-                              <h3 className="text-sm font-semibold text-slate-900 mb-3">Organisation Documents</h3>
+                              <h3 className="text-sm font-semibold text-foreground mb-3">Organisation Documents</h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {organizationDocuments.map((doc, index) => (
-                                  <div key={doc.id || index} className="border border-slate-200 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all overflow-hidden">
+                                  <div key={doc.id || index} className="border border-border rounded-lg hover:border-border hover:shadow-sm transition-all overflow-hidden">
                                     {/* Document Thumbnail */}
                                     <a
                                       href={doc.url}
@@ -4196,24 +4196,24 @@ export default function OrganizationProfilePage() {
                                             href={doc.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-blue-600 transition-colors"
+                                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-blue-600 transition-colors"
                                           >
                                             <ExternalLink className="h-4 w-4" />
                                           </a>
                                         )}
                                       </div>
-                                      <h4 className="text-sm font-medium text-slate-900 line-clamp-2 mb-1">
+                                      <h4 className="text-sm font-medium text-foreground line-clamp-2 mb-1">
                                         {doc.title || doc.filename || 'Untitled Document'}
                                       </h4>
                                       {doc.description && (
-                                        <p className="text-xs text-slate-500 line-clamp-2 mb-2">{doc.description}</p>
+                                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{doc.description}</p>
                                       )}
                                       <div className="flex items-center gap-2 flex-wrap">
                                         {doc.format && (
                                           <Badge variant="secondary" className="text-xs">{doc.format}</Badge>
                                         )}
                                         {doc.document_date && (
-                                          <span className="text-xs text-slate-400">{doc.document_date}</span>
+                                          <span className="text-xs text-muted-foreground">{doc.document_date}</span>
                                         )}
                                       </div>
                                     </div>
@@ -4226,12 +4226,12 @@ export default function OrganizationProfilePage() {
                           {/* Activity Documents - Card View */}
                           {activityDocuments.map((activityDoc) => (
                             <div key={activityDoc.activityId}>
-                              <h3 className="text-sm font-semibold text-slate-900 mb-3">
+                              <h3 className="text-sm font-semibold text-foreground mb-3">
                                 From Activity: {activityDoc.activityTitle}
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {activityDoc.documents.map((doc: any, index: number) => (
-                                  <div key={doc.id || index} className="border border-slate-200 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all overflow-hidden">
+                                  <div key={doc.id || index} className="border border-border rounded-lg hover:border-border hover:shadow-sm transition-all overflow-hidden">
                                     {/* Document Thumbnail */}
                                     <a
                                       href={doc.url}
@@ -4257,17 +4257,17 @@ export default function OrganizationProfilePage() {
                                             href={doc.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 hover:text-blue-600 transition-colors"
+                                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-blue-600 transition-colors"
                                           >
                                             <ExternalLink className="h-4 w-4" />
                                           </a>
                                         )}
                                       </div>
-                                      <h4 className="text-sm font-medium text-slate-900 line-clamp-2 mb-1">
+                                      <h4 className="text-sm font-medium text-foreground line-clamp-2 mb-1">
                                         {doc.title || doc.filename || 'Untitled Document'}
                                       </h4>
                                       {doc.description && (
-                                        <p className="text-xs text-slate-500 line-clamp-2">{doc.description}</p>
+                                        <p className="text-xs text-muted-foreground line-clamp-2">{doc.description}</p>
                                       )}
                                     </div>
                                   </div>
@@ -4281,26 +4281,26 @@ export default function OrganizationProfilePage() {
                         <div className="overflow-x-auto">
                           <table className="w-full">
                             <thead>
-                              <tr className="border-b border-slate-200">
-                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Document</th>
-                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
-                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Source</th>
-                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Format</th>
-                                <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
-                                <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Link</th>
+                              <tr className="border-b border-border">
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Document</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Format</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
+                                <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Link</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-border">
                               {/* Organization Documents - Table View */}
                               {organizationDocuments.map((doc, index) => (
-                                <tr key={`org-${doc.id || index}`} className="hover:bg-slate-50">
+                                <tr key={`org-${doc.id || index}`} className="hover:bg-muted/50">
                                   <td className="py-3 px-4">
                                     <div className="flex items-center gap-2">
                                       <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
                                       <div>
-                                        <div className="text-sm font-medium text-slate-900">{doc.title || 'Untitled Document'}</div>
+                                        <div className="text-sm font-medium text-foreground">{doc.title || 'Untitled Document'}</div>
                                         {doc.description && (
-                                          <div className="text-xs text-slate-500 truncate max-w-xs">{doc.description}</div>
+                                          <div className="text-xs text-muted-foreground truncate max-w-xs">{doc.description}</div>
                                         )}
                                       </div>
                                     </div>
@@ -4308,11 +4308,11 @@ export default function OrganizationProfilePage() {
                                   <td className="py-3 px-4">
                                     <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">Organisation</Badge>
                                   </td>
-                                  <td className="py-3 px-4 text-sm text-slate-600">-</td>
+                                  <td className="py-3 px-4 text-sm text-muted-foreground">-</td>
                                   <td className="py-3 px-4">
                                     {doc.format && <Badge variant="secondary" className="text-xs">{doc.format}</Badge>}
                                   </td>
-                                  <td className="py-3 px-4 text-sm text-slate-500">{doc.document_date || '-'}</td>
+                                  <td className="py-3 px-4 text-sm text-muted-foreground">{doc.document_date || '-'}</td>
                                   <td className="py-3 px-4 text-right">
                                     {doc.url && (
                                       <a
@@ -4331,14 +4331,14 @@ export default function OrganizationProfilePage() {
                               {/* Activity Documents - Table View */}
                               {activityDocuments.flatMap((activityDoc) =>
                                 activityDoc.documents.map((doc: any, index: number) => (
-                                  <tr key={`activity-${activityDoc.activityId}-${doc.id || index}`} className="hover:bg-slate-50">
+                                  <tr key={`activity-${activityDoc.activityId}-${doc.id || index}`} className="hover:bg-muted/50">
                                     <td className="py-3 px-4">
                                       <div className="flex items-center gap-2">
-                                        <FileText className="h-4 w-4 text-slate-600 flex-shrink-0" />
+                                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                         <div>
-                                          <div className="text-sm font-medium text-slate-900">{doc.title || doc.filename || 'Untitled Document'}</div>
+                                          <div className="text-sm font-medium text-foreground">{doc.title || doc.filename || 'Untitled Document'}</div>
                                           {doc.description && (
-                                            <div className="text-xs text-slate-500 truncate max-w-xs">{doc.description}</div>
+                                            <div className="text-xs text-muted-foreground truncate max-w-xs">{doc.description}</div>
                                           )}
                                         </div>
                                       </div>
@@ -4346,11 +4346,11 @@ export default function OrganizationProfilePage() {
                                     <td className="py-3 px-4">
                                       <Badge variant="outline" className="text-xs">Activity</Badge>
                                     </td>
-                                    <td className="py-3 px-4 text-sm text-slate-600 truncate max-w-xs">{activityDoc.activityTitle}</td>
+                                    <td className="py-3 px-4 text-sm text-muted-foreground truncate max-w-xs">{activityDoc.activityTitle}</td>
                                     <td className="py-3 px-4">
                                       {doc.format && <Badge variant="secondary" className="text-xs">{doc.format}</Badge>}
                                     </td>
-                                    <td className="py-3 px-4 text-sm text-slate-500">{doc.document_date || '-'}</td>
+                                    <td className="py-3 px-4 text-sm text-muted-foreground">{doc.document_date || '-'}</td>
                                     <td className="py-3 px-4 text-right">
                                       {doc.url && (
                                         <a
@@ -4372,8 +4372,8 @@ export default function OrganizationProfilePage() {
                       )
                     ) : (
                       <div className="text-center py-12">
-                        <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No documents available</p>
+                        <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No documents available</p>
                       </div>
                     )}
                   </CardContent>

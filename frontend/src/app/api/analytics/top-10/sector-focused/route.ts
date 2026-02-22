@@ -175,8 +175,8 @@ export async function GET(request: NextRequest) {
 
     const orgMap = new Map(orgs?.map((o: any) => [o.id, { name: o.name, acronym: o.acronym }]) || []);
 
-    // Convert to array, sort, and limit
-    const result = Array.from(donorTotals.entries())
+    // Convert to array and sort
+    const sorted = Array.from(donorTotals.entries())
       .map(([orgId, totalValue]) => {
         const org = orgMap.get(orgId);
         return {
@@ -186,13 +186,14 @@ export async function GET(request: NextRequest) {
           totalValue
         };
       })
-      .sort((a, b) => b.totalValue - a.totalValue)
-      .slice(0, limit);
+      .sort((a, b) => b.totalValue - a.totalValue);
 
-    // Calculate "Others" total if there are more donors
-    const othersTotal = Array.from(donorTotals.entries())
+    // Take top N and calculate "Others" from the rest
+    const result = sorted.slice(0, limit);
+
+    const othersTotal = sorted
       .slice(limit)
-      .reduce((sum, [, value]) => sum + value, 0);
+      .reduce((sum, item) => sum + item.totalValue, 0);
 
     if (othersTotal > 0) {
       result.push({

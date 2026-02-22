@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import * as d3 from 'd3'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, SlidersHorizontal, Search, Check } from 'lucide-react'
 import {
@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 // @ts-ignore
 import sectorGroupData from '@/data/SectorGroup.json'
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils'
 
 /**
  * Aid Ecosystem Solar System
@@ -487,7 +488,7 @@ export function AidEcosystemSolarSystem({
 
   // Render loading state
   if (loading) {
-    return <Skeleton className="w-full h-full min-h-[300px]" />
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
   }
 
   // Render error state
@@ -601,27 +602,27 @@ export function AidEcosystemSolarSystem({
         {/* Sector Filter Controls */}
         <div className="flex items-center gap-2">
           {/* Aggregation Level Toggle */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
             <Button
-              variant={aggregationLevel === 'group' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className="h-8"
+              className={cn("h-8", aggregationLevel === 'group' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               onClick={() => setAggregationLevel('group')}
             >
               Sector Category
             </Button>
             <Button
-              variant={aggregationLevel === 'category' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className="h-8"
+              className={cn("h-8", aggregationLevel === 'category' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               onClick={() => setAggregationLevel('category')}
             >
               Sector
             </Button>
             <Button
-              variant={aggregationLevel === 'sector' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className="h-8"
+              className={cn("h-8", aggregationLevel === 'sector' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               onClick={() => setAggregationLevel('sector')}
             >
               Sub-sector

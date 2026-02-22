@@ -15,7 +15,7 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -90,7 +90,7 @@ export function AidPredictabilityChart() {
   }, [fetchData]);
 
   if (loading) {
-    return <Skeleton className="h-80 w-full" />;
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
   }
 
   if (error) {
@@ -136,37 +136,8 @@ export function AidPredictabilityChart() {
         </div>
       )}
 
-      {/* Chart Type Toggle */}
+      {/* Expand Button */}
       <div className="flex items-center justify-end mb-2 gap-2">
-        <div className="flex items-center border rounded-md">
-          <Button
-            variant={chartType === "bar" ? "default" : "ghost"}
-            size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "bar" && "bg-primary text-primary-foreground")}
-            onClick={() => setChartType("bar")}
-            title="Bar Chart"
-          >
-            <BarChart3 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={chartType === "line" ? "default" : "ghost"}
-            size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "line" && "bg-primary text-primary-foreground")}
-            onClick={() => setChartType("line")}
-            title="Line Chart"
-          >
-            <LineChartIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={chartType === "area" ? "default" : "ghost"}
-            size="sm"
-            className={cn("h-8 w-8 p-0", chartType === "area" && "bg-primary text-primary-foreground")}
-            onClick={() => setChartType("area")}
-            title="Area Chart"
-          >
-            <TrendingUp className="h-4 w-4" />
-          </Button>
-        </div>
         <Button
           variant="ghost"
           size="sm"

@@ -713,7 +713,7 @@ const ImageUpload: React.FC<{
     : 'h-32 w-full' // Same height but full width for banner
   const iconSize = isLogo ? 'h-8 w-8' : 'h-10 w-10'
   const objectFit = isLogo ? 'object-contain' : 'object-cover'
-  const bgColor = isLogo ? 'bg-gray-50' : 'bg-gray-100'
+  const bgColor = isLogo ? 'bg-muted' : 'bg-muted'
 
   if (preview) {
     return (
@@ -739,7 +739,7 @@ const ImageUpload: React.FC<{
             </Button>
           </div>
         </div>
-        <p className="text-xs text-gray-500 text-center">
+        <p className="text-xs text-muted-foreground text-center">
           Recommended size: {recommendedSize}
         </p>
       </div>
@@ -753,21 +753,21 @@ const ImageUpload: React.FC<{
         {...getRootProps()}
         className={`
           ${containerClass} border-2 border-dashed rounded-lg cursor-pointer transition-colors ${bgColor}
-          ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
+          ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-border hover:border-border'}
           ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >
         <input {...getInputProps()} />
-        <div className="h-full w-full flex flex-col items-center justify-center text-gray-500 p-4 text-center">
+        <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
           <ImageIcon className={`${iconSize} mb-2`} />
           <p className="text-sm font-medium">
             {isDragActive ? `Drop ${label.toLowerCase()}` : `Drag & drop`}
           </p>
           <p className="text-xs mt-1">or click to upload</p>
-          <p className="text-xs mt-2 text-gray-400">PNG, JPG, GIF up to 5MB</p>
+          <p className="text-xs mt-2 text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
         </div>
       </div>
-      <p className="text-xs text-gray-500 text-center">
+      <p className="text-xs text-muted-foreground text-center">
         Recommended size: {recommendedSize}
       </p>
     </div>
@@ -898,7 +898,7 @@ const OrganizationCard: React.FC<{
 
   return (
     <Card
-      className="bg-white border border-gray-300 hover:border-gray-400 hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer h-full flex flex-col shadow-sm relative"
+      className="bg-card border border-border hover:border-border hover:shadow-lg transition-all duration-300 ease-in-out cursor-pointer h-full flex flex-col shadow-sm relative"
       onClick={handleView}
     >
       {/* Actions Dropdown - positioned at card level to avoid overflow clipping */}
@@ -911,7 +911,7 @@ const OrganizationCard: React.FC<{
             <Button
               variant="outline"
               size="icon"
-              className="bg-white/90 hover:bg-white"
+              className="bg-card/90 hover:bg-card"
             >
               <MoreVertical className="h-5 w-5" />
             </Button>
@@ -951,7 +951,7 @@ const OrganizationCard: React.FC<{
               <FileSpreadsheet className="h-4 w-4 mr-2" />
               Export as Excel
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-gray-200" />
+            <DropdownMenuSeparator className="bg-muted" />
             <DropdownMenuItem
               className="cursor-pointer text-red-600 hover:bg-red-50"
               onClick={(e) => { e.stopPropagation(); onDelete(organization); }}
@@ -991,21 +991,21 @@ const OrganizationCard: React.FC<{
                 <img 
                   src={organization.logo} 
                   alt={`${organization.name} logo`}
-                  className="w-12 h-12 object-contain rounded-lg border bg-white p-1"
+                  className="w-12 h-12 object-contain rounded-lg border bg-card p-1"
                 />
               ) : (
-                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-gray-400" />
+                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-muted-foreground" />
                 </div>
               )}
             </div>
             
             {/* Organization Name and Details */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-base text-gray-900 line-clamp-2">
+              <h3 className="font-semibold text-base text-foreground line-clamp-2">
                 {organization.name}
                 {organization.acronym && (
-                  <span className="text-gray-500 font-medium ml-1">({organization.acronym})</span>
+                  <span className="text-muted-foreground font-medium ml-1">({organization.acronym})</span>
                 )}
               </h3>
               
@@ -1024,7 +1024,7 @@ const OrganizationCard: React.FC<{
                   </span>
                 )}
                 {organization.Organisation_Type_Code && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
                     {getPartnerClassification(organization.Organisation_Type_Code, organization.country_represented || organization.country || '')}
                   </span>
                 )}
@@ -1034,7 +1034,7 @@ const OrganizationCard: React.FC<{
 
           {/* Description - condensed to 2 lines */}
           {organization.description && (
-            <p className="text-sm text-gray-600 line-clamp-2">
+            <p className="text-sm text-muted-foreground line-clamp-2">
               {organization.description}
             </p>
           )}
@@ -1042,13 +1042,13 @@ const OrganizationCard: React.FC<{
           {/* Statistics Section - Compact horizontal layout */}
           <div className="flex items-center justify-between text-sm border-t border-gray-100 pt-3 mt-auto">
             <div className="flex items-center gap-1">
-              <Activity className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-900 font-medium">{organization.activeProjects || 0}</span>
-              <span className="text-gray-500 text-xs">activities</span>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+              <span className="text-foreground font-medium">{organization.activeProjects || 0}</span>
+              <span className="text-muted-foreground text-xs">activities</span>
             </div>
             <div className="flex items-center gap-1">
-              <DollarSign className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-900 font-medium">{formatCurrency(organization.totalBudgeted)}</span>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <span className="text-foreground font-medium">{formatCurrency(organization.totalBudgeted)}</span>
             </div>
           </div>
         </div>
@@ -1072,7 +1072,7 @@ const OrganizationListView: React.FC<{
       {organizations.map((org) => (
         <div 
           key={org.id} 
-          className="bg-white border border-gray-200 rounded-lg px-4 py-3 hover:shadow-md transition-shadow duration-200"
+          className="bg-card border border-border rounded-lg px-4 py-3 hover:shadow-md transition-shadow duration-200"
         >
           <div className="flex items-center justify-between gap-4">
             {/* Left section: Organization info */}
@@ -1082,11 +1082,11 @@ const OrganizationListView: React.FC<{
             >
               {/* Organization Name + Acronym + IATI ID */}
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900 truncate">
+                <h3 className="text-sm font-semibold text-foreground truncate">
                   {org.name}
                 </h3>
                 {org.acronym && (
-                  <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                  <span className="text-sm font-semibold text-foreground flex-shrink-0">
                     ({org.acronym})
                   </span>
                 )}
@@ -1112,7 +1112,7 @@ const OrganizationListView: React.FC<{
 
               {/* Location */}
               <div className="flex-shrink-0 min-w-[120px]">
-                <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   {(org.country_represented || org.country) === 'United Nations' ? (
                     <img src="/images/flags/united-nations.svg" alt="UN Flag" className="h-3.5 w-5 object-cover rounded-sm" />
                   ) : (org.country_represented || org.country) === 'European Union Institutions' ? (
@@ -1134,7 +1134,7 @@ const OrganizationListView: React.FC<{
                   e.stopPropagation()
                   router.push(`/organizations/${org.id}`)
                 }}
-                className="text-gray-600 hover:text-green-600"
+                className="text-muted-foreground hover:text-green-600"
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -1145,7 +1145,7 @@ const OrganizationListView: React.FC<{
                   e.stopPropagation()
                   onEdit(org)
                 }}
-                className="text-gray-600 hover:text-blue-600"
+                className="text-muted-foreground hover:text-blue-600"
               >
                 <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
               </Button>
@@ -1156,7 +1156,7 @@ const OrganizationListView: React.FC<{
                   e.stopPropagation()
                   onDelete(org)
                 }}
-                className="text-gray-600 hover:text-red-600"
+                className="text-muted-foreground hover:text-red-600"
               >
                 <Trash2 className="h-4 w-4 text-red-500" />
               </Button>
@@ -1640,12 +1640,12 @@ function OrganizationsPageContent() {
           {/* Loading skeleton */}
           <div className="flex items-center justify-between">
             <div>
-              <div className="h-8 bg-gray-200 rounded w-64 animate-pulse"></div>
-              <div className="h-4 bg-gray-200 rounded w-96 mt-2 animate-pulse"></div>
+              <div className="h-8 bg-muted rounded w-64 animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-96 mt-2 animate-pulse"></div>
             </div>
             <div className="flex space-x-4">
-              <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-              <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+              <div className="h-10 bg-muted rounded w-32 animate-pulse"></div>
+              <div className="h-10 bg-muted rounded w-32 animate-pulse"></div>
             </div>
           </div>
 
@@ -1656,13 +1656,13 @@ function OrganizationsPageContent() {
                 <CardContent className="p-6">
                   <div className="animate-pulse">
                     <div className="flex items-start space-x-4">
-                      <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
+                      <div className="w-16 h-16 bg-muted rounded-lg"></div>
                       <div className="flex-1">
-                        <div className="h-6 bg-gray-200 rounded w-32 mb-2"></div>
-                        <div className="h-4 bg-gray-200 rounded w-20 mb-4"></div>
+                        <div className="h-6 bg-muted rounded w-32 mb-2"></div>
+                        <div className="h-4 bg-muted rounded w-20 mb-4"></div>
                         <div className="space-y-2">
-                          <div className="h-4 bg-gray-200 rounded w-full"></div>
-                          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                          <div className="h-4 bg-muted rounded w-full"></div>
+                          <div className="h-4 bg-muted rounded w-3/4"></div>
                         </div>
                       </div>
                     </div>
@@ -1682,8 +1682,8 @@ function OrganizationsPageContent() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Organizations</h1>
-            <p className="text-gray-600 mt-1">Browse and explore our development partner network</p>
+            <h1 className="text-3xl font-bold text-foreground">Organizations</h1>
+            <p className="text-muted-foreground mt-1">Browse and explore our development partner network</p>
           </div>
           
           <div className="flex items-center space-x-2">
@@ -1710,7 +1710,7 @@ function OrganizationsPageContent() {
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder={activeFilter === 'custom_groups' ? "Search custom groups..." : "Search organizations..."}
                 value={searchTerm}
@@ -1720,7 +1720,7 @@ function OrganizationsPageContent() {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-muted-foreground transition-colors"
                   aria-label="Clear search"
                   title="Clear search"
                 >
@@ -1730,11 +1730,11 @@ function OrganizationsPageContent() {
             </div>
             
             {/* View Toggle */}
-            <div className="flex items-center">
+            <div className="flex items-center border rounded-md">
               <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
+                variant="ghost"
                 size="sm"
-                className="rounded-r-none"
+                className={`rounded-r-none ${viewMode === 'table' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
                 onClick={() => {
                   setViewMode('table')
                   localStorage.setItem('organizationViewMode', 'table')
@@ -1743,9 +1743,9 @@ function OrganizationsPageContent() {
                 <TableIcon className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'card' ? 'default' : 'outline'}
+                variant="ghost"
                 size="sm"
-                className="rounded-l-none"
+                className={`rounded-l-none ${viewMode === 'card' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
                 onClick={() => {
                   setViewMode('card')
                   localStorage.setItem('organizationViewMode', 'card')
@@ -1759,7 +1759,7 @@ function OrganizationsPageContent() {
           {/* Active Filters Display - Only show for organizations */}
           {activeFilter !== 'custom_groups' && activeTagFilters.size > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-gray-600">Active filters:</span>
+              <span className="text-sm text-muted-foreground">Active filters:</span>
               {Array.from(activeTagFilters).map(filter => (
                 <Badge 
                   key={filter}
@@ -1785,11 +1785,11 @@ function OrganizationsPageContent() {
           {/* Results counter */}
           {activeFilter === 'custom_groups' ? (
             loadingCustomGroups ? (
-              <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <Skeleton className="h-4 w-32" />
               </div>
             ) : (
-              <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
                   Showing {customGroups.length} custom group{customGroups.length !== 1 ? 's' : ''}
                 </span>
@@ -1797,12 +1797,12 @@ function OrganizationsPageContent() {
             )
           ) : (
             loading ? (
-              <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <Skeleton className="h-4 w-48" />
                 <Skeleton className="h-4 w-24" />
               </div>
             ) : (
-              <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
                   Showing {startIndex + 1}-{Math.min(endIndex, filteredOrganizations.length)} of {filteredOrganizations.length} organizations
                 </span>
@@ -1818,7 +1818,7 @@ function OrganizationsPageContent() {
         <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
             {IATI_TABS.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger key={tab.value} value={tab.value} className="text-xs data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                 {tab.label}
               </TabsTrigger>
             ))}
@@ -1834,13 +1834,13 @@ function OrganizationsPageContent() {
                       <CardContent className="p-6">
                         <div className="animate-pulse">
                           <div className="flex items-start space-x-4">
-                            <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+                            <div className="w-12 h-12 bg-muted rounded-lg"></div>
                             <div className="flex-1">
-                              <div className="h-6 bg-gray-200 rounded w-32 mb-2"></div>
-                              <div className="h-4 bg-gray-200 rounded w-20 mb-4"></div>
+                              <div className="h-6 bg-muted rounded w-32 mb-2"></div>
+                              <div className="h-4 bg-muted rounded w-20 mb-4"></div>
                               <div className="space-y-2">
-                                <div className="h-4 bg-gray-200 rounded w-full"></div>
-                                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                <div className="h-4 bg-muted rounded w-full"></div>
+                                <div className="h-4 bg-muted rounded w-3/4"></div>
                               </div>
                             </div>
                           </div>
@@ -1895,7 +1895,7 @@ function OrganizationsPageContent() {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-card rounded-md shadow-sm border border-border overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -1925,11 +1925,11 @@ function OrganizationsPageContent() {
                                   <span>{group.name}</span>
                                 </div>
                               </TableCell>
-                              <TableCell className="text-gray-600 text-sm">
+                              <TableCell className="text-muted-foreground text-sm">
                                 {group.description ? (
                                   <span className="line-clamp-2">{group.description}</span>
                                 ) : (
-                                  <span className="text-gray-400">No description</span>
+                                  <span className="text-muted-foreground">No description</span>
                                 )}
                               </TableCell>
                               <TableCell className="text-center">
@@ -1942,7 +1942,7 @@ function OrganizationsPageContent() {
                                     Public
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center text-xs text-gray-600">
+                                  <span className="inline-flex items-center text-xs text-muted-foreground">
                                     <Lock className="h-3 w-3 mr-1" />
                                     Private
                                   </span>
@@ -2002,9 +2002,9 @@ function OrganizationsPageContent() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <Users className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No custom groups yet</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-2 text-sm font-medium text-foreground">No custom groups yet</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Create custom groups to organize partners by specific criteria
                   </p>
                   <Button
@@ -2117,8 +2117,8 @@ function OrganizationsPageContent() {
                     <div className="space-y-4">
                       <Building2 className="mx-auto h-12 w-12 text-red-500" />
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load Organizations</h3>
-                        <p className="text-gray-500 mb-4">{fetchError}</p>
+                        <h3 className="text-lg font-medium text-foreground mb-2">Unable to Load Organizations</h3>
+                        <p className="text-muted-foreground mb-4">{fetchError}</p>
                         <Button onClick={fetchOrganizations} variant="outline">
                           Try Again
                         </Button>
@@ -2126,18 +2126,18 @@ function OrganizationsPageContent() {
                     </div>
                   ) : searchTerm || activeFilter !== 'all' ? (
                     <div>
-                      <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">No organizations found</h3>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
+                      <h3 className="mt-2 text-sm font-medium text-foreground">No organizations found</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {searchTerm ? 'Try adjusting your search terms.' : 'No organizations match the current filter.'}
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+                      <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations yet</h3>
-                        <p className="text-gray-500 mb-4">Get started by adding your first organization.</p>
+                        <h3 className="text-lg font-medium text-foreground mb-2">No organizations yet</h3>
+                        <p className="text-muted-foreground mb-4">Get started by adding your first organization.</p>
                         <Button className="mt-4" onClick={handleAddOrganization}>
                           <Plus className="h-4 w-4 mr-2" />
                           Add Organization

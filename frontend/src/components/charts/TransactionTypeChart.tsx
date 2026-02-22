@@ -15,8 +15,9 @@ import {
 import { AlertCircle, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { PieChartSkeleton, BarChartSkeleton } from "@/components/ui/skeleton-loader";
+import { LoadingText } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 interface TransactionTypeData {
   transactionType: string;
@@ -134,7 +135,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   // Compact mode renders just the chart without filters
   if (compact) {
     if (loading) {
-      return <PieChartSkeleton height="100%" />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
     if (error || !data || data.length === 0) {
       return (
@@ -171,7 +172,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   }
 
   if (loading) {
-    return <PieChartSkeleton height="400px" />;
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
   }
 
   if (error) {
@@ -273,7 +274,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
           </PieChart>
         ) : (
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#cfd0d5" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis dataKey="typeName" stroke="#4c5568" fontSize={12} />
             <YAxis 
               stroke="#4c5568" 

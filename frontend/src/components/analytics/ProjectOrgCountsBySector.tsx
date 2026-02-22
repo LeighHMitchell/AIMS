@@ -33,6 +33,8 @@ import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
 import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 // Color palette
 const COLORS = {
@@ -451,27 +453,30 @@ export function ProjectOrgCountsBySector({
     const parentInfo = sectorCode && sectorCode !== 'OTHER' ? getParentSectorInfo(sectorCode) : null
 
     return (
-      <div className="bg-white p-4 border rounded-lg shadow-lg min-w-[320px]">
-        {/* Hierarchical sector info */}
-        {parentInfo && groupByLevel !== '1' && (
-          <div className="mb-2 text-xs text-gray-500">
-            <span className="font-mono bg-gray-50 px-1.5 py-0.5 rounded mr-1">{parentInfo.categoryCode}</span>
-            <span>{parentInfo.categoryName}</span>
-            {groupByLevel === '5' && (
-              <>
-                <span className="mx-1">›</span>
-                <span className="font-mono bg-gray-50 px-1.5 py-0.5 rounded mr-1">{parentInfo.sectorCodePrefix}</span>
-                <span>{parentInfo.sectorName}</span>
-              </>
-            )}
+      <div className="bg-card border rounded-lg shadow-lg min-w-[320px] overflow-hidden">
+        <div className="bg-surface-muted px-4 py-3 border-b border-border">
+          {/* Hierarchical sector info */}
+          {parentInfo && groupByLevel !== '1' && (
+            <div className="mb-2 text-xs text-muted-foreground">
+              <span className="font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground mr-1.5">{parentInfo.categoryCode}</span>
+              <span>{parentInfo.categoryName}</span>
+              {groupByLevel === '5' && (
+                <>
+                  <span className="mx-1">›</span>
+                  <span className="font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground mr-1.5">{parentInfo.sectorCodePrefix}</span>
+                  <span>{parentInfo.sectorName}</span>
+                </>
+              )}
+            </div>
+          )}
+          <div>
+            <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">
+              {sectorCode}
+            </span>
+            <span className="font-semibold text-sm">{fullName}</span>
           </div>
-        )}
-        <div className="mb-3 pb-2 border-b">
-          <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">
-            {sectorCode}
-          </span>
-          <span className="font-semibold text-sm">{fullName}</span>
         </div>
+        <div className="p-4">
         <table className="w-full text-sm">
           <tbody>
             {payload.map((entry, index) => (
@@ -482,7 +487,7 @@ export function ProjectOrgCountsBySector({
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: entry.color }}
                     />
-                    <span className="text-gray-700">{entry.name}</span>
+                    <span className="text-foreground">{entry.name}</span>
                   </div>
                 </td>
                 <td className="py-1.5 text-right font-medium">
@@ -492,6 +497,7 @@ export function ProjectOrgCountsBySector({
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     )
   }
@@ -560,9 +566,9 @@ export function ProjectOrgCountsBySector({
       return <div className="h-full flex items-center justify-center text-red-500"><p className="text-sm">{error}</p></div>
     }
     return (
-      <div ref={chartRef} className="bg-white h-full">
+      <div ref={chartRef} className="bg-card h-full">
         {chartData.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-gray-500">
+          <div className="h-full flex items-center justify-center text-muted-foreground">
             No data available
           </div>
         ) : (
@@ -573,7 +579,7 @@ export function ProjectOrgCountsBySector({
               barCategoryGap="20%"
               barGap={0}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
               <XAxis
                 dataKey="displayName"
                 height={50}
@@ -613,9 +619,9 @@ export function ProjectOrgCountsBySector({
   // Loading state
   if (loading && sectors.length === 0) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Projects & Organisations by Sector
           </CardTitle>
         </CardHeader>
@@ -629,9 +635,9 @@ export function ProjectOrgCountsBySector({
   // Error state
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Projects & Organisations by Sector
           </CardTitle>
         </CardHeader>
@@ -643,7 +649,7 @@ export function ProjectOrgCountsBySector({
   }
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-card border-border">
       <CardHeader className="pb-2">
         {/* Controls Row */}
         <div className="flex items-start justify-between flex-wrap gap-2">
@@ -652,7 +658,7 @@ export function ProjectOrgCountsBySector({
             {customYears.length > 0 && (
               <>
                 {/* Calendar Type Selector */}
-                <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                <div className="flex gap-1 border rounded-lg p-1 bg-card">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 gap-1">
@@ -666,7 +672,7 @@ export function ProjectOrgCountsBySector({
                       {customYears.map(cy => (
                         <DropdownMenuItem
                           key={cy.id}
-                          className={calendarType === cy.id ? 'bg-slate-100 font-medium' : ''}
+                          className={calendarType === cy.id ? 'bg-muted font-medium' : ''}
                           onClick={() => setCalendarType(cy.id)}
                         >
                           {cy.name}
@@ -678,7 +684,7 @@ export function ProjectOrgCountsBySector({
 
                 {/* Year Range Selector with Date Range below */}
                 <div className="flex flex-col gap-1">
-                  <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                  <div className="flex gap-1 border rounded-lg p-1 bg-card">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 gap-1">
@@ -695,17 +701,17 @@ export function ProjectOrgCountsBySector({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="p-3 w-auto">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                          <span className="text-xs font-medium text-foreground">Select Year Range</span>
                           <div className="flex gap-1">
                             <button
                               onClick={selectAllYears}
-                              className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                              className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                             >
                               All
                             </button>
                             <button
                               onClick={selectDataRange}
-                              className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                              className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                             >
                               Data
                             </button>
@@ -727,7 +733,7 @@ export function ProjectOrgCountsBySector({
                                     ? 'bg-primary text-primary-foreground'
                                     : inRange
                                       ? 'bg-primary/20 text-primary'
-                                      : 'text-slate-600 hover:bg-slate-100'
+                                      : 'text-muted-foreground hover:bg-muted'
                                   }
                                 `}
                                 title="Click to select start, then click another to select end"
@@ -737,7 +743,7 @@ export function ProjectOrgCountsBySector({
                             )
                           })}
                         </div>
-                        <p className="text-[10px] text-slate-400 mt-2 text-center">
+                        <p className="text-[10px] text-muted-foreground mt-2 text-center">
                           Click start year, then click end year
                         </p>
                       </DropdownMenuContent>
@@ -745,7 +751,7 @@ export function ProjectOrgCountsBySector({
                   </div>
                   {/* Date Range Indicator */}
                   {localDateRange?.from && localDateRange?.to && (
-                    <span className="text-xs text-slate-500 text-center">
+                    <span className="text-xs text-muted-foreground text-center">
                       {format(localDateRange.from, 'MMM d, yyyy')} – {format(localDateRange.to, 'MMM d, yyyy')}
                     </span>
                   )}
@@ -757,27 +763,27 @@ export function ProjectOrgCountsBySector({
           {/* Controls - Right Side */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Group By Toggle Buttons */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
               <Button
-                variant={groupByLevel === '1' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", groupByLevel === '1' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setGroupByLevel('1')}
               >
                 Sector Category
               </Button>
               <Button
-                variant={groupByLevel === '3' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", groupByLevel === '3' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setGroupByLevel('3')}
               >
                 Sector
               </Button>
               <Button
-                variant={groupByLevel === '5' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", groupByLevel === '5' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setGroupByLevel('5')}
               >
                 Sub-sector
@@ -785,19 +791,19 @@ export function ProjectOrgCountsBySector({
             </div>
 
             {/* Chart/Table Toggle */}
-            <div className="flex">
+            <div className="flex gap-1 rounded-lg p-1 bg-muted">
               <Button
-                variant={viewMode === 'chart' ? 'default' : 'outline'}
+                variant="ghost"
                 size="sm"
-                className="h-8 rounded-r-none"
+                className={cn("h-8", viewMode === 'chart' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setViewMode('chart')}
               >
                 Chart
               </Button>
               <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
+                variant="ghost"
                 size="sm"
-                className="h-8 rounded-l-none"
+                className={cn("h-8", viewMode === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
                 onClick={() => setViewMode('table')}
               >
                 Table
@@ -805,7 +811,7 @@ export function ProjectOrgCountsBySector({
             </div>
 
             {/* Reset Button */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 border rounded-lg p-1 bg-card">
               <Button
                 variant="ghost"
                 size="sm"
@@ -818,7 +824,7 @@ export function ProjectOrgCountsBySector({
             </div>
 
             {/* Save Button */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 border rounded-lg p-1 bg-card">
               <Button
                 variant="ghost"
                 size="sm"
@@ -834,7 +840,7 @@ export function ProjectOrgCountsBySector({
       </CardHeader>
 
       <CardContent className="pt-6 pb-4">
-        <div ref={chartRef} className="bg-white" style={{ minHeight: chartHeight + 60 }}>
+        <div ref={chartRef} className="bg-card" style={{ minHeight: chartHeight + 60 }}>
           {viewMode === 'chart' ? (
             <>
               {/* Legend */}
@@ -846,7 +852,7 @@ export function ProjectOrgCountsBySector({
                       key={key}
                       className={`flex items-center gap-2 cursor-pointer select-none px-2 py-1 rounded transition-all ${
                         isVisible ? 'opacity-100' : 'opacity-40'
-                      } hover:bg-gray-50`}
+                      } hover:bg-muted/50`}
                       onClick={() => toggleSeries(key)}
                       title={isVisible ? `Click to hide ${label}` : `Click to show ${label}`}
                     >
@@ -854,7 +860,7 @@ export function ProjectOrgCountsBySector({
                         className="w-4 h-4 rounded-sm"
                         style={{ backgroundColor: color }}
                       />
-                      <span className={`text-sm ${isVisible ? 'text-gray-700' : 'text-gray-400 line-through'}`}>
+                      <span className={`text-sm ${isVisible ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
                         {label}
                       </span>
                     </div>
@@ -864,11 +870,11 @@ export function ProjectOrgCountsBySector({
 
               {/* Chart */}
               {selectedYears.length === 0 ? (
-                <div className="flex items-center justify-center text-gray-500" style={{ height: chartHeight }}>
+                <div className="flex items-center justify-center text-muted-foreground" style={{ height: chartHeight }}>
                   Select one or more years to view data
                 </div>
               ) : chartData.length === 0 ? (
-                <div className="flex items-center justify-center text-gray-500" style={{ height: chartHeight }}>
+                <div className="flex items-center justify-center text-muted-foreground" style={{ height: chartHeight }}>
                   No data available for the selected date range
                 </div>
               ) : (
@@ -879,7 +885,7 @@ export function ProjectOrgCountsBySector({
                     barCategoryGap="20%"
                     barGap={0}
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                     <XAxis
                       dataKey="displayName"
                       height={110}
@@ -918,29 +924,29 @@ export function ProjectOrgCountsBySector({
             <div className="overflow-auto" style={{ height: chartHeight }}>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold text-gray-700 sticky left-0 bg-gray-50">Sector</TableHead>
-                    <TableHead className="text-right font-semibold text-gray-700">Projects</TableHead>
-                    <TableHead className="text-right font-semibold text-gray-700">Orgs</TableHead>
+                  <TableRow className="bg-muted">
+                    <TableHead className="font-semibold text-foreground sticky left-0 bg-muted">Sector</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">Projects</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">Orgs</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {selectedYears.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-gray-500 py-8">
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                         Select one or more years to view data
                       </TableCell>
                     </TableRow>
                   ) : chartData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-gray-500 py-8">
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                         No data available for the selected date range
                       </TableCell>
                     </TableRow>
                   ) : (
                     chartData.map((sector, idx) => (
-                      <TableRow key={idx} className="hover:bg-gray-50">
-                        <TableCell className="font-medium sticky left-0 bg-white">
+                      <TableRow key={idx} className="hover:bg-muted/50">
+                        <TableCell className="font-medium sticky left-0 bg-card">
                           <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground mr-2">
                             {sector.sectorCode}
                           </span>
@@ -954,8 +960,8 @@ export function ProjectOrgCountsBySector({
                 </TableBody>
                 {chartData.length > 0 && selectedYears.length > 0 && (
                   <tfoot>
-                    <TableRow className="bg-gray-100 font-semibold border-t-2">
-                      <TableCell className="sticky left-0 bg-gray-100">Total (Unique)</TableCell>
+                    <TableRow className="bg-muted font-semibold border-t-2">
+                      <TableCell className="sticky left-0 bg-muted">Total (Unique)</TableCell>
                       <TableCell className="text-right">
                         {uniqueTotals.uniqueProjects.toLocaleString()}
                       </TableCell>
@@ -971,7 +977,7 @@ export function ProjectOrgCountsBySector({
         </div>
 
         {/* Explanatory Text */}
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-muted-foreground mt-4">
           <strong>Projects</strong> shows the count of activities that have been tagged with each {groupByLevel === '1' ? 'sector category' : groupByLevel === '3' ? 'sector' : 'sub-sector'}.
           <strong> Organisations</strong> shows the count of unique organisations involved in activities in that {groupByLevel === '1' ? 'sector category' : groupByLevel === '3' ? 'sector' : 'sub-sector'} (including reporting organisations and contributors).
           Since activities can be tagged with multiple sectors, the same project or organisation may appear across different {groupByLevel === '1' ? 'categories' : groupByLevel === '3' ? 'sectors' : 'sub-sectors'}.

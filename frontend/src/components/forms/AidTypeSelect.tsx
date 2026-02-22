@@ -157,7 +157,7 @@ export function AidTypeSelect({
     return groups
   }, [filteredItems, flattenedAidTypes])
 
-  const COMMONLY_USED_AID_CODES = ["C01", "D02"];
+  const COMMONLY_USED_AID_CODES = ["C01", "B01", "D02"];
   const commonlyUsedAidTypes = filteredItems.filter(opt => COMMONLY_USED_AID_CODES.includes(opt.code));
   const otherGroupedItems = Object.entries(groupedItems).reduce((acc, [group, options]) => {
     acc[group] = options.filter(opt => !COMMONLY_USED_AID_CODES.includes(opt.code));

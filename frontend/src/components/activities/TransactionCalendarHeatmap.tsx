@@ -922,30 +922,30 @@ export function TransactionCalendarHeatmap({ transactions, stats }: TransactionC
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-wrap">
           {/* View Mode Toggle */}
-          <div className="flex gap-1 border rounded-lg p-1 bg-white">
+          <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
             <Button
-              variant={viewMode === 'heatmap' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode('heatmap')}
-              className="h-7 px-2"
+              className={cn("h-7 px-2", viewMode === 'heatmap' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               title="Heatmap view"
             >
               <Grid3x3 className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'timeline' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode('timeline')}
-              className="h-7 px-2"
+              className={cn("h-7 px-2", viewMode === 'timeline' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               title="Timeline view"
             >
               <List className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'monthly' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode('monthly')}
-              className="h-7 px-2"
+              className={cn("h-7 px-2", viewMode === 'monthly' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               title="Monthly summary"
             >
               <BarChart3 className="h-4 w-4" />

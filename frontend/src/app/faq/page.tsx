@@ -315,13 +315,13 @@ export default function FAQPage() {
     <MainLayout>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="border-b bg-white">
+        <div className="border-b bg-card">
           <div className="flex items-center justify-between p-6">
             <div className="flex items-center space-x-3">
-              <HelpCircle className="h-8 w-8 text-gray-600" />
+              <HelpCircle className="h-8 w-8 text-muted-foreground" />
               <div>
                 <div className="flex items-center space-x-2">
-                  <h1 className="text-2xl font-bold text-gray-900">Frequently Asked Questions</h1>
+                  <h1 className="text-2xl font-bold text-foreground">Frequently Asked Questions</h1>
                   <HelpTextTooltip content="Find answers to common questions or add new ones. If you cannot find what you are looking for, submit feedback through the User Menu in the top right to request a new FAQ entry." />
                 </div>
               </div>
@@ -415,7 +415,7 @@ export default function FAQPage() {
           {/* Search and Filter Controls */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search FAQs..."
                 value={searchTerm}
@@ -459,8 +459,8 @@ export default function FAQPage() {
               <Card>
                 <CardContent className="p-8 text-center">
                   <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No FAQs found</h3>
-                  <p className="text-gray-500 mb-4">
+                  <h3 className="text-lg font-medium text-foreground mb-2">No FAQs found</h3>
+                  <p className="text-muted-foreground mb-4">
                     {searchTerm || selectedCategory !== 'All'
                       ? 'Try adjusting your search or filter criteria.'
                       : 'No FAQs available yet.'}
@@ -490,13 +490,13 @@ export default function FAQPage() {
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <CardTitle className="text-lg font-semibold text-gray-900">
+                          <CardTitle className="text-lg font-semibold text-foreground">
                             {faq.question}
                           </CardTitle>
 
                           <div className="flex items-center space-x-2 mt-2">
                             <Badge variant="secondary">{faq.category}</Badge>
-                            <div className="flex items-center text-xs text-gray-500">
+                            <div className="flex items-center text-xs text-muted-foreground">
                               <Clock className="h-3 w-3 mr-1" />
                               Updated {isClient ? new Date(faq.updated_at).toLocaleDateString() : ''}
                             </div>
@@ -511,7 +511,7 @@ export default function FAQPage() {
                               onClick={() => handleEdit(faq)}
                               className="h-8 w-8 p-0"
                             >
-                              <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                              <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -529,7 +529,7 @@ export default function FAQPage() {
                     <CardContent className="pt-0">
                       {/* Answer - always visible */}
                       <div className="prose prose-sm max-w-none">
-                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        <p className="text-foreground leading-relaxed whitespace-pre-wrap">
                           {displayAnswer}
                         </p>
                       </div>
@@ -538,7 +538,7 @@ export default function FAQPage() {
                       {isLongAnswer && (
                         <button
                           onClick={() => toggleExpanded(faq.id)}
-                          className="mt-2 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                          className="mt-2 text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
                         >
                           {isExpanded ? (
                             <>
@@ -570,7 +570,7 @@ export default function FAQPage() {
                       {/* Follow-up questions thread */}
                       {faq.followUps && faq.followUps.length > 0 && (
                         <div className="mt-4 pt-4 border-t">
-                          <p className="text-xs font-medium text-gray-500 uppercase mb-3">
+                          <p className="text-xs font-medium text-muted-foreground uppercase mb-3">
                             Follow-up Questions ({faq.followUps.length})
                           </p>
                           <div className="space-y-0">
@@ -583,17 +583,17 @@ export default function FAQPage() {
                               return (
                                 <div key={followUp.id} className="relative">
                                   {/* Connecting line */}
-                                  <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-200"
+                                  <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-muted"
                                        style={{ height: isLast ? '24px' : '100%' }} />
 
                                   {/* Branch connector */}
-                                  <div className="absolute left-3 top-6 w-4 h-0.5 bg-gray-200" />
+                                  <div className="absolute left-3 top-6 w-4 h-0.5 bg-muted" />
 
                                   {/* Follow-up content */}
                                   <div className="pl-9 pb-4">
                                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                                       <div className="flex items-start justify-between gap-2">
-                                        <p className="text-sm text-gray-800">{followUp.question}</p>
+                                        <p className="text-sm text-foreground">{followUp.question}</p>
                                         <Badge
                                           variant={followUp.status === 'published' ? 'default' : 'secondary'}
                                           className="text-xs flex-shrink-0"
@@ -602,7 +602,7 @@ export default function FAQPage() {
                                            followUp.status === 'published' ? 'Answered' : followUp.status}
                                         </Badge>
                                       </div>
-                                      <p className="text-xs text-gray-500 mt-2">
+                                      <p className="text-xs text-muted-foreground mt-2">
                                         Asked by {userName} • {isClient ? new Date(followUp.created_at).toLocaleDateString() : ''}
                                       </p>
                                     </div>
@@ -616,7 +616,7 @@ export default function FAQPage() {
 
                       {/* Follow-up question button */}
                       <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           Need more information?
                         </p>
                         <Button
@@ -642,7 +642,7 @@ export default function FAQPage() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     Showing {Math.min(startIndex + 1, totalFAQs)} to {Math.min(endIndex, totalFAQs)} of {totalFAQs} FAQs
                   </div>
 
@@ -714,7 +714,7 @@ export default function FAQPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-600">Items per page:</label>
+                    <label className="text-sm text-muted-foreground">Items per page:</label>
                     <Select
                       value={pageLimit.toString()}
                       onValueChange={(value) => handlePageLimitChange(Number(value))}
@@ -770,8 +770,8 @@ export default function FAQPage() {
             <div className="space-y-4">
               {/* Original FAQ context */}
               <div className="bg-surface-muted rounded-lg p-3 border">
-                <p className="text-xs text-gray-500 uppercase font-medium mb-1">Related to:</p>
-                <p className="text-sm font-medium text-gray-900">{followUpFAQ.question}</p>
+                <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Related to:</p>
+                <p className="text-sm font-medium text-foreground">{followUpFAQ.question}</p>
               </div>
 
               {/* Follow-up question input */}

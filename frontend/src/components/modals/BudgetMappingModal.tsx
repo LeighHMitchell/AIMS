@@ -238,7 +238,7 @@ export function BudgetMappingModal({
         <div className="space-y-6">
           {/* Vocabulary Selector */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Budget Identifier Vocabulary *
             </label>
             <BudgetIdentifierVocabularySelect
@@ -252,7 +252,7 @@ export function BudgetMappingModal({
           {/* Budget Items Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-gray-700">Budget Items</h4>
+              <h4 className="text-sm font-medium text-foreground">Budget Items</h4>
               {!editingItem && (
                 <Button type="button" variant="outline" size="sm" onClick={addBudgetItem}>
                   <Plus className="h-4 w-4 mr-1" />
@@ -292,7 +292,7 @@ export function BudgetMappingModal({
                           </span>
                         </TableCell>
                         <TableCell className="text-sm">{item.percentage}%</TableCell>
-                        <TableCell className="text-sm text-gray-600">
+                        <TableCell className="text-sm text-muted-foreground">
                           {getPrimaryDescription(item.description)}
                         </TableCell>
                         <TableCell className="text-right">
@@ -303,7 +303,7 @@ export function BudgetMappingModal({
                               size="sm"
                               onClick={() => editBudgetItem(item, index)}
                             >
-                              <Pencil className="h-4 w-4 text-slate-500" />
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
                             </Button>
                             <Button
                               type="button"
@@ -317,7 +317,7 @@ export function BudgetMappingModal({
                         </TableCell>
                       </TableRow>
                     ))}
-                    <TableRow className="bg-gray-50 font-medium">
+                    <TableRow className="bg-muted font-medium">
                       <TableCell>Total</TableCell>
                       <TableCell>
                         <span className={!validation.isValid ? 'text-red-600' : ''}>
@@ -333,14 +333,14 @@ export function BudgetMappingModal({
 
             {/* Edit/Add Budget Item Form */}
             {editingItem && (
-              <div className="bg-white border border-gray-200 rounded-md p-4 space-y-4">
-                <h5 className="text-sm font-medium text-gray-700">
+              <div className="bg-card border border-border rounded-md p-4 space-y-4">
+                <h5 className="text-sm font-medium text-foreground">
                   {editingItemIndex !== null ? 'Edit Budget Item' : 'Add Budget Item'}
                 </h5>
 
                 {/* Classification Type Selector */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Classification Type *
                   </label>
                   <Select
@@ -367,7 +367,7 @@ export function BudgetMappingModal({
 
                 {/* Budget Classification Selector */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Budget Classification *
                   </label>
                   {loadingClassifications ? (
@@ -489,7 +489,7 @@ export function BudgetMappingModal({
 
                 {/* Percentage */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Percentage *
                   </label>
                   <input
@@ -503,7 +503,7 @@ export function BudgetMappingModal({
                       const numValue = value === '' ? null : parseFloat(value);
                       setEditingItem({ ...editingItem, percentage: numValue });
                     }}
-                    className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   />
                 </div>
 

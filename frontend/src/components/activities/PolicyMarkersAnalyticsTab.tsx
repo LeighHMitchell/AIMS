@@ -163,12 +163,12 @@ const getSignificanceExplanation = (iatiCode: string | undefined, markerName: st
 // Helper function to get significance color
 const getSignificanceColor = (significance: number): string => {
   switch (significance) {
-    case 0: return "bg-slate-100 text-slate-800";
+    case 0: return "bg-muted text-foreground";
     case 1: return "bg-blue-100 text-blue-800";
     case 2: return "bg-green-100 text-green-800";
     case 3: return "bg-yellow-100 text-yellow-800";
     case 4: return "bg-red-100 text-red-800";
-    default: return "bg-slate-100 text-slate-800";
+    default: return "bg-muted text-foreground";
   }
 };
 
@@ -294,9 +294,9 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
 
   if (activeMarkers.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-500">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         <div className="text-center">
-          <Wrench className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+          <Wrench className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
           <p className="text-lg font-medium">No Policy Markers Selected</p>
           <p className="text-sm">Add policy markers in the Activity Editor to see analytics here.</p>
         </div>
@@ -315,38 +315,38 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-slate-200">
+          <div className="rounded-md border border-border">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
-                  <TableHead className="font-semibold text-slate-700">
+                <TableRow className="bg-muted">
+                  <TableHead className="font-semibold text-foreground">
                     <button
                       onClick={() => handleSort('name')}
-                      className="flex items-center gap-2 hover:text-slate-900"
+                      className="flex items-center gap-2 hover:text-foreground"
                     >
                       Policy Marker
                       {getSortIcon('name')}
                     </button>
                   </TableHead>
-                  <TableHead className="font-semibold text-slate-700">
+                  <TableHead className="font-semibold text-foreground">
                     <button
                       onClick={() => handleSort('category')}
-                      className="flex items-center gap-2 hover:text-slate-900"
+                      className="flex items-center gap-2 hover:text-foreground"
                     >
                       Category
                       {getSortIcon('category')}
                     </button>
                   </TableHead>
-                  <TableHead className="font-semibold text-slate-700">
+                  <TableHead className="font-semibold text-foreground">
                     <button
                       onClick={() => handleSort('significance')}
-                      className="flex items-center gap-2 hover:text-slate-900"
+                      className="flex items-center gap-2 hover:text-foreground"
                     >
                       Significance
                       {getSortIcon('significance')}
                     </button>
                   </TableHead>
-                  <TableHead className="font-semibold text-slate-700">Rationale</TableHead>
+                  <TableHead className="font-semibold text-foreground">Rationale</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -356,13 +356,13 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                     <TableRow key={marker.policy_marker_id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <IconComponent className="w-5 h-5 text-slate-600" />
+                          <IconComponent className="w-5 h-5 text-muted-foreground" />
                           <div>
-                            <div className="font-medium text-slate-900">
+                            <div className="font-medium text-foreground">
                               {marker.policy_marker_details?.name || 'Unknown Marker'}
                             </div>
                             {marker.policy_marker_details?.iati_code && (
-                              <div className="text-xs text-slate-500 font-mono">
+                              <div className="text-xs text-muted-foreground font-mono">
                                 IATI Code: {marker.policy_marker_details.iati_code}
                               </div>
                             )}
@@ -370,7 +370,7 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="border-slate-300">
+                        <Badge variant="outline" className="border-border">
                           {getCategoryLabel(marker.policy_marker_details?.marker_type || 'other')}
                         </Badge>
                       </TableCell>
@@ -378,7 +378,7 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="cursor-help text-slate-900">
+                              <span className="cursor-help text-foreground">
                                 {getSignificanceLabel(marker.significance)}
                               </span>
                             </TooltipTrigger>
@@ -395,8 +395,8 @@ export function PolicyMarkersAnalyticsTab({ policyMarkers, activityTitle }: Poli
                         </TooltipProvider>
                       </TableCell>
                       <TableCell className="max-w-md">
-                        <p className="text-sm text-slate-600 line-clamp-2">
-                          {marker.rationale || <span className="italic text-slate-400">No rationale provided</span>}
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {marker.rationale || <span className="italic text-muted-foreground">No rationale provided</span>}
                         </p>
                       </TableCell>
                     </TableRow>

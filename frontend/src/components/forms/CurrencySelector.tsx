@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import currencyList from '@/data/currency-list.json';
+import { useDefaultCurrency } from '@/contexts/SystemSettingsContext';
 
 interface Currency {
   code: string;
@@ -14,7 +15,7 @@ interface Currency {
   withdrawn?: boolean;
 }
 
-const PINNED_CODES = ["USD", "EUR", "GBP", "AUD", "JPY", "MMK"];
+const BASE_PINNED_CODES = ["USD", "EUR", "GBP", "AUD", "JPY", "MMK"];
 
 interface CurrencySelectorProps {
   value?: string | null | undefined;
@@ -28,8 +29,6 @@ interface CurrencySelectorProps {
 }
 
 const allOptions: Currency[] = currencyList;
-const pinnedOptions: Currency[] = allOptions.filter(opt => PINNED_CODES.includes(opt.code));
-const otherOptions: Currency[] = allOptions.filter(opt => !PINNED_CODES.includes(opt.code));
 
 export function CurrencySelector({
   value,
@@ -46,6 +45,18 @@ export function CurrencySelector({
   const [dropDirection, setDropDirection] = useState<"top" | "bottom">(forceDropUp ? "top" : "bottom");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
+  const systemCurrency = useDefaultCurrency();
+
+  const pinnedCodes = useMemo(() => {
+    if (systemCurrency && !BASE_PINNED_CODES.includes(systemCurrency)) {
+      return [...BASE_PINNED_CODES, systemCurrency];
+    }
+    return BASE_PINNED_CODES;
+  }, [systemCurrency]);
+
+  const pinnedOptions = useMemo(() => allOptions.filter(opt => pinnedCodes.includes(opt.code)), [pinnedCodes]);
+  const otherOptions = useMemo(() => allOptions.filter(opt => !pinnedCodes.includes(opt.code)), [pinnedCodes]);
+
   const selectedOption = allOptions.find(option => option.code === value);
 
   const filteredPinned = useMemo(() => {
@@ -56,7 +67,7 @@ export function CurrencySelector({
       option.name.toLowerCase().includes(query) ||
       (option.description && option.description.toLowerCase().includes(query))
     );
-  }, [searchQuery]);
+  }, [searchQuery, pinnedOptions]);
 
   const filteredOther = useMemo(() => {
     if (!searchQuery) return otherOptions;
@@ -66,7 +77,7 @@ export function CurrencySelector({
       option.name.toLowerCase().includes(query) ||
       (option.description && option.description.toLowerCase().includes(query))
     );
-  }, [searchQuery]);
+  }, [searchQuery, otherOptions]);
 
   // For search, combine both lists
   const filteredCombined = useMemo(() => {

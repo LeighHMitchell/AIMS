@@ -18,6 +18,7 @@ import releases from '@/data/releases.json'
 interface Release {
   version: string
   date: string
+  narrativeSummary?: string
   changes: string[]
 }
 
@@ -89,14 +90,40 @@ export default function BuildHistoryPage() {
         </div>
 
         <div className="p-6">
-          {/* Narrative Summary */}
+          {/* This release — non-technical narrative (latest push) */}
+          {releaseList.length > 0 && releaseList[0].narrativeSummary && (
+            <Card className="mb-6 border-primary/30 bg-primary/[0.04] shadow-sm">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                      <Rocket className="h-5 w-5 text-primary" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold text-foreground">
+                      What&apos;s in this release (v{releaseList[0].version})
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {releaseList[0].narrativeSummary}
+                    </p>
+                    <p className="text-xs text-muted-foreground/60 pt-1">
+                      Released {formatDate(releaseList[0].date)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Overall narrative summary */}
           {releases.narrativeSummary && (
             <Card className="mb-8 border-primary/20 bg-primary/[0.02]">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 mt-0.5">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Rocket className="h-5 w-5 text-primary" />
+                      <History className="h-5 w-5 text-primary" />
                     </div>
                   </div>
                   <div className="space-y-2">

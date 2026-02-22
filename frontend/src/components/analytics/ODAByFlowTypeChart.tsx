@@ -12,12 +12,13 @@ import {
   Cell,
   Legend
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { BarChart3, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 interface ODAByFlowTypeChartProps {
   dateRange: {
@@ -123,9 +124,7 @@ export function ODAByFlowTypeChart({
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-[400px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -160,7 +159,7 @@ export function ODAByFlowTypeChart({
           data={data}
           margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis 
             dataKey="label"
             angle={-45}

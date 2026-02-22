@@ -27,6 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 import { useUser } from '@/hooks/useUser';
 import { useFieldAutosave } from '@/hooks/use-field-autosave-new';
@@ -354,20 +355,20 @@ export default function LocationsTab({
 
         <div className="flex items-center gap-2">
           {locations.length > 0 && (
-            <div className="flex items-center">
+            <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
               <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className="h-7 px-2 rounded-r-none"
+                className={cn("h-7 px-2", viewMode === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               >
                 <TableIcon className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'cards' ? 'default' : 'outline'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('cards')}
-                className="h-7 px-2 rounded-l-none"
+                className={cn("h-7 px-2", viewMode === 'cards' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
               >
                 <LayoutGrid className="h-4 w-4" />
               </Button>

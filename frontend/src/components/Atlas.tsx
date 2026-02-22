@@ -1344,13 +1344,18 @@ export default function Atlas() {
                       </Popover>
 
                       {/* View Mode Toggle */}
-                      <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
+                      <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
                         <Button
                           onClick={() => setViewMode('markers')}
                           variant="ghost"
                           size="sm"
                           title="Show markers"
-                          className={`rounded-none border-0 h-9 w-9 p-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                          className={cn(
+                            "h-9 w-9 p-0",
+                            viewMode === 'markers'
+                              ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                              : "text-slate-500 hover:text-slate-700"
+                          )}
                         >
                           <CircleDot className="h-4 w-4" />
                         </Button>
@@ -1359,7 +1364,12 @@ export default function Atlas() {
                           variant="ghost"
                           size="sm"
                           title="Show heatmap"
-                          className={`rounded-none border-0 border-l border-gray-300 h-9 w-9 p-0 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
+                          className={cn(
+                            "h-9 w-9 p-0",
+                            viewMode === 'heatmap'
+                              ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                              : "text-slate-500 hover:text-slate-700"
+                          )}
                         >
                           <Flame className="h-4 w-4" />
                         </Button>

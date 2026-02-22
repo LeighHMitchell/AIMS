@@ -80,7 +80,7 @@ interface SimpleHeroCardProps {
 
 function HeroCard({ title, value, subtitle, icon }: SimpleHeroCardProps) {
   return (
-    <div className="p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+    <div className="p-4 border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
           <div className="text-sm text-muted-foreground">{title}</div>
@@ -193,8 +193,8 @@ interface BudgetLineChartProps {
 
 function BudgetLineChart({ title, data, dataKey, color = "#64748b", currencyMode, usdValues, budgets, defaultCurrency }: BudgetLineChartProps) {
   return (
-    <div className="bg-white border rounded-xl p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">{title}</h3>
+    <div className="bg-card border rounded-xl p-6">
+      <h3 className="text-lg font-medium text-foreground mb-4">{title}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 20, right: 30, left: 60, bottom: 5 }}>
@@ -217,10 +217,10 @@ function BudgetLineChart({ title, data, dataKey, color = "#64748b", currencyMode
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
                   return (
-                    <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                      <p className="font-semibold text-gray-900 mb-1">{data.period}</p>
-                      <p className="text-sm text-gray-600">Cumulative Budget</p>
-                      <p className="text-lg font-bold text-gray-900">USD {Number(data.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <div className="bg-card p-3 border border-border rounded-lg shadow-lg">
+                      <p className="font-semibold text-foreground mb-1">{data.period}</p>
+                      <p className="text-sm text-muted-foreground">Cumulative Budget</p>
+                      <p className="text-lg font-bold text-foreground">USD {Number(data.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   );
                 }
@@ -1518,11 +1518,11 @@ export default function ActivityBudgetsTab({
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="text-center text-gray-500">Loading budgets...</div>
+        <div className="text-center text-muted-foreground">Loading budgets...</div>
         {/* Financial Summary Cards Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white border rounded-xl p-6">
+            <div key={i} className="bg-card border rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
                 <Skeleton className="h-4 w-20" />
                 <Skeleton className="h-8 w-8 rounded" />
@@ -1534,7 +1534,7 @@ export default function ActivityBudgetsTab({
         </div>
 
         {/* Budget Configuration Skeleton */}
-        <div className="bg-white border rounded-xl p-6">
+        <div className="bg-card border rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
             <Skeleton className="h-6 w-6" />
             <Skeleton className="h-6 w-48" />
@@ -1588,7 +1588,7 @@ export default function ActivityBudgetsTab({
         {/* Charts Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[...Array(2)].map((_, i) => (
-            <div key={i} className="bg-white border rounded-xl p-6">
+            <div key={i} className="bg-card border rounded-xl p-6">
               <Skeleton className="h-5 w-40 mb-4" />
               <Skeleton className="h-64 w-full" />
             </div>
@@ -1604,7 +1604,7 @@ export default function ActivityBudgetsTab({
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-        <div className="text-center text-gray-500">Unable to load budgets. Please try refreshing the page or contact support if the problem persists.</div>
+        <div className="text-center text-muted-foreground">Unable to load budgets. Please try refreshing the page or contact support if the problem persists.</div>
       </div>
     );
   }
@@ -1648,7 +1648,7 @@ export default function ActivityBudgetsTab({
               {!readOnly && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+                    <Button className="bg-foreground hover:bg-foreground/90 text-white">
                       <Plus className="h-4 w-4 mr-1" />
                       Add Budget
                       <ChevronDown className="h-4 w-4 ml-1" />
@@ -1918,9 +1918,9 @@ export default function ActivityBudgetsTab({
               
               <div className="space-y-4">
                 {copySourceBudget && (
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm font-medium text-gray-700">Copying budget:</p>
-                    <p className="text-sm text-gray-600">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm font-medium text-foreground">Copying budget:</p>
+                    <p className="text-sm text-muted-foreground">
                       {copySourceBudget.period_start} to {copySourceBudget.period_end} 
                       ({copySourceBudget.currency} {copySourceBudget.value?.toLocaleString()})
                     </p>
@@ -2006,7 +2006,7 @@ export default function ActivityBudgetsTab({
                       {sortColumn === 'period_start' ? (
                         sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                       ) : (
-                        <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                        <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                       )}
                     </div>
                   </TableHead>
@@ -2031,7 +2031,7 @@ export default function ActivityBudgetsTab({
                           {sortColumn === header.sortKey ? (
                             sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                            <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
                           )}
                         </div>
                       ) : (
@@ -2171,7 +2171,7 @@ export default function ActivityBudgetsTab({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openModalForEditBudget(budget)}>
-                                <Pencil className="h-4 w-4 mr-2 text-slate-500" /> Edit
+                                <Pencil className="h-4 w-4 mr-2 text-muted-foreground" /> Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => duplicateForward(index)}>
                                 <Copy className="h-4 w-4 mr-2" /> Duplicate
@@ -2240,7 +2240,7 @@ export default function ActivityBudgetsTab({
                                           )}
                                         </>
                                       ) : (
-                                        <span className="text-gray-400">—</span>
+                                        <span className="text-muted-foreground">—</span>
                                       )}
                                     </div>
                                   </div>
@@ -2325,7 +2325,7 @@ export default function ActivityBudgetsTab({
                 }
                 {/* Total Row */}
                 {sortedBudgets.length > 0 && (
-                  <TableRow className="bg-slate-50 border-t-2 border-slate-300 font-semibold">
+                  <TableRow className="bg-muted border-t-2 border-border font-semibold">
                     <TableCell colSpan={readOnly ? 6 : 7} className="py-3 px-4 text-right">
                       Total:
                     </TableCell>
@@ -2797,7 +2797,7 @@ export default function ActivityBudgetsTab({
                             setModalExchangeRate(isNaN(value) ? null : value);
                           }}
                           disabled={!modalExchangeRateManual || isLoadingModalRate}
-                          className={!modalExchangeRateManual ? 'bg-gray-100' : ''}
+                          className={!modalExchangeRateManual ? 'bg-muted' : ''}
                           placeholder={isLoadingModalRate ? 'Loading...' : 'Enter rate'}
                         />
                         {isLoadingModalRate && (
@@ -2815,7 +2815,7 @@ export default function ActivityBudgetsTab({
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm">USD Value</Label>
-                      <div className="h-10 px-3 py-2 border rounded-md bg-gray-100 flex items-center font-medium text-green-700">
+                      <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center font-medium text-green-700">
                         {modalCalculatedUsdValue !== null ? (
                           <>$ {modalCalculatedUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
                         ) : (
@@ -2833,7 +2833,7 @@ export default function ActivityBudgetsTab({
               {/* Advanced IATI Fields - Budget Lines */}
               <div 
                 onClick={() => setShowAdvancedFields(!showAdvancedFields)}
-                className="flex items-center justify-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-gray-800 transition-colors py-2"
+                className="flex items-center justify-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
               >
                 <span>Advanced IATI Fields</span>
                 {showAdvancedFields ? (
@@ -2844,8 +2844,8 @@ export default function ActivityBudgetsTab({
               </div>
 
               {showAdvancedFields && (
-                <div className="space-y-6 pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">
+                <div className="space-y-6 pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
                     These optional fields provide additional IATI-compliant budget breakdown for detailed financial reporting.
                   </p>
 
@@ -2853,7 +2853,7 @@ export default function ActivityBudgetsTab({
                     <div className="flex items-center justify-between">
                       <div>
                         <Label className="text-sm font-medium">Budget Lines</Label>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           Optional breakdown of budget into line items. Sum of lines does not need to equal total budget.
                         </p>
                       </div>
@@ -2869,11 +2869,11 @@ export default function ActivityBudgetsTab({
                       </div>
 
                       {modalBudget.budget_lines && modalBudget.budget_lines.length > 0 && (
-                        <div className="space-y-3 border rounded-lg p-3 bg-gray-50">
+                        <div className="space-y-3 border rounded-lg p-3 bg-muted">
                           {modalBudget.budget_lines.map((line, index) => (
-                            <div key={index} className="space-y-3 p-3 border rounded-lg bg-white">
+                            <div key={index} className="space-y-3 p-3 border rounded-lg bg-card">
                               <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-700">Line {index + 1}</span>
+                                <span className="text-sm font-medium text-foreground">Line {index + 1}</span>
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -2969,7 +2969,7 @@ export default function ActivityBudgetsTab({
                           ))}
                           
                           {modalBudget.budget_lines.length > 0 && (
-                            <div className="text-xs text-gray-500 mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                            <div className="text-xs text-muted-foreground mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
                               <strong>Note:</strong> Budget lines are optional. The sum of line items does not need to equal the total budget value.
                             </div>
                           )}

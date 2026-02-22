@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { supabase } from '@/lib/supabase'
 import { BarChart3, PieChart, Table } from 'lucide-react'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { Button } from '@/components/ui/button'
 import {
   BarChart,
@@ -138,11 +139,11 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
-      return <Skeleton className="h-full w-full" />
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (!data || data.total === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-slate-500">
+        <div className="h-full flex items-center justify-center text-muted-foreground">
           <p className="text-sm">No data available</p>
         </div>
       )
@@ -161,7 +162,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
             </text>
           </svg>
         </div>
-        <div className="text-xs text-slate-500 text-center">
+        <div className="text-xs text-muted-foreground text-center">
           <span className="text-red-600 font-medium">{formatCurrency(data.humanitarian)}</span>
           {' / '}
           <span>{formatCurrency(data.total)}</span>
@@ -172,20 +173,15 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <Skeleton className="h-6 w-48 bg-slate-100" />
-          <Skeleton className="h-4 w-64 bg-slate-100 mt-2" />
+          <CardTitle className="text-xl font-semibold text-foreground">
+            Share of humanitarian aid
+          </CardTitle>
+          <CardDescription>Share of total international aid</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-12 py-8">
-            <Skeleton className="h-40 w-40 rounded-full bg-slate-100" />
-            <Skeleton className="h-64 w-20 bg-slate-100" />
-            <div className="space-y-4">
-              <Skeleton className="h-4 w-48 bg-slate-100" />
-              <Skeleton className="h-4 w-48 bg-slate-100" />
-            </div>
-          </div>
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </CardContent>
       </Card>
     )
@@ -193,16 +189,16 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
 
   if (!data || data.total === 0) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-xl font-semibold text-slate-800">
+          <CardTitle className="text-xl font-semibold text-foreground">
             Share of humanitarian aid
           </CardTitle>
           <CardDescription>Share of total international aid</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-48 bg-slate-50 rounded-lg">
-            <p className="text-slate-600">No aid data available for the selected period</p>
+          <div className="flex items-center justify-center h-48 bg-muted rounded-lg">
+            <p className="text-muted-foreground">No aid data available for the selected period</p>
           </div>
         </CardContent>
       </Card>
@@ -285,8 +281,8 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
               />
             </svg>
             <div>
-              <p className="font-semibold text-slate-800">Development cooperation</p>
-              <p className="text-slate-600">
+              <p className="font-semibold text-foreground">Development cooperation</p>
+              <p className="text-muted-foreground">
                 {formatCurrency(data.development)} USD ({data.developmentPercent}%)
               </p>
             </div>
@@ -307,7 +303,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
             </svg>
             <div>
               <p className="font-semibold text-red-700">Humanitarian assistance</p>
-              <p className="text-slate-600">
+              <p className="text-muted-foreground">
                 {formatCurrency(data.humanitarian)} USD ({data.humanitarianPercent}%)
               </p>
             </div>
@@ -321,7 +317,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
     <div className="py-6">
       <ResponsiveContainer width="100%" height={250}>
         <BarChart data={barChartData} layout="vertical" margin={{ left: 20, right: 30 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={true} vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={true} vertical={false} />
           <XAxis 
             type="number" 
             tickFormatter={(value) => formatCurrency(value)}
@@ -356,27 +352,27 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
     <div className="py-6">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-slate-200">
+          <tr className="border-b border-border">
             <th className="text-left py-3 px-4 font-semibold text-slate-700">Category</th>
             <th className="text-right py-3 px-4 font-semibold text-slate-700">Amount (USD)</th>
             <th className="text-right py-3 px-4 font-semibold text-slate-700">Share</th>
           </tr>
         </thead>
         <tbody>
-          <tr className="border-b border-slate-100">
-            <td className="py-3 px-4 text-slate-800">Development cooperation</td>
-            <td className="text-right py-3 px-4 text-slate-600">{formatCurrency(data.development)}</td>
-            <td className="text-right py-3 px-4 text-slate-600">{data.developmentPercent}%</td>
+          <tr className="border-b border-border">
+            <td className="py-3 px-4 text-foreground">Development cooperation</td>
+            <td className="text-right py-3 px-4 text-muted-foreground">{formatCurrency(data.development)}</td>
+            <td className="text-right py-3 px-4 text-muted-foreground">{data.developmentPercent}%</td>
           </tr>
-          <tr className="border-b border-slate-100">
+          <tr className="border-b border-border">
             <td className="py-3 px-4 text-red-700 font-medium">Humanitarian assistance</td>
-            <td className="text-right py-3 px-4 text-slate-600">{formatCurrency(data.humanitarian)}</td>
+            <td className="text-right py-3 px-4 text-muted-foreground">{formatCurrency(data.humanitarian)}</td>
             <td className="text-right py-3 px-4 text-red-600 font-medium">{data.humanitarianPercent}%</td>
           </tr>
-          <tr className="bg-slate-50">
-            <td className="py-3 px-4 font-semibold text-slate-800">Total</td>
-            <td className="text-right py-3 px-4 font-semibold text-slate-800">{formatCurrency(data.total)}</td>
-            <td className="text-right py-3 px-4 font-semibold text-slate-800">100%</td>
+          <tr className="bg-muted">
+            <td className="py-3 px-4 font-semibold text-foreground">Total</td>
+            <td className="text-right py-3 px-4 font-semibold text-foreground">{formatCurrency(data.total)}</td>
+            <td className="text-right py-3 px-4 font-semibold text-foreground">100%</td>
           </tr>
         </tbody>
       </table>
@@ -384,18 +380,18 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
   )
 
   return (
-    <Card className="bg-white border-slate-200 rounded-2xl">
+    <Card className="bg-card border-border rounded-2xl">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl font-semibold text-slate-800">
+            <CardTitle className="text-xl font-semibold text-foreground">
               Share of humanitarian aid
             </CardTitle>
-            <CardDescription className="text-slate-500">
+            <CardDescription className="text-muted-foreground">
               Share of total international aid
             </CardDescription>
           </div>
-          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             <Button
               variant={viewMode === 'chart' ? 'default' : 'ghost'}
               size="sm"

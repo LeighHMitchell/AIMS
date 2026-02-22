@@ -12,10 +12,11 @@ import {
   LabelList,
   PieChart,
   Pie,
+  CartesianGrid,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import {
   Select,
   SelectContent,
@@ -49,6 +50,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 type MetricType = "budgets" | "planned" | "commitments" | "disbursements";
 type ViewMode = "bar" | "pie" | "table";
@@ -70,6 +72,36 @@ const GROUP_COLORS = [
   "#f1f4f8", // Platinum
   "#6b7280", // Gray (OTHERS)
 ];
+
+function WrapXAxisTick({ x, y, payload }: { x: number; y: number; payload: { value: string } }) {
+  const text = payload.value || "";
+  const maxChars = 14;
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  words.forEach((word) => {
+    if (currentLine.length === 0) {
+      currentLine = word;
+    } else if ((currentLine + " " + word).length <= maxChars) {
+      currentLine += " " + word;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+
+  return (
+    <text x={x} y={y + 8} textAnchor="middle" fontSize={11} fill="#6b7280">
+      {lines.map((line, i) => (
+        <tspan key={i} x={x} dy={i === 0 ? 0 : 13}>
+          {line}
+        </tspan>
+      ))}
+    </text>
+  );
+}
 
 const METRIC_OPTIONS = [
   { value: "budgets", label: "Total Budgets" },
@@ -210,22 +242,31 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
     if (active && payload && payload.length) {
       const item = payload[0].payload as DonorGroupData & { fill: string };
     return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-1">{item.name}</p>
-          <div className="border-t mt-2 pt-2 space-y-1">
-            <p className="text-sm font-medium text-gray-900">
-              {formatCurrency(item.value)}
-            </p>
-            {item.activityCount > 0 && (
-              <p className="text-xs text-gray-500">
-                {item.activityCount} activities
-              </p>
-            )}
-            {item.orgCount > 0 && (
-              <p className="text-xs text-gray-500">
-                {item.orgCount} organizations
-              </p>
-            )}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+            <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
+          </div>
+          <div className="p-2">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-slate-100 last:border-b-0">
+                  <td className="py-1 pr-4 text-slate-700 font-medium">Amount</td>
+                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
+                </tr>
+                {item.activityCount > 0 && (
+                  <tr className="border-b border-slate-100 last:border-b-0">
+                    <td className="py-1 pr-4 text-slate-700 font-medium">Activities</td>
+                    <td className="py-1 text-right font-semibold text-slate-900">{item.activityCount}</td>
+                  </tr>
+                )}
+                {item.orgCount > 0 && (
+                  <tr>
+                    <td className="py-1 pr-4 text-slate-700 font-medium">Organizations</td>
+                    <td className="py-1 text-right font-semibold text-slate-900">{item.orgCount}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
       </div>
     );
@@ -244,15 +285,17 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
     <ResponsiveContainer width="100%" height={height}>
         <BarChart
           data={chartData}
-        margin={{ top: 25, right: 5, left: 5, bottom: 5 }}
+        margin={{ top: 25, right: 5, left: 5, bottom: 40 }}
         >
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis
-          dataKey="shortName"
+          dataKey="name"
           stroke="#6b7280"
             fontSize={11}
           tickLine={false}
           axisLine={false}
           interval={0}
+          tick={(props: Record<string, unknown>) => <WrapXAxisTick {...props as { x: number; y: number; payload: { value: string } }} />}
         />
         <YAxis hide />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0, 0, 0, 0.05)" }} />
@@ -341,7 +384,7 @@ export function TopDonorGroupsChart({ refreshKey = 0 }: TopDonorGroupsChartProps
     const chartHeight = expanded ? 300 : 180;
 
     if (loading) {
-      return <Skeleton className="w-full h-[220px]" />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (!data || data.length === 0) {

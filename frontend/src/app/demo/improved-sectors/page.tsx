@@ -66,10 +66,10 @@ export default function ImprovedSectorsDemoPage() {
     <MainLayout>
       <div className="container mx-auto py-8 max-w-6xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Improved Sector Allocation Demo
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Experience the enhanced sector allocation interface with improved UX, visual feedback, and intuitive category grouping.
           </p>
         </div>
@@ -88,7 +88,7 @@ export default function ImprovedSectorsDemoPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">Grouped by Category</p>
-                    <p className="text-xs text-gray-600">Sectors organized under their DAC 3-digit categories</p>
+                    <p className="text-xs text-muted-foreground">Sectors organized under their DAC 3-digit categories</p>
                   </div>
                 </div>
                 
@@ -98,7 +98,7 @@ export default function ImprovedSectorsDemoPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">Visual Progress Bars</p>
-                    <p className="text-xs text-gray-600">See allocation percentages at a glance</p>
+                    <p className="text-xs text-muted-foreground">See allocation percentages at a glance</p>
                   </div>
                 </div>
                 
@@ -108,7 +108,7 @@ export default function ImprovedSectorsDemoPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">Quick Search</p>
-                    <p className="text-xs text-gray-600">Find sectors instantly with smart search</p>
+                    <p className="text-xs text-muted-foreground">Find sectors instantly with smart search</p>
                   </div>
                 </div>
                 
@@ -118,7 +118,7 @@ export default function ImprovedSectorsDemoPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">Color Coding</p>
-                    <p className="text-xs text-gray-600">Each category has a unique color</p>
+                    <p className="text-xs text-muted-foreground">Each category has a unique color</p>
                   </div>
                 </div>
                 
@@ -128,7 +128,7 @@ export default function ImprovedSectorsDemoPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">Real-time Validation</p>
-                    <p className="text-xs text-gray-600">Instant feedback on allocation errors</p>
+                    <p className="text-xs text-muted-foreground">Instant feedback on allocation errors</p>
                   </div>
                 </div>
                 
@@ -138,7 +138,7 @@ export default function ImprovedSectorsDemoPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">Smart Actions</p>
-                    <p className="text-xs text-gray-600">Distribute equally & clear all with one click</p>
+                    <p className="text-xs text-muted-foreground">Distribute equally & clear all with one click</p>
                   </div>
                 </div>
               </div>
@@ -149,7 +149,7 @@ export default function ImprovedSectorsDemoPage() {
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Try it out!</h2>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">Validation Status:</span>
+            <span className="text-sm text-muted-foreground">Validation Status:</span>
             {validation.isValid ? (
               <Badge className="bg-green-600">
                 <CheckCircle className="h-3 w-3 mr-1" />
@@ -171,9 +171,9 @@ export default function ImprovedSectorsDemoPage() {
           allowPublish={true}
         />
         
-        <div className="mt-8 p-6 bg-gray-50 rounded-lg">
-          <h3 className="font-medium text-gray-900 mb-3">Current Allocation Data:</h3>
-          <pre className="text-xs bg-white p-4 rounded border overflow-x-auto">
+        <div className="mt-8 p-6 bg-muted rounded-lg">
+          <h3 className="font-medium text-foreground mb-3">Current Allocation Data:</h3>
+          <pre className="text-xs bg-card p-4 rounded border overflow-x-auto">
 {JSON.stringify(allocations, null, 2)}
           </pre>
         </div>

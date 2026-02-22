@@ -96,9 +96,9 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; bgColor: string }> = {
-  success: { icon: CheckCircle, color: 'text-gray-600', bgColor: 'bg-gray-100' },
-  partial: { icon: AlertCircle, color: 'text-gray-500', bgColor: 'bg-gray-100' },
-  failed: { icon: XCircle, color: 'text-gray-500', bgColor: 'bg-gray-100' },
+  success: { icon: CheckCircle, color: 'text-muted-foreground', bgColor: 'bg-muted' },
+  partial: { icon: AlertCircle, color: 'text-muted-foreground', bgColor: 'bg-muted' },
+  failed: { icon: XCircle, color: 'text-muted-foreground', bgColor: 'bg-muted' },
 };
 
 export function IATIImportLogsManagement() {
@@ -155,14 +155,14 @@ export function IATIImportLogsManagement() {
   }, [currentPage, filterStatus, filterSource]);
 
   const getTrendIcon = () => {
-    if (!analytics) return <Minus className="h-4 w-4 text-gray-500" />;
+    if (!analytics) return <Minus className="h-4 w-4 text-muted-foreground" />;
     switch (analytics.trend) {
       case 'increasing':
-        return <TrendingUp className="h-4 w-4 text-gray-600" />;
+        return <TrendingUp className="h-4 w-4 text-muted-foreground" />;
       case 'decreasing':
-        return <TrendingDown className="h-4 w-4 text-gray-600" />;
+        return <TrendingDown className="h-4 w-4 text-muted-foreground" />;
       default:
-        return <Minus className="h-4 w-4 text-gray-500" />;
+        return <Minus className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -198,54 +198,54 @@ export function IATIImportLogsManagement() {
       {/* Analytics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {/* Time Period Cards */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+        <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <span className="text-xs font-medium text-gray-600">Last 7 Days</span>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Last 7 Days</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{analytics?.last7Days || 0}</p>
+          <p className="text-2xl font-bold text-foreground">{analytics?.last7Days || 0}</p>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+        <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <span className="text-xs font-medium text-gray-600">Last Month</span>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Last Month</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{analytics?.last1Month || 0}</p>
+          <p className="text-2xl font-bold text-foreground">{analytics?.last1Month || 0}</p>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+        <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <span className="text-xs font-medium text-gray-600">Last 3 Months</span>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Last 3 Months</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{analytics?.last3Months || 0}</p>
+          <p className="text-2xl font-bold text-foreground">{analytics?.last3Months || 0}</p>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+        <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <span className="text-xs font-medium text-gray-600">Last 6 Months</span>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Last 6 Months</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{analytics?.last6Months || 0}</p>
+          <p className="text-2xl font-bold text-foreground">{analytics?.last6Months || 0}</p>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+        <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <span className="text-xs font-medium text-gray-600">Last 12 Months</span>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Last 12 Months</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{analytics?.last12Months || 0}</p>
+          <p className="text-2xl font-bold text-foreground">{analytics?.last12Months || 0}</p>
         </div>
 
         {/* Trend Card */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+        <div className="bg-muted border border-border rounded-lg px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
             {getTrendIcon()}
-            <span className="text-xs font-medium text-gray-600">Trend</span>
+            <span className="text-xs font-medium text-muted-foreground">Trend</span>
           </div>
-          <p className="text-lg font-bold text-gray-900 capitalize">{analytics?.trend || 'N/A'}</p>
-          <span className="text-[10px] text-gray-500">{getTrendLabel()}</span>
+          <p className="text-lg font-bold text-foreground capitalize">{analytics?.trend || 'N/A'}</p>
+          <span className="text-[10px] text-muted-foreground">{getTrendLabel()}</span>
         </div>
       </div>
 
@@ -309,12 +309,12 @@ export function IATIImportLogsManagement() {
             <CardContent className="p-0">
               {loading ? (
                 <div className="py-12 text-center">
-                  <RefreshCw className="h-8 w-8 text-gray-400 mx-auto mb-4 animate-spin" />
+                  <RefreshCw className="h-8 w-8 text-muted-foreground mx-auto mb-4 animate-spin" />
                   <LoadingText>Loading import logs...</LoadingText>
                 </div>
               ) : recentStream.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="font-medium">No import logs found</p>
                   <p className="text-sm mt-2">Import logs will appear here once IATI imports are made</p>
                 </div>
@@ -361,7 +361,7 @@ export function IATIImportLogsManagement() {
                             <div>
                               <div className="font-medium">{log.imported_by_name || 'Unknown'}</div>
                               {log.imported_by_email && (
-                                <div className="text-xs text-gray-500">{log.imported_by_email}</div>
+                                <div className="text-xs text-muted-foreground">{log.imported_by_email}</div>
                               )}
                             </div>
                           </TableCell>
@@ -376,10 +376,10 @@ export function IATIImportLogsManagement() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-muted-foreground">
                               {formatDistanceToNow(new Date(log.import_date), { addSuffix: true })}
                             </div>
-                            <div className="text-xs text-gray-400">
+                            <div className="text-xs text-muted-foreground">
                               {format(new Date(log.import_date), 'MMM d, yyyy HH:mm')}
                             </div>
                           </TableCell>
@@ -415,7 +415,7 @@ export function IATIImportLogsManagement() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} imports
                   </div>
                   <div className="flex items-center gap-2">
@@ -457,7 +457,7 @@ export function IATIImportLogsManagement() {
             <CardContent className="p-0">
               {topUsers.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground">
-                  <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p>No user data available</p>
                 </div>
               ) : (
@@ -474,12 +474,12 @@ export function IATIImportLogsManagement() {
                     {topUsers.map((user, index) => (
                       <TableRow key={user.id}>
                         <TableCell>
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600">
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground">
                             {index + 1}
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell className="text-gray-500">{user.email}</TableCell>
+                        <TableCell className="text-muted-foreground">{user.email}</TableCell>
                         <TableCell className="text-right">
                           <Badge variant="secondary" className="font-mono">
                             {user.count}
@@ -504,7 +504,7 @@ export function IATIImportLogsManagement() {
             <CardContent className="p-0">
               {topOrgs.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground">
-                  <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p>No organisation data available</p>
                 </div>
               ) : (
@@ -521,12 +521,12 @@ export function IATIImportLogsManagement() {
                     {topOrgs.map((org, index) => (
                       <TableRow key={org.ref}>
                         <TableCell>
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600">
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground">
                             {index + 1}
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">{org.name}</TableCell>
-                        <TableCell className="text-gray-500 font-mono text-sm">{org.ref}</TableCell>
+                        <TableCell className="text-muted-foreground font-mono text-sm">{org.ref}</TableCell>
                         <TableCell className="text-right">
                           <Badge variant="secondary" className="font-mono">
                             {org.count}

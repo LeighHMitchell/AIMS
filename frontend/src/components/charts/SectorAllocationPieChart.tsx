@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
+import { LoadingText } from '@/components/ui/loading-text';
 import { getSectorLabel, getSectorDescription } from '@/components/forms/SimpleSectorSelect';
 import dacSectorsData from '@/data/dac-sectors.json';
 
@@ -449,17 +450,7 @@ export default function SectorAllocationPieChart({
     return (
       <div className="h-full flex flex-col">
         <div className="flex-1 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-pulse space-y-4">
-              <div className="flex justify-center">
-                <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-32 mx-auto"></div>
-                <div className="h-3 bg-gray-200 rounded w-24 mx-auto"></div>
-              </div>
-            </div>
-          </div>
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </div>
       </div>
     );

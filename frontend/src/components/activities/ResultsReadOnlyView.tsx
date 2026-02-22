@@ -447,8 +447,8 @@ export function ResultsReadOnlyView({
   if (loading) {
     return (
       <div className={cn("space-y-6", className)}>
-        <div className="h-48 bg-slate-100 rounded-lg animate-pulse" />
-        <div className="h-64 bg-slate-100 rounded-lg animate-pulse" />
+        <div className="h-48 bg-muted rounded-lg animate-pulse" />
+        <div className="h-64 bg-muted rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -465,12 +465,12 @@ export function ResultsReadOnlyView({
   if (!results || results.length === 0) {
     return (
       <div className={cn("space-y-6", className)}>
-        <Card className="border-slate-200">
+        <Card className="border-border">
           <CardContent className="py-12">
             <div className="text-center">
-              <Target className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-slate-900 mb-2">No results reported</h4>
-              <p className="text-slate-500">
+              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-foreground mb-2">No results reported</h4>
+              <p className="text-muted-foreground">
                 This activity has not yet reported any results or indicators.
               </p>
             </div>
@@ -485,17 +485,17 @@ export function ResultsReadOnlyView({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold text-slate-900">Results & Indicators</h3>
-          <p className="text-sm text-slate-500 mt-1">
+          <h3 className="text-xl font-semibold text-foreground">Results & Indicators</h3>
+          <p className="text-sm text-muted-foreground mt-1">
             {results.length} result{results.length !== 1 ? 's' : ''} · {indicatorRows.filter(r => r.indicatorTitle !== '(No indicators defined)').length} indicator{indicatorRows.filter(r => r.indicatorTitle !== '(No indicators defined)').length !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
 
       {/* Summary Card - Always visible */}
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Summary of indicator progress to date
           </CardTitle>
         </CardHeader>
@@ -504,7 +504,7 @@ export function ResultsReadOnlyView({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="h-3 rounded-full overflow-hidden bg-slate-200 flex cursor-pointer">
+                <div className="h-3 rounded-full overflow-hidden bg-muted flex cursor-pointer">
                   {progressPercentages.high > 0 && (
                     <div 
                       className="bg-[#6b9080] h-full transition-all duration-500"
@@ -568,21 +568,21 @@ export function ResultsReadOnlyView({
         <TabsContent value="indicators" className="mt-4">
           {/* View Mode Toggle */}
           <div className="flex justify-end mb-4">
-            <div className="flex">
+            <div className="inline-flex items-center gap-0.5 rounded-lg bg-muted p-1">
               <Button
-                variant={viewMode === 'visualization' ? 'default' : 'outline'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('visualization')}
-                className="rounded-r-none"
+                className={cn(viewMode === 'visualization' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Charts
               </Button>
               <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className="rounded-l-none"
+                className={cn(viewMode === 'table' ? "bg-card shadow-sm text-foreground hover:bg-card" : "text-muted-foreground hover:text-foreground")}
               >
                 <Table2 className="h-4 w-4 mr-2" />
                 Table
@@ -596,9 +596,9 @@ export function ResultsReadOnlyView({
               {/* Charts Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Achievement Status Pie Chart */}
-                <Card className="border-slate-200">
+                <Card className="border-border">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-semibold text-slate-900">
+                    <CardTitle className="text-base font-semibold text-foreground">
                       Indicator Achievement Status
                     </CardTitle>
                   </CardHeader>
@@ -629,7 +629,7 @@ export function ResultsReadOnlyView({
                         </ResponsiveContainer>
                       </div>
                     ) : (
-                      <div className="h-64 flex items-center justify-center text-slate-400">
+                      <div className="h-64 flex items-center justify-center text-muted-foreground">
                         No achievement data available
                       </div>
                     )}
@@ -637,9 +637,9 @@ export function ResultsReadOnlyView({
                 </Card>
 
                 {/* Results by Type Pie Chart */}
-                <Card className="border-slate-200">
+                <Card className="border-border">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-semibold text-slate-900">
+                    <CardTitle className="text-base font-semibold text-foreground">
                       Results by Type
                     </CardTitle>
                   </CardHeader>
@@ -670,7 +670,7 @@ export function ResultsReadOnlyView({
                         </ResponsiveContainer>
                       </div>
                     ) : (
-                      <div className="h-64 flex items-center justify-center text-slate-400">
+                      <div className="h-64 flex items-center justify-center text-muted-foreground">
                         No results data available
                       </div>
                     )}
@@ -680,13 +680,13 @@ export function ResultsReadOnlyView({
 
               {/* Results Details Cards */}
               <div>
-                <h4 className="text-lg font-semibold text-slate-900 mb-4">Results Details</h4>
+                <h4 className="text-lg font-semibold text-foreground mb-4">Results Details</h4>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {resultsWithIndicators.map((result) => (
-                    <Card key={result.id} className="border-slate-200">
+                    <Card key={result.id} className="border-border">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-base font-semibold text-slate-900">
+                          <CardTitle className="text-base font-semibold text-foreground">
                             {result.title}
                           </CardTitle>
                           <Badge 
@@ -704,12 +704,12 @@ export function ResultsReadOnlyView({
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {result.indicators.length === 0 ? (
-                          <p className="text-sm text-slate-400 italic">No indicators defined</p>
+                          <p className="text-sm text-muted-foreground italic">No indicators defined</p>
                         ) : (
                           result.indicators.map((indicator) => (
                             <div key={indicator.id} className="space-y-2">
                               <div className="flex items-center justify-between">
-                                <p className="text-sm text-slate-700 font-medium">{indicator.title}</p>
+                                <p className="text-sm text-foreground font-medium">{indicator.title}</p>
                                 {indicator.achievementPercentage !== null && (
                                   <Badge 
                                     variant="outline"
@@ -726,22 +726,22 @@ export function ResultsReadOnlyView({
                               </div>
                               {/* Progress Bar */}
                               <div className="space-y-1">
-                                <div className="flex justify-between text-xs text-slate-500">
+                                <div className="flex justify-between text-xs text-muted-foreground">
                                   <span>Target: {formatValue(indicator.target, indicator.measure)}</span>
                                 </div>
-                                <div className="h-4 rounded-full overflow-hidden bg-slate-200">
+                                <div className="h-4 rounded-full overflow-hidden bg-muted">
                                   <div 
                                     className={cn(
                                       "h-full transition-all duration-500",
                                       indicator.status === 'high' && "bg-[#6b9080]",
                                       indicator.status === 'medium' && "bg-[#c4a35a]",
                                       indicator.status === 'low' && "bg-[#b87070]",
-                                      indicator.status === 'none' && "bg-slate-300"
+                                      indicator.status === 'none' && "bg-muted-foreground"
                                     )}
                                     style={{ width: `${Math.min(indicator.achievementPercentage || 0, 100)}%` }}
                                   />
                                 </div>
-                                <div className="flex justify-between text-xs text-slate-500">
+                                <div className="flex justify-between text-xs text-muted-foreground">
                                   <span>Actual: {formatValue(indicator.actual, indicator.measure)}</span>
                                 </div>
                               </div>
@@ -758,21 +758,21 @@ export function ResultsReadOnlyView({
 
           {/* Table View with Expandable Rows */}
           {viewMode === 'table' && (
-            <Card className="border-slate-200">
+            <Card className="border-border">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-b border-slate-200">
-                        <TableHead className="font-semibold text-slate-900 py-4 px-4 w-10"></TableHead>
-                        <TableHead className="font-semibold text-slate-900 py-4 px-4">Title</TableHead>
-                        <TableHead className="font-semibold text-slate-900 py-4 px-4 w-24">Trend</TableHead>
-                        <TableHead className="font-semibold text-slate-900 py-4 px-4">Baseline</TableHead>
-                        <TableHead className="font-semibold text-slate-900 py-4 px-4">Target</TableHead>
-                        <TableHead className="font-semibold text-slate-900 py-4 px-4">Actual</TableHead>
-                        <TableHead className="font-semibold text-slate-900 py-4 px-4">Comment</TableHead>
-                        <TableHead className="font-semibold text-slate-900 py-4 px-4">Location References</TableHead>
-                        <TableHead className="font-semibold text-slate-900 py-4 px-4">Disaggregation Dimensions</TableHead>
+                      <TableRow className="border-b border-border">
+                        <TableHead className="font-semibold text-foreground py-4 px-4 w-10"></TableHead>
+                        <TableHead className="font-semibold text-foreground py-4 px-4">Title</TableHead>
+                        <TableHead className="font-semibold text-foreground py-4 px-4 w-24">Trend</TableHead>
+                        <TableHead className="font-semibold text-foreground py-4 px-4">Baseline</TableHead>
+                        <TableHead className="font-semibold text-foreground py-4 px-4">Target</TableHead>
+                        <TableHead className="font-semibold text-foreground py-4 px-4">Actual</TableHead>
+                        <TableHead className="font-semibold text-foreground py-4 px-4">Comment</TableHead>
+                        <TableHead className="font-semibold text-foreground py-4 px-4">Location References</TableHead>
+                        <TableHead className="font-semibold text-foreground py-4 px-4">Disaggregation Dimensions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -781,9 +781,9 @@ export function ResultsReadOnlyView({
                           {/* Main row */}
                           <TableRow 
                             className={cn(
-                              "border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors",
-                              index % 2 === 0 ? "bg-white" : "bg-slate-50/50",
-                              expandedRows.has(row.id) && "bg-slate-100"
+                              "border-b border-border cursor-pointer hover:bg-muted/50 transition-colors",
+                              index % 2 === 0 ? "bg-card" : "bg-muted/50",
+                              expandedRows.has(row.id) && "bg-muted"
                             )}
                             onClick={() => row.indicator && toggleRowExpansion(row.id)}
                           >
@@ -808,9 +808,9 @@ export function ResultsReadOnlyView({
                             </TableCell>
                             <TableCell className="py-4 px-4">
                               <div className="space-y-1">
-                                <p className="font-medium text-slate-900">{row.resultTitle}</p>
+                                <p className="font-medium text-foreground">{row.resultTitle}</p>
                                 {row.indicatorTitle !== '(No indicators defined)' && (
-                                  <p className="text-sm text-slate-600">{row.indicatorTitle}</p>
+                                  <p className="text-sm text-muted-foreground">{row.indicatorTitle}</p>
                                 )}
                               </div>
                             </TableCell>
@@ -824,36 +824,36 @@ export function ResultsReadOnlyView({
                                 />
                               )}
                             </TableCell>
-                            <TableCell className="py-4 px-4 text-slate-700">
+                            <TableCell className="py-4 px-4 text-foreground">
                               {row.baseline !== undefined ? (
                                 <div>
                                   <span>{formatValue(row.baseline, row.measure)}</span>
                                   {row.baselineYear && (
-                                    <span className="text-slate-400 text-xs ml-1">{row.baselineYear}</span>
+                                    <span className="text-muted-foreground text-xs ml-1">{row.baselineYear}</span>
                                   )}
                                 </div>
                               ) : '—'}
                             </TableCell>
                             <TableCell className="py-4 px-4">
                               <div className="space-y-1">
-                                <p className="text-slate-700">{formatValue(row.target, row.measure)}</p>
+                                <p className="text-foreground">{formatValue(row.target, row.measure)}</p>
                               </div>
                             </TableCell>
                             <TableCell className="py-4 px-4">
                               <div>
-                                <span className="text-slate-700">{formatValue(row.actual, row.measure)}</span>
+                                <span className="text-foreground">{formatValue(row.actual, row.measure)}</span>
                                 {row.achievementPercentage !== null && (
-                                  <span className="text-slate-400 text-xs ml-1">{row.achievementPercentage}%</span>
+                                  <span className="text-muted-foreground text-xs ml-1">{row.achievementPercentage}%</span>
                                 )}
                               </div>
                             </TableCell>
                             <TableCell className="py-4 px-4">
                               {row.comment ? (
-                                <p className="text-sm text-slate-600 max-w-[200px] truncate" title={row.comment}>
+                                <p className="text-sm text-muted-foreground max-w-[200px] truncate" title={row.comment}>
                                   {row.comment}
                                 </p>
                               ) : (
-                                <span className="text-slate-400">—</span>
+                                <span className="text-muted-foreground">—</span>
                               )}
                             </TableCell>
                             <TableCell className="py-4 px-4">
@@ -863,14 +863,14 @@ export function ResultsReadOnlyView({
                                     <Badge 
                                       key={idx}
                                       variant="outline" 
-                                      className="text-xs font-mono bg-muted text-muted-foreground border-slate-300"
+                                      className="text-xs font-mono bg-muted text-muted-foreground border-border"
                                     >
                                       {ref}
                                     </Badge>
                                   ))}
                                 </div>
                               ) : (
-                                <span className="text-slate-400">—</span>
+                                <span className="text-muted-foreground">—</span>
                               )}
                             </TableCell>
                             <TableCell className="py-4 px-4">
@@ -880,7 +880,7 @@ export function ResultsReadOnlyView({
                                     <Badge 
                                       key={idx}
                                       variant="outline"
-                                      className="text-xs font-normal bg-slate-50 text-slate-700 border-slate-200"
+                                      className="text-xs font-normal bg-muted text-foreground border-border"
                                     >
                                       <span className="font-mono bg-muted text-muted-foreground px-1 rounded">{dim.name}</span>
                                       <span className="ml-1">{dim.value}</span>
@@ -888,16 +888,16 @@ export function ResultsReadOnlyView({
                                   ))}
                                 </div>
                               ) : (
-                                <span className="text-slate-400">—</span>
+                                <span className="text-muted-foreground">—</span>
                               )}
                             </TableCell>
                           </TableRow>
 
                           {/* Expanded row with detail tabs */}
                           {expandedRows.has(row.id) && row.indicator && (
-                            <TableRow className="bg-slate-50">
+                            <TableRow className="bg-muted">
                               <TableCell colSpan={9} className="p-0">
-                                <div className="p-6 border-t border-slate-200">
+                                <div className="p-6 border-t border-border">
                                   <IndicatorDetailTabs indicator={row.indicator} />
                                 </div>
                               </TableCell>
@@ -915,9 +915,9 @@ export function ResultsReadOnlyView({
 
         {/* Documents Gallery Tab */}
         <TabsContent value="documents" className="mt-4">
-          <Card className="border-slate-200">
+          <Card className="border-border">
             <CardHeader>
-              <CardTitle className="text-base font-semibold text-slate-900">
+              <CardTitle className="text-base font-semibold text-foreground">
                 Document Links Gallery
               </CardTitle>
             </CardHeader>

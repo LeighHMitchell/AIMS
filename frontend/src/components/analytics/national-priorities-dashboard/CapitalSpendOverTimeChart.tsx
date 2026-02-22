@@ -15,9 +15,9 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import {
   Select,
   SelectContent,
@@ -238,25 +238,40 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
       const nonCapitalColor = chartType === "bar" ? CAPITAL_COLORS.nonCapital : CAPITAL_COLORS.accent1;
 
       return (
-        <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-900 mb-2">{label}</p>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: CAPITAL_COLORS.capital }} />
-              <span className="text-sm text-gray-600">Capital:</span>
-              <span className="text-sm font-medium">{formatCurrency(capitalValue)}</span>
-              <span className="text-xs text-gray-400">({capitalPct}%)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: nonCapitalColor }} />
-              <span className="text-sm text-gray-600">Non-Capital:</span>
-              <span className="text-sm font-medium">{formatCurrency(nonCapitalValue)}</span>
-              <span className="text-xs text-gray-400">({nonCapitalPct}%)</span>
-            </div>
-            <div className="border-t pt-1 mt-1">
-              <span className="text-sm text-gray-600">Total:</span>{" "}
-              <span className="text-sm font-semibold">{formatCurrency(total)}</span>
-            </div>
+        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+            <p className="font-semibold text-slate-900 text-sm">{label}</p>
+          </div>
+          <div className="p-2">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-slate-100">
+                  <td className="py-1 pr-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: CAPITAL_COLORS.capital }} />
+                      <span className="text-slate-700 font-medium">Capital</span>
+                    </div>
+                  </td>
+                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(capitalValue)}</td>
+                  <td className="py-1 text-right text-xs text-slate-500 pl-2">{capitalPct}%</td>
+                </tr>
+                <tr className="border-b border-slate-100">
+                  <td className="py-1 pr-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: nonCapitalColor }} />
+                      <span className="text-slate-700 font-medium">Non-Capital</span>
+                    </div>
+                  </td>
+                  <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(nonCapitalValue)}</td>
+                  <td className="py-1 text-right text-xs text-slate-500 pl-2">{nonCapitalPct}%</td>
+                </tr>
+                <tr>
+                  <td className="py-1 pr-3 text-slate-700 font-medium">Total</td>
+                  <td className="py-1 text-right font-bold text-slate-900">{formatCurrency(total)}</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       );
@@ -507,7 +522,7 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
     const chartHeight = expanded ? 350 : "100%";
 
     if (loading) {
-      return <Skeleton className="w-full h-[280px]" />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (!data || data.length === 0) {
@@ -625,19 +640,6 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
           </Button>
         </div>
 
-        {/* Expand button - only in compact view */}
-        {!expanded && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setIsExpanded(true)}
-            title="Expand"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        )}
-
         {/* Export button - only in expanded view */}
         {expanded && (
           <Button
@@ -678,23 +680,28 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
       {/* Compact Card View */}
       <Card className="bg-white border-slate-200 h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base font-medium text-slate-700 truncate">
                 Capital vs Non-Capital Spend
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
                 Yearly breakdown of spending types
-              </p>
+              </CardDescription>
             </div>
-            <span className="text-lg font-bold text-slate-500">
-              {formatCurrencyUSD(grandTotal)}
-            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(true)}
+              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              title="Expand to full screen"
+            >
+              <Maximize2 className="h-4 w-4 text-slate-500" />
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
-          {renderControls(false)}
         </CardContent>
       </Card>
 
@@ -704,16 +711,13 @@ export function CapitalSpendOverTimeChart({ refreshKey = 0 }: CapitalSpendOverTi
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-bold uppercase tracking-wide">
+                <DialogTitle className="text-2xl font-semibold text-slate-800">
                   Capital vs Non-Capital Spend Over Time
                 </DialogTitle>
-                <DialogDescription className="text-base mt-1">
+                <DialogDescription className="text-base mt-2">
                   Yearly breakdown by {METRIC_OPTIONS.find((o) => o.value === metric)?.label.toLowerCase()}
                 </DialogDescription>
               </div>
-              <span className="text-2xl font-bold text-slate-500">
-                {formatCurrencyUSD(grandTotal)}
-              </span>
             </div>
           </DialogHeader>
 

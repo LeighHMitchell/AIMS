@@ -162,7 +162,7 @@ export function getAvailableSignificanceOptions(marker: PolicyMarker) {
       value: i,
       label: getSignificanceLabel(i, marker),
       description: getSignificanceDescription(i, marker),
-      color: "bg-gray-100 text-gray-700"
+      color: "bg-muted text-foreground"
     });
   }
 

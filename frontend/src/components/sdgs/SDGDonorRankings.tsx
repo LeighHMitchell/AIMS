@@ -68,7 +68,7 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
 
   if (donors.length === 0) {
     return (
-      <div className="h-24 flex items-center justify-center text-slate-400 text-xs">
+      <div className="h-24 flex items-center justify-center text-muted-foreground text-xs">
         No donor data available
       </div>
     )
@@ -86,8 +86,8 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
                 onClick={() => setMetric(m)}
                 className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
                   metric === m
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-foreground text-white'
+                    : 'bg-muted text-muted-foreground hover:bg-muted'
                 }`}
               >
                 {m === 'disbursed' ? 'Disbursed' : m === 'committed' ? 'Committed' : 'Activities'}
@@ -126,8 +126,8 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
                   const data = payload[0].payload
                   return (
                     <div className={TOOLTIP_CLASSES}>
-                      <p className="font-medium text-xs text-slate-900 mb-1">{data.fullName}</p>
-                      <p className="text-xs text-slate-600">
+                      <p className="font-medium text-xs text-foreground mb-1">{data.fullName}</p>
+                      <p className="text-xs text-muted-foreground">
                         {metric === 'activities' ? `${data.value} activities` : formatCurrencyShort(data.value)}
                       </p>
                     </div>
@@ -146,27 +146,27 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-slate-200">
-                <th className="text-left py-2 px-2 text-slate-500 font-medium">#</th>
-                <th className="text-left py-2 px-2 text-slate-500 font-medium">Organization</th>
-                <th className="text-right py-2 px-2 text-slate-500 font-medium">Activities</th>
-                <th className="text-right py-2 px-2 text-slate-500 font-medium">Committed</th>
-                <th className="text-right py-2 px-2 text-slate-500 font-medium">Disbursed</th>
-                <th className="text-right py-2 px-2 text-slate-500 font-medium">% of Total</th>
+              <tr className="border-b border-border">
+                <th className="text-left py-2 px-2 text-muted-foreground font-medium">#</th>
+                <th className="text-left py-2 px-2 text-muted-foreground font-medium">Organization</th>
+                <th className="text-right py-2 px-2 text-muted-foreground font-medium">Activities</th>
+                <th className="text-right py-2 px-2 text-muted-foreground font-medium">Committed</th>
+                <th className="text-right py-2 px-2 text-muted-foreground font-medium">Disbursed</th>
+                <th className="text-right py-2 px-2 text-muted-foreground font-medium">% of Total</th>
               </tr>
             </thead>
             <tbody>
               {sortedDonors.map((donor, i) => (
-                <tr key={donor.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="py-2 px-2 text-slate-400">{i + 1}</td>
+                <tr key={donor.id} className="border-b border-border hover:bg-muted/50">
+                  <td className="py-2 px-2 text-muted-foreground">{i + 1}</td>
                   <td className="py-2 px-2">
-                    <span className="font-medium text-slate-900">{donor.name}</span>
-                    {donor.acronym && <span className="text-slate-400 ml-1">({donor.acronym})</span>}
+                    <span className="font-medium text-foreground">{donor.name}</span>
+                    {donor.acronym && <span className="text-muted-foreground ml-1">({donor.acronym})</span>}
                   </td>
-                  <td className="py-2 px-2 text-right text-slate-600">{donor.activityCount}</td>
-                  <td className="py-2 px-2 text-right text-slate-600">{formatCurrencyShort(donor.totalCommitted)}</td>
-                  <td className="py-2 px-2 text-right font-medium text-slate-900">{formatCurrencyShort(donor.totalDisbursed)}</td>
-                  <td className="py-2 px-2 text-right text-slate-500">
+                  <td className="py-2 px-2 text-right text-muted-foreground">{donor.activityCount}</td>
+                  <td className="py-2 px-2 text-right text-muted-foreground">{formatCurrencyShort(donor.totalCommitted)}</td>
+                  <td className="py-2 px-2 text-right font-medium text-foreground">{formatCurrencyShort(donor.totalDisbursed)}</td>
+                  <td className="py-2 px-2 text-right text-muted-foreground">
                     {totalDisbursed > 0 ? ((donor.totalDisbursed / totalDisbursed) * 100).toFixed(1) : '0.0'}%
                   </td>
                 </tr>

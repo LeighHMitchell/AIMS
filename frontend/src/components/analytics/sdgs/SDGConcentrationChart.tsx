@@ -20,11 +20,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle, Calendar as CalendarIcon } from 'lucide-react'
 import { CustomYear, getCustomYearRange, getCustomYearLabel } from '@/types/custom-years'
 import { format } from 'date-fns'
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 // Generate list of available years
 const AVAILABLE_YEARS = Array.from(
@@ -308,7 +310,7 @@ export function SDGConcentrationChart({
   // Compact mode renders just the chart without Card wrapper
   if (compact) {
     if (loading) {
-      return <Skeleton className="h-full w-full" />
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (chartData.length === 0) {
       return (
@@ -327,7 +329,7 @@ export function SDGConcentrationChart({
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={compactChartData} margin={{ top: 10, right: 20, left: 35, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis dataKey="year" fontSize={9} tick={{ fill: '#64748b' }} tickFormatter={(year) => getYearLabel(year)} />
             <YAxis fontSize={9} tick={{ fill: '#64748b' }} tickFormatter={(v) => v.toFixed(0)}>
               <Label value="Activities" angle={-90} position="insideLeft" style={{ textAnchor: 'middle', fontSize: 9, fill: '#64748b' }} />
@@ -354,7 +356,7 @@ export function SDGConcentrationChart({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[400px] w-full" />
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </CardContent>
       </Card>
     )
@@ -395,7 +397,7 @@ export function SDGConcentrationChart({
         {customYears.length > 0 && (
           <div className="flex items-start gap-2 mb-4 pb-3 border-b border-slate-100">
             {/* Calendar Type Selector */}
-            <div className="flex gap-1 border rounded-lg p-1 bg-white">
+            <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 gap-1">
@@ -421,7 +423,7 @@ export function SDGConcentrationChart({
 
             {/* Year Range Selector */}
             <div className="flex flex-col gap-1">
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 gap-1">
@@ -504,7 +506,7 @@ export function SDGConcentrationChart({
             })}
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} vertical={false} />
             <XAxis
               dataKey="year"
               tickFormatter={(year) => getYearLabel(year)}

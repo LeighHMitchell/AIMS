@@ -12,6 +12,7 @@ import {
   PieChart,
   Pie,
   LabelList,
+  CartesianGrid,
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +37,7 @@ import {
   Maximize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { RankedItem } from "@/types/national-priorities";
 
 interface RecipientGovBodiesChartProps {
@@ -124,6 +126,7 @@ export function RecipientGovBodiesChart({
         data={chartData}
         margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
       >
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
           dataKey="acronym"
           tick={{ fontSize: 10 }}

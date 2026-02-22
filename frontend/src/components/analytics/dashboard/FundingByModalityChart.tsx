@@ -14,8 +14,8 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingText } from "@/components/ui/loading-text";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -388,7 +388,7 @@ export function FundingByModalityChart() {
     const chartHeight = expanded ? "100%" : "100%";
 
     if (loading) {
-      return <Skeleton className={expanded ? "h-full w-full flex-1" : "h-[280px] w-full"} />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
 
     if (error) {
@@ -551,19 +551,6 @@ export function FundingByModalityChart() {
           </div>
         )}
 
-        {/* Expand button - only in compact view */}
-        {!expanded && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setIsExpanded(true)}
-            title="Expand"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        )}
-
         {/* Export button - only in expanded view */}
         {expanded && (
           <Button
@@ -585,25 +572,28 @@ export function FundingByModalityChart() {
       {/* Compact Card View */}
       <Card className="bg-white border-slate-200 h-full flex flex-col">
         <CardHeader className="pb-1 pt-4 px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base font-medium text-slate-700 truncate">
                 Funding Over Time
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                By Aid Modality Type
-              </p>
+              <CardDescription className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                By aid modality type
+              </CardDescription>
             </div>
-            {summary && (
-              <span className="text-lg font-bold text-slate-500">
-                {formatCurrencyWithSymbol(summary.total)}
-              </span>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(true)}
+              className="h-7 w-7 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
+              title="Expand to full screen"
+            >
+              <Maximize2 className="h-4 w-4 text-slate-500" />
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-0 px-4 pb-3 flex-1 flex flex-col">
           {renderContent(false)}
-          {renderControls(false)}
         </CardContent>
       </Card>
 
@@ -613,16 +603,13 @@ export function FundingByModalityChart() {
           <DialogHeader className="flex-shrink-0">
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-2xl font-bold uppercase tracking-wide">
+                <DialogTitle className="text-2xl font-semibold text-slate-800">
                   Funding Over Time
                 </DialogTitle>
-                <DialogDescription className="text-base mt-1">
+                <DialogDescription className="text-base mt-2">
                   {METRIC_OPTIONS.find((o) => o.value === transactionType)?.label} by aid modality type over time
                 </DialogDescription>
               </div>
-              <span className="text-2xl font-bold text-slate-500">
-                {summary ? formatCurrencyWithSymbol(summary.total) : ''}
-              </span>
             </div>
           </DialogHeader>
 

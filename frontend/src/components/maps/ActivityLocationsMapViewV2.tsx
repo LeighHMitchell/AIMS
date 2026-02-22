@@ -5,6 +5,7 @@ import { Map, MapControls, useMap } from '@/components/ui/map';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { CircleDot, Flame, MapPin, RotateCcw, Building2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import MapLibreGL from 'maplibre-gl';
 import dynamic from 'next/dynamic';
 import { apiFetch } from '@/lib/api-fetch';
@@ -327,13 +328,18 @@ export default function ActivityLocationsMapViewV2({
         </Select>
 
         {/* View Mode Toggle */}
-        <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
+        <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
           <Button
             onClick={() => setViewMode('markers')}
             variant="ghost"
             size="sm"
             title="Show markers"
-            className={`rounded-none border-0 h-8 w-8 p-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+            className={cn(
+              "h-8 w-8 p-0",
+              viewMode === 'markers'
+                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                : "text-slate-500 hover:text-slate-700"
+            )}
           >
             <CircleDot className="h-3.5 w-3.5" />
           </Button>
@@ -342,7 +348,12 @@ export default function ActivityLocationsMapViewV2({
             variant="ghost"
             size="sm"
             title="Show heatmap"
-            className={`rounded-none border-0 border-l border-gray-300 h-8 w-8 p-0 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
+            className={cn(
+              "h-8 w-8 p-0",
+              viewMode === 'heatmap'
+                ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                : "text-slate-500 hover:text-slate-700"
+            )}
           >
             <Flame className="h-3.5 w-3.5" />
           </Button>

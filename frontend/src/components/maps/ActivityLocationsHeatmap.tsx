@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MapPin, Download, RotateCcw, CircleDot, Flame, Map as MapIcon, Mountain } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import html2canvas from 'html2canvas'
@@ -411,13 +412,18 @@ export default function ActivityLocationsHeatmap({
               </Button>
 
               {/* View Mode Toggle */}
-              <div className="flex bg-white rounded-md shadow-md border border-gray-300 overflow-hidden">
+              <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
                 <Button
                   onClick={() => setViewMode('markers')}
                   variant="ghost"
                   size="sm"
                   title="Show markers"
-                  className={`rounded-none border-0 h-9 w-9 p-0 ${viewMode === 'markers' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
+                  className={cn(
+                    "h-9 w-9 p-0",
+                    viewMode === 'markers'
+                      ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
                 >
                   <CircleDot className="h-4 w-4" />
                 </Button>
@@ -426,7 +432,12 @@ export default function ActivityLocationsHeatmap({
                   variant="ghost"
                   size="sm"
                   title="Show heatmap"
-                  className={`rounded-none border-0 border-l border-gray-300 h-9 w-9 p-0 ${viewMode === 'heatmap' ? 'bg-orange-100 text-orange-700' : 'hover:bg-gray-100'}`}
+                  className={cn(
+                    "h-9 w-9 p-0",
+                    viewMode === 'heatmap'
+                      ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
                 >
                   <Flame className="h-4 w-4" />
                 </Button>

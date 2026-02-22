@@ -33,7 +33,7 @@ import {
   Info,
   Maximize2
 } from 'lucide-react'
-import { BarChartSkeleton } from '@/components/ui/skeleton-loader'
+import { LoadingText } from '@/components/ui/loading-text'
 import { exportChartToJPG, downloadCSV, convertToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
 import {
@@ -43,6 +43,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 // Color scheme
 const COLORS = {
@@ -259,7 +260,7 @@ export function FundingOverTimeAnalytics() {
 
       return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden" style={{ borderColor: COLORS.paleSlate }}>
-          <div className="px-3 py-2 font-semibold" style={{ backgroundColor: COLORS.platinum, color: COLORS.blueSlate, borderBottom: `1px solid ${COLORS.paleSlate}` }}>
+          <div className="px-3 py-2 font-semibold bg-surface-muted border-b border-slate-200 text-slate-900">
             {label}
           </div>
           <table className="min-w-full text-sm border-collapse">
@@ -531,7 +532,7 @@ export function FundingOverTimeAnalytics() {
       ) : loading ? (
         <Card>
           <CardContent className="py-6">
-            <BarChartSkeleton height="300px" bars={8} />
+            <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
           </CardContent>
         </Card>
       ) : chartData.length === 0 ? (
@@ -550,7 +551,7 @@ export function FundingOverTimeAnalytics() {
             {chartView === 'line' && (
               <ResponsiveContainer width="100%" height={500}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={COLORS.paleSlate} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                   <XAxis
                     dataKey="year"
                     stroke={COLORS.blueSlate}
@@ -606,7 +607,7 @@ export function FundingOverTimeAnalytics() {
             {chartView === 'bar' && (
               <ResponsiveContainer width="100%" height={500}>
                 <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={COLORS.paleSlate} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                   <XAxis
                     dataKey="year"
                     stroke={COLORS.blueSlate}
@@ -654,7 +655,7 @@ export function FundingOverTimeAnalytics() {
             {chartView === 'area' && (
               <ResponsiveContainer width="100%" height={500}>
                 <AreaChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={COLORS.paleSlate} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                   <XAxis
                     dataKey="year"
                     stroke={COLORS.blueSlate}

@@ -257,7 +257,7 @@ function SearchPageContent() {
             <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
               <TabsTrigger
                 value="all"
-                className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
               >
                 <Search className="h-4 w-4" />
                 All ({resultCounts.all})
@@ -268,7 +268,7 @@ function SearchPageContent() {
                   <TabsTrigger
                     key={type}
                     value={type}
-                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm"
                   >
                     <Icon className="h-4 w-4" />
                     {resultTypeLabels[type]} ({resultCounts[type]})

@@ -30,7 +30,7 @@ interface FinanceTypeSearchableSelectProps {
 const allOptions: FinanceType[] = financeTypes;
 
 // Commonly used finance types for priority display
-const COMMONLY_USED_CODES = ["110", "421", "422", "1100"];
+const COMMONLY_USED_CODES = ["110", "410", "421", "422", "1100"];
 
 export function FinanceTypeSearchableSelect({
   value,

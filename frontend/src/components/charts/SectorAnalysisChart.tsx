@@ -15,8 +15,9 @@ import {
 import { AlertCircle, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { PieChartSkeleton } from "@/components/ui/skeleton-loader";
+import { LoadingText } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 interface SectorData {
   sectorCode: string;
@@ -112,7 +113,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
   };
 
   if (loading) {
-    return <PieChartSkeleton height="384px" />;
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
   }
 
   if (error) {
@@ -260,7 +261,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
           </PieChart>
         ) : (
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis
               dataKey="displayName"
               stroke="#6B7280"

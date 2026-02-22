@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, CreditCard, Settings } from 'lucide-react';
+import { CheckCircle, CreditCard, Settings, Wallet } from 'lucide-react';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { ModalitySearchableSelect } from '@/components/forms/ModalitySearchableSelect';
 import { FinanceTypeSearchableSelect } from '@/components/forms/FinanceTypeSearchableSelect';
@@ -20,6 +20,11 @@ import { FinanceTypeSearchableSelect } from '@/components/forms/FinanceTypeSearc
 import { areAllDefaultFieldsCompleted } from '@/utils/defaultFieldsValidation';
 import { calculateModality } from '@/utils/modality-calculation';
 import { useSupabaseFieldUpdate } from '@/hooks/use-supabase-field-update';
+import { FundOverviewView } from '@/components/activities/fund/FundOverviewView';
+import { FundContributionsView } from '@/components/activities/fund/FundContributionsView';
+import { FundDisbursementsView } from '@/components/activities/fund/FundDisbursementsView';
+import { FundReconciliationView } from '@/components/activities/fund/FundReconciliationView';
+import { FundSuggestedLinksView } from '@/components/activities/fund/FundSuggestedLinksView';
 
 // Enhanced components with Supabase integration
 const SupabaseAidTypeSelect = withSupabaseIntegration(AidTypeSelect);
@@ -50,6 +55,7 @@ interface EnhancedFinancesSectionProps {
     defaultModality?: string | null; // Changed to camelCase
     defaultModalityOverride?: boolean; // Changed to camelCase
     otherIdentifier?: string | null;
+    is_pooled_fund?: boolean;
   };
   onDefaultsChange?: (field: string, value: string | null | boolean) => void;
   transactions?: any[];
@@ -242,6 +248,32 @@ export function EnhancedFinancesSection({
               <CheckCircle className="h-4 w-4 text-green-500" />
             )}
           </TabsTrigger>
+          {general?.is_pooled_fund === true && (
+            <TabsTrigger value="fund-overview" className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              Fund Overview
+            </TabsTrigger>
+          )}
+          {general?.is_pooled_fund === true && (
+            <TabsTrigger value="fund-contributions" className="flex items-center gap-2">
+              Contributions
+            </TabsTrigger>
+          )}
+          {general?.is_pooled_fund === true && (
+            <TabsTrigger value="fund-disbursements" className="flex items-center gap-2">
+              Disbursements
+            </TabsTrigger>
+          )}
+          {general?.is_pooled_fund === true && (
+            <TabsTrigger value="fund-reconciliation" className="flex items-center gap-2">
+              Reconciliation
+            </TabsTrigger>
+          )}
+          {general?.is_pooled_fund === true && (
+            <TabsTrigger value="fund-suggestions" className="flex items-center gap-2">
+              Suggested Links
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Default Values Tab */}
@@ -452,6 +484,36 @@ export function EnhancedFinancesSection({
             activitySectors={activitySectors}
           />
         </TabsContent>
+
+        {general?.is_pooled_fund === true && activityId && (
+          <TabsContent value="fund-overview" className="space-y-4">
+            <FundOverviewView activityId={activityId} />
+          </TabsContent>
+        )}
+
+        {general?.is_pooled_fund === true && activityId && (
+          <TabsContent value="fund-contributions" className="space-y-4">
+            <FundContributionsView activityId={activityId} />
+          </TabsContent>
+        )}
+
+        {general?.is_pooled_fund === true && activityId && (
+          <TabsContent value="fund-disbursements" className="space-y-4">
+            <FundDisbursementsView activityId={activityId} />
+          </TabsContent>
+        )}
+
+        {general?.is_pooled_fund === true && activityId && (
+          <TabsContent value="fund-reconciliation" className="space-y-4">
+            <FundReconciliationView activityId={activityId} />
+          </TabsContent>
+        )}
+
+        {general?.is_pooled_fund === true && activityId && (
+          <TabsContent value="fund-suggestions" className="space-y-4">
+            <FundSuggestedLinksView activityId={activityId} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

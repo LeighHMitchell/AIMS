@@ -109,7 +109,7 @@ export default function WorkingGroupsPage() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-muted-foreground"></div>
         </div>
       </MainLayout>
     )
@@ -121,8 +121,8 @@ export default function WorkingGroupsPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Working Groups</h1>
-            <p className="mt-2 text-gray-600">
+            <h1 className="text-3xl font-bold text-foreground">Working Groups</h1>
+            <p className="mt-2 text-muted-foreground">
               Technical and Sector Working Groups for coordination and collaboration
             </p>
           </div>
@@ -138,10 +138,10 @@ export default function WorkingGroupsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Total Groups</p>
-                  <p className="text-2xl font-bold text-gray-900">{workingGroups.length}</p>
+                  <p className="text-sm text-muted-foreground">Total Groups</p>
+                  <p className="text-2xl font-bold text-foreground">{workingGroups.length}</p>
                 </div>
-                <NetworkIcon className="h-8 w-8 text-gray-400" />
+                <NetworkIcon className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -150,12 +150,12 @@ export default function WorkingGroupsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Active Groups</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-muted-foreground">Active Groups</p>
+                  <p className="text-2xl font-bold text-foreground">
                     {workingGroups.filter(wg => wg.status === 'active').length}
                   </p>
                 </div>
-                <UserCheck className="h-8 w-8 text-gray-400" />
+                <UserCheck className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -164,12 +164,12 @@ export default function WorkingGroupsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Total Members</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-muted-foreground">Total Members</p>
+                  <p className="text-2xl font-bold text-foreground">
                     {workingGroups.reduce((sum, wg) => sum + (wg.member_count || 0), 0)}
                   </p>
                 </div>
-                <Users className="h-8 w-8 text-gray-400" />
+                <Users className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -178,12 +178,12 @@ export default function WorkingGroupsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Linked Activities</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-muted-foreground">Linked Activities</p>
+                  <p className="text-2xl font-bold text-foreground">
                     {workingGroups.reduce((sum, wg) => sum + (wg.activities_count || 0), 0)}
                   </p>
                 </div>
-                <Calendar className="h-8 w-8 text-gray-400" />
+                <Calendar className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -193,7 +193,7 @@ export default function WorkingGroupsPage() {
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1">
             <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
               <Input
                 placeholder="Search working groups..."
                 value={searchQuery}
@@ -216,17 +216,17 @@ export default function WorkingGroupsPage() {
 
           <div className="flex border rounded-md">
             <Button
-              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className="rounded-r-none"
+              className={`rounded-r-none ${viewMode === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
               onClick={() => setViewMode('table')}
             >
               <TableIcon className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'card' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className="rounded-l-none"
+              className={`rounded-l-none ${viewMode === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
               onClick={() => setViewMode('card')}
             >
               <LayoutGrid className="h-4 w-4" />
@@ -249,7 +249,7 @@ export default function WorkingGroupsPage() {
                       <CardTitle className="text-lg font-semibold line-clamp-2">
                         {wg.label}
                       </CardTitle>
-                      <p className="text-sm text-gray-500 mt-1">{wg.code}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{wg.code}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge
@@ -269,28 +269,28 @@ export default function WorkingGroupsPage() {
 
                 <CardContent>
                   {wg.description && (
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                       {wg.description}
                     </p>
                   )}
 
                   {wg.lead_person && (
                     <div className="mb-4">
-                      <p className="text-xs text-gray-500">Chair</p>
+                      <p className="text-xs text-muted-foreground">Chair</p>
                       <p className="text-sm font-medium">{wg.lead_person.name}</p>
-                      <p className="text-xs text-gray-500">{wg.lead_person.organization}</p>
+                      <p className="text-xs text-muted-foreground">{wg.lead_person.organization}</p>
                     </div>
                   )}
 
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-600">{wg.member_count || 0} members</span>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">{wg.member_count || 0} members</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-600">{wg.activities_count || 0} activities</span>
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">{wg.activities_count || 0} activities</span>
                       </div>
                     </div>
                   </div>
@@ -306,7 +306,7 @@ export default function WorkingGroupsPage() {
                         router.push(`/working-groups/${wg.id}/edit`)
                       }}
                     >
-                      <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                      <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
                     </Button>
                   )}
                 </CardContent>
@@ -338,14 +338,14 @@ export default function WorkingGroupsPage() {
                     onClick={() => router.push(`/working-groups/${wg.id}`)}
                   >
                     <TableCell className="font-medium">{wg.label}</TableCell>
-                    <TableCell className="text-gray-500 font-mono text-sm">{wg.code}</TableCell>
+                    <TableCell className="text-muted-foreground font-mono text-sm">{wg.code}</TableCell>
                     <TableCell>
                       {wg.group_type ? (
                         <Badge variant="outline" className="text-xs">
                           {GROUP_TYPE_LABELS[wg.group_type] || wg.group_type}
                         </Badge>
                       ) : (
-                        <span className="text-gray-400 text-sm">-</span>
+                        <span className="text-muted-foreground text-sm">-</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -366,7 +366,7 @@ export default function WorkingGroupsPage() {
                             router.push(`/working-groups/${wg.id}/edit`)
                           }}
                         >
-                          <Pencil className="h-4 w-4 text-slate-500 ring-1 ring-slate-300 rounded-sm" />
+                          <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
                         </Button>
                       </TableCell>
                     )}
@@ -379,7 +379,7 @@ export default function WorkingGroupsPage() {
 
         {filteredGroups.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No working groups found matching your criteria</p>
+            <p className="text-muted-foreground">No working groups found matching your criteria</p>
           </div>
         )}
       </div>

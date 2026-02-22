@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     const organizationData = {
       name: name, // Required field
       acronym: acronym || null,
-      type: type || 'development_partner',
+      type: type || '40',
       country: country || null,
       ...otherFields
     };

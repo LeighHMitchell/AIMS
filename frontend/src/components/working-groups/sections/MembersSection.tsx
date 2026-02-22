@@ -74,8 +74,8 @@ const getRoleBadgeColor = (role: string) => {
     case 'deputy_chair': return 'bg-violet-100 text-violet-800'
     case 'secretariat': return 'bg-blue-100 text-blue-800'
     case 'member': return 'bg-green-100 text-green-800'
-    case 'observer': return 'bg-gray-100 text-gray-800'
-    default: return 'bg-gray-100 text-gray-800'
+    case 'observer': return 'bg-muted text-gray-800'
+    default: return 'bg-muted text-gray-800'
   }
 }
 
@@ -280,15 +280,15 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
   }
 
   if (loading) {
-    return <div className="animate-pulse space-y-4"><div className="h-20 bg-gray-100 rounded" /><div className="h-20 bg-gray-100 rounded" /></div>
+    return <div className="animate-pulse space-y-4"><div className="h-20 bg-muted rounded" /><div className="h-20 bg-muted rounded" /></div>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Leadership & Members</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage working group membership and roles</p>
+          <h2 className="text-xl font-semibold text-foreground">Leadership & Members</h2>
+          <p className="text-sm text-muted-foreground mt-1">Manage working group membership and roles</p>
         </div>
         <Button onClick={() => { resetForm(); setShowAddDialog(true) }} className="gap-2">
           <UserPlus className="h-4 w-4" />
@@ -298,7 +298,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
 
       {members.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg">
-          <UserPlus className="h-12 w-12 text-gray-300 mb-3" />
+          <UserPlus className="h-12 w-12 text-muted-foreground mb-3" />
           <p className="text-sm text-muted-foreground">No members yet</p>
           <p className="text-xs text-muted-foreground mt-1">Add members to this working group to get started</p>
           <Button onClick={() => { resetForm(); setShowAddDialog(true) }} variant="outline" className="mt-4 gap-2">
@@ -310,34 +310,34 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Name</th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Organization</th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Email</th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Role</th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Joined</th>
-                <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Actions</th>
+              <tr className="bg-muted border-b">
+                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Name</th>
+                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Organization</th>
+                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Email</th>
+                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Role</th>
+                <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Joined</th>
+                <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {members.map((member) => (
-                <tr key={member.id} className="hover:bg-gray-50">
+                <tr key={member.id} className="hover:bg-muted/50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">{member.person_name}</span>
+                      <span className="text-sm font-medium text-foreground">{member.person_name}</span>
                       {!member.is_active && (
                         <Badge variant="secondary" className="text-xs">Inactive</Badge>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{member.person_organization || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{member.person_email || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{member.person_organization || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{member.person_email || '—'}</td>
                   <td className="px-4 py-3">
                     <Badge className={getRoleBadgeColor(member.role)}>
                       {getRoleLabel(member.role)}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
                     {member.joined_on ? format(new Date(member.joined_on), 'MMM d, yyyy') : '—'}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -428,7 +428,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                       />
                       <CommandList>
                         {searchingPeople ? (
-                          <div className="py-6 text-center text-sm text-gray-500">
+                          <div className="py-6 text-center text-sm text-muted-foreground">
                             {contactSearchQuery.trim().length === 0 ? 'Loading contacts...' : 'Searching...'}
                           </div>
                         ) : rolodexPeople.length === 0 ? (
@@ -454,7 +454,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                                 <div className="flex flex-col min-w-0">
                                   <span className="truncate">{person.name}</span>
                                   {person.email && (
-                                    <span className="text-xs text-gray-500 truncate">{person.email}</span>
+                                    <span className="text-xs text-muted-foreground truncate">{person.email}</span>
                                   )}
                                 </div>
                               </CommandItem>
@@ -480,18 +480,18 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-foreground">
                         {selectedContact.name}
                       </p>
                       {selectedContact.email && (
-                        <p className="text-xs text-gray-600">{selectedContact.email}</p>
+                        <p className="text-xs text-muted-foreground">{selectedContact.email}</p>
                       )}
                     </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-gray-500 hover:text-red-500"
+                    className="h-7 w-7 text-muted-foreground hover:text-red-500"
                     onClick={clearSelectedContact}
                   >
                     <X className="h-4 w-4" />

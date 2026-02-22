@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
       description,
       sortOrder = 0,
       isActive = true,
+      responsibleMinistries,
     } = body;
 
     if (!category || !category.trim()) {
@@ -112,6 +113,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Build the JSONB array for the denormalized column
+    const ministriesJson = Array.isArray(responsibleMinistries)
+      ? responsibleMinistries.map((m: { id: string; code: string; name: string }) => ({
+          id: m.id,
+          code: m.code,
+          name: m.name,
+        }))
+      : [];
+
     const { data, error } = await supabase
       .from("aid_effectiveness_options")
       .insert({
@@ -120,6 +130,7 @@ export async function POST(request: NextRequest) {
         description: description || null,
         sort_order: sortOrder,
         is_active: isActive,
+        responsible_ministries: ministriesJson,
       })
       .select()
       .single();
@@ -136,6 +147,15 @@ export async function POST(request: NextRequest) {
         { error: "Failed to create option", details: error.message },
         { status: 500 }
       );
+    }
+
+    // Sync junction table
+    if (data && ministriesJson.length > 0) {
+      const junctionRows = ministriesJson.map((m: { id: string }) => ({
+        ae_option_id: data.id,
+        budget_classification_id: m.id,
+      }));
+      await supabase.from("ae_option_ministries").insert(junctionRows);
     }
 
     return NextResponse.json({

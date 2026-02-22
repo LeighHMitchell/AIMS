@@ -11,10 +11,11 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Activity, Table as TableIcon } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 interface Top10ActiveProjectsChartProps {
   filters?: {
@@ -38,12 +39,22 @@ interface PartnerData {
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
+    const orgDisplay = data.acronym ? `${data.name} (${data.acronym})` : data.name
     return (
-      <div className="bg-slate-800 px-3 py-2 rounded-lg shadow-lg border border-slate-700">
-        <p className="text-white font-medium text-sm">{data.name}</p>
-        <p className="text-slate-300 text-sm mt-1">
-          {data.projectCount} active project{data.projectCount !== 1 ? 's' : ''}
-        </p>
+      <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+          <p className="font-semibold text-slate-900 text-sm">{orgDisplay}</p>
+        </div>
+        <div className="p-2">
+          <table className="w-full text-sm">
+            <tbody>
+              <tr>
+                <td className="py-1 pr-4 text-slate-700 font-medium">Active Projects</td>
+                <td className="py-1 text-right font-semibold text-slate-900">{data.projectCount}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     )
   }
@@ -107,13 +118,23 @@ export function Top10ActiveProjectsChart({
     }
   }
 
+  // Custom Y-axis tick that never wraps text
+  const NoWrapTick = ({ x, y, payload, fontSize = 11 }: any) => {
+    const label = payload?.value || ''
+    return (
+      <text x={x} y={y} textAnchor="end" dominantBaseline="central" fill="#64748b" fontSize={fontSize}>
+        {label}
+      </text>
+    )
+  }
+
   const BAR_COLOR = '#4C5568'
   const OTHERS_COLOR = '#94a3b8'
 
   // Compact mode renders just the chart
   if (compact) {
     if (loading) {
-      return <Skeleton className="h-full w-full" />
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     }
     if (!data || data.length === 0) {
       return (
@@ -126,9 +147,9 @@ export function Top10ActiveProjectsChart({
       <div className="h-full w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis type="number" tick={{ fontSize: 10 }} />
-            <YAxis type="category" dataKey="shortName" tick={{ fontSize: 9 }} width={55} />
+            <YAxis type="category" dataKey="shortName" tick={<NoWrapTick fontSize={9} />} width={55} />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
             <Bar dataKey="projectCount" radius={[0, 4, 4, 0]} isAnimationActive={false}>
               {data.map((entry, index) => (
@@ -143,9 +164,7 @@ export function Top10ActiveProjectsChart({
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-[400px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -194,11 +213,7 @@ export function Top10ActiveProjectsChart({
             layout="vertical"
             margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
           >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#e2e8f0"
-              horizontal={false}
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis
               type="number"
               tick={{ fill: '#64748b', fontSize: 12 }}
@@ -207,7 +222,7 @@ export function Top10ActiveProjectsChart({
             <YAxis
               type="category"
               dataKey="shortName"
-              tick={{ fill: '#64748b', fontSize: 12 }}
+              tick={<NoWrapTick fontSize={12} />}
               axisLine={{ stroke: '#cbd5e1' }}
               width={90}
             />

@@ -20,6 +20,8 @@ import { SectorMetrics, SectorAnalyticsFilters, SectorSortField, SortDirection }
 import { BarChart3, Download, AlignLeft, AlignVerticalSpaceAround, Users, FolderKanban, Table as TableIcon, Search, FileImage } from 'lucide-react'
 import { AlertCircle } from 'lucide-react'
 import { CHART_BAR_COLORS } from './sectorColorMap'
+import { cn } from '@/lib/utils'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
   const isNegative = value < 0
@@ -334,7 +336,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
 
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-md">
-          <div className="bg-slate-50 px-4 py-2 border-b border-slate-200">
+          <div className="bg-surface-muted px-4 py-2 border-b border-slate-200">
             <p className="font-semibold text-slate-900 text-sm">
               <code className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono text-xs mr-1.5">
                 {dataPoint.code}
@@ -482,7 +484,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
             layout="vertical"
             margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={true} vertical={false} />
             <XAxis type="number" tickFormatter={(v) => v >= 1e6 ? `$${(v/1e6).toFixed(0)}m` : `$${(v/1e3).toFixed(0)}k`} fontSize={10} />
             <YAxis
               type="category"
@@ -541,21 +543,21 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap">
               {/* View Type Toggle */}
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
                 <Button
-                  variant={viewType === 'bar' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewType('bar')}
-                  className="h-8"
+                  className={cn("h-8", viewType === 'bar' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Bar"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={viewType === 'table' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewType('table')}
-                  className="h-8"
+                  className={cn("h-8", viewType === 'table' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                   title="Table"
                 >
                   <TableIcon className="h-4 w-4" />
@@ -566,21 +568,21 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
               {viewType === 'bar' && (
                 <>
                   {/* Orientation Toggle Buttons */}
-                  <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                  <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
                     <Button
-                      variant={orientation === 'horizontal' ? 'default' : 'ghost'}
+                      variant="ghost"
                       size="sm"
                       onClick={() => setOrientation('horizontal')}
-                      className="h-8"
+                      className={cn("h-8", orientation === 'horizontal' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                       title="Horizontal"
                     >
                       <AlignLeft className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant={orientation === 'vertical' ? 'default' : 'ghost'}
+                      variant="ghost"
                       size="sm"
                       onClick={() => setOrientation('vertical')}
-                      className="h-8"
+                      className={cn("h-8", orientation === 'vertical' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                       title="Vertical"
                     >
                       <AlignVerticalSpaceAround className="h-4 w-4" />
@@ -602,21 +604,21 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
                   </Select>
 
                   {/* Project/Partner Toggle Buttons */}
-                  <div className="flex gap-1 border rounded-lg p-1 bg-white">
+                  <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
                     <Button
-                      variant={showProjectCount ? 'default' : 'ghost'}
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowProjectCount(!showProjectCount)}
-                      className="h-8"
+                      className={cn("h-8", showProjectCount ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                       title="Projects"
                     >
                       <FolderKanban className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant={showPartnerCount ? 'default' : 'ghost'}
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowPartnerCount(!showPartnerCount)}
-                      className="h-8"
+                      className={cn("h-8", showPartnerCount ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                       title="Partners"
                     >
                       <Users className="h-4 w-4" />
@@ -676,7 +678,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
               layout="vertical" 
               margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} horizontal={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
               <XAxis 
                 type="number" 
                 tickFormatter={formatCurrency} 
@@ -757,7 +759,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
               data={chartData} 
               margin={{ top: 20, right: 30, left: 20, bottom: 130 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
               <XAxis 
                 dataKey="name" 
                 tick={<CustomXAxisTick />}

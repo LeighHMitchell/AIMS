@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 // Inline currency formatter to avoid initialization issues
@@ -168,22 +168,22 @@ export function FundingSourceBreakdown({
       }
       
       return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-slate-100 px-3 py-2 border-b border-slate-200">
-            <p className="font-semibold text-slate-900 text-sm">{entry.name}</p>
+        <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground text-sm">{entry.name}</p>
           </div>
           <div className="p-2">
             <table className="w-full text-sm">
               <tbody>
-                <tr className="border-b border-slate-100 last:border-b-0">
+                <tr className="border-b border-border last:border-b-0">
                   <td className="py-1.5 pr-4 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="text-slate-700 font-medium">Amount</span>
+                    <span className="text-foreground font-medium">Amount</span>
                   </td>
-                  <td className="py-1.5 text-right font-semibold text-slate-900">
+                  <td className="py-1.5 text-right font-semibold text-foreground">
                     {formatTooltipValue(entry.value)}
                   </td>
                 </tr>
@@ -198,9 +198,9 @@ export function FundingSourceBreakdown({
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Funding Source Breakdown
           </CardTitle>
           <CardDescription>
@@ -208,7 +208,7 @@ export function FundingSourceBreakdown({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[400px] w-full" />
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </CardContent>
       </Card>
     )
@@ -216,9 +216,9 @@ export function FundingSourceBreakdown({
 
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
+          <CardTitle className="text-lg font-semibold text-foreground">
             Funding Source Breakdown
           </CardTitle>
           <CardDescription>
@@ -226,7 +226,7 @@ export function FundingSourceBreakdown({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">{error}</p>
@@ -238,9 +238,9 @@ export function FundingSourceBreakdown({
   }
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-900">
+        <CardTitle className="text-lg font-semibold text-foreground">
           Funding Source Breakdown
         </CardTitle>
         <CardDescription>
@@ -271,20 +271,20 @@ export function FundingSourceBreakdown({
               </PieChart>
             </ResponsiveContainer>
             <div className="space-y-3">
-              <p className="font-semibold text-slate-900 text-sm">Detailed Breakdown</p>
+              <p className="font-semibold text-foreground text-sm">Detailed Breakdown</p>
               <div className="space-y-2">
                 {fundingSourceData.map((source, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                     <div className="flex items-center gap-3">
                       <div
                         className="w-4 h-4 rounded-full flex-shrink-0"
                         style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                       />
-                      <span className="text-sm font-medium text-slate-900">{source.name}</span>
+                      <span className="text-sm font-medium text-foreground">{source.name}</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-slate-900">{formatCurrency(source.value)}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-sm font-bold text-foreground">{formatCurrency(source.value)}</p>
+                      <p className="text-xs text-muted-foreground">
                         {((source.value / fundingSourceData.reduce((sum, s) => sum + s.value, 0)) * 100).toFixed(1)}%
                       </p>
                     </div>
@@ -294,7 +294,7 @@ export function FundingSourceBreakdown({
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="flex items-center justify-center h-96 text-muted-foreground">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="font-medium">No funding source data available</p>

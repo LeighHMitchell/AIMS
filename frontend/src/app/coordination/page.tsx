@@ -55,7 +55,7 @@ export default function CoordinationPage() {
   if (error) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-card">
           <div className="p-6">
             <Card className="border-red-200 bg-red-50">
               <CardContent className="p-6">
@@ -85,15 +85,15 @@ export default function CoordinationPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-card">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-40 bg-white border-b border-slate-200 px-6 py-4">
+        <div className="sticky top-0 z-40 bg-card border-b border-border px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Network className="h-6 w-6 text-slate-700" />
+              <Network className="h-6 w-6 text-foreground" />
               <div>
-                <h1 className="text-xl font-semibold text-slate-900">Coordination</h1>
-                <p className="text-sm text-slate-600">
+                <h1 className="text-xl font-semibold text-foreground">Coordination</h1>
+                <p className="text-sm text-muted-foreground">
                   {view === "sectors"
                     ? "Who's working in each sector?"
                     : "What is each partner working on?"}
@@ -143,11 +143,11 @@ export default function CoordinationPage() {
                   <DollarSign className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Total Budget</p>
+                  <p className="text-sm text-muted-foreground">Total Budget</p>
                   {loading ? (
                     <Skeleton className="h-6 w-24 mt-1" />
                   ) : (
-                    <p className="text-lg font-semibold text-slate-900">
+                    <p className="text-lg font-semibold text-foreground">
                       {formatCurrency(data?.summary.totalBudget || 0)}
                     </p>
                   )}
@@ -163,11 +163,11 @@ export default function CoordinationPage() {
                   <Layers className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Sectors</p>
+                  <p className="text-sm text-muted-foreground">Sectors</p>
                   {loading ? (
                     <Skeleton className="h-6 w-16 mt-1" />
                   ) : (
-                    <p className="text-lg font-semibold text-slate-900">
+                    <p className="text-lg font-semibold text-foreground">
                       {formatNumber(data?.summary.sectorCount || 0)}
                     </p>
                   )}
@@ -183,11 +183,11 @@ export default function CoordinationPage() {
                   <Users className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Partners</p>
+                  <p className="text-sm text-muted-foreground">Partners</p>
                   {loading ? (
                     <Skeleton className="h-6 w-16 mt-1" />
                   ) : (
-                    <p className="text-lg font-semibold text-slate-900">
+                    <p className="text-lg font-semibold text-foreground">
                       {formatNumber(data?.summary.organizationCount || 0)}
                     </p>
                   )}
@@ -203,11 +203,11 @@ export default function CoordinationPage() {
                   <Activity className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Activities</p>
+                  <p className="text-sm text-muted-foreground">Activities</p>
                   {loading ? (
                     <Skeleton className="h-6 w-16 mt-1" />
                   ) : (
-                    <p className="text-lg font-semibold text-slate-900">
+                    <p className="text-lg font-semibold text-foreground">
                       {formatNumber(data?.summary.activityCount || 0)}
                     </p>
                   )}
@@ -235,7 +235,7 @@ export default function CoordinationPage() {
           </Card>
 
           {/* Explanation */}
-          <div className="mt-4 text-sm text-slate-500 text-center">
+          <div className="mt-4 text-sm text-muted-foreground text-center">
             {view === "sectors" ? (
               <p>
                 Each large circle represents a sector. The smaller circles inside show

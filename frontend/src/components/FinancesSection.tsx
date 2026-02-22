@@ -220,7 +220,7 @@ export default function FinancesSection({
               </thead>
               <tbody>
                 {/* Budgets */}
-                <tr className="border-b hover:bg-gray-50">
+                <tr className="border-b hover:bg-muted/50">
                   <td className="py-2 px-4">Budgets</td>
                   <td className="text-right py-2 px-4">{financialSummary.budgetCount}</td>
                   <td className="text-right py-2 px-4 font-medium">
@@ -234,7 +234,7 @@ export default function FinancesSection({
                 </tr>
 
                 {/* Planned Disbursements */}
-                <tr className="border-b hover:bg-gray-50">
+                <tr className="border-b hover:bg-muted/50">
                   <td className="py-2 px-4">Planned Disbursements</td>
                   <td className="text-right py-2 px-4">{financialSummary.plannedDisbursementCount}</td>
                   <td className="text-right py-2 px-4 font-medium">
@@ -251,7 +251,7 @@ export default function FinancesSection({
                 {Object.entries(financialSummary.transactionsByType)
                   .sort(([a], [b]) => Number(a) - Number(b))
                   .map(([type, data]) => (
-                    <tr key={type} className="border-b hover:bg-gray-50">
+                    <tr key={type} className="border-b hover:bg-muted/50">
                       <td className="py-2 px-4">
                         <span className="font-medium">{getTransactionTypeLabel(type)}</span>
                         <span className="text-xs text-muted-foreground ml-2">(Type {type})</span>
@@ -269,7 +269,7 @@ export default function FinancesSection({
                   ))}
 
                 {/* Total Row */}
-                <tr className="bg-gray-100 font-bold">
+                <tr className="bg-surface-muted font-bold">
                   <td className="py-3 px-4">TOTAL (All Transactions)</td>
                   <td className="text-right py-3 px-4">{financialSummary.transactionCount}</td>
                   <td className="text-right py-3 px-4">

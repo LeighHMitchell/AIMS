@@ -25,6 +25,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { exportToCSV } from '@/lib/csv-export';
 import { exportChartToJPG } from '@/lib/chart-export';
+import { cn } from '@/lib/utils';
 
 // User's simplified data structure
 interface SectorAllocation {
@@ -1527,28 +1528,28 @@ export default function SectorSankeyVisualization({
 
             {/* Bar grouping buttons - only show when bar view is active */}
             {viewMode === 'bar' && (
-              <div className="flex gap-1 border rounded-lg p-1 bg-white">
+              <div className="flex gap-1 rounded-lg p-1 bg-slate-100">
                 <Button
-                  variant={barGroupingMode === 'group' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setBarGroupingMode('group')}
-                  className="h-7 text-xs px-3"
+                  className={cn("h-7 text-xs px-3", barGroupingMode === 'group' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 >
                   Sector Category
                 </Button>
                 <Button
-                  variant={barGroupingMode === 'category' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setBarGroupingMode('category')}
-                  className="h-7 text-xs px-3"
+                  className={cn("h-7 text-xs px-3", barGroupingMode === 'category' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 >
                   Sector
                 </Button>
                 <Button
-                  variant={barGroupingMode === 'sector' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setBarGroupingMode('sector')}
-                  className="h-7 text-xs px-3"
+                  className={cn("h-7 text-xs px-3", barGroupingMode === 'sector' ? "bg-white shadow-sm text-slate-900 hover:bg-white" : "text-slate-500 hover:text-slate-700")}
                 >
                   Sub Sector
                 </Button>

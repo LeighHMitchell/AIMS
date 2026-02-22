@@ -270,12 +270,12 @@ export default function WorkingGroupProfilePage() {
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold text-gray-900">{workingGroup.label}</h1>
+                <h1 className="text-3xl font-bold text-foreground">{workingGroup.label}</h1>
                 <Badge variant={workingGroup.status === 'active' ? 'default' : 'secondary'}>
                   {workingGroup.status}
                 </Badge>
               </div>
-              <p className="text-gray-600 mt-1">{workingGroup.code}</p>
+              <p className="text-muted-foreground mt-1">{workingGroup.code}</p>
               {workingGroup.sector_code && (
                 <Badge variant="outline" className="mt-2">
                   Sector {workingGroup.sector_code}
@@ -344,7 +344,7 @@ export default function WorkingGroupProfilePage() {
                 </div>
               </div>
             ) : (
-              <p className="text-gray-700 whitespace-pre-wrap">
+              <p className="text-foreground whitespace-pre-wrap">
                 {workingGroup.description || 'No description available'}
               </p>
             )}
@@ -354,19 +354,19 @@ export default function WorkingGroupProfilePage() {
         {/* Tabs */}
         <Tabs defaultValue="members" className="space-y-6">
           <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="members" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="members" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Users className="h-4 w-4" />
               Members ({workingGroup.members.length})
             </TabsTrigger>
-            <TabsTrigger value="meetings" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="meetings" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <Calendar className="h-4 w-4" />
               Meetings ({workingGroup.meetings.length})
             </TabsTrigger>
-            <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <FileText className="h-4 w-4" />
               Activities ({workingGroup.activities.length})
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="documents" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <FileText className="h-4 w-4" />
               Documents ({workingGroup.documents.length})
             </TabsTrigger>
@@ -392,7 +392,7 @@ export default function WorkingGroupProfilePage() {
                 <div className="space-y-4">
                   {workingGroup.members.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <UserPlus className="h-12 w-12 text-gray-300 mb-3" />
+                      <UserPlus className="h-12 w-12 text-muted-foreground mb-3" />
                       <p className="text-sm text-muted-foreground">No members yet</p>
                       <p className="text-xs text-muted-foreground mt-1">Add members to this working group to get started</p>
                     </div>
@@ -408,19 +408,19 @@ export default function WorkingGroupProfilePage() {
                           </div>
                           <div className="mt-1 space-y-1">
                             {member.person_organization && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Building className="h-4 w-4" />
                                 {member.person_organization}
                               </div>
                             )}
                             {member.person_email && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Mail className="h-4 w-4" />
                                 {member.person_email}
                               </div>
                             )}
                             {member.joined_on && (
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-muted-foreground">
                                 Joined {format(new Date(member.joined_on), 'MMM d, yyyy')}
                               </p>
                             )}
@@ -454,7 +454,7 @@ export default function WorkingGroupProfilePage() {
                 <div className="space-y-4">
                   {workingGroup.meetings.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <Calendar className="h-12 w-12 text-gray-300 mb-3" />
+                      <Calendar className="h-12 w-12 text-muted-foreground mb-3" />
                       <p className="text-sm text-muted-foreground">No meetings scheduled</p>
                       <p className="text-xs text-muted-foreground mt-1">Schedule meetings to coordinate with working group members</p>
                     </div>
@@ -469,7 +469,7 @@ export default function WorkingGroupProfilePage() {
                                 {meeting.status}
                               </Badge>
                             </div>
-                            <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                            <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-3.5 w-3.5" />
                                 {format(new Date(meeting.meeting_date), 'MMM d, yyyy')}
@@ -507,7 +507,7 @@ export default function WorkingGroupProfilePage() {
                 <div className="space-y-4">
                   {workingGroup.activities.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <FileText className="h-12 w-12 text-gray-300 mb-3" />
+                      <FileText className="h-12 w-12 text-muted-foreground mb-3" />
                       <p className="text-sm text-muted-foreground">No activities linked</p>
                       <p className="text-xs text-muted-foreground mt-1">Activities associated with this working group will appear here</p>
                     </div>
@@ -515,13 +515,13 @@ export default function WorkingGroupProfilePage() {
                     workingGroup.activities.map((activity) => (
                       <div
                         key={activity.id}
-                        className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                        className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer"
                         onClick={() => router.push(`/activities/${activity.id}`)}
                       >
                         <div className="flex justify-between items-start">
                           <div>
                             <h4 className="font-medium">{activity.title}</h4>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm text-muted-foreground mt-1">
                               {activity.iati_id && <span>{activity.iati_id} &middot; </span>}
                               {activity.partner_name}
                             </p>
@@ -558,7 +558,7 @@ export default function WorkingGroupProfilePage() {
                 <div className="space-y-4">
                   {workingGroup.documents.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <FileText className="h-12 w-12 text-gray-300 mb-3" />
+                      <FileText className="h-12 w-12 text-muted-foreground mb-3" />
                       <p className="text-sm text-muted-foreground">No documents uploaded</p>
                       <p className="text-xs text-muted-foreground mt-1">Upload documents to share with working group members</p>
                     </div>
@@ -572,9 +572,9 @@ export default function WorkingGroupProfilePage() {
                               <div>
                                 <h4 className="font-medium">{doc.title}</h4>
                                 {doc.description && (
-                                  <p className="text-sm text-gray-600 mt-1">{doc.description}</p>
+                                  <p className="text-sm text-muted-foreground mt-1">{doc.description}</p>
                                 )}
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                   Uploaded on {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}
                                   {doc.uploaded_by_name && ` by ${doc.uploaded_by_name}`}
                                 </p>

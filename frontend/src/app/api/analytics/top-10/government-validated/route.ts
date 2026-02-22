@@ -172,8 +172,8 @@ export async function GET(request: NextRequest) {
 
     const orgMap = new Map(orgs?.map((o: any) => [o.id, { name: o.name, acronym: o.acronym }]) || []);
 
-    // Convert to array, sort, and limit
-    const result = Array.from(orgTotals.entries())
+    // Convert to array and sort
+    const sorted = Array.from(orgTotals.entries())
       .map(([orgId, data]) => {
         const org = orgMap.get(orgId);
         return {
@@ -184,25 +184,22 @@ export async function GET(request: NextRequest) {
           projectCount: data.projectCount.size
         };
       })
-      .sort((a, b) => b.totalValue - a.totalValue)
-      .slice(0, limit);
+      .sort((a, b) => b.totalValue - a.totalValue);
 
-    // Calculate "Others" if there are more organizations
-    const othersData = Array.from(orgTotals.entries())
-      .slice(limit)
-      .reduce((acc, [, data]) => {
-        acc.value += data.value;
-        data.projectCount.forEach(id => acc.projectCount.add(id));
-        return acc;
-      }, { value: 0, projectCount: new Set<string>() });
+    // Take top N and calculate "Others" from the rest
+    const result = sorted.slice(0, limit);
 
-    if (othersData.value > 0) {
+    const othersSlice = sorted.slice(limit);
+    const othersValue = othersSlice.reduce((sum, item) => sum + item.totalValue, 0);
+    const othersProjects = othersSlice.reduce((sum, item) => sum + item.projectCount, 0);
+
+    if (othersValue > 0) {
       result.push({
         orgId: 'others',
         name: 'All Others',
         acronym: null,
-        totalValue: othersData.value,
-        projectCount: othersData.projectCount.size
+        totalValue: othersValue,
+        projectCount: othersProjects
       });
     }
 

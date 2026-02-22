@@ -114,13 +114,13 @@ export default function RegisterPage() {
                 <Mail className="h-8 w-8 text-blue-600" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
+            <CardTitle className="text-2xl font-bold text-foreground">
               Check Your Email
             </CardTitle>
-            <CardDescription className="text-gray-600 mt-2">
+            <CardDescription className="text-muted-foreground mt-2">
               We've sent a verification link to
             </CardDescription>
-            <p className="font-medium text-gray-900 mt-1">{email}</p>
+            <p className="font-medium text-foreground mt-1">{email}</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert className="border-blue-200 bg-blue-50">
@@ -154,11 +154,11 @@ export default function RegisterPage() {
               </Button>
             </div>
 
-            <p className="text-center text-sm text-gray-500 pt-4">
+            <p className="text-center text-sm text-muted-foreground pt-4">
               Didn't receive the email?{" "}
               <button
                 onClick={() => toast.info("Please wait a few minutes and check your spam folder. If you still don't receive it, try registering again.")}
-                className="text-gray-700 hover:text-gray-900 underline"
+                className="text-foreground hover:text-foreground underline"
               >
                 Learn more
               </button>
@@ -187,10 +187,10 @@ export default function RegisterPage() {
               className="h-24 w-24 object-contain"
             />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className="text-2xl font-bold text-foreground">
             Create your account
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-muted-foreground">
             Join æther to access development finance information
           </CardDescription>
         </CardHeader>
@@ -207,7 +207,7 @@ export default function RegisterPage() {
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+                <label htmlFor="firstName" className="text-sm font-medium text-foreground">
                   First Name
                 </label>
                 <Input
@@ -220,7 +220,7 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="lastName" className="text-sm font-medium text-gray-700">
+                <label htmlFor="lastName" className="text-sm font-medium text-foreground">
                   Last Name
                 </label>
                 <Input
@@ -235,7 +235,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </label>
               <Input
@@ -250,7 +250,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="text-sm font-medium text-foreground">
                 Password <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </label>
               <Input
@@ -266,7 +266,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+              <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
                 Confirm Password <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
               </label>
               <Input
@@ -302,10 +302,10 @@ export default function RegisterPage() {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-300" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#F6F5F4] px-2 text-gray-500">Or continue with</span>
+              <span className="bg-[#F6F5F4] px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
 
@@ -313,32 +313,32 @@ export default function RegisterPage() {
           <GmailLogin redirectTo="/auth/callback?next=/activities" />
 
           {/* Sign In Link */}
-          <div className="mt-6 text-center text-sm text-gray-600">
+          <div className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-gray-900 hover:text-black font-medium underline"
+              className="text-foreground hover:text-black font-medium underline"
             >
               Sign in
             </Link>
           </div>
 
           {/* Terms and Privacy Links */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-center text-xs text-gray-500 mb-2">
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-center text-xs text-muted-foreground mb-2">
               By creating an account, you agree to our
             </p>
-            <div className="flex justify-center gap-4 text-sm text-gray-600">
+            <div className="flex justify-center gap-4 text-sm text-muted-foreground">
               <Link
                 href="/terms-of-service"
-                className="hover:text-gray-900 underline"
+                className="hover:text-foreground underline"
               >
                 Terms of Service
               </Link>
-              <span className="text-gray-400">•</span>
+              <span className="text-muted-foreground">•</span>
               <Link
                 href="/privacy-policy"
-                className="hover:text-gray-900 underline"
+                className="hover:text-foreground underline"
               >
                 Privacy Policy
               </Link>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
@@ -168,13 +168,13 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
       case '3':
         return 'bg-yellow-100 text-yellow-800' // Finalisation
       case '4':
-        return 'bg-slate-100 text-slate-800' // Closed
+        return 'bg-muted text-foreground' // Closed
       case '5':
         return 'bg-red-100 text-red-800' // Cancelled
       case '6':
         return 'bg-orange-100 text-orange-800' // Suspended
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-muted text-foreground'
     }
   }
 
@@ -186,10 +186,7 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-10 w-full bg-slate-100" />
-        <Skeleton className="h-[300px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -197,13 +194,13 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
     <div className="space-y-4">
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Search projects..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 bg-slate-100 border-slate-200 text-slate-800"
+          className="pl-10 bg-muted border-border text-foreground"
         />
       </div>
 
@@ -211,38 +208,38 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-slate-200">
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Project Name</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Donor</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Sector</th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-slate-600">Budget</th>
-              <th className="text-right py-3 px-4 text-sm font-medium text-slate-600">Disbursed</th>
-              <th className="text-center py-3 px-4 text-sm font-medium text-slate-600">Status</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Last Updated</th>
+            <tr className="border-b border-border">
+              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Project Name</th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Donor</th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Sector</th>
+              <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Budget</th>
+              <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Disbursed</th>
+              <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Last Updated</th>
             </tr>
           </thead>
           <tbody>
             {filteredData.slice(0, 10).map((project, index) => (
               <tr 
                 key={project.id}
-                className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
+                className={index % 2 === 0 ? 'bg-card' : 'bg-muted'}
               >
-                <td className="py-3 px-4 text-sm text-slate-700 font-medium">
+                <td className="py-3 px-4 text-sm text-foreground font-medium">
                   {project.name}
                 </td>
-                <td className="py-3 px-4 text-sm text-slate-600">
+                <td className="py-3 px-4 text-sm text-muted-foreground">
                   {project.donor}
                 </td>
-                <td className="py-3 px-4 text-sm text-slate-600">
+                <td className="py-3 px-4 text-sm text-muted-foreground">
                   {project.sector}
                 </td>
-                <td className="py-3 px-4 text-sm text-slate-700 text-right">
+                <td className="py-3 px-4 text-sm text-foreground text-right">
                   {formatCurrency(project.budget)}
                 </td>
-                <td className="py-3 px-4 text-sm text-slate-700 text-right">
+                <td className="py-3 px-4 text-sm text-foreground text-right">
                   {formatCurrency(project.disbursed)}
                   {project.budget > 0 && !isNaN(project.disbursed) && !isNaN(project.budget) && (
-                    <span className="text-xs text-slate-500 ml-1">
+                    <span className="text-xs text-muted-foreground ml-1">
                       ({(() => {
                         const percentage = (project.disbursed / project.budget) * 100
                         return isNaN(percentage) || !isFinite(percentage) ? 0 : Math.round(percentage)
@@ -258,7 +255,7 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
                     {getStatusLabel(project.status)}
                   </Badge>
                 </td>
-                <td className="py-3 px-4 text-sm text-slate-600">
+                <td className="py-3 px-4 text-sm text-muted-foreground">
                   {format(new Date(project.lastUpdated), 'MMM d, yyyy')}
                 </td>
               </tr>
@@ -267,7 +264,7 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
         </table>
         
         {filteredData.length === 0 && (
-          <div className="text-center py-8 text-slate-500">
+          <div className="text-center py-8 text-muted-foreground">
             No projects found matching your criteria
           </div>
         )}

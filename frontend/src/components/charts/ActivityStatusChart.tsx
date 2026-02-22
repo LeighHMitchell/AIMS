@@ -16,8 +16,9 @@ import { AlertCircle, BarChart3, PieChart as PieChartIcon, Table as TableIcon } 
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PieChartSkeleton } from "@/components/ui/skeleton-loader";
+import { LoadingText } from "@/components/ui/loading-text";
 import { getActivityStatusByCode } from "@/data/activity-status-types";
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import Link from "next/link";
 
 interface StatusData {
@@ -170,7 +171,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   // Compact mode renders just the chart without filters
   if (compact) {
     if (loading) {
-      return <PieChartSkeleton height="100%" />;
+      return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
     }
     if (error || !currentData || currentData.length === 0) {
       return (
@@ -207,7 +208,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
   }
 
   if (loading) {
-    return <PieChartSkeleton height="384px" />;
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>;
   }
 
   if (error) {
@@ -375,7 +376,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
               data={currentData.map(item => ({ ...item, displayStatus: formatStatusName(item.status) }))} 
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#cfd0d5" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
               <XAxis dataKey="displayStatus" stroke="#4c5568" fontSize={12} />
               <YAxis stroke="#4c5568" fontSize={12} />
               <Tooltip content={<CustomTooltip />} />

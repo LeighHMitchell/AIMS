@@ -151,6 +151,7 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Activity List", href: "/activities", show: true },
+        { name: "Pooled Funds", href: "/funds", show: true, isNew: true },
       ]
     },
     {

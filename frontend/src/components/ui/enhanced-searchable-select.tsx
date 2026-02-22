@@ -212,10 +212,9 @@ export function EnhancedSearchableSelect({
                           )}
                         />
                         <div className="flex-1 min-w-0">
-                          <span className="text-foreground">
-                            <span className="font-mono text-muted-foreground">{option.code}</span>
-                            {' — '}
-                            {option.name.replace(new RegExp(`^${option.code}\\s*-?\\s*`), "")}
+                          <span className="text-foreground flex items-center gap-2">
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
+                            <span>{option.name.replace(new RegExp(`^${option.code}\\s*-?\\s*`), "")}</span>
                           </span>
                           {option.description && (
                             <div className="text-sm text-muted-foreground mt-1.5 leading-relaxed">

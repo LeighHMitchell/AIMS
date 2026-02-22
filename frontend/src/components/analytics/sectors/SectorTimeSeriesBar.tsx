@@ -6,6 +6,7 @@ import { CardContent } from '@/components/ui/card';
 import { ChartDataPoint, formatCurrency, formatTooltipCurrency, getYearTotal } from './sectorTimeSeriesQueries';
 import { generateSectorColorMap } from './sectorColorMap';
 import { TimeSeriesDataType } from '@/types/sector-analytics';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 
 interface SectorTimeSeriesBarProps {
   data: ChartDataPoint[];
@@ -30,7 +31,7 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
       
       return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-lg text-sm max-h-[400px] overflow-hidden">
-          <div className="bg-slate-50 px-4 py-2 border-b border-slate-200">
+          <div className="bg-surface-muted px-4 py-2 border-b border-slate-200">
             <p className="font-semibold text-slate-900">Year: {label}</p>
             <p className="text-slate-600">
               Total {dataType === 'planned' ? 'Planned' : 'Actual'}: <span className="font-bold text-slate-900">{formatTooltipCurrency(yearTotal)}</span>
@@ -80,7 +81,7 @@ export function SectorTimeSeriesBar({ data, sectorNames, sectorCodes = {}, dataT
             top: 10, right: 30, left: 20, bottom: 0,
           }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} vertical={false} />
           <XAxis
             dataKey="year"
             tick={{ fill: '#64748b', fontSize: 12 }}

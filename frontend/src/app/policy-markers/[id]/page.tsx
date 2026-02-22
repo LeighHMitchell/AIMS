@@ -185,8 +185,8 @@ export default function PolicyMarkerProfilePage() {
         <div className="min-h-screen"><div className="w-full p-6">
           <Card><CardContent className="p-8 text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Error Loading Policy Marker</h2>
-            <p className="text-slate-600 mb-4">{error || 'Failed to load'}</p>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Policy Marker</h2>
+            <p className="text-muted-foreground mb-4">{error || 'Failed to load'}</p>
             <Button onClick={() => router.push('/policy-markers')}><ArrowLeft className="h-4 w-4 mr-2" />Back to Policy Markers</Button>
           </CardContent></Card>
         </div></div>
@@ -205,7 +205,7 @@ export default function PolicyMarkerProfilePage() {
         <div className="w-full p-6">
           {/* Back button */}
           <div className="flex items-center justify-between mb-4">
-            <Button variant="ghost" size="sm" onClick={() => router.push('/policy-markers')} className="text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <Button variant="ghost" size="sm" onClick={() => router.push('/policy-markers')} className="text-muted-foreground hover:text-foreground hover:bg-muted">
               <ArrowLeft className="h-4 w-4 mr-1.5" />Policy Markers
             </Button>
           </div>
@@ -218,16 +218,16 @@ export default function PolicyMarkerProfilePage() {
                   <IconComponent className="w-8 h-8" style={{ color: themeColor }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl font-bold text-slate-900 mb-1">{marker.name}</h1>
-                  <p className="text-sm text-slate-600 leading-relaxed mb-3">{marker.description}</p>
+                  <h1 className="text-2xl font-bold text-foreground mb-1">{marker.name}</h1>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">{marker.description}</p>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <code className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded font-mono border border-slate-200">
+                    <code className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded font-mono border border-border">
                       {marker.is_iati_standard ? marker.iati_code || marker.code : marker.code}
                     </code>
                     <Badge className={badgeClass}>{getMarkerTypeLabel(marker.marker_type)}</Badge>
                     {marker.is_iati_standard && <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-700">IATI Standard</Badge>}
                     {marker.vocabulary && marker.vocabulary !== '1' && (
-                      <Badge variant="outline" className="border-slate-300 text-slate-700">Vocabulary: {marker.vocabulary}</Badge>
+                      <Badge variant="outline" className="border-border text-foreground">Vocabulary: {marker.vocabulary}</Badge>
                     )}
                   </div>
                 </div>
@@ -241,8 +241,8 @@ export default function PolicyMarkerProfilePage() {
           {/* Mini Chart Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Funding Trends */}
-            <Card className="border-slate-200">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-slate-600">Funding Trends</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Funding Trends</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {transactionsByYear.length > 0 ? (
                   <div className="h-36 -mx-1">
@@ -258,8 +258,8 @@ export default function PolicyMarkerProfilePage() {
                         <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
                           <div className={TOOLTIP_CLASSES}>
-                            <p className="font-medium text-xs text-slate-900 mb-1">{payload[0]?.payload?.year}</p>
-                            {payload.map((e: any, i: number) => <p key={i} className="text-xs text-slate-600">{e.name}: {formatCurrencyShort(e.value)}</p>)}
+                            <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
+                            {payload.map((e: any, i: number) => <p key={i} className="text-xs text-muted-foreground">{e.name}: {formatCurrencyShort(e.value)}</p>)}
                           </div>
                         ) : null} />
                         <Area type="monotone" dataKey="commitments" stackId="1" stroke={themeColor} strokeWidth={2} fill="url(#pmGrad)" name="Commitments" />
@@ -267,21 +267,21 @@ export default function PolicyMarkerProfilePage() {
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No data</div>}
+                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No data</div>}
               </CardContent>
             </Card>
 
             {/* Significance Distribution mini */}
-            <Card className="border-slate-200">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-slate-600">Significance Distribution</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Significance Distribution</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 <SignificanceDistribution distribution={significanceDistribution} themeColor={themeColor} compact />
               </CardContent>
             </Card>
 
             {/* Top Donors mini */}
-            <Card className="border-slate-200">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-slate-600">Top Donors</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Top Donors</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {donorRankings.length > 0 ? (
                   <div className="h-36 -mx-1">
@@ -290,19 +290,19 @@ export default function PolicyMarkerProfilePage() {
                         <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} width={65} />
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
-                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-slate-900">{payload[0]?.payload?.fullName}</p><p className="text-xs text-slate-600">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p></div>
+                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)} disbursed</p></div>
                         ) : null} />
                         <Bar dataKey="value" fill={themeColor} radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No donor data</div>}
+                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No donor data</div>}
               </CardContent>
             </Card>
 
             {/* Geographic Spread mini */}
-            <Card className="border-slate-200">
-              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-slate-600">Geographic Spread</CardTitle></CardHeader>
+            <Card className="border-border">
+              <CardHeader className="py-2 px-3"><CardTitle className="text-xs font-medium text-muted-foreground">Geographic Spread</CardTitle></CardHeader>
               <CardContent className="px-1 pb-2">
                 {geographicDistribution.length > 0 ? (
                   <div className="h-36 -mx-1">
@@ -311,13 +311,13 @@ export default function PolicyMarkerProfilePage() {
                         <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
                         <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} width={30} />
                         <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
-                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-slate-900">{payload[0]?.payload?.fullName}</p><p className="text-xs text-slate-600">{formatCurrencyShort(payload[0]?.value as number)}</p></div>
+                          <div className={TOOLTIP_CLASSES}><p className="font-medium text-xs text-foreground">{payload[0]?.payload?.fullName}</p><p className="text-xs text-muted-foreground">{formatCurrencyShort(payload[0]?.value as number)}</p></div>
                         ) : null} />
                         <Bar dataKey="value" fill={themeColor} radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                ) : <div className="h-36 flex items-center justify-center text-slate-400 text-xs">No geo data</div>}
+                ) : <div className="h-36 flex items-center justify-center text-muted-foreground text-xs">No geo data</div>}
               </CardContent>
             </Card>
           </div>
@@ -338,9 +338,9 @@ export default function PolicyMarkerProfilePage() {
             <TabsContent value="overview" className="space-y-6">
               <Card><CardHeader><CardTitle className="text-sm">Summary</CardTitle></CardHeader><CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div><p className="text-xs font-medium text-slate-600 mb-1">Aligned Activities</p><p className="text-3xl font-bold text-slate-900">{formatNumber(metrics.totalActivities)}</p><p className="text-xs text-slate-500 mt-0.5">using this policy marker</p></div>
-                  <div><p className="text-xs font-medium text-slate-600 mb-1">Organizations</p><p className="text-3xl font-bold text-slate-900">{formatNumber(metrics.totalOrganizations)}</p><p className="text-xs text-slate-500 mt-0.5">involved</p></div>
-                  <div><p className="text-xs font-medium text-slate-600 mb-1">Total Financial Value</p><p className="text-3xl font-bold text-slate-900">{formatCurrencyShort(metrics.totalValue)}</p><p className="text-xs text-slate-500 mt-0.5">across all transactions</p></div>
+                  <div><p className="text-xs font-medium text-muted-foreground mb-1">Aligned Activities</p><p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalActivities)}</p><p className="text-xs text-muted-foreground mt-0.5">using this policy marker</p></div>
+                  <div><p className="text-xs font-medium text-muted-foreground mb-1">Organizations</p><p className="text-3xl font-bold text-foreground">{formatNumber(metrics.totalOrganizations)}</p><p className="text-xs text-muted-foreground mt-0.5">involved</p></div>
+                  <div><p className="text-xs font-medium text-muted-foreground mb-1">Total Financial Value</p><p className="text-3xl font-bold text-foreground">{formatCurrencyShort(metrics.totalValue)}</p><p className="text-xs text-muted-foreground mt-0.5">across all transactions</p></div>
                 </div>
               </CardContent></Card>
 
@@ -366,17 +366,17 @@ export default function PolicyMarkerProfilePage() {
                 <Card><CardHeader><CardTitle className="text-sm">Top Activities</CardTitle></CardHeader><CardContent>
                   <div className="space-y-2">
                     {activities.slice(0, 5).map(activity => (
-                      <Link key={activity.id} href={`/activities/${activity.id}`} className="flex items-start justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                      <Link key={activity.id} href={`/activities/${activity.id}`} className="flex items-start justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm text-slate-900 truncate">{activity.title_narrative || 'Untitled Activity'}</h3>
+                          <h3 className="font-medium text-sm text-foreground truncate">{activity.title_narrative || 'Untitled Activity'}</h3>
                           <div className="flex items-center gap-2 mt-0.5">
                             {activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded">{activity.iati_identifier}</code>}
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">{getSignificanceLabel(activity.significance, isRMNCH)}</Badge>
                           </div>
                         </div>
                         <div className="text-right ml-3 flex-shrink-0">
-                          <p className="text-sm font-semibold text-slate-900">{formatCurrencyShort(activity.totalValue)}</p>
-                          <p className="text-[10px] text-slate-500">{activity.transactionCount} tx</p>
+                          <p className="text-sm font-semibold text-foreground">{formatCurrencyShort(activity.totalValue)}</p>
+                          <p className="text-[10px] text-muted-foreground">{activity.transactionCount} tx</p>
                         </div>
                       </Link>
                     ))}
@@ -425,8 +425,8 @@ export default function PolicyMarkerProfilePage() {
                           <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={{ stroke: '#e5e7eb' }} tickLine={false} tickFormatter={v => formatCurrency(v)} />
                           <RechartsTooltip content={({ active, payload }) => active && payload?.length ? (
                             <div className={TOOLTIP_CLASSES}>
-                              <p className="font-medium text-xs text-slate-900 mb-1">{payload[0]?.payload?.year}</p>
-                              {payload.map((e: any, i: number) => <p key={i} className="text-xs text-slate-600"><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: e.stroke || e.fill }} />{e.name}: {formatCurrencyShort(e.value)}</p>)}
+                              <p className="font-medium text-xs text-foreground mb-1">{payload[0]?.payload?.year}</p>
+                              {payload.map((e: any, i: number) => <p key={i} className="text-xs text-muted-foreground"><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: e.stroke || e.fill }} />{e.name}: {formatCurrencyShort(e.value)}</p>)}
                             </div>
                           ) : null} />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -436,7 +436,7 @@ export default function PolicyMarkerProfilePage() {
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
-                  ) : <div className="h-72 flex items-center justify-center text-slate-400 text-sm">No time-series data</div>}
+                  ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No time-series data</div>}
                 </CardContent></Card>
 
                 <Card><CardHeader><CardTitle className="text-sm">Transaction Type Breakdown</CardTitle></CardHeader><CardContent>
@@ -452,16 +452,16 @@ export default function PolicyMarkerProfilePage() {
                         </RechartsPieChart>
                       </ResponsiveContainer>
                     </div>
-                  ) : <div className="h-72 flex items-center justify-center text-slate-400 text-sm">No transaction data</div>}
+                  ) : <div className="h-72 flex items-center justify-center text-muted-foreground text-sm">No transaction data</div>}
                 </CardContent></Card>
               </div>
 
               <Card><CardHeader><CardTitle className="text-sm">Financial Summary</CardTitle></CardHeader><CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div><p className="text-xs text-slate-600 mb-1">Commitments</p><p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.commitments)}</p></div>
-                  <div><p className="text-xs text-slate-600 mb-1">Disbursements</p><p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.disbursements)}</p></div>
-                  <div><p className="text-xs text-slate-600 mb-1">Expenditures</p><p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.expenditures)}</p></div>
-                  <div><p className="text-xs text-slate-600 mb-1">Inflows</p><p className="text-xl font-bold text-slate-900">{formatCurrencyShort(metrics.inflows)}</p></div>
+                  <div><p className="text-xs text-muted-foreground mb-1">Commitments</p><p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.commitments)}</p></div>
+                  <div><p className="text-xs text-muted-foreground mb-1">Disbursements</p><p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.disbursements)}</p></div>
+                  <div><p className="text-xs text-muted-foreground mb-1">Expenditures</p><p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.expenditures)}</p></div>
+                  <div><p className="text-xs text-muted-foreground mb-1">Inflows</p><p className="text-xl font-bold text-foreground">{formatCurrencyShort(metrics.inflows)}</p></div>
                 </div>
               </CardContent></Card>
             </TabsContent>
@@ -476,23 +476,37 @@ export default function PolicyMarkerProfilePage() {
                     { key: '2', label: 'Active', count: activities.filter(a => a.activity_status === '2').length },
                     { key: '4', label: 'Closed', count: activities.filter(a => a.activity_status === '4' || a.activity_status === '3').length },
                   ].map(f => (
-                    <button key={f.key} onClick={() => setActivityStatusFilter(f.key)} className={`text-xs px-2.5 py-1 rounded-md transition-colors ${activityStatusFilter === f.key ? 'text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} style={activityStatusFilter === f.key ? { backgroundColor: themeColor } : undefined}>
+                    <button key={f.key} onClick={() => setActivityStatusFilter(f.key)} className={`text-xs px-2.5 py-1 rounded-md transition-colors ${activityStatusFilter === f.key ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={activityStatusFilter === f.key ? { backgroundColor: themeColor } : undefined}>
                       {f.label} ({f.count})
                     </button>
                   ))}
                 </div>
                 <div className="flex items-center gap-2">
-                  <select value={activitySort} onChange={e => setActivitySort(e.target.value)} className="text-xs border border-slate-200 rounded-md px-2 py-1 text-slate-600">
+                  <select value={activitySort} onChange={e => setActivitySort(e.target.value)} className="text-xs border border-border rounded-md px-2 py-1 text-muted-foreground">
                     <option value="value">Sort by Value</option><option value="committed">Sort by Committed</option><option value="disbursed">Sort by Disbursed</option><option value="significance">Sort by Significance</option><option value="title">Sort by Title</option>
                   </select>
-                  <div className="flex border border-slate-200 rounded-md overflow-hidden">
-                    <button onClick={() => setActivityView('table')} className={`p-1.5 ${activityView === 'table' ? 'bg-slate-100' : 'bg-white'}`}><TableIcon className="h-3.5 w-3.5 text-slate-600" /></button>
-                    <button onClick={() => setActivityView('card')} className={`p-1.5 ${activityView === 'card' ? 'bg-slate-100' : 'bg-white'}`}><LayoutGrid className="h-3.5 w-3.5 text-slate-600" /></button>
+                  <div className="flex border border-border rounded-md">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActivityView('table')}
+                      className={`rounded-r-none h-7 px-2 ${activityView === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+                    >
+                      <TableIcon className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActivityView('card')}
+                      className={`rounded-l-none h-7 px-2 ${activityView === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+                    >
+                      <LayoutGrid className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-500">{filteredActivities.length} activit{filteredActivities.length === 1 ? 'y' : 'ies'}</p>
+              <p className="text-xs text-muted-foreground">{filteredActivities.length} activit{filteredActivities.length === 1 ? 'y' : 'ies'}</p>
 
               {activityView === 'card' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -504,11 +518,11 @@ export default function PolicyMarkerProfilePage() {
                             <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">Sig {activity.significance}</Badge>
                           </div>
-                          <h3 className="font-medium text-sm text-slate-900 line-clamp-2 mb-2">{activity.title_narrative || 'Untitled Activity'}</h3>
-                          {activity.iati_identifier && <code className="text-[10px] font-mono text-slate-400 block mb-2 truncate">{activity.iati_identifier}</code>}
-                          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
-                            <div><p className="text-[10px] text-slate-500">Committed</p><p className="text-xs font-semibold text-slate-900">{formatCurrencyShort(activity.commitments)}</p></div>
-                            <div><p className="text-[10px] text-slate-500">Disbursed</p><p className="text-xs font-semibold text-slate-900">{formatCurrencyShort(activity.disbursements)}</p></div>
+                          <h3 className="font-medium text-sm text-foreground line-clamp-2 mb-2">{activity.title_narrative || 'Untitled Activity'}</h3>
+                          {activity.iati_identifier && <code className="text-[10px] font-mono text-muted-foreground block mb-2 truncate">{activity.iati_identifier}</code>}
+                          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
+                            <div><p className="text-[10px] text-muted-foreground">Committed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
+                            <div><p className="text-[10px] text-muted-foreground">Disbursed</p><p className="text-xs font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
                           </div>
                         </CardContent>
                       </Card>
@@ -517,20 +531,20 @@ export default function PolicyMarkerProfilePage() {
                 </div>
               ) : (
                 <Card><CardContent className="p-0"><div className="overflow-x-auto">
-                  <table className="w-full text-xs"><thead><tr className="border-b border-slate-200 bg-slate-50">
-                    <th className="text-left py-2.5 px-3 text-slate-600 font-medium">Title</th>
-                    <th className="text-center py-2.5 px-3 text-slate-600 font-medium">Status</th>
-                    <th className="text-center py-2.5 px-3 text-slate-600 font-medium">Significance</th>
-                    <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Committed</th>
-                    <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Disbursed</th>
+                  <table className="w-full text-xs"><thead><tr className="border-b border-border bg-muted">
+                    <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Title</th>
+                    <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Status</th>
+                    <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Significance</th>
+                    <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Committed</th>
+                    <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Disbursed</th>
                   </tr></thead><tbody>
                     {paginatedActivities.map(activity => (
-                      <tr key={activity.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-2 px-3"><Link href={`/activities/${activity.id}`} className="font-medium text-slate-900 hover:underline">{(activity.title_narrative || 'Untitled').substring(0, 60)}</Link></td>
+                      <tr key={activity.id} className="border-b border-border hover:bg-muted/50">
+                        <td className="py-2 px-3"><Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline">{(activity.title_narrative || 'Untitled').substring(0, 60)}</Link></td>
                         <td className="py-2 px-3 text-center"><Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge></td>
                         <td className="py-2 px-3 text-center"><Badge variant="outline" className="text-[10px] px-1.5 py-0">{getSignificanceLabel(activity.significance, isRMNCH)}</Badge></td>
-                        <td className="py-2 px-3 text-right text-slate-900">{formatCurrencyShort(activity.commitments)}</td>
-                        <td className="py-2 px-3 text-right text-slate-900">{formatCurrencyShort(activity.disbursements)}</td>
+                        <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(activity.commitments)}</td>
+                        <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(activity.disbursements)}</td>
                       </tr>
                     ))}
                   </tbody></table>
@@ -540,7 +554,7 @@ export default function PolicyMarkerProfilePage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2">
                   <Button variant="outline" size="sm" disabled={activityPage <= 1} onClick={() => setActivityPage(p => p - 1)} className="text-xs h-7">Previous</Button>
-                  <span className="text-xs text-slate-500">Page {activityPage} of {totalPages}</span>
+                  <span className="text-xs text-muted-foreground">Page {activityPage} of {totalPages}</span>
                   <Button variant="outline" size="sm" disabled={activityPage >= totalPages} onClick={() => setActivityPage(p => p + 1)} className="text-xs h-7">Next</Button>
                 </div>
               )}
@@ -558,16 +572,16 @@ export default function PolicyMarkerProfilePage() {
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-1">
                   {['all', 'funding', 'implementing', 'accountable'].map(role => (
-                    <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-xs px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} style={orgRoleFilter === role ? { backgroundColor: themeColor } : undefined}>
+                    <button key={role} onClick={() => setOrgRoleFilter(role)} className={`text-xs px-2.5 py-1 rounded-md transition-colors capitalize ${orgRoleFilter === role ? 'text-white' : 'bg-muted text-muted-foreground hover:bg-muted'}`} style={orgRoleFilter === role ? { backgroundColor: themeColor } : undefined}>
                       {role === 'all' ? 'All' : role}
                     </button>
                   ))}
                 </div>
-                <select value={orgSort} onChange={e => setOrgSort(e.target.value)} className="text-xs border border-slate-200 rounded-md px-2 py-1 text-slate-600">
+                <select value={orgSort} onChange={e => setOrgSort(e.target.value)} className="text-xs border border-border rounded-md px-2 py-1 text-muted-foreground">
                   <option value="value">Sort by Value</option><option value="activities">Sort by Activities</option><option value="name">Sort by Name</option>
                 </select>
               </div>
-              <p className="text-xs text-slate-500">{filteredOrgs.length} organization{filteredOrgs.length !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-muted-foreground">{filteredOrgs.length} organization{filteredOrgs.length !== 1 ? 's' : ''}</p>
               {filteredOrgs.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredOrgs.map(org => (
@@ -580,11 +594,11 @@ export default function PolicyMarkerProfilePage() {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm text-slate-900 truncate">{org.name}</h3>
-                            {org.acronym && <p className="text-[10px] text-slate-500">{org.acronym}</p>}
+                            <h3 className="font-medium text-sm text-foreground truncate">{org.name}</h3>
+                            {org.acronym && <p className="text-[10px] text-muted-foreground">{org.acronym}</p>}
                             <div className="flex items-center gap-3 mt-1.5">
-                              <span className="text-xs font-semibold text-slate-900">{formatCurrencyShort(org.totalValue)}</span>
-                              <span className="text-[10px] text-slate-400">{org.activityCount} activit{org.activityCount === 1 ? 'y' : 'ies'}</span>
+                              <span className="text-xs font-semibold text-foreground">{formatCurrencyShort(org.totalValue)}</span>
+                              <span className="text-[10px] text-muted-foreground">{org.activityCount} activit{org.activityCount === 1 ? 'y' : 'ies'}</span>
                             </div>
                             {org.contributionTypes.length > 0 && (
                               <div className="flex gap-1 mt-1">
@@ -597,7 +611,7 @@ export default function PolicyMarkerProfilePage() {
                     </Link>
                   ))}
                 </div>
-              ) : <Card><CardContent className="p-8 text-center"><p className="text-slate-500 text-sm">No organizations found</p></CardContent></Card>}
+              ) : <Card><CardContent className="p-8 text-center"><p className="text-muted-foreground text-sm">No organizations found</p></CardContent></Card>}
             </TabsContent>
 
             {/* Geography */}
@@ -617,23 +631,23 @@ export default function PolicyMarkerProfilePage() {
                 </CardHeader><CardContent>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
-                      <thead><tr className="border-b border-slate-200 bg-slate-50">
-                        <th className="text-left py-2.5 px-3 text-slate-600 font-medium w-8">#</th>
-                        <th className="text-left py-2.5 px-3 text-slate-600 font-medium">Country</th>
-                        <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Activities</th>
-                        <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Committed</th>
-                        <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Disbursed</th>
-                        <th className="text-right py-2.5 px-3 text-slate-600 font-medium">Total</th>
+                      <thead><tr className="border-b border-border bg-muted">
+                        <th className="text-left py-2.5 px-3 text-muted-foreground font-medium w-8">#</th>
+                        <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Country</th>
+                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Activities</th>
+                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Committed</th>
+                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Disbursed</th>
+                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Total</th>
                       </tr></thead>
                       <tbody>
                         {geographicDistribution.map((g, i) => (
-                          <tr key={g.countryCode} className="border-b border-slate-100 hover:bg-slate-50">
-                            <td className="py-2 px-3 text-slate-400">{i + 1}</td>
-                            <td className="py-2 px-3"><div className="flex items-center gap-2"><Flag code={g.countryCode} className="w-5 h-3 object-cover rounded-sm" fallback={<MapPin className="w-3 h-3 text-slate-400" />} /><span className="text-slate-900">{g.countryName}</span><span className="text-slate-400">({g.countryCode})</span></div></td>
+                          <tr key={g.countryCode} className="border-b border-border hover:bg-muted/50">
+                            <td className="py-2 px-3 text-muted-foreground">{i + 1}</td>
+                            <td className="py-2 px-3"><div className="flex items-center gap-2"><Flag code={g.countryCode} className="w-5 h-3 object-cover rounded-sm" fallback={<MapPin className="w-3 h-3 text-muted-foreground" />} /><span className="text-foreground">{g.countryName}</span><span className="text-muted-foreground">({g.countryCode})</span></div></td>
                             <td className="py-2 px-3 text-right">{g.activityCount}</td>
-                            <td className="py-2 px-3 text-right text-slate-900">{formatCurrencyShort(g.commitments)}</td>
-                            <td className="py-2 px-3 text-right text-slate-900">{formatCurrencyShort(g.disbursements)}</td>
-                            <td className="py-2 px-3 text-right font-medium text-slate-900">{formatCurrencyShort(g.value)}</td>
+                            <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(g.commitments)}</td>
+                            <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(g.disbursements)}</td>
+                            <td className="py-2 px-3 text-right font-medium text-foreground">{formatCurrencyShort(g.value)}</td>
                           </tr>
                         ))}
                       </tbody>

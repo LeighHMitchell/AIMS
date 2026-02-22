@@ -218,7 +218,7 @@ export function ParticipatingOrgModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-visible">
         <DialogHeader>
           <DialogTitle>
             {editingOrg ? 'Edit Participating Organization' : 'Add Participating Organization'}
@@ -228,7 +228,7 @@ export function ParticipatingOrgModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="flex-1 overflow-y-auto space-y-6 py-4">
           {/* Organization Selection */}
           <div className="space-y-2">
             <Label htmlFor="organization" className="flex items-center gap-2">
@@ -240,7 +240,7 @@ export function ParticipatingOrgModal({
               onValueChange={(value) => setFormData(prev => ({ ...prev, organization_id: value }))}
               organizations={organizations}
               placeholder="Search for an organization..."
-              disabled={orgsLoading || !!editingOrg}
+              disabled={orgsLoading}
               open={activeDropdown === 'organization'}
               onOpenChange={(isOpen) => setActiveDropdown(isOpen ? 'organization' : null)}
             />

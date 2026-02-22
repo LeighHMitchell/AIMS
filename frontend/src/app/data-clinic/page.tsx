@@ -106,35 +106,35 @@ export default function DataClinicPage() {
           {/* Tabs */}
           <Tabs defaultValue="activities" className="w-full">
             <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-              <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                 <FileText className="h-4 w-4" />
                 Activities
               </TabsTrigger>
-              <TabsTrigger value="transactions" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="transactions" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                 <ArrowLeftRight className="h-4 w-4" />
                 Transactions
               </TabsTrigger>
-              <TabsTrigger value="budgets" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="budgets" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                 <Wallet className="h-4 w-4" />
                 Budgets
               </TabsTrigger>
-              <TabsTrigger value="organizations" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="organizations" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                 <Building2 className="h-4 w-4" />
                 Organizations
               </TabsTrigger>
-              <TabsTrigger value="duplicates" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="duplicates" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                 <Copy className="h-4 w-4" />
                 Duplicates
               </TabsTrigger>
-              <TabsTrigger value="timeliness" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="timeliness" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                 <Clock className="h-4 w-4" />
                 Timeliness
               </TabsTrigger>
-              <TabsTrigger value="financial-dates" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="financial-dates" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                 <CalendarDays className="h-4 w-4" />
                 Financial Dates
               </TabsTrigger>
-              <TabsTrigger value="financial-completeness" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="financial-completeness" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                 <PieChart className="h-4 w-4" />
                 Financial Completeness
               </TabsTrigger>

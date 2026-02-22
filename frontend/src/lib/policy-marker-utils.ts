@@ -84,7 +84,7 @@ export const MARKER_TYPE_BADGE_CLASSES: Record<string, string> = {
   environmental: 'bg-green-100 text-green-800 border-green-300',
   social_governance: 'bg-blue-100 text-blue-800 border-blue-300',
   other: 'bg-purple-100 text-purple-800 border-purple-300',
-  custom: 'bg-slate-100 text-slate-800 border-slate-300',
+  custom: 'bg-muted text-foreground border-border',
 }
 
 /**

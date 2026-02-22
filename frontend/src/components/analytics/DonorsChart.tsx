@@ -12,9 +12,10 @@ import {
   Cell
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { BarChart3, DollarSign, Wallet, Calendar } from 'lucide-react'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 type ViewMode = 'budgets' | 'disbursements' | 'planned'
 
@@ -241,9 +242,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-[400px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -274,7 +273,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
       <div className="space-y-4">
         {/* View Selector */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-slate-600">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {getViewIcon()}
             <span>Viewing by:</span>
           </div>
@@ -305,11 +304,11 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
           </Select>
         </div>
 
-        <div className="flex items-center justify-center h-[400px] bg-slate-50 rounded-lg">
+        <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
           <div className="text-center">
-            <BarChart3 className="h-8 w-8 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600">No donor {getViewLabel()} available</p>
-            <p className="text-sm text-slate-500 mt-2">Try adjusting your date range or filters</p>
+            <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">No donor {getViewLabel()} available</p>
+            <p className="text-sm text-muted-foreground mt-2">Try adjusting your date range or filters</p>
           </div>
         </div>
       </div>
@@ -320,7 +319,7 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
     <div className="space-y-4">
       {/* View Selector */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-slate-600">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           {getViewIcon()}
           <span>Viewing by:</span>
         </div>
@@ -357,9 +356,9 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
         layout="vertical"
         margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
       >
-        <CartesianGrid 
-          strokeDasharray="3 3" 
-          stroke="#e2e8f0" 
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke={CHART_STRUCTURE_COLORS.grid}
           horizontal={false}
         />
         <XAxis 
@@ -375,15 +374,29 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
           axisLine={{ stroke: '#cbd5e1' }}
           width={90}
         />
-        <Tooltip 
-          formatter={(value: number) => formatCurrency(value)}
-          contentStyle={{
-            backgroundColor: '#1e293b',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#fff'
+        <Tooltip
+          content={({ active, payload, label }: any) => {
+            if (active && payload && payload.length) {
+              return (
+                <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+                  <div className="bg-surface-muted px-3 py-2 border-b border-border">
+                    <p className="font-semibold text-foreground text-sm">{label}</p>
+                  </div>
+                  <div className="p-2">
+                    <table className="w-full text-sm">
+                      <tbody>
+                        <tr>
+                          <td className="py-1 pr-4 text-foreground font-medium">Amount</td>
+                          <td className="py-1 text-right font-semibold text-foreground">{formatCurrency(payload[0].value)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )
+            }
+            return null
           }}
-          labelStyle={{ color: '#94a3b8' }}
           cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
         />
         <Bar dataKey="value" radius={[0, 4, 4, 0]}>

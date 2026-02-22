@@ -9,7 +9,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingText } from "@/components/ui/loading-text";
 import {
   Select,
   SelectContent,
@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
-import { TableSkeleton } from "@/components/ui/skeleton-loader";
 import {
   Table,
   TableBody,
@@ -47,6 +46,7 @@ import {
   ClassificationType,
 } from "@/types/aid-on-budget";
 import { apiFetch } from '@/lib/api-fetch';
+import { cn } from '@/lib/utils';
 
 interface EnhancedAidOnBudgetChartProps {
   refreshKey?: number;
@@ -982,9 +982,9 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-card border-border">
         <CardContent className="pt-6">
-          <Skeleton className="h-[700px] w-full" />
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </CardContent>
       </Card>
     );
@@ -992,12 +992,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
 
   if (error) {
     return (
-      <Card className="bg-white border-slate-200">
+      <Card className="bg-card border-border">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center h-[700px] text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-            <p className="text-lg font-medium text-gray-900 mb-2">Error loading data</p>
-            <p className="text-sm text-gray-500 mb-4">{error}</p>
+            <p className="text-lg font-medium text-foreground mb-2">Error loading data</p>
+            <p className="text-sm text-muted-foreground mb-4">{error}</p>
             <Button onClick={fetchData} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
@@ -1011,7 +1011,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   const summary = data?.summary;
 
   return (
-    <Card className="bg-white border-slate-200">
+    <Card className="bg-card border-border">
       <CardHeader>
         <div className="flex items-end justify-end gap-3">
           {/* Year Range Selector */}
@@ -1033,17 +1033,17 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="p-3 w-auto">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-slate-700">Select Year Range</span>
+                  <span className="text-xs font-medium text-foreground">Select Year Range</span>
                   <div className="flex gap-1">
                     <button
                       onClick={selectAllYears}
-                      className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                      className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                     >
                       All
                     </button>
                     <button
                       onClick={selectDataRange}
-                      className="text-xs text-slate-500 hover:text-slate-700 px-2 py-0.5 hover:bg-slate-100 rounded"
+                      className="text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 hover:bg-muted rounded"
                     >
                       Data
                     </button>
@@ -1068,7 +1068,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                               ? "bg-primary text-primary-foreground"
                               : inRange
                                 ? "bg-primary/20 text-primary"
-                                : "text-slate-600 hover:bg-slate-100"
+                                : "text-muted-foreground hover:bg-muted"
                           }
                         `}
                         title="Click to select start, then click another to select end"
@@ -1078,7 +1078,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                     );
                   })}
                 </div>
-                <p className="text-[10px] text-slate-400 mt-2 text-center">
+                <p className="text-[10px] text-muted-foreground mt-2 text-center">
                   Click start year, then click end year
                 </p>
               </DropdownMenuContent>
@@ -1119,21 +1119,21 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             <RefreshCw className="h-4 w-4" />
           </Button>
           {/* View Toggle */}
-          <div className="flex items-center border rounded-md">
+          <div className="flex items-center gap-1 rounded-lg p-1 bg-muted">
             <Button
-              variant={viewMode === "chart" ? "default" : "ghost"}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode("chart")}
-              className="rounded-r-none"
+              className={cn(viewMode === "chart" ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               title="Chart View"
             >
               <PieChart className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === "table" ? "default" : "ghost"}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode("table")}
-              className="rounded-l-none"
+              className={cn(viewMode === "table" ? "bg-white shadow-sm text-foreground hover:bg-white" : "text-muted-foreground hover:text-foreground")}
               title="Table View"
             >
               <Table2 className="h-4 w-4" />
@@ -1242,8 +1242,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                   }}
                 >
                   <div
-                    className="font-semibold text-sm px-3 py-2 border-b"
-                    style={{ color: '#4c5568', backgroundColor: '#f1f4f8' }}
+                    className="font-semibold text-sm px-3 py-2 border-b border-border bg-surface-muted text-foreground"
                   >
                     {tooltip.content.title}
                   </div>
@@ -1279,12 +1278,12 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
         {viewMode === "table" && (
           <div className="space-y-4">
             {activitiesLoading && !data?.chartData?.sectorData ? (
-              <TableSkeleton rows={8} columns={8} />
+              <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
             ) : data?.chartData?.sectorData ? (
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50">
+                    <TableRow className="bg-muted">
                       <TableHead className="w-8"></TableHead>
                       <TableHead className="font-semibold">Classification</TableHead>
                       <TableHead className="font-semibold text-right">Domestic Spending</TableHead>
@@ -1313,14 +1312,14 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                           <React.Fragment key={sector.code}>
                             {/* Classification Header Row */}
                             <TableRow
-                              className={`bg-slate-50/70 ${showChevron ? "cursor-pointer hover:bg-slate-100/70" : ""}`}
+                              className={`bg-muted/70 ${showChevron ? "cursor-pointer hover:bg-muted/70" : ""}`}
                               onClick={() => showChevron && toggleClassification(sector.code)}
                             >
                               <TableCell className="w-8">
                                 {showChevron && (
                                   isExpanded
-                                    ? <ChevronDown className="h-4 w-4 text-gray-600" />
-                                    : <ChevronRight className="h-4 w-4 text-gray-600" />
+                                    ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                    : <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                 )}
                               </TableCell>
                               <TableCell className="font-medium">
@@ -1355,20 +1354,20 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                             {isExpanded && classificationActivities.map((activity) => (
                               <TableRow
                                 key={`${sector.code}-${activity.id}`}
-                                className="bg-slate-50/50 hover:bg-slate-100/50"
+                                className="bg-muted/50 hover:bg-muted/50"
                               >
                                 <TableCell className="w-8 pl-6"></TableCell>
                                 <TableCell className="pl-6">
                                   <Link 
                                     href={`/activities/${activity.id}`}
-                                    className="font-medium text-sm hover:text-gray-600 cursor-pointer"
+                                    className="font-medium text-sm hover:text-muted-foreground cursor-pointer"
                                     title={activity.title}
                                   >
                                     {activity.title}
                                   </Link>
-                                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                                     {activity.iatiIdentifier && (
-                                      <span className="font-mono bg-muted text-gray-600 px-1.5 py-0.5 rounded">
+                                      <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                                         {activity.iatiIdentifier}
                                       </span>
                                     )}
@@ -1410,7 +1409,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                         : 0;
 
                       return (
-                        <TableRow className="bg-slate-100 font-semibold">
+                        <TableRow className="bg-muted font-semibold">
                           <TableCell></TableCell>
                           <TableCell>Total (COFOG 01–10 only)</TableCell>
                           <TableCell className="text-right">
@@ -1436,17 +1435,17 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                     })()}
                   </TableBody>
                 </Table>
-                <div className="p-3 bg-slate-50 border-t text-xs text-gray-600 space-y-2">
+                <div className="p-3 bg-muted border-t text-xs text-muted-foreground space-y-2">
                   <p><span className="font-medium">Click on any classification row with activities to expand and see individual activities.</span></p>
                   {data.chartData.sectorData.some(s => s.code === "99") && (
-                    <p className="text-gray-500 italic">
+                    <p className="text-muted-foreground italic">
                       Note: Spending classified as &apos;Unclassified / Budget Support&apos; reflects centralised resources and external assistance that cannot be reliably allocated to COFOG functions. These amounts are shown separately to preserve the integrity of functional expenditure analysis.
                     </p>
                   )}
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center text-gray-500 border rounded-lg">
+              <div className="p-8 text-center text-muted-foreground border rounded-lg">
                 <p>No budget data available for this period.</p>
               </div>
             )}

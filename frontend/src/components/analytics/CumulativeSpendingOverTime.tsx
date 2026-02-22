@@ -11,9 +11,10 @@ import {
   Tooltip,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { Button } from '@/components/ui/button'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
@@ -257,7 +258,7 @@ export function CumulativeSpendingOverTime({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[400px] w-full" />
+          <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
         </CardContent>
       </Card>
     )
@@ -311,7 +312,7 @@ export function CumulativeSpendingOverTime({
                   <stop offset="95%" stopColor="#64748B" stopOpacity={0.1}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="CHART_STRUCTURE_COLORS.grid" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
               <XAxis dataKey="displayDate" stroke="#64748B" fontSize={12} />
               <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={12} />
               <Tooltip content={<CustomTooltip />} />

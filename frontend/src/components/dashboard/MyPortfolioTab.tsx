@@ -306,10 +306,10 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
       {/* Charts and Additional Sections */}
       <Tabs defaultValue="timeline" className="space-y-4">
         <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
-          <TabsTrigger value="timeline" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Timeline</TabsTrigger>
-          <TabsTrigger value="sectors" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Sectors</TabsTrigger>
-          <TabsTrigger value="validation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Validation Status</TabsTrigger>
-          <TabsTrigger value="participating" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Participating Org</TabsTrigger>
+          <TabsTrigger value="timeline" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">Timeline</TabsTrigger>
+          <TabsTrigger value="sectors" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">Sectors</TabsTrigger>
+          <TabsTrigger value="validation" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">Validation Status</TabsTrigger>
+          <TabsTrigger value="participating" className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">Participating Org</TabsTrigger>
         </TabsList>
 
         <TabsContent value="timeline" className="space-y-4">

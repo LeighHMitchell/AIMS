@@ -22,6 +22,7 @@ import {
 import { BarChart3, TableIcon, ChevronDown, ChevronUp } from 'lucide-react'
 import { LoadingText } from '@/components/ui/loading-text'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { cn } from '@/lib/utils'
 
 interface YearData {
   year: number;
@@ -154,20 +155,28 @@ export function DisbursementsBySectorChart({ data, loading = false }: Disburseme
               Compare planned vs actual disbursements across sectors
             </CardDescription>
           </div>
-          <div className="flex">
+          <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 p-1">
             <Button
-              variant={viewMode === 'chart' ? 'default' : 'outline'}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode('chart')}
-              className="rounded-r-none"
+              className={cn(
+                viewMode === 'chart'
+                  ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                  : "text-slate-500 hover:text-slate-700"
+              )}
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'table' ? 'default' : 'outline'}
+              variant="ghost"
               size="sm"
               onClick={() => setViewMode('table')}
-              className="rounded-l-none"
+              className={cn(
+                viewMode === 'table'
+                  ? "bg-white shadow-sm text-slate-900 hover:bg-white"
+                  : "text-slate-500 hover:text-slate-700"
+              )}
             >
               <TableIcon className="h-4 w-4" />
             </Button>

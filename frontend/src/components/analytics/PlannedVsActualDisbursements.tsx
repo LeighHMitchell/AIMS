@@ -14,9 +14,10 @@ import {
   Legend,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { AlertCircle, BarChart3, TrendingUpIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { Button } from '@/components/ui/button'
 // Inline currency formatter to avoid initialization issues
 const formatCurrencyAbbreviated = (value: number): string => {
@@ -356,19 +357,7 @@ export function PlannedVsActualDisbursements({
 
   if (loading) {
     return (
-      <Card className="bg-white border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-slate-900">
-            Planned vs Actual Disbursements
-          </CardTitle>
-          <CardDescription>
-            Compare planned and actual disbursements across all activities
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[400px] w-full" />
-        </CardContent>
-      </Card>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -426,7 +415,7 @@ export function PlannedVsActualDisbursements({
           <ResponsiveContainer width="100%" height={400} key={`disbursement-${groupBy}-${chartType}`}>
             {chartType === 'line' ? (
               <LineChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: groupBy === 'month' ? 60 : 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="CHART_STRUCTURE_COLORS.grid" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                 <XAxis
                   dataKey={groupBy === 'year' ? 'period' : 'timestamp'}
                   type={groupBy === 'year' ? 'category' : 'number'}
@@ -468,7 +457,7 @@ export function PlannedVsActualDisbursements({
               </LineChart>
             ) : (
               <BarChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: groupBy === 'month' ? 60 : 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="CHART_STRUCTURE_COLORS.grid" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
                 <XAxis
                   dataKey={groupBy === 'year' ? 'period' : 'timestamp'}
                   type={groupBy === 'year' ? 'category' : 'number'}

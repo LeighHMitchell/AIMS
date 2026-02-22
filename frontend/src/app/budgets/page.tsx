@@ -415,8 +415,8 @@ export default function BudgetsPage() {
         {/* Header */}
         <div className="flex flex-wrap justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">Budgets</h1>
-            <p className="text-slate-500">View and manage all activity budgets</p>
+            <h1 className="text-2xl font-semibold text-foreground">Budgets</h1>
+            <p className="text-muted-foreground">View and manage all activity budgets</p>
           </div>
           <div className="flex items-center space-x-4">
             {sortedBudgets.length > 0 && (
@@ -433,7 +433,7 @@ export default function BudgetsPage() {
         </div>
 
         {/* Search, Filters, and View Controls */}
-        <div className="flex items-end gap-3 py-3 bg-surface-muted rounded-lg px-3 border border-gray-200">
+        <div className="flex items-end gap-3 py-3 bg-surface-muted rounded-lg px-3 border border-border">
             {/* Search Input */}
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">Search</Label>
@@ -543,15 +543,15 @@ export default function BudgetsPage() {
 
         {/* Budgets Table */}
         {loading && sortedBudgets.length === 0 && !searchQuery ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+          <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
             <LoadingText>Loading budgets...</LoadingText>
           </div>
         ) : error ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+          <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-medium text-slate-900 mb-2">Unable to Load Budgets</h3>
-                <p className="text-slate-500 mb-4">{error}</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">Unable to Load Budgets</h3>
+                <p className="text-muted-foreground mb-4">{error}</p>
                 <Button onClick={() => window.location.reload()} variant="outline">
                   Try Again
                 </Button>
@@ -559,11 +559,11 @@ export default function BudgetsPage() {
             </div>
           </div>
         ) : sortedBudgets.length === 0 ? (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
-            <p className="text-slate-500">No budgets found</p>
+          <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
+            <p className="text-muted-foreground">No budgets found</p>
           </div>
         ) : (
-          <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-card rounded-md shadow-sm border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <BudgetTable
                 key={`budget-table-${budgets.length}-${selectedBudgetIds.size}`}
@@ -591,7 +591,7 @@ export default function BudgetsPage() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   Showing {Math.min(startIndex + 1, totalBudgets)} to {Math.min(endIndex, totalBudgets)} of {totalBudgets} budgets
                 </div>
                 
@@ -669,7 +669,7 @@ export default function BudgetsPage() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Items per page:</label>
+                  <label className="text-sm text-muted-foreground">Items per page:</label>
                   <Select 
                     value={pageLimit.toString()} 
                     onValueChange={(value) => handlePageLimitChange(Number(value))}

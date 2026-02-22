@@ -1393,16 +1393,15 @@ const router = useRouter();
       sectorFilter.subSectors.length > 0;
     
     if (usingOptimization) {
-      // Server-side filtering already applied for most filters
-      // Apply sector filter client-side if active
+      let result = activities;
       if (hasSectorFilter) {
-        return activities.filter(activity => {
+        result = result.filter(activity => {
           const activitySectors = activity.sectors || [];
           const sectorCodes = activitySectors.map((s: any) => s.code || s.sector_code);
           return matchesSectorFilter(sectorCodes, sectorFilter);
         });
       }
-      return activities;
+      return result;
     }
     
     // Legacy client-side filtering (search removed as it's now global)
@@ -1867,20 +1866,20 @@ const router = useRouter();
         <div className="flex-1 min-w-[8px]" />
 
         {/* View Mode Toggle */}
-        <div className="flex items-center flex-shrink-0" data-tour="activities-view-toggle">
+        <div className="flex items-center border rounded-md flex-shrink-0" data-tour="activities-view-toggle">
           <Button
-            variant={viewMode === 'table' ? 'default' : 'outline'}
+            variant="ghost"
             size="sm"
             onClick={() => setViewMode('table')}
-            className="rounded-r-none h-9"
+            className={`rounded-r-none h-9 ${viewMode === 'table' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
           >
             <TableIcon className="h-4 w-4" />
           </Button>
           <Button
-            variant={viewMode === 'card' ? 'default' : 'outline'}
+            variant="ghost"
             size="sm"
             onClick={() => setViewMode('card')}
-            className="rounded-l-none h-9"
+            className={`rounded-l-none h-9 ${viewMode === 'card' ? 'bg-slate-200 text-slate-900' : 'text-slate-400'}`}
           >
             <LayoutGrid className="h-4 w-4" />
           </Button>
@@ -1892,7 +1891,7 @@ const router = useRouter();
       {loading || userLoading || !hasLoadedOnce || isInitialLoad ? (
         <ActivityListSkeleton />
       ) : error ? (
-        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+        <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
           <div className="space-y-4">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
             <div>
@@ -1908,7 +1907,7 @@ const router = useRouter();
           </div>
         </div>
       ) : showEmptyState ? (
-        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+        <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
           <div className="space-y-4">
             <div className="text-slate-500">No activities found</div>
             <p className="text-sm text-slate-400">
@@ -1920,9 +1919,16 @@ const router = useRouter();
           </div>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden fade-in" data-tour="activities-table">
+        <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden fade-in" data-tour="activities-table">
           <div className="overflow-x-auto">
             <table className="w-full table-auto border-collapse activities-table">
+              <colgroup>
+                <col style={{ width: 50, minWidth: 50 }} />
+                {orderedDraggableColumns.map((colId) => (
+                  <col key={colId} />
+                ))}
+                <col style={{ width: 72, minWidth: 72 }} />
+              </colgroup>
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
                   {/* Checkbox column - always visible */}
@@ -2541,12 +2547,14 @@ const router = useRouter();
                   </DndColumnProvider>
 
                   {/* Actions column - always visible */}
-                  <th className="h-12 px-4 py-3 text-right align-middle text-sm font-medium text-muted-foreground w-[80px]">
-                    <ColumnHeaderText columnId="actions">Actions</ColumnHeaderText>
+                  <th className="h-12 px-3 py-3 align-middle text-sm font-medium text-muted-foreground w-[72px]">
+                    <div className="w-full flex items-center justify-end">
+                      <ColumnHeaderText columnId="actions">Actions</ColumnHeaderText>
+                    </div>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
+              <tbody className="divide-y divide-border bg-background">
                 {paginatedActivities.map(activity => {
                   const organizationAcronyms = getOrganizationAcronyms(activity);
                   const acronymsText = formatOrganizationAcronyms(organizationAcronyms);
@@ -2560,7 +2568,7 @@ const router = useRouter();
                   return (
                     <tr
                       key={activity.id}
-                      className={`group hover:bg-muted transition-colors ${isSelected ? 'bg-blue-50 border-blue-200' : ''}`}
+                      className={`group hover:bg-muted transition-colors ${isSelected ? 'bg-muted border-border' : ''}`}
                     >
                       {/* Checkbox cell - always visible */}
                       <td className="px-4 py-2 text-center" onClick={(e) => e.stopPropagation()}>
@@ -3891,8 +3899,8 @@ const router = useRouter();
                       })}
 
                       {/* Actions cell - always visible */}
-                      <td className="px-4 py-2 text-sm text-foreground text-right">
-                        <div className="flex items-center justify-end">
+                      <td className="px-3 py-2 text-sm text-foreground w-[72px] align-middle">
+                        <div className="w-full flex items-center justify-end">
                           <ActivityActionMenu
                             activityId={activity.id}
                             isBookmarked={isBookmarked(activity.id)}
@@ -3953,7 +3961,7 @@ const router = useRouter();
 
       {/* Pagination */}
       {!isShowingAll && totalActivities > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4" data-tour="activities-pagination">
+        <div className="bg-card rounded-lg border border-border shadow-sm p-4" data-tour="activities-pagination">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-600">
               Showing {Math.min(startIndex + 1, totalActivities)} to {Math.min(endIndex, totalActivities)} of {totalActivities} activities

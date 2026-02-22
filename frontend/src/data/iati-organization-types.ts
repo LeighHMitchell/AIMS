@@ -110,7 +110,20 @@ export const IATI_ORGANIZATION_TYPES: IATIOrganizationType[] = [
  */
 export function getOrganizationTypeName(code: string): string {
   const type = IATI_ORGANIZATION_TYPES.find(t => t.code === code);
-  return type?.name || 'Unknown';
+  if (type) return type.name;
+  // Also check if the value is already a name
+  const byName = IATI_ORGANIZATION_TYPES.find(t => t.name.toLowerCase() === code.toLowerCase());
+  return byName?.name || 'Unknown';
+}
+
+/**
+ * Get organization type code by code or name
+ */
+export function getOrganizationTypeCode(value: string): string | null {
+  const byCode = IATI_ORGANIZATION_TYPES.find(t => t.code === value);
+  if (byCode) return byCode.code;
+  const byName = IATI_ORGANIZATION_TYPES.find(t => t.name.toLowerCase() === value.toLowerCase());
+  return byName?.code || null;
 }
 
 /**

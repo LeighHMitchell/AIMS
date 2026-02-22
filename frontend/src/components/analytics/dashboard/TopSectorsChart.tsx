@@ -9,8 +9,10 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  CartesianGrid,
 } from "recharts";
 import { RankedItem } from "@/types/national-priorities";
+import { CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 
 interface TopSectorsChartProps {
   data: RankedItem[];
@@ -62,6 +64,7 @@ export function TopSectorsChart({
           layout="vertical"
           margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
         >
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
           <XAxis
             type="number"
             tickFormatter={(v) => formatCurrency(v)}
@@ -75,16 +78,28 @@ export function TopSectorsChart({
             tickFormatter={(v) => (v.length > 12 ? `${v.slice(0, 12)}...` : v)}
           />
           <Tooltip
-            formatter={(value: number) => [formatCurrency(value), "Value"]}
-            labelFormatter={(label) => {
-              const item = chartData.find((d) => d.displayName === label);
-              return item?.name || label;
-            }}
-            contentStyle={{
-              backgroundColor: "hsl(var(--background))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: "6px",
-              fontSize: "12px",
+            content={({ active, payload }: any) => {
+              if (active && payload && payload.length) {
+                const item = payload[0].payload;
+                return (
+                  <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                    <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+                      <p className="font-semibold text-slate-900 text-sm">{item.name}</p>
+                    </div>
+                    <div className="p-2">
+                      <table className="w-full text-sm">
+                        <tbody>
+                          <tr>
+                            <td className="py-1 pr-4 text-slate-700 font-medium">Value</td>
+                            <td className="py-1 text-right font-semibold text-slate-900">{formatCurrency(item.value)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
             }}
           />
           <Bar dataKey="value" radius={[0, 4, 4, 0]}>

@@ -11,8 +11,9 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { BarChart3, TrendingUp } from 'lucide-react'
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 interface Top10DisbursementCommitmentRatioChartProps {
   dateRange: {
@@ -127,9 +128,7 @@ export function Top10DisbursementCommitmentRatioChart({
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-[400px] w-full bg-slate-100" />
-      </div>
+      <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
     )
   }
 
@@ -167,7 +166,7 @@ export function Top10DisbursementCommitmentRatioChart({
       >
         <CartesianGrid
           strokeDasharray="3 3"
-          stroke="#e2e8f0"
+          stroke={CHART_STRUCTURE_COLORS.grid}
           horizontal={false}
         />
         <XAxis

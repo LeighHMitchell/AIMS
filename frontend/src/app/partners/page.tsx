@@ -351,10 +351,10 @@ export default function PartnersPage() {
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 text-gray-400" />;
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 text-muted-foreground" />;
     return sortOrder === 'asc' 
-      ? <ArrowUp className="h-3 w-3 ml-1 text-gray-400" />
-      : <ArrowDown className="h-3 w-3 ml-1 text-gray-400" />;
+      ? <ArrowUp className="h-3 w-3 ml-1 text-muted-foreground" />
+      : <ArrowDown className="h-3 w-3 ml-1 text-muted-foreground" />;
   };
 
   // Sort organizations within a group
@@ -550,24 +550,24 @@ export default function PartnersPage() {
 
       // Country row
       rows.push(
-        <tr key={country.id} className="border-b border-gray-200 hover:bg-gray-50 bg-gray-100">
+        <tr key={country.id} className="border-b border-border hover:bg-muted/50 bg-surface-muted">
           <td className="py-3 px-2">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => toggleCountry(country.id)}
-                className="p-1 hover:bg-gray-300 rounded transition-colors"
+                className="p-1 hover:bg-muted rounded transition-colors"
                 title={isCountryExpanded ? "Collapse organizations" : "Expand organizations"}
                 disabled={loadingCountries.has(country.id)}
               >
                 {loadingCountries.has(country.id) ? (
-                  <Loader2 className="h-4 w-4 text-gray-500 animate-spin" />
+                  <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
                 ) : isCountryExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-gray-500" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 )}
               </button>
-              <span className="font-semibold text-gray-900">
+              <span className="font-semibold text-foreground">
                 {country.name}
               </span>
             </div>
@@ -609,21 +609,21 @@ export default function PartnersPage() {
 
           // Organization row
           rows.push(
-            <tr key={org.id} className="border-b border-gray-200 hover:bg-blue-50 bg-gray-50">
+            <tr key={org.id} className="border-b border-border hover:bg-muted/50 bg-muted">
               <td className="py-3 px-2">
                 <div className="flex items-center gap-2 pl-8">
                   <button
                     onClick={() => toggleOrganization(org.id)}
-                    className="p-1 hover:bg-gray-300 rounded transition-colors"
+                    className="p-1 hover:bg-muted rounded transition-colors"
                     title={isOrgExpanded ? "Collapse activities" : "Expand activities"}
                     disabled={loadingOrgs.has(org.id)}
                   >
                     {loadingOrgs.has(org.id) ? (
-                      <Loader2 className="h-4 w-4 text-gray-500 animate-spin" />
+                      <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
                     ) : isOrgExpanded ? (
-                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <ChevronRight className="h-4 w-4 text-gray-500" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     )}
                   </button>
                   <OrganizationLogo logo={org.logo} name={org.name} size="sm" />
@@ -677,13 +677,13 @@ export default function PartnersPage() {
 
             filteredActivities.forEach((activity: any) => {
               rows.push(
-                <tr key={`activity-${activity.id}`} className="hover:bg-gray-50">
+                <tr key={`activity-${activity.id}`} className="hover:bg-muted/50">
                   <td className="py-2 px-2 pl-16">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-px bg-gray-300"></div>
+                      <div className="w-3 h-px bg-border"></div>
                       {/* Activity Icon */}
                       {activity.icon ? (
-                        <div className="w-5 h-5 flex-shrink-0 rounded overflow-hidden border border-gray-200 bg-white">
+                        <div className="w-5 h-5 flex-shrink-0 rounded overflow-hidden border border-border bg-card">
                           <img 
                             src={activity.icon} 
                             alt="" 
@@ -694,8 +694,8 @@ export default function PartnersPage() {
                           />
                         </div>
                       ) : (
-                        <div className="w-5 h-5 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center">
-                          <FileText className="h-3 w-3 text-gray-400" />
+                        <div className="w-5 h-5 flex-shrink-0 bg-muted rounded flex items-center justify-center">
+                          <FileText className="h-3 w-3 text-muted-foreground" />
                         </div>
                       )}
                       <a
@@ -802,21 +802,21 @@ export default function PartnersPage() {
 
     return (
       <React.Fragment key={org.id}>
-        <tr className="border-b border-gray-200 hover:bg-blue-50 bg-gray-50">
+        <tr className="border-b border-border hover:bg-muted/50 bg-muted">
           <td className="py-3 px-2">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => toggleOrganization(org.id)}
-                className="p-1 hover:bg-gray-300 rounded transition-colors"
+                className="p-1 hover:bg-muted rounded transition-colors"
                 title={isOrgExpanded ? "Collapse activities" : "Expand activities"}
                 disabled={loadingOrgs.has(org.id)}
               >
                 {loadingOrgs.has(org.id) ? (
-                  <Loader2 className="h-4 w-4 text-gray-500 animate-spin" />
+                  <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
                 ) : isOrgExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-gray-500" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 )}
               </button>
               <OrganizationLogo logo={org.logo} name={org.name} size="sm" />
@@ -863,13 +863,13 @@ export default function PartnersPage() {
             })
           : orgActivitiesList
         ).map((activity: any) => (
-          <tr key={`activity-${activity.id}`} className="hover:bg-gray-50">
+          <tr key={`activity-${activity.id}`} className="hover:bg-muted/50">
             <td className="py-2 px-2 pl-16">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-px bg-gray-300"></div>
+                <div className="w-3 h-px bg-border"></div>
                 {/* Activity Icon */}
                 {activity.icon ? (
-                  <div className="w-5 h-5 flex-shrink-0 rounded overflow-hidden border border-gray-200 bg-white">
+                  <div className="w-5 h-5 flex-shrink-0 rounded overflow-hidden border border-border bg-card">
                     <img 
                       src={activity.icon} 
                       alt="" 
@@ -880,8 +880,8 @@ export default function PartnersPage() {
                     />
                   </div>
                 ) : (
-                  <div className="w-5 h-5 flex-shrink-0 bg-gray-100 rounded flex items-center justify-center">
-                    <FileText className="h-3 w-3 text-gray-400" />
+                  <div className="w-5 h-5 flex-shrink-0 bg-muted rounded flex items-center justify-center">
+                    <FileText className="h-3 w-3 text-muted-foreground" />
                   </div>
                 )}
                 <a
@@ -954,18 +954,18 @@ export default function PartnersPage() {
         <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Partner Summary</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Partner Summary</h1>
           </div>
 
           {/* Main Content */}
           <Tabs value={groupBy} onValueChange={(value) => setGroupBy(value as 'type' | 'custom')}>
             <div className="flex items-center justify-between mb-6">
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-                <TabsTrigger value="type" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="type" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                   <Building2 className="h-4 w-4" />
                   Development Partners
                 </TabsTrigger>
-                <TabsTrigger value="custom" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="custom" className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-sm">
                   <FolderOpen className="h-4 w-4" />
                   Custom Groups
                 </TabsTrigger>
@@ -974,7 +974,7 @@ export default function PartnersPage() {
               <div className="flex items-center gap-4">
                 {/* Search */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="text"
                     placeholder="Search by name, acronym, count..."
@@ -1016,12 +1016,12 @@ export default function PartnersPage() {
             <TabsContent value="type">
               <div className="space-y-4">
                 {/* Bilateral Partners Table */}
-                <Card className="bg-white border border-gray-200">
+                <Card className="bg-white border border-border">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-semibold text-gray-900">
+                    <CardTitle className="text-lg font-semibold text-foreground">
                       Bilateral Partners
                     </CardTitle>
-                    <CardDescription className="text-gray-600">
+                    <CardDescription className="text-muted-foreground">
                       Development partners organized by country
                     </CardDescription>
                   </CardHeader>
@@ -1029,83 +1029,83 @@ export default function PartnersPage() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-gray-200 bg-gray-50">
-                            <th className="text-left py-3 px-2 font-medium text-gray-700">
+                          <tr className="border-b border-border bg-surface-muted">
+                            <th className="text-left py-3 px-2 font-medium text-muted-foreground">
                               <button
                                 onClick={() => handleSort('name')}
-                                className="flex items-center hover:text-gray-900"
+                                className="flex items-center hover:text-foreground"
                               >
                                 Country / Organisation Name
                                 {getSortIcon('name')}
                               </button>
                             </th>
-                            <th className="text-center py-3 px-2 font-medium text-gray-700">
+                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                               <button
                                 onClick={() => handleSort('reportedActivities')}
-                                className="flex items-center hover:text-gray-900"
+                                className="flex items-center hover:text-foreground"
                               >
                                 Reported
                                 {getSortIcon('reportedActivities')}
                               </button>
                             </th>
-                            <th className="text-center py-3 px-2 font-medium text-gray-700">
+                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                               <button
                                 onClick={() => handleSort('providerReceiver')}
-                                className="flex items-center hover:text-gray-900"
+                                className="flex items-center hover:text-foreground"
                               >
                                 Provider/Receiver
                                 {getSortIcon('providerReceiver')}
                               </button>
                             </th>
-                            <th className="text-center py-3 px-2 font-medium text-gray-700">
+                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                               <button
                                 onClick={() => handleSort('2022')}
-                                className="flex items-center hover:text-gray-900"
+                                className="flex items-center hover:text-foreground"
                               >
                                 {getYearLabel(2022)}
                                 {getSortIcon('2022')}
                               </button>
                             </th>
-                            <th className="text-center py-3 px-2 font-medium text-gray-700">
+                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                               <button
                                 onClick={() => handleSort('2023')}
-                                className="flex items-center hover:text-gray-900"
+                                className="flex items-center hover:text-foreground"
                               >
                                 {getYearLabel(2023)}
                                 {getSortIcon('2023')}
                               </button>
                             </th>
-                            <th className="text-center py-3 px-2 font-medium text-gray-700">
+                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                               <button
                                 onClick={() => handleSort('2024')}
-                                className="flex items-center hover:text-gray-900"
+                                className="flex items-center hover:text-foreground"
                               >
                                 {getYearLabel(2024)}
                                 {getSortIcon('2024')}
                               </button>
                             </th>
-                            <th className="text-center py-3 px-2 font-medium text-gray-700">
+                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                               <button
                                 onClick={() => handleSort('2025')}
-                                className="flex items-center hover:text-gray-900"
+                                className="flex items-center hover:text-foreground"
                               >
                                 {getYearLabel(2025)}
                                 {getSortIcon('2025')}
                               </button>
                             </th>
-                            <th className="text-center py-3 px-2 font-medium text-gray-700">
+                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                               <button
                                 onClick={() => handleSort('2026')}
-                                className="flex items-center hover:text-gray-900"
+                                className="flex items-center hover:text-foreground"
                               >
                                 {getYearLabel(2026)}
                                 {getSortIcon('2026')}
                               </button>
                             </th>
-                            <th className="text-center py-3 px-2 font-medium text-gray-700">
+                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                               <button
                                 onClick={() => handleSort('2027')}
-                                className="flex items-center hover:text-gray-900"
+                                className="flex items-center hover:text-foreground"
                               >
                                 {getYearLabel(2027)}
                                 {getSortIcon('2027')}
@@ -1125,12 +1125,12 @@ export default function PartnersPage() {
                 {getOrganizationsByInstitutionalGroup()
                   .filter(institutionalGroup => filterOrganizations(institutionalGroup.organizations).length > 0)
                   .map((institutionalGroup) => (
-                  <Card key={institutionalGroup.name} className="bg-white border border-gray-200">
+                  <Card key={institutionalGroup.name} className="bg-white border border-border">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg font-semibold text-gray-900">
+                      <CardTitle className="text-lg font-semibold text-foreground">
                         {institutionalGroup.name}
                       </CardTitle>
-                      <CardDescription className="text-gray-600">
+                      <CardDescription className="text-muted-foreground">
                         {institutionalGroup.description}
                       </CardDescription>
                     </CardHeader>
@@ -1138,83 +1138,83 @@ export default function PartnersPage() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-gray-200 bg-gray-50">
-                              <th className="text-left py-3 px-2 font-medium text-gray-700">
+                            <tr className="border-b border-border bg-surface-muted">
+                              <th className="text-left py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('name')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   Organisation Name
                                   {getSortIcon('name')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('reportedActivities')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   Reported
                                   {getSortIcon('reportedActivities')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('providerReceiver')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   Provider/Receiver
                                   {getSortIcon('providerReceiver')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2022')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2022)}
                                   {getSortIcon('2022')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2023')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2023)}
                                   {getSortIcon('2023')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2024')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2024)}
                                   {getSortIcon('2024')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2025')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2025)}
                                   {getSortIcon('2025')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2026')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2026)}
                                   {getSortIcon('2026')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2027')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2027)}
                                   {getSortIcon('2027')}
@@ -1235,10 +1235,10 @@ export default function PartnersPage() {
                 {filterOrganizations(getUnassignedOrganizations()).length > 0 && (
                   <Card className="bg-white border border-orange-200">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg font-semibold text-gray-900">
+                      <CardTitle className="text-lg font-semibold text-foreground">
                         Unassigned Organizations
                       </CardTitle>
-                      <CardDescription className="text-gray-600">
+                      <CardDescription className="text-muted-foreground">
                         Organizations that need to be assigned a country or institutional group
                       </CardDescription>
                     </CardHeader>
@@ -1246,83 +1246,83 @@ export default function PartnersPage() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-gray-200">
-                              <th className="text-left py-3 px-2 font-medium text-gray-700">
+                            <tr className="border-b border-border">
+                              <th className="text-left py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('name')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   Organisation Name
                                   {getSortIcon('name')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('reportedActivities')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   Reported
                                   {getSortIcon('reportedActivities')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('providerReceiver')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   Provider/Receiver
                                   {getSortIcon('providerReceiver')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2022')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2022)}
                                   {getSortIcon('2022')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2023')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2023)}
                                   {getSortIcon('2023')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2024')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2024)}
                                   {getSortIcon('2024')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2025')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2025)}
                                   {getSortIcon('2025')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2026')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2026)}
                                   {getSortIcon('2026')}
                                 </button>
                               </th>
-                              <th className="text-center py-3 px-2 font-medium text-gray-700">
+                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                 <button
                                   onClick={() => handleSort('2027')}
-                                  className="flex items-center hover:text-gray-900"
+                                  className="flex items-center hover:text-foreground"
                                 >
                                   {getYearLabel(2027)}
                                   {getSortIcon('2027')}
@@ -1344,11 +1344,11 @@ export default function PartnersPage() {
             <TabsContent value="custom">
               <div className="space-y-4">
                 {summaryData.customGroups.length === 0 ? (
-                  <Card className="bg-white border border-gray-200">
+                  <Card className="bg-white border border-border">
                     <CardContent className="py-12 text-center">
-                      <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Custom Groups</h3>
-                      <p className="text-gray-600 mb-4">
+                      <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-foreground mb-2">No Custom Groups</h3>
+                      <p className="text-muted-foreground mb-4">
                         Create custom organization groups to organize partners by your own criteria.
                       </p>
                       <Button onClick={() => router.push('/partners/groups')}>
@@ -1364,17 +1364,17 @@ export default function PartnersPage() {
                     const sortedOrgs = sortOrganizations(filteredOrgs);
 
                     return (
-                      <Card key={group.id} className="bg-white border border-gray-200">
+                      <Card key={group.id} className="bg-white border border-border">
                         <CardHeader 
-                          className="cursor-pointer hover:bg-gray-50 transition-colors py-4"
+                          className="cursor-pointer hover:bg-muted/50 transition-colors py-4"
                           onClick={() => toggleGroup(group.id)}
                         >
                           <div className="flex items-center justify-between">
                                                          <div className="flex items-center gap-3">
                                {isExpanded ? (
-                                 <ChevronDown className="h-4 w-4 text-gray-400" />
+                                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                ) : (
-                                 <ChevronRight className="h-4 w-4 text-gray-400" />
+                                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                )}
                                {group.logo ? (
                                  <img 
@@ -1386,7 +1386,7 @@ export default function PartnersPage() {
                                  <FolderOpen className="h-5 w-5 text-blue-600" />
                                )}
                               <div>
-                                <CardTitle className="text-lg font-semibold text-gray-900">
+                                <CardTitle className="text-lg font-semibold text-foreground">
                                   {group.name}
                                 </CardTitle>
                               </div>
@@ -1402,90 +1402,90 @@ export default function PartnersPage() {
                         {isExpanded && (
                           <CardContent className="pt-0">
                             {sortedOrgs.length === 0 ? (
-                              <div className="text-center py-8 text-gray-500">
+                              <div className="text-center py-8 text-muted-foreground">
                                 {searchTerm ? 'No organizations match your search' : 'No organizations in this group'}
                               </div>
                             ) : (
                               <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                   <thead>
-                                    <tr className="border-b border-gray-200">
-                                      <th className="text-left py-3 px-2 font-medium text-gray-700">
+                                    <tr className="border-b border-border">
+                                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">
                                         <button
                                           onClick={() => handleSort('name')}
-                                          className="flex items-center hover:text-gray-900"
+                                          className="flex items-center hover:text-foreground"
                                         >
                                           Organisation Name
                                           {getSortIcon('name')}
                                         </button>
                                       </th>
-                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                         <button
                                           onClick={() => handleSort('reportedActivities')}
-                                          className="flex items-center hover:text-gray-900"
+                                          className="flex items-center hover:text-foreground"
                                         >
                                           Reported
                                           {getSortIcon('reportedActivities')}
                                         </button>
                                       </th>
-                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                         <button
                                           onClick={() => handleSort('providerReceiver')}
-                                          className="flex items-center hover:text-gray-900"
+                                          className="flex items-center hover:text-foreground"
                                         >
                                           Provider/Receiver
                                           {getSortIcon('providerReceiver')}
                                         </button>
                                       </th>
-                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                         <button
                                           onClick={() => handleSort('2022')}
-                                          className="flex items-center hover:text-gray-900"
+                                          className="flex items-center hover:text-foreground"
                                         >
                                           {getYearLabel(2022)}
                                           {getSortIcon('2022')}
                                         </button>
                                       </th>
-                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                         <button
                                           onClick={() => handleSort('2023')}
-                                          className="flex items-center hover:text-gray-900"
+                                          className="flex items-center hover:text-foreground"
                                         >
                                           {getYearLabel(2023)}
                                           {getSortIcon('2023')}
                                         </button>
                                       </th>
-                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                         <button
                                           onClick={() => handleSort('2024')}
-                                          className="flex items-center hover:text-gray-900"
+                                          className="flex items-center hover:text-foreground"
                                         >
                                           {getYearLabel(2024)}
                                           {getSortIcon('2024')}
                                         </button>
                                       </th>
-                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                         <button
                                           onClick={() => handleSort('2025')}
-                                          className="flex items-center hover:text-gray-900"
+                                          className="flex items-center hover:text-foreground"
                                         >
                                           {getYearLabel(2025)}
                                           {getSortIcon('2025')}
                                         </button>
                                       </th>
-                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                         <button
                                           onClick={() => handleSort('2026')}
-                                          className="flex items-center hover:text-gray-900"
+                                          className="flex items-center hover:text-foreground"
                                         >
                                           {getYearLabel(2026)}
                                           {getSortIcon('2026')}
                                         </button>
                                       </th>
-                                      <th className="text-center py-3 px-2 font-medium text-gray-700">
+                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
                                         <button
                                           onClick={() => handleSort('2027')}
-                                          className="flex items-center hover:text-gray-900"
+                                          className="flex items-center hover:text-foreground"
                                         >
                                           {getYearLabel(2027)}
                                           {getSortIcon('2027')}

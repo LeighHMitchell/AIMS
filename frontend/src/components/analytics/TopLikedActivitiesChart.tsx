@@ -12,7 +12,7 @@ import {
   Cell,
   ReferenceLine,
 } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
+import { LoadingText } from '@/components/ui/loading-text'
 import { Button } from '@/components/ui/button'
 import { TrendingUp } from 'lucide-react'
 import {
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select'
 import { IATI_ORGANIZATION_TYPES } from '@/data/iati-organization-types'
 import { apiFetch } from '@/lib/api-fetch';
+import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 
 // Color palette
 const COLORS = {
@@ -46,6 +47,7 @@ interface ActivityData {
   id: string
   iatiIdentifier: string | null
   title: string
+  acronym: string | null
   voteScore: number
   upvoteCount: number
   downvoteCount: number
@@ -91,12 +93,14 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
 
   // Prepare chart data with truncated titles - memoized for performance
   const chartData = useMemo(() => {
-    const maxTitleLength = compact ? 35 : 80
+    const maxTitleLength = compact ? 16 : 28
     return data.map(activity => ({
       ...activity,
-      displayTitle: activity.title.length > maxTitleLength
-        ? activity.title.substring(0, maxTitleLength) + '...'
-        : activity.title,
+      displayTitle: activity.acronym
+        ? activity.acronym
+        : activity.title.length > maxTitleLength
+          ? activity.title.substring(0, maxTitleLength) + '...'
+          : activity.title,
       // For pyramid view: negative downvotes go left, positive upvotes go right
       negativeDownvotes: -activity.downvoteCount
     }))
@@ -111,36 +115,37 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
           ? `${item.reportingOrgName} (${item.reportingOrgAcronym})`
           : item.reportingOrgName
         return (
-          <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 max-w-sm">
-            {/* Activity title */}
-            <p className="font-semibold text-slate-900 text-sm mb-1">{item.title}</p>
-
-            {/* Reporting org name and acronym on same line */}
-            <p className="text-xs text-slate-500 mb-2 pb-2 border-b border-slate-100">{orgDisplay}</p>
-
-            {/* Vote statistics table */}
-            <table className="w-full text-xs">
-              <tbody>
-                <tr>
-                  <td className="py-0.5 text-slate-500">Upvotes</td>
-                  <td className="py-0.5 text-right font-medium" style={{ color: COLORS.coolSteel }}>
-                    +{item.upvoteCount}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-0.5 text-slate-500">Downvotes</td>
-                  <td className="py-0.5 text-right font-medium" style={{ color: COLORS.primaryScarlet }}>
-                    -{item.downvoteCount}
-                  </td>
-                </tr>
-                <tr className="border-t border-slate-100">
-                  <td className="py-0.5 pt-1 text-slate-600 font-medium">Net Score</td>
-                  <td className="py-0.5 pt-1 text-right font-semibold" style={{ color: item.voteScore >= 0 ? COLORS.coolSteel : COLORS.primaryScarlet }}>
-                    {item.voteScore > 0 ? '+' : ''}{item.voteScore}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden max-w-sm">
+            <div className="bg-surface-muted px-3 py-2 border-b border-slate-200">
+              <p className="font-semibold text-slate-900 text-sm">
+                {item.title}{item.acronym ? ` (${item.acronym})` : ''}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">{orgDisplay}</p>
+            </div>
+            <div className="p-2">
+              <table className="w-full text-xs">
+                <tbody>
+                  <tr>
+                    <td className="py-0.5 text-slate-500">Upvotes</td>
+                    <td className="py-0.5 text-right font-medium" style={{ color: COLORS.coolSteel }}>
+                      +{item.upvoteCount}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-0.5 text-slate-500">Downvotes</td>
+                    <td className="py-0.5 text-right font-medium" style={{ color: COLORS.primaryScarlet }}>
+                      -{item.downvoteCount}
+                    </td>
+                  </tr>
+                  <tr className="border-t border-slate-100">
+                    <td className="py-0.5 pt-1 text-slate-600 font-medium">Net Score</td>
+                    <td className="py-0.5 pt-1 text-right font-semibold" style={{ color: item.voteScore >= 0 ? COLORS.coolSteel : COLORS.primaryScarlet }}>
+                      {item.voteScore > 0 ? '+' : ''}{item.voteScore}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         )
       }
@@ -158,7 +163,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
   }, [data])
 
   if (loading) {
-    return <Skeleton className="h-full w-full" />
+    return <div className="h-full flex items-center justify-center"><LoadingText>Loading...</LoadingText></div>
   }
 
   // Check if we have no data - but only show simple empty state in compact mode
@@ -186,7 +191,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
         layout="vertical"
         margin={{ top: 5, right: 30, left: compact ? 10 : 20, bottom: 5 }}
       >
-        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
           type="number"
           fontSize={compact ? 10 : 12}
@@ -226,7 +231,7 @@ export function TopLikedActivitiesChart({ refreshKey, onDataChange, compact = tr
         margin={{ top: 5, right: 30, left: compact ? 10 : 20, bottom: 5 }}
         stackOffset="sign"
       >
-        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
         <XAxis
           type="number"
           fontSize={compact ? 10 : 12}

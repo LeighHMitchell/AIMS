@@ -45,6 +45,7 @@ interface ActivityCardModernProps {
     created_by_org_acronym?: string;
     totalBudget?: number;
     totalDisbursed?: number;
+    is_pooled_fund?: boolean;
   };
   className?: string;
   onEdit?: (activityId: string) => void;
@@ -232,6 +233,12 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
                 <span style={{ color: colors.paleSlate }}>Published</span>
               ) : (
                 <span style={{ color: colors.coolSteel }}>Unpublished</span>
+              )}
+              {activity.is_pooled_fund && (
+                <>
+                  <span>•</span>
+                  <span style={{ color: '#3C6255', fontWeight: 600 }}>Fund</span>
+                </>
               )}
               {activity.activity_status && (
                 <>

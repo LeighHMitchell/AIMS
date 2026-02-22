@@ -347,7 +347,7 @@ export default function ImprovedSectorAllocationForm({
     const isRightAligned = className.includes('text-right');
     return (
       <TableHead 
-        className={cn("cursor-pointer hover:bg-gray-100 select-none py-3", className)}
+        className={cn("cursor-pointer hover:bg-muted select-none py-3", className)}
         onClick={() => handleSort(field)}
       >
         <div className={cn("flex items-center gap-1", isRightAligned ? "justify-end" : "justify-start")}>
@@ -933,47 +933,47 @@ export default function ImprovedSectorAllocationForm({
 
       {/* IATI Sector Export Level Setting */}
       {activityId && onSectorExportLevelChange && (
-        <Card className="bg-slate-50 border-slate-200">
+        <Card className="bg-muted border-border">
           <CardHeader className="py-3 px-4">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-medium text-slate-700">IATI Sector Export Level</CardTitle>
+              <CardTitle className="text-sm font-medium text-foreground">IATI Sector Export Level</CardTitle>
               <HelpTextTooltip
                 content="When exporting to IATI XML, sectors can be published at the activity level (all transactions inherit) or at the transaction level (each transaction has its own sector breakdown). IATI requires consistency - sectors must be at one level or the other, not both."
               />
             </div>
-            <CardDescription className="text-xs text-slate-500">
+            <CardDescription className="text-xs text-muted-foreground">
               Choose how sectors are included in IATI exports
             </CardDescription>
           </CardHeader>
           <CardContent className="py-2 px-4">
             <div className="flex flex-col space-y-2">
-              <label className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-slate-100 transition-colors">
+              <label className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-muted transition-colors">
                 <input
                   type="radio"
                   name="sector-export-level"
                   checked={sectorExportLevel === 'activity'}
                   onChange={() => onSectorExportLevelChange('activity')}
-                  className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  className="mt-0.5 h-4 w-4 text-blue-600 border-border focus:ring-blue-500"
                 />
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-700">Activity Level</span>
-                  <p className="text-xs text-gray-500">
+                  <span className="text-sm font-medium text-foreground">Activity Level</span>
+                  <p className="text-xs text-muted-foreground">
                     Sectors are exported as activity-level elements. All transactions share these sectors.
                   </p>
                 </div>
               </label>
               
-              <label className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-slate-100 transition-colors">
+              <label className="flex items-start gap-3 cursor-pointer p-2 rounded hover:bg-muted transition-colors">
                 <input
                   type="radio"
                   name="sector-export-level"
                   checked={sectorExportLevel === 'transaction'}
                   onChange={() => onSectorExportLevelChange('transaction')}
-                  className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  className="mt-0.5 h-4 w-4 text-blue-600 border-border focus:ring-blue-500"
                 />
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-700">Transaction Level</span>
-                  <p className="text-xs text-gray-500">
+                  <span className="text-sm font-medium text-foreground">Transaction Level</span>
+                  <p className="text-xs text-muted-foreground">
                     Sectors are exported within each transaction. Transactions using activity sectors will export the activity sectors.
                   </p>
                 </div>
@@ -1136,7 +1136,7 @@ export default function ImprovedSectorAllocationForm({
                             variant="default" 
                             size="sm"
                             onClick={distributeEqually}
-                            className="text-xs bg-gray-900 hover:bg-gray-800 text-white"
+                            className="text-xs bg-foreground hover:bg-foreground/90 text-white"
                             disabled={isLocked}
                           >
                             <Sparkles className="h-3 w-3 mr-1" />
@@ -1177,7 +1177,7 @@ export default function ImprovedSectorAllocationForm({
               <div className="rounded-lg border overflow-hidden">
                 <Table className="table-fixed w-full">
                   <TableHeader>
-                    <TableRow className="bg-gray-50">
+                    <TableRow className="bg-muted">
                       <SortableHeader field="category">Sector Category</SortableHeader>
                       <SortableHeader field="sector">Sector</SortableHeader>
                       <SortableHeader field="subSector">Sub-sector</SortableHeader>
@@ -1203,7 +1203,7 @@ export default function ImprovedSectorAllocationForm({
                         <TableRow 
                           key={allocation.id}
                           className={cn(
-                            "hover:bg-gray-50 transition-colors duration-150",
+                            "hover:bg-muted/50 transition-colors duration-150",
                             allocation.percentage === 0 && "bg-[#DC2625]/10 hover:bg-[#DC2625]/15"
                           )}
                         >
@@ -1239,7 +1239,7 @@ export default function ImprovedSectorAllocationForm({
                                 className={cn(
                                   "w-24 h-8 text-sm text-center font-mono p-2",
                                   allocation.percentage === 0 && "border-[#DC2625]/40",
-                                  isLocked && "bg-gray-100 cursor-not-allowed"
+                                  isLocked && "bg-muted cursor-not-allowed"
                                 )}
                               />
                               {/* Save Status Icon */}
@@ -1312,7 +1312,7 @@ export default function ImprovedSectorAllocationForm({
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base">Sector Allocation Visualization</CardTitle>
                 <HelpTextTooltip content="Interactive Sankey diagram showing sector allocation hierarchy from categories to sectors to subsectors">
-                  <HelpCircle className="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-help" />
+                  <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
                 </HelpTextTooltip>
               </div>
             </CardHeader>

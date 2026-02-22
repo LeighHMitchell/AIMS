@@ -10,6 +10,8 @@ interface SystemSettings {
     name: string
     dialCode?: string
   }
+  defaultLanguage: string
+  defaultCurrency: string
 }
 
 interface SystemSettingsContextType {
@@ -46,7 +48,9 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
         homeCountryData: countryData || {
           code: data.homeCountry || '',
           name: '',
-        }
+        },
+        defaultLanguage: data.defaultLanguage || 'en',
+        defaultCurrency: data.defaultCurrency || 'USD',
       })
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
@@ -104,4 +108,16 @@ export function useHomeCountryData() {
     name: '',
     dialCode: ''
   }
+}
+
+// Helper function to get the default language with fallback
+export function useDefaultLanguage() {
+  const { settings } = useSystemSettings()
+  return settings?.defaultLanguage || 'en'
+}
+
+// Helper function to get the default currency with fallback
+export function useDefaultCurrency() {
+  const { settings } = useSystemSettings()
+  return settings?.defaultCurrency || 'USD'
 }
