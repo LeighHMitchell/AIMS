@@ -708,10 +708,8 @@ export function TransactionTable({
                 return txHeaderMap[colId] || null;
               })}
             </DndColumnProvider>
-            {/* Actions - always visible, locked last */}
-            <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground">
-              Actions
-            </th>
+            {/* Actions - always visible, no header text */}
+            <th className="h-12 px-2" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -1051,7 +1049,7 @@ export function TransactionTable({
                 })}
 
               {/* Actions - always visible */}
-              <td className="py-3 px-4 text-right">
+              <td className="py-3 px-2 text-center">
                 <TransactionActionMenu
                   transactionId={transaction.uuid || transaction.id}
                   isLinkedTransaction={transaction.transaction_source === 'linked'}

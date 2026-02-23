@@ -34,7 +34,7 @@ export async function GET(
     // Incoming transactions (contributions): types 1 (Incoming Funds), 11 (Incoming Commitment), 13 (Incoming Pledge)
     const { data: incomingTxns, error: inErr } = await supabase
       .from('transactions')
-      .select('uuid, transaction_type, value, currency, transaction_date, value_date, provider_org_id, provider_org_name, provider_org_ref, value_usd, usd_value')
+      .select('uuid, transaction_type, value, currency, transaction_date, value_date, provider_org_id, provider_org_name, provider_org_ref, value_usd')
       .eq('activity_id', activityId)
       .in('transaction_type', ['1', '11', '13'])
 
@@ -45,7 +45,7 @@ export async function GET(
     // Outgoing transactions (disbursements from fund): types 2 (Outgoing Commitment), 3 (Disbursement)
     const { data: outgoingTxns, error: outErr } = await supabase
       .from('transactions')
-      .select('uuid, transaction_type, value, currency, transaction_date, value_date, receiver_activity_uuid, receiver_org_id, receiver_org_name, value_usd, usd_value')
+      .select('uuid, transaction_type, value, currency, transaction_date, value_date, receiver_activity_uuid, receiver_org_id, receiver_org_name, value_usd')
       .eq('activity_id', activityId)
       .in('transaction_type', ['2', '3'])
 
@@ -77,7 +77,7 @@ export async function GET(
     if (childIds.size > 0) {
       const { data: childIncoming } = await supabase
         .from('transactions')
-        .select('value, currency, value_usd, usd_value')
+        .select('value, currency, value_usd')
         .in('activity_id', Array.from(childIds))
         .in('transaction_type', ['1', '11'])
         .eq('provider_activity_uuid', activityId)

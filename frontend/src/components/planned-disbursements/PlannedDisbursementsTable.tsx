@@ -426,9 +426,7 @@ export function PlannedDisbursementsTable({
               <DndColumnProvider items={orderedVisibleColumns} onReorder={handleReorder}>
                 {orderedVisibleColumns.map((colId) => headerMap[colId])}
               </DndColumnProvider>
-              <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground">
-                Actions
-              </th>
+              <th className="h-12 px-2" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -668,8 +666,8 @@ export function PlannedDisbursementsTable({
 
                     {orderedVisibleColumns.map((colId) => cellMap[colId])}
 
-                    {/* Actions */}
-                    <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    {/* Actions - same layout as activities list */}
+                    <td className="px-2 py-2 text-center align-middle" onClick={(e) => e.stopPropagation()}>
                       <PlannedDisbursementActionMenu
                         disbursementId={disbursementId}
                         onEdit={onEdit ? () => onEdit(disbursement) : undefined}

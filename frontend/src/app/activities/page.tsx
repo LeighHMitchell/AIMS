@@ -1921,13 +1921,13 @@ const router = useRouter();
       ) : viewMode === 'table' ? (
         <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden fade-in" data-tour="activities-table">
           <div className="overflow-x-auto">
-            <table className="w-full table-auto border-collapse activities-table">
+            <table className="w-full border-collapse activities-table table-auto">
               <colgroup>
-                <col style={{ width: 50, minWidth: 50 }} />
+                <col />
                 {orderedDraggableColumns.map((colId) => (
                   <col key={colId} />
                 ))}
-                <col style={{ width: 72, minWidth: 72 }} />
+                <col />
               </colgroup>
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
@@ -2542,16 +2542,15 @@ const router = useRouter();
                           </SortableTableHeader>
                         ),
                       };
-                      return actHeaderMap[colId] || null;
+                      /* Always render a cell so column count matches header (keeps Actions column aligned) */
+                      return actHeaderMap[colId] ?? (
+                        <th key={colId} className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground" />
+                      );
                     })}
                   </DndColumnProvider>
 
-                  {/* Actions column - always visible */}
-                  <th className="h-12 px-3 py-3 align-middle text-sm font-medium text-muted-foreground w-[72px]">
-                    <div className="w-full flex items-center justify-end">
-                      <ColumnHeaderText columnId="actions">Actions</ColumnHeaderText>
-                    </div>
-                  </th>
+                  {/* Actions column - no header text, just kebab in rows */}
+                  <th className="h-12 px-2" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
@@ -2568,7 +2567,7 @@ const router = useRouter();
                   return (
                     <tr
                       key={activity.id}
-                      className={`group hover:bg-muted transition-colors ${isSelected ? 'bg-muted border-border' : ''}`}
+                      className={`group hover:bg-muted [&:hover>td]:bg-muted transition-colors ${isSelected ? 'bg-muted border-border' : ''}`}
                     >
                       {/* Checkbox cell - always visible */}
                       <td className="px-4 py-2 text-center" onClick={(e) => e.stopPropagation()}>
@@ -2649,7 +2648,7 @@ const router = useRouter();
                               >
                                 {activity.title}
                                 {activity.acronym && (
-                                  <span>
+                                  <span className="font-medium text-foreground">
                                     {' '}({activity.acronym})
                                   </span>
                                 )}
@@ -3895,24 +3894,25 @@ const router = useRouter();
                         </td>
                           ),
                         };
-                        return actCellMap[colId] || null;
+                        /* Always render a cell so column count matches header (keeps Actions column aligned) */
+                        return actCellMap[colId] ?? (
+                          <td key={colId} className="px-4 py-2 text-sm text-foreground" />
+                        );
                       })}
 
-                      {/* Actions cell - always visible */}
-                      <td className="px-3 py-2 text-sm text-foreground w-[72px] align-middle">
-                        <div className="w-full flex items-center justify-end">
-                          <ActivityActionMenu
-                            activityId={activity.id}
-                            isBookmarked={isBookmarked(activity.id)}
-                            canEdit={canUserEditActivity(user, activity)}
-                            onToggleBookmark={() => toggleBookmark(activity.id)}
-                            onEdit={() => router.push(`/activities/new?id=${activity.id}`)}
-                            onExportXML={() => handleExportActivityXML(activity.id)}
-                            onExportPDF={() => handleExportActivityPDF(activity.id)}
-                            onExportExcel={() => handleExportActivityExcel(activity.id)}
-                            onDelete={() => setDeleteActivityId(activity.id)}
-                          />
-                        </div>
+                      {/* Actions cell */}
+                      <td className="px-2 py-2 text-center align-middle">
+                        <ActivityActionMenu
+                          activityId={activity.id}
+                          isBookmarked={isBookmarked(activity.id)}
+                          canEdit={canUserEditActivity(user, activity)}
+                          onToggleBookmark={() => toggleBookmark(activity.id)}
+                          onEdit={() => router.push(`/activities/new?id=${activity.id}`)}
+                          onExportXML={() => handleExportActivityXML(activity.id)}
+                          onExportPDF={() => handleExportActivityPDF(activity.id)}
+                          onExportExcel={() => handleExportActivityExcel(activity.id)}
+                          onDelete={() => setDeleteActivityId(activity.id)}
+                        />
                       </td>
                     </tr>
                   );

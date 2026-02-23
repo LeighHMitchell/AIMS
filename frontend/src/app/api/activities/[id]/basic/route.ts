@@ -214,6 +214,7 @@ export async function GET(
       activityScope: activity.activity_scope,
       activity_scope: activity.activity_scope,
       hierarchy: activity.hierarchy,
+      is_pooled_fund: activity.is_pooled_fund ?? false,
       activityStatus: activity.activity_status,
       activity_status: activity.activity_status,
       publicationStatus: activity.publication_status,

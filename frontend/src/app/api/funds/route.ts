@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     // Get all pooled fund activities
     let query = supabase
       .from('activities')
-      .select('id, title_narrative, activity_status, planned_start_date, planned_end_date, actual_start_date, actual_end_date', { count: 'exact' })
+      .select('id, title_narrative, acronym, iati_identifier, activity_status, planned_start_date, planned_end_date, actual_start_date, actual_end_date, reporting_org_id', { count: 'exact' })
       .eq('is_pooled_fund', true)
 
     if (status) {
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: funds, error: fundsError, count } = await query
-      .order('title', { ascending: true })
+      .order('title_narrative', { ascending: true })
       .range(offset, offset + limit - 1)
 
     if (fundsError) {
@@ -45,14 +45,14 @@ export async function GET(request: NextRequest) {
     // Get incoming transactions (contributions) for all funds
     const { data: allIncoming } = await supabase
       .from('transactions')
-      .select('activity_id, transaction_type, value, value_usd, usd_value, provider_org_name, transaction_date')
+      .select('activity_id, transaction_type, value, value_usd, provider_org_name, provider_org_id, transaction_date')
       .in('activity_id', fundIds)
       .in('transaction_type', ['1', '11', '13'])
 
-    // Get outgoing transactions (disbursements) for all funds
+    // Get outgoing transactions (disbursements) for all funds - include receiver for sector split
     const { data: allOutgoing } = await supabase
       .from('transactions')
-      .select('activity_id, transaction_type, value, value_usd, usd_value, transaction_date')
+      .select('activity_id, transaction_type, value, value_usd, transaction_date, receiver_activity_uuid')
       .in('activity_id', fundIds)
       .in('transaction_type', ['2', '3'])
 
@@ -88,6 +88,22 @@ export async function GET(request: NextRequest) {
     const allChildIds = new Set<string>()
     Object.values(childIdsByFund).forEach(s => s.forEach(id => allChildIds.add(id)))
 
+    // Fetch child activity titles, acronyms, and identifiers for display
+    let childActivityDetails: Record<string, { title: string; acronym: string | null; identifier: string }> = {}
+    if (allChildIds.size > 0) {
+      const { data: childActivities } = await supabase
+        .from('activities')
+        .select('id, title_narrative, acronym, iati_identifier')
+        .in('id', Array.from(allChildIds))
+      childActivities?.forEach((a: { id: string; title_narrative: string | null; acronym: string | null; iati_identifier: string | null }) => {
+        childActivityDetails[a.id] = {
+          title: a.title_narrative || 'Untitled activity',
+          acronym: a.acronym || null,
+          identifier: a.iati_identifier || a.id,
+        }
+      })
+    }
+
     let sectorsByActivity: Record<string, string[]> = {}
     if (allChildIds.size > 0) {
       const { data: sectors } = await supabase
@@ -103,27 +119,65 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Resolve donor org acronyms (provider_org_id -> organizations)
+    const providerOrgIds = new Set<string>()
+    allIncoming?.forEach((t: { provider_org_id?: string }) => {
+      if (t.provider_org_id) providerOrgIds.add(t.provider_org_id)
+    })
+    let orgById: Record<string, { name: string; acronym: string | null }> = {}
+    if (providerOrgIds.size > 0) {
+      const { data: orgs } = await supabase
+        .from('organizations')
+        .select('id, name, acronym')
+        .in('id', Array.from(providerOrgIds))
+      orgs?.forEach((o: { id: string; name: string; acronym: string | null }) => {
+        orgById[o.id] = { name: o.name, acronym: o.acronym ?? null }
+      })
+    }
+
+    // Resolve fund manager (reporting org) per fund
+    const reportingOrgIds = [...new Set(funds.map((f: { reporting_org_id?: string }) => f.reporting_org_id).filter(Boolean))] as string[]
+    let reportingOrgById: Record<string, { name: string; acronym: string | null; logo: string | null }> = {}
+    if (reportingOrgIds.length > 0) {
+      const { data: reportingOrgs } = await supabase
+        .from('organizations')
+        .select('id, name, acronym, logo')
+        .in('id', reportingOrgIds)
+      reportingOrgs?.forEach((o: { id: string; name: string; acronym: string | null; logo?: string | null }) => {
+        reportingOrgById[o.id] = { name: o.name, acronym: o.acronym ?? null, logo: o.logo ?? null }
+      })
+    }
+
     // Build fund summaries
     const fundSummaries = funds.map(fund => {
       const incoming = allIncoming?.filter(t => t.activity_id === fund.id) || []
       const outgoing = allOutgoing?.filter(t => t.activity_id === fund.id) || []
-      const childIds = childIdsByFund[fund.id] || new Set()
+      const rawChildIds = childIdsByFund[fund.id] || new Set<string>()
+      const childIds = new Set([...rawChildIds].filter(id => id !== fund.id))
 
       let totalContributions = 0
       let totalDisbursements = 0
       const donorAmounts: Record<string, number> = {}
+      const donorNameToOrgId: Record<string, string> = {}
       const quarterlyData: Record<string, number> = {}
 
-      incoming.forEach(t => {
-        const usd = t.value_usd || t.usd_value || t.value || 0
+      incoming.forEach((t: { value_usd?: number; value?: number; provider_org_name?: string; provider_org_id?: string }) => {
+        const usd = t.value_usd ?? (t as { usd_value?: number }).usd_value ?? t.value ?? 0
         totalContributions += usd
         const donor = t.provider_org_name || 'Unknown'
         donorAmounts[donor] = (donorAmounts[donor] || 0) + usd
+        if (t.provider_org_id) donorNameToOrgId[donor] = t.provider_org_id
       })
 
-      outgoing.forEach(t => {
-        const usd = t.value_usd || t.usd_value || t.value || 0
+      // Disbursements per child (for sector totals)
+      const childDisbursed: Record<string, number> = {}
+      outgoing.forEach((t: { value_usd?: number; value?: number; receiver_activity_uuid?: string; transaction_date?: string }) => {
+        const usd = t.value_usd ?? (t as { usd_value?: number }).usd_value ?? t.value ?? 0
         totalDisbursements += usd
+        const childId = t.receiver_activity_uuid
+        if (childId && childIds.has(childId)) {
+          childDisbursed[childId] = (childDisbursed[childId] || 0) + usd
+        }
         const date = t.transaction_date
         if (date) {
           const d = new Date(date)
@@ -136,27 +190,57 @@ export async function GET(request: NextRequest) {
       const topDonors = Object.entries(donorAmounts)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 3)
-        .map(([name, total]) => ({ name, total }))
+        .map(([name, total]) => {
+          const org = donorNameToOrgId[name] ? orgById[donorNameToOrgId[name]] : null
+          return { name, acronym: org?.acronym ?? null, total }
+        })
 
-      // Top sectors from child activities
-      const sectorCounts: Record<string, number> = {}
+      // Top sectors by total disbursements to children in that sector
+      const sectorAmounts: Record<string, number> = {}
       Array.from(childIds).forEach(childId => {
         const sectors = sectorsByActivity[childId] || []
-        sectors.forEach(s => { sectorCounts[s] = (sectorCounts[s] || 0) + 1 })
+        const amount = childDisbursed[childId] || 0
+        sectors.forEach(s => {
+          sectorAmounts[s] = (sectorAmounts[s] || 0) + amount
+        })
       })
-      const topSectors = Object.entries(sectorCounts)
+      const allocatedTotal = Object.values(sectorAmounts).reduce((a, b) => a + b, 0)
+      const unallocated = Math.max(0, totalDisbursements - allocatedTotal)
+      if (unallocated > 0) {
+        sectorAmounts['Unallocated'] = unallocated
+      }
+      const topSectors = Object.entries(sectorAmounts)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 3)
-        .map(([name, count]) => ({ name, count }))
+        .map(([name, total]) => ({ name, total }))
 
       const sparkline = Object.entries(quarterlyData)
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([quarter, amount]) => ({ quarter, amount }))
 
+      const childActivities = Array.from(childIds)
+        .map(id => {
+          const details = childActivityDetails[id]
+          return details
+            ? { id, title: details.title, acronym: details.acronym, identifier: details.identifier }
+            : { id, title: 'Untitled activity', acronym: null as string | null, identifier: id }
+        })
+        .sort((a, b) => a.title.localeCompare(b.title))
+
+      // Child flows for Sankey: disbursements per child (show child activities, include zeros so we always show children not sectors)
+      const childFlows = childActivities
+        .map(c => ({ id: c.id, name: c.acronym || c.title, total: childDisbursed[c.id] || 0 }))
+        .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+        .slice(0, 6)
+        .map(({ id, name, total }) => ({ id, name: name.length > 14 ? name.slice(0, 12) + '…' : name, total }))
+
       return {
         id: fund.id,
         title: fund.title_narrative,
+        acronym: fund.acronym || null,
+        identifier: fund.iati_identifier || fund.id,
         status: fund.activity_status,
+        fundManager: fund.reporting_org_id ? (reportingOrgById[fund.reporting_org_id] ?? null) : null,
         dateRange: {
           start: fund.actual_start_date || fund.planned_start_date,
           end: fund.actual_end_date || fund.planned_end_date,
@@ -165,8 +249,10 @@ export async function GET(request: NextRequest) {
         totalDisbursements,
         balance: totalContributions - totalDisbursements,
         childCount: childIds.size,
+        childActivities,
         topDonors,
         topSectors,
+        childFlows,
         sparkline,
       }
     })

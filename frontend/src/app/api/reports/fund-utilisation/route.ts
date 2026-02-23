@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
 
     const { data: funds, error: fundsError } = await supabase
       .from('activities')
-      .select('id, title, activity_status')
+      .select('id, title_narrative, activity_status')
       .eq('is_pooled_fund', true)
-      .order('title')
+      .order('title_narrative')
 
     if (fundsError) {
       return NextResponse.json({ error: 'Failed to fetch funds' }, { status: 500 })
@@ -30,14 +30,14 @@ export async function GET(request: NextRequest) {
     // Get contributions (incoming transactions)
     const { data: incoming } = await supabase
       .from('transactions')
-      .select('activity_id, value, value_usd, usd_value')
+      .select('activity_id, value, value_usd')
       .in('activity_id', fundIds)
       .in('transaction_type', ['1', '11', '13'])
 
     // Get disbursements (outgoing transactions)
     const { data: outgoing } = await supabase
       .from('transactions')
-      .select('activity_id, value, value_usd, usd_value')
+      .select('activity_id, value, value_usd')
       .in('activity_id', fundIds)
       .in('transaction_type', ['2', '3'])
 
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
       const utilisation = contributions > 0 ? ((disbursements / contributions) * 100).toFixed(1) : '0.0'
 
       return {
-        fund_name: fund.title,
+        fund_name: fund.title_narrative,
         total_contributions: contributions.toFixed(2),
         total_disbursements: disbursements.toFixed(2),
         balance: balance.toFixed(2),

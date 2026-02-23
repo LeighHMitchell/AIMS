@@ -22,7 +22,7 @@ export async function GET(
     // Incoming transactions: types 1 (Incoming Funds), 11 (Incoming Commitment), 13 (Incoming Pledge)
     const { data: transactions, error } = await supabase
       .from('transactions')
-      .select('uuid, transaction_type, value, currency, transaction_date, value_date, provider_org_id, provider_org_name, provider_org_ref, value_usd, usd_value')
+      .select('uuid, transaction_type, value, currency, transaction_date, value_date, provider_org_id, provider_org_name, provider_org_ref, value_usd')
       .eq('activity_id', activityId)
       .in('transaction_type', ['1', '11', '13'])
       .order('transaction_date', { ascending: true })

@@ -1,7 +1,26 @@
 {
-  "currentVersion": "2.14.0",
-  "narrativeSummary": "æther Myanmar now supports pooled and trust funds so you can model activities that receive contributions and disburse to child projects. The Aid Effectiveness survey is further strengthened: dropdown options can be linked to responsible ministries, and seed data is in place for national plans, results frameworks, accountability frameworks, and capacity development. This builds on the recent survey overhaul with richer, country-ready options and clearer data structures.",
+  "currentVersion": "2.15.0",
+  "narrativeSummary": "This release focuses on table polish and consistency across the system. The activity list's action menu has been rebuilt for reliability, row highlights now cover the full width of every table, and unnecessary column headers have been cleaned up for a tidier, more intuitive layout.",
   "releases": [
+    {
+      "version": "2.15.0",
+      "date": "2026-02-23",
+      "narrativeSummary": "We tidied up the tables across æther so they feel more polished and consistent. Previously, the action menu on the activity list used a custom animated component that caused the kebab button to sit out of alignment with the rest of the row — when you hovered over a row the highlight would stop short, leaving an awkward white gap on the right. We replaced that menu with the same straightforward dropdown used elsewhere in the system, removed the now-unnecessary "Actions" column header from both the Activities and Transactions tables, and made sure that hovering over any row in any table — Activities, Transactions, Budgets, or Planned Disbursements — highlights the entire row edge to edge. Small details, but they add up to a cleaner, more trustworthy interface.",
+      "changes": [
+        "<b>Activity Action Menu Rebuilt</b>",
+        "&nbsp;&nbsp;Replaced custom <code>bloom-menu</code> animated component with standard <code>DropdownMenu</code> (same pattern as Transactions table)",
+        "&nbsp;&nbsp;Fixes alignment issue where the kebab button sat out of line with column headers",
+        "&nbsp;&nbsp;Export sub-menu preserved with XML, PDF, and Excel options",
+        "<b>Actions Column Cleanup</b>",
+        "&nbsp;&nbsp;Removed &ldquo;Actions&rdquo; column header text from Activities table &mdash; kebab button renders without a header label",
+        "&nbsp;&nbsp;Removed &ldquo;Actions&rdquo; column header text from Transactions table for consistency",
+        "&nbsp;&nbsp;Removed <code>actions</code> from column configuration in both Activities and Transactions column definitions",
+        "<b>Full-Width Row Hover Highlights</b>",
+        "&nbsp;&nbsp;Added <code>[&amp;:hover&gt;td]:bg-muted/50</code> to the base <code>TableRow</code> component so every cell receives the highlight background on hover",
+        "&nbsp;&nbsp;Applies globally to all tables using the shared <code>Table</code> component: Transactions, Budgets, and Planned Disbursements",
+        "&nbsp;&nbsp;Activities table also updated with matching <code>[&amp;:hover&gt;td]:bg-muted</code> on its custom row element"
+      ]
+    },
     {
       "version": "2.14.0",
       "date": "2026-02-22",

@@ -20,7 +20,7 @@ export async function GET(
     // Get fund details
     const { data: fund, error: fundError } = await supabase
       .from('activities')
-      .select('id, title_narrative, created_by_org, is_pooled_fund')
+      .select('id, title_narrative, reporting_org_id, is_pooled_fund')
       .eq('id', fundId)
       .single()
 
@@ -59,13 +59,13 @@ export async function GET(
     // Method 1: Transaction references — activities with transactions referencing this fund
     const { data: providerRefs } = await supabase
       .from('transactions')
-      .select('activity_id, value, value_usd, usd_value')
+      .select('activity_id, value, value_usd')
       .eq('provider_activity_uuid', fundId)
       .not('activity_id', 'in', `(${Array.from(linkedIds).join(',')})`)
 
     const { data: receiverRefs } = await supabase
       .from('transactions')
-      .select('activity_id, value, value_usd, usd_value')
+      .select('activity_id, value, value_usd')
       .eq('receiver_activity_uuid', fundId)
       .not('activity_id', 'in', `(${Array.from(linkedIds).join(',')})`)
 
@@ -111,11 +111,11 @@ export async function GET(
     })
 
     // Method 2: Funding org match — activities where fund's org is a funding participating org
-    if (fund.created_by_org) {
+    if (fund.reporting_org_id) {
       const { data: orgMatches } = await supabase
         .from('activity_participating_organizations')
         .select('activity_id')
-        .eq('organization_id', fund.created_by_org)
+        .eq('organization_id', fund.reporting_org_id)
         .eq('role_type', 'funding')
 
       orgMatches?.forEach(m => {
@@ -137,8 +137,8 @@ export async function GET(
     }
 
     // Method 3: Fuzzy title match
-    if (fund.title && fund.title.length > 3) {
-      const searchTerms = fund.title
+    if (fund.title_narrative && fund.title_narrative.length > 3) {
+      const searchTerms = fund.title_narrative
         .split(/\s+/)
         .filter((w: string) => w.length > 3)
         .slice(0, 3)
@@ -147,8 +147,8 @@ export async function GET(
         for (const term of searchTerms) {
           const { data: titleMatches } = await supabase
             .from('activities')
-            .select('id, title, activity_status')
-            .ilike('title', `%${term}%`)
+            .select('id, title_narrative, activity_status')
+            .ilike('title_narrative', `%${term}%`)
             .neq('id', fundId)
             .limit(20)
 
@@ -157,7 +157,7 @@ export async function GET(
               if (!suggestions[m.id]) {
                 suggestions[m.id] = {
                   activityId: m.id,
-                  title: m.title,
+                  title: m.title_narrative,
                   status: m.activity_status || '',
                   reasons: [],
                   confidence: 0,
@@ -168,7 +168,7 @@ export async function GET(
                 suggestions[m.id].reasons.push(`Title contains "${term}"`)
                 suggestions[m.id].confidence += 10
               }
-              if (m.title) suggestions[m.id].title = m.title
+              if (m.title_narrative) suggestions[m.id].title = m.title_narrative
               if (m.activity_status) suggestions[m.id].status = m.activity_status
             }
           })
@@ -184,12 +184,12 @@ export async function GET(
     if (missingTitleIds.length > 0) {
       const { data: activityDetails } = await supabase
         .from('activities')
-        .select('id, title, activity_status')
+        .select('id, title_narrative, activity_status')
         .in('id', missingTitleIds)
 
       activityDetails?.forEach(a => {
         if (suggestions[a.id]) {
-          suggestions[a.id].title = a.title
+          suggestions[a.id].title = a.title_narrative
           suggestions[a.id].status = a.activity_status || ''
         }
       })

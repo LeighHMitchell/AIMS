@@ -6,7 +6,6 @@ import { ColumnConfig } from "@/components/ui/column-selector";
 export type TransactionColumnId =
   // Always visible
   | "checkbox"
-  | "actions"
   // Default visible
   | "activity"
   | "transactionDate"
@@ -54,7 +53,6 @@ export const transactionColumns: ColumnConfig<TransactionColumnId>[] = [
   { id: "valueDate", label: "Value Date", group: "default", defaultVisible: true },
   { id: "usdValue", label: "USD Value", group: "default", defaultVisible: true },
   { id: "financeType", label: "Finance Type", group: "default", defaultVisible: true },
-  { id: "actions", label: "Actions", group: "default", alwaysVisible: true, defaultVisible: true },
 
   // Activity Context
   { id: "activityId", label: "Activity ID", group: "activityContext", defaultVisible: false },

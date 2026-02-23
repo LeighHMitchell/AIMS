@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
 
     const { data: funds, error: fundsError } = await supabase
       .from('activities')
-      .select('id, title')
+      .select('id, title_narrative')
       .eq('is_pooled_fund', true)
-      .order('title')
+      .order('title_narrative')
 
     if (fundsError) {
       return NextResponse.json({ error: 'Failed to fetch funds' }, { status: 500 })
@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
 
     const fundIds = funds.map(f => f.id)
     const fundTitleMap: Record<string, string> = {}
-    funds.forEach(f => { fundTitleMap[f.id] = f.title })
+    funds.forEach(f => { fundTitleMap[f.id] = f.title_narrative })
 
     const { data: transactions, error: txnError } = await supabase
       .from('transactions')
-      .select('activity_id, transaction_type, value, value_usd, usd_value, provider_org_name, provider_org_ref, transaction_date')
+      .select('activity_id, transaction_type, value, value_usd, provider_org_name, provider_org_ref, transaction_date')
       .in('activity_id', fundIds)
       .in('transaction_type', ['1', '11', '13'])
       .order('transaction_date', { ascending: true })

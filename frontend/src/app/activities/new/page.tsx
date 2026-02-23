@@ -110,6 +110,7 @@ import { IatiDocumentLink } from "@/lib/iatiDocumentLink";
 import { HumanitarianTab } from "@/components/activities/HumanitarianTab";
 
 import { DeleteActivityDialog } from "@/components/DeleteActivityDialog";
+import { PooledFundTypeToggle } from "@/components/activities/PooledFundTypeToggle";
 import { ReadinessChecklistTab } from "@/components/activities/readiness";
 import { apiFetch } from '@/lib/api-fetch';
 import {
@@ -1609,6 +1610,40 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             disabled={fieldLockStatus.isLocked}
           />
         </div>
+        {general.is_pooled_fund === true && (
+          <p className="text-xs text-muted-foreground mt-1">
+            For pooled funds, this organisation is shown as the fund manager on the Pooled funds page.
+          </p>
+        )}
+      </div>
+
+      {/* Activity Type: Standard vs Pooled Fund (same card UI as Sectors / Geography) */}
+      <div className="w-full space-y-2 mb-6">
+        <LabelSaveIndicator
+          isSaving={isPooledFundAutosave.state.isSaving}
+          isSaved={isPooledFundAutosave.state.isPersistentlySaved || general.is_pooled_fund === true}
+          hasValue={general.is_pooled_fund === true}
+          className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
+        >
+          <div className="flex items-center gap-2">
+            Activity Type
+            <HelpTextTooltip>
+              Choose whether this is a standard activity (single project or programme) or a pooled or trust fund. Pooled funds receive contributions from donors and disburse to child activities, with a dedicated fund management section.
+            </HelpTextTooltip>
+          </div>
+        </LabelSaveIndicator>
+        <PooledFundTypeToggle
+          isPooledFund={general.is_pooled_fund || false}
+          onSelect={(checked) => {
+            if (!fieldLockStatus.isLocked) {
+              setGeneral((g: any) => ({ ...g, is_pooled_fund: checked }));
+              isPooledFundAutosave.triggerFieldSave(checked);
+            }
+          }}
+          disabled={fieldLockStatus.isLocked}
+          isSaving={isPooledFundAutosave.state.isSaving}
+        />
+        {isPooledFundAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {isPooledFundAutosave.state.error.message}</p>}
       </div>
 
       {/* Description with field-level autosave */}
@@ -2030,39 +2065,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             {hierarchyAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {hierarchyAutosave.state.error.message}</p>}
-          </div>
-
-          {/* Pooled Fund Toggle */}
-          <div className="w-full space-y-2">
-            <LabelSaveIndicator
-              isSaving={isPooledFundAutosave.state.isSaving}
-              isSaved={isPooledFundAutosave.state.isPersistentlySaved || general.is_pooled_fund === true}
-              hasValue={general.is_pooled_fund === true}
-              className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
-            >
-              <div className="flex items-center gap-2">
-                Pooled Fund
-                <HelpTextTooltip>
-                  Mark this activity as a pooled or trust fund. Pooled funds receive contributions from donors and disburse to child activities. Enabling this adds a dedicated fund management section with contributions tracking, disbursement views, and reconciliation tools.
-                </HelpTextTooltip>
-              </div>
-            </LabelSaveIndicator>
-            <div className="flex items-center gap-3">
-              <Switch
-                checked={general.is_pooled_fund || false}
-                onCheckedChange={(checked) => {
-                  if (!fieldLockStatus.isLocked) {
-                    setGeneral((g: any) => ({ ...g, is_pooled_fund: checked }));
-                    isPooledFundAutosave.triggerFieldSave(checked);
-                  }
-                }}
-                disabled={fieldLockStatus.isLocked}
-              />
-              <span className="text-sm text-muted-foreground">
-                {general.is_pooled_fund ? 'This activity is a pooled fund' : 'Not a pooled fund'}
-              </span>
-            </div>
-            {isPooledFundAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {isPooledFundAutosave.state.error.message}</p>}
           </div>
         </div>
       </div>

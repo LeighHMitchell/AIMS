@@ -1,30 +1,62 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useRef } from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { apiFetch } from "@/lib/api-fetch"
 import { useRouter } from "next/navigation"
-import { Search, DollarSign, Users, Layers, TrendingUp, ArrowUpDown, Wallet } from "lucide-react"
-import { AreaChart, Area, ResponsiveContainer } from "recharts"
+import Link from "next/link"
+import { toast } from "sonner"
+import { Search, DollarSign, Users, Layers, TrendingUp, ArrowUpDown, Wallet, MoreVertical, Pencil, Download, Trash2, Copy } from "lucide-react"
 import { useLoadingBar } from "@/hooks/useLoadingBar"
+import { useUser } from "@/hooks/useUser"
+import { exportActivityToPDF } from "@/lib/activity-export"
+import { FundFlowSankey } from "@/components/charts/FundFlowSankey"
+import { OrganizationLogo } from "@/components/ui/organization-logo"
 
 interface FundSummary {
   id: string
   title: string
+  acronym: string | null
+  identifier: string
   status: string
+  fundManager: { name: string; acronym: string | null; logo: string | null } | null
   dateRange: { start: string | null; end: string | null }
   totalContributions: number
   totalDisbursements: number
   balance: number
   childCount: number
-  topDonors: { name: string; total: number }[]
-  topSectors: { name: string; count: number }[]
+  childActivities: { id: string; title: string; acronym: string | null; identifier: string }[]
+  topDonors: { name: string; acronym: string | null; total: number }[]
+  topSectors: { name: string; total: number }[]
+  childFlows: { id: string; name: string; total: number }[]
   sparkline: { quarter: string; amount: number }[]
 }
 
@@ -34,23 +66,51 @@ function formatUSD(value: number): string {
   return `$${value.toFixed(0)}`
 }
 
-const statusColors: Record<string, string> = {
-  'Pipeline/identification': 'bg-muted text-gray-700',
-  'Implementation': 'bg-blue-100 text-blue-700',
-  'Completion': 'bg-green-100 text-green-700',
-  'Post-completion': 'bg-purple-100 text-purple-700',
-  'Cancelled': 'bg-red-100 text-red-700',
-  'Suspended': 'bg-yellow-100 text-yellow-700',
+function getActivityStatusDisplay(status: string | null | undefined): { label: string; className: string } {
+  if (!status) return { label: 'Pipeline/Identification', className: 'bg-muted text-foreground hover:bg-muted' }
+  const s = String(status).toLowerCase()
+  if (s === '4' || s === 'completed' || s === 'post-completion') return { label: s === '4' ? 'Post-Completion' : (s === 'completed' ? 'Completion' : 'Post-Completion'), className: 'bg-green-100 text-green-800 hover:bg-green-200' }
+  if (s === '2' || s === 'implementation') return { label: 'Implementation', className: 'bg-blue-100 text-blue-800 hover:bg-blue-200' }
+  if (s === '3') return { label: 'Completion', className: 'bg-green-100 text-green-800 hover:bg-green-200' }
+  if (s === '5' || s === 'cancelled') return { label: 'Cancelled', className: 'bg-red-100 text-red-800 hover:bg-red-200' }
+  if (s === '6' || s === 'suspended') return { label: 'Suspended', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' }
+  if (s === '1' || s === 'pipeline/identification') return { label: 'Pipeline/Identification', className: 'bg-muted text-foreground hover:bg-muted' }
+  return { label: status, className: 'bg-muted text-foreground hover:bg-muted' }
 }
 
 export default function FundsPage() {
   const router = useRouter()
+  const { user } = useUser()
   const [funds, setFunds] = useState<FundSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("title")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [deleteFundId, setDeleteFundId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [openMoreChildFundId, setOpenMoreChildFundId] = useState<string | null>(null)
+  const moreChildCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearMoreChildCloseTimeout = useCallback(() => {
+    if (moreChildCloseTimeoutRef.current) {
+      clearTimeout(moreChildCloseTimeoutRef.current)
+      moreChildCloseTimeoutRef.current = null
+    }
+  }, [])
+
+  const scheduleMoreChildClose = useCallback(() => {
+    clearMoreChildCloseTimeout()
+    moreChildCloseTimeoutRef.current = setTimeout(() => setOpenMoreChildFundId(null), 250)
+  }, [clearMoreChildCloseTimeout])
+
+  const copyToClipboard = useCallback((text: string, label: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(text).then(
+      () => toast.success(`${label} copied to clipboard`),
+      () => toast.error('Failed to copy')
+    )
+  }, [])
 
   useLoadingBar(loading)
 
@@ -81,6 +141,44 @@ export default function FundsPage() {
     loadFunds()
   }, [loadFunds])
 
+  const handleDeleteFund = useCallback(async (id: string) => {
+    setDeleteFundId(null)
+    setIsDeleting(true)
+    const fund = funds.find(f => f.id === id)
+    const fundTitle = fund?.title || "Pooled fund"
+    try {
+      const res = await apiFetch("/api/activities", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          user: user ? { id: user.id, name: user.name, role: user.role } : undefined,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || "Failed to delete")
+      }
+      toast.success(`"${fundTitle}" was deleted successfully`)
+      setFunds(prev => prev.filter(f => f.id !== id))
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete activity")
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [funds, user])
+
+  const handleExportPDF = useCallback(async (fundId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    toast.loading("Generating PDF...", { id: "fund-export-pdf" })
+    try {
+      await exportActivityToPDF(fundId)
+      toast.success("PDF exported successfully", { id: "fund-export-pdf" })
+    } catch (err) {
+      toast.error("Export failed", { id: "fund-export-pdf" })
+    }
+  }, [])
+
   const filteredFunds = searchQuery
     ? funds.filter(f => f.title.toLowerCase().includes(searchQuery.toLowerCase()))
     : funds
@@ -99,72 +197,53 @@ export default function FundsPage() {
           </p>
         </header>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search funds..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+        {/* Filters - shaded card like activity list */}
+        <div className="flex flex-wrap items-end gap-3 py-3 px-4 bg-surface-muted rounded-lg border border-gray-200">
+          <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-md">
+            <Label className="text-xs text-muted-foreground">Search</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search funds..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="Pipeline/identification">Pipeline</SelectItem>
-              <SelectItem value="Implementation">Implementation</SelectItem>
-              <SelectItem value="Completion">Completion</SelectItem>
-              <SelectItem value="Post-completion">Post-completion</SelectItem>
-              <SelectItem value="Cancelled">Cancelled</SelectItem>
-              <SelectItem value="Suspended">Suspended</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px]">
-              <ArrowUpDown className="h-3.5 w-3.5 mr-1" />
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="title">Name</SelectItem>
-              <SelectItem value="contributions">Total Contributions</SelectItem>
-              <SelectItem value="balance">Balance</SelectItem>
-              <SelectItem value="children">Child Activities</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Status</Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="Pipeline/identification">Pipeline</SelectItem>
+                <SelectItem value="Implementation">Implementation</SelectItem>
+                <SelectItem value="Completion">Completion</SelectItem>
+                <SelectItem value="Post-completion">Post-completion</SelectItem>
+                <SelectItem value="Cancelled">Cancelled</SelectItem>
+                <SelectItem value="Suspended">Suspended</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Sort by</Label>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px] h-9">
+                <ArrowUpDown className="h-3.5 w-3.5 mr-1" />
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="title">Name</SelectItem>
+                <SelectItem value="contributions">Total Contributions</SelectItem>
+                <SelectItem value="balance">Balance</SelectItem>
+                <SelectItem value="children">Child Activities</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-
-        {/* Summary Stats */}
-        {!loading && filteredFunds.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-card rounded-lg border p-4 text-center">
-              <p className="text-2xl font-bold text-foreground">{filteredFunds.length}</p>
-              <p className="text-xs text-muted-foreground">Total Funds</p>
-            </div>
-            <div className="bg-card rounded-lg border p-4 text-center">
-              <p className="text-2xl font-bold text-foreground">
-                {formatUSD(filteredFunds.reduce((s, f) => s + f.totalContributions, 0))}
-              </p>
-              <p className="text-xs text-muted-foreground">Total Contributions</p>
-            </div>
-            <div className="bg-card rounded-lg border p-4 text-center">
-              <p className="text-2xl font-bold text-foreground">
-                {formatUSD(filteredFunds.reduce((s, f) => s + f.totalDisbursements, 0))}
-              </p>
-              <p className="text-xs text-muted-foreground">Total Disbursements</p>
-            </div>
-            <div className="bg-card rounded-lg border p-4 text-center">
-              <p className="text-2xl font-bold text-foreground">
-                {filteredFunds.reduce((s, f) => s + f.childCount, 0)}
-              </p>
-              <p className="text-xs text-muted-foreground">Total Child Activities</p>
-            </div>
-          </div>
-        )}
 
         {/* Fund Cards */}
         {loading ? (
@@ -196,21 +275,130 @@ export default function FundsPage() {
               return (
                 <Card
                   key={fund.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow border border-border"
+                  className="cursor-pointer hover:shadow-md transition-shadow border border-border relative"
                   onClick={() => router.push(`/activities/${fund.id}?section=fund-overview`)}
                 >
                   <CardContent className="pt-5 pb-5">
-                    {/* Title and status */}
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 flex-1 mr-2">
-                        {fund.title}
-                      </h3>
-                      {fund.status && (
-                        <Badge variant="outline" className={`text-xs shrink-0 ${statusColors[fund.status] || ''}`}>
-                          {fund.status}
-                        </Badge>
-                      )}
+                    {/* Title, status, and action menu */}
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex flex-wrap items-baseline gap-1.5 flex-1 min-w-0">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="group/title font-semibold text-foreground text-base leading-tight line-clamp-2">
+                            {fund.title}
+                            {fund.acronym && (
+                              <>
+                                {' '}
+                                <span className="font-semibold text-foreground">({fund.acronym})</span>
+                                <button
+                                  type="button"
+                                  onClick={e => copyToClipboard(fund.acronym!, 'Acronym', e)}
+                                  className="inline-flex p-0.5 rounded hover:bg-muted opacity-0 group-hover/title:opacity-100 focus:opacity-100 focus:outline-none transition-opacity align-middle"
+                                  title="Copy acronym"
+                                  aria-label="Copy acronym"
+                                >
+                                  <Copy className="w-3 h-3 text-muted-foreground" />
+                                </button>
+                              </>
+                            )}
+                          </h3>
+                          <span className="group/id inline-flex items-center gap-0.5 mt-0.5">
+                            <code className="inline-block shrink-0 text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                              {fund.identifier}
+                            </code>
+                            <button
+                              type="button"
+                              onClick={e => copyToClipboard(fund.identifier, 'Activity ID', e)}
+                              className="inline-flex p-0.5 rounded hover:bg-muted opacity-0 group-hover/id:opacity-100 focus:opacity-100 focus:outline-none transition-opacity"
+                              aria-label="Copy activity ID"
+                            >
+                              <Copy className="w-3 h-3 text-muted-foreground" />
+                            </button>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                        {fund.status && (() => {
+                          const { label, className } = getActivityStatusDisplay(fund.status)
+                          return (
+                            <Badge className={className}>
+                              {label}
+                            </Badge>
+                          )
+                        })()}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="bg-card/90 hover:bg-card"
+                            >
+                              <MoreVertical className="h-5 w-5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" sideOffset={5} className="min-w-[160px] shadow-xl">
+                            <DropdownMenuItem
+                              onClick={e => {
+                                e.stopPropagation()
+                                router.push(`/activities/new?id=${fund.id}`)
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={e => handleExportPDF(fund.id, e)}
+                              className="cursor-pointer"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Export PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={e => {
+                                e.stopPropagation()
+                                setDeleteFundId(fund.id)
+                              }}
+                              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
+
+                    {/* Fund Manager (pooled fund) – below activity ID; logo, name, acronym */}
+                    {fund.fundManager && (
+                      <div className="mb-3">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="text-xs text-muted-foreground mb-1 cursor-help">Fund Manager</p>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>From this activity&apos;s Reporting Organisation; edit on the activity.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <div className="flex items-center gap-2">
+                          <OrganizationLogo
+                            logo={fund.fundManager.logo}
+                            name={fund.fundManager.name}
+                            size="sm"
+                            className="shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <span className="text-xs text-foreground font-medium truncate block">
+                              {fund.fundManager.name}
+                              {fund.fundManager.acronym && (
+                                <span className="text-xs text-foreground font-medium ml-0.5">({fund.fundManager.acronym})</span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Financial summary */}
                     <div className="grid grid-cols-3 gap-2 mb-3">
@@ -242,47 +430,92 @@ export default function FundsPage() {
                       </div>
                     </div>
 
-                    {/* Top donors and sectors */}
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Top Donors</p>
-                        {fund.topDonors.length > 0 ? (
-                          fund.topDonors.map((d, i) => (
-                            <p key={i} className="text-xs text-muted-foreground truncate">{d.name}</p>
-                          ))
-                        ) : (
-                          <p className="text-xs text-muted-foreground">-</p>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Top Sectors</p>
-                        {fund.topSectors.length > 0 ? (
-                          fund.topSectors.map((s, i) => (
-                            <p key={i} className="text-xs text-muted-foreground truncate">{s.name}</p>
-                          ))
-                        ) : (
-                          <p className="text-xs text-muted-foreground">-</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Sparkline */}
-                    {fund.sparkline.length > 1 && (
-                      <div className="h-12">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={fund.sparkline}>
-                            <Area
-                              type="monotone"
-                              dataKey="amount"
-                              stroke="#3C6255"
-                              fill="#3C6255"
-                              fillOpacity={0.1}
-                              strokeWidth={1.5}
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
+                    {/* Child Activities: first 3 + "Show all" with hover/click full list */}
+                    {(fund.childActivities?.length ?? 0) > 0 && (
+                      <div className="mb-3" onClick={e => e.stopPropagation()}>
+                        <p className="text-xs text-muted-foreground mb-1">Child Activities</p>
+                        <ul className="space-y-0.5">
+                          {fund.childActivities.slice(0, 3).map(child => (
+                            <li key={child.id}>
+                              <Link
+                                href={`/activities/${child.id}`}
+                                className="text-xs text-foreground flex flex-wrap items-baseline gap-1 gap-y-0.5"
+                              >
+                                <span className="break-words min-w-0">
+                                  {child.title}
+                                  {child.acronym && (
+                                    <span className="text-muted-foreground ml-0.5">({child.acronym})</span>
+                                  )}
+                                </span>
+                                <span className="shrink-0 font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded truncate max-w-[180px]">
+                                  {child.identifier}
+                                </span>
+                              </Link>
+                            </li>
+                          ))}
+                          {fund.childActivities.length > 3 && (
+                            <li>
+                              <Popover
+                                open={openMoreChildFundId === fund.id}
+                                onOpenChange={open => setOpenMoreChildFundId(open ? fund.id : null)}
+                              >
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="text-xs text-primary font-medium"
+                                    onMouseEnter={() => { clearMoreChildCloseTimeout(); setOpenMoreChildFundId(fund.id); }}
+                                    onMouseLeave={scheduleMoreChildClose}
+                                  >
+                                    Show all
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  align="start"
+                                  className="max-h-64 overflow-y-auto w-auto min-w-[220px]"
+                                  onMouseEnter={() => { clearMoreChildCloseTimeout(); setOpenMoreChildFundId(fund.id); }}
+                                  onMouseLeave={scheduleMoreChildClose}
+                                >
+                                  <p className="text-xs font-semibold text-foreground pb-2">All child activities</p>
+                                  <ul className="space-y-1">
+                                    {fund.childActivities.map(child => (
+                                      <li key={child.id}>
+                                        <Link
+                                          href={`/activities/${child.id}`}
+                                          className="text-xs text-foreground flex flex-wrap items-baseline gap-1"
+                                          onClick={() => setOpenMoreChildFundId(null)}
+                                        >
+                                          <span className="break-words min-w-0">
+                                            {child.title}
+                                            {child.acronym && (
+                                              <span className="text-muted-foreground ml-0.5">({child.acronym})</span>
+                                            )}
+                                          </span>
+                                          <span className="shrink-0 font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded text-[11px]">
+                                            {child.identifier}
+                                          </span>
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </PopoverContent>
+                              </Popover>
+                            </li>
+                          )}
+                        </ul>
                       </div>
                     )}
+
+                    {/* Fund flow Sankey (donors → fund → sectors) */}
+                    <div className="mb-3" onClick={e => e.stopPropagation()}>
+                      <p className="text-xs text-muted-foreground mb-1">Fund Flow</p>
+                      <FundFlowSankey
+                        fundTitle={fund.title}
+                        topDonors={fund.topDonors}
+                        topChildFlows={fund.childFlows}
+                        height={120}
+                        className="w-full"
+                      />
+                    </div>
 
                     {/* Date range */}
                     {(fund.dateRange.start || fund.dateRange.end) && (
@@ -298,6 +531,30 @@ export default function FundsPage() {
             })}
           </div>
         )}
+
+        {/* Delete confirmation dialog */}
+        <Dialog open={!!deleteFundId} onOpenChange={open => !open && setDeleteFundId(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete activity</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this pooled fund activity? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteFundId(null)} disabled={isDeleting}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => deleteFundId && handleDeleteFund(deleteFundId)}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting…" : "Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   )

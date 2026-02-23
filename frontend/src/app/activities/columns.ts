@@ -14,7 +14,6 @@ export type ActivityColumnId =
   | "totalPlannedDisbursement"
   | "lastEdited"
   | "modalityClassification"
-  | "actions"
   // Optional default fields
   | "aidType"
   | "defaultFinanceType"
@@ -117,7 +116,6 @@ export const activityColumns: ColumnConfig<ActivityColumnId>[] = [
   { id: "subSectors", label: "Sub-sectors", group: "sectors", defaultVisible: false, description: "Detailed DAC 5-digit purpose codes for precise classification." },
   { id: "locations", label: "Locations", group: "locations", defaultVisible: false, description: "Subnational allocation showing percentage breakdown by state/region." },
   { id: "recipientCountries", label: "Country/Region", group: "locations", defaultVisible: false, description: "Recipient countries or regions where this activity takes place." },
-  { id: "actions", label: "Actions", group: "default", alwaysVisible: true, defaultVisible: true, description: "Quick actions: view, edit, duplicate, or delete the activity." },
 
   // Activity defaults (optional columns)
   { id: "aidType", label: "Default Aid Type", group: "activityDefaults", defaultVisible: false, description: "The primary type of aid (e.g., Grant, Loan, Technical Assistance)." },

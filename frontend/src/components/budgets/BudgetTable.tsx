@@ -333,9 +333,7 @@ export function BudgetTable({
               <DndColumnProvider items={orderedVisibleColumns} onReorder={handleReorder}>
                 {orderedVisibleColumns.map((colId) => headerMap[colId])}
               </DndColumnProvider>
-              <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground">
-                Actions
-              </th>
+              <th className="h-12 px-2" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -500,7 +498,8 @@ export function BudgetTable({
 
                     {orderedVisibleColumns.map((colId) => cellMap[colId])}
 
-                    <TableCell className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    {/* Actions - same layout as activities list */}
+                    <TableCell className="px-2 py-2 text-center align-middle" onClick={(e) => e.stopPropagation()}>
                       <BudgetActionMenu
                         budgetId={budgetId}
                         onEdit={onEdit ? () => onEdit(budget) : undefined}

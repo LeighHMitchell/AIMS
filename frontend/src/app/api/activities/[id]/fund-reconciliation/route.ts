@@ -58,14 +58,14 @@ export async function GET(
     // Fund-side outgoing (types 2, 3) to children
     const { data: fundOutgoing } = await supabase
       .from('transactions')
-      .select('uuid, transaction_type, value, currency, transaction_date, value_date, receiver_activity_uuid, receiver_org_name, value_usd, usd_value')
+      .select('uuid, transaction_type, value, currency, transaction_date, value_date, receiver_activity_uuid, receiver_org_name, value_usd')
       .eq('activity_id', fundId)
       .in('transaction_type', ['2', '3'])
 
     // Child-side incoming from this fund
     const { data: childIncoming } = await supabase
       .from('transactions')
-      .select('uuid, activity_id, transaction_type, value, currency, transaction_date, value_date, provider_org_name, value_usd, usd_value')
+      .select('uuid, activity_id, transaction_type, value, currency, transaction_date, value_date, provider_org_name, value_usd')
       .in('activity_id', childIdArray)
       .in('transaction_type', ['1', '11'])
       .eq('provider_activity_uuid', fundId)
