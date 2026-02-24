@@ -31,13 +31,18 @@ interface FundFlowSankeyProps {
   className?: string
 }
 
-const COLORS = ['#3C6255', '#5f7f7a', '#8BA89E', '#B5CFC6', '#D4E8E0', '#2D4A44']
+// Sankey: different shades of red (Primary Scarlet and variants)
+const COLORS = ['#dc2625', '#b91c1c', '#991b1b', '#ef4444', '#f87171', '#fca5a5']
 
 function formatUSD(value: number): string {
   if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
   if (Math.abs(value) >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
   return `$${value.toFixed(0)}`
 }
+
+export type LinkTooltipInfo =
+  | { type: 'donor-to-fund'; sourceName: string; targetName: string; value: number }
+  | { type: 'fund-to-child'; sourceName: string; targetName: string; value: number }
 
 export function FundFlowSankey({
   fundTitle,
@@ -50,6 +55,28 @@ export function FundFlowSankey({
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(280)
+  const [hoveredLink, setHoveredLink] = useState<{ index: number; x: number; y: number } | null>(null)
+
+  const linkTooltips = useMemo((): LinkTooltipInfo[] => {
+    const list: LinkTooltipInfo[] = []
+    topDonors.forEach((d) => {
+      list.push({
+        type: 'donor-to-fund',
+        sourceName: d.acronym || d.name || 'Donor',
+        targetName: fundTitle,
+        value: d.total,
+      })
+    })
+    topChildFlows.forEach((c) => {
+      list.push({
+        type: 'fund-to-child',
+        sourceName: fundTitle,
+        targetName: c.name,
+        value: c.total,
+      })
+    })
+    return list
+  }, [fundTitle, topDonors, topChildFlows])
 
   useEffect(() => {
     const el = containerRef.current
@@ -84,18 +111,23 @@ export function FundFlowSankey({
     const fundIndex = nodeIndex++
     nodes.push({ id: 'fund', name: fundTitle.length > 20 ? fundTitle.slice(0, 17) + '…' : fundTitle })
 
+    // Only add third tier (child activities) when there are flows with dollar values
     const childIndices: number[] = []
-    topChildFlows.forEach((c, i) => {
-      nodes.push({ id: `child-${c.id}`, name: c.name })
-      childIndices.push(nodeIndex++)
-    })
+    if (hasChildren) {
+      topChildFlows.forEach((c) => {
+        nodes.push({ id: `child-${c.id}`, name: c.name })
+        childIndices.push(nodeIndex++)
+      })
+    }
 
     topDonors.forEach((d, i) => {
       links.push({ source: donorIndices[i], target: fundIndex, value: Math.max(d.total, 1) })
     })
-    topChildFlows.forEach((c, i) => {
-      links.push({ source: fundIndex, target: childIndices[i], value: Math.max(c.total, 1) })
-    })
+    if (hasChildren) {
+      topChildFlows.forEach((c, i) => {
+        links.push({ source: fundIndex, target: childIndices[i], value: Math.max(c.total, 1) })
+      })
+    }
 
     if (links.length === 0) return null
 
@@ -136,8 +168,28 @@ export function FundFlowSankey({
       path.setAttribute('fill', 'none')
       path.setAttribute('stroke', COLORS[i % COLORS.length])
       path.setAttribute('stroke-opacity', '0.4')
-      path.setAttribute('stroke-width', Math.max(1, link.width || 1))
+      const strokeW = Math.max(1, link.width || 1)
+      path.setAttribute('stroke-width', String(strokeW))
+      path.style.cursor = 'pointer'
+      path.setAttribute('data-link-index', String(i))
+      path.addEventListener('mouseenter', (e: MouseEvent) => {
+        setHoveredLink({ index: i, x: e.clientX, y: e.clientY })
+      })
+      path.addEventListener('mouseleave', () => setHoveredLink(null))
       svg.appendChild(path)
+
+      // Invisible wider path for easier hover
+      const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+      hitPath.setAttribute('d', linkPath(link) || '')
+      hitPath.setAttribute('fill', 'none')
+      hitPath.setAttribute('stroke', 'transparent')
+      hitPath.setAttribute('stroke-width', String(Math.max(strokeW + 8, 12)))
+      hitPath.style.cursor = 'pointer'
+      hitPath.addEventListener('mouseenter', (e: MouseEvent) => {
+        setHoveredLink({ index: i, x: e.clientX, y: e.clientY })
+      })
+      hitPath.addEventListener('mouseleave', () => setHoveredLink(null))
+      svg.appendChild(hitPath)
     })
 
     layout.nodes.forEach((node: any, i: number) => {
@@ -146,7 +198,7 @@ export function FundFlowSankey({
       rect.setAttribute('y', node.y0)
       rect.setAttribute('width', Math.max(1, node.x1 - node.x0))
       rect.setAttribute('height', Math.max(1, node.y1 - node.y0))
-      rect.setAttribute('fill', i < topDonors.length ? COLORS[i % COLORS.length] : '#3C6255')
+      rect.setAttribute('fill', COLORS[i % COLORS.length])
       rect.setAttribute('rx', 2)
       svg.appendChild(rect)
 
@@ -175,13 +227,31 @@ export function FundFlowSankey({
     )
   }
 
+  const tooltipInfo = hoveredLink !== null ? linkTooltips[hoveredLink.index] : null
+
   return (
-    <div ref={containerRef} className={className} style={{ width: '100%' }}>
+    <div ref={containerRef} className={`relative ${className}`} style={{ width: '100%' }}>
       <svg
         ref={svgRef}
         width={width}
         height={height}
       />
+      {hoveredLink !== null && tooltipInfo && (
+        <div
+          className="pointer-events-none fixed z-50 max-w-[240px] rounded-md border border-border bg-popover px-3 py-2 text-popover-foreground shadow-md"
+          style={{
+            left: hoveredLink.x + 10,
+            top: hoveredLink.y + 10,
+          }}
+        >
+          <p className="text-xs font-medium text-foreground">
+            {tooltipInfo.sourceName} → {tooltipInfo.targetName}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {tooltipInfo.type === 'donor-to-fund' ? 'Contribution' : 'Disbursement'}: {formatUSD(tooltipInfo.value)}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

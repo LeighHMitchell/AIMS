@@ -625,11 +625,28 @@ export function TransactionTable({
   return (
     <TooltipProvider>
     <div>
-      <Table>
+      <Table className="min-w-full data-table-balanced">
+        <colgroup>
+          <col style={{ width: '48px' }} />
+          {orderedDraggableColumns.map((colId) => {
+            if (colId === 'activity') return <col key={colId} />;
+            const w =
+              colId === 'organizations'
+                ? '180px'
+                : ['amount', 'usdValue'].includes(colId)
+                  ? '130px'
+                  : ['valueDate', 'financeType', 'transactionDate', 'transactionType'].includes(colId)
+                    ? '120px'
+                    : '110px';
+            return <col key={colId} style={{ width: w }} />;
+          })}
+          <col style={{ width: '48px' }} />
+          <col style={{ width: '8px' }} />
+        </colgroup>
         <TableHeader>
           <TableRow>
             {/* Checkbox - always visible, locked first */}
-            <th className="h-12 px-4 text-center align-middle w-10">
+            <th className="h-12 px-4 text-center align-middle data-table-col-checkbox">
               {onSelectAll && selectedIds && (
                 <div className="flex items-center justify-center" key={`select-all-wrapper-${transactions.length}`}>
                   <Checkbox
@@ -648,7 +665,7 @@ export function TransactionTable({
               {orderedDraggableColumns.map((colId) => {
                 const txHeaderMap: Record<string, React.ReactNode> = {
                   activity: variant === "full" ? (
-                    <SortableTableHeader key="activity" id="activity" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("activity")}>
+                    <SortableTableHeader key="activity" id="activity" className="cursor-pointer hover:bg-muted/80 transition-colors data-table-col-activity min-w-0" onClick={() => onSort("activity")}>
                       <div className="flex items-center gap-1"><span>Activity</span>{getSortIcon("activity", sortField, sortOrder)}</div>
                     </SortableTableHeader>
                   ) : null,
@@ -709,7 +726,9 @@ export function TransactionTable({
               })}
             </DndColumnProvider>
             {/* Actions - always visible, no header text */}
-            <th className="h-12 px-2" />
+            <th className="h-12 px-2 data-table-col-actions" />
+            {/* Filler column so row hover extends to the scroll container edge */}
+            <th className="h-12 p-0 bg-surface-muted border-0 data-table-col-filler" aria-hidden="true" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -1068,6 +1087,8 @@ export function TransactionTable({
                   onViewSourceActivity={transaction.linked_from_activity_id ? () => window.open(`/activities/${transaction.linked_from_activity_id}`, '_blank') : undefined}
                 />
               </td>
+              {/* Filler cell so row hover extends to the scroll container edge */}
+              <td className="p-0 data-table-col-filler" aria-hidden="true" />
             </TableRow>
             
             {/* Expanded Row Content - Data-Rich Card Dashboard */}

@@ -189,7 +189,7 @@ export default function FundsPage() {
         {/* Header */}
         <header>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <Wallet className="h-8 w-8 text-[#3C6255]" />
+            <Wallet className="h-8 w-8 text-[#dc2625]" />
             Pooled Funds
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -284,7 +284,13 @@ export default function FundsPage() {
                       <div className="flex flex-wrap items-baseline gap-1.5 flex-1 min-w-0">
                         <div className="min-w-0 flex-1">
                           <h3 className="group/title font-semibold text-foreground text-base leading-tight line-clamp-2">
-                            {fund.title}
+                            <Link
+                              href={`/activities/${fund.id}?section=fund-overview`}
+                              onClick={e => e.stopPropagation()}
+                              className="focus:outline-none no-underline hover:no-underline"
+                            >
+                              {fund.title}
+                            </Link>
                             {fund.acronym && (
                               <>
                                 {' '}
@@ -314,17 +320,19 @@ export default function FundsPage() {
                               <Copy className="w-3 h-3 text-muted-foreground" />
                             </button>
                           </span>
+                          {fund.status && (() => {
+                            const { label, className } = getActivityStatusDisplay(fund.status)
+                            return (
+                              <span className="mt-1 block">
+                                <Badge className={className}>
+                                  {label}
+                                </Badge>
+                              </span>
+                            )
+                          })()}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-                        {fund.status && (() => {
-                          const { label, className } = getActivityStatusDisplay(fund.status)
-                          return (
-                            <Badge className={className}>
-                              {label}
-                            </Badge>
-                          )
-                        })()}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -416,15 +424,15 @@ export default function FundsPage() {
                       </div>
                     </div>
 
-                    {/* Utilisation bar */}
+                    {/* Utilisation bar: track Pale Slate, progress Blue Slate */}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs text-muted-foreground mb-1">
                         <span>{utilisation}% utilised</span>
                         <span>{fund.childCount} child activit{fund.childCount !== 1 ? 'ies' : 'y'}</span>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-1.5">
+                      <div className="w-full rounded-full h-1.5 bg-[#cfd0d5]">
                         <div
-                          className="bg-[#3C6255] h-1.5 rounded-full transition-all"
+                          className="h-1.5 rounded-full transition-all bg-[#4c5568]"
                           style={{ width: `${Math.min(parseFloat(utilisation), 100)}%` }}
                         />
                       </div>

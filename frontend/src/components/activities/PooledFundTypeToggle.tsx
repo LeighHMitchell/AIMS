@@ -71,7 +71,7 @@ export function PooledFundTypeToggle({
           src="/images/activity-type-pooled.png"
           alt="Pooled fund"
           fill
-          className="object-cover opacity-15"
+          className="object-cover opacity-15 grayscale"
         />
         {isPooledFund && (
           <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">

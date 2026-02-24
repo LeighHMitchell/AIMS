@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -138,10 +139,10 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Analytics", href: "/analytics-dashboard", show: true },
-        { name: "Atlas", href: "/atlas", show: true, isNew: true },
+        { name: "Atlas", href: "/atlas", show: true, underDevelopment: true },
         { name: "Search", href: "/search", show: true },
         { name: "Portfolios", href: "/partners", show: true, underDevelopment: true },
-        { name: "Reports", href: "/reports", show: true, isNew: true },
+        { name: "Reports", href: "/reports", show: true, underDevelopment: true },
       ]
     },
     {
@@ -151,7 +152,7 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Activity List", href: "/activities", show: true },
-        { name: "Pooled Funds", href: "/funds", show: true, isNew: true },
+        { name: "Pooled Funds", href: "/funds", show: true, underDevelopment: true, badge: "New" },
       ]
     },
     {
@@ -181,10 +182,10 @@ export function SidebarNav({
       isAnimated: false,
       defaultOpen: true,
       items: [
-        { name: "SDGs", href: "/sdgs", show: true, isNew: true },
-        { name: "Sectors", href: "/sectors", show: true, isNew: true },
-        { name: "Policy Markers", href: "/policy-markers", show: true, isNew: true },
-        { name: "Working Groups", href: "/working-groups", show: true, isNew: true },
+        { name: "SDGs", href: "/sdgs", show: true, underDevelopment: true },
+        { name: "Sectors", href: "/sectors", show: true, underDevelopment: true },
+        { name: "Policy Markers", href: "/policy-markers", show: true, underDevelopment: true },
+        { name: "Working Groups", href: "/working-groups", show: true, underDevelopment: true },
       ]
     },
     {
@@ -205,8 +206,8 @@ export function SidebarNav({
       items: [
         { name: "Calendar", href: "/calendar", show: true, underDevelopment: true },
         { name: "Data Clinic", href: "/data-clinic", show: true, underDevelopment: true },
-        { name: "Library", href: "/library", show: true, isNew: true },
-        { name: "Build History", href: "/build-history", show: true, isNew: true },
+        { name: "Library", href: "/library", show: true, underDevelopment: true },
+        { name: "Build History", href: "/build-history", show: true, underDevelopment: true },
       ]
     },
     {
@@ -492,10 +493,10 @@ export function SidebarNav({
                                 }}
                               >
                                 {item.name}
-                                {'isNew' in item && item.isNew && (
-                                  <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded" style={{ backgroundColor: '#3C6255', color: 'white' }}>
-                                    New
-                                  </span>
+                                {'badge' in item && item.badge && (
+                                  <Badge variant="success" className="text-[10px] px-1.5 py-0 font-medium">
+                                    {item.badge}
+                                  </Badge>
                                 )}
                                 {'underDevelopment' in item && item.underDevelopment && (
                                   <Tooltip>
@@ -527,10 +528,10 @@ export function SidebarNav({
                                     <div className="flex flex-col gap-1">
                                       <span className="flex items-center gap-2">
                                         {item.name}
-                                        {'isNew' in item && item.isNew && (
-<span className="px-1.5 py-0.5 text-[10px] font-semibold rounded" style={{ backgroundColor: '#3C6255', color: 'white' }}>
-                                    New
-                                  </span>
+                                        {'badge' in item && item.badge && (
+                                          <Badge variant="success" className="text-[10px] px-1.5 py-0 font-medium">
+                                            {item.badge}
+                                          </Badge>
                                         )}
                                         {'underDevelopment' in item && item.underDevelopment && (
                                           <Construction className="h-3.5 w-3.5 text-gray-400" />

@@ -813,6 +813,51 @@ body:has([data-radix-dialog-content]) {
   visibility: visible !important;
 }
 
+/* Activities table: fill scroll container so row hover extends to the right edge */
+.activities-table {
+  min-width: 100%;
+}
+
+/* Data tables (Activities, Transactions, Planned Disbursements, Budgets): balanced column widths, fill table */
+.data-table-balanced {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 100%;
+}
+/* Activity/Title column has no fixed width so it takes remaining space and fills the table */
+.data-table-balanced th.data-table-col-activity,
+.data-table-balanced td.data-table-col-activity {
+  min-width: 0;
+}
+/* Filler column: fixed 8px so activity column gets the remainder; row hover still extends to edge */
+.data-table-balanced th.data-table-col-filler,
+.data-table-balanced td.data-table-col-filler {
+  width: 8px;
+  min-width: 8px;
+  max-width: 8px;
+  padding: 0;
+}
+.data-table-balanced th.data-table-col-checkbox {
+  width: 48px;
+  max-width: 48px;
+}
+.data-table-balanced th.data-table-col-actions {
+  width: 48px;
+  max-width: 48px;
+}
+/* Consistent horizontal padding so columns don’t feel bunched */
+.data-table-balanced th,
+.data-table-balanced td {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.data-table-balanced th.data-table-col-checkbox,
+.data-table-balanced td:first-child,
+.data-table-balanced th.data-table-col-actions {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
 /* Force left alignment for Reported by column in activities table */
 table td:has(div:contains("AA-AAA")) {
   text-align: left !important;

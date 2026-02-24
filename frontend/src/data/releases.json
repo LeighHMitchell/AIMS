@@ -1,7 +1,40 @@
 {
-  "currentVersion": "2.15.0",
-  "narrativeSummary": "This release focuses on table polish and consistency across the system. The activity list's action menu has been rebuilt for reliability, row highlights now cover the full width of every table, and unnecessary column headers have been cleaned up for a tidier, more intuitive layout.",
+  "currentVersion": "2.16.0",
+  "narrativeSummary": "This update brings balanced, professional-looking tables across the entire system and refines the Pooled Funds experience. Every data table now uses fixed column widths with a flexible title column, so nothing feels cramped or stretched. The Sankey flow chart on pooled fund pages is smarter about when to show child activities and now shows tooltips when you hover over a flow link. Sidebar navigation labels have been tidied up, and the Pooled Funds page itself received several small quality-of-life improvements including clickable fund titles, repositioned status badges, and a refreshed colour palette.",
   "releases": [
+    {
+      "version": "2.16.0",
+      "date": "2026-02-24",
+      "narrativeSummary": "Tables across the system were starting to feel uneven &mdash; some columns too wide, others too narrow, and the title column would sometimes get squeezed when lots of columns were visible. We switched every data table (Activities, Transactions, Budgets, and Planned Disbursements) to a fixed-layout approach where each column type gets an appropriate width and the title column stretches to fill whatever space is left, so the layout stays balanced at any screen size. A thin filler column at the right edge ensures that row hover highlights extend all the way to the container boundary. On the Pooled Funds side, the Sankey chart now only shows a third tier of child activities when there are actual disbursement values to display, and hovering over any flow link pops up a tooltip showing the donor or child name and dollar amount. We also moved the fund status badge underneath the IATI identifier for a cleaner card layout, made fund titles clickable links to the fund overview, and swapped the green colour scheme to match the system&rsquo;s red primary palette. In the sidebar, items previously marked &ldquo;New&rdquo; have been moved to the standard under-development indicator for consistency, with only Pooled Funds retaining a &ldquo;New&rdquo; badge.",
+      "changes": [
+        "<b>Balanced Table Layouts</b>",
+        "&nbsp;&nbsp;All four data tables (Activities, Transactions, Budgets, Planned Disbursements) now use <code>table-layout: fixed</code> with explicit <code>&lt;colgroup&gt;</code> column widths",
+        "&nbsp;&nbsp;Title/Activity column has no fixed width and stretches to fill remaining space",
+        "&nbsp;&nbsp;Numeric and date columns get narrower fixed widths (110&ndash;140 px) to prevent wasted space",
+        "&nbsp;&nbsp;Checkbox and Actions columns locked at 48 px",
+        "&nbsp;&nbsp;New CSS class <code>data-table-balanced</code> in <code>globals.css</code> with shared styles for all tables",
+        "<b>Edge-to-Edge Row Hover</b>",
+        "&nbsp;&nbsp;Added an 8 px filler column at the right edge of every table so hover highlights extend to the scroll container boundary",
+        "&nbsp;&nbsp;Filler cells marked <code>aria-hidden</code> for accessibility",
+        "&nbsp;&nbsp;Expanded-row <code>colSpan</code> increased by one to account for the new filler column",
+        "<b>Sankey Chart Improvements (Pooled Funds)</b>",
+        "&nbsp;&nbsp;Third tier (child activities) now only renders when at least one child has a non-zero disbursement value",
+        "&nbsp;&nbsp;API filters out children with zero disbursements so the chart never shows empty nodes",
+        "&nbsp;&nbsp;Hover tooltips on flow links showing source &rarr; target name and dollar amount (Contribution or Disbursement)",
+        "&nbsp;&nbsp;Invisible wider hit-area paths behind each link for easier mouse targeting",
+        "&nbsp;&nbsp;Colour palette updated from green to red shades matching the system primary colour",
+        "<b>Pooled Funds Page Polish</b>",
+        "&nbsp;&nbsp;Fund titles are now clickable links to the fund overview page",
+        "&nbsp;&nbsp;Status badge repositioned from the actions row to below the IATI identifier for a tidier card layout",
+        "&nbsp;&nbsp;Utilisation bar colours updated: Pale Slate track (<code>#cfd0d5</code>) with Blue Slate progress (<code>#4c5568</code>)",
+        "&nbsp;&nbsp;Header icon colour updated to primary red",
+        "&nbsp;&nbsp;Pooled fund type toggle image set to grayscale",
+        "<b>Sidebar Navigation Cleanup</b>",
+        "&nbsp;&nbsp;Replaced all <code>isNew</code> badges (Atlas, Reports, SDGs, Sectors, Policy Markers, Working Groups, Library, Build History) with standard <code>underDevelopment</code> indicator",
+        "&nbsp;&nbsp;Pooled Funds retains a &ldquo;New&rdquo; badge using the <code>Badge</code> component with <code>variant=&ldquo;success&rdquo;</code>",
+        "&nbsp;&nbsp;Removed inline green background style in favour of the shared Badge component"
+      ]
+    },
     {
       "version": "2.15.0",
       "date": "2026-02-23",

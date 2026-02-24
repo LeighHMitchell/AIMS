@@ -296,7 +296,7 @@ export function PlannedDisbursementsTable({
       <SortableTableHeader
         key="activity"
         id="activity"
-        className="cursor-pointer hover:bg-muted/80 transition-colors"
+        className="cursor-pointer hover:bg-muted/80 transition-colors data-table-col-activity min-w-0"
         onClick={() => onSort("activity")}
       >
         <div className="flex items-center gap-1">
@@ -405,10 +405,27 @@ export function PlannedDisbursementsTable({
   return (
     <TooltipProvider>
       <div>
-        <Table>
+        <Table className="min-w-full data-table-balanced">
+          <colgroup>
+            <col style={{ width: '48px' }} />
+            {orderedVisibleColumns.map((colId) => {
+              if (colId === 'activity') return <col key={colId} />;
+              const w =
+                colId === 'providerReceiver'
+                  ? '180px'
+                  : ['amount', 'valueUsd'].includes(colId)
+                    ? '130px'
+                    : ['periodStart', 'periodEnd', 'valueDate'].includes(colId)
+                      ? '120px'
+                      : '110px';
+              return <col key={colId} style={{ width: w }} />;
+            })}
+            <col style={{ width: '48px' }} />
+            <col style={{ width: '8px' }} />
+          </colgroup>
           <TableHeader>
             <TableRow>
-              <th className="h-12 px-4 text-center align-middle w-10">
+              <th className="h-12 px-4 text-center align-middle data-table-col-checkbox">
                 {onSelectAll && selectedIds && (
                   <div className="flex items-center justify-center" key={`select-all-wrapper-${disbursements.length}`}>
                     <Checkbox
@@ -426,7 +443,9 @@ export function PlannedDisbursementsTable({
               <DndColumnProvider items={orderedVisibleColumns} onReorder={handleReorder}>
                 {orderedVisibleColumns.map((colId) => headerMap[colId])}
               </DndColumnProvider>
-              <th className="h-12 px-2" />
+              <th className="h-12 px-2 data-table-col-actions" />
+              {/* Filler column so row hover extends to the scroll container edge */}
+              <th className="h-12 p-0 bg-surface-muted border-0 data-table-col-filler" aria-hidden="true" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -674,12 +693,14 @@ export function PlannedDisbursementsTable({
                         onDelete={onDelete ? () => onDelete(disbursementId) : undefined}
                       />
                     </td>
+                    {/* Filler cell so row hover extends to the scroll container edge */}
+                    <td className="p-0 data-table-col-filler" aria-hidden="true" />
                   </TableRow>
 
                   {/* Expanded Row Content */}
                   {isExpanded && (
                     <TableRow className="bg-slate-50/50">
-                      <td colSpan={visibleColumnCount} className="p-6">
+                      <td colSpan={visibleColumnCount + 1} className="p-6">
                         <div className="space-y-4">
                           <h3 className="text-sm font-semibold text-gray-900">Details</h3>
                           <div className="grid grid-cols-2 gap-4 text-sm">
