@@ -146,7 +146,7 @@ export function LibraryFiltersPanel({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {/* Source Type Filter */}
           <div className="space-y-4">
-            <Label className="text-sm font-medium">Source Type</Label>
+            <Label className="text-xs text-muted-foreground">Source Type</Label>
             <div className="flex flex-col gap-4">
               {SOURCE_TYPE_OPTIONS.map(option => (
                 <div key={option.value} className="flex items-center gap-2">
@@ -171,7 +171,7 @@ export function LibraryFiltersPanel({
 
           {/* Format Filter */}
           <div className="space-y-4">
-            <Label className="text-sm font-medium">File Format</Label>
+            <Label className="text-xs text-muted-foreground">File Format</Label>
             <div className="flex flex-col gap-4">
               {FORMAT_OPTIONS.map(option => (
                 <div key={option.value} className="flex items-center gap-2">
@@ -198,7 +198,7 @@ export function LibraryFiltersPanel({
           <div className="space-y-4 lg:col-span-2 max-w-[90%]">
             {/* Category Filter */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Document Category</Label>
+              <Label className="text-xs text-muted-foreground">Document Category</Label>
               <MultiSelectFilter
                 options={CATEGORY_OPTIONS}
                 value={filters.categoryCodes || []}
@@ -219,7 +219,7 @@ export function LibraryFiltersPanel({
 
             {/* Organization Filter */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Reporting Organization</Label>
+              <Label className="text-xs text-muted-foreground">Reporting Organization</Label>
               <SearchableSelect
                 options={orgOptions}
                 value={filters.reportingOrgIds?.[0] || ''}
@@ -240,7 +240,7 @@ export function LibraryFiltersPanel({
 
           {/* Date Range Filter */}
           <div className="space-y-2 min-w-0 -ml-4">
-            <Label className="text-sm font-medium">Document Date</Label>
+            <Label className="text-xs text-muted-foreground">Document Date</Label>
             <div className="flex items-center gap-1.5">
               <Input
                 type="date"

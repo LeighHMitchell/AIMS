@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
@@ -75,10 +76,7 @@ export function SDGAnalyticsFilters({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Organization Filter */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Organization
-          </label>
+          <Label className="text-xs text-muted-foreground">Organization</Label>
           <Select
             value={organizationId}
             onValueChange={onOrganizationChange}
@@ -100,10 +98,7 @@ export function SDGAnalyticsFilters({
 
         {/* Date Range Filter */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4" />
-            Date Range
-          </label>
+          <Label className="text-xs text-muted-foreground">Date Range</Label>
           <div className="flex gap-2">
             <Popover>
               <PopoverTrigger asChild>
@@ -154,10 +149,7 @@ export function SDGAnalyticsFilters({
 
         {/* Metric Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            Metric
-          </label>
+          <Label className="text-xs text-muted-foreground">Metric</Label>
           <Select value={metric} onValueChange={(value: 'activities' | 'budget' | 'planned') => onMetricChange(value)}>
             <SelectTrigger className="w-full">
               <SelectValue />
@@ -187,10 +179,7 @@ export function SDGAnalyticsFilters({
 
         {/* SDG Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-            <Target className="h-4 w-4" />
-            SDG Selection
-          </label>
+          <Label className="text-xs text-muted-foreground">SDG Selection</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start">

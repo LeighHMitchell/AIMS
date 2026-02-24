@@ -40,6 +40,7 @@ import { useUser } from "@/hooks/useUser"
 import { exportActivityToPDF } from "@/lib/activity-export"
 import { FundFlowSankey } from "@/components/charts/FundFlowSankey"
 import { OrganizationLogo } from "@/components/ui/organization-logo"
+import { getActivityStatusDisplay } from "@/lib/activity-status-utils"
 
 interface FundSummary {
   id: string
@@ -66,17 +67,7 @@ function formatUSD(value: number): string {
   return `$${value.toFixed(0)}`
 }
 
-function getActivityStatusDisplay(status: string | null | undefined): { label: string; className: string } {
-  if (!status) return { label: 'Pipeline/Identification', className: 'bg-muted text-foreground hover:bg-muted' }
-  const s = String(status).toLowerCase()
-  if (s === '4' || s === 'completed' || s === 'post-completion') return { label: s === '4' ? 'Post-Completion' : (s === 'completed' ? 'Completion' : 'Post-Completion'), className: 'bg-green-100 text-green-800 hover:bg-green-200' }
-  if (s === '2' || s === 'implementation') return { label: 'Implementation', className: 'bg-blue-100 text-blue-800 hover:bg-blue-200' }
-  if (s === '3') return { label: 'Completion', className: 'bg-green-100 text-green-800 hover:bg-green-200' }
-  if (s === '5' || s === 'cancelled') return { label: 'Cancelled', className: 'bg-red-100 text-red-800 hover:bg-red-200' }
-  if (s === '6' || s === 'suspended') return { label: 'Suspended', className: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' }
-  if (s === '1' || s === 'pipeline/identification') return { label: 'Pipeline/Identification', className: 'bg-muted text-foreground hover:bg-muted' }
-  return { label: status, className: 'bg-muted text-foreground hover:bg-muted' }
-}
+// getActivityStatusDisplay imported from @/lib/activity-status-utils
 
 export default function FundsPage() {
   const router = useRouter()

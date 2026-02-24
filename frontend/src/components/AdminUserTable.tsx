@@ -607,8 +607,8 @@ export function AdminUserTable() {
           </div>
           
           {/* Role Filter */}
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-sm font-medium text-gray-700">Filter by Role</Label>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Role</Label>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-full sm:w-[220px]">
                 <SelectValue placeholder="Filter by role" />
@@ -625,8 +625,8 @@ export function AdminUserTable() {
           </div>
           
           {/* Organization Filter with Search */}
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-sm font-medium text-gray-700">Filter by Organisation</Label>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Organisation</Label>
             <Popover open={orgFilterOpen} onOpenChange={setOrgFilterOpen}>
               <PopoverTrigger asChild>
                 <Button

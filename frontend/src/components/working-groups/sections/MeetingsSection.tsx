@@ -211,7 +211,7 @@ function EditMeetingModal({
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
       <DialogContent className="sm:max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden p-0">
-        <DialogHeader className="sticky top-0 bg-card z-10 px-6 pt-6 pb-4 border-b">
+        <DialogHeader className="sticky top-0 z-10 mx-0 mt-0 px-6 py-4 border-b">
           <DialogTitle>Edit Meeting</DialogTitle>
           <DialogDescription>Update meeting details, location, and documents</DialogDescription>
         </DialogHeader>
@@ -634,7 +634,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
       {/* Add Meeting Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden p-0">
-          <DialogHeader className="sticky top-0 bg-card z-10 px-6 pt-6 pb-4 border-b">
+          <DialogHeader className="sticky top-0 z-10 mx-0 mt-0 px-6 py-4 border-b">
             <DialogTitle>Schedule Meeting</DialogTitle>
             <DialogDescription>Create a new meeting for this working group</DialogDescription>
           </DialogHeader>

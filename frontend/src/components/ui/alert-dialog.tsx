@@ -51,7 +51,7 @@ const AlertDialogHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col space-y-2 text-center sm:text-left",
+      "flex flex-col space-y-2 text-center sm:text-left bg-surface-muted px-6 py-4 border-b -mx-6 -mt-6 sm:rounded-t-lg",
       className
     )}
     {...props}

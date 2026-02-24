@@ -131,7 +131,7 @@ export function CreateTaskModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
+        <DialogHeader className="mx-0 mt-0 px-6 py-4 border-b flex-shrink-0">
           <DialogTitle>Create New Task</DialogTitle>
           <DialogDescription>
             Create a task and assign it to users. They will be notified and can track the task in their dashboard.

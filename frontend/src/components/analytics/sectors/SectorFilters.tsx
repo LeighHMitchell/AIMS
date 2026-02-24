@@ -44,7 +44,7 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Year Filter */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700">Calendar Year</Label>
+            <Label className="text-xs text-muted-foreground">Calendar Year</Label>
             <Select 
               value={filters.year || 'all'} 
               onValueChange={(value) => onFiltersChange({ ...filters, year: value })}
@@ -63,7 +63,7 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
 
           {/* Organization Filter */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700">Organization</Label>
+            <Label className="text-xs text-muted-foreground">Organization</Label>
             <Select 
               value={filters.organizationId || 'all'} 
               onValueChange={(value) => onFiltersChange({ ...filters, organizationId: value })}
@@ -85,7 +85,7 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
 
           {/* Activity Status Filter */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700">Activity Status</Label>
+            <Label className="text-xs text-muted-foreground">Activity Status</Label>
             <Select 
               value={filters.publicationStatus || 'all'} 
               onValueChange={(value: 'published' | 'all') => onFiltersChange({ ...filters, publicationStatus: value })}
@@ -102,7 +102,7 @@ export function SectorFilters({ filters, onFiltersChange }: SectorFiltersProps) 
 
           {/* Group By Level */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700">Group By</Label>
+            <Label className="text-xs text-muted-foreground">Group By</Label>
             <Select 
               value={filters.groupByLevel} 
               onValueChange={(value: '1' | '3' | '5') => onFiltersChange({ ...filters, groupByLevel: value })}

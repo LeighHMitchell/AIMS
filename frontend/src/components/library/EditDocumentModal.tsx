@@ -213,7 +213,7 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
+        <DialogHeader className="mx-0 mt-0 px-6 py-4 border-b flex-shrink-0">
           <DialogTitle>Edit Document</DialogTitle>
           <DialogDescription>
             Update the metadata for this document.

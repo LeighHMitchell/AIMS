@@ -463,8 +463,8 @@ export function FAQManagement() {
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-48">
-                      <Label className="text-sm mb-1 block">Filter by Status</Label>
+                    <div className="w-48 flex flex-col gap-1">
+                      <Label className="text-xs text-muted-foreground">Status</Label>
                       <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as FAQQuestionStatus | 'all')}>
                         <SelectTrigger>
                           <SelectValue />
@@ -529,8 +529,8 @@ export function FAQManagement() {
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-48">
-                      <Label className="text-sm mb-1 block">Filter by Status</Label>
+                    <div className="w-48 flex flex-col gap-1">
+                      <Label className="text-xs text-muted-foreground">Status</Label>
                       <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as FAQQuestionStatus | 'all')}>
                         <SelectTrigger>
                           <SelectValue />

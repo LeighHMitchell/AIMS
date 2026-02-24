@@ -292,7 +292,7 @@ export function AddDocumentModal({ isOpen, onClose, onSuccess }: AddDocumentModa
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
+        <DialogHeader className="mx-0 mt-0 px-6 py-4 border-b flex-shrink-0">
           <DialogTitle>Add Document to Library</DialogTitle>
           <DialogDescription>
             Upload a file or add an external URL to the document library.

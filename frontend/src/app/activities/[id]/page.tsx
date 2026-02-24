@@ -158,6 +158,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { CodelistTooltip } from "@/components/ui/codelist-tooltip"
 import { splitBudgetAcrossYears, splitPlannedDisbursementAcrossYears } from "@/utils/year-allocation"
 import { getTransactionUSDValue, getTransactionUSDValueSync, normalizeTransactionType } from "@/lib/transaction-usd-helper"
+import { getActivityStatusDisplay } from "@/lib/activity-status-utils"
 
 // Hierarchy levels mapping
 type HierarchyOption = {
@@ -1900,22 +1901,10 @@ export default function ActivityDetailPage() {
                               </button>
                             </div>
                           )}
-                          <Badge 
-                            className={
-                              activity.activityStatus === "completed" || activity.activityStatus === "4" ? "bg-green-100 text-green-800 hover:bg-green-200" : 
-                              activity.activityStatus === "implementation" || activity.activityStatus === "2" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" :
-                              activity.activityStatus === "cancelled" || activity.activityStatus === "5" ? "bg-red-100 text-red-800 hover:bg-red-200" : 
-                              "bg-muted text-foreground hover:bg-muted"
-                            }
-                          >
-                            {activity.activityStatus === "2" ? "Implementation" :
-                             activity.activityStatus === "1" ? "Pipeline/Identification" :
-                             activity.activityStatus === "3" ? "Completion" :
-                             activity.activityStatus === "4" ? "Post-Completion" :
-                             activity.activityStatus === "5" ? "Cancelled" :
-                             activity.activityStatus === "6" ? "Suspended" :
-                             "Pipeline/Identification"}
-                          </Badge>
+                          {(() => {
+                            const { label, className: statusClassName } = getActivityStatusDisplay(activity.activityStatus);
+                            return <Badge className={statusClassName}>{label}</Badge>;
+                          })()}
                           
                           {/* Publication Status Badge */}
                           {activity.publicationStatus && (

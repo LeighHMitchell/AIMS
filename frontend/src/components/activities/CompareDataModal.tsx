@@ -263,7 +263,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 py-4 border-b">
+        <DialogHeader className="mx-0 mt-0 px-6 py-4 border-b">
           <DialogTitle className="text-xl">IATI Data Comparison</DialogTitle>
         </DialogHeader>
         

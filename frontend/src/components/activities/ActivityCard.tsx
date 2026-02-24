@@ -18,6 +18,7 @@ import { ActivityCardSkeleton } from './ActivityCardSkeleton';
 import { formatReportedBy } from '@/utils/format-helpers';
 import { StatusIcon } from '@/components/ui/status-icon';
 import { TIED_STATUS_LABELS } from '@/types/transaction';
+import { getActivityStatusDisplay } from '@/lib/activity-status-utils';
 
 // Aid modality label mappings
 const AID_TYPE_LABELS: Record<string, string> = {
@@ -171,14 +172,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       console.error('Error exporting card:', error);
     }
   };
-  const statusColors = {
-    'pipeline': 'outline',
-    'planned': 'default',
-    'implementation': 'success', 
-    'active': 'success', 
-    'completed': 'secondary',
-    'cancelled': 'destructive'
-  } as const;
+  // Status display from centralized utility
 
   const publicationColors = {
     'draft': 'secondary',
@@ -390,14 +384,14 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
             {/* Status Pills Section */}
             <div className="flex flex-wrap gap-2 items-center">
-              {activity.activity_status && (
-                <Badge 
-                  variant={statusColors[activity.activity_status as keyof typeof statusColors] || 'secondary'}
-                  className="text-xs font-medium leading-tight capitalize"
-                >
-                  {activity.activity_status}
-                </Badge>
-              )}
+              {activity.activity_status && (() => {
+                const { label, className: statusCls } = getActivityStatusDisplay(activity.activity_status);
+                return (
+                  <Badge className={`text-xs font-medium leading-tight ${statusCls}`}>
+                    {label}
+                  </Badge>
+                );
+              })()}
               {activity.is_pooled_fund && (
                 <Badge className="text-xs font-medium leading-tight bg-[#3C6255] text-white">
                   Fund

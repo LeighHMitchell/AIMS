@@ -327,7 +327,7 @@ export function DocumentFormEnhanced({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl h-[90vh] overflow-hidden flex flex-col p-0 mb-8">
-        <DialogHeader className="px-6 pt-6">
+        <DialogHeader className="mx-0 mt-0 px-6 py-4 border-b">
           <DialogTitle>
             {document ? 'Edit Document Link' : 'Add Document Link'}
           </DialogTitle>

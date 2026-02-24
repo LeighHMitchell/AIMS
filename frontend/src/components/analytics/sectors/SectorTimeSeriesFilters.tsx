@@ -95,7 +95,7 @@ export function SectorTimeSeriesFilters({
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[1fr_auto_auto_1fr_1fr] gap-3 items-end">
       {/* Sector Multi-Select */}
       <div className="space-y-1.5">
-        <Label className="text-sm font-medium text-slate-700">Sectors</Label>
+        <Label className="text-xs text-muted-foreground">Sectors</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -179,7 +179,7 @@ export function SectorTimeSeriesFilters({
 
       {/* Year Range - From */}
       <div className="space-y-1.5 w-[120px]">
-        <Label className="text-sm font-medium text-slate-700">From Year</Label>
+        <Label className="text-xs text-muted-foreground">From Year</Label>
         <Select 
           value={filters.yearRange?.from ? filters.yearRange.from.toString() : 'all'} 
           onValueChange={(value) => {
@@ -205,7 +205,7 @@ export function SectorTimeSeriesFilters({
 
       {/* Year Range - To */}
       <div className="space-y-1.5 w-[120px]">
-        <Label className="text-sm font-medium text-slate-700">To Year</Label>
+        <Label className="text-xs text-muted-foreground">To Year</Label>
         <Select 
           value={filters.yearRange?.to ? filters.yearRange.to.toString() : 'all'} 
           onValueChange={(value) => {
@@ -231,7 +231,7 @@ export function SectorTimeSeriesFilters({
 
       {/* Group By Level */}
       <div className="space-y-1.5">
-        <Label className="text-sm font-medium text-slate-700">Group By</Label>
+        <Label className="text-xs text-muted-foreground">Group By</Label>
         <Select 
           value={filters.groupByLevel} 
           onValueChange={(value: '1' | '3' | '5') => onFiltersChange({ ...filters, groupByLevel: value })}
@@ -249,7 +249,7 @@ export function SectorTimeSeriesFilters({
 
       {/* Organization Filter */}
       <div className="space-y-1.5">
-        <Label className="text-sm font-medium text-slate-700">Organization</Label>
+        <Label className="text-xs text-muted-foreground">Organization</Label>
         <Select 
           value={filters.organizationId || 'all'} 
           onValueChange={(value) => onFiltersChange({ ...filters, organizationId: value === 'all' ? undefined : value })}

@@ -651,7 +651,7 @@ export function EditOrganizationModal({
       <DialogContent 
         className="max-w-4xl h-[85vh] overflow-hidden flex flex-col p-0"
       >
-        <DialogHeader className="flex-shrink-0 p-6 pb-4 rounded-t-lg" style={{ backgroundColor: '#F0EEE9' }}>
+        <DialogHeader className="mx-0 mt-0 px-6 py-4 border-b flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-xl font-semibold">

@@ -106,20 +106,17 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed':
-      case 'completion':
-        return 'bg-green-500';
       case 'implementation':
       case 'active':
-        return 'bg-blue-500';
-      case 'pipeline':
-      case 'planning':
-        return 'bg-yellow-500';
+      case '2':
+        return 'bg-[#3C6255]';
       case 'cancelled':
       case 'suspended':
-        return 'bg-red-500';
+      case '5':
+      case '6':
+        return 'bg-[#dc2625]';
       default:
-        return 'bg-gray-500';
+        return 'bg-gray-400';
     }
   };
 

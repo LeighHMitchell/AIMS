@@ -117,6 +117,7 @@ import { SortableTableHeader } from "@/components/ui/sortable-table-header";
 import { DndColumnProvider } from "@/components/ui/dnd-column-provider";
 import { useColumnOrder } from "@/hooks/use-column-order";
 import { apiFetch } from '@/lib/api-fetch';
+import { getActivityStatusLabel } from '@/lib/activity-status-utils';
 
 // Dynamically import SectorHierarchyFilter to avoid hydration issues
 const SectorHierarchyFilter = dynamic(
@@ -370,45 +371,7 @@ type SortField = 'title' | 'partnerId' | 'createdBy' | 'commitments' | 'disburse
 type SortOrder = 'asc' | 'desc';
 
 
-const getActivityStatusColor = (status: string): "secondary" | "success" | "default" | "destructive" => {
-  const colors: Record<string, "secondary" | "success" | "default" | "destructive"> = {
-    draft: "secondary",
-    published: "success",
-    "1": "default", // Pipeline / Identification
-    "2": "default", // Implementation
-    "3": "secondary", // Finalisation
-    "4": "success", // Closed
-    "5": "destructive", // Cancelled
-    "6": "secondary", // Suspended
-    // Legacy support
-    planning: "default",
-    implementation: "default",
-    completed: "success",
-    cancelled: "destructive",
-    suspended: "secondary",
-    "": "secondary",
-  };
-  return colors[status] || "default";
-};
-
-// Helper function to get status label from code
-const getActivityStatusLabel = (status: string): string => {
-  const labels: Record<string, string> = {
-    "1": "Pipeline",
-    "2": "Implementation", 
-    "3": "Finalisation",
-    "4": "Closed",
-    "5": "Cancelled",
-    "6": "Suspended",
-    // Legacy support
-    planning: "Planning",
-    implementation: "Implementation",
-    completed: "Completed",
-    cancelled: "Cancelled",
-    suspended: "Suspended",
-  };
-  return labels[status] || status.charAt(0).toUpperCase() + status.slice(1);
-};
+// getActivityStatusLabel imported from @/lib/activity-status-utils
 
 
 

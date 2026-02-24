@@ -1,7 +1,31 @@
 {
-  "currentVersion": "2.16.0",
-  "narrativeSummary": "This update brings balanced, professional-looking tables across the entire system and refines the Pooled Funds experience. Every data table now uses fixed column widths with a flexible title column, so nothing feels cramped or stretched. The Sankey flow chart on pooled fund pages is smarter about when to show child activities and now shows tooltips when you hover over a flow link. Sidebar navigation labels have been tidied up, and the Pooled Funds page itself received several small quality-of-life improvements including clickable fund titles, repositioned status badges, and a refreshed colour palette.",
+  "currentVersion": "2.17.0",
+  "narrativeSummary": "Every dialog and modal now opens with a consistent muted header bar, filter labels across the system have been simplified, and duplicated activity-status logic has been consolidated into a single shared utility.",
   "releases": [
+    {
+      "version": "2.17.0",
+      "date": "2026-02-24",
+      "narrativeSummary": "This release is about visual consistency and code hygiene. Every dialog and modal in the system &mdash; from adding transactions and contacts to editing organisations, tasks, documents, and meetings &mdash; now opens with the same muted-background header bar and bottom border, so they all feel like they belong to the same application. Filter labels across analytics pages, the library, admin panels, and user management have been simplified from bold slate headings to smaller, quieter muted text so your eye goes to the data, not the chrome. Behind the scenes, the activity-status display logic that was duplicated in five different files has been pulled into a single shared utility, which means status badges now look identical everywhere &mdash; activity cards, the activity editor, and the pooled funds page &mdash; and any future status-related change only needs to happen in one place. We also removed the redundant &ldquo;Story So Far&rdquo; summary card from the Build History page; the per-release narrative card at the top already tells you everything you need to know.",
+      "changes": [
+        "<b>Consistent Dialog Headers</b>",
+        "&nbsp;&nbsp;Base <code>DialogHeader</code> component updated with <code>bg-surface-muted</code> background, <code>border-b</code>, and negative margin to span full width",
+        "&nbsp;&nbsp;<code>AlertDialogHeader</code> receives matching treatment with rounded top corners",
+        "&nbsp;&nbsp;15+ modals adjusted with <code>mx-0 mt-0</code> overrides so headers sit flush against the dialog edge",
+        "&nbsp;&nbsp;Affected: Transaction, Contact, Location, Document, Organisation, Task, Meeting, Compare Data, About, and Library modals",
+        "<b>Simplified Filter Labels</b>",
+        "&nbsp;&nbsp;All filter labels standardised to <code>text-xs text-muted-foreground</code> via the <code>Label</code> component",
+        "&nbsp;&nbsp;Removed bold slate-700 styling and inline icons from filter headings",
+        "&nbsp;&nbsp;Affected: SDG Analytics, Sector Analytics, Sector Time Series, Library Filters, FAQ Management, and Admin User Table",
+        "<b>Centralised Activity Status Utility</b>",
+        "&nbsp;&nbsp;New shared module <code>@/lib/activity-status-utils</code> exports <code>getActivityStatusDisplay()</code> and <code>getActivityStatusLabel()</code>",
+        "&nbsp;&nbsp;Replaced duplicate status logic in Activities list, Activity detail page, Activity Card, Activity Card Modern, and Pooled Funds page",
+        "&nbsp;&nbsp;Status badges now render identical colours and labels across all views",
+        "<b>Build History Cleanup</b>",
+        "&nbsp;&nbsp;Removed the &ldquo;Story So Far&rdquo; narrative card &mdash; only the per-release summary card remains at the top of the page",
+        "<b>Portfolio Timeline Colours</b>",
+        "&nbsp;&nbsp;Organisation portfolio timeline status colours updated to match the system palette (green for active, red for cancelled/suspended, grey default)"
+      ]
+    },
     {
       "version": "2.16.0",
       "date": "2026-02-24",
