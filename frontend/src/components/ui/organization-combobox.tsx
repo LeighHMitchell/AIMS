@@ -323,7 +323,7 @@ export function OrganizationCombobox({
                 </span>
               );
             }
-            return <span className="text-gray-400 text-base leading-relaxed">{placeholder}</span>;
+            return <span className="text-muted-foreground text-base leading-relaxed">{placeholder}</span>;
           })()}
           <div className="flex items-center gap-1 ml-2">
             {value && (

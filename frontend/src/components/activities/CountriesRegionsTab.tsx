@@ -1427,7 +1427,7 @@ export default function CountriesRegionsTab({
                         <TableCell className="text-gray-500 text-sm">
                           <div className="flex items-center gap-1">
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">A4</span>
-                            <span className="text-xs text-gray-400 font-normal">ISO Country</span>
+                            <span className="text-sm text-gray-500 font-normal">ISO Country</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1488,7 +1488,7 @@ export default function CountriesRegionsTab({
                         <TableCell className="text-gray-500 text-sm">
                           <div className="flex items-center gap-1">
                             <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                            <span className="text-xs text-gray-400 font-normal">OECD DAC</span>
+                            <span className="text-sm text-gray-500 font-normal">OECD DAC</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1552,7 +1552,7 @@ export default function CountriesRegionsTab({
                               <TooltipTrigger asChild>
                                 <div className="flex items-center gap-1 cursor-help">
                                   <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">99</span>
-                                  <span className="text-xs text-gray-400 font-normal">Custom</span>
+                                  <span className="text-sm text-gray-500 font-normal">Custom</span>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">

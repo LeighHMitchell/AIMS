@@ -1065,7 +1065,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                           ${isAllSelected
                             ? "bg-primary/20 text-primary"
                             : isStartOrEnd
-                              ? "bg-primary text-primary-foreground"
+                              ? "bg-slate-200 text-slate-900"
                               : inRange
                                 ? "bg-primary/20 text-primary"
                                 : "text-muted-foreground hover:bg-muted"

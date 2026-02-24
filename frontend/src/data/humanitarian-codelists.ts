@@ -16,6 +16,13 @@ export const HUMANITARIAN_SCOPE_TYPES = [
 
 export const HUMANITARIAN_SCOPE_VOCABULARIES = [
   {
+    code: '98',
+    name: 'Country Identified',
+    description: 'Country-specific emergency defined by the host government',
+    url: '',
+    example: 'e.g., MMR-CYCLONE-2024'
+  },
+  {
     code: '1-2',
     name: 'Glide',
     description: 'Global Identifier Number (GlideNumber) - for emergencies',
@@ -28,13 +35,6 @@ export const HUMANITARIAN_SCOPE_VOCABULARIES = [
     description: 'UN OCHA Humanitarian Response Plan codes - for appeals',
     url: 'https://fts.unocha.org/plan-code-list-iati',
     example: 'FNPL15 (Nepal Flash Appeal 2015)'
-  },
-  {
-    code: '98',
-    name: 'Country Identified',
-    description: 'Country-specific emergency defined by the host government',
-    url: '',
-    example: 'e.g., MMR-CYCLONE-2024'
   },
   {
     code: '99',

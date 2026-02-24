@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 import { MeasureType, DashboardData, RankedItem, FundingByType } from '@/types/national-priorities';
 
 // In-memory cache for dashboard results (keyed by query params)
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
           id,
           reporting_org_id,
           organizations!reporting_org_id (id, name, acronym, country),
-          transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status)
+          transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status, receiver_activity_uuid)
         `)
         .not('reporting_org_id', 'is', null);
 
@@ -207,7 +208,7 @@ export async function GET(request: NextRequest) {
         percentage,
         activity_id,
         activities (
-          transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status)
+          transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status, receiver_activity_uuid)
         )
       `);
 
@@ -305,7 +306,7 @@ export async function GET(request: NextRequest) {
           percentage,
           activity_id,
           activities (
-            transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status)
+            transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status, receiver_activity_uuid)
           )
         `);
 
@@ -507,7 +508,7 @@ export async function GET(request: NextRequest) {
         organizations (id, name, acronym),
         activities (
           id,
-          transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status)
+          transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status, receiver_activity_uuid)
         )
       `)
       .eq('iati_role_code', 4); // Implementing
@@ -577,7 +578,7 @@ export async function GET(request: NextRequest) {
         organizations (id, name, acronym),
         activities (
           id,
-          transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status)
+          transactions!transactions_activity_id_fkey1 (value, value_usd, transaction_type, transaction_date, status, receiver_activity_uuid)
         )
       `)
       .eq('iati_role_code', 3); // Extending

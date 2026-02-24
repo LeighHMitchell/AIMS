@@ -45,7 +45,7 @@ export function PaginationLink({ isActive, onClick, children, className = "" }: 
     <button
       type="button"
       onClick={onClick}
-      className={`px-2 py-1 rounded text-sm ${isActive ? "bg-blue-100 text-blue-700 font-semibold" : "text-gray-600 hover:bg-gray-100"} ${className}`}
+      className={`px-2 py-1 rounded text-sm ${isActive ? "bg-slate-200 text-slate-900 font-semibold" : "text-gray-600 hover:bg-gray-100"} ${className}`}
       aria-current={isActive ? "page" : undefined}
     >
       {children}

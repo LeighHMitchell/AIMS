@@ -474,27 +474,27 @@ export function FundingByModalityChart() {
         {(!expanded || viewMode === 'chart') && (
           <div className="flex items-center border rounded-md">
             <Button
-              variant={chartType === 'bar' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === 'bar' && "bg-primary text-primary-foreground")}
+              className={cn("h-8 w-8 p-0", chartType === 'bar' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
               onClick={() => setChartType('bar')}
               title="Bar Chart"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
-              variant={chartType === 'line' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === 'line' && "bg-primary text-primary-foreground")}
+              className={cn("h-8 w-8 p-0", chartType === 'line' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
               onClick={() => setChartType('line')}
               title="Line Chart"
             >
               <LineChartIcon className="h-4 w-4" />
             </Button>
             <Button
-              variant={chartType === 'area' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartType === 'area' && "bg-primary text-primary-foreground")}
+              className={cn("h-8 w-8 p-0", chartType === 'area' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
               onClick={() => setChartType('area')}
               title="Area Chart"
             >
@@ -507,18 +507,18 @@ export function FundingByModalityChart() {
         {(!expanded || viewMode === 'chart') && chartType === 'bar' && (
           <div className="flex items-center border rounded-md">
             <Button
-              variant={chartMode === 'stacked' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartMode === 'stacked' && "bg-primary text-primary-foreground")}
+              className={cn("h-8 w-8 p-0", chartMode === 'stacked' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
               onClick={() => setChartMode('stacked')}
               title="Stacked"
             >
               <Layers className="h-4 w-4" />
             </Button>
             <Button
-              variant={chartMode === 'grouped' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", chartMode === 'grouped' && "bg-primary text-primary-foreground")}
+              className={cn("h-8 w-8 p-0", chartMode === 'grouped' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
               onClick={() => setChartMode('grouped')}
               title="Grouped"
             >
@@ -531,18 +531,18 @@ export function FundingByModalityChart() {
         {expanded && (
           <div className="flex items-center border rounded-md">
             <Button
-              variant={viewMode === 'chart' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === 'chart' && "bg-primary text-primary-foreground")}
+              className={cn("h-8 w-8 p-0", viewMode === 'chart' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
               onClick={() => setViewMode('chart')}
               title="Chart"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
-              className={cn("h-8 w-8 p-0", viewMode === 'table' && "bg-primary text-primary-foreground")}
+              className={cn("h-8 w-8 p-0", viewMode === 'table' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
               onClick={() => setViewMode('table')}
               title="Table"
             >

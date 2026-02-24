@@ -475,18 +475,18 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
         {/* View mode toggles */}
         <div className="flex items-center border rounded-md">
           <Button
-            variant={viewMode === "bar" ? "default" : "ghost"}
+            variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "bar" && "bg-primary text-primary-foreground")}
+            className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
             onClick={() => setViewMode("bar")}
             title="Bar Chart"
           >
             <BarChart3 className="h-4 w-4" />
           </Button>
           <Button
-            variant={viewMode === "pie" ? "default" : "ghost"}
+            variant="ghost"
             size="sm"
-            className={cn("h-8 w-8 p-0", viewMode === "pie" && "bg-primary text-primary-foreground")}
+            className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
             onClick={() => setViewMode("pie")}
             title="Pie Chart"
           >
@@ -595,18 +595,18 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId }: 
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center border rounded-md">
               <Button
-                variant={viewMode === "bar" ? "default" : "ghost"}
+                variant="ghost"
                 size="sm"
-                className={cn("h-8 w-8 p-0", viewMode === "bar" && "bg-primary text-primary-foreground")}
+                className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
                 onClick={() => setViewMode("bar")}
                 title="Bar Chart"
               >
                 <BarChart3 className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === "pie" ? "default" : "ghost"}
+                variant="ghost"
                 size="sm"
-                className={cn("h-8 w-8 p-0", viewMode === "pie" && "bg-primary text-primary-foreground")}
+                className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
                 onClick={() => setViewMode("pie")}
                 title="Pie Chart"
               >

@@ -2,14 +2,15 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, AlertCircle } from 'lucide-react';
-import ContactCard from './ContactCard';
 import ContactForm from './ContactForm';
 import ContactSearchBar from './ContactSearchBar';
+import { PersonCard } from '@/components/rolodex/PersonCard';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { normalizeContact, deduplicateContacts, areContactsDuplicate } from '@/lib/contact-utils';
 import { apiFetch } from '@/lib/api-fetch';
+import type { RolodexPerson } from '@/app/api/rolodex/route';
 
 interface Contact {
   id?: string;
@@ -304,6 +305,29 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     setEditingContact(null);
   };
 
+  // Convert Contact to RolodexPerson for PersonCard
+  const toRolodexPerson = (contact: Contact): RolodexPerson => ({
+    id: contact.id || '',
+    source: 'activity_contact',
+    name: [contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'Unknown Contact',
+    title: contact.title,
+    first_name: contact.firstName,
+    last_name: contact.lastName,
+    email: contact.email || '',
+    position: contact.jobTitle || contact.position,
+    job_title: contact.jobTitle || contact.position,
+    department: contact.department,
+    organization_id: contact.organisationId,
+    organization_name: contact.organisation,
+    organization_acronym: contact.organisationAcronym,
+    phone: contact.phoneNumber || contact.phone,
+    country_code: contact.countryCode,
+    profile_photo: contact.profilePhoto,
+    created_at: '',
+    updated_at: '',
+    activity_count: 0,
+  });
+
 
   if (isLoading) {
     return (
@@ -406,14 +430,16 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
           </Alert>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {contacts.map((contact, index) => (
-              <ContactCard
-                key={contact.id || index}
-                contact={contact}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
+            {contacts.map((contact, index) => {
+              const person = toRolodexPerson(contact);
+              return (
+                <PersonCard
+                  key={contact.id || index}
+                  person={person}
+                  onDelete={(p) => handleDelete(p.id)}
+                />
+              );
+            })}
           </div>
         )}
       </div>

@@ -682,10 +682,10 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                     return (
                       <Button
                         key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "outline"}
+                        variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className="w-8 h-8 p-0"
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
                       >
                         {pageNum}
                       </Button>

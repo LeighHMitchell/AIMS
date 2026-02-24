@@ -31,7 +31,7 @@ interface FundContributionsViewProps {
   activityId: string
 }
 
-const COLORS = ['#3C6255', '#5f7f7a', '#8BA89E', '#B5CFC6', '#D4E8E0', '#2D4A44', '#1A3530', '#4A7068', '#6B9B90', '#9CC4B8']
+const COLORS = ['#374151', '#6b7280', '#9ca3af', '#d1d5db', '#e5e7eb', '#1f2937', '#111827', '#4b5563', '#9ca3af', '#d1d5db']
 
 function formatUSD(value: number): string {
   if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
@@ -150,9 +150,9 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
                 contentStyle={{ fontSize: 12 }}
               />
               <Legend />
-              {data.totals.pledged > 0 && <Bar dataKey="pledged" fill="#B5CFC6" stackId="a" name="Pledged" />}
-              {data.totals.committed > 0 && <Bar dataKey="committed" fill="#5f7f7a" stackId="a" name="Committed" />}
-              <Bar dataKey="received" fill="#3C6255" stackId="a" name="Received" />
+              {data.totals.pledged > 0 && <Bar dataKey="pledged" fill="#d1d5db" name="Pledged" />}
+              {data.totals.committed > 0 && <Bar dataKey="committed" fill="#6b7280" name="Committed" />}
+              <Bar dataKey="received" fill="#374151" name="Received" />
             </BarChart>
           ) : (
             <PieChart>

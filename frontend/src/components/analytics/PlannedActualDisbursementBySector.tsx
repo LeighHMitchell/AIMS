@@ -833,7 +833,7 @@ export function PlannedActualDisbursementBySector({
                                 className={`
                                   px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                                   ${isStartOrEnd
-                                    ? 'bg-primary text-primary-foreground'
+                                    ? 'bg-slate-200 text-slate-900'
                                     : inRange
                                       ? 'bg-primary/20 text-primary'
                                       : 'text-muted-foreground hover:bg-muted'
@@ -868,25 +868,25 @@ export function PlannedActualDisbursementBySector({
             {/* Group By Toggle Buttons */}
             <div className="flex gap-1 border rounded-lg p-1 bg-card">
               <Button
-                variant={groupByLevel === '1' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", groupByLevel === '1' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
                 onClick={() => setGroupByLevel('1')}
               >
                 Sector Category
               </Button>
               <Button
-                variant={groupByLevel === '3' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", groupByLevel === '3' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
                 onClick={() => setGroupByLevel('3')}
               >
                 Sector
               </Button>
               <Button
-                variant={groupByLevel === '5' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className={cn("h-8", groupByLevel === '5' ? "bg-slate-200 text-slate-900" : "text-slate-400")}
                 onClick={() => setGroupByLevel('5')}
               >
                 Sub-sector

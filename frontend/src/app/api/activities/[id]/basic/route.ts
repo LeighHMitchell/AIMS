@@ -161,11 +161,34 @@ export async function GET(
       console.log('[AIMS API] Acronym found in database:', activity.acronym);
     }
     
-    // Fetch participating organisations count for tab completion
-    const { count: participatingOrgsCount } = await supabase
-      .from('activity_participating_organizations')
-      .select('id', { count: 'exact', head: true })
-      .eq('activity_id', id);
+    // Fetch lightweight counts for tab completion indicators (all in parallel)
+    const [
+      { count: participatingOrgsCount },
+      { count: contactsCount },
+      { count: focalPointsCount },
+      { count: linkedActivitiesCount },
+      { count: transactionsCount },
+      { count: budgetsCount },
+      { count: plannedDisbursementsCount },
+      { count: resultsCount },
+      { count: fssCount },
+      { count: financingTermsCount },
+      { count: conditionsCount },
+      { count: countryBudgetItemsCount },
+    ] = await Promise.all([
+      supabase.from('activity_participating_organizations').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('activity_contacts').select('id', { count: 'exact', head: true }).eq('activity_id', id).not('type', 'in', '("government_focal_point","development_partner_focal_point")'),
+      supabase.from('activity_contacts').select('id', { count: 'exact', head: true }).eq('activity_id', id).in('type', ['government_focal_point', 'development_partner_focal_point']),
+      supabase.from('activity_relationships').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('activity_budgets').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('planned_disbursements').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('activity_results').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('forward_spending_survey').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('activity_financing_terms').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('activity_conditions').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+      supabase.from('country_budget_items').select('id', { count: 'exact', head: true }).eq('activity_id', id),
+    ]);
 
     // Extract sectors
     const sectors = activity.activity_sectors || [];
@@ -329,7 +352,21 @@ export async function GET(
       custom_geographies: activity.custom_geographies || [],
       customDates: activity.custom_dates || [],
       custom_dates: activity.custom_dates || [],
-      participatingOrgsCount: participatingOrgsCount || 0
+      participatingOrgsCount: participatingOrgsCount || 0,
+      // Tab completion counts (lightweight, fetched in parallel)
+      tabCounts: {
+        contacts: contactsCount || 0,
+        focal_points: focalPointsCount || 0,
+        linked_activities: linkedActivitiesCount || 0,
+        transactions: transactionsCount || 0,
+        budgets: budgetsCount || 0,
+        planned_disbursements: plannedDisbursementsCount || 0,
+        results: resultsCount || 0,
+        fss: fssCount || 0,
+        financing_terms: financingTermsCount || 0,
+        conditions: conditionsCount || 0,
+        country_budget_items: countryBudgetItemsCount || 0,
+      }
     };
     
     console.log('[AIMS API] Basic activity transformed:', transformedActivity.title);

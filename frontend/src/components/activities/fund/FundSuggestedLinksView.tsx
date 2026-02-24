@@ -142,9 +142,9 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
       )}
 
       {visibleSuggestions.map(suggestion => {
-        const confidenceColor = suggestion.confidence >= 60 ? 'bg-green-100 text-green-700'
-          : suggestion.confidence >= 30 ? 'bg-yellow-100 text-yellow-700'
-          : 'bg-gray-100 text-gray-700'
+        const confidenceColor = suggestion.confidence >= 60 ? 'bg-gray-200 text-gray-800'
+          : suggestion.confidence >= 30 ? 'bg-gray-100 text-gray-600'
+          : 'bg-gray-50 text-gray-500'
 
         return (
           <Card key={suggestion.activityId} className="border border-gray-200">
@@ -154,7 +154,7 @@ export function FundSuggestedLinksView({ activityId, readOnly = false }: FundSug
                   <div className="flex items-center gap-2 mb-1">
                     <Link
                       href={`/activities/${suggestion.activityId}`}
-                      className="text-blue-600 hover:underline font-medium truncate"
+                      className="text-foreground hover:underline font-medium truncate"
                     >
                       {suggestion.title}
                     </Link>

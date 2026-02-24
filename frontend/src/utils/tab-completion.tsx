@@ -445,15 +445,12 @@ export function checkContactsTabCompletion(contacts: any[]): TabCompletionStatus
   const missingFields: string[] = []
   
   if (contacts && contacts.length > 0) {
-    // Check if we have at least one valid contact with required fields
-    const hasValidContacts = contacts.some(contact => 
-      contact && 
-      contact.firstName?.trim() && 
-      contact.lastName?.trim() &&
-      contact.type &&
-      contact.position?.trim()
+    // At least one contact with a name is sufficient
+    const hasValidContacts = contacts.some(contact =>
+      contact &&
+      (contact.firstName?.trim() || contact.lastName?.trim())
     );
-    
+
     if (hasValidContacts) {
       completedFields.push('contacts')
     } else {

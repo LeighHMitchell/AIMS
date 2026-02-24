@@ -198,28 +198,36 @@ export function HumanitarianTab({
     <div className={`space-y-6 ${className}`}>
       {/* Humanitarian Flag Section - Fieldset Style with Label */}
       <div className="relative border-2 border-red-300 rounded-lg p-6 bg-red-50/30">
-        <div>
-          <div className="flex items-center gap-2">
-            <LabelSaveIndicator
-              isSaving={isSaving}
-              isSaved={!isLoading && activityId !== 'NEW'}
-              hasValue={humanitarian}
-              className="text-sm font-medium cursor-pointer text-red-900"
-            >
-              Humanitarian Activity
-            </LabelSaveIndicator>
-            <HelpTextTooltip content="Mark this activity as humanitarian if it relates entirely or partially to humanitarian aid. This follows IATI Standard guidance for humanitarian reporting." />
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <LabelSaveIndicator
+                isSaving={isSaving}
+                isSaved={!isLoading && activityId !== 'NEW'}
+                hasValue={humanitarian}
+                className="text-sm font-medium cursor-pointer text-red-900"
+              >
+                Humanitarian Activity
+              </LabelSaveIndicator>
+              <HelpTextTooltip content="Mark this activity as humanitarian if it relates entirely or partially to humanitarian aid. This follows IATI Standard guidance for humanitarian reporting." />
+            </div>
+            <p className="text-xs text-red-700 mt-1">
+              Identify if this activity is for emergency response or disaster relief
+            </p>
+            <Switch
+              id="humanitarian-toggle"
+              checked={humanitarian}
+              onCheckedChange={handleHumanitarianToggle}
+              disabled={readOnly || isSaving || activityId === 'NEW'}
+              className="mt-3 data-[state=checked]:bg-red-600 data-[state=unchecked]:bg-red-200"
+            />
           </div>
-          <p className="text-xs text-red-700 mt-1">
-            Identify if this activity is for emergency response or disaster relief
-          </p>
-          <Switch
-            id="humanitarian-toggle"
-            checked={humanitarian}
-            onCheckedChange={handleHumanitarianToggle}
-            disabled={readOnly || isSaving || activityId === 'NEW'}
-            className="mt-3 data-[state=checked]:bg-red-600 data-[state=unchecked]:bg-red-200"
-          />
+          {humanitarian && !readOnly && activityId !== 'NEW' && (
+            <Button onClick={handleAddScope} size="sm" disabled={isSaving} className="bg-red-600 text-white hover:bg-red-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Scope
+            </Button>
+          )}
         </div>
 
         {activityId === 'NEW' && (
@@ -236,23 +244,13 @@ export function HumanitarianTab({
       {humanitarian && activityId !== 'NEW' && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle className="flex items-center gap-2">
-                  Humanitarian Scope
-                  <HelpTextTooltip content="Identify specific emergencies (using GLIDE codes) or appeals (using UN OCHA HRP codes) that this activity responds to. Multiple entries can be added." />
-                </CardTitle>
-                <CardDescription>
-                  Link to specific emergencies or appeals (optional but recommended)
-                </CardDescription>
-              </div>
-              {!readOnly && (
-                <Button onClick={handleAddScope} size="sm" disabled={isSaving}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Scope
-                </Button>
-              )}
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              Humanitarian Scope
+              <HelpTextTooltip content="Identify specific emergencies (using GLIDE codes) or appeals (using UN OCHA HRP codes) that this activity responds to. Multiple entries can be added." />
+            </CardTitle>
+            <CardDescription>
+              Link to specific emergencies or appeals (optional but recommended)
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {scopes.length === 0 && (
@@ -286,7 +284,8 @@ export function HumanitarianTab({
                             {getScopeTypeName(scope.type)}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground align-top whitespace-nowrap">
+                        <TableCell className="text-sm align-top whitespace-nowrap">
+                          <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">{scope.vocabulary}</code>{' '}
                           {getVocabularyName(scope.vocabulary)}
                         </TableCell>
                         <TableCell className="align-top">
@@ -316,14 +315,14 @@ export function HumanitarianTab({
                             </code>
                           )}
                         </TableCell>
-                        <TableCell className="align-top text-sm text-muted-foreground">
+                        <TableCell className="align-top text-sm">
                           {scope.vocabulary === '98' && emergencyMap[scope.code]?.location ? (
                             <span>{emergencyMap[scope.code].location}</span>
                           ) : (
                             <span className="text-gray-400">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="align-top text-sm text-muted-foreground whitespace-nowrap">
+                        <TableCell className="align-top text-sm whitespace-nowrap">
                           {scope.vocabulary === '98' && emergencyMap[scope.code] && formatEmergencyDateRange(emergencyMap[scope.code]) ? (
                             <span>{formatEmergencyDateRange(emergencyMap[scope.code])}</span>
                           ) : (

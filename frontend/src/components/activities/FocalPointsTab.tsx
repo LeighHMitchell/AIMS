@@ -23,8 +23,8 @@ import {
   Trash2,
   Clock
 } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
+import { PersonCard } from '@/components/rolodex/PersonCard';
+import type { RolodexPerson } from '@/app/api/rolodex/route';
 import { FocalPointHandoffModal } from './FocalPointHandoffModal';
 import { AssignFocalPointModal } from './AssignFocalPointModal';
 import {
@@ -328,111 +328,95 @@ export default function FocalPointsTab({
     }
   };
 
-  // Using getInitials from UserAvatar component
+  // Convert a FocalPoint to a RolodexPerson for PersonCard display
+  const focalPointToRolodexPerson = (focalPoint: FocalPoint): RolodexPerson => {
+    const nameParts = focalPoint.name?.split(' ') || [];
+    return {
+      id: focalPoint.id,
+      source: 'user',
+      name: focalPoint.name || focalPoint.email || 'Unknown',
+      first_name: nameParts[0],
+      last_name: nameParts.slice(1).join(' '),
+      email: focalPoint.email || '',
+      job_title: focalPoint.job_title,
+      position: focalPoint.job_title,
+      organization_id: focalPoint.organization?.id,
+      organization_name: focalPoint.organization?.name || focalPoint.organisation,
+      organization_acronym: focalPoint.organization?.acronym,
+      profile_photo: focalPoint.avatar_url || null,
+      phone: undefined,
+      created_at: '',
+      updated_at: '',
+    };
+  };
 
   const renderFocalPointCard = (focalPoint: FocalPoint) => {
     const showHandoffButton = canHandoff(focalPoint);
     const showRemoveButton = canRemove(focalPoint);
     const isLoading = actionLoading?.includes(focalPoint.id);
+    const person = focalPointToRolodexPerson(focalPoint);
 
     return (
-      <Card key={focalPoint.id} className="border-slate-200">
-        <CardContent className="pt-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
-              {/* Profile Picture */}
-              <UserAvatar
-                src={focalPoint.avatar_url}
-                seed={focalPoint.id || focalPoint.email || focalPoint.name}
-                name={focalPoint.name}
-                size="md"
-                initials={getInitials(focalPoint.name)}
-              />
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  <h3 className="font-semibold text-slate-900">{focalPoint.name}</h3>
-                  {getStatusBadge(focalPoint.status)}
-                  {isCurrentUserFocalPoint(focalPoint) && (
-                    <Badge variant="secondary" className="bg-slate-100">
-                      You
-                    </Badge>
-                  )}
-                </div>
-                
-                <p className="text-sm text-slate-600 mb-1">{focalPoint.email}</p>
-                
-                {focalPoint.job_title && (
-                  <p className="text-sm text-slate-500">{focalPoint.job_title}</p>
-                )}
-                
-                {focalPoint.organization && (
-                  <p className="text-sm text-slate-500 flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
-                    {focalPoint.organization.name}
-                    {focalPoint.organization.acronym && ` (${focalPoint.organization.acronym})`}
-                  </p>
-                )}
-                
-                {focalPoint.organisation && !focalPoint.organization && (
-                  <p className="text-sm text-slate-500 flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
-                    {focalPoint.organisation}
-                  </p>
-                )}
+      <div key={focalPoint.id} className="space-y-2">
+        <PersonCard person={person} compact />
 
-                <div className="mt-3 text-xs text-slate-400 space-y-1">
-                  {focalPoint.assigned_by_name && (
-                    <p>Assigned by {focalPoint.assigned_by_name}</p>
-                  )}
-                  {focalPoint.handed_off_by_name && focalPoint.status !== 'pending_handoff' && (
-                    <p>Handed off by {focalPoint.handed_off_by_name}</p>
-                  )}
-                  {focalPoint.status === 'pending_handoff' && focalPoint.handed_off_by_name && (
-                    <p>Handoff initiated by {focalPoint.handed_off_by_name}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {(showHandoffButton || showRemoveButton) && (
-              <div className="flex flex-col gap-2 shrink-0">
-                {showHandoffButton && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openHandoffModal(focalPoint)}
-                    disabled={isLoading}
-                  >
-                    {isLoading && actionLoading?.startsWith('handoff') ? (
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                    ) : (
-                      <HandPlatter className="h-4 w-4 mr-1" />
-                    )}
-                    Handoff
-                  </Button>
-                )}
-                {showRemoveButton && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleRemove(focalPoint)}
-                    disabled={isLoading}
-                  >
-                    {isLoading && actionLoading?.startsWith('remove') ? (
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4 mr-1 text-red-500" />
-                    )}
-                    Remove
-                  </Button>
-                )}
-              </div>
+        {/* Focal-point-specific info & actions */}
+        <div className="flex items-center justify-between px-3 pb-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            {getStatusBadge(focalPoint.status)}
+            {isCurrentUserFocalPoint(focalPoint) && (
+              <Badge variant="secondary" className="bg-slate-100">
+                You
+              </Badge>
+            )}
+            {focalPoint.assigned_by_name && (
+              <span className="text-xs text-slate-400">Assigned by {focalPoint.assigned_by_name}</span>
+            )}
+            {focalPoint.handed_off_by_name && focalPoint.status !== 'pending_handoff' && (
+              <span className="text-xs text-slate-400">Handed off by {focalPoint.handed_off_by_name}</span>
+            )}
+            {focalPoint.status === 'pending_handoff' && focalPoint.handed_off_by_name && (
+              <span className="text-xs text-slate-400">Handoff initiated by {focalPoint.handed_off_by_name}</span>
             )}
           </div>
-        </CardContent>
-      </Card>
+
+          {(showHandoffButton || showRemoveButton) && (
+            <div className="flex gap-2 shrink-0">
+              {showHandoffButton && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openHandoffModal(focalPoint)}
+                  disabled={isLoading}
+                >
+                  {isLoading && actionLoading?.startsWith('handoff') ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <HandPlatter className="h-4 w-4 mr-1" />
+                  )}
+                  Handoff
+                </Button>
+              )}
+              {showRemoveButton && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => handleRemove(focalPoint)}
+                  disabled={isLoading}
+                >
+                  {isLoading && actionLoading?.startsWith('remove') ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-1 text-red-500" />
+                  )}
+                  Remove
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     );
   };
 

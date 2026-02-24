@@ -76,7 +76,7 @@ function SimpleLocationMarker({
           <div className="text-slate-600 leading-snug">{location.location_description}</div>
         )}
         {location.activity_location_description && (
-          <div className="text-slate-500 italic leading-snug">{location.activity_location_description}</div>
+          <div className="text-slate-500 leading-snug">{location.activity_location_description}</div>
         )}
         {address && (
           <div className="text-slate-600 leading-snug">{address}</div>

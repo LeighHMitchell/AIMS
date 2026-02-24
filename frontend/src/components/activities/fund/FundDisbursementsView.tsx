@@ -109,11 +109,11 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
 
   const statusColors: Record<string, string> = {
     'Pipeline/identification': 'bg-muted text-foreground',
-    'Implementation': 'bg-blue-100 text-blue-700',
-    'Completion': 'bg-green-100 text-green-700',
-    'Post-completion': 'bg-purple-100 text-purple-700',
-    'Cancelled': 'bg-red-100 text-red-700',
-    'Suspended': 'bg-yellow-100 text-yellow-700',
+    'Implementation': 'bg-gray-200 text-gray-700',
+    'Completion': 'bg-gray-300 text-gray-800',
+    'Post-completion': 'bg-gray-100 text-gray-600',
+    'Cancelled': 'bg-gray-100 text-gray-500',
+    'Suspended': 'bg-gray-100 text-gray-500',
   }
 
   return (
@@ -176,8 +176,8 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
                 contentStyle={{ fontSize: 12 }}
               />
               <Legend />
-              <Bar dataKey="committed" fill="#5f7f7a" name="Committed" />
-              <Bar dataKey="disbursed" fill="#3C6255" name="Disbursed" />
+              <Bar dataKey="committed" fill="#9ca3af" name="Committed" />
+              <Bar dataKey="disbursed" fill="#374151" name="Disbursed" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -202,7 +202,7 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
               {data.children.map(child => (
                 <TableRow key={child.id}>
                   <TableCell>
-                    <Link href={`/activities/${child.id}`} className="text-blue-600 hover:underline font-medium">
+                    <Link href={`/activities/${child.id}`} className="text-foreground hover:underline font-medium">
                       {child.title}
                     </Link>
                   </TableCell>

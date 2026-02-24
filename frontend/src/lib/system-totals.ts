@@ -11,6 +11,7 @@
  */
 
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 
 /**
  * System-wide financial totals across all activities
@@ -138,9 +139,12 @@ export async function fetchSystemTotals(forceRefresh = false): Promise<SystemTot
  */
 async function fetchTransactionTotals(supabase: any): Promise<{ commitments: number; disbursements: number }> {
   // Query transactions table directly using USD values for accuracy
-  const { data: transactions, error } = await supabase
+  // Exclude internal transfers (pooled fund flows) to avoid double-counting
+  let query = supabase
     .from('transactions')
     .select('transaction_type, value_usd');
+  query = excludeInternalTransfers(query, ['2', '3']);
+  const { data: transactions, error } = await query;
 
   if (error || !transactions) {
     console.error('[System Totals] Transaction query error:', error);

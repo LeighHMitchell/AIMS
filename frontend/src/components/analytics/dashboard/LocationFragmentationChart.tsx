@@ -72,7 +72,7 @@ export function LocationFragmentationChart({
             onClick={() => setViewMode('chart')}
             className={cn(
               "h-8 px-3 rounded-none",
-              viewMode === 'chart' && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+              viewMode === 'chart' ? "bg-slate-200 text-slate-900" : "text-slate-400"
             )}
           >
             <BarChart3 className="h-4 w-4" />
@@ -83,7 +83,7 @@ export function LocationFragmentationChart({
             onClick={() => setViewMode('table')}
             className={cn(
               "h-8 px-3 rounded-none",
-              viewMode === 'table' && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+              viewMode === 'table' ? "bg-slate-200 text-slate-900" : "text-slate-400"
             )}
           >
             <Table className="h-4 w-4" />

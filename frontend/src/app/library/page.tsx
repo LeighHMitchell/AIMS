@@ -692,10 +692,10 @@ export default function LibraryPage() {
                           return (
                             <Button
                               key={pageNum}
-                              variant={pagination.page === pageNum ? "default" : "outline"}
+                              variant="outline"
                               size="sm"
                               onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
-                              className="w-8 h-8 p-0"
+                              className={`w-8 h-8 p-0 ${pagination.page === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
                               disabled={loading}
                             >
                               {pageNum}

@@ -2091,9 +2091,10 @@ function OrganizationsPageContent() {
                           return (
                             <Button
                               key={pageNum}
-                              variant={currentPage === pageNum ? "default" : "outline"}
+                              variant="outline"
                               size="sm"
                               onClick={() => setCurrentPage(pageNum)}
+                              className={currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}
                             >
                               {pageNum}
                             </Button>

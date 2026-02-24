@@ -368,11 +368,11 @@ const RadioButtonField: React.FC<{
   onDocRemove?: (fieldName: string) => void;
 }> = ({ id, value, onValueChange, label, tooltip, description, documentUpload, document, uploadingDoc, onDocUpload, onDocRemove }) => (
   <div className="py-3 border-b border-slate-100 last:border-b-0">
-    <div className="flex items-start gap-3">
+    <div className="flex items-center gap-3">
       <RadioGroup
         value={value || ""}
         onValueChange={onValueChange}
-        className="flex items-center gap-3 mt-0.5 flex-shrink-0"
+        className="flex items-center gap-3 flex-shrink-0"
       >
         <div className="flex items-center gap-1">
           <RadioGroupItem value="yes" id={`${id}-yes`} className="border-orange-300 text-orange-500" />
@@ -383,7 +383,7 @@ const RadioButtonField: React.FC<{
           <Label htmlFor={`${id}-no`} className="text-xs font-medium cursor-pointer text-slate-600">No</Label>
         </div>
       </RadioGroup>
-      <div className="flex-1 flex items-start justify-between gap-3">
+      <div className="flex-1 flex items-center justify-between gap-3">
         <div className="space-y-0.5">
           <Label className="text-sm font-medium leading-tight text-slate-800">
             {label}

@@ -30,7 +30,7 @@ export function HumanitarianScopeModal({
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<HumanitarianScope>({
     type: '1',
-    vocabulary: '1-2',
+    vocabulary: '98',
     code: '',
     vocabulary_uri: '',
     narratives: [{ language: 'en', narrative: '' }],
@@ -45,7 +45,7 @@ export function HumanitarianScopeModal({
       } else {
         setFormData({
           type: '1',
-          vocabulary: '1-2',
+          vocabulary: '98',
           code: '',
           vocabulary_uri: '',
           narratives: [{ language: 'en', narrative: '' }],
@@ -108,7 +108,7 @@ export function HumanitarianScopeModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto">
           <div className="space-y-2">
             <Label>Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
             <HumanitarianTypeSelect

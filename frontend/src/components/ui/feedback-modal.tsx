@@ -1,8 +1,9 @@
 "use client"
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -59,8 +60,11 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showDiscardWarning, setShowDiscardWarning] = useState(false);
 
   const selectedType = FEEDBACK_TYPES.find(type => type.code === selectedCategory);
+
+  const hasUnsavedContent = subject.trim() !== '' || message.trim() !== '' || selectedFile !== null;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -227,12 +231,21 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   const handleClose = () => {
     if (isSubmitting) return;
+    if (hasUnsavedContent) {
+      setShowDiscardWarning(true);
+      return;
+    }
+    resetAndClose();
+  };
+
+  const resetAndClose = () => {
     setSelectedCategory('comment');
     setSelectedFeature('');
     setSelectedPriority('medium');
     setSubject('');
     setMessage('');
     setSelectedFile(null);
+    setShowDiscardWarning(false);
     onClose();
   };
 
@@ -250,6 +263,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
@@ -470,5 +484,23 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         </form>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showDiscardWarning} onOpenChange={setShowDiscardWarning}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Discard feedback?</AlertDialogTitle>
+          <AlertDialogDescription>
+            You have unsaved feedback that will be lost if you close this window. Are you sure you want to discard it?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep editing</AlertDialogCancel>
+          <AlertDialogAction onClick={resetAndClose} className={buttonVariants({ variant: "destructive" })}>
+            Discard
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

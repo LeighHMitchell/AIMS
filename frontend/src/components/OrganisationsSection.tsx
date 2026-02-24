@@ -407,7 +407,7 @@ export default function OrganisationsSection({
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-sm text-foreground">
                             {participatingOrg.organization?.Organisation_Type_Name || 
                              (participatingOrg.organization?.Organisation_Type_Code ? getOrganizationTypeName(participatingOrg.organization.Organisation_Type_Code) : null) || 
                              <span className="text-muted-foreground">Not set</span>}

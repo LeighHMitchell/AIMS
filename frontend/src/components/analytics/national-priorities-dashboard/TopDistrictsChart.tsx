@@ -272,27 +272,27 @@ export function TopDistrictsChart({
     <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t flex-shrink-0">
       <div className="flex items-center border rounded-md">
         <Button
-          variant={viewMode === "bar" ? "default" : "ghost"}
+          variant="ghost"
           size="sm"
-          className={cn("h-8 w-8 p-0", viewMode === "bar" && "bg-primary text-primary-foreground")}
+          className={cn("h-8 w-8 p-0", viewMode === "bar" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
           onClick={() => setViewMode("bar")}
           title="Bar Chart"
         >
           <BarChart3 className="h-4 w-4" />
         </Button>
         <Button
-          variant={viewMode === "pie" ? "default" : "ghost"}
+          variant="ghost"
           size="sm"
-          className={cn("h-8 w-8 p-0", viewMode === "pie" && "bg-primary text-primary-foreground")}
+          className={cn("h-8 w-8 p-0", viewMode === "pie" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
           onClick={() => setViewMode("pie")}
           title="Pie Chart"
         >
           <PieChartIcon className="h-4 w-4" />
         </Button>
         <Button
-          variant={viewMode === "table" ? "default" : "ghost"}
+          variant="ghost"
           size="sm"
-          className={cn("h-8 w-8 p-0", viewMode === "table" && "bg-primary text-primary-foreground")}
+          className={cn("h-8 w-8 p-0", viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400")}
           onClick={() => setViewMode("table")}
           title="Table"
         >

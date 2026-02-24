@@ -636,7 +636,7 @@ export function AidEcosystemSolarSystem({
                 <SlidersHorizontal className="h-4 w-4" />
                 Filter
                 {(isFilterOpen ? pendingSectors.size : visibleSectors.size) > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-slate-200 text-slate-900 rounded-full">
                     {isFilterOpen ? pendingSectors.size : visibleSectors.size}
                   </span>
                 )}

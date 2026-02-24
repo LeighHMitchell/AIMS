@@ -3255,6 +3255,11 @@ function NewActivityPageContent() {
   const [financingTermsCount, setFinancingTermsCount] = useState<number>(0);
   const [countryBudgetItemsCount, setCountryBudgetItemsCount] = useState<number>(0);
   const [focalPointsCount, setFocalPointsCount] = useState<number>(0);
+  const [contactsCount, setContactsCount] = useState<number>(0);
+
+  // Tabs whose count data has been loaded via the lightweight tab-counts endpoint
+  // Used to show completion ticks before the full group data is lazy-loaded
+  const [tabCountsReady, setTabCountsReady] = useState<Set<string>>(new Set());
 
   // Track sidebar collapse state to avoid covering the collapse button
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -4318,6 +4323,25 @@ function NewActivityPageContent() {
           // Mark only activity-overview group as loaded (basic data contains sectors, etc.)
           setDataLoadedGroups(new Set(['activity-overview']));
 
+          // Apply tab completion counts included in the basic response
+          if (data.tabCounts) {
+            setContactsCount(data.tabCounts.contacts || 0);
+            setFocalPointsCount(data.tabCounts.focal_points || 0);
+            setLinkedActivitiesCount(data.tabCounts.linked_activities || 0);
+            setFinancingTermsCount(data.tabCounts.financing_terms || 0);
+            setConditionsCount(data.tabCounts.conditions || 0);
+            setCountryBudgetItemsCount(data.tabCounts.country_budget_items || 0);
+            setResultsCount(data.tabCounts.results || 0);
+            if (data.tabCounts.fss > 0) setForwardSpendCount(1);
+            // Mark these individual tabs as having valid count data
+            // so getStatusForTab bypasses the group-level data loading check
+            setTabCountsReady(new Set([
+              'contacts', 'focal_points', 'linked_activities',
+              'financing-terms', 'conditions', 'country-budget',
+              'results', 'forward-spending-survey',
+            ]));
+          }
+
           console.log('[AIMS] Activity data loaded successfully - tab data will lazy load')
         } else {
           // New activity - just set some defaults
@@ -4539,8 +4563,13 @@ function NewActivityPageContent() {
       tabId: string,
       computedStatus: { isComplete: boolean; isInProgress: boolean }
     ): { isComplete: boolean; isInProgress: boolean } => {
-      // If data is loaded, return the computed status
+      // If full group data is loaded, return the computed status
       if (isDataLoadedForTab(tabId)) {
+        return computedStatus;
+      }
+      // If lightweight counts have been fetched for this tab, trust the computed status
+      // This allows completion ticks to display before the full group data is lazy-loaded
+      if (tabCountsReady.has(tabId)) {
         return computedStatus;
       }
       // If data hasn't been loaded yet, show nothing (not complete, not in progress)
@@ -4694,10 +4723,12 @@ function NewActivityPageContent() {
         isComplete: organizationsCompletion.isComplete,
         isInProgress: organizationsCompletion.isInProgress
       } : { isComplete: false, isInProgress: false },
-      contacts: getStatusForTab('contacts', contactsCompletion ? {
-        isComplete: contactsCompletion.isComplete,
-        isInProgress: contactsCompletion.isInProgress
-      } : { isComplete: false, isInProgress: false }),
+      contacts: getStatusForTab('contacts', {
+        isComplete: contacts.length > 0
+          ? (contactsCompletion?.isComplete ?? false)
+          : contactsCount > 0,
+        isInProgress: contactsCompletion?.isInProgress ?? false
+      }),
       focal_points: getStatusForTab('focal_points', {
         isComplete: focalPointsCount > 0,
         isInProgress: false
@@ -4778,7 +4809,7 @@ function NewActivityPageContent() {
         isInProgress: xmlImportCompletion.isInProgress
       } : { isComplete: false, isInProgress: false }
     }
-  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, countryBudgetItemsCount, focalPointsCount, metadataData, xmlImportStatus, dataLoadedGroups]);
+  }, [general, sectors, getDateFieldStatus, sectorValidation, specificLocations, countries, regions, tags, workingGroups, policyMarkers, hasUnsavedChanges, transactions, budgets, budgetNotProvided, plannedDisbursements, forwardSpendCount, humanitarian, humanitarianScopes, sdgMappings, iatiSyncState, subnationalBreakdowns, extendingPartners, implementingPartners, governmentPartners, participatingOrgsCount, linkedActivitiesCount, resultsCount, capitalSpendPercentage, conditionsCount, financingTermsCount, documents, contacts, contactsCount, countryBudgetItemsCount, focalPointsCount, metadataData, xmlImportStatus, dataLoadedGroups, tabCountsReady]);
 
   // Helper to get next section id - moved here to avoid temporal dead zone
   const getNextSection = useCallback((currentId: string) => {
@@ -4863,6 +4894,24 @@ function NewActivityPageContent() {
       const params = new URLSearchParams(window.location.search);
       params.set('section', value);
       window.history.replaceState({}, '', `?${params.toString()}`);
+
+      // Trigger lazy loading for the target tab's group data if not yet loaded
+      // This ensures tab completion indicators update correctly
+      const tabGroup = getTabGroup(value);
+      if (tabGroup) {
+        setVisitedGroups(prev => {
+          if (prev.has(tabGroup)) return prev;
+          const newSet = new Set(prev);
+          newSet.add(tabGroup);
+          return newSet;
+        });
+      }
+      if (general.id && general.id !== 'NEW' && tabGroup && !tabDataLoader.isGroupLoaded(value)) {
+        tabDataLoader.loadTabData(value).catch(err => {
+          console.error('[AIMS Performance] Failed to load tab data:', err);
+        });
+      }
+
       return;
     }
 

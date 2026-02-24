@@ -5,6 +5,7 @@ import { apiFetch } from "@/lib/api-fetch"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DollarSign, Users, Layers, TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 
@@ -87,7 +88,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
 
   if (!data) return null
 
-  const balanceColor = data.balance > 0 ? 'text-green-600' : data.balance < 0 ? 'text-red-600' : 'text-muted-foreground'
+  const balanceColor = data.balance > 0 ? 'text-foreground' : data.balance < 0 ? 'text-foreground' : 'text-muted-foreground'
   const BalanceIcon = data.balance > 0 ? TrendingUp : data.balance < 0 ? TrendingDown : Minus
 
   return (
@@ -104,7 +105,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
                   {formatUSD(data.balance)}
                 </p>
               </div>
-              <div className={`p-3 rounded-full bg-muted ${balanceColor}`}>
+              <div className="p-3 rounded-full bg-muted text-muted-foreground">
                 <BalanceIcon className="h-6 w-6" />
               </div>
             </div>
@@ -124,7 +125,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
                   {data.totalReceived > 0 && <span>Received: {formatUSD(data.totalReceived)}</span>}
                 </div>
               </div>
-              <div className="p-3 rounded-full bg-blue-50 text-blue-600">
+              <div className="p-3 rounded-full bg-muted text-muted-foreground">
                 <DollarSign className="h-6 w-6" />
               </div>
             </div>
@@ -144,7 +145,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
                   </p>
                 )}
               </div>
-              <div className="p-3 rounded-full bg-orange-50 text-orange-600">
+              <div className="p-3 rounded-full bg-muted text-muted-foreground">
                 <TrendingDown className="h-6 w-6" />
               </div>
             </div>
@@ -153,44 +154,71 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
       </div>
 
       {/* Secondary Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-muted rounded-lg p-4 text-center">
-          <Users className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
-          <p className="text-2xl font-bold text-foreground">{data.donorCount}</p>
-          <p className="text-xs text-muted-foreground">Donors</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-6 justify-center">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-foreground">{data.donorCount}</p>
+                <p className="text-xs text-muted-foreground">Donors</p>
+              </div>
+              <div className="h-8 w-px bg-border" />
+              <div className="text-center">
+                <p className="text-2xl font-bold text-foreground">{data.childCount}</p>
+                <p className="text-xs text-muted-foreground">Child Activities</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted">
+                <TableHead className="font-semibold text-xs">Top Donors</TableHead>
+                <TableHead className="font-semibold text-xs text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.topDonors.length > 0 ? (
+                data.topDonors.map((d, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-sm py-2">{d.name}</TableCell>
+                    <TableCell className="text-sm py-2 text-right text-muted-foreground">{formatUSD(d.total)}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={2} className="text-sm text-muted-foreground text-center py-3">No contributions yet</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
-        <div className="bg-muted rounded-lg p-4 text-center">
-          <Layers className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
-          <p className="text-2xl font-bold text-foreground">{data.childCount}</p>
-          <p className="text-xs text-muted-foreground">Child Activities</p>
-        </div>
-        <div className="bg-muted rounded-lg p-4">
-          <p className="text-xs font-medium text-muted-foreground mb-2">Top Donors</p>
-          {data.topDonors.length > 0 ? (
-            <ul className="space-y-1">
-              {data.topDonors.map((d, i) => (
-                <li key={i} className="text-xs text-foreground truncate">
-                  {d.name} <span className="text-muted-foreground">({formatUSD(d.total)})</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-muted-foreground">No contributions yet</p>
-          )}
-        </div>
-        <div className="bg-muted rounded-lg p-4">
-          <p className="text-xs font-medium text-muted-foreground mb-2">Top Sectors</p>
-          {data.topSectors.length > 0 ? (
-            <ul className="space-y-1">
-              {data.topSectors.map((s, i) => (
-                <li key={i} className="text-xs text-foreground truncate">
-                  {s.name} <span className="text-muted-foreground">({s.count} activities)</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-muted-foreground">No sectors assigned</p>
-          )}
+
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted">
+                <TableHead className="font-semibold text-xs">Top Sectors</TableHead>
+                <TableHead className="font-semibold text-xs text-right">Activities</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.topSectors.length > 0 ? (
+                data.topSectors.map((s, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-sm py-2">{s.name}</TableCell>
+                    <TableCell className="text-sm py-2 text-right text-muted-foreground">{s.count}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={2} className="text-sm text-muted-foreground text-center py-3">No sectors assigned</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -203,8 +231,8 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
               <AreaChart data={data.sparkline}>
                 <defs>
                   <linearGradient id="fundSparkGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3C6255" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3C6255" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#6b7280" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6b7280" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="quarter" tick={{ fontSize: 10 }} />
@@ -216,7 +244,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
                 <Area
                   type="monotone"
                   dataKey="amount"
-                  stroke="#3C6255"
+                  stroke="#6b7280"
                   fill="url(#fundSparkGradient)"
                   strokeWidth={2}
                 />

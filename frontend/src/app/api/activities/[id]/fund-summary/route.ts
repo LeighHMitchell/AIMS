@@ -142,7 +142,9 @@ export async function GET(
       totalDisbursedFundSide += getUsdValue(t)
     })
 
-    const totalContributions = totalReceived + totalCommitted + totalPledged
+    // Use the most advanced stage as the headline: received > committed > pledged
+    // These are stages of the same funding pipeline, not additive amounts
+    const totalContributions = totalReceived || totalCommitted || totalPledged
     const totalDisbursements = Math.max(totalDisbursedFundSide, childIncomingTotal)
     const balance = totalContributions - totalDisbursements
 

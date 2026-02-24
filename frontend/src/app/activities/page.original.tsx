@@ -1247,10 +1247,10 @@ function ActivitiesPageContent() {
                 return (
                   <Button
                     key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
+                    variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(pageNum)}
-                    className="w-10"
+                    className={`w-10 ${currentPage === pageNum ? "bg-slate-200 text-slate-900" : ""}`}
                   >
                     {pageNum}
                   </Button>

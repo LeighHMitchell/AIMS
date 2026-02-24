@@ -913,7 +913,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                                 className={`
                                   px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                                   ${isStartOrEnd
-                                    ? 'bg-primary text-primary-foreground'
+                                    ? 'bg-slate-200 text-slate-900'
                                     : inRange
                                       ? 'bg-primary/20 text-primary'
                                       : 'text-slate-600 hover:bg-slate-100'
@@ -1056,7 +1056,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                               className={`
                                 px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap
                                 ${isStartOrEnd
-                                  ? 'bg-primary text-primary-foreground'
+                                  ? 'bg-slate-200 text-slate-900'
                                   : inRange
                                     ? 'bg-primary/20 text-primary'
                                     : 'text-slate-600 hover:bg-slate-100'
@@ -1143,7 +1143,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                   {selectedSectors.size > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-slate-200 text-slate-900 rounded-full">
                       {selectedSectors.size}
                     </span>
                   )}
