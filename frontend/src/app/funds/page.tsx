@@ -34,13 +34,14 @@ import { apiFetch } from "@/lib/api-fetch"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { Search, DollarSign, Users, Layers, TrendingUp, ArrowUpDown, Wallet, MoreVertical, Pencil, Download, Trash2, Copy } from "lucide-react"
+import { Search, DollarSign, Users, Layers, TrendingUp, ArrowUpDown, Wallet, MoreVertical, Pencil, Download, Trash2, Copy, Calendar } from "lucide-react"
 import { useLoadingBar } from "@/hooks/useLoadingBar"
 import { useUser } from "@/hooks/useUser"
 import { exportActivityToPDF } from "@/lib/activity-export"
 import { FundFlowSankey } from "@/components/charts/FundFlowSankey"
 import { OrganizationLogo } from "@/components/ui/organization-logo"
 import { getActivityStatusDisplay } from "@/lib/activity-status-utils"
+import { formatActivityDate } from "@/lib/date-utils"
 
 interface FundSummary {
   id: string
@@ -48,6 +49,7 @@ interface FundSummary {
   acronym: string | null
   identifier: string
   status: string
+  banner: string | null
   fundManager: { name: string; acronym: string | null; logo: string | null } | null
   dateRange: { start: string | null; end: string | null }
   totalContributions: number
@@ -95,8 +97,7 @@ export default function FundsPage() {
     moreChildCloseTimeoutRef.current = setTimeout(() => setOpenMoreChildFundId(null), 250)
   }, [clearMoreChildCloseTimeout])
 
-  const copyToClipboard = useCallback((text: string, label: string, e: React.MouseEvent) => {
-    e.stopPropagation()
+  const copyToClipboard = useCallback((text: string, label: string) => {
     navigator.clipboard.writeText(text).then(
       () => toast.success(`${label} copied to clipboard`),
       () => toast.error('Failed to copy')
@@ -159,8 +160,7 @@ export default function FundsPage() {
     }
   }, [funds, user])
 
-  const handleExportPDF = useCallback(async (fundId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleExportPDF = useCallback(async (fundId: string) => {
     toast.loading("Generating PDF...", { id: "fund-export-pdf" })
     try {
       await exportActivityToPDF(fundId)
@@ -180,7 +180,7 @@ export default function FundsPage() {
         {/* Header */}
         <header>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <Wallet className="h-8 w-8 text-[#dc2625]" />
+            <Wallet className="h-8 w-8 text-foreground" />
             Pooled Funds
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -266,9 +266,20 @@ export default function FundsPage() {
               return (
                 <Card
                   key={fund.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow border border-border relative"
-                  onClick={() => router.push(`/activities/${fund.id}?section=fund-overview`)}
+                  className="border border-gray-300 rounded-lg relative overflow-hidden"
                 >
+                  {fund.banner && (
+                    <div className="relative h-32 w-full overflow-hidden">
+                      <img
+                        src={fund.banner}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  )}
                   <CardContent className="pt-5 pb-5">
                     {/* Title, status, and action menu */}
                     <div className="flex items-start justify-between gap-2 mb-3">
@@ -277,25 +288,23 @@ export default function FundsPage() {
                           <h3 className="group/title font-semibold text-foreground text-base leading-tight line-clamp-2">
                             <Link
                               href={`/activities/${fund.id}?section=fund-overview`}
-                              onClick={e => e.stopPropagation()}
                               className="focus:outline-none no-underline hover:no-underline"
                             >
                               {fund.title}
+                              {fund.acronym && (
+                                <span className="font-semibold text-foreground ml-1">({fund.acronym})</span>
+                              )}
                             </Link>
                             {fund.acronym && (
-                              <>
-                                {' '}
-                                <span className="font-semibold text-foreground">({fund.acronym})</span>
-                                <button
-                                  type="button"
-                                  onClick={e => copyToClipboard(fund.acronym!, 'Acronym', e)}
-                                  className="inline-flex p-0.5 rounded hover:bg-muted opacity-0 group-hover/title:opacity-100 focus:opacity-100 focus:outline-none transition-opacity align-middle"
-                                  title="Copy acronym"
-                                  aria-label="Copy acronym"
-                                >
-                                  <Copy className="w-3 h-3 text-muted-foreground" />
-                                </button>
-                              </>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(fund.acronym!, 'Acronym')}
+                                className="inline-flex p-0.5 rounded hover:bg-muted opacity-0 group-hover/title:opacity-100 focus:opacity-100 focus:outline-none transition-opacity align-middle"
+                                title="Copy acronym"
+                                aria-label="Copy acronym"
+                              >
+                                <Copy className="w-3 h-3 text-muted-foreground" />
+                              </button>
                             )}
                           </h3>
                           <span className="group/id inline-flex items-center gap-0.5 mt-0.5">
@@ -304,7 +313,7 @@ export default function FundsPage() {
                             </code>
                             <button
                               type="button"
-                              onClick={e => copyToClipboard(fund.identifier, 'Activity ID', e)}
+                              onClick={() => copyToClipboard(fund.identifier, 'Activity ID')}
                               className="inline-flex p-0.5 rounded hover:bg-muted opacity-0 group-hover/id:opacity-100 focus:opacity-100 focus:outline-none transition-opacity"
                               aria-label="Copy activity ID"
                             >
@@ -323,7 +332,7 @@ export default function FundsPage() {
                           })()}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-1 shrink-0">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -336,27 +345,21 @@ export default function FundsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" sideOffset={5} className="min-w-[160px] shadow-xl">
                             <DropdownMenuItem
-                              onClick={e => {
-                                e.stopPropagation()
-                                router.push(`/activities/new?id=${fund.id}`)
-                              }}
+                              onClick={() => router.push(`/activities/new?id=${fund.id}`)}
                               className="cursor-pointer"
                             >
                               <Pencil className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={e => handleExportPDF(fund.id, e)}
+                              onClick={() => handleExportPDF(fund.id)}
                               className="cursor-pointer"
                             >
                               <Download className="h-4 w-4 mr-2" />
                               Export PDF
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={e => {
-                                e.stopPropagation()
-                                setDeleteFundId(fund.id)
-                              }}
+                              onClick={() => setDeleteFundId(fund.id)}
                               className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
@@ -419,7 +422,6 @@ export default function FundsPage() {
                     <div className="mb-3">
                       <div className="flex justify-between text-xs text-muted-foreground mb-1">
                         <span>{utilisation}% utilised</span>
-                        <span>{fund.childCount} child activit{fund.childCount !== 1 ? 'ies' : 'y'}</span>
                       </div>
                       <div className="w-full rounded-full h-1.5 bg-[#cfd0d5]">
                         <div
@@ -431,7 +433,7 @@ export default function FundsPage() {
 
                     {/* Child Activities: first 3 + "Show all" with hover/click full list */}
                     {(fund.childActivities?.length ?? 0) > 0 && (
-                      <div className="mb-3" onClick={e => e.stopPropagation()}>
+                      <div className="mb-3">
                         <p className="text-xs text-muted-foreground mb-1">Child Activities</p>
                         <ul className="space-y-0.5">
                           {fund.childActivities.slice(0, 3).map(child => (
@@ -505,7 +507,7 @@ export default function FundsPage() {
                     )}
 
                     {/* Fund flow Sankey (donors → fund → sectors) */}
-                    <div className="mb-3" onClick={e => e.stopPropagation()}>
+                    <div className="mb-3">
                       <p className="text-xs text-muted-foreground mb-1">Fund Flow</p>
                       <FundFlowSankey
                         fundTitle={fund.title}
@@ -517,13 +519,22 @@ export default function FundsPage() {
                     </div>
 
                     {/* Date range */}
-                    {(fund.dateRange.start || fund.dateRange.end) && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {fund.dateRange.start && new Date(fund.dateRange.start).toLocaleDateString()}
-                        {fund.dateRange.start && fund.dateRange.end && ' — '}
-                        {fund.dateRange.end && new Date(fund.dateRange.end).toLocaleDateString()}
-                      </p>
-                    )}
+                    <div className="grid grid-cols-2 gap-4 mt-2">
+                      <div className="space-y-1">
+                        <p className="text-[10px] uppercase tracking-wider text-[#7b95a7]">Start Date</p>
+                        <div className="flex items-center gap-2 font-medium text-sm text-[#4c5568]">
+                          <Calendar className="w-4 h-4 text-[#7b95a7]" />
+                          <span>{fund.dateRange.start ? formatActivityDate(fund.dateRange.start) : 'Not set'}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] uppercase tracking-wider text-[#7b95a7]">End Date</p>
+                        <div className="flex items-center gap-2 font-medium text-sm text-[#4c5568]">
+                          <Calendar className="w-4 h-4 text-[#7b95a7]" />
+                          <span>{fund.dateRange.end ? formatActivityDate(fund.dateRange.end) : 'Not set'}</span>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               )

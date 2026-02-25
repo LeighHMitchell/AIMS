@@ -1,7 +1,39 @@
 {
-  "currentVersion": "2.18.0",
-  "narrativeSummary": "The activity editor now shows completion ticks on sidebar tabs immediately when you open an activity, the SDG section has been rebuilt as a compact summary table with a modal editor, contact search now includes system users, pagination buttons across the system use a softer active-page style, and several editor tabs received layout and readability improvements.",
+  "currentVersion": "2.19.0",
+  "narrativeSummary": "Aid Effectiveness options now support acronyms and flexible date ranges, pooled fund cards show banner images and better date formatting, three action menus have been migrated off the bloom-menu library to the standard DropdownMenu, and the dashboard chart-view toggle uses the same subtle active-state style as pagination buttons.",
   "releases": [
+    {
+      "version": "2.19.0",
+      "date": "2026-02-25",
+      "narrativeSummary": "The Aid Effectiveness admin panel has been expanded so each government planning document can carry an acronym and a start/end date with configurable precision &mdash; year only, month and year, or full date. Those details now appear in the option list and in the Aid Effectiveness survey dropdowns, making it easy to distinguish between overlapping national plans. Pooled fund cards on the Funds page now display the activity&rsquo;s banner image across the top of the card if one has been set, and the date range at the bottom has been upgraded from a plain text line to a two-column layout with calendar icons. The card is no longer a giant click target &mdash; only the title link navigates, which removes all the <code>stopPropagation</code> hacks that were scattered through the card&rsquo;s event handlers. Three card-view action menus (Activity Card, Organisation Card, and Task Card) that still relied on the third-party <code>bloom-menu</code> library have been replaced with the standard <code>DropdownMenu</code> component used everywhere else in the system, giving them consistent styling and keyboard navigation. The dashboard hero chart-view toggle (bar/line/table) has been updated to use the same subtle slate highlight as the pagination buttons rather than a filled primary button. Smaller fixes include removing <code>font-mono</code> from sector percentages, upgrading the sector aggregation preview to use a code badge for sector codes, a bar-radius fix on the Funding by Modality chart, and a minor identifier styling tweak in the activity editor.",
+      "changes": [
+        "<b>Aid Effectiveness Date &amp; Acronym Fields</b>",
+        "&nbsp;&nbsp;New <code>acronym</code>, <code>start_date</code>, <code>start_date_precision</code>, <code>end_date</code>, <code>end_date_precision</code> fields on AE options (API create + update)",
+        "&nbsp;&nbsp;Admin dialog widened to 600 px with a new <code>FlexibleDateInput</code> component supporting year-only, month+year, or full-date granularity",
+        "&nbsp;&nbsp;Option list now shows acronym in parentheses and date range below the label",
+        "&nbsp;&nbsp;Survey dropdown options display acronym and date range inline",
+        "&nbsp;&nbsp;Admin section renamed from &ldquo;Aid Effectiveness Dropdown Options&rdquo; to &ldquo;Government Planning Documents/Frameworks&rdquo;",
+        "<b>Pooled Fund Card Enhancements</b>",
+        "&nbsp;&nbsp;Banner image displayed at the top of each fund card when present (API now returns <code>banner</code> field)",
+        "&nbsp;&nbsp;Date range replaced with a two-column Start Date / End Date layout using <code>Calendar</code> icons and <code>formatActivityDate()</code>",
+        "&nbsp;&nbsp;Card no longer wraps everything in a single click handler &mdash; only the title is a link; all <code>stopPropagation</code> calls removed",
+        "&nbsp;&nbsp;Child activity count removed from the utilisation bar label",
+        "&nbsp;&nbsp;Acronym moved inside the title link so it&rsquo;s part of the clickable text",
+        "&nbsp;&nbsp;Header icon changed to foreground colour",
+        "<b>bloom-menu Replacement</b>",
+        "&nbsp;&nbsp;Activity Card action menu (<code>ActivityCardActionMenu</code>) migrated from <code>bloom-menu</code> to <code>DropdownMenu</code>",
+        "&nbsp;&nbsp;Organisation Card action menu (<code>OrganizationCardActionMenu</code>) migrated from <code>bloom-menu</code> to <code>DropdownMenu</code>",
+        "&nbsp;&nbsp;Task Card action menu (<code>TaskActionMenu</code>) migrated from <code>bloom-menu</code> to <code>DropdownMenu</code>",
+        "<b>Dashboard Chart-View Toggle</b>",
+        "&nbsp;&nbsp;Bar/Line/Table toggle buttons updated from <code>variant=&ldquo;default&rdquo;</code> to <code>bg-slate-200 text-slate-900</code> active style, matching pagination",
+        "<b>Minor Fixes</b>",
+        "&nbsp;&nbsp;Sector allocation percentages no longer use <code>font-mono</code>",
+        "&nbsp;&nbsp;Sector aggregation preview uses a <code>code</code> badge for sector codes instead of stacked text",
+        "&nbsp;&nbsp;Funding by Modality chart: bar radius now applied in both stacked and grouped modes",
+        "&nbsp;&nbsp;Other Identifier display in activity editor: background changed to <code>bg-background</code> with softer hover, pencil icon ring removed",
+        "&nbsp;&nbsp;DatePicker component: added <code>autoFocus</code> to calendar trigger"
+      ]
+    },
     {
       "version": "2.18.0",
       "date": "2026-02-24",

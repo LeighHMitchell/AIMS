@@ -1,6 +1,12 @@
 "use client";
 
-import { Menu } from 'bloom-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   MoreVertical,
   Play,
@@ -27,9 +33,9 @@ interface TaskActionMenuProps {
   isCreatorView?: boolean;
 }
 
-const itemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors";
-const successItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer transition-colors";
-const dangerItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors";
+const itemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer";
+const successItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-green-600 dark:text-green-400 hover:!bg-green-50 dark:hover:!bg-green-900/20 cursor-pointer";
+const dangerItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20 cursor-pointer";
 
 export function TaskActionMenu({
   assignment,
@@ -48,109 +54,102 @@ export function TaskActionMenu({
   const canDelete = isCreatorView && onDelete;
 
   return (
-    <Menu.Root direction="bottom" anchor="end">
-      <Menu.Container
-        buttonSize={32}
-        menuWidth={180}
-        menuRadius={12}
-        className="bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black/5 dark:ring-white/10 relative z-[9999]"
-      >
-        <Menu.Trigger>
-          <div className="flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors">
-            <MoreVertical className="h-4 w-4" />
-          </div>
-        </Menu.Trigger>
-        <Menu.Content className="p-1.5">
-          {/* View Details */}
-          {onViewDetails && (
-            <Menu.Item className={itemClass} onSelect={onViewDetails}>
-              <ExternalLink className="h-4 w-4" />
-              View Details
-            </Menu.Item>
-          )}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors">
+          <MoreVertical className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[180px] rounded-xl p-1.5">
+        {/* View Details */}
+        {onViewDetails && (
+          <DropdownMenuItem className={itemClass} onSelect={onViewDetails}>
+            <ExternalLink className="h-4 w-4" />
+            View Details
+          </DropdownMenuItem>
+        )}
 
-          {/* Status Actions */}
-          {canChangeStatus && onStatusChange && (
-            <>
-              {(onViewDetails) && (
-                <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-              )}
+        {/* Status Actions */}
+        {canChangeStatus && onStatusChange && (
+          <>
+            {(onViewDetails) && (
+              <DropdownMenuSeparator />
+            )}
 
-              {assignment.status === 'pending' && (
-                <Menu.Item className={itemClass} onSelect={() => onStatusChange('in_progress')}>
-                  <Play className="h-4 w-4" />
-                  Start Task
-                </Menu.Item>
-              )}
+            {assignment.status === 'pending' && (
+              <DropdownMenuItem className={itemClass} onSelect={() => onStatusChange('in_progress')}>
+                <Play className="h-4 w-4" />
+                Start Task
+              </DropdownMenuItem>
+            )}
 
-              <Menu.Item className={successItemClass} onSelect={() => onStatusChange('completed')}>
-                <Check className="h-4 w-4" />
-                Mark Complete
-              </Menu.Item>
+            <DropdownMenuItem className={successItemClass} onSelect={() => onStatusChange('completed')}>
+              <Check className="h-4 w-4" />
+              Mark Complete
+            </DropdownMenuItem>
 
-              <Menu.Item className={dangerItemClass} onSelect={() => onStatusChange('declined')}>
-                <X className="h-4 w-4" />
-                Decline
-              </Menu.Item>
-            </>
-          )}
+            <DropdownMenuItem className={dangerItemClass} onSelect={() => onStatusChange('declined')}>
+              <X className="h-4 w-4" />
+              Decline
+            </DropdownMenuItem>
+          </>
+        )}
 
-          {/* Reassign & Share */}
-          {(onReassign || onShare) && (
-            <>
-              <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+        {/* Reassign & Share */}
+        {(onReassign || onShare) && (
+          <>
+            <DropdownMenuSeparator />
 
-              {onReassign && (
-                <Menu.Item className={itemClass} onSelect={onReassign}>
-                  <ArrowRightLeft className="h-4 w-4" />
-                  Reassign
-                </Menu.Item>
-              )}
+            {onReassign && (
+              <DropdownMenuItem className={itemClass} onSelect={onReassign}>
+                <ArrowRightLeft className="h-4 w-4" />
+                Reassign
+              </DropdownMenuItem>
+            )}
 
-              {onShare && (
-                <Menu.Item className={itemClass} onSelect={onShare}>
-                  <Share2 className="h-4 w-4" />
-                  Share
-                </Menu.Item>
-              )}
-            </>
-          )}
+            {onShare && (
+              <DropdownMenuItem className={itemClass} onSelect={onShare}>
+                <Share2 className="h-4 w-4" />
+                Share
+              </DropdownMenuItem>
+            )}
+          </>
+        )}
 
-          {/* Archive Actions */}
-          {canArchive && (onArchive || onUnarchive) && (
-            <>
-              <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+        {/* Archive Actions */}
+        {canArchive && (onArchive || onUnarchive) && (
+          <>
+            <DropdownMenuSeparator />
 
-              {isArchived ? (
-                onUnarchive && (
-                  <Menu.Item className={itemClass} onSelect={onUnarchive}>
-                    <ArchiveRestore className="h-4 w-4" />
-                    Unarchive
-                  </Menu.Item>
-                )
-              ) : (
-                onArchive && (
-                  <Menu.Item className={itemClass} onSelect={onArchive}>
-                    <Archive className="h-4 w-4" />
-                    Archive
-                  </Menu.Item>
-                )
-              )}
-            </>
-          )}
+            {isArchived ? (
+              onUnarchive && (
+                <DropdownMenuItem className={itemClass} onSelect={onUnarchive}>
+                  <ArchiveRestore className="h-4 w-4" />
+                  Unarchive
+                </DropdownMenuItem>
+              )
+            ) : (
+              onArchive && (
+                <DropdownMenuItem className={itemClass} onSelect={onArchive}>
+                  <Archive className="h-4 w-4" />
+                  Archive
+                </DropdownMenuItem>
+              )
+            )}
+          </>
+        )}
 
-          {/* Delete Task (Creator only) */}
-          {canDelete && (
-            <>
-              <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-              <Menu.Item className={dangerItemClass} onSelect={onDelete}>
-                <Trash2 className="h-4 w-4 text-red-500" />
-                Delete Task
-              </Menu.Item>
-            </>
-          )}
-        </Menu.Content>
-      </Menu.Container>
-    </Menu.Root>
+        {/* Delete Task (Creator only) */}
+        {canDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className={dangerItemClass} onSelect={onDelete}>
+              <Trash2 className="h-4 w-4 text-red-500" />
+              Delete Task
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

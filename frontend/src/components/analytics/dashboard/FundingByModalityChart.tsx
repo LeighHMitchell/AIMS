@@ -256,7 +256,7 @@ export function FundingByModalityChart() {
             stackId={chartMode === 'stacked' ? 'a' : undefined}
             fill={MODALITY_COLORS[modality]}
             name={modality}
-            radius={chartMode === 'grouped' ? [4, 4, 0, 0] : undefined}
+            radius={[4, 4, 0, 0]}
             animationDuration={500}
             animationEasing="ease-out"
             animationBegin={index * 50}

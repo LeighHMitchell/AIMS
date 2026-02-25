@@ -23,7 +23,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const { label, description, sortOrder, isActive, responsibleMinistries } = body;
+    const { label, description, sortOrder, isActive, responsibleMinistries, acronym, startDate, startDatePrecision, endDate, endDatePrecision } = body;
 
     const updateData: Record<string, unknown> = {};
 
@@ -58,6 +58,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           }))
         : [];
       updateData.responsible_ministries = ministriesJson;
+    }
+
+    if (acronym !== undefined) {
+      updateData.acronym = acronym?.trim() || null;
+    }
+
+    if (startDate !== undefined) {
+      updateData.start_date = startDate || null;
+      updateData.start_date_precision = startDate ? (startDatePrecision || "day") : null;
+    }
+
+    if (endDate !== undefined) {
+      updateData.end_date = endDate || null;
+      updateData.end_date_precision = endDate ? (endDatePrecision || "day") : null;
     }
 
     if (Object.keys(updateData).length === 0) {

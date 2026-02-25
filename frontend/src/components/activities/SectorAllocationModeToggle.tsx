@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { Loader2, AlertTriangle, Check } from 'lucide-react'
+import { LoadingText } from '@/components/ui/loading-text'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -211,8 +212,7 @@ export function SectorAllocationModeToggle({
             <div className="mt-4">
               {isLoadingAggregation ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  <span className="ml-2 text-sm text-muted-foreground">Loading aggregation preview...</span>
+                  <LoadingText>Loading aggregation preview...</LoadingText>
                 </div>
               ) : aggregatedSectors && aggregatedSectors.length > 0 ? (
                 <div className="border rounded-md max-h-64 overflow-auto">
@@ -228,14 +228,12 @@ export function SectorAllocationModeToggle({
                       {aggregatedSectors.map((sector) => (
                         <TableRow key={sector.sector_code}>
                           <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{sector.sector_code}</span>
-                              <span className="text-sm text-muted-foreground truncate max-w-[300px]">
-                                {sector.sector_name}
-                              </span>
-                            </div>
+                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{sector.sector_code}</span>
+                            <span className="ml-2 text-muted-foreground">
+                              {sector.sector_name}
+                            </span>
                           </TableCell>
-                          <TableCell className="text-right font-mono">
+                          <TableCell className="text-right">
                             {sector.weighted_percentage.toFixed(2)}%
                           </TableCell>
                           <TableCell className="text-right">

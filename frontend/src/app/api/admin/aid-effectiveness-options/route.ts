@@ -83,6 +83,11 @@ export async function POST(request: NextRequest) {
       sortOrder = 0,
       isActive = true,
       responsibleMinistries,
+      acronym,
+      startDate,
+      startDatePrecision,
+      endDate,
+      endDatePrecision,
     } = body;
 
     if (!category || !category.trim()) {
@@ -113,6 +118,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate precision values
+    const validPrecisions = ["year", "month", "day"];
+    if (startDatePrecision && !validPrecisions.includes(startDatePrecision)) {
+      return NextResponse.json(
+        { error: "Invalid startDatePrecision. Must be year, month, or day" },
+        { status: 400 }
+      );
+    }
+    if (endDatePrecision && !validPrecisions.includes(endDatePrecision)) {
+      return NextResponse.json(
+        { error: "Invalid endDatePrecision. Must be year, month, or day" },
+        { status: 400 }
+      );
+    }
+
     // Build the JSONB array for the denormalized column
     const ministriesJson = Array.isArray(responsibleMinistries)
       ? responsibleMinistries.map((m: { id: string; code: string; name: string }) => ({
@@ -131,6 +151,11 @@ export async function POST(request: NextRequest) {
         sort_order: sortOrder,
         is_active: isActive,
         responsible_ministries: ministriesJson,
+        acronym: acronym?.trim() || null,
+        start_date: startDate || null,
+        start_date_precision: startDate ? (startDatePrecision || "day") : null,
+        end_date: endDate || null,
+        end_date_precision: endDate ? (endDatePrecision || "day") : null,
       })
       .select()
       .single();

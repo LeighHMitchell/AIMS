@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     // Get all pooled fund activities
     let query = supabase
       .from('activities')
-      .select('id, title_narrative, acronym, iati_identifier, activity_status, planned_start_date, planned_end_date, actual_start_date, actual_end_date, reporting_org_id', { count: 'exact' })
+      .select('id, title_narrative, acronym, iati_identifier, activity_status, planned_start_date, planned_end_date, actual_start_date, actual_end_date, reporting_org_id, banner', { count: 'exact' })
       .eq('is_pooled_fund', true)
 
     if (status) {
@@ -241,6 +241,7 @@ export async function GET(request: NextRequest) {
         acronym: fund.acronym || null,
         identifier: fund.iati_identifier || fund.id,
         status: fund.activity_status,
+        banner: fund.banner || null,
         fundManager: fund.reporting_org_id ? (reportingOrgById[fund.reporting_org_id] ?? null) : null,
         dateRange: {
           start: fund.actual_start_date || fund.planned_start_date,

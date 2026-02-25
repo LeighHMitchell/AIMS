@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Globe, Save, CheckCircle, AlertCircle, Languages, DollarSign, Calendar, Shield } from "lucide-react"
+import { Globe, Save, CheckCircle, AlertCircle, Languages, DollarSign, Calendar, FileText } from "lucide-react"
 import { countries } from "@/data/countries"
 import { useSystemSettings } from "@/hooks/useSystemSettings"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
@@ -394,15 +394,15 @@ export function SystemsSettings() {
         </CardContent>
       </Card>
 
-      {/* Aid Effectiveness Options Card - two columns wide */}
+      {/* Government Planning Documents/Frameworks Card - two columns wide */}
       <Card className="md:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Aid Effectiveness Dropdown Options
+            <FileText className="h-5 w-5" />
+            Government Planning Documents/Frameworks
           </CardTitle>
           <CardDescription>
-            Configure country-specific dropdown options for the Aid Effectiveness form (national plans, government frameworks, accountability frameworks, capacity plans)
+            Manage government planning documents and frameworks referenced in the Aid Effectiveness form (national plans, results frameworks, accountability frameworks, capacity plans)
           </CardDescription>
         </CardHeader>
         <CardContent>

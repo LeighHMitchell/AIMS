@@ -36,6 +36,8 @@ import {
   X,
 } from "lucide-react";
 import { apiFetch } from '@/lib/api-fetch';
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface MinistryRef {
   id: string;
@@ -43,16 +45,140 @@ interface MinistryRef {
   name: string;
 }
 
+type DatePrecision = "year" | "month" | "day";
+
 interface AEOption {
   id: string;
   category: string;
   label: string;
   description: string | null;
+  acronym: string | null;
+  start_date: string | null;
+  start_date_precision: DatePrecision | null;
+  end_date: string | null;
+  end_date_precision: DatePrecision | null;
   sort_order: number;
   is_active: boolean;
   responsible_ministries: MinistryRef[];
   created_at: string;
   updated_at: string;
+}
+
+const MONTHS = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+function formatDateWithPrecision(date: string | null, precision: DatePrecision | null): string {
+  if (!date) return "";
+  const d = new Date(date + "T00:00:00");
+  if (precision === "year") return d.getFullYear().toString();
+  if (precision === "month") {
+    return `${MONTHS[d.getMonth()]?.label ?? ""} ${d.getFullYear()}`;
+  }
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** Inline date input supporting year-only, month+year, or full date granularity */
+function FlexibleDateInput({
+  label,
+  precision,
+  onPrecisionChange,
+  dateValue,
+  onDateChange,
+  idPrefix,
+}: {
+  label: string;
+  precision: DatePrecision;
+  onPrecisionChange: (p: DatePrecision) => void;
+  dateValue: string;
+  onDateChange: (v: string) => void;
+  idPrefix: string;
+}) {
+  // Parse current value
+  const year = dateValue ? new Date(dateValue + "T00:00:00").getFullYear().toString() : "";
+  const month = dateValue ? String(new Date(dateValue + "T00:00:00").getMonth() + 1).padStart(2, "0") : "";
+
+  const setYear = (y: string) => {
+    const yr = parseInt(y) || 0;
+    if (yr < 1900 || yr > 2100) { onDateChange(""); return; }
+    onDateChange(`${yr}-01-01`);
+  };
+
+  const setMonthYear = (m: string, y: string) => {
+    const yr = parseInt(y) || 0;
+    if (yr < 1900 || yr > 2100) { onDateChange(""); return; }
+    onDateChange(`${yr}-${m}-01`);
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex items-center gap-2 mb-1">
+        <Select value={precision} onValueChange={(v) => { onPrecisionChange(v as DatePrecision); onDateChange(""); }}>
+          <SelectTrigger className="w-[140px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="year">Year only</SelectItem>
+            <SelectItem value="month">Month + Year</SelectItem>
+            <SelectItem value="day">Full date</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {precision === "year" && (
+        <Input
+          id={`${idPrefix}-year`}
+          type="number"
+          min={1900}
+          max={2100}
+          placeholder="e.g. 2025"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          className="w-28"
+        />
+      )}
+      {precision === "month" && (
+        <div className="flex items-center gap-2">
+          <Select value={month} onValueChange={(m) => setMonthYear(m, year || new Date().getFullYear().toString())}>
+            <SelectTrigger className="w-[130px]">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map(m => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            type="number"
+            min={1900}
+            max={2100}
+            placeholder="Year"
+            value={year}
+            onChange={(e) => setMonthYear(month || "01", e.target.value)}
+            className="w-28"
+          />
+        </div>
+      )}
+      {precision === "day" && (
+        <DatePicker
+          value={dateValue || undefined}
+          onChange={onDateChange}
+        />
+      )}
+    </div>
+  );
 }
 
 interface LineMinistry {
@@ -81,10 +207,15 @@ export function AidEffectivenessOptionsManagement() {
 
   // Form state
   const [formLabel, setFormLabel] = useState("");
+  const [formAcronym, setFormAcronym] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formSortOrder, setFormSortOrder] = useState(0);
   const [formIsActive, setFormIsActive] = useState(true);
   const [formMinistries, setFormMinistries] = useState<MinistryRef[]>([]);
+  const [formStartDate, setFormStartDate] = useState("");
+  const [formStartDatePrecision, setFormStartDatePrecision] = useState<DatePrecision>("year");
+  const [formEndDate, setFormEndDate] = useState("");
+  const [formEndDatePrecision, setFormEndDatePrecision] = useState<DatePrecision>("year");
 
   // Line ministries from budget classifications
   const [lineMinistries, setLineMinistries] = useState<LineMinistry[]>([]);
@@ -144,10 +275,15 @@ export function AidEffectivenessOptionsManagement() {
   // Reset form
   const resetForm = () => {
     setFormLabel("");
+    setFormAcronym("");
     setFormDescription("");
     setFormSortOrder(0);
     setFormIsActive(true);
     setFormMinistries([]);
+    setFormStartDate("");
+    setFormStartDatePrecision("year");
+    setFormEndDate("");
+    setFormEndDatePrecision("year");
     setEditingOption(null);
   };
 
@@ -164,10 +300,15 @@ export function AidEffectivenessOptionsManagement() {
   const handleEdit = (option: AEOption) => {
     setEditingOption(option);
     setFormLabel(option.label);
+    setFormAcronym(option.acronym || "");
     setFormDescription(option.description || "");
     setFormSortOrder(option.sort_order);
     setFormIsActive(option.is_active);
     setFormMinistries(option.responsible_ministries || []);
+    setFormStartDate(option.start_date || "");
+    setFormStartDatePrecision(option.start_date_precision || "year");
+    setFormEndDate(option.end_date || "");
+    setFormEndDatePrecision(option.end_date_precision || "year");
     setDialogOpen(true);
   };
 
@@ -187,10 +328,15 @@ export function AidEffectivenessOptionsManagement() {
 
       const body: Record<string, unknown> = {
         label: formLabel.trim(),
+        acronym: formAcronym.trim() || null,
         description: formDescription.trim() || null,
         sortOrder: formSortOrder,
         isActive: formIsActive,
         responsibleMinistries: formMinistries,
+        startDate: formStartDate || null,
+        startDatePrecision: formStartDate ? formStartDatePrecision : null,
+        endDate: formEndDate || null,
+        endDatePrecision: formEndDate ? formEndDatePrecision : null,
       };
 
       if (!editingOption) {
@@ -314,13 +460,23 @@ export function AidEffectivenessOptionsManagement() {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium truncate">{option.label}</span>
+                  <span className="font-medium truncate">
+                    {option.label}
+                    {option.acronym && <span className="text-muted-foreground"> ({option.acronym})</span>}
+                  </span>
                   {!option.is_active && (
                     <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-full">
                       Inactive
                     </span>
                   )}
                 </div>
+                {(option.start_date || option.end_date) && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatDateWithPrecision(option.start_date, option.start_date_precision)}
+                    {option.start_date && option.end_date ? " – " : ""}
+                    {formatDateWithPrecision(option.end_date, option.end_date_precision)}
+                  </p>
+                )}
                 {option.description && (
                   <p className="text-sm text-muted-foreground mt-0.5 truncate">
                     {option.description}
@@ -364,7 +520,7 @@ export function AidEffectivenessOptionsManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
               {editingOption ? "Edit Option" : "Add Option"}
@@ -386,6 +542,21 @@ export function AidEffectivenessOptionsManagement() {
                 value={formLabel}
                 onChange={(e) => setFormLabel(e.target.value)}
                 placeholder="e.g., National Development Strategy 2025-2030"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="opt-acronym" className="flex items-center gap-1">
+                Acronym
+                <HelpTextTooltip text="Short abbreviation for this document, e.g. NDS, NSEDP, NDP" />
+              </Label>
+              <Input
+                id="opt-acronym"
+                value={formAcronym}
+                onChange={(e) => setFormAcronym(e.target.value)}
+                placeholder="e.g., NDS"
+                maxLength={50}
+                className="w-40"
               />
             </div>
 
@@ -444,6 +615,25 @@ export function AidEffectivenessOptionsManagement() {
                 </Select>
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <FlexibleDateInput
+                label="Start Date"
+                precision={formStartDatePrecision}
+                onPrecisionChange={setFormStartDatePrecision}
+                dateValue={formStartDate}
+                onDateChange={setFormStartDate}
+                idPrefix="opt-start"
+              />
+              <FlexibleDateInput
+                label="End Date"
+                precision={formEndDatePrecision}
+                onPrecisionChange={setFormEndDatePrecision}
+                dateValue={formEndDate}
+                onDateChange={setFormEndDate}
+                idPrefix="opt-end"
+              />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="opt-sort">Sort Order</Label>

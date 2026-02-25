@@ -1237,7 +1237,7 @@ export default function ImprovedSectorAllocationForm({
                                 onChange={(e) => updatePercentage(allocation.id, parseFloat(e.target.value) || 0)}
                                 disabled={isLocked}
                                 className={cn(
-                                  "w-24 h-8 text-sm text-center font-mono p-2",
+                                  "w-24 h-8 text-sm text-center p-2",
                                   allocation.percentage === 0 && "border-[#DC2625]/40",
                                   isLocked && "bg-muted cursor-not-allowed"
                                 )}
@@ -1278,7 +1278,7 @@ export default function ImprovedSectorAllocationForm({
                         <TableCell colSpan={3} className="py-2 px-4 font-medium">
                           Unallocated
                         </TableCell>
-                        <TableCell className="text-center font-mono py-2 font-semibold">
+                        <TableCell className="text-center py-2 font-semibold">
                           {formatUnallocatedValue(totalUnallocated)}%
                         </TableCell>
                         <TableCell></TableCell>

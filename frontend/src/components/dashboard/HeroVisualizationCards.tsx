@@ -200,15 +200,17 @@ function ChartHelpIcon({ text }: { text: string }) {
 type ViewMode = 'bar' | 'line' | 'table';
 
 function ChartViewToggle({ mode, setMode }: { mode: ViewMode; setMode: (m: ViewMode) => void }) {
+  const active = "bg-slate-200 text-slate-900 font-semibold";
+  const inactive = "text-gray-600 hover:bg-gray-100";
   return (
     <div className="flex gap-0.5 ml-auto">
-      <Button variant={mode === 'bar' ? 'default' : 'ghost'} size="sm" className="h-6 w-6 p-0" title="Bar chart" onClick={() => setMode('bar')}>
+      <Button variant="ghost" size="sm" className={`h-6 w-6 p-0 ${mode === 'bar' ? active : inactive}`} title="Bar chart" onClick={() => setMode('bar')}>
         <BarChart3 className="h-3.5 w-3.5" />
       </Button>
-      <Button variant={mode === 'line' ? 'default' : 'ghost'} size="sm" className="h-6 w-6 p-0" title="Line chart" onClick={() => setMode('line')}>
+      <Button variant="ghost" size="sm" className={`h-6 w-6 p-0 ${mode === 'line' ? active : inactive}`} title="Line chart" onClick={() => setMode('line')}>
         <LineChartIcon className="h-3.5 w-3.5" />
       </Button>
-      <Button variant={mode === 'table' ? 'default' : 'ghost'} size="sm" className="h-6 w-6 p-0" title="Table" onClick={() => setMode('table')}>
+      <Button variant="ghost" size="sm" className={`h-6 w-6 p-0 ${mode === 'table' ? active : inactive}`} title="Table" onClick={() => setMode('table')}>
         <TableIcon className="h-3.5 w-3.5" />
       </Button>
     </div>

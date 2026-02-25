@@ -1310,7 +1310,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   {identifier.label || `Other Identifier ${index + 1}`}
                 </LabelSaveIndicator>
                 <div
-                  className="relative bg-muted border border-input rounded-md px-3 py-2 pr-14 cursor-pointer hover:bg-muted transition-colors"
+                  className="relative bg-background border border-input rounded-md px-3 py-2 pr-14 cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => {
                     setEditingIdentifierIndex(index);
                     setOtherIdentifierForm({
@@ -1365,7 +1365,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       className="p-1 hover:bg-muted rounded"
                       title="Edit identifier"
                     >
-                      <Pencil className="w-3.5 h-3.5 hover: text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
+                      <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
                     </button>
                     <button
                       type="button"

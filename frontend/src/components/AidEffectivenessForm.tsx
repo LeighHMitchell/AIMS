@@ -159,9 +159,25 @@ interface AEOption {
   category: string;
   label: string;
   description?: string;
+  acronym?: string | null;
+  start_date?: string | null;
+  start_date_precision?: "year" | "month" | "day" | null;
+  end_date?: string | null;
+  end_date_precision?: "year" | "month" | "day" | null;
   sort_order: number;
   is_active: boolean;
   responsible_ministries?: { id: string; code: string; name: string }[];
+}
+
+function formatAEDate(date?: string | null, precision?: "year" | "month" | "day" | null): string {
+  if (!date) return "";
+  const d = new Date(date + "T00:00:00");
+  if (precision === "year") return d.getFullYear().toString();
+  if (precision === "month") {
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return `${months[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
 // ──────────────────────────────────────────────
@@ -467,9 +483,15 @@ const CountryDropdownField: React.FC<{
 }> = ({ id, value, onValueChange, label, tooltip, description, negativeOption, aeOptions, documentUpload, document, uploadingDoc, onDocUpload, onDocRemove }) => {
   // Build options: admin-configured options + "yes" + negative option
   const options = [
-    { value: "yes", label: "Yes", ministries: undefined as { id: string; code: string; name: string }[] | undefined },
-    ...aeOptions.map(opt => ({ value: opt.label, label: opt.label, ministries: opt.responsible_ministries })),
-    { value: negativeOption, label: negativeOption, ministries: undefined as { id: string; code: string; name: string }[] | undefined },
+    { value: "yes", label: "Yes", displayLabel: "Yes", dateRange: "", ministries: undefined as { id: string; code: string; name: string }[] | undefined },
+    ...aeOptions.map(opt => {
+      const displayLabel = opt.acronym ? `${opt.label} (${opt.acronym})` : opt.label;
+      const startStr = formatAEDate(opt.start_date, opt.start_date_precision);
+      const endStr = formatAEDate(opt.end_date, opt.end_date_precision);
+      const dateRange = startStr || endStr ? `${startStr}${startStr && endStr ? " – " : ""}${endStr}` : "";
+      return { value: opt.label, label: opt.label, displayLabel, dateRange, ministries: opt.responsible_ministries };
+    }),
+    { value: negativeOption, label: negativeOption, displayLabel: negativeOption, dateRange: "", ministries: undefined as { id: string; code: string; name: string }[] | undefined },
   ];
 
   return (
@@ -505,7 +527,10 @@ const CountryDropdownField: React.FC<{
             {options.map(option => (
               <SelectItem key={option.value} value={option.value}>
                 <div className="flex flex-col">
-                  <span>{option.label}</span>
+                  <span>{option.displayLabel}</span>
+                  {option.dateRange && (
+                    <span className="text-xs text-gray-400">{option.dateRange}</span>
+                  )}
                   {option.ministries && option.ministries.length > 0 && (
                     <span className="text-xs text-gray-500">
                       {option.ministries.map(m => `${m.name} (${m.code})`).join(", ")}

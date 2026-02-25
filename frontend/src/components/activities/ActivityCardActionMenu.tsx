@@ -1,6 +1,12 @@
 "use client";
 
-import { Menu } from 'bloom-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   MoreVertical,
   Bookmark,
@@ -19,8 +25,8 @@ interface ActivityCardActionMenuProps {
   onDelete?: () => void;
 }
 
-const itemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer transition-colors";
-const dangerItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors";
+const itemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer";
+const dangerItemClass = "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20 cursor-pointer";
 
 export function ActivityCardActionMenu({
   activityId,
@@ -31,61 +37,54 @@ export function ActivityCardActionMenu({
   onDelete,
 }: ActivityCardActionMenuProps) {
   return (
-    <Menu.Root direction="bottom" anchor="start">
-      <Menu.Container
-        buttonSize={32}
-        menuWidth={200}
-        menuRadius={12}
-        className="bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-black/5 dark:ring-white/10 relative z-[9999]"
-      >
-        <Menu.Trigger>
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition-colors"
-            style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
-          >
-            <MoreVertical className="h-4 w-4 text-white" />
-          </div>
-        </Menu.Trigger>
-        <Menu.Content className="p-1.5">
-          <Menu.Item className={itemClass} onSelect={onToggleBookmark}>
-            {isBookmarked ? (
-              <>
-                <BookmarkCheck className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                Remove Bookmark
-              </>
-            ) : (
-              <>
-                <Bookmark className="h-4 w-4" />
-                Add Bookmark
-              </>
-            )}
-          </Menu.Item>
-
-          {onExportJPG && (
-            <Menu.Item className={itemClass} onSelect={onExportJPG}>
-              <Download className="h-4 w-4" />
-              Export as JPG
-            </Menu.Item>
-          )}
-
-          {onEdit && (
-            <Menu.Item className={itemClass} onSelect={onEdit}>
-              <Pencil className="h-4 w-4 text-slate-500" />
-              Edit
-            </Menu.Item>
-          )}
-
-          {onDelete && (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition-colors"
+          style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+        >
+          <MoreVertical className="h-4 w-4 text-white" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-[200px] rounded-xl p-1.5">
+        <DropdownMenuItem className={itemClass} onSelect={onToggleBookmark}>
+          {isBookmarked ? (
             <>
-              <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
-              <Menu.Item className={dangerItemClass} onSelect={onDelete}>
-                <Trash2 className="h-4 w-4 text-red-500" />
-                Delete
-              </Menu.Item>
+              <BookmarkCheck className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+              Remove Bookmark
+            </>
+          ) : (
+            <>
+              <Bookmark className="h-4 w-4" />
+              Add Bookmark
             </>
           )}
-        </Menu.Content>
-      </Menu.Container>
-    </Menu.Root>
+        </DropdownMenuItem>
+
+        {onExportJPG && (
+          <DropdownMenuItem className={itemClass} onSelect={onExportJPG}>
+            <Download className="h-4 w-4" />
+            Export as JPG
+          </DropdownMenuItem>
+        )}
+
+        {onEdit && (
+          <DropdownMenuItem className={itemClass} onSelect={onEdit}>
+            <Pencil className="h-4 w-4 text-slate-500" />
+            Edit
+          </DropdownMenuItem>
+        )}
+
+        {onDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className={dangerItemClass} onSelect={onDelete}>
+              <Trash2 className="h-4 w-4 text-red-500" />
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
