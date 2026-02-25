@@ -2288,6 +2288,11 @@ const router = useRouter();
                             <ColumnHeaderText columnId="importedFromIrt">Imported from IRT</ColumnHeaderText>
                           </SortableTableHeader>
                         ),
+                        origin: (
+                          <SortableTableHeader key="origin" id="origin" className="py-3 text-center min-w-[130px]">
+                            <ColumnHeaderText columnId="origin">Origin</ColumnHeaderText>
+                          </SortableTableHeader>
+                        ),
                         budgetStatus: (
                           <SortableTableHeader key="budgetStatus" id="budgetStatus" className="py-3 text-center min-w-[130px]">
                             <ColumnHeaderText columnId="budgetStatus">Budget Status</ColumnHeaderText>
@@ -3245,6 +3250,19 @@ const router = useRouter();
                             <span className="text-muted-foreground">Quick Add</span>
                           ) : (
                             <span className="text-muted-foreground">Manual</span>
+                          )}
+                        </td>
+                          ),
+                          origin: (
+<td key="origin" className="px-4 py-2 text-sm text-foreground text-center">
+                          {(activity as any).origin === 'projectbank' ? (
+                            <Badge variant="teal">
+                              Project Bank
+                            </Badge>
+                          ) : (
+                            <Badge variant="blue">
+                              Donor Reported
+                            </Badge>
                           )}
                         </td>
                           ),

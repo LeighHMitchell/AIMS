@@ -27,7 +27,15 @@ import {
   Zap,
   Upload,
   ChevronDown,
-  Construction
+  Construction,
+  FolderKanban,
+  LayoutDashboard,
+  ListTodo,
+  PlusCircle,
+  TrendingDown,
+  Handshake,
+  ArrowLeft,
+  MapPin,
 } from "lucide-react"
 import {
   HomeIcon,
@@ -53,25 +61,28 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { QuickAddActivityModal } from "@/components/modals/QuickAddActivityModal"
 import { apiFetch } from '@/lib/api-fetch';
+import { getCurrentModule, type AetherModule } from '@/lib/navigation-utils';
 
 interface SidebarNavProps {
   userRole?: string
   canManageUsers?: boolean
   canCreateActivities?: boolean
+  canCreateProjects?: boolean
   isInActivityEditor?: boolean
   isLoading?: boolean
   isCollapsed?: boolean
   isInitialLoad?: boolean
 }
 
-export function SidebarNav({ 
-  userRole, 
-  canManageUsers, 
+export function SidebarNav({
+  userRole,
+  canManageUsers,
   canCreateActivities,
+  canCreateProjects,
   isInActivityEditor = false,
-  isLoading, 
-  isCollapsed = false, 
-  isInitialLoad = false 
+  isLoading,
+  isCollapsed = false,
+  isInitialLoad = false
 }: SidebarNavProps) {
   const pathname = usePathname()
   const router = useRouter()
@@ -84,12 +95,17 @@ export function SidebarNav({
     "ACTORS": true,
     "OPERATIONS": true,
     "SUPPORT": true,
+    "PROJECT BANK": true,
   })
   const [showQuickAddModal, setShowQuickAddModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [sidebarCounts, setSidebarCounts] = useState<Record<string, number>>({})
 
+  const currentModule = getCurrentModule(pathname)
+
   useEffect(() => {
+    // Only fetch sidebar counts for AIMS module
+    if (currentModule !== 'aims') return
     let cancelled = false
     async function fetchCounts() {
       try {
@@ -103,7 +119,7 @@ export function SidebarNav({
     }
     fetchCounts()
     return () => { cancelled = true }
-  }, [])
+  }, [currentModule])
 
   // Map href to count key
   const countMap: Record<string, number | undefined> = {
@@ -131,7 +147,8 @@ export function SidebarNav({
     )
   }
 
-  const navGroups = [
+  // ─── AIMS sidebar groups (existing) ───
+  const aimsNavGroups = [
     {
       label: "EXPLORE",
       icon: MagnifierIcon,
@@ -221,6 +238,26 @@ export function SidebarNav({
     },
   ]
 
+  // ─── Project Bank sidebar groups ───
+  const projectBankNavGroups = [
+    {
+      label: "PROJECT BANK",
+      icon: FolderKanban,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "Dashboard", href: "/project-bank", show: true },
+        { name: "All Projects", href: "/project-bank/projects", show: true },
+        { name: "Submit New", href: "/project-bank/new", show: canCreateProjects },
+        { name: "Funding Gaps", href: "/project-bank/gaps", show: true },
+        { name: "PPP Pipeline", href: "/project-bank/ppp", show: true },
+      ]
+    },
+  ]
+
+  // Choose which nav groups to show based on current module
+  const navGroups = currentModule === 'project-bank' ? projectBankNavGroups : aimsNavGroups
+
   const toggleGroup = (label: string) => {
     setOpenGroups(prev => ({
       ...prev,
@@ -228,21 +265,44 @@ export function SidebarNav({
     }))
   }
 
-  // Top-level navigation items (outside groups)
-  const topLevelItems = [
-    { name: "DASHBOARD", href: "/dashboard", icon: HomeIcon, isAnimated: true, show: true },
-  ]
+  // Top-level navigation items
+  const topLevelItems = currentModule === 'project-bank'
+    ? [{ name: "DASHBOARD", href: "/project-bank", icon: HomeIcon, isAnimated: true, show: true }]
+    : currentModule === 'aims'
+    ? [{ name: "DASHBOARD", href: "/dashboard", icon: HomeIcon, isAnimated: true, show: true }]
+    : []
+
+  // Show "Back to Home" link when inside a module
+  const showBackToHome = currentModule === 'project-bank' || currentModule === 'aims' || currentModule === 'land-bank'
 
   return (
     <TooltipProvider delayDuration={100} skipDelayDuration={0}>
       <nav className="px-4 py-6">
         <div className="space-y-4">
-          {/* Add New Activity CTA Button */}
-          {canCreateActivities && (
+          {/* Back to Home link */}
+          {showBackToHome && (
+            <div className="pb-2">
+              <Link
+                href="/home"
+                className="group flex items-center gap-2 py-1.5 px-3 ml-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span className={cn(
+                  "whitespace-nowrap",
+                  isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100 w-auto"
+                )}>
+                  Back to Home
+                </span>
+              </Link>
+            </div>
+          )}
+
+          {/* Module CTA Button */}
+          {currentModule === 'aims' && canCreateActivities && (
             <div className="pb-4 border-b border-gray-200 dark:border-gray-700" data-tour="activities-create">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
+                  <Button
                     className={cn(
                       "w-full justify-center gap-2",
                       isInActivityEditor && "opacity-50 cursor-not-allowed"
@@ -329,65 +389,79 @@ export function SidebarNav({
             </div>
           )}
 
+          {currentModule === 'project-bank' && canCreateProjects && (
+            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+              <Button
+                className="w-full justify-center gap-2"
+                onClick={() => router.push('/project-bank/new')}
+              >
+                <Plus className="h-4 w-4" />
+                {!isCollapsed && "Submit Project"}
+              </Button>
+            </div>
+          )}
+
           {/* Top Level Items */}
-          <div className="space-y-1">
-            {topLevelItems.filter(item => item.show).map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
-              const ItemIcon = item.icon
+          {topLevelItems.length > 0 && (
+            <div className="space-y-1">
+              {topLevelItems.filter(item => item.show).map((item) => {
+                const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href) && pathname === item.href)
+                const ItemIcon = item.icon
 
-              const linkContent = (
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "group relative flex items-center gap-3 py-2 px-3 ml-2 text-sm font-bold rounded-md",
-                    "transition-colors duration-200",
-                    "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
-                    isActive
-                      ? "bg-[#5f7f7a]/15 text-[#3C6255] dark:bg-[#5f7f7a]/20 dark:text-[#7a9994]"
-                      : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-                  )}
-                >
-                  {item.isAnimated ? (
-                    <ItemIcon size={20} className="flex-shrink-0" />
-                  ) : (
-                    <ItemIcon className="h-5 w-5 flex-shrink-0" />
-                  )}
-                  <span
+                const linkContent = (
+                  <Link
+                    href={item.href}
                     className={cn(
-                      "whitespace-nowrap",
-                      isCollapsed
-                        ? "opacity-0 w-0 overflow-hidden"
-                        : "opacity-100 w-auto"
+                      "group relative flex items-center gap-3 py-2 px-3 ml-2 text-sm font-bold rounded-md",
+                      "transition-colors duration-200",
+                      "hover:bg-[#5f7f7a]/8 dark:hover:bg-[#5f7f7a]/15",
+                      isActive
+                        ? "bg-[#5f7f7a]/15 text-[#3C6255] dark:bg-[#5f7f7a]/20 dark:text-[#7a9994]"
+                        : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
                     )}
-                    style={{
-                      transitionProperty: isInitialLoad ? 'none' : 'opacity, width',
-                      transitionDuration: isCollapsed ? '200ms, 0ms' : '300ms, 0ms',
-                      transitionDelay: isCollapsed ? '0ms, 0ms' : '100ms, 0ms'
-                    }}
                   >
-                    {item.name}
-                  </span>
-                </Link>
-              )
+                    {item.isAnimated ? (
+                      <ItemIcon size={20} className="flex-shrink-0" />
+                    ) : (
+                      <ItemIcon className="h-5 w-5 flex-shrink-0" />
+                    )}
+                    <span
+                      className={cn(
+                        "whitespace-nowrap",
+                        isCollapsed
+                          ? "opacity-0 w-0 overflow-hidden"
+                          : "opacity-100 w-auto"
+                      )}
+                      style={{
+                        transitionProperty: isInitialLoad ? 'none' : 'opacity, width',
+                        transitionDuration: isCollapsed ? '200ms, 0ms' : '300ms, 0ms',
+                        transitionDelay: isCollapsed ? '0ms, 0ms' : '100ms, 0ms'
+                      }}
+                    >
+                      {item.name}
+                    </span>
+                  </Link>
+                )
 
-              return (
-                <div key={item.name}>
-                  {isCollapsed ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        {linkContent}
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="font-bold">
-                        {item.name}
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    linkContent
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                return (
+                  <div key={item.name}>
+                    {isCollapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          {linkContent}
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="font-bold">
+                          {item.name}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      linkContent
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           {/* Grouped Navigation */}
           {navGroups.map((group) => {
@@ -461,7 +535,12 @@ export function SidebarNav({
                       {/* Menu Items */}
                       <div className="space-y-0.5">
                         {filteredItems.map((item, index) => {
-                          const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
+                          // For top-level module routes (e.g. /project-bank, /dashboard), only match exact path
+                          // to prevent the "Dashboard" sub-item from highlighting on child routes
+                          const isExactOnly = topLevelItems.some(t => t.href === item.href)
+                          const isActive = isExactOnly
+                            ? pathname === item.href
+                            : pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href + '/'))
 
                           const itemCount = countMap[item.href]
 

@@ -90,6 +90,7 @@ export interface UserPermissions {
   canManageOrganizations: boolean;
   canEditAllActivities: boolean;
   canViewAllActivities: boolean;
+  canCreateProjects: boolean;
 }
 
 export function getUserPermissions(role: UserRole | string): UserPermissions {
@@ -102,9 +103,10 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canManageUsers: true,
         canManageOrganizations: true,
         canEditAllActivities: true,
-        canViewAllActivities: true
+        canViewAllActivities: true,
+        canCreateProjects: true,
       };
-    
+
     case USER_ROLES.DEV_PARTNER_TIER_1:
     case USER_ROLES.GOV_PARTNER_TIER_1:
       return {
@@ -113,9 +115,10 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canManageUsers: false,
         canManageOrganizations: false,
         canEditAllActivities: false,
-        canViewAllActivities: false
+        canViewAllActivities: false,
+        canCreateProjects: true,
       };
-    
+
     case USER_ROLES.DEV_PARTNER_TIER_2:
     case USER_ROLES.GOV_PARTNER_TIER_2:
       return {
@@ -124,9 +127,10 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canManageUsers: false,
         canManageOrganizations: false,
         canEditAllActivities: false,
-        canViewAllActivities: false
+        canViewAllActivities: false,
+        canCreateProjects: true,
       };
-    
+
     case USER_ROLES.PUBLIC_USER:
       return {
         canCreateActivities: false,
@@ -134,9 +138,10 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canManageUsers: false,
         canManageOrganizations: false,
         canEditAllActivities: false,
-        canViewAllActivities: true // Can view but not edit
+        canViewAllActivities: true,
+        canCreateProjects: false,
       };
-    
+
     default:
       return {
         canCreateActivities: false,
@@ -144,7 +149,8 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canManageUsers: false,
         canManageOrganizations: false,
         canEditAllActivities: false,
-        canViewAllActivities: false
+        canViewAllActivities: false,
+        canCreateProjects: false,
       };
   }
 } 

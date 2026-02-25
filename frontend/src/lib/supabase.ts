@@ -412,6 +412,210 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['indicator_periods']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['indicator_periods']['Insert']>
       }
+      national_development_goals: {
+        Row: {
+          id: string
+          code: string
+          name: string
+          description: string | null
+          plan_name: string
+          display_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['national_development_goals']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['national_development_goals']['Insert']>
+      }
+      project_bank_projects: {
+        Row: {
+          id: string
+          project_code: string
+          name: string
+          description: string | null
+          nominating_ministry: string
+          sector: string
+          region: string | null
+          estimated_cost: number | null
+          currency: string
+          ndp_goal_id: string | null
+          ndp_aligned: boolean
+          sdg_goals: string[] | null
+          firr: number | null
+          eirr: number | null
+          firr_date: string | null
+          eirr_date: string | null
+          status: string
+          pathway: string | null
+          vgf_amount: number | null
+          vgf_calculated: boolean
+          land_parcel_id: string | null
+          total_committed: number | null
+          total_disbursed: number | null
+          funding_gap: number | null
+          aims_activity_id: string | null
+          origin: string
+          rejection_reason: string | null
+          rejected_at: string | null
+          nominated_at: string | null
+          screened_at: string | null
+          appraised_at: string | null
+          approved_at: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+          appraisal_stage: string | null
+          routing_outcome: string | null
+          contact_officer: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          project_type: string | null
+          sub_sector: string | null
+          townships: string[] | null
+          estimated_start_date: string | null
+          estimated_duration_months: number | null
+          objectives: string | null
+          target_beneficiaries: string | null
+          construction_period_years: number | null
+          operational_period_years: number | null
+          project_life_years: number | null
+          preliminary_fs_summary: string | null
+          preliminary_fs_date: string | null
+          preliminary_fs_conducted_by: string | null
+          cost_table_data: any | null
+          technical_approach: string | null
+          technology_methodology: string | null
+          technical_risks: string | null
+          has_technical_design: boolean
+          technical_design_maturity: string | null
+          environmental_impact_level: string | null
+          social_impact_level: string | null
+          land_acquisition_required: boolean
+          resettlement_required: boolean
+          estimated_affected_households: number | null
+          has_revenue_component: boolean
+          revenue_sources: string[] | null
+          market_assessment_summary: string | null
+          projected_annual_users: number | null
+          projected_annual_revenue: number | null
+          revenue_ramp_up_years: number | null
+          msdp_strategy_area: string | null
+          secondary_ndp_goals: string[] | null
+          alignment_justification: string | null
+          sector_strategy_reference: string | null
+          in_sector_investment_plan: boolean
+          firr_calculation_data: any | null
+          eirr_calculation_data: any | null
+          eirr_shadow_prices: any | null
+          vgf_calculation_data: any | null
+          vgf_status: string | null
+          dap_compliant: boolean | null
+          dap_notes: string | null
+          budget_allocation_status: string | null
+          budget_amount: number | null
+        }
+        Insert: Omit<Database['public']['Tables']['project_bank_projects']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['project_bank_projects']['Insert']>
+      }
+      project_bank_donors: {
+        Row: {
+          id: string
+          project_id: string
+          donor_name: string
+          donor_type: string | null
+          instrument_type: string | null
+          amount: number | null
+          currency: string
+          commitment_status: string
+          iati_identifier: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['project_bank_donors']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['project_bank_donors']['Insert']>
+      }
+      project_appraisals: {
+        Row: {
+          id: string
+          project_id: string
+          appraisal_type: string
+          firr_result: number | null
+          eirr_result: number | null
+          npv: number | null
+          benefit_cost_ratio: number | null
+          shadow_wage_rate: number | null
+          shadow_exchange_rate: number | null
+          standard_conversion_factor: number | null
+          social_discount_rate: number | null
+          project_life_years: number | null
+          construction_years: number | null
+          cost_data: any | null
+          benefit_data: any | null
+          appraised_by: string | null
+          appraisal_date: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['project_appraisals']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['project_appraisals']['Insert']>
+      }
+      project_documents: {
+        Row: {
+          id: string
+          project_id: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          mime_type: string | null
+          upload_stage: string | null
+          description: string | null
+          is_required: boolean
+          uploaded_by: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['project_documents']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['project_documents']['Insert']>
+      }
+      appraisal_shadow_prices: {
+        Row: {
+          id: string
+          shadow_wage_rate: number
+          shadow_exchange_rate: number
+          standard_conversion_factor: number
+          social_discount_rate: number
+          sector: string | null
+          effective_from: string | null
+          effective_to: string | null
+          is_active: boolean
+          approved_by: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['appraisal_shadow_prices']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['appraisal_shadow_prices']['Insert']>
+      }
+      land_parcels: {
+        Row: {
+          id: string
+          parcel_code: string | null
+          name: string | null
+          region: string | null
+          hectares: number | null
+          parcel_type: string | null
+          status: string
+          allocated_project_id: string | null
+          coordinates: any | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['land_parcels']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['land_parcels']['Insert']>
+      }
     }
   }
 } 

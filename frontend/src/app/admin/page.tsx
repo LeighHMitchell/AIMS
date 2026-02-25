@@ -23,6 +23,7 @@ import { EventManagement } from "@/components/calendar/EventManagement"
 import { UserActivityDashboard } from "@/components/admin/UserActivityDashboard"
 import { NationalPrioritiesManagement } from "@/components/admin/NationalPrioritiesManagement"
 import { CountryEmergenciesManagement } from "@/components/admin/CountryEmergenciesManagement"
+import { NationalDevelopmentGoals } from "@/components/admin/NationalDevelopmentGoals"
 import { LoadingText } from "@/components/ui/loading-text"
 function AdminPageContent() {
   const { user, isLoading } = useUser()
@@ -32,7 +33,7 @@ function AdminPageContent() {
   const [activeSubTab, setActiveSubTab] = useState("classifications")
 
   // Valid tab values
-  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events"]
+  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "ndp-goals"]
   const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget", "national-priorities"]
 
   useEffect(() => {
@@ -170,6 +171,10 @@ function AdminPageContent() {
               <Calendar className="h-4 w-4" />
               Calendar Events
             </TabsTrigger>
+            <TabsTrigger value="ndp-goals" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <Target className="h-4 w-4" />
+              NDP Goals
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
@@ -257,6 +262,10 @@ function AdminPageContent() {
 
           <TabsContent value="calendar-events" className="space-y-6">
             <EventManagement />
+          </TabsContent>
+
+          <TabsContent value="ndp-goals" className="space-y-6">
+            <NationalDevelopmentGoals />
           </TabsContent>
         </Tabs>
       </div>

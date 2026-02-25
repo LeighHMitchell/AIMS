@@ -74,6 +74,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
             userRole={user?.role}
             canManageUsers={permissions.canManageUsers}
             canCreateActivities={permissions.canCreateActivities}
+            canCreateProjects={permissions.canCreateProjects}
             isInActivityEditor={isInActivityEditor}
             isLoading={isLoading}
             isCollapsed={false}
