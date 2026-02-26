@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, ExternalLink, FileText, Plus } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 import { apiFetch } from '@/lib/api-fetch';
 import { determineFullRouting, formatCurrency, APPRAISAL_STAGE_LABELS } from '@/lib/project-bank-utils';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
@@ -79,6 +80,7 @@ export function StageRouting({ wizard }: StageRoutingProps) {
         pathway = 'ppp';
         status = 'approved';
       } else if (routing.outcome === 'rejected_not_msdp' || routing.outcome === 'rejected_low_eirr') {
+        pathway = null;
         status = 'rejected';
       }
 
@@ -92,6 +94,7 @@ export function StageRouting({ wizard }: StageRoutingProps) {
             routing_outcome: routing.outcome,
             status,
             pathway,
+            ...(status === 'rejected' ? { rejection_reason: routing.description } : {}),
           },
           advance: 'routing_complete',
         }),

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import { useUser } from "@/hooks/useUser"
@@ -91,6 +92,13 @@ export default function ProjectListPage() {
     return list
   }, [projects, statusFilter, sectorFilter, pathwayFilter, searchQuery, sortField, sortDir])
 
+  // Max funding gap across filtered projects (for sparkline scaling)
+  const maxGap = useMemo(() => {
+    let max = 0
+    filtered.forEach(p => { if (p.funding_gap && p.funding_gap > max) max = p.funding_gap })
+    return max
+  }, [filtered])
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
   const paginated = filtered.slice((page - 1) * perPage, page * perPage)
   const startIndex = (page - 1) * perPage
@@ -130,57 +138,61 @@ export default function ProjectListPage() {
           )}
         </div>
 
-        {/* Status filter tabs */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {STATUS_FILTERS.map(f => (
-            <button
-              key={f.value}
-              onClick={() => { setStatusFilter(f.value); setPage(1) }}
-              className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
-                statusFilter === f.value
-                  ? "bg-background border-border font-medium shadow-sm"
-                  : "bg-transparent border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {f.label}{" "}
-              <span className="text-xs font-mono text-muted-foreground">
-                {statusCounts[f.value] || 0}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Filters row */}
-        <div className="flex flex-wrap gap-3 mb-4">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={e => { setSearchQuery(e.target.value); setPage(1) }}
-              className="pl-9"
-            />
+        {/* Filters */}
+        <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200 mb-4">
+          <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
+            <Label className="text-xs text-muted-foreground">Search</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search projects..."
+                value={searchQuery}
+                onChange={e => { setSearchQuery(e.target.value); setPage(1) }}
+                className="pl-9 h-9"
+              />
+            </div>
           </div>
-          <Select value={sectorFilter} onValueChange={v => { setSectorFilter(v === 'all' ? '' : v); setPage(1) }}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Sector" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sectors</SelectItem>
-              {SECTORS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={pathwayFilter} onValueChange={v => { setPathwayFilter(v === 'all' ? '' : v); setPage(1) }}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Pathway" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Pathways</SelectItem>
-              {Object.entries(PATHWAY_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Status</Label>
+            <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1) }}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_FILTERS.map(f => (
+                  <SelectItem key={f.value} value={f.value}>
+                    {f.label} ({statusCounts[f.value] || 0})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Sector</Label>
+            <Select value={sectorFilter || 'all'} onValueChange={v => { setSectorFilter(v === 'all' ? '' : v); setPage(1) }}>
+              <SelectTrigger className="w-[160px] h-9">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sectors</SelectItem>
+                {SECTORS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Pathway</Label>
+            <Select value={pathwayFilter || 'all'} onValueChange={v => { setPathwayFilter(v === 'all' ? '' : v); setPage(1) }}>
+              <SelectTrigger className="w-[160px] h-9">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Pathways</SelectItem>
+                {Object.entries(PATHWAY_LABELS).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Table */}
@@ -198,13 +210,14 @@ export default function ProjectListPage() {
                   <SortHeader field="status">Status</SortHeader>
                   <SortHeader field="pathway">Pathway</SortHeader>
                   <SortHeader field="funding_gap" className="text-right">Gap</SortHeader>
+                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground w-[120px]">Funding</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
-                      {Array.from({ length: 9 }).map((_, j) => (
+                      {Array.from({ length: 10 }).map((_, j) => (
                         <td key={j} className="px-4 py-2">
                           <div className="h-4 bg-muted animate-pulse rounded w-16" />
                         </td>
@@ -213,18 +226,24 @@ export default function ProjectListPage() {
                   ))
                 ) : paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    <td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">
                       No projects found
                     </td>
                   </tr>
                 ) : (
-                  paginated.map(p => (
+                  paginated.map(p => {
+                    const gap = p.funding_gap && p.funding_gap > 0 ? p.funding_gap : 0
+                    const cost = p.estimated_cost || 0
+                    const committed = cost - gap
+                    const committedPct = cost > 0 ? Math.round((committed / cost) * 100) : 0
+                    const gapBarPct = maxGap > 0 && gap > 0 ? Math.max(4, Math.round((gap / maxGap) * 100)) : 0
+                    return (
                     <tr
                       key={p.id}
                       className="group hover:bg-muted transition-colors cursor-pointer"
                       onClick={() => router.push(`/project-bank/${p.id}`)}
                     >
-                      <td className="px-4 py-2 text-sm font-mono text-muted-foreground">{p.project_code}</td>
+                      <td className="px-4 py-2 text-sm text-muted-foreground">{p.project_code}</td>
                       <td className="px-4 py-2">
                         <div className="text-sm font-medium text-foreground">{p.name}</div>
                         <div className="text-xs text-muted-foreground">
@@ -232,12 +251,12 @@ export default function ProjectListPage() {
                         </div>
                       </td>
                       <td className="px-4 py-2 text-sm text-muted-foreground">{p.sector}</td>
-                      <td className="px-4 py-2 text-sm font-mono text-right">{formatCurrency(p.estimated_cost, p.currency)}</td>
-                      <td className={`px-4 py-2 text-sm font-mono text-right ${p.firr != null ? (p.firr >= 10 ? 'text-green-600' : 'text-amber-600') : 'text-muted-foreground'}`}>
-                        {p.firr != null ? `${p.firr}%` : '—'}
+                      <td className="px-4 py-2 text-sm text-right">{formatCurrency(p.estimated_cost, p.currency)}</td>
+                      <td className="px-4 py-2 text-sm text-right" style={{ color: p.firr != null ? (p.firr >= 10 ? '#7b95a7' : '#dc2625') : undefined }}>
+                        {p.firr != null ? <span>{p.firr}%</span> : <span className="text-muted-foreground">—</span>}
                       </td>
-                      <td className={`px-4 py-2 text-sm font-mono text-right ${p.eirr != null ? (p.eirr >= 15 ? 'text-green-600 font-semibold' : 'text-red-600') : 'text-muted-foreground'}`}>
-                        {p.eirr != null ? `${p.eirr}%` : '—'}
+                      <td className="px-4 py-2 text-sm text-right" style={{ color: p.eirr != null ? (p.eirr >= 15 ? '#7b95a7' : '#dc2625') : undefined }}>
+                        {p.eirr != null ? <span className="font-semibold">{p.eirr}%</span> : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-2">
                         <Badge variant={STATUS_BADGE_VARIANT[p.status] as any}>
@@ -247,12 +266,30 @@ export default function ProjectListPage() {
                       <td className={`px-4 py-2 text-sm font-semibold ${p.pathway ? PATHWAY_COLORS[p.pathway] : 'text-muted-foreground'}`}>
                         {p.pathway ? PATHWAY_LABELS[p.pathway] || p.pathway.toUpperCase() : '—'}
                       </td>
-                      <td className={`px-4 py-2 text-sm font-mono text-right ${p.funding_gap && p.funding_gap > 0 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
-                        {p.funding_gap && p.funding_gap > 0 ? formatCurrency(p.funding_gap) : '—'}
+                      <td className="px-4 py-2 text-sm text-right" style={{ color: gap > 0 ? '#dc2625' : undefined }}>
+                        {gap > 0 ? <span className="font-semibold">{formatCurrency(gap)}</span> : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      <td className="px-4 py-2">
+                        {gap > 0 ? (
+                          <div className="flex items-center gap-2 min-w-[100px]">
+                            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#cfd0d5' }}>
+                              <div className="h-full rounded-full" style={{ width: `${gapBarPct}%`, backgroundColor: '#dc2625' }} />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{committedPct}%</span>
+                          </div>
+                        ) : cost > 0 ? (
+                          <div className="flex items-center gap-2 min-w-[100px]">
+                            <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: '#7b95a7' }} />
+                            <span className="text-[10px] text-muted-foreground">100%</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
                       </td>
                     </tr>
-                  ))
-                )}
+                    )
+                  }))
+                }
               </tbody>
             </table>
           </div>

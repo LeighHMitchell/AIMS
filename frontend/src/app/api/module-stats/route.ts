@@ -35,7 +35,7 @@ export async function GET() {
 
   const { data: landAvailable } = await supabase!
     .from('land_parcels')
-    .select('hectares')
+    .select('size_hectares')
     .eq('status', 'available')
     .catch(() => ({ data: [] })) as any;
 
@@ -50,7 +50,7 @@ export async function GET() {
     },
     landBank: {
       parcels: landCount || 0,
-      hectaresAvailable: (landAvailable || []).reduce((sum: number, p: any) => sum + (p.hectares || 0), 0),
+      hectaresAvailable: (landAvailable || []).reduce((sum: number, p: any) => sum + (p.size_hectares || 0), 0),
     },
   });
 }

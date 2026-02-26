@@ -311,12 +311,7 @@ export default function ProjectDetailPage() {
             {/* 4. Appraisal */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Appraisal</CardTitle>
-                  <Button variant="outline" size="sm" onClick={() => setShowEIRRModal(true)} className="gap-1.5">
-                    <Calculator className="h-3.5 w-3.5" /> Run EIRR Appraisal
-                  </Button>
-                </div>
+                <CardTitle className="text-base">Appraisal Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -395,7 +390,7 @@ export default function ProjectDetailPage() {
                   >
                     <Link href={`/project-bank/${id}/appraisal`}>
                       <ArrowRight className="h-4 w-4" />
-                      Continue Appraisal
+                      Open Appraisal
                     </Link>
                   </Button>
                 )}
@@ -409,13 +404,6 @@ export default function ProjectDetailPage() {
                     Advance to {STATUS_LABELS[nextStatus]}
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2"
-                  onClick={() => setShowEIRRModal(true)}
-                >
-                  <Calculator className="h-4 w-4" /> Run EIRR Appraisal
-                </Button>
                 {!project.aims_activity_id && (project.pathway === 'oda' || project.pathway === 'ppp') && (
                   <Button
                     variant="outline"

@@ -12,7 +12,8 @@ import { formatCurrency } from '@/lib/project-bank-utils';
 import { DocumentUploadZone } from './DocumentUploadZone';
 import { apiFetch } from '@/lib/api-fetch';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
-import type { LandParcel } from '@/types/project-bank';
+import type { LandParcel } from '@/types/land-bank';
+import { HelpTooltip } from './HelpTooltip';
 import { cn } from '@/lib/utils';
 
 interface StagePPPStructuringProps {
@@ -94,7 +95,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
 
       {/* VGF Estimation */}
       <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-3">
-        <Label className="text-sm font-medium text-purple-800">VGF Estimation</Label>
+        <Label className="text-sm font-medium text-purple-800">VGF Estimation <HelpTooltip text="Viability Gap Funding — the government subsidy needed to make the project commercially viable at the target FIRR." /></Label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="text-xs text-purple-600">Target FIRR (%)</label>
@@ -126,7 +127,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
 
       {/* VGF Modality */}
       <div>
-        <Label>VGF Modality</Label>
+        <Label>VGF Modality <HelpTooltip text="How the viability gap funding will be delivered (capital grant, annuity, interest subsidy, etc.)." /></Label>
         <Select value={formData.vgf_status || ''} onValueChange={v => updateField('vgf_status', v)}>
           <SelectTrigger><SelectValue placeholder="Select modality..." /></SelectTrigger>
           <SelectContent>
@@ -139,14 +140,14 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
 
       {/* Land Parcel Selection */}
       <div>
-        <Label>Land Parcel (from Land Bank)</Label>
+        <Label>Land Parcel (from Land Bank) <HelpTooltip text="Select an available state-owned land parcel to be allocated to this project." /></Label>
         <Select value={formData.land_parcel_id || ''} onValueChange={v => updateField('land_parcel_id', v || null)}>
           <SelectTrigger><SelectValue placeholder="Select a parcel..." /></SelectTrigger>
           <SelectContent>
             <SelectItem value="">None selected</SelectItem>
             {landParcels.map(p => (
               <SelectItem key={p.id} value={p.id}>
-                {p.name || p.parcel_code} — {p.region} ({p.hectares} ha)
+                {p.name || p.parcel_code} — {p.state_region} ({p.size_hectares} ha)
               </SelectItem>
             ))}
           </SelectContent>
@@ -197,7 +198,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
 
       {/* Readiness Checklist */}
       <div>
-        <Label className="mb-2 block">PPP Readiness Checklist</Label>
+        <Label className="mb-2 block">PPP Readiness Checklist <HelpTooltip text="Track key milestones required before the PPP can be tendered." /></Label>
         <div className="space-y-2">
           {CHECKLIST_ITEMS.map(item => (
             <div key={item.key} className="flex items-center gap-2">

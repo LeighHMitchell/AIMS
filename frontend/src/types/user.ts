@@ -91,6 +91,9 @@ export interface UserPermissions {
   canEditAllActivities: boolean;
   canViewAllActivities: boolean;
   canCreateProjects: boolean;
+  canCreateParcels: boolean;
+  canManageParcels: boolean;
+  canRequestAllocation: boolean;
 }
 
 export function getUserPermissions(role: UserRole | string): UserPermissions {
@@ -105,9 +108,11 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canEditAllActivities: true,
         canViewAllActivities: true,
         canCreateProjects: true,
+        canCreateParcels: true,
+        canManageParcels: true,
+        canRequestAllocation: true,
       };
 
-    case USER_ROLES.DEV_PARTNER_TIER_1:
     case USER_ROLES.GOV_PARTNER_TIER_1:
       return {
         canCreateActivities: true,
@@ -117,9 +122,11 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canEditAllActivities: false,
         canViewAllActivities: false,
         canCreateProjects: true,
+        canCreateParcels: true,
+        canManageParcels: true,
+        canRequestAllocation: false,
       };
 
-    case USER_ROLES.DEV_PARTNER_TIER_2:
     case USER_ROLES.GOV_PARTNER_TIER_2:
       return {
         canCreateActivities: true,
@@ -129,6 +136,37 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canEditAllActivities: false,
         canViewAllActivities: false,
         canCreateProjects: true,
+        canCreateParcels: true,
+        canManageParcels: true,
+        canRequestAllocation: false,
+      };
+
+    case USER_ROLES.DEV_PARTNER_TIER_1:
+      return {
+        canCreateActivities: true,
+        canValidateActivities: true,
+        canManageUsers: false,
+        canManageOrganizations: false,
+        canEditAllActivities: false,
+        canViewAllActivities: false,
+        canCreateProjects: true,
+        canCreateParcels: false,
+        canManageParcels: false,
+        canRequestAllocation: true,
+      };
+
+    case USER_ROLES.DEV_PARTNER_TIER_2:
+      return {
+        canCreateActivities: true,
+        canValidateActivities: false,
+        canManageUsers: false,
+        canManageOrganizations: false,
+        canEditAllActivities: false,
+        canViewAllActivities: false,
+        canCreateProjects: true,
+        canCreateParcels: false,
+        canManageParcels: false,
+        canRequestAllocation: true,
       };
 
     case USER_ROLES.PUBLIC_USER:
@@ -140,6 +178,9 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canEditAllActivities: false,
         canViewAllActivities: true,
         canCreateProjects: false,
+        canCreateParcels: false,
+        canManageParcels: false,
+        canRequestAllocation: false,
       };
 
     default:
@@ -151,6 +192,9 @@ export function getUserPermissions(role: UserRole | string): UserPermissions {
         canEditAllActivities: false,
         canViewAllActivities: false,
         canCreateProjects: false,
+        canCreateParcels: false,
+        canManageParcels: false,
+        canRequestAllocation: false,
       };
   }
 } 

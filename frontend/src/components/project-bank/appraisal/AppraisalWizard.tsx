@@ -14,6 +14,7 @@ import { StageFIRR } from './StageFIRR';
 import { StageEIRR } from './StageEIRR';
 import { StagePPPStructuring } from './StagePPPStructuring';
 import { StageRouting } from './StageRouting';
+import { ContextualHelpButton } from '@/components/project-bank/ContextualHelpButton';
 
 interface AppraisalWizardProps {
   projectId?: string;
@@ -71,6 +72,9 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
+      {/* Contextual Help Button */}
+      <ContextualHelpButton stage={currentStage} />
+
       {/* Progress Rail */}
       <AppraisalProgressRail
         visibleStages={visibleStages}

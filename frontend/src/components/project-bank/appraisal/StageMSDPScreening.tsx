@@ -7,9 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
+import { HelpTooltip } from './HelpTooltip';
 import type { NationalDevelopmentGoal } from '@/types/project-bank';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
 import { cn } from '@/lib/utils';
+
+function RequiredDot() {
+  return <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" />;
+}
 
 interface StageMSDPScreeningProps {
   wizard: UseAppraisalWizardReturn;
@@ -31,17 +36,43 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
 
   const activeGoals = goals.filter(g => g.is_active);
   const selectedGoalId = formData.ndp_goal_id;
+  const secondaryGoals: string[] = formData.secondary_ndp_goals || [];
   const ndpAligned = formData.ndp_aligned;
 
-  const handleGoalSelect = (goalId: string | null) => {
-    if (goalId) {
+  /** Handle selecting / deselecting an NDP goal */
+  const handleGoalToggle = (goalId: string) => {
+    if (goalId === selectedGoalId) {
+      // If clicking the primary, promote first secondary or deselect all
+      if (secondaryGoals.length > 0) {
+        const [newPrimary, ...rest] = secondaryGoals;
+        updateField('ndp_goal_id', newPrimary);
+        updateField('secondary_ndp_goals', rest);
+        updateField('ndp_aligned', true);
+      } else {
+        updateField('ndp_goal_id', null);
+        updateField('secondary_ndp_goals', []);
+        updateField('ndp_aligned', false);
+      }
+    } else if (secondaryGoals.includes(goalId)) {
+      // Remove from secondary
+      updateField('secondary_ndp_goals', secondaryGoals.filter(id => id !== goalId));
+    } else if (!selectedGoalId) {
+      // First selection becomes primary
       updateField('ndp_goal_id', goalId);
       updateField('ndp_aligned', true);
     } else {
-      updateField('ndp_goal_id', null);
-      updateField('ndp_aligned', false);
+      // Add as secondary
+      updateField('secondary_ndp_goals', [...secondaryGoals, goalId]);
     }
   };
+
+  const handleNotAligned = () => {
+    updateField('ndp_goal_id', null);
+    updateField('secondary_ndp_goals', []);
+    updateField('ndp_aligned', false);
+  };
+
+  const isGoalSelected = (goalId: string) => goalId === selectedGoalId || secondaryGoals.includes(goalId);
 
   return (
     <div className="space-y-6">
@@ -49,42 +80,45 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
         <h3 className="text-lg font-semibold mb-1">MSDP Alignment Screening</h3>
         <p className="text-sm text-muted-foreground">
           Determine whether this project aligns with the Myanmar Sustainable Development Plan.
-          MSDP alignment is required for projects with FIRR below 10% to proceed to economic analysis.
+          MSDP alignment determines whether your project qualifies for additional economic analysis and PPP structuring.
         </p>
       </div>
 
-      {/* Alignment status indicator */}
-      <div className={cn(
-        'p-4 rounded-lg border',
-        ndpAligned ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200',
-      )}>
-        <div className="flex items-center gap-2">
-          {ndpAligned ? (
-            <CheckCircle className="h-5 w-5 text-green-600" />
-          ) : (
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-          )}
-          <span className={cn('text-sm font-medium', ndpAligned ? 'text-green-700' : 'text-amber-700')}>
-            {ndpAligned
-              ? 'Project is aligned with MSDP'
-              : 'Project is not currently aligned with MSDP'}
-          </span>
+      {/* Alignment status indicator — only show after user has made a selection */}
+      {(ndpAligned !== undefined && ndpAligned !== null) && (
+        <div className={cn(
+          'p-4 rounded-lg border',
+          ndpAligned ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200',
+        )}>
+          <div className="flex items-center gap-2">
+            {ndpAligned ? (
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            ) : (
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+            )}
+            <span className={cn('text-sm font-medium', ndpAligned ? 'text-green-700' : 'text-amber-700')}>
+              {ndpAligned
+                ? 'Project is aligned with MSDP'
+                : 'Project is not currently aligned with MSDP'}
+            </span>
+          </div>
         </div>
-        {!ndpAligned && (
-          <p className="text-xs text-amber-600 mt-1 ml-7">
-            Without MSDP alignment, projects with FIRR below 10% will be rejected at the financial analysis stage.
-          </p>
-        )}
-      </div>
+      )}
 
       {/* Primary NDP Goal Selection */}
       <div>
-        <Label className="mb-2 block">Primary NDP Goal</Label>
+        <Label className="mb-2 block">
+          NDP Goals <RequiredDot />
+          <HelpTooltip text="Select one or more National Development Plan goals. The first selected goal becomes the primary. Click additional goals to add as secondary." />
+        </Label>
+        <p className="text-xs text-muted-foreground mb-3">
+          Click to select goals. The first selected goal is the <strong>primary</strong>. Additional selections are secondary goals.
+        </p>
         <div className="space-y-2">
           {/* Not aligned option */}
           <button
             type="button"
-            onClick={() => handleGoalSelect(null)}
+            onClick={handleNotAligned}
             className={cn(
               'w-full text-left p-3 rounded-lg border transition-colors',
               !ndpAligned
@@ -99,27 +133,41 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
           </button>
 
           {/* NDP Goals as cards */}
-          {activeGoals.map(goal => (
-            <button
-              key={goal.id}
-              type="button"
-              onClick={() => handleGoalSelect(goal.id)}
-              className={cn(
-                'w-full text-left p-3 rounded-lg border transition-colors',
-                selectedGoalId === goal.id
-                  ? 'border-green-300 bg-green-50'
-                  : 'border-muted-foreground/20 hover:border-muted-foreground/40',
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold text-muted-foreground">{goal.code}</span>
-                <span className="text-sm font-medium">{goal.name}</span>
-              </div>
-              {goal.description && (
-                <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{goal.description}</div>
-              )}
-            </button>
-          ))}
+          {activeGoals.map(goal => {
+            const isPrimary = selectedGoalId === goal.id;
+            const isSecondary = secondaryGoals.includes(goal.id);
+            const isSelected = isPrimary || isSecondary;
+
+            return (
+              <button
+                key={goal.id}
+                type="button"
+                onClick={() => handleGoalToggle(goal.id)}
+                className={cn(
+                  'w-full text-left p-3 rounded-lg border transition-colors',
+                  isPrimary
+                    ? 'border-green-300 bg-green-50'
+                    : isSecondary
+                    ? 'border-blue-300 bg-blue-50'
+                    : 'border-muted-foreground/20 hover:border-muted-foreground/40',
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-muted-foreground">{goal.code}</span>
+                  <span className="text-sm font-medium">{goal.name}</span>
+                  {isPrimary && (
+                    <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-green-200 text-green-800">Primary</span>
+                  )}
+                  {isSecondary && (
+                    <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-200 text-blue-800">Secondary</span>
+                  )}
+                </div>
+                {goal.description && (
+                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{goal.description}</div>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -127,7 +175,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
       {ndpAligned && (
         <>
           <div>
-            <Label>MSDP Strategy Area</Label>
+            <Label>MSDP Strategy Area <HelpTooltip text="The specific MSDP strategy or action area this project supports." /></Label>
             <Input
               value={formData.msdp_strategy_area || ''}
               onChange={e => updateField('msdp_strategy_area', e.target.value)}
@@ -136,7 +184,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
           </div>
 
           <div>
-            <Label>Alignment Justification</Label>
+            <Label>Alignment Justification <HelpTooltip text="Explain how this project directly contributes to the selected NDP goals." /></Label>
             <Textarea
               value={formData.alignment_justification || ''}
               onChange={e => updateField('alignment_justification', e.target.value)}
@@ -146,7 +194,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
           </div>
 
           <div>
-            <Label>Sector Strategy Reference</Label>
+            <Label>Sector Strategy Reference <HelpTooltip text="Reference to the national sector strategy or master plan this project implements." /></Label>
             <Input
               value={formData.sector_strategy_reference || ''}
               onChange={e => updateField('sector_strategy_reference', e.target.value)}
@@ -160,37 +208,6 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
               onCheckedChange={v => updateField('in_sector_investment_plan', v)}
             />
             <Label>Included in sector investment plan</Label>
-          </div>
-
-          {/* SDG Goals (multi-select) */}
-          <div>
-            <Label>SDG Goals</Label>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {Array.from({ length: 17 }, (_, i) => {
-                const val = String(i + 1);
-                const selected = (formData.sdg_goals || []).includes(val);
-                return (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => {
-                      const current = formData.sdg_goals || [];
-                      updateField(
-                        'sdg_goals',
-                        selected ? current.filter((g: string) => g !== val) : [...current, val]
-                      );
-                    }}
-                    className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
-                      selected
-                        ? 'bg-blue-100 border-blue-300 text-blue-700'
-                        : 'bg-background border-muted-foreground/20 text-muted-foreground hover:border-muted-foreground/40'
-                    }`}
-                  >
-                    SDG {val}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </>
       )}

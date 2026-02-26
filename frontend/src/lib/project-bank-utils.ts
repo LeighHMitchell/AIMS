@@ -187,11 +187,11 @@ export const DONOR_TYPE_LABELS: Record<string, string> = {
 /** Display labels for each appraisal stage */
 export const APPRAISAL_STAGE_LABELS: Record<AppraisalStage, string> = {
   intake: 'Project Intake',
-  preliminary_fs: 'Preliminary FS',
+  preliminary_fs: 'Preliminary Feasibility Study',
   msdp_screening: 'MSDP Screening',
-  firr_assessment: 'Financial Analysis',
-  eirr_assessment: 'Economic Analysis',
-  vgf_assessment: 'PPP / VGF',
+  firr_assessment: 'Financial Analysis (FIRR)',
+  eirr_assessment: 'Economic Analysis (EIRR)',
+  vgf_assessment: 'PPP / VGF Structuring',
   dp_consultation: 'Review & Submit',
   routing_complete: 'Complete',
   rejected: 'Rejected',
@@ -253,10 +253,10 @@ export const IMPACT_LEVELS = [
 
 /** Technical design maturity levels */
 export const TECHNICAL_MATURITY_LEVELS = [
-  { value: 'concept', label: 'Concept Only' },
-  { value: 'preliminary', label: 'Preliminary Design' },
-  { value: 'detailed', label: 'Detailed Design' },
-  { value: 'construction_ready', label: 'Construction-Ready' },
+  { value: 'concept', label: 'Concept Only', code: '1' },
+  { value: 'preliminary', label: 'Preliminary Design', code: '2' },
+  { value: 'detailed', label: 'Detailed Design', code: '3' },
+  { value: 'construction_ready', label: 'Construction-Ready', code: '4' },
 ] as const;
 
 /**

@@ -601,21 +601,83 @@ export type Database = {
       land_parcels: {
         Row: {
           id: string
-          parcel_code: string | null
-          name: string | null
-          region: string | null
-          hectares: number | null
-          parcel_type: string | null
+          parcel_code: string
+          name: string
+          state_region: string
+          township: string | null
+          geometry: any | null
+          size_hectares: number | null
+          classification: string | null
           status: string
-          allocated_project_id: string | null
-          coordinates: any | null
+          allocated_to: string | null
+          lease_start_date: string | null
+          lease_end_date: string | null
           notes: string | null
+          created_by: string | null
           created_at: string
           updated_at: string
         }
         Insert: Omit<Database['public']['Tables']['land_parcels']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['land_parcels']['Insert']>
       }
+      land_parcel_classifications: {
+        Row: {
+          name: string
+          description: string | null
+          display_order: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: Database['public']['Tables']['land_parcel_classifications']['Row']
+        Update: Partial<Database['public']['Tables']['land_parcel_classifications']['Insert']>
+      }
+      allocation_requests: {
+        Row: {
+          id: string
+          parcel_id: string
+          organization_id: string
+          requested_by: string | null
+          status: string
+          purpose: string | null
+          proposed_start_date: string | null
+          proposed_end_date: string | null
+          linked_project_id: string | null
+          priority_score_purpose: number | null
+          priority_score_track_record: number | null
+          priority_score_feasibility: number | null
+          total_score: number | null
+          reviewer_notes: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['allocation_requests']['Row'], 'id' | 'total_score' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['allocation_requests']['Insert']>
+      }
+      land_parcel_projects: {
+        Row: {
+          id: string
+          parcel_id: string
+          project_id: string
+          linked_at: string
+          linked_by: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['land_parcel_projects']['Row'], 'id' | 'linked_at'>
+        Update: Partial<Database['public']['Tables']['land_parcel_projects']['Insert']>
+      }
+      land_parcel_history: {
+        Row: {
+          id: string
+          parcel_id: string
+          action: string
+          details: any | null
+          performed_by: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['land_parcel_history']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['land_parcel_history']['Insert']>
+      }
     }
   }
-} 
+}

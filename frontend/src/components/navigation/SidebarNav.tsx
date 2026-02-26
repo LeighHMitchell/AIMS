@@ -68,6 +68,7 @@ interface SidebarNavProps {
   canManageUsers?: boolean
   canCreateActivities?: boolean
   canCreateProjects?: boolean
+  canCreateParcels?: boolean
   isInActivityEditor?: boolean
   isLoading?: boolean
   isCollapsed?: boolean
@@ -79,6 +80,7 @@ export function SidebarNav({
   canManageUsers,
   canCreateActivities,
   canCreateProjects,
+  canCreateParcels,
   isInActivityEditor = false,
   isLoading,
   isCollapsed = false,
@@ -96,6 +98,7 @@ export function SidebarNav({
     "OPERATIONS": true,
     "SUPPORT": true,
     "PROJECT BANK": true,
+    "LAND BANK": true,
   })
   const [showQuickAddModal, setShowQuickAddModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
@@ -248,15 +251,55 @@ export function SidebarNav({
       items: [
         { name: "Dashboard", href: "/project-bank", show: true },
         { name: "All Projects", href: "/project-bank/projects", show: true },
-        { name: "Submit New", href: "/project-bank/new", show: canCreateProjects },
         { name: "Funding Gaps", href: "/project-bank/gaps", show: true },
         { name: "PPP Pipeline", href: "/project-bank/ppp", show: true },
+      ]
+    },
+    {
+      label: "SUPPORT",
+      icon: HelpCircle,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "Build History", href: "/build-history", show: true },
+        { name: "FAQ", href: "/faq", show: true },
+      ]
+    },
+  ]
+
+  // ─── Land Bank sidebar groups ───
+  const landBankNavGroups = [
+    {
+      label: "LAND BANK",
+      icon: MapPin,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "Dashboard", href: "/land-bank", show: true },
+        { name: "All Parcels", href: "/land-bank/parcels", show: true },
+        { name: "Register New", href: "/land-bank/new", show: canCreateParcels },
+        { name: "Import Parcels", href: "/land-bank/import", show: canCreateParcels },
+        { name: "Analytics", href: "/land-bank/analytics", show: true },
+      ]
+    },
+    {
+      label: "SUPPORT",
+      icon: HelpCircle,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "Build History", href: "/build-history", show: true },
+        { name: "FAQ", href: "/faq", show: true },
       ]
     },
   ]
 
   // Choose which nav groups to show based on current module
-  const navGroups = currentModule === 'project-bank' ? projectBankNavGroups : aimsNavGroups
+  const navGroups = currentModule === 'project-bank'
+    ? projectBankNavGroups
+    : currentModule === 'land-bank'
+    ? landBankNavGroups
+    : aimsNavGroups
 
   const toggleGroup = (label: string) => {
     setOpenGroups(prev => ({
@@ -268,6 +311,8 @@ export function SidebarNav({
   // Top-level navigation items
   const topLevelItems = currentModule === 'project-bank'
     ? [{ name: "DASHBOARD", href: "/project-bank", icon: HomeIcon, isAnimated: true, show: true }]
+    : currentModule === 'land-bank'
+    ? [{ name: "DASHBOARD", href: "/land-bank", icon: HomeIcon, isAnimated: true, show: true }]
     : currentModule === 'aims'
     ? [{ name: "DASHBOARD", href: "/dashboard", icon: HomeIcon, isAnimated: true, show: true }]
     : []
@@ -397,6 +442,18 @@ export function SidebarNav({
               >
                 <Plus className="h-4 w-4" />
                 {!isCollapsed && "Submit Project"}
+              </Button>
+            </div>
+          )}
+
+          {currentModule === 'land-bank' && canCreateParcels && (
+            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+              <Button
+                className="w-full justify-center gap-2"
+                onClick={() => router.push('/land-bank/new')}
+              >
+                <Plus className="h-4 w-4" />
+                {!isCollapsed && "Register Parcel"}
               </Button>
             </div>
           )}

@@ -8,10 +8,16 @@ import { Plus, Trash2 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 import { calculateFullEIRR, runSensitivityAnalysis } from '@/lib/eirr-calculator';
 import { determineFullRouting, formatCurrency } from '@/lib/project-bank-utils';
+import { CHART_COLOR_PALETTE } from '@/lib/chart-colors';
 import { DocumentUploadZone } from './DocumentUploadZone';
+import { HelpTooltip } from './HelpTooltip';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
 import type { AppraisalShadowPrices } from '@/types/project-bank';
 import { cn } from '@/lib/utils';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  ResponsiveContainer, ReferenceLine,
+} from 'recharts';
 
 interface StageEIRRProps {
   wizard: UseAppraisalWizardReturn;
@@ -163,6 +169,14 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
     red: 'text-red-700',
   };
 
+  // Tornado chart data
+  const baseEirr = sensitivityResults.length > 0 ? sensitivityResults[0].firr_or_eirr : null;
+  const tornadoData = sensitivityResults.slice(1).map(s => ({
+    scenario: s.scenario,
+    deviation: s.firr_or_eirr !== null && baseEirr !== null ? s.firr_or_eirr - baseEirr : 0,
+    eirr: s.firr_or_eirr,
+  })).sort((a, b) => Math.abs(b.deviation) - Math.abs(a.deviation));
+
   return (
     <div className="space-y-6">
       <div>
@@ -172,56 +186,153 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
         </p>
       </div>
 
-      {/* Shadow Prices */}
-      <div className="p-4 bg-muted/30 rounded-lg space-y-3">
-        <Label className="text-sm font-medium">Shadow Price Parameters</Label>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div>
-            <label className="text-xs text-muted-foreground">Standard Conversion Factor</label>
-            <Input
-              type="number"
-              step="0.01"
-              value={shadowPrices.standard_conversion_factor}
-              onChange={e => setShadowPrices(p => ({ ...p, standard_conversion_factor: parseFloat(e.target.value) || 0 }))}
-              className="h-8 text-sm"
-            />
+      {/* Explanatory card */}
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          <strong>What is EIRR?</strong> The Economic Internal Rate of Return measures the project&apos;s value to
+          society, not just financial returns. It uses shadow prices to adjust for market distortions such as subsidized
+          labour, import duties, and exchange rate premiums.
+        </p>
+      </div>
+
+      {/* Results Panel — left sidebar layout */}
+      {eirrResult && (
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
+          {/* Left: Hero cards */}
+          <div className="space-y-3">
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="text-xs text-muted-foreground">EIRR <HelpTooltip text="Economic Internal Rate of Return — the social discount rate at which ENPV equals zero." /></div>
+              <div className={cn(
+                'text-3xl font-bold font-mono mt-1',
+                eirrResult.eirr !== null && eirrResult.eirr >= 15 ? 'text-green-600' : 'text-red-600',
+              )}>
+                {eirrResult.eirr !== null ? `${eirrResult.eirr.toFixed(1)}%` : 'N/A'}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {eirrResult.eirr !== null && eirrResult.eirr >= 15 ? 'Economically viable' : 'Below 15% threshold'}
+              </div>
+            </div>
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="text-xs text-muted-foreground">ENPV <HelpTooltip text="Economic Net Present Value — the total net economic benefit in present-value terms." /></div>
+              <div className={cn(
+                'text-xl font-bold font-mono mt-1',
+                eirrResult.enpv >= 0 ? 'text-green-600' : 'text-red-600',
+              )}>
+                {formatCurrency(eirrResult.enpv)}
+              </div>
+            </div>
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="text-xs text-muted-foreground">BCR <HelpTooltip text="Benefit-Cost Ratio — values above 1.0 mean benefits exceed costs." /></div>
+              <div className="text-xl font-bold font-mono mt-1 text-foreground">
+                {eirrResult.bcr !== null ? eirrResult.bcr.toFixed(2) : '—'}
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Shadow Exchange Rate</label>
-            <Input
-              type="number"
-              step="0.01"
-              value={shadowPrices.shadow_exchange_rate}
-              onChange={e => setShadowPrices(p => ({ ...p, shadow_exchange_rate: parseFloat(e.target.value) || 0 }))}
-              className="h-8 text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Shadow Wage Rate</label>
-            <Input
-              type="number"
-              step="0.01"
-              value={shadowPrices.shadow_wage_rate}
-              onChange={e => setShadowPrices(p => ({ ...p, shadow_wage_rate: parseFloat(e.target.value) || 0 }))}
-              className="h-8 text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Social Discount Rate (%)</label>
-            <Input
-              type="number"
-              step="0.1"
-              value={shadowPrices.social_discount_rate}
-              onChange={e => setShadowPrices(p => ({ ...p, social_discount_rate: parseFloat(e.target.value) || 0 }))}
-              className="h-8 text-sm"
-            />
+
+          {/* Right: Shadow prices + tables */}
+          <div className="space-y-4">
+            {/* Shadow Prices */}
+            <div className="p-4 bg-muted/30 rounded-lg space-y-3">
+              <Label className="text-sm font-medium">Shadow Price Parameters <HelpTooltip text="These conversion factors adjust market prices to reflect true economic values." /></Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Standard Conversion Factor</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={shadowPrices.standard_conversion_factor}
+                    onChange={e => setShadowPrices(p => ({ ...p, standard_conversion_factor: parseFloat(e.target.value) || 0 }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Shadow Exchange Rate</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={shadowPrices.shadow_exchange_rate}
+                    onChange={e => setShadowPrices(p => ({ ...p, shadow_exchange_rate: parseFloat(e.target.value) || 0 }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Shadow Wage Rate</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={shadowPrices.shadow_wage_rate}
+                    onChange={e => setShadowPrices(p => ({ ...p, shadow_wage_rate: parseFloat(e.target.value) || 0 }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Social Discount Rate (%)</label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={shadowPrices.social_discount_rate}
+                    onChange={e => setShadowPrices(p => ({ ...p, social_discount_rate: parseFloat(e.target.value) || 0 }))}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Shadow Prices — shown when no results yet */}
+      {!eirrResult && (
+        <div className="p-4 bg-muted/30 rounded-lg space-y-3">
+          <Label className="text-sm font-medium">Shadow Price Parameters</Label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground">Standard Conversion Factor</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={shadowPrices.standard_conversion_factor}
+                onChange={e => setShadowPrices(p => ({ ...p, standard_conversion_factor: parseFloat(e.target.value) || 0 }))}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Shadow Exchange Rate</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={shadowPrices.shadow_exchange_rate}
+                onChange={e => setShadowPrices(p => ({ ...p, shadow_exchange_rate: parseFloat(e.target.value) || 0 }))}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Shadow Wage Rate</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={shadowPrices.shadow_wage_rate}
+                onChange={e => setShadowPrices(p => ({ ...p, shadow_wage_rate: parseFloat(e.target.value) || 0 }))}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Social Discount Rate (%)</label>
+              <Input
+                type="number"
+                step="0.1"
+                value={shadowPrices.social_discount_rate}
+                onChange={e => setShadowPrices(p => ({ ...p, social_discount_rate: parseFloat(e.target.value) || 0 }))}
+                className="h-8 text-sm"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Economic Costs Table */}
       <div>
-        <Label className="mb-2 block">Economic Costs (by component)</Label>
+        <Label className="mb-2 block">Economic Costs (by component) <HelpTooltip text="Break down project costs into local, imported, and labour components. Shadow prices are applied automatically." /></Label>
         <div className="overflow-x-auto border rounded-lg">
           <table className="w-full text-sm">
             <thead>
@@ -274,7 +385,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
 
       {/* Economic Benefits Table */}
       <div>
-        <Label className="mb-2 block">Economic Benefits</Label>
+        <Label className="mb-2 block">Economic Benefits <HelpTooltip text="Quantify social and economic benefits by category and year." /></Label>
         <div className="overflow-x-auto border rounded-lg">
           <table className="w-full text-sm">
             <thead>
@@ -318,34 +429,37 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
         </Button>
       </div>
 
-      {/* EIRR Results */}
-      {eirrResult && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground">EIRR</div>
-            <div className={cn('text-xl font-bold font-mono', eirrResult.eirr !== null && eirrResult.eirr >= 15 ? 'text-green-600' : 'text-red-600')}>
-              {eirrResult.eirr !== null ? `${eirrResult.eirr.toFixed(1)}%` : 'N/A'}
-            </div>
-          </div>
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground">ENPV</div>
-            <div className={cn('text-lg font-bold font-mono', eirrResult.enpv >= 0 ? 'text-green-600' : 'text-red-600')}>
-              {formatCurrency(eirrResult.enpv)}
-            </div>
-          </div>
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground">BCR</div>
-            <div className="text-lg font-bold font-mono text-foreground">
-              {eirrResult.bcr !== null ? eirrResult.bcr.toFixed(2) : '—'}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sensitivity */}
+      {/* Sensitivity — Tornado Chart + Table */}
       {sensitivityResults.length > 0 && (
         <div>
-          <Label className="mb-2 block">Sensitivity Analysis</Label>
+          <Label className="mb-2 block">Sensitivity Analysis <HelpTooltip text="Shows how EIRR changes under different cost and benefit scenarios." /></Label>
+
+          {/* Tornado Chart */}
+          {tornadoData.length > 0 && baseEirr !== null && (
+            <div className="border rounded-lg p-4 bg-background mb-4">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={tornadoData} layout="vertical" margin={{ top: 5, right: 30, left: 120, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `${v > 0 ? '+' : ''}${v.toFixed(1)}pp`} />
+                  <YAxis type="category" dataKey="scenario" tick={{ fontSize: 11 }} width={110} />
+                  <RechartsTooltip
+                    formatter={(value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}pp`}
+                    labelFormatter={(label: string) => label}
+                  />
+                  <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
+                  <Bar dataKey="deviation" fill={CHART_COLOR_PALETTE[2]}>
+                    {tornadoData.map((entry, index) => (
+                      <rect key={index} fill={entry.deviation >= 0 ? '#4c5568' : CHART_COLOR_PALETTE[0]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <p className="text-xs text-muted-foreground text-center mt-1">
+                Deviation from base case EIRR ({baseEirr.toFixed(1)}%) in percentage points
+              </p>
+            </div>
+          )}
+
           <div className="overflow-x-auto border rounded-lg">
             <table className="w-full text-sm">
               <thead>

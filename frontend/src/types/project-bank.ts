@@ -10,7 +10,6 @@ export type CommitmentStatus = 'expression_of_interest' | 'pipeline' | 'pledged'
 
 export type AppraisalType = 'preliminary_fs' | 'detailed_fs' | 'eirr' | 'vgf';
 
-export type LandParcelStatus = 'available' | 'allocated' | 'pending' | 'reserved' | 'unavailable';
 
 export type AppraisalStage =
   | 'intake' | 'preliminary_fs' | 'msdp_screening' | 'firr_assessment'
@@ -239,20 +238,6 @@ export interface ProjectAppraisal {
   updated_at: string;
 }
 
-export interface LandParcel {
-  id: string;
-  parcel_code: string | null;
-  name: string | null;
-  region: string | null;
-  hectares: number | null;
-  parcel_type: string | null;
-  status: LandParcelStatus;
-  allocated_project_id: string | null;
-  coordinates: any | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface RoutingResult {
   pathway: ProjectPathway | null;

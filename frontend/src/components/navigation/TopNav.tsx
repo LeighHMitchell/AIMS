@@ -6,10 +6,11 @@ import Link from "next/link"
 import { Menu } from "bloom-menu"
 import { Badge } from "@/components/ui/badge"
 import { UserAvatar } from "@/components/ui/user-avatar"
-import { LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share, Info, Bell, Bookmark } from "lucide-react"
+import { LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share, Info, Bell, Bookmark, FolderKanban, BarChart3, MapPin } from "lucide-react"
 import { toast } from "sonner"
 import { USER_ROLES } from "@/types/user"
 import { getRoleBadgeVariant, getRoleDisplayLabel } from "@/lib/role-badge-utils"
+import { getCurrentModule } from "@/lib/navigation-utils"
 import { GlobalSearchBar } from "@/components/search/GlobalSearchBar"
 import { FeedbackModal } from "@/components/ui/feedback-modal"
 import { AskQuestionModal } from "@/components/faq/AskQuestionModal"
@@ -161,7 +162,33 @@ export function TopNav({ user, onLogout }: TopNavProps) {
                     )}
                   </div>
 
-                  <div className="border-t border-neutral-100 my-1" />
+                  {/* Module Switcher */}
+                  <div className="border-t border-neutral-200 my-1" />
+                  <div className="px-3 py-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Modules</span>
+                  </div>
+                  {[
+                    { label: 'DFMIS', href: '/dashboard', icon: BarChart3, module: 'aims' as const },
+                    { label: 'Project Bank', href: '/project-bank', icon: FolderKanban, module: 'project-bank' as const },
+                    { label: 'Land Bank', href: '/land-bank', icon: MapPin, module: 'land-bank' as const },
+                  ].map(mod => {
+                    const currentMod = getCurrentModule(pathname || '')
+                    const isActive = currentMod === mod.module
+                    const ModIcon = mod.icon
+                    return (
+                      <Link
+                        key={mod.module}
+                        href={mod.href}
+                        className={`${itemClass} ${isActive ? 'bg-neutral-100 font-medium' : ''}`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <ModIcon className="h-4 w-4" />
+                        <span>{mod.label}</span>
+                        {isActive && <span className="ml-auto text-[10px] text-neutral-400">Current</span>}
+                      </Link>
+                    )
+                  })}
+                  <div className="border-t border-neutral-200 my-1" />
 
                   <Link href="/profile" className={itemClass} onClick={() => setIsMenuOpen(false)}>
                     <Settings className="h-4 w-4" />
