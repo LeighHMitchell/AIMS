@@ -13,7 +13,9 @@ import { HelpTooltip } from './HelpTooltip';
 import { DatePicker } from '@/components/ui/date-picker';
 import { apiFetch } from '@/lib/api-fetch';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
+import { useComplianceRules } from '@/hooks/use-compliance-rules';
 import { cn } from '@/lib/utils';
+import { AlertTriangle, ShieldAlert } from 'lucide-react';
 
 const SDG_GOALS = Array.from({ length: 17 }, (_, i) => ({
   value: String(i + 1),
@@ -46,7 +48,9 @@ export function StageIntake({ wizard }: StageIntakeProps) {
   const [ministries, setMinistries] = useState<Ministry[]>([]);
   const [costDisplay, setCostDisplay] = useState(() => formatCurrencyDisplay(formData.estimated_cost));
 
+  const { validateMinimumSize } = useComplianceRules();
   const sectorSubSectors = formData.sector ? SUB_SECTORS[formData.sector] || [] : [];
+  const minSizeResult = validateMinimumSize(formData.estimated_cost, formData.currency || 'USD');
 
   // Fetch line ministries
   useEffect(() => {
@@ -88,6 +92,50 @@ export function StageIntake({ wizard }: StageIntakeProps) {
         <p className="text-sm text-muted-foreground">Enter basic project information and contact details.</p>
       </div>
 
+      {/* ─── Project Origin ─── */}
+      <div id="section-origin" className="scroll-mt-20 rounded-lg border border-muted bg-muted/20 p-4 space-y-4">
+        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Project Origin</h4>
+        <Select value={formData.origin || 'government'} onValueChange={v => updateField('origin', v)}>
+          <SelectTrigger className="w-[280px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="government">Government Nominated</SelectItem>
+            <SelectItem value="unsolicited">Unsolicited Proposal</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {formData.origin === 'unsolicited' && (
+          <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-3">
+            <h5 className="text-sm font-medium text-purple-800">Proponent Details</h5>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs text-purple-600">Proponent Name</Label>
+                <Input
+                  value={formData.proponent_name || ''}
+                  onChange={e => updateField('proponent_name', e.target.value)}
+                  placeholder="Full name"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-purple-600">Company</Label>
+                <Input
+                  value={formData.proponent_company || ''}
+                  onChange={e => updateField('proponent_company', e.target.value)}
+                  placeholder="Company name"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-purple-600">Contact Info</Label>
+                <Input
+                  value={formData.proponent_contact || ''}
+                  onChange={e => updateField('proponent_contact', e.target.value)}
+                  placeholder="Email or phone"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* ─── General Info ─── */}
       <div id="section-general-info" className="scroll-mt-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -123,6 +171,29 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               />
             )}
             {errors.nominating_ministry && <p className="text-xs text-red-500 mt-1">{errors.nominating_ministry}</p>}
+          </div>
+
+          <div>
+            <Label>Implementing Agency (IGA) <HelpTooltip text="The agency responsible for implementing the project. May differ from the nominating ministry." /></Label>
+            {ministries.length > 0 ? (
+              <Select
+                value={formData.implementing_agency || ''}
+                onValueChange={v => updateField('implementing_agency', v)}
+              >
+                <SelectTrigger><SelectValue placeholder="Same as nominating ministry" /></SelectTrigger>
+                <SelectContent>
+                  {ministries.map(m => (
+                    <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                value={formData.implementing_agency || ''}
+                onChange={e => updateField('implementing_agency', e.target.value)}
+                placeholder="Same as nominating ministry"
+              />
+            )}
           </div>
 
           <div>
@@ -163,6 +234,23 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               </Select>
             </div>
           </div>
+
+          {/* Minimum project size compliance warning */}
+          {minSizeResult && !minSizeResult.passed && (
+            <div className={cn(
+              "md:col-span-2 flex items-start gap-2 p-3 rounded-lg border text-sm",
+              minSizeResult.enforcement === 'enforce'
+                ? "bg-red-50 border-red-200 text-red-800"
+                : "bg-amber-50 border-amber-200 text-amber-800"
+            )}>
+              {minSizeResult.enforcement === 'enforce' ? (
+                <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              )}
+              <span>{minSizeResult.message}</span>
+            </div>
+          )}
 
           <div>
             <Label>Estimated Start Date <HelpTooltip text="When the project is expected to begin." /></Label>

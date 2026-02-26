@@ -514,9 +514,173 @@ export type Database = {
           dap_notes: string | null
           budget_allocation_status: string | null
           budget_amount: number | null
+          ppp_contract_type: string | null
+          ppp_contract_details: any | null
+          implementing_agency: string | null
+          equity_ratio: number | null
         }
         Insert: Omit<Database['public']['Tables']['project_bank_projects']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['project_bank_projects']['Insert']>
+      }
+      project_bank_settings: {
+        Row: {
+          id: string
+          key: string
+          value: any
+          label: string
+          description: string | null
+          enforcement: string
+          category: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['project_bank_settings']['Row'], 'id' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['project_bank_settings']['Insert']>
+      }
+      unsolicited_proposals: {
+        Row: {
+          id: string
+          project_id: string
+          proponent_name: string
+          proponent_contact: string | null
+          proponent_company: string | null
+          proposal_date: string | null
+          status: string
+          rfp_published_date: string | null
+          counter_proposal_deadline: string | null
+          original_proponent_match_deadline: string | null
+          match_response: string | null
+          award_decision: string | null
+          award_date: string | null
+          awarded_to: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['unsolicited_proposals']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['unsolicited_proposals']['Insert']>
+      }
+      proposal_bidders: {
+        Row: {
+          id: string
+          proposal_id: string
+          company_name: string
+          contact_name: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          bid_amount: number | null
+          currency: string
+          proposal_document_id: string | null
+          evaluation_score: number | null
+          evaluation_notes: string | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['proposal_bidders']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['proposal_bidders']['Insert']>
+      }
+      project_monitoring_schedules: {
+        Row: {
+          id: string
+          project_id: string
+          interval_months: number
+          next_due_date: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['project_monitoring_schedules']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['project_monitoring_schedules']['Insert']>
+      }
+      project_monitoring_reports: {
+        Row: {
+          id: string
+          project_id: string
+          schedule_id: string | null
+          report_period_start: string | null
+          report_period_end: string | null
+          due_date: string | null
+          submitted_date: string | null
+          status: string
+          compliance_status: string
+          submitted_by: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+          review_notes: string | null
+          document_id: string | null
+          key_findings: string | null
+          recommendations: string | null
+          kpi_data: any | null
+        }
+        Insert: Omit<Database['public']['Tables']['project_monitoring_reports']['Row'], 'id'>
+        Update: Partial<Database['public']['Tables']['project_monitoring_reports']['Insert']>
+      }
+      see_transfers: {
+        Row: {
+          id: string
+          transfer_code: string
+          see_name: string
+          see_sector: string | null
+          see_ministry: string | null
+          description: string | null
+          status: string
+          transfer_mode: string | null
+          current_annual_revenue: number | null
+          current_annual_expenses: number | null
+          total_assets: number | null
+          total_liabilities: number | null
+          employee_count: number | null
+          valuation_amount: number | null
+          valuation_date: string | null
+          valuation_method: string | null
+          valuation_firm: string | null
+          shares_allotted_to_state: number | null
+          regulatory_separation_done: boolean
+          legislation_review_done: boolean
+          fixed_asset_register_maintained: boolean
+          restructuring_notes: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['see_transfers']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['see_transfers']['Insert']>
+      }
+      see_transfer_financials: {
+        Row: {
+          id: string
+          transfer_id: string
+          year: number
+          period_type: string
+          revenue: number | null
+          expenses: number | null
+          net_income: number | null
+          free_cash_flow: number | null
+          capex: number | null
+          depreciation: number | null
+        }
+        Insert: Omit<Database['public']['Tables']['see_transfer_financials']['Row'], 'id'>
+        Update: Partial<Database['public']['Tables']['see_transfer_financials']['Insert']>
+      }
+      see_transfer_documents: {
+        Row: {
+          id: string
+          transfer_id: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          mime_type: string | null
+          upload_stage: string | null
+          description: string | null
+          uploaded_by: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['see_transfer_documents']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['see_transfer_documents']['Insert']>
       }
       project_bank_donors: {
         Row: {
@@ -608,6 +772,11 @@ export type Database = {
           geometry: any | null
           size_hectares: number | null
           classification: string | null
+          controlling_ministry_id: string | null
+          asset_type: string | null
+          title_status: string
+          ndp_goal_id: string | null
+          secondary_ndp_goals: string[]
           status: string
           allocated_to: string | null
           lease_start_date: string | null
@@ -677,6 +846,43 @@ export type Database = {
         }
         Insert: Omit<Database['public']['Tables']['land_parcel_history']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['land_parcel_history']['Insert']>
+      }
+      land_parcel_documents: {
+        Row: {
+          id: string
+          parcel_id: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          mime_type: string | null
+          description: string | null
+          uploaded_by: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['land_parcel_documents']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['land_parcel_documents']['Insert']>
+      }
+      line_ministries: {
+        Row: {
+          id: string
+          name: string
+          code: string
+          is_active: boolean
+          display_order: number
+        }
+        Insert: Omit<Database['public']['Tables']['line_ministries']['Row'], 'id'>
+        Update: Partial<Database['public']['Tables']['line_ministries']['Insert']>
+      }
+      land_asset_types: {
+        Row: {
+          name: string
+          description: string | null
+          display_order: number
+          is_active: boolean
+        }
+        Insert: Database['public']['Tables']['land_asset_types']['Row']
+        Update: Partial<Database['public']['Tables']['land_asset_types']['Insert']>
       }
     }
   }

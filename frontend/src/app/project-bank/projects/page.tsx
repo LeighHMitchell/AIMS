@@ -34,6 +34,7 @@ export default function ProjectListPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [sectorFilter, setSectorFilter] = useState("")
   const [pathwayFilter, setPathwayFilter] = useState("")
+  const [originFilter, setOriginFilter] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(20)
@@ -69,6 +70,7 @@ export default function ProjectListPage() {
     if (statusFilter !== "all") list = list.filter(p => p.status === statusFilter)
     if (sectorFilter) list = list.filter(p => p.sector === sectorFilter)
     if (pathwayFilter) list = list.filter(p => p.pathway === pathwayFilter)
+    if (originFilter) list = list.filter(p => p.origin === originFilter)
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       list = list.filter(p =>
@@ -90,7 +92,7 @@ export default function ProjectListPage() {
     })
 
     return list
-  }, [projects, statusFilter, sectorFilter, pathwayFilter, searchQuery, sortField, sortDir])
+  }, [projects, statusFilter, sectorFilter, pathwayFilter, originFilter, searchQuery, sortField, sortDir])
 
   // Max funding gap across filtered projects (for sparkline scaling)
   const maxGap = useMemo(() => {
@@ -176,6 +178,19 @@ export default function ProjectListPage() {
               <SelectContent>
                 <SelectItem value="all">All Sectors</SelectItem>
                 {SECTORS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Origin</Label>
+            <Select value={originFilter || 'all'} onValueChange={v => { setOriginFilter(v === 'all' ? '' : v); setPage(1) }}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Origins</SelectItem>
+                <SelectItem value="government">Government</SelectItem>
+                <SelectItem value="unsolicited">Unsolicited</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -154,7 +154,7 @@ export default function GeneralSection({
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={bannerAutosave.state.isSaving}
-              isSaved={!!bannerAutosave.state.lastSaved}
+              isSaved={!!bannerAutosave.state.lastSaved || (!isCreating && !!banner)}
               hasValue={!!banner}
             >
               Banner Image
@@ -203,7 +203,7 @@ export default function GeneralSection({
           <div className="space-y-2">
             <LabelSaveIndicator
               isSaving={iconAutosave.state.isSaving}
-              isSaved={!!iconAutosave.state.lastSaved}
+              isSaved={!!iconAutosave.state.lastSaved || (!isCreating && !!iconUrl)}
               hasValue={!!iconUrl}
             >
               Icon / Logo
@@ -256,7 +256,7 @@ export default function GeneralSection({
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={labelAutosave.state.isSaving}
-            isSaved={!!labelAutosave.state.lastSaved}
+            isSaved={!!labelAutosave.state.lastSaved || (!isCreating && !!label)}
             hasValue={!!label}
           >
             Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
@@ -273,7 +273,7 @@ export default function GeneralSection({
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={codeAutosave.state.isSaving}
-            isSaved={!!codeAutosave.state.lastSaved}
+            isSaved={!!codeAutosave.state.lastSaved || (!isCreating && !!code)}
             hasValue={!!code}
           >
             Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
@@ -294,7 +294,7 @@ export default function GeneralSection({
       <div className="space-y-2">
         <LabelSaveIndicator
           isSaving={descAutosave.state.isSaving}
-          isSaved={!!descAutosave.state.lastSaved}
+          isSaved={!!descAutosave.state.lastSaved || (!isCreating && !!description)}
           hasValue={!!description}
         >
           Description / Mandate
@@ -315,7 +315,7 @@ export default function GeneralSection({
         <div className="space-y-2">
           <LabelSaveIndicator
             isSaving={groupTypeAutosave.state.isSaving}
-            isSaved={!!groupTypeAutosave.state.lastSaved}
+            isSaved={!!groupTypeAutosave.state.lastSaved || (!isCreating && !!groupType)}
             hasValue={!!groupType}
           >
             Working Group Type
@@ -345,7 +345,7 @@ export default function GeneralSection({
           <div>
             <LabelSaveIndicator
               isSaving={activeAutosave.state.isSaving}
-              isSaved={!!activeAutosave.state.lastSaved}
+              isSaved={!!activeAutosave.state.lastSaved || !isCreating}
               hasValue={true}
             >
               Active Status

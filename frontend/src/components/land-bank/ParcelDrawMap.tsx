@@ -1,45 +1,32 @@
 "use client"
 
 import { useEffect, useRef, useCallback, useState } from "react"
-import MapLibreGL from "maplibre-gl"
-import "maplibre-gl/dist/maplibre-gl.css"
+import { useMap } from "@/components/ui/map"
 import { Button } from "@/components/ui/button"
 import { Upload, Trash2, MousePointerClick } from "lucide-react"
-
-const CARTO_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+import { LandBankMapShell } from "./LandBankMapShell"
+import type MapLibreGL from "maplibre-gl"
 
 interface ParcelDrawMapProps {
   geometry: any | null
   onChange: (geometry: any | null) => void
 }
 
-export function ParcelDrawMap({ geometry, onChange }: ParcelDrawMapProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<MapLibreGL.Map | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+function DrawController({ geometry, onChange }: ParcelDrawMapProps) {
+  const { map, isLoaded } = useMap()
+  const initialized = useRef(false)
   const [drawingMode, setDrawingMode] = useState(false)
   const pointsRef = useRef<[number, number][]>([])
 
-  // Initialise map
+  // Add draw sources once map is loaded
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!map || !isLoaded || initialized.current) return
 
-    const map = new MapLibreGL.Map({
-      container: containerRef.current,
-      style: CARTO_STYLE,
-      center: [96.5, 19.8],
-      zoom: 5,
-      renderWorldCopies: false,
-      attributionControl: { compact: true },
-    })
-
-    mapRef.current = map
-
-    map.on("load", () => {
-      // Source for the completed polygon
+    // Source for completed polygon
+    if (!map.getSource("drawn-polygon")) {
       map.addSource("drawn-polygon", {
         type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
+        data: { type: "FeatureCollection", features: [] } as any,
       })
       map.addLayer({
         id: "drawn-polygon-fill",
@@ -53,54 +40,59 @@ export function ParcelDrawMap({ geometry, onChange }: ParcelDrawMapProps) {
         source: "drawn-polygon",
         paint: { "line-color": "#3b82f6", "line-width": 2 },
       })
+    }
 
-      // Source for in-progress drawing points/lines
+    // Source for in-progress drawing
+    if (!map.getSource("draw-points")) {
       map.addSource("draw-points", {
         type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
+        data: { type: "FeatureCollection", features: [] } as any,
       })
       map.addLayer({
         id: "draw-points-line",
         type: "line",
         source: "draw-points",
-        paint: { "line-color": "#3b82f6", "line-width": 2, "line-dasharray": [2, 2] },
+        paint: {
+          "line-color": "#3b82f6",
+          "line-width": 2,
+          "line-dasharray": [2, 2],
+        },
       })
       map.addLayer({
         id: "draw-points-circles",
         type: "circle",
         source: "draw-points",
         filter: ["==", "$type", "Point"],
-        paint: { "circle-color": "#3b82f6", "circle-radius": 5, "circle-stroke-color": "#fff", "circle-stroke-width": 2 },
+        paint: {
+          "circle-color": "#3b82f6",
+          "circle-radius": 5,
+          "circle-stroke-color": "#fff",
+          "circle-stroke-width": 2,
+        },
       })
-
-      // If geometry provided, display it
-      if (geometry) {
-        renderPolygon(map, geometry)
-      }
-    })
-
-    return () => {
-      map.remove()
-      mapRef.current = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
-  // Sync geometry prop changes to map
+    // Display existing geometry if provided
+    if (geometry) {
+      renderPolygon(map, geometry)
+    }
+
+    initialized.current = true
+  }, [map, isLoaded, geometry])
+
+  // Sync geometry prop changes
   useEffect(() => {
-    const map = mapRef.current
-    if (!map || !map.isStyleLoaded()) return
+    if (!map || !isLoaded || !initialized.current) return
     if (geometry) {
       renderPolygon(map, geometry)
     } else {
       clearPolygon(map)
     }
-  }, [geometry])
+  }, [map, isLoaded, geometry])
 
   // Handle drawing clicks
   useEffect(() => {
-    const map = mapRef.current
-    if (!map) return
+    if (!map || !isLoaded) return
 
     const handleClick = (e: MapLibreGL.MapMouseEvent) => {
       if (!drawingMode) return
@@ -131,55 +123,66 @@ export function ParcelDrawMap({ geometry, onChange }: ParcelDrawMapProps) {
       map.off("click", handleClick)
       map.off("dblclick", handleDblClick)
     }
-  }, [drawingMode, onChange])
+  }, [map, isLoaded, drawingMode, onChange])
 
-  // Toggle cursor when drawing mode changes
+  // Toggle cursor
   useEffect(() => {
-    const map = mapRef.current
     if (!map) return
     map.getCanvas().style.cursor = drawingMode ? "crosshair" : ""
     if (!drawingMode) {
       pointsRef.current = []
       if (map.isStyleLoaded()) clearDrawPreview(map)
     }
-  }, [drawingMode])
+  }, [map, drawingMode])
 
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  return (
+    <div className="absolute bottom-3 left-3 z-[1000] flex items-center gap-2">
+      <Button
+        type="button"
+        variant={drawingMode ? "default" : "outline"}
+        size="sm"
+        onClick={() => setDrawingMode(!drawingMode)}
+        className="gap-1 bg-white shadow-md border-gray-300"
+      >
+        <MousePointerClick className="h-3.5 w-3.5" />
+        {drawingMode ? "Drawing... (double-click to finish)" : "Draw Polygon"}
+      </Button>
+    </div>
+  )
+}
 
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      try {
-        const json = JSON.parse(event.target?.result as string)
-        if (json.type === "FeatureCollection" && json.features?.length > 0) {
-          onChange(json.features[0].geometry)
-        } else if (json.type === "Feature") {
-          onChange(json.geometry)
-        } else if (json.type === "Polygon" || json.type === "MultiPolygon") {
-          onChange(json)
+export function ParcelDrawMap({ geometry, onChange }: ParcelDrawMapProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const json = JSON.parse(event.target?.result as string)
+          if (json.type === "FeatureCollection" && json.features?.length > 0) {
+            onChange(json.features[0].geometry)
+          } else if (json.type === "Feature") {
+            onChange(json.geometry)
+          } else if (json.type === "Polygon" || json.type === "MultiPolygon") {
+            onChange(json)
+          }
+        } catch {
+          // Invalid JSON
         }
-      } catch {
-        // Invalid JSON
       }
-    }
-    reader.readAsText(file)
-    e.target.value = ""
-  }, [onChange])
+      reader.readAsText(file)
+      e.target.value = ""
+    },
+    [onChange]
+  )
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <Button
-          type="button"
-          variant={drawingMode ? "default" : "outline"}
-          size="sm"
-          onClick={() => setDrawingMode(!drawingMode)}
-          className="gap-1"
-        >
-          <MousePointerClick className="h-3.5 w-3.5" />
-          {drawingMode ? "Drawing... (double-click to finish)" : "Draw Polygon"}
-        </Button>
         <Button
           type="button"
           variant="outline"
@@ -199,7 +202,7 @@ export function ParcelDrawMap({ geometry, onChange }: ParcelDrawMapProps) {
             className="gap-1 text-destructive"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            Clear
+            Clear Geometry
           </Button>
         )}
         <input
@@ -211,7 +214,9 @@ export function ParcelDrawMap({ geometry, onChange }: ParcelDrawMapProps) {
         />
       </div>
 
-      <div ref={containerRef} className="w-full h-[350px] rounded-lg overflow-hidden border" />
+      <LandBankMapShell height="h-[350px]">
+        <DrawController geometry={geometry} onChange={onChange} />
+      </LandBankMapShell>
 
       {geometry && (
         <p className="text-xs text-muted-foreground">
@@ -222,6 +227,8 @@ export function ParcelDrawMap({ geometry, onChange }: ParcelDrawMapProps) {
   )
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────
+
 function renderPolygon(map: MapLibreGL.Map, geometry: any) {
   const source = map.getSource("drawn-polygon") as MapLibreGL.GeoJSONSource
   if (source) {
@@ -231,7 +238,6 @@ function renderPolygon(map: MapLibreGL.Map, geometry: any) {
       geometry,
     } as any)
 
-    // Fit bounds
     const coords = extractCoords(geometry)
     if (coords.length > 0) {
       const bounds = coords.reduce(
@@ -256,11 +262,14 @@ function clearPolygon(map: MapLibreGL.Map) {
   }
 }
 
-function updateDrawPreview(map: MapLibreGL.Map, points: [number, number][]) {
+function updateDrawPreview(
+  map: MapLibreGL.Map,
+  points: [number, number][]
+) {
   const source = map.getSource("draw-points") as MapLibreGL.GeoJSONSource
   if (!source) return
 
-  const features: any[] = points.map(pt => ({
+  const features: any[] = points.map((pt) => ({
     type: "Feature",
     properties: {},
     geometry: { type: "Point", coordinates: pt },

@@ -12,10 +12,10 @@ export async function GET(
 
   const { id } = await params;
 
-  // Fetch parcel with org
+  // Fetch parcel with org + ministry + NDP goal
   const { data: parcel, error } = await supabase!
     .from('land_parcels')
-    .select('*, organizations!land_parcels_allocated_to_fkey(id, name, acronym)')
+    .select('*, organizations!land_parcels_allocated_to_fkey(id, name, acronym), line_ministries(id, name, code), national_development_goals(id, code, name)')
     .eq('id', id)
     .single();
 
@@ -43,6 +43,13 @@ export async function GET(
     .eq('parcel_id', id)
     .order('created_at', { ascending: false });
 
+  // Fetch documents
+  const { data: documents } = await supabase!
+    .from('land_parcel_documents')
+    .select('*')
+    .eq('parcel_id', id)
+    .order('created_at', { ascending: false });
+
   // Check if public user — strip sensitive data
   const { data: profile } = await supabase!
     .from('users')
@@ -56,6 +63,10 @@ export async function GET(
     ...parcel,
     organization: parcel.organizations || null,
     organizations: undefined,
+    controlling_ministry: parcel.line_ministries || null,
+    line_ministries: undefined,
+    ndp_goal: parcel.national_development_goals || null,
+    national_development_goals: undefined,
     allocation_requests: isPublic ? [] : (allocations || []).map((a: any) => ({
       ...a,
       organization: a.organizations || null,
@@ -69,6 +80,7 @@ export async function GET(
       linked_at: lp.linked_at,
       project: lp.project_bank_projects,
     })),
+    documents: documents || [],
     history: history || [],
   };
 
@@ -115,6 +127,8 @@ export async function PUT(
     'name', 'state_region', 'township', 'geometry', 'size_hectares',
     'classification', 'status', 'notes', 'allocated_to',
     'lease_start_date', 'lease_end_date',
+    'controlling_ministry_id', 'asset_type', 'title_status',
+    'ndp_goal_id', 'secondary_ndp_goals',
   ];
 
   allowedFields.forEach(field => {

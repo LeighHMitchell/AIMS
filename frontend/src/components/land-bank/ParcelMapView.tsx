@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { Map, useMap } from "@/components/ui/map"
+import { useMap } from "@/components/ui/map"
 import { PARCEL_STATUS_COLORS } from "@/lib/land-bank-utils"
+import { LandBankMapShell } from "./LandBankMapShell"
 import type { LandParcel, ParcelStatus } from "@/types/land-bank"
 
 interface ParcelMapViewProps {
@@ -17,7 +18,6 @@ function ParcelMapLayers({ parcels, onParcelClick }: ParcelMapViewProps) {
   useEffect(() => {
     if (!map || !isLoaded || layersAdded.current) return
 
-    // Build GeoJSON from parcels that have geometry
     const features = parcels
       .filter(p => p.geometry)
       .map(p => ({
@@ -39,7 +39,6 @@ function ParcelMapLayers({ parcels, onParcelClick }: ParcelMapViewProps) {
       features,
     }
 
-    // Add source
     if (!map.getSource("parcels")) {
       map.addSource("parcels", {
         type: "geojson",
@@ -47,7 +46,6 @@ function ParcelMapLayers({ parcels, onParcelClick }: ParcelMapViewProps) {
       })
     }
 
-    // Add fill layer
     if (!map.getLayer("parcels-fill")) {
       map.addLayer({
         id: "parcels-fill",
@@ -68,7 +66,6 @@ function ParcelMapLayers({ parcels, onParcelClick }: ParcelMapViewProps) {
       })
     }
 
-    // Add outline layer
     if (!map.getLayer("parcels-outline")) {
       map.addLayer({
         id: "parcels-outline",
@@ -89,7 +86,6 @@ function ParcelMapLayers({ parcels, onParcelClick }: ParcelMapViewProps) {
       })
     }
 
-    // Click handler
     if (onParcelClick) {
       map.on("click", "parcels-fill", (e: any) => {
         const feature = e.features?.[0]
@@ -98,7 +94,6 @@ function ParcelMapLayers({ parcels, onParcelClick }: ParcelMapViewProps) {
           if (parcel) onParcelClick(parcel)
         }
       })
-
       map.on("mouseenter", "parcels-fill", () => {
         map.getCanvas().style.cursor = "pointer"
       })
@@ -107,7 +102,6 @@ function ParcelMapLayers({ parcels, onParcelClick }: ParcelMapViewProps) {
       })
     }
 
-    // Fit bounds to parcels
     if (features.length > 0) {
       const bounds = features.reduce(
         (acc, f) => {
@@ -122,7 +116,6 @@ function ParcelMapLayers({ parcels, onParcelClick }: ParcelMapViewProps) {
         },
         [180, 90, -180, -90] as [number, number, number, number]
       )
-
       map.fitBounds(bounds as any, { padding: 50, maxZoom: 14 })
     }
 
@@ -134,14 +127,9 @@ function ParcelMapLayers({ parcels, onParcelClick }: ParcelMapViewProps) {
 
 export function ParcelMapView({ parcels, onParcelClick }: ParcelMapViewProps) {
   return (
-    <div className="w-full h-[500px] rounded-lg overflow-hidden border">
-      <Map
-        center={[96.5, 19.8]}
-        zoom={5}
-      >
-        <ParcelMapLayers parcels={parcels} onParcelClick={onParcelClick} />
-      </Map>
-    </div>
+    <LandBankMapShell height="h-[500px]">
+      <ParcelMapLayers parcels={parcels} onParcelClick={onParcelClick} />
+    </LandBankMapShell>
   )
 }
 

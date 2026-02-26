@@ -69,11 +69,10 @@ export default function LandBankDashboard() {
     : []
 
   const regionChartData = stats
-    ? stats.byRegion.slice(0, 10).map((r, i) => ({
+    ? stats.byRegion.slice(0, 10).map((r) => ({
         name: r.region,
         count: r.count,
         hectares: r.hectares,
-        fill: CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length],
       }))
     : []
 
@@ -158,8 +157,8 @@ export default function LandBankDashboard() {
                     <ResponsiveContainer width="100%" height={240}>
                       <BarChart data={statusChartData} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-                        <XAxis type="number" stroke="#64748B" fontSize={11} tickLine={false} />
-                        <YAxis type="category" dataKey="name" stroke="#64748B" fontSize={12} width={80} />
+                        <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} />
+                        <YAxis type="category" dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={12} width={80} />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
                         <Bar dataKey="count" radius={[0, 2, 2, 0]} barSize={20}>
                           {statusChartData.map((entry, idx) => (
@@ -217,14 +216,10 @@ export default function LandBankDashboard() {
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={regionChartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} vertical={false} />
-                      <XAxis dataKey="name" stroke="#64748B" fontSize={11} tickLine={false} angle={-30} textAnchor="end" height={60} />
-                      <YAxis stroke="#64748B" fontSize={11} tickLine={false} />
+                      <XAxis dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} angle={-30} textAnchor="end" height={60} />
+                      <YAxis stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} />
                       <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                      <Bar dataKey="count" radius={[2, 2, 0, 0]} barSize={28}>
-                        {regionChartData.map((entry, idx) => (
-                          <Cell key={idx} fill={entry.fill} />
-                        ))}
-                      </Bar>
+                      <Bar dataKey="count" fill={CHART_COLOR_PALETTE[1]} radius={[2, 2, 0, 0]} barSize={28} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>

@@ -10,7 +10,7 @@ export async function GET() {
   // Fetch all parcels for aggregation
   const { data: parcels, error } = await supabase!
     .from('land_parcels')
-    .select('id, status, state_region, classification, size_hectares, created_at')
+    .select('id, status, state_region, classification, size_hectares, created_at, asset_type, title_status, controlling_ministry_id, line_ministries(name)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -56,6 +56,42 @@ export async function GET() {
     classification, ...data,
   })).sort((a, b) => b.count - a.count);
 
+  // By asset type
+  const assetMap = new Map<string, { count: number; hectares: number }>();
+  all.forEach((p: any) => {
+    const key = p.asset_type || 'Unspecified';
+    const existing = assetMap.get(key) || { count: 0, hectares: 0 };
+    existing.count++;
+    existing.hectares += p.size_hectares || 0;
+    assetMap.set(key, existing);
+  });
+  const byAssetType = Array.from(assetMap.entries()).map(([asset_type, data]) => ({
+    asset_type, ...data,
+  })).sort((a, b) => b.count - a.count);
+
+  // By title status
+  const titleMap = new Map<string, number>();
+  all.forEach((p: any) => {
+    const key = p.title_status || 'Unregistered';
+    titleMap.set(key, (titleMap.get(key) || 0) + 1);
+  });
+  const byTitleStatus = Array.from(titleMap.entries()).map(([title_status, count]) => ({
+    title_status, count,
+  })).sort((a, b) => b.count - a.count);
+
+  // By ministry
+  const ministryMap = new Map<string, { count: number; hectares: number }>();
+  all.forEach((p: any) => {
+    const key = p.line_ministries?.name || 'Unassigned';
+    const existing = ministryMap.get(key) || { count: 0, hectares: 0 };
+    existing.count++;
+    existing.hectares += p.size_hectares || 0;
+    ministryMap.set(key, existing);
+  });
+  const byMinistry = Array.from(ministryMap.entries()).map(([ministry, data]) => ({
+    ministry, ...data,
+  })).sort((a, b) => b.count - a.count);
+
   // Recent parcels (last 5)
   const recentParcels = all.slice(0, 5);
 
@@ -74,6 +110,9 @@ export async function GET() {
     byStatus,
     byRegion,
     byClassification,
+    byAssetType,
+    byTitleStatus,
+    byMinistry,
     recentParcels,
     recentActivity: recentActivity || [],
   });

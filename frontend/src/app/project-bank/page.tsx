@@ -217,11 +217,11 @@ export default function ProjectBankDashboard() {
                       barCategoryGap="20%"
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-                      <XAxis type="number" stroke="#64748B" fontSize={11} tickLine={false} allowDecimals={false} />
+                      <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} allowDecimals={false} />
                       <YAxis
                         type="category"
                         dataKey="name"
-                        stroke="#64748B"
+                        stroke={CHART_STRUCTURE_COLORS.axis}
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
@@ -252,11 +252,11 @@ export default function ProjectBankDashboard() {
                       barCategoryGap="20%"
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-                      <XAxis type="number" stroke="#64748B" fontSize={11} tickLine={false} tickFormatter={formatAxisCurrency} />
+                      <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} tickFormatter={formatAxisCurrency} />
                       <YAxis
                         type="category"
                         dataKey="name"
-                        stroke="#64748B"
+                        stroke={CHART_STRUCTURE_COLORS.axis}
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
@@ -289,11 +289,11 @@ export default function ProjectBankDashboard() {
                       barCategoryGap="16%"
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-                      <XAxis type="number" stroke="#64748B" fontSize={11} tickLine={false} tickFormatter={formatAxisCurrency} />
+                      <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} tickFormatter={formatAxisCurrency} />
                       <YAxis
                         type="category"
                         dataKey="name"
-                        stroke="#64748B"
+                        stroke={CHART_STRUCTURE_COLORS.axis}
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}

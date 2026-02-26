@@ -17,19 +17,25 @@ import {
   Layers,
   Clock,
   Link2,
+  FileText,
+  Target,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import { useUser } from "@/hooks/useUser"
 import { formatHectares } from "@/lib/land-bank-utils"
 import { ParcelStatusBadge } from "@/components/land-bank/ParcelStatusBadge"
+import { TitleStatusBadge } from "@/components/land-bank/TitleStatusBadge"
+import { MSDPAlignmentBadge } from "@/components/land-bank/MSDPAlignmentBadge"
 import { LeaseExpiryBadge } from "@/components/land-bank/LeaseExpiryBadge"
 import { ParcelDetailMap } from "@/components/land-bank/ParcelDetailMap"
 import { AllocationScoringPanel } from "@/components/land-bank/AllocationScoringPanel"
 import { AllocationRequestModal } from "@/components/land-bank/AllocationRequestModal"
 import { ParcelHistoryTimeline } from "@/components/land-bank/ParcelHistoryTimeline"
-import type { LandParcel, AllocationRequest, LandParcelHistory, LinkedProject } from "@/types/land-bank"
+import { ParcelDocumentUpload } from "@/components/land-bank/ParcelDocumentUpload"
+import { SuggestedProjectsCard } from "@/components/land-bank/SuggestedProjectsCard"
+import type { LandParcel, AllocationRequest, LandParcelHistory, LinkedProject, LandParcelDocument } from "@/types/land-bank"
 
-type Tab = "overview" | "map" | "allocation" | "history"
+type Tab = "overview" | "map" | "documents" | "allocation" | "history"
 
 export default function ParcelDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -39,6 +45,7 @@ export default function ParcelDetailPage() {
   const [allocations, setAllocations] = useState<AllocationRequest[]>([])
   const [history, setHistory] = useState<LandParcelHistory[]>([])
   const [linkedProjects, setLinkedProjects] = useState<LinkedProject[]>([])
+  const [documents, setDocuments] = useState<LandParcelDocument[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>("overview")
   const [showAllocationModal, setShowAllocationModal] = useState(false)
@@ -53,11 +60,21 @@ export default function ParcelDetailPage() {
         setAllocations(data.allocation_requests || [])
         setHistory(data.history || [])
         setLinkedProjects(data.linked_projects || [])
+        setDocuments(data.documents || [])
       }
     } catch {
       // silent
     } finally {
       setLoading(false)
+    }
+  }, [id])
+
+  const fetchDocuments = useCallback(async () => {
+    try {
+      const res = await apiFetch(`/api/land-bank/${id}/documents`)
+      if (res.ok) setDocuments(await res.json())
+    } catch {
+      // silent
     }
   }, [id])
 
@@ -115,6 +132,7 @@ export default function ParcelDetailPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: "overview", label: "Overview" },
     { key: "map", label: "Map" },
+    { key: "documents", label: `Documents (${documents.length})` },
     { key: "allocation", label: `Allocation (${allocations.length})` },
     { key: "history", label: `History (${history.length})` },
   ]
@@ -137,6 +155,7 @@ export default function ParcelDetailPage() {
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-2xl font-bold">{parcel.name}</h1>
               <ParcelStatusBadge status={parcel.status} />
+              <TitleStatusBadge status={parcel.title_status} />
               <LeaseExpiryBadge leaseEndDate={parcel.lease_end_date} />
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -144,7 +163,17 @@ export default function ParcelDetailPage() {
               <span>{parcel.state_region}{parcel.township ? `, ${parcel.township}` : ""}</span>
               {parcel.size_hectares && <span>{formatHectares(parcel.size_hectares)}</span>}
               {parcel.classification && <Badge variant="outline">{parcel.classification}</Badge>}
+              {parcel.asset_type && <Badge variant="outline">{parcel.asset_type}</Badge>}
             </div>
+            {parcel.ndp_goal && (
+              <div className="mt-2">
+                <MSDPAlignmentBadge
+                  goalName={parcel.ndp_goal.name}
+                  goalCode={parcel.ndp_goal.code}
+                  secondaryCount={parcel.secondary_ndp_goals?.length || 0}
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -152,6 +181,16 @@ export default function ParcelDetailPage() {
               <Button onClick={() => setShowAllocationModal(true)} className="gap-1">
                 <Building className="h-4 w-4" />
                 Request Allocation
+              </Button>
+            )}
+            {permissions.canManageParcels && (
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/land-bank/${id}/edit`)}
+                className="gap-1"
+              >
+                <Edit className="h-4 w-4" />
+                Edit
               </Button>
             )}
             {permissions.canManageParcels && parcel.status === "allocated" && (
@@ -227,9 +266,29 @@ export default function ParcelDetailPage() {
                         <dd>{parcel.classification || "—"}</dd>
                       </div>
                       <div>
+                        <dt className="text-muted-foreground mb-1">Asset Type</dt>
+                        <dd>{parcel.asset_type || "—"}</dd>
+                      </div>
+                      <div>
                         <dt className="text-muted-foreground mb-1">Status</dt>
                         <dd><ParcelStatusBadge status={parcel.status} /></dd>
                       </div>
+                      <div>
+                        <dt className="text-muted-foreground mb-1">Title Status</dt>
+                        <dd><TitleStatusBadge status={parcel.title_status} /></dd>
+                      </div>
+                      {parcel.controlling_ministry && (
+                        <div className="col-span-2">
+                          <dt className="text-muted-foreground mb-1">Controlling Ministry</dt>
+                          <dd>{parcel.controlling_ministry.code} — {parcel.controlling_ministry.name}</dd>
+                        </div>
+                      )}
+                      {parcel.ndp_goal && (
+                        <div className="col-span-2">
+                          <dt className="text-muted-foreground mb-1">Primary NDP Goal</dt>
+                          <dd>{parcel.ndp_goal.code} — {parcel.ndp_goal.name}</dd>
+                        </div>
+                      )}
                       {parcel.notes && (
                         <div className="col-span-2">
                           <dt className="text-muted-foreground mb-1">Notes</dt>
@@ -297,6 +356,15 @@ export default function ParcelDetailPage() {
               <ParcelDetailMap parcel={parcel} />
             )}
 
+            {activeTab === "documents" && (
+              <ParcelDocumentUpload
+                parcelId={parcel.id}
+                documents={documents}
+                canManage={permissions.canManageParcels}
+                onDocumentsChange={fetchDocuments}
+              />
+            )}
+
             {activeTab === "allocation" && (
               <Card>
                 <CardHeader>
@@ -345,12 +413,22 @@ export default function ParcelDetailPage() {
                       <span>{parcel.classification}</span>
                     </div>
                   )}
+                  {parcel.controlling_ministry && (
+                    <div className="flex items-center gap-2">
+                      <Building className="h-4 w-4 text-muted-foreground" />
+                      <span>{parcel.controlling_ministry.code}</span>
+                    </div>
+                  )}
                   {parcel.lease_end_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span>Lease ends {parcel.lease_end_date}</span>
                     </div>
                   )}
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span>{documents.length} document{documents.length !== 1 ? "s" : ""}</span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>Created {new Date(parcel.created_at).toLocaleDateString()}</span>
@@ -369,6 +447,12 @@ export default function ParcelDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            <SuggestedProjectsCard
+              parcelId={parcel.id}
+              canLink={permissions.canManageParcels}
+              onLinked={fetchParcel}
+            />
           </div>
         </div>
 

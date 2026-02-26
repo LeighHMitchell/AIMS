@@ -8,12 +8,16 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { estimateVGF } from '@/lib/eirr-calculator';
-import { formatCurrency } from '@/lib/project-bank-utils';
+import { formatCurrency, PPP_CONTRACT_TYPE_LABELS } from '@/lib/project-bank-utils';
 import { DocumentUploadZone } from './DocumentUploadZone';
 import { apiFetch } from '@/lib/api-fetch';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
 import type { LandParcel } from '@/types/land-bank';
+import type { PPPContractType } from '@/types/project-bank';
 import { HelpTooltip } from './HelpTooltip';
+import { DatePicker } from '@/components/ui/date-picker';
+import { useComplianceRules } from '@/hooks/use-compliance-rules';
+import { AlertTriangle, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StagePPPStructuringProps {
@@ -40,6 +44,13 @@ const CHECKLIST_ITEMS = [
 export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
   const { formData, updateField, projectId, documents, refreshDocuments } = wizard;
   const [landParcels, setLandParcels] = useState<LandParcel[]>([]);
+  const { validateEquityRatio } = useComplianceRules();
+
+  // Cost in USD for equity ratio validation
+  const costUSD = formData.currency === 'USD' ? formData.estimated_cost :
+    formData.currency === 'MMK' ? (formData.estimated_cost || 0) / 2100 :
+    formData.estimated_cost;
+  const equityResult = validateEquityRatio(formData.equity_ratio ?? null, costUSD ?? null);
 
   // Fetch available land parcels
   useEffect(() => {
@@ -137,6 +148,216 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
           </SelectContent>
         </Select>
       </div>
+
+      {/* PPP Contract Type */}
+      <div>
+        <Label>PPP Contract Type <HelpTooltip text="The specific PPP modality for this project per Notification No. 2/2018." /></Label>
+        <Select value={formData.ppp_contract_type || ''} onValueChange={v => updateField('ppp_contract_type', v || null)}>
+          <SelectTrigger><SelectValue placeholder="Select contract type..." /></SelectTrigger>
+          <SelectContent>
+            {Object.entries(PPP_CONTRACT_TYPE_LABELS).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Conditional PPP Contract Detail Fields */}
+      {formData.ppp_contract_type && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+          <Label className="text-sm font-medium text-blue-800">
+            {PPP_CONTRACT_TYPE_LABELS[formData.ppp_contract_type as string] || 'Contract'} Details
+          </Label>
+
+          {(formData.ppp_contract_type === 'bot' || formData.ppp_contract_type === 'bto') && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-blue-600">Transfer Date</label>
+                <DatePicker
+                  value={formData.ppp_contract_details?.transfer_date || ''}
+                  onChange={v => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), transfer_date: v || null })}
+                  placeholder="Pick transfer date"
+                />
+              </div>
+              {formData.ppp_contract_type === 'bot' && (
+                <>
+                  <div>
+                    <label className="text-xs text-blue-600">Concession Period (years)</label>
+                    <Input
+                      type="number"
+                      value={formData.ppp_contract_details?.concession_period_years ?? ''}
+                      onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), concession_period_years: e.target.value ? Number(e.target.value) : null })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs text-blue-600">Transfer Conditions</label>
+                    <Textarea
+                      value={formData.ppp_contract_details?.transfer_conditions || ''}
+                      onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), transfer_conditions: e.target.value })}
+                      rows={2} className="text-sm"
+                    />
+                  </div>
+                </>
+              )}
+              {formData.ppp_contract_type === 'bto' && (
+                <div>
+                  <label className="text-xs text-blue-600">Operating Period (years)</label>
+                  <Input
+                    type="number"
+                    value={formData.ppp_contract_details?.operating_period_years ?? ''}
+                    onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), operating_period_years: e.target.value ? Number(e.target.value) : null })}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {formData.ppp_contract_type === 'boo' && (
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="text-xs text-blue-600">Perpetuity Terms</label>
+                <Textarea
+                  value={formData.ppp_contract_details?.perpetuity_terms || ''}
+                  onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), perpetuity_terms: e.target.value })}
+                  rows={2} className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-blue-600">Purchase Option Terms</label>
+                <Textarea
+                  value={formData.ppp_contract_details?.purchase_option_terms || ''}
+                  onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), purchase_option_terms: e.target.value })}
+                  rows={2} className="text-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {formData.ppp_contract_type === 'btl' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-blue-600">Lease Period (years)</label>
+                <Input
+                  type="number"
+                  value={formData.ppp_contract_details?.lease_period_years ?? ''}
+                  onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), lease_period_years: e.target.value ? Number(e.target.value) : null })}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-xs text-blue-600">Lease Payment Terms</label>
+                <Textarea
+                  value={formData.ppp_contract_details?.lease_payment_terms || ''}
+                  onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), lease_payment_terms: e.target.value })}
+                  rows={2} className="text-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {formData.ppp_contract_type === 'om' && (
+            <div>
+              <label className="text-xs text-blue-600">Contract Period (years)</label>
+              <Input
+                type="number"
+                value={formData.ppp_contract_details?.contract_period_years ?? ''}
+                onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), contract_period_years: e.target.value ? Number(e.target.value) : null })}
+                className="h-8 text-sm w-40"
+              />
+            </div>
+          )}
+
+          {formData.ppp_contract_type === 'availability_payment' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="md:col-span-2">
+                <label className="text-xs text-blue-600">Service Level KPIs</label>
+                <Textarea
+                  value={formData.ppp_contract_details?.service_level_kpis || ''}
+                  onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), service_level_kpis: e.target.value })}
+                  rows={2} className="text-sm" placeholder="Define key performance indicators..."
+                />
+              </div>
+              <div>
+                <label className="text-xs text-blue-600">Payment Schedule</label>
+                <Select
+                  value={formData.ppp_contract_details?.payment_schedule_type || ''}
+                  onValueChange={v => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), payment_schedule_type: v })}
+                >
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                    <SelectItem value="annual">Annual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-xs text-blue-600">Performance Deduction Terms</label>
+                <Textarea
+                  value={formData.ppp_contract_details?.performance_deduction_terms || ''}
+                  onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), performance_deduction_terms: e.target.value })}
+                  rows={2} className="text-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {formData.ppp_contract_type === 'other' && (
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="text-xs text-blue-600">Custom Type Description</label>
+                <Input
+                  value={formData.ppp_contract_details?.custom_type_description || ''}
+                  onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), custom_type_description: e.target.value })}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-blue-600">Custom Terms</label>
+                <Textarea
+                  value={formData.ppp_contract_details?.custom_terms || ''}
+                  onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), custom_terms: e.target.value })}
+                  rows={2} className="text-sm"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Equity Ratio */}
+      <div>
+        <Label>Equity Ratio (%) <HelpTooltip text="The private equity contribution as a percentage of total project cost. Per Notification 2/2018: >=30% for projects <=50M USD, >=20% for projects >50M USD." /></Label>
+        <Input
+          type="number"
+          min={0}
+          max={100}
+          step={0.1}
+          value={formData.equity_ratio ?? ''}
+          onChange={e => updateField('equity_ratio', e.target.value ? parseFloat(e.target.value) : null)}
+          placeholder="e.g. 25"
+          className="w-40"
+        />
+      </div>
+
+      {/* Equity ratio compliance warning */}
+      {equityResult && !equityResult.passed && (
+        <div className={cn(
+          "flex items-start gap-2 p-3 rounded-lg border text-sm",
+          equityResult.enforcement === 'enforce'
+            ? "bg-red-50 border-red-200 text-red-800"
+            : "bg-amber-50 border-amber-200 text-amber-800"
+        )}>
+          {equityResult.enforcement === 'enforce' ? (
+            <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" />
+          ) : (
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          )}
+          <span>{equityResult.message}</span>
+        </div>
+      )}
 
       {/* Land Parcel Selection */}
       <div>

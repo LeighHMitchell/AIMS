@@ -102,6 +102,69 @@ export const PATHWAY_LABELS: Record<string, string> = {
   domestic_budget: 'Domestic Budget',
 };
 
+/** PPP Contract Type labels */
+export const PPP_CONTRACT_TYPE_LABELS: Record<string, string> = {
+  availability_payment: 'Availability Payment',
+  boo: 'Build–Own–Operate (BOO)',
+  bot: 'Build–Operate–Transfer (BOT)',
+  btl: 'Build–Transfer–Lease (BTL)',
+  bto: 'Build–Transfer–Operate (BTO)',
+  om: 'Operations & Maintenance (O&M)',
+  other: 'Other',
+};
+
+/** SEE Transfer Status labels */
+export const SEE_STATUS_LABELS: Record<string, string> = {
+  draft: 'Draft',
+  assessment: 'Assessment',
+  valuation: 'Valuation',
+  restructuring: 'Restructuring',
+  tender: 'Tender',
+  transferred: 'Transferred',
+  cancelled: 'Cancelled',
+};
+
+/** SEE Transfer Mode labels */
+export const SEE_TRANSFER_MODE_LABELS: Record<string, string> = {
+  public_offering: 'Public Offering',
+  auction: 'Auction',
+  competitive_bid: 'Competitive Bid',
+  swiss_challenge: 'Swiss Challenge',
+  asset_sale: 'Asset Sale',
+  management_buyout: 'Management Buyout',
+  lease_concession: 'Lease/Concession',
+  bot_boo: 'BOT/BOO',
+  other: 'Other',
+};
+
+/** Monitoring report status labels */
+export const MONITORING_STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending',
+  submitted: 'Submitted',
+  under_review: 'Under Review',
+  reviewed: 'Reviewed',
+  overdue: 'Overdue',
+};
+
+/** Compliance status labels */
+export const COMPLIANCE_STATUS_LABELS: Record<string, string> = {
+  compliant: 'Compliant',
+  partially_compliant: 'Partially Compliant',
+  non_compliant: 'Non-Compliant',
+  not_assessed: 'Not Assessed',
+};
+
+/** Proposal status labels */
+export const PROPOSAL_STATUS_LABELS: Record<string, string> = {
+  received: 'Received',
+  under_review: 'Under Review',
+  rfp_published: 'RFP Published',
+  counter_proposals_open: 'Counter Proposals Open',
+  evaluation: 'Evaluation',
+  awarded: 'Awarded',
+  rejected: 'Rejected',
+};
+
 /** Pathway → color mapping */
 export const PATHWAY_COLORS: Record<string, string> = {
   oda: 'text-blue-600',

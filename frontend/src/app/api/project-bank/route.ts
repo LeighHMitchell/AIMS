@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     'contact_officer', 'contact_email', 'contact_phone',
     'project_type', 'sub_sector', 'townships',
     'estimated_start_date', 'estimated_duration_months',
-    'objectives', 'target_beneficiaries',
+    'objectives', 'target_beneficiaries', 'implementing_agency',
   ];
   intakeFields.forEach(field => {
     if (body[field] !== undefined) {

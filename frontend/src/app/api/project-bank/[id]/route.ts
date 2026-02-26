@@ -87,6 +87,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     'firr_calculation_data', 'eirr_calculation_data', 'eirr_shadow_prices',
     'vgf_calculation_data', 'vgf_status',
     'dap_compliant', 'dap_notes', 'budget_allocation_status', 'budget_amount',
+    'ppp_contract_type', 'ppp_contract_details', 'implementing_agency', 'equity_ratio',
   ];
 
   allowedFields.forEach(field => {

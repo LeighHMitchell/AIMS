@@ -30,6 +30,8 @@ const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   vgf_calculation: 'VGF Calculation',
   risk_allocation_matrix: 'Risk Allocation Matrix',
   funding_request: 'Funding Request',
+  cabinet_approval: 'Cabinet Approval',
+  monitoring_report: 'Monitoring Report',
   other: 'Other',
 };
 

@@ -98,6 +98,7 @@ export function SidebarNav({
     "OPERATIONS": true,
     "SUPPORT": true,
     "PROJECT BANK": true,
+    "SEE TRANSFERS": true,
     "LAND BANK": true,
   })
   const [showQuickAddModal, setShowQuickAddModal] = useState(false)
@@ -253,6 +254,17 @@ export function SidebarNav({
         { name: "All Projects", href: "/project-bank/projects", show: true },
         { name: "Funding Gaps", href: "/project-bank/gaps", show: true },
         { name: "PPP Pipeline", href: "/project-bank/ppp", show: true },
+        { name: "Monitoring", href: "/project-bank/monitoring", show: true },
+      ]
+    },
+    {
+      label: "SEE TRANSFERS",
+      icon: TrendingDown,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "All Transfers", href: "/project-bank/transfers", show: true },
+        { name: "New Transfer", href: "/project-bank/transfers/new", show: canCreateProjects },
       ]
     },
     {
@@ -294,11 +306,27 @@ export function SidebarNav({
     },
   ]
 
+  // ─── Home sidebar groups (module chooser page) ───
+  const homeNavGroups = [
+    {
+      label: "SUPPORT",
+      icon: HelpCircle,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "Build History", href: "/build-history", show: true },
+        { name: "FAQ", href: "/faq", show: true },
+      ]
+    },
+  ]
+
   // Choose which nav groups to show based on current module
   const navGroups = currentModule === 'project-bank'
     ? projectBankNavGroups
     : currentModule === 'land-bank'
     ? landBankNavGroups
+    : currentModule === 'home'
+    ? homeNavGroups
     : aimsNavGroups
 
   const toggleGroup = (label: string) => {

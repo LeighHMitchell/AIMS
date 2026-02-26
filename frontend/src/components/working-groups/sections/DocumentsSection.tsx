@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Upload, FileText, Download, Trash2 } from 'lucide-react'
+import { Upload, FileText, Download, Trash2, Pencil } from 'lucide-react'
 import { apiFetch } from '@/lib/api-fetch'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -72,6 +72,13 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
   const [docToDelete, setDocToDelete] = useState<Document | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Edit form
+  const [docToEdit, setDocToEdit] = useState<Document | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editType, setEditType] = useState('other')
+  const [editSaving, setEditSaving] = useState(false)
 
   // Upload form
   const [uploadTitle, setUploadTitle] = useState('')
@@ -152,6 +159,40 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
     }
   }
 
+  const openEditModal = (doc: Document) => {
+    setDocToEdit(doc)
+    setEditTitle(doc.title)
+    setEditDescription(doc.description || '')
+    setEditType(doc.document_type)
+  }
+
+  const handleEditDocument = async () => {
+    if (!docToEdit || !editTitle.trim()) {
+      toast.error('Title is required')
+      return
+    }
+    setEditSaving(true)
+    try {
+      const res = await apiFetch(`/api/working-groups/${workingGroupId}/documents`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          document_id: docToEdit.id,
+          title: editTitle.trim(),
+          description: editDescription.trim() || null,
+          document_type: editType,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to update document')
+      toast.success('Document updated')
+      setDocToEdit(null)
+      fetchDocuments()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update document')
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
   if (loading) {
     return <div className="animate-pulse space-y-4"><div className="h-20 bg-gray-100 rounded" /><div className="h-20 bg-gray-100 rounded" /></div>
   }
@@ -210,6 +251,14 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
                     onClick={() => window.open(doc.file_url, '_blank')}
                   >
                     <Download className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEditModal(doc)}
+                    title="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -278,6 +327,55 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
             <Button variant="outline" onClick={() => setShowUploadDialog(false)}>Cancel</Button>
             <Button onClick={handleUpload} disabled={uploading || !selectedFile || !uploadTitle.trim()}>
               {uploading ? 'Uploading...' : 'Upload'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Document Dialog */}
+      <Dialog open={!!docToEdit} onOpenChange={(v) => { if (!v) setDocToEdit(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Document</DialogTitle>
+            <DialogDescription>Update document details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Document title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Brief description"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Document Type</Label>
+              <Select value={editType} onValueChange={setEditType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOC_TYPE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDocToEdit(null)}>Cancel</Button>
+            <Button onClick={handleEditDocument} disabled={editSaving || !editTitle.trim()}>
+              {editSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>

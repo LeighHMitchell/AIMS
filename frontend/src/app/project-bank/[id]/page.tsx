@@ -21,12 +21,17 @@ import {
   formatCurrency, STATUS_BADGE_VARIANT, STATUS_LABELS, STATUS_ORDER,
   PATHWAY_LABELS, PATHWAY_COLORS, getNextStatus,
   COMMITMENT_STATUS_LABELS, INSTRUMENT_TYPE_LABELS, DONOR_TYPE_LABELS,
+  PPP_CONTRACT_TYPE_LABELS,
 } from "@/lib/project-bank-utils"
 import type { ProjectBankProject, ProjectBankDonor, ProjectAppraisal, DonorType, InstrumentType, CommitmentStatus } from "@/types/project-bank"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatusTimeline } from "@/components/project-bank/StatusTimeline"
+import { SuggestedParcelsCard } from "@/components/project-bank/SuggestedParcelsCard"
 import { FundingGapBar } from "@/components/project-bank/FundingGapBar"
 import { EIRRCalculatorModal } from "@/components/project-bank/EIRRCalculatorModal"
 import { AddDonorModal } from "@/components/project-bank/AddDonorModal"
+import { SwissChallengeTab } from "@/components/project-bank/SwissChallengeTab"
+import { MonitoringTab } from "@/components/project-bank/MonitoringTab"
 
 export default function ProjectDetailPage() {
   const router = useRouter()
@@ -217,6 +222,25 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
+        {/* Cabinet Approval Warning Banner */}
+        {(() => {
+          const costUSD = project.currency === 'USD' ? project.estimated_cost :
+            project.currency === 'MMK' ? (project.estimated_cost || 0) / 2100 : project.estimated_cost;
+          const hasCabinetDoc = project.documents?.some((d: any) => d.document_type === 'cabinet_approval');
+          if (costUSD && costUSD > 100_000_000 && !hasCabinetDoc && project.status !== 'approved' && project.status !== 'completed' && project.status !== 'rejected') {
+            return (
+              <div className="flex items-start gap-2 p-4 rounded-lg border bg-amber-50 border-amber-200 text-amber-800">
+                <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" />
+                <div>
+                  <div className="text-sm font-medium">Cabinet Approval Required</div>
+                  <div className="text-sm">This project exceeds $100M and requires a Cabinet Approval document before it can be advanced to approved status.</div>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
         {/* ============================================================ */}
         {/*  TWO-COLUMN GRID                                             */}
         {/* ============================================================ */}
@@ -228,6 +252,20 @@ export default function ProjectDetailPage() {
             {/* 1. Status Timeline */}
             <StatusTimeline currentStatus={project.status} project={project} />
 
+            {/* Tabbed content: Overview, Swiss Challenge, Monitoring */}
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="p-1 h-auto bg-background gap-1 border mb-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                {project.origin === 'unsolicited' && (
+                  <TabsTrigger value="swiss-challenge">Swiss Challenge</TabsTrigger>
+                )}
+                {(['approved', 'implementation', 'completed'] as string[]).includes(project.status) && (
+                  <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+                )}
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-6">
+
             {/* 2. Project Details */}
             <Card>
               <CardHeader><CardTitle className="text-base">Project Details</CardTitle></CardHeader>
@@ -235,9 +273,11 @@ export default function ProjectDetailPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     ["Ministry", project.nominating_ministry],
+                    ["IGA", (project as any).implementing_agency || project.nominating_ministry],
                     ["Sector", project.sector],
                     ["Region", project.region || "—"],
                     ["Origin", project.origin],
+                    ...((project as any).ppp_contract_type ? [["PPP Type", PPP_CONTRACT_TYPE_LABELS[(project as any).ppp_contract_type] || (project as any).ppp_contract_type]] : []),
                   ].map(([label, value], i) => (
                     <div key={i}>
                       <div className="text-xs text-muted-foreground mb-0.5">{label}</div>
@@ -372,6 +412,20 @@ export default function ProjectDetailPage() {
                 )}
               </CardContent>
             </Card>
+              </TabsContent>
+
+              {project.origin === 'unsolicited' && (
+                <TabsContent value="swiss-challenge">
+                  <SwissChallengeTab projectId={id} />
+                </TabsContent>
+              )}
+
+              {(['approved', 'implementation', 'completed'] as string[]).includes(project.status) && (
+                <TabsContent value="monitoring">
+                  <MonitoringTab projectId={id} />
+                </TabsContent>
+              )}
+            </Tabs>
           </div>
 
           {/* ---------------------------------------------------------- */}
@@ -490,6 +544,9 @@ export default function ProjectDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* 5. Suggested Parcels */}
+            <SuggestedParcelsCard projectId={id} />
           </div>
         </div>
       </div>

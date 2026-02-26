@@ -19,10 +19,14 @@ import { useUser } from "@/hooks/useUser"
 import {
   PARCEL_STATUS_LABELS,
   STATES_REGIONS,
+  TITLE_STATUS_OPTIONS,
+  TITLE_STATUS_LABELS,
   formatHectares,
 } from "@/lib/land-bank-utils"
+import { TitleStatusBadge } from "@/components/land-bank/TitleStatusBadge"
 import { ParcelStatusBadge } from "@/components/land-bank/ParcelStatusBadge"
 import { ParcelMapView } from "@/components/land-bank/ParcelMapView"
+import { ParcelActionMenu } from "@/components/land-bank/ParcelActionMenu"
 import type { LandParcel, ParcelStatus } from "@/types/land-bank"
 
 export default function ParcelsListPage() {
@@ -36,6 +40,9 @@ export default function ParcelsListPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [regionFilter, setRegionFilter] = useState("all")
   const [classificationFilter, setClassificationFilter] = useState("all")
+  const [ministryFilter, setMinistryFilter] = useState("all")
+  const [assetTypeFilter, setAssetTypeFilter] = useState("all")
+  const [titleStatusFilter, setTitleStatusFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [minSize, setMinSize] = useState("")
   const [maxSize, setMaxSize] = useState("")
@@ -46,20 +53,31 @@ export default function ParcelsListPage() {
   const [sortField, setSortField] = useState("created_at")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
 
-  // Classifications
+  // Lookups
   const [classifications, setClassifications] = useState<string[]>([])
+  const [assetTypes, setAssetTypes] = useState<string[]>([])
+  const [ministries, setMinistries] = useState<{ id: string; name: string; code: string }[]>([])
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [parcelsRes, classRes] = await Promise.all([
+        const [parcelsRes, classRes, assetRes, ministryRes] = await Promise.all([
           apiFetch("/api/land-bank"),
           apiFetch("/api/land-bank/classifications"),
+          apiFetch("/api/land-bank/asset-types"),
+          apiFetch("/api/line-ministries"),
         ])
         if (parcelsRes.ok) setParcels(await parcelsRes.json())
         if (classRes.ok) {
           const classes = await classRes.json()
           setClassifications(classes.map((c: any) => c.name))
+        }
+        if (assetRes.ok) {
+          const types = await assetRes.json()
+          setAssetTypes(types.map((a: any) => a.name))
+        }
+        if (ministryRes.ok) {
+          setMinistries(await ministryRes.json())
         }
       } catch {
         // silent
@@ -86,6 +104,9 @@ export default function ParcelsListPage() {
     if (statusFilter !== "all") list = list.filter(p => p.status === statusFilter)
     if (regionFilter !== "all") list = list.filter(p => p.state_region === regionFilter)
     if (classificationFilter !== "all") list = list.filter(p => p.classification === classificationFilter)
+    if (ministryFilter !== "all") list = list.filter(p => p.controlling_ministry_id === ministryFilter)
+    if (assetTypeFilter !== "all") list = list.filter(p => p.asset_type === assetTypeFilter)
+    if (titleStatusFilter !== "all") list = list.filter(p => p.title_status === titleStatusFilter)
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       list = list.filter(p =>
@@ -109,7 +130,7 @@ export default function ParcelsListPage() {
     })
 
     return list
-  }, [parcels, statusFilter, regionFilter, classificationFilter, searchQuery, minSize, maxSize, sortField, sortDir])
+  }, [parcels, statusFilter, regionFilter, classificationFilter, ministryFilter, assetTypeFilter, titleStatusFilter, searchQuery, minSize, maxSize, sortField, sortDir])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
   const paginated = filtered.slice((page - 1) * perPage, page * perPage)
@@ -249,6 +270,51 @@ export default function ParcelsListPage() {
           </div>
 
           <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Ministry</Label>
+            <Select value={ministryFilter} onValueChange={v => { setMinistryFilter(v); setPage(1) }}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ministries</SelectItem>
+                {ministries.map(m => (
+                  <SelectItem key={m.id} value={m.id}>{m.code}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Asset Type</Label>
+            <Select value={assetTypeFilter} onValueChange={v => { setAssetTypeFilter(v); setPage(1) }}>
+              <SelectTrigger className="w-[160px] h-9">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Assets</SelectItem>
+                {assetTypes.map(a => (
+                  <SelectItem key={a} value={a}>{a}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Title Status</Label>
+            <Select value={titleStatusFilter} onValueChange={v => { setTitleStatusFilter(v); setPage(1) }}>
+              <SelectTrigger className="w-[170px] h-9">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                {TITLE_STATUS_OPTIONS.map(s => (
+                  <SelectItem key={s} value={s}>{TITLE_STATUS_LABELS[s]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1">
             <Label className="text-xs text-muted-foreground">Size (ha)</Label>
             <div className="flex items-center gap-1">
               <Input
@@ -290,15 +356,18 @@ export default function ParcelsListPage() {
                       <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Township</th>
                       <SortHeader field="size_hectares">Size</SortHeader>
                       <SortHeader field="classification">Classification</SortHeader>
+                      <SortHeader field="asset_type">Asset Type</SortHeader>
+                      <SortHeader field="title_status">Title</SortHeader>
                       <SortHeader field="status">Status</SortHeader>
                       <SortHeader field="created_at">Created</SortHeader>
+                      <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground w-[60px]">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border bg-background">
                     {loading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <tr key={i}>
-                          {Array.from({ length: 8 }).map((_, j) => (
+                          {Array.from({ length: 11 }).map((_, j) => (
                             <td key={j} className="px-4 py-2">
                               <div className="h-4 bg-muted animate-pulse rounded w-16" />
                             </td>
@@ -307,7 +376,7 @@ export default function ParcelsListPage() {
                       ))
                     ) : paginated.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                        <td colSpan={11} className="px-4 py-8 text-center text-sm text-muted-foreground">
                           No parcels found
                         </td>
                       </tr>
@@ -324,11 +393,24 @@ export default function ParcelsListPage() {
                           <td className="px-4 py-2.5 text-muted-foreground">{parcel.township || "—"}</td>
                           <td className="px-4 py-2.5 tabular-nums">{formatHectares(parcel.size_hectares)}</td>
                           <td className="px-4 py-2.5">{parcel.classification || "—"}</td>
+                          <td className="px-4 py-2.5">{parcel.asset_type || "—"}</td>
+                          <td className="px-4 py-2.5">
+                            <TitleStatusBadge status={parcel.title_status} />
+                          </td>
                           <td className="px-4 py-2.5">
                             <ParcelStatusBadge status={parcel.status} />
                           </td>
                           <td className="px-4 py-2.5 text-muted-foreground text-xs">
                             {new Date(parcel.created_at).toLocaleDateString()}
+                          </td>
+                          <td
+                            className="px-4 py-2.5 text-right"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <ParcelActionMenu
+                              parcel={parcel}
+                              canEdit={permissions.canManageParcels}
+                            />
                           </td>
                         </tr>
                       ))

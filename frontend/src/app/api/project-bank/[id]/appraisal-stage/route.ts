@@ -9,7 +9,7 @@ const STAGE_FIELDS: Record<string, string[]> = {
     'description', 'contact_officer', 'contact_email', 'contact_phone',
     'project_type', 'sub_sector', 'townships', 'estimated_start_date',
     'estimated_duration_months', 'objectives', 'target_beneficiaries',
-    'sdg_goals', 'ndp_goal_id', 'ndp_aligned',
+    'sdg_goals', 'ndp_goal_id', 'ndp_aligned', 'implementing_agency',
   ],
   preliminary_fs: [
     'construction_period_years', 'operational_period_years', 'project_life_years',
@@ -35,7 +35,7 @@ const STAGE_FIELDS: Record<string, string[]> = {
   vgf_assessment: [
     'vgf_amount', 'vgf_calculated', 'vgf_calculation_data', 'vgf_status',
     'dap_compliant', 'dap_notes', 'budget_allocation_status', 'budget_amount',
-    'land_parcel_id',
+    'land_parcel_id', 'ppp_contract_type', 'ppp_contract_details', 'equity_ratio',
   ],
   dp_consultation: [
     'routing_outcome', 'status', 'pathway',

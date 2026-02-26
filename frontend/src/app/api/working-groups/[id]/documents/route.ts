@@ -101,6 +101,43 @@ export async function POST(
   }
 }
 
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+  if (!supabase) return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const { document_id, title, description, document_type } = body;
+
+    if (!document_id || !title?.trim()) {
+      return NextResponse.json({ error: 'document_id and title are required' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('working_group_documents')
+      .update({
+        title: title.trim(),
+        description: description?.trim() || null,
+        document_type: document_type || 'other',
+      })
+      .eq('id', document_id)
+      .eq('working_group_id', id)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!data) return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    return NextResponse.json(data);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

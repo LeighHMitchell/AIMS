@@ -1,4 +1,4 @@
-import type { ParcelStatus, AllocationRequestStatus } from '@/types/land-bank';
+import type { ParcelStatus, AllocationRequestStatus, TitleStatus, LandDocumentType } from '@/types/land-bank';
 
 /** Status → display label */
 export const PARCEL_STATUS_LABELS: Record<ParcelStatus, string> = {
@@ -18,10 +18,10 @@ export const PARCEL_STATUS_BADGE_VARIANT: Record<ParcelStatus, string> = {
 
 /** Status → map fill color */
 export const PARCEL_STATUS_COLORS: Record<ParcelStatus, string> = {
-  available: '#22c55e',
-  reserved: '#f59e0b',
-  allocated: '#3b82f6',
-  disputed: '#ef4444',
+  available: '#7b95a7',   // Cool Steel
+  reserved: '#cfd0d5',    // Pale Slate
+  allocated: '#4c5568',   // Blue Slate
+  disputed: '#dc2625',    // Primary Scarlet
 };
 
 /** Allocation request status labels */
@@ -99,6 +99,43 @@ export function generateParcelCodeSuggestion(region: string): string {
   return `${prefix}-`;
 }
 
+/** Title status → display label */
+export const TITLE_STATUS_LABELS: Record<TitleStatus, string> = {
+  'Clear': 'Clear',
+  'Pending Verification': 'Pending Verification',
+  'Under Review': 'Under Review',
+  'Title Disputed': 'Title Disputed',
+  'Unregistered': 'Unregistered',
+};
+
+/** Title status → Badge variant mapping */
+export const TITLE_STATUS_BADGE_VARIANT: Record<TitleStatus, string> = {
+  'Clear': 'success',
+  'Pending Verification': 'amber',
+  'Under Review': 'blue',
+  'Title Disputed': 'destructive',
+  'Unregistered': 'gray',
+};
+
+/** All possible title status values */
+export const TITLE_STATUS_OPTIONS: TitleStatus[] = [
+  'Clear',
+  'Pending Verification',
+  'Under Review',
+  'Title Disputed',
+  'Unregistered',
+];
+
+/** Land document type → display label */
+export const LAND_DOCUMENT_TYPE_LABELS: Record<LandDocumentType, string> = {
+  title_deed: 'Title Deed',
+  survey_report: 'Survey Report',
+  environmental_assessment: 'Environmental Assessment',
+  valuation_report: 'Valuation Report',
+  legal_opinion: 'Legal Opinion',
+  other: 'Other',
+};
+
 /** History action → human-readable label */
 export const HISTORY_ACTION_LABELS: Record<string, string> = {
   created: 'Parcel registered',
@@ -109,4 +146,6 @@ export const HISTORY_ACTION_LABELS: Record<string, string> = {
   deallocated: 'Parcel de-allocated',
   status_changed: 'Status changed',
   disputed: 'Dispute flagged',
+  project_linked: 'Project linked',
+  document_uploaded: 'Document uploaded',
 };

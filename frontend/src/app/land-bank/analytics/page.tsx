@@ -116,11 +116,10 @@ export default function LandBankAnalyticsPage() {
       fill: PARCEL_STATUS_COLORS[status],
     }))
 
-  const regionData = stats.byRegion.map((r, i) => ({
+  const regionData = stats.byRegion.map((r) => ({
     name: r.region,
     count: r.count,
     hectares: r.hectares,
-    fill: CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length],
   }))
 
   const classData = stats.byClassification.map((c, i) => ({
@@ -130,14 +129,33 @@ export default function LandBankAnalyticsPage() {
     fill: CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length],
   }))
 
+  const assetTypeData = (stats.byAssetType || []).map((a, i) => ({
+    name: a.asset_type,
+    count: a.count,
+    hectares: a.hectares,
+    fill: CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length],
+  }))
+
+  const titleStatusData = (stats.byTitleStatus || []).map((t, i) => ({
+    name: t.title_status,
+    count: t.count,
+    fill: CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length],
+  }))
+
+  const ministryData = (stats.byMinistry || []).slice(0, 10).map((m, i) => ({
+    name: m.ministry.length > 30 ? m.ministry.slice(0, 27) + "..." : m.ministry,
+    count: m.count,
+    hectares: m.hectares,
+    fill: CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length],
+  }))
+
   // Hectares by region
   const hectaresRegionData = stats.byRegion
     .filter(r => r.hectares > 0)
     .sort((a, b) => b.hectares - a.hectares)
-    .map((r, i) => ({
+    .map((r) => ({
       name: r.region,
       hectares: Math.round(r.hectares),
-      fill: CHART_COLOR_PALETTE[i % CHART_COLOR_PALETTE.length],
     }))
 
   return (
@@ -212,11 +230,11 @@ export default function LandBankAnalyticsPage() {
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={classData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-                  <XAxis type="number" stroke="#64748B" fontSize={11} tickLine={false} />
+                  <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} />
                   <YAxis
                     type="category"
                     dataKey="name"
-                    stroke="#64748B"
+                    stroke={CHART_STRUCTURE_COLORS.axis}
                     fontSize={11}
                     width={130}
                     tick={{ cursor: "pointer" }}
@@ -245,20 +263,17 @@ export default function LandBankAnalyticsPage() {
               <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={regionData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} vertical={false} />
-                  <XAxis dataKey="name" stroke="#64748B" fontSize={10} tickLine={false} angle={-40} textAnchor="end" height={70} />
-                  <YAxis stroke="#64748B" fontSize={11} tickLine={false} />
+                  <XAxis dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={10} tickLine={false} angle={-40} textAnchor="end" height={70} />
+                  <YAxis stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
                   <Bar
                     dataKey="count"
+                    fill={CHART_COLOR_PALETTE[1]}
                     radius={[2, 2, 0, 0]}
                     barSize={24}
                     onClick={(data: any) => handleDrillDown("region", data.name)}
                     cursor="pointer"
-                  >
-                    {regionData.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.fill} />
-                    ))}
-                  </Bar>
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -275,12 +290,12 @@ export default function LandBankAnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
                   <XAxis
                     type="number"
-                    stroke="#64748B"
+                    stroke={CHART_STRUCTURE_COLORS.axis}
                     fontSize={11}
                     tickLine={false}
                     tickFormatter={(v: number) => formatHectares(v)}
                   />
-                  <YAxis type="category" dataKey="name" stroke="#64748B" fontSize={11} width={90} />
+                  <YAxis type="category" dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} width={90} />
                   <Tooltip
                     content={({ active, payload }: any) => {
                       if (active && payload?.length) {
@@ -295,13 +310,102 @@ export default function LandBankAnalyticsPage() {
                     }}
                     cursor={{ fill: 'rgba(0,0,0,0.04)' }}
                   />
-                  <Bar dataKey="hectares" radius={[0, 2, 2, 0]} barSize={18}>
-                    {hectaresRegionData.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.fill} />
-                    ))}
-                  </Bar>
+                  <Bar dataKey="hectares" fill={CHART_COLOR_PALETTE[2]} radius={[0, 2, 2, 0]} barSize={18} />
                 </BarChart>
               </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* New charts: Asset Type, Title Status, Ministry */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          {/* By Asset Type */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">By Asset Type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {assetTypeData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={assetTypeData}
+                      dataKey="count"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      fontSize={10}
+                    >
+                      {assetTypeData.map((entry, idx) => (
+                        <Cell key={idx} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="py-8 text-center text-sm text-muted-foreground">No asset type data</div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* By Title Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">By Title Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {titleStatusData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={titleStatusData}
+                      dataKey="count"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      fontSize={10}
+                    >
+                      {titleStatusData.map((entry, idx) => (
+                        <Cell key={idx} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="py-8 text-center text-sm text-muted-foreground">No title status data</div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* By Ministry */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">By Ministry</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {ministryData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={ministryData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
+                    <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} />
+                    <YAxis type="category" dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={9} width={130} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                    <Bar dataKey="count" radius={[0, 2, 2, 0]} barSize={16}>
+                      {ministryData.map((entry, idx) => (
+                        <Cell key={idx} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="py-8 text-center text-sm text-muted-foreground">No ministry data</div>
+              )}
             </CardContent>
           </Card>
         </div>

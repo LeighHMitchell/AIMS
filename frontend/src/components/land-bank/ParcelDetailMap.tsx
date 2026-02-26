@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { Map, useMap } from "@/components/ui/map"
+import { useMap } from "@/components/ui/map"
 import { PARCEL_STATUS_COLORS } from "@/lib/land-bank-utils"
+import { LandBankMapShell } from "./LandBankMapShell"
 import type { LandParcel, ParcelStatus } from "@/types/land-bank"
 
 interface ParcelDetailMapProps {
@@ -55,7 +56,6 @@ function ParcelLayer({ parcel }: ParcelDetailMapProps) {
       })
     }
 
-    // Fit to parcel bounds
     const coords = extractCoords(parcel.geometry!)
     if (coords.length > 0) {
       const bounds = coords.reduce(
@@ -87,14 +87,9 @@ export function ParcelDetailMap({ parcel }: ParcelDetailMapProps) {
   }
 
   return (
-    <div className="w-full h-[400px] rounded-lg overflow-hidden border">
-      <Map
-        center={[96.5, 19.8]}
-        zoom={6}
-      >
-        <ParcelLayer parcel={parcel} />
-      </Map>
-    </div>
+    <LandBankMapShell height="h-[400px]">
+      <ParcelLayer parcel={parcel} />
+    </LandBankMapShell>
   )
 }
 

@@ -26,6 +26,47 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const nextStatus = STATUS_ORDER[currentIdx + 1];
+
+  // Cabinet approval enforcement: check if advancing to 'approved' and cost exceeds threshold
+  if (nextStatus === 'approved') {
+    // Fetch full project with cost + documents
+    const { data: fullProject } = await supabase!
+      .from('project_bank_projects')
+      .select('estimated_cost, currency')
+      .eq('id', id)
+      .single();
+
+    // Fetch cabinet approval threshold setting
+    const { data: cabinetSetting } = await supabase!
+      .from('project_bank_settings')
+      .select('value, enforcement')
+      .eq('key', 'cabinet_approval_threshold_usd')
+      .single();
+
+    if (cabinetSetting && cabinetSetting.enforcement === 'enforce' && fullProject) {
+      const thresholdUSD = cabinetSetting.value?.amount || 100_000_000;
+      const costUSD = fullProject.currency === 'USD' ? fullProject.estimated_cost :
+        fullProject.currency === 'MMK' ? (fullProject.estimated_cost || 0) / 2100 :
+        fullProject.estimated_cost;
+
+      if (costUSD && costUSD > thresholdUSD) {
+        // Check for cabinet_approval document
+        const { data: cabinetDocs } = await supabase!
+          .from('project_documents')
+          .select('id')
+          .eq('project_id', id)
+          .eq('document_type', 'cabinet_approval')
+          .limit(1);
+
+        if (!cabinetDocs || cabinetDocs.length === 0) {
+          return NextResponse.json({
+            error: `Projects exceeding $${(thresholdUSD / 1e6).toFixed(0)}M require a Cabinet Approval document before advancing to approved status. Please upload a cabinet approval document first.`
+          }, { status: 400 });
+        }
+      }
+    }
+  }
+
   const timestampField = `${nextStatus === 'screening' ? 'screened' : nextStatus === 'appraisal' ? 'appraised' : nextStatus}_at`;
 
   const updateData: Record<string, any> = {

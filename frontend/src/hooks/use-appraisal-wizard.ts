@@ -109,6 +109,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
           'vgf_amount', 'vgf_calculated', 'vgf_calculation_data', 'vgf_status',
           'dap_compliant', 'dap_notes', 'budget_allocation_status', 'budget_amount',
           'land_parcel_id', 'routing_outcome', 'status', 'pathway',
+          'ppp_contract_type', 'ppp_contract_details', 'implementing_agency', 'equity_ratio',
         ];
         fields.forEach(f => {
           if ((project as any)[f] !== undefined) {

@@ -2491,7 +2491,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       type="text"
                       value={customDate.date ? format(new Date(customDate.date), 'dd MMM yyyy') : ''}
                       readOnly
-                      className="bg-muted cursor-pointer pr-14"
+                      className="cursor-pointer pr-14"
                       placeholder="No date set"
                       onClick={() => {
                         setEditingDateIndex(index);
@@ -2519,7 +2519,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         className="p-1 hover:bg-muted rounded"
                         title="Edit date"
                       >
-                        <Pencil className="w-3.5 h-3.5 hover: text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
+                        <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
                       </button>
                       <button
                         type="button"
@@ -2812,11 +2812,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           // Callbacks
           onBudgetsChange={setBudgets}
           onDisbursementsChange={handlePlannedDisbursementsChange}
-          onFssChange={setForwardSpendCount}
-          onResultsChange={handleResultsChange}
-          onCapitalSpendChange={(percentage) => setCapitalSpendPercentage(percentage)}
-          onFinancingTermsChange={(hasData) => setFinancingTermsCount(hasData ? 1 : 0)}
-          onConditionsChange={(conditions) => setConditionsCount(conditions.length)}
         />
 
         <StrategicAlignmentGroup
@@ -2836,12 +2831,6 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           // SDG props
           sdgMappings={sdgMappings}
           onSdgMappingsChange={setSdgMappings}
-
-          // Budget Mapping props
-          general={general}
-          setGeneral={setGeneral}
-          onCountryBudgetItemsChange={setCountryBudgetItemsCount}
-          totalBudgetUSD={totalBudgetUSD}
 
           // Tags props
           tags={tags}
@@ -2876,6 +2865,35 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
           documents={documents}
           onDocumentsChange={setDocuments}
           documentsAutosave={documentsAutosave}
+        />
+
+        <AdvancedGroup
+          // Activity context
+          activityId={general.id}
+          userId={user?.id}
+          permissions={permissions}
+
+          // Scroll integration
+          onActiveSectionChange={onSectionChange}
+          initialSection={section}
+          activityCreated={!!general.id}
+
+          // Lazy loading - only enable preloading when this group has been visited
+          enablePreloading={visitedGroups.has('advanced')}
+
+          // Callbacks
+          onLinkedActivitiesCountChange={setLinkedActivitiesCount}
+          onResultsChange={handleResultsChange}
+          onFssChange={setForwardSpendCount}
+          onCapitalSpendChange={(percentage) => setCapitalSpendPercentage(percentage)}
+          onFinancingTermsChange={(hasData) => setFinancingTermsCount(hasData ? 1 : 0)}
+          onConditionsChange={(conditions) => setConditionsCount(conditions.length)}
+
+          // Budget Mapping props
+          general={general}
+          setGeneral={setGeneral}
+          onCountryBudgetItemsChange={setCountryBudgetItemsCount}
+          totalBudgetUSD={totalBudgetUSD}
         />
 
       </>
@@ -4878,12 +4896,14 @@ function NewActivityPageContent() {
                                       isStakeholdersSection(value) ||
                                       isFundingDeliverySection(value) ||
                                       isStrategicAlignmentSection(value) ||
-                                      isSupportingInfoSection(value);
+                                      isSupportingInfoSection(value) ||
+                                      isAdvancedSection(value);
     const isCurrentInScrollableGroup = isActivityOverviewSection(activeSection) ||
                                         isStakeholdersSection(activeSection) ||
                                         isFundingDeliverySection(activeSection) ||
                                         isStrategicAlignmentSection(activeSection) ||
-                                        isSupportingInfoSection(activeSection);
+                                        isSupportingInfoSection(activeSection) ||
+                                        isAdvancedSection(activeSection);
 
     if (isValueInScrollableGroup && isCurrentInScrollableGroup) {
       console.log('[AIMS Performance] Scrolling to section:', value, 'from:', activeSection);
@@ -5517,6 +5537,7 @@ function NewActivityPageContent() {
                !isFundingDeliverySection(activeSection) &&
                !isStrategicAlignmentSection(activeSection) &&
                !isSupportingInfoSection(activeSection) &&
+               !isAdvancedSection(activeSection) &&
                activeSection !== 'iati' &&
                activeSection !== 'metadata' &&
                activeSection !== 'government' &&

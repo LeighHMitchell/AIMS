@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar, Activity, Target, AlertTriangle } from "lucide-react"
+import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, FileCode2, Calendar, Activity, Target, AlertTriangle, Scale } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
 import { FeedbackManagement } from "@/components/admin/FeedbackManagement"
@@ -24,6 +24,7 @@ import { UserActivityDashboard } from "@/components/admin/UserActivityDashboard"
 import { NationalPrioritiesManagement } from "@/components/admin/NationalPrioritiesManagement"
 import { CountryEmergenciesManagement } from "@/components/admin/CountryEmergenciesManagement"
 import { NationalDevelopmentGoals } from "@/components/admin/NationalDevelopmentGoals"
+import { ComplianceRulesManagement } from "@/components/admin/ComplianceRulesManagement"
 import { LoadingText } from "@/components/ui/loading-text"
 function AdminPageContent() {
   const { user, isLoading } = useUser()
@@ -33,7 +34,7 @@ function AdminPageContent() {
   const [activeSubTab, setActiveSubTab] = useState("classifications")
 
   // Valid tab values
-  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "ndp-goals"]
+  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "ndp-goals", "compliance-rules"]
   const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget", "national-priorities"]
 
   useEffect(() => {
@@ -175,6 +176,10 @@ function AdminPageContent() {
               <Target className="h-4 w-4" />
               NDP Goals
             </TabsTrigger>
+            <TabsTrigger value="compliance-rules" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <Scale className="h-4 w-4" />
+              Compliance Rules
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
@@ -266,6 +271,10 @@ function AdminPageContent() {
 
           <TabsContent value="ndp-goals" className="space-y-6">
             <NationalDevelopmentGoals />
+          </TabsContent>
+
+          <TabsContent value="compliance-rules" className="space-y-6">
+            <ComplianceRulesManagement />
           </TabsContent>
         </Tabs>
       </div>

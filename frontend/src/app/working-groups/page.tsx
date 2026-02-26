@@ -15,7 +15,24 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { PlusIcon, SearchIcon, NetworkIcon, Users, UserCheck, Calendar, LayoutGrid, Table as TableIcon, Pencil } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { PlusIcon, SearchIcon, NetworkIcon, Users, UserCheck, Calendar, LayoutGrid, Table as TableIcon, Pencil, MoreVertical, Eye, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useUserRole } from '@/hooks/useUserRole'
@@ -57,6 +74,24 @@ export default function WorkingGroupsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
+  const [wgToDelete, setWgToDelete] = useState<WorkingGroup | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDeleteWorkingGroup = async () => {
+    if (!wgToDelete) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/working-groups/${wgToDelete.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete working group')
+      toast.success('Working group deleted')
+      setWgToDelete(null)
+      fetchWorkingGroups()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete working group')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   useEffect(() => {
     fetchWorkingGroups()
@@ -295,19 +330,42 @@ export default function WorkingGroupsPage() {
                     </div>
                   </div>
 
-                  {/* Edit button for super users */}
+                  {/* Kebab menu for super users */}
                   {isSuperUser() && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        router.push(`/working-groups/${wg.id}/edit`)
-                      }}
+                    <div
+                      className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Pencil className="h-4 w-4 text-muted-foreground ring-1 ring-slate-300 rounded-sm" />
-                    </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full bg-background/80 hover:bg-background shadow-sm"
+                          >
+                            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => router.push(`/working-groups/${wg.id}`)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/working-groups/${wg.id}/edit`)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-600 focus:text-red-600"
+                            onClick={() => setWgToDelete(wg)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -383,6 +441,28 @@ export default function WorkingGroupsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!wgToDelete} onOpenChange={() => setWgToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Working Group</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{wgToDelete?.label}&quot;? This will permanently remove the working group and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteWorkingGroup}
+              disabled={deleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   )
 }

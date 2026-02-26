@@ -61,6 +61,27 @@ export async function GET(request: NextRequest) {
     }
     
     console.log('[API] Successfully fetched working groups:', data?.length || 0);
+
+    // Enrich with member counts from working_group_memberships
+    if (data && data.length > 0) {
+      const groupIds = data.map((wg: any) => wg.id);
+      const { data: memberships } = await supabase
+        .from('working_group_memberships')
+        .select('working_group_id')
+        .in('working_group_id', groupIds)
+        .eq('is_active', true);
+
+      if (memberships) {
+        const countMap: Record<string, number> = {};
+        memberships.forEach((m: any) => {
+          countMap[m.working_group_id] = (countMap[m.working_group_id] || 0) + 1;
+        });
+        data.forEach((wg: any) => {
+          wg.member_count = countMap[wg.id] || 0;
+        });
+      }
+    }
+
     return NextResponse.json(data || []);
   } catch (error: any) {
     console.error('[API] Unexpected error:', error);
