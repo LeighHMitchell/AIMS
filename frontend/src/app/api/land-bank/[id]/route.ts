@@ -12,12 +12,23 @@ export async function GET(
 
   const { id } = await params;
 
-  // Fetch parcel with org + ministry + NDP goal
-  const { data: parcel, error } = await supabase!
+  // Fetch parcel with org + ministry + NDP goal — fall back if line_ministries/ndp tables are missing
+  let { data: parcel, error } = await supabase!
     .from('land_parcels')
     .select('*, organizations!land_parcels_allocated_to_fkey(id, name, acronym), line_ministries(id, name, code), national_development_goals(id, code, name)')
     .eq('id', id)
     .single();
+
+  if (error) {
+    // Retry without line_ministries / national_development_goals joins
+    const fallback = await supabase!
+      .from('land_parcels')
+      .select('*, organizations!land_parcels_allocated_to_fkey(id, name, acronym)')
+      .eq('id', id)
+      .single();
+    parcel = fallback.data;
+    error = fallback.error;
+  }
 
   if (error || !parcel) {
     return NextResponse.json({ error: 'Parcel not found' }, { status: 404 });
@@ -43,12 +54,18 @@ export async function GET(
     .eq('parcel_id', id)
     .order('created_at', { ascending: false });
 
-  // Fetch documents
-  const { data: documents } = await supabase!
-    .from('land_parcel_documents')
-    .select('*')
-    .eq('parcel_id', id)
-    .order('created_at', { ascending: false });
+  // Fetch documents (table may not exist yet)
+  let documents: any[] = [];
+  try {
+    const { data: docs } = await supabase!
+      .from('land_parcel_documents')
+      .select('*')
+      .eq('parcel_id', id)
+      .order('created_at', { ascending: false });
+    documents = docs || [];
+  } catch {
+    // table may not exist
+  }
 
   // Check if public user — strip sensitive data
   const { data: profile } = await supabase!

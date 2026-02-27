@@ -18,40 +18,41 @@ export async function GET(request: Request) {
   const minSize = searchParams.get('min_size');
   const maxSize = searchParams.get('max_size');
 
-  let query = supabase!
-    .from('land_parcels')
-    .select('*, organizations!land_parcels_allocated_to_fkey(id, name, acronym), line_ministries(id, name, code)')
-    .order('created_at', { ascending: false });
+  // Try with full joins first; fall back to simpler query if line_ministries doesn't exist yet
+  const selectFull = '*, organizations!land_parcels_allocated_to_fkey(id, name, acronym), line_ministries(id, name, code)';
+  const selectSimple = '*, organizations!land_parcels_allocated_to_fkey(id, name, acronym)';
 
-  if (status && status !== 'all') {
-    query = query.eq('status', status);
-  }
-  if (region && region !== 'all') {
-    query = query.eq('state_region', region);
-  }
-  if (classification && classification !== 'all') {
-    query = query.eq('classification', classification);
-  }
-  if (ministry && ministry !== 'all') {
-    query = query.eq('controlling_ministry_id', ministry);
-  }
-  if (assetType && assetType !== 'all') {
-    query = query.eq('asset_type', assetType);
-  }
-  if (titleStatus && titleStatus !== 'all') {
-    query = query.eq('title_status', titleStatus);
-  }
-  if (search) {
-    query = query.or(`name.ilike.%${search}%,parcel_code.ilike.%${search}%,township.ilike.%${search}%`);
-  }
-  if (minSize) {
-    query = query.gte('size_hectares', parseFloat(minSize));
-  }
-  if (maxSize) {
-    query = query.lte('size_hectares', parseFloat(maxSize));
+  let useFullSelect = true;
+
+  function applyFilters(query: any) {
+    if (status && status !== 'all') query = query.eq('status', status);
+    if (region && region !== 'all') query = query.eq('state_region', region);
+    if (classification && classification !== 'all') query = query.eq('classification', classification);
+    if (ministry && ministry !== 'all') query = query.eq('controlling_ministry_id', ministry);
+    if (assetType && assetType !== 'all') query = query.eq('asset_type', assetType);
+    if (titleStatus && titleStatus !== 'all') query = query.eq('title_status', titleStatus);
+    if (search) query = query.or(`name.ilike.%${search}%,parcel_code.ilike.%${search}%,township.ilike.%${search}%`);
+    if (minSize) query = query.gte('size_hectares', parseFloat(minSize));
+    if (maxSize) query = query.lte('size_hectares', parseFloat(maxSize));
+    return query;
   }
 
-  const { data, error } = await query;
+  let query = applyFilters(
+    supabase!.from('land_parcels').select(selectFull).order('created_at', { ascending: false })
+  );
+
+  let { data, error } = await query;
+
+  // If the join failed (line_ministries table may not exist), retry without it
+  if (error) {
+    useFullSelect = false;
+    const fallback = applyFilters(
+      supabase!.from('land_parcels').select(selectSimple).order('created_at', { ascending: false })
+    );
+    const result = await fallback;
+    data = result.data;
+    error = result.error;
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -62,7 +63,7 @@ export async function GET(request: Request) {
     ...p,
     organization: p.organizations || null,
     organizations: undefined,
-    controlling_ministry: p.line_ministries || null,
+    controlling_ministry: useFullSelect ? (p.line_ministries || null) : null,
     line_ministries: undefined,
   }));
 

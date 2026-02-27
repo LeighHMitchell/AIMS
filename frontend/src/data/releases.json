@@ -1,7 +1,18 @@
 {
-  "currentVersion": "3.0.0",
-  "narrativeSummary": "Version 3.0 is a major release that transforms the Project Bank into a full public-investment lifecycle tool and brings the Land Bank to feature parity. The Project Bank now handles PPP contract structuring with Notification 2/2018 compliance, unsolicited proposals with Swiss Challenge workflows, cabinet approval enforcement for large projects, post-approval monitoring schedules, SEE transfer tracking, and cross-linking to land parcels. The Land Bank gains title status tracking, asset type and ministry dimensions, parcel document management, NDP goal alignment, and richer analytics. Working Groups receive document editing and meeting deletion capabilities.",
+  "currentVersion": "3.0.1",
+  "narrativeSummary": "Version 3.0.1 is a stability patch that makes the Land Bank APIs resilient to database schema variations. All three Land Bank endpoints now gracefully fall back to simpler queries when optional reference tables (line ministries, parcel documents) have not yet been provisioned, preventing server errors during phased database migrations.",
   "releases": [
+    {
+      "version": "3.0.1",
+      "date": "2026-02-27",
+      "narrativeSummary": "This patch improves the reliability of the Land Bank module. When the system was first deployed, certain reference tables &mdash; such as the line ministries lookup and the parcel documents store &mdash; might not yet exist in every environment. Previously this could cause the parcel list, parcel detail, and statistics pages to return errors. Now all three Land Bank API endpoints detect when a join fails and automatically retry with a simpler query, so you always see your data even if optional tables haven&rsquo;t been created yet. The parcel list endpoint also received a refactored filter pipeline for cleaner, more maintainable code.",
+      "changes": [
+        "<b>Land Bank API Resilience</b>",
+        "&nbsp;&nbsp;Parcel list endpoint: refactored filter logic into a reusable <code>applyFilters()</code> helper; falls back from full join (with line ministries) to a simpler query if the table is missing",
+        "&nbsp;&nbsp;Parcel detail endpoint: primary query now attempts joins to <code>line_ministries</code> and <code>national_development_goals</code> with automatic fallback; documents query wrapped in try/catch for environments where <code>land_parcel_documents</code> doesn&rsquo;t exist yet",
+        "&nbsp;&nbsp;Statistics endpoint: aggregation query retries without the <code>line_ministries</code> join if it fails, ensuring the dashboard always loads"
+      ]
+    },
     {
       "version": "3.0.0",
       "date": "2026-02-26",

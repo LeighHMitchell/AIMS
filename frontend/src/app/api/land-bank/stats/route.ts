@@ -7,11 +7,21 @@ export async function GET() {
   const { supabase, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
-  // Fetch all parcels for aggregation
-  const { data: parcels, error } = await supabase!
+  // Fetch all parcels for aggregation — fall back if line_ministries table is missing
+  let { data: parcels, error } = await supabase!
     .from('land_parcels')
     .select('id, status, state_region, classification, size_hectares, created_at, asset_type, title_status, controlling_ministry_id, line_ministries(name)')
     .order('created_at', { ascending: false });
+
+  if (error) {
+    // Retry without line_ministries join
+    const fallback = await supabase!
+      .from('land_parcels')
+      .select('id, status, state_region, classification, size_hectares, created_at, asset_type, title_status, controlling_ministry_id')
+      .order('created_at', { ascending: false });
+    parcels = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
