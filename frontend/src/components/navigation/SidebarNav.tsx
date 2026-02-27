@@ -97,8 +97,9 @@ export function SidebarNav({
     "ACTORS": true,
     "OPERATIONS": true,
     "SUPPORT": true,
-    "PROJECT BANK": true,
+    "PROJECTS": true,
     "SEE TRANSFERS": true,
+    "MONITORING": true,
     "LAND BANK": true,
   })
   const [showQuickAddModal, setShowQuickAddModal] = useState(false)
@@ -245,16 +246,23 @@ export function SidebarNav({
   // ─── Project Bank sidebar groups ───
   const projectBankNavGroups = [
     {
-      label: "PROJECT BANK",
+      label: "PROJECTS",
       icon: FolderKanban,
       isAnimated: false,
       defaultOpen: true,
       items: [
-        { name: "Dashboard", href: "/project-bank", show: true },
-        { name: "All Projects", href: "/project-bank/projects", show: true },
+        { name: "Project List", href: "/project-bank/projects", show: true },
+        { name: "Review Board", href: "/project-bank/review", show: true },
         { name: "Funding Gaps", href: "/project-bank/gaps", show: true },
-        { name: "PPP Pipeline", href: "/project-bank/ppp", show: true },
-        { name: "Monitoring", href: "/project-bank/monitoring", show: true },
+      ]
+    },
+    {
+      label: "MONITORING",
+      icon: CalendarClock,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "Monitoring Dashboard", href: "/project-bank/monitoring", show: true },
       ]
     },
     {
@@ -264,7 +272,6 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "All Transfers", href: "/project-bank/transfers", show: true },
-        { name: "New Transfer", href: "/project-bank/transfers/new", show: canCreateProjects },
       ]
     },
     {

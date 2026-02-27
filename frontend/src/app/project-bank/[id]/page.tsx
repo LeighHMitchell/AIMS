@@ -22,8 +22,10 @@ import {
   PATHWAY_LABELS, PATHWAY_COLORS, getNextStatus,
   COMMITMENT_STATUS_LABELS, INSTRUMENT_TYPE_LABELS, DONOR_TYPE_LABELS,
   PPP_CONTRACT_TYPE_LABELS,
+  FEASIBILITY_STAGE_LABELS, FEASIBILITY_STAGE_BADGE_STYLES,
+  CATEGORY_LABELS,
 } from "@/lib/project-bank-utils"
-import type { ProjectBankProject, ProjectBankDonor, ProjectAppraisal, DonorType, InstrumentType, CommitmentStatus } from "@/types/project-bank"
+import type { ProjectBankProject, ProjectBankDonor, ProjectAppraisal, DonorType, InstrumentType, CommitmentStatus, FeasibilityStage } from "@/types/project-bank"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatusTimeline } from "@/components/project-bank/StatusTimeline"
 import { SuggestedParcelsCard } from "@/components/project-bank/SuggestedParcelsCard"
@@ -32,6 +34,9 @@ import { EIRRCalculatorModal } from "@/components/project-bank/EIRRCalculatorMod
 import { AddDonorModal } from "@/components/project-bank/AddDonorModal"
 import { SwissChallengeTab } from "@/components/project-bank/SwissChallengeTab"
 import { MonitoringTab } from "@/components/project-bank/MonitoringTab"
+import { FS1NarrativeForm } from "@/components/project-bank/fs1/FS1NarrativeForm"
+import { FS2AssignmentPanel } from "@/components/project-bank/fs2/FS2AssignmentPanel"
+import { CategoryDecisionPanel } from "@/components/project-bank/categorization/CategoryDecisionPanel"
 
 export default function ProjectDetailPage() {
   const router = useRouter()
@@ -176,6 +181,22 @@ export default function ProjectDetailPage() {
                 {PATHWAY_LABELS[project.pathway] || project.pathway}
               </Badge>
             )}
+            {project.feasibility_stage && project.feasibility_stage !== 'registered' && (
+              <span
+                className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold"
+                style={(() => {
+                  const s = FEASIBILITY_STAGE_BADGE_STYLES[project.feasibility_stage as FeasibilityStage]
+                  return s ? { backgroundColor: s.bg, color: s.text, border: `1px solid ${s.border}` } : {}
+                })()}
+              >
+                {FEASIBILITY_STAGE_LABELS[project.feasibility_stage as FeasibilityStage] || project.feasibility_stage}
+              </span>
+            )}
+            {project.proceeding_independently && (
+              <Badge variant="outline" className="text-gray-600 border-gray-400">
+                Proceeding Independently (MIC)
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-muted-foreground">
             {project.nominating_ministry}
@@ -256,6 +277,7 @@ export default function ProjectDetailPage() {
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="feasibility">Feasibility</TabsTrigger>
                 {project.origin === 'unsolicited' && (
                   <TabsTrigger value="swiss-challenge">Swiss Challenge</TabsTrigger>
                 )}
@@ -412,6 +434,101 @@ export default function ProjectDetailPage() {
                 )}
               </CardContent>
             </Card>
+              </TabsContent>
+
+              <TabsContent value="feasibility" className="space-y-6">
+                {/* FS-1 Narrative Submission */}
+                {(project.feasibility_stage === 'registered' || project.feasibility_stage === 'fs1_returned' || !project.feasibility_stage) && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <FS1NarrativeForm
+                        projectId={id}
+                        isResubmission={project.feasibility_stage === 'fs1_returned'}
+                        onSubmitted={fetchProject}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* FS-1 Status Info */}
+                {project.feasibility_stage && ['fs1_submitted', 'fs1_desk_screened'].includes(project.feasibility_stage) && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-5 w-5 text-blue-600" />
+                        <div>
+                          <h3 className="text-sm font-semibold">FS-1 Under Review</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {project.feasibility_stage === 'fs1_submitted'
+                              ? 'Your narrative is awaiting desk review.'
+                              : 'Your narrative passed desk review and is awaiting senior review.'}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* FS-1 Rejected */}
+                {project.feasibility_stage === 'fs1_rejected' && (
+                  <Card className="border-red-200">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <XCircle className="h-5 w-5 text-red-600" />
+                        <div>
+                          <h3 className="text-sm font-semibold text-red-700">FS-1 Rejected</h3>
+                          {project.fs1_rejected_at && (
+                            <p className="text-xs text-muted-foreground">
+                              Cool-down until {new Date(new Date(project.fs1_rejected_at).getTime() + 6 * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* FS-2 Assignment Panel — shows for fs1_passed and beyond */}
+                {project.feasibility_stage && ['fs1_passed', 'fs2_assigned', 'fs2_in_progress', 'fs2_completed'].includes(project.feasibility_stage) && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <FS2AssignmentPanel
+                        projectId={id}
+                        feasibilityStage={project.feasibility_stage}
+                        onUpdated={fetchProject}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Category Decision Panel — shows after FS-2 complete */}
+                {project.feasibility_stage && ['fs2_completed', 'categorized', 'fs3_in_progress', 'fs3_completed'].includes(project.feasibility_stage) && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <CategoryDecisionPanel
+                        project={project}
+                        onCategorized={fetchProject}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Category display for already-categorized */}
+                {project.category_decision && project.feasibility_stage === 'categorized' && (
+                  <Card>
+                    <CardContent className="pt-6 text-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="font-semibold">{CATEGORY_LABELS[project.category_decision]}</span>
+                      </div>
+                      {project.category_decision === 'category_c' && (
+                        <p className="text-muted-foreground text-xs">
+                          This project requires FS-3 PPP Structuring. Open the Appraisal wizard to configure VGF, MRG, and other support mechanisms.
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               {project.origin === 'unsolicited' && (

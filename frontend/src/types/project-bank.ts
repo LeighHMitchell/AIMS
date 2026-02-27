@@ -19,6 +19,59 @@ export type RoutingOutcome =
   | 'private_with_state_support' | 'private_no_support' | 'ppp_mechanism'
   | 'rejected_not_msdp' | 'rejected_low_eirr';
 
+// Three-Tier Feasibility Study Framework
+export type FeasibilityStage =
+  | 'registered'
+  | 'fs1_submitted' | 'fs1_desk_screened' | 'fs1_passed' | 'fs1_returned' | 'fs1_rejected'
+  | 'fs2_assigned' | 'fs2_in_progress' | 'fs2_completed'
+  | 'categorized'
+  | 'fs3_in_progress' | 'fs3_completed';
+
+export type CategoryDecision = 'category_a' | 'category_b' | 'category_c';
+
+export type PPPSupportMechanism = 'vgf' | 'mrg' | 'availability_payment' | 'interest_subsidy' | 'tax_incentive' | 'land_grant' | 'combined';
+
+export interface FS1Narrative {
+  id: string;
+  project_id: string;
+  problem_statement: string;
+  target_beneficiaries: string;
+  ndp_alignment_justification: string;
+  expected_outcomes: string;
+  preliminary_cost_justification: string;
+  submitted_at: string;
+  submitted_by: string | null;
+  version: number;
+  created_at: string;
+}
+
+export interface FS1Review {
+  id: string;
+  project_id: string;
+  narrative_id: string | null;
+  reviewer_id: string | null;
+  review_tier: 'desk' | 'senior';
+  decision: 'screened' | 'passed' | 'returned' | 'rejected';
+  comments: string | null;
+  reviewed_at: string;
+  created_at: string;
+  reviewer_name?: string;
+}
+
+export interface FS2Assignment {
+  id: string;
+  project_id: string;
+  assigned_to: string;
+  assigned_at: string;
+  deadline: string | null;
+  status: 'assigned' | 'in_progress' | 'completed' | 'overdue';
+  completed_at: string | null;
+  report_document_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type DocumentType =
   | 'concept_note' | 'project_proposal' | 'preliminary_fs_report'
   | 'cost_estimate' | 'environmental_screening' | 'msdp_alignment_justification'
@@ -378,6 +431,23 @@ export interface ProjectBankProject {
   ppp_contract_details?: PPPContractDetails | null;
   implementing_agency?: string | null;
   equity_ratio?: number | null;
+  // Feasibility Study Framework
+  feasibility_stage?: FeasibilityStage | null;
+  fs1_rejected_at?: string | null;
+  fs1_resubmission_count?: number;
+  category_recommendation?: CategoryDecision | null;
+  category_decision?: CategoryDecision | null;
+  category_rationale?: string | null;
+  proceeding_independently?: boolean;
+  // FS-3 PPP Support Mechanisms
+  ppp_support_mechanism?: PPPSupportMechanism | null;
+  mrg_guaranteed_minimum?: number | null;
+  mrg_trigger_conditions?: string | null;
+  mrg_government_liability_cap?: number | null;
+  mrg_duration_years?: number | null;
+  availability_payment_amount?: number | null;
+  availability_payment_duration_years?: number | null;
+  availability_payment_conditions?: string | null;
   // Joined fields
   ndp_goal?: NationalDevelopmentGoal | null;
   donors?: ProjectBankDonor[];

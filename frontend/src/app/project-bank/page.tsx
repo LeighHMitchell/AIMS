@@ -202,7 +202,7 @@ export default function ProjectBankDashboard() {
               })}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               {/* Pipeline Status — Recharts horizontal bar chart */}
               <Card>
                 <CardHeader>
@@ -272,42 +272,42 @@ export default function ProjectBankDashboard() {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-            </div>
 
-            {/* Sector Distribution — Recharts horizontal bar chart */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="text-base">By Sector</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {sectorData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={Math.max(200, sectorData.length * 36)}>
-                    <BarChart
-                      data={sectorData}
-                      layout="vertical"
-                      margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
-                      barCategoryGap="16%"
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-                      <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} tickFormatter={formatAxisCurrency} />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        stroke={CHART_STRUCTURE_COLORS.axis}
-                        fontSize={12}
-                        tickLine={false}
-                        axisLine={false}
-                        width={120}
-                      />
-                      <Tooltip content={<SectorTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                      <Bar dataKey="value" fill={CHART_COLOR_PALETTE[1]} radius={[0, 2, 2, 0]} barSize={18} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">No sector data available</p>
-                )}
-              </CardContent>
-            </Card>
+              {/* Sector Distribution — Recharts horizontal bar chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">By Sector</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {sectorData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={240}>
+                      <BarChart
+                        data={sectorData}
+                        layout="vertical"
+                        margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+                        barCategoryGap="16%"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
+                        <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} tickFormatter={formatAxisCurrency} />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          stroke={CHART_STRUCTURE_COLORS.axis}
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          width={120}
+                        />
+                        <Tooltip content={<SectorTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                        <Bar dataKey="value" fill={CHART_COLOR_PALETTE[1]} radius={[0, 2, 2, 0]} barSize={18} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-8">No sector data available</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Recent Submissions — Table */}
             <Card>

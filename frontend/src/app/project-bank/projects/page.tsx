@@ -4,18 +4,24 @@ import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  Plus, Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown,
+  Copy, Check, MoreVertical, ListTodo,
+} from "lucide-react"
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { apiFetch } from "@/lib/api-fetch"
 import { useUser } from "@/hooks/useUser"
 import {
-  formatCurrency, STATUS_BADGE_VARIANT, STATUS_LABELS,
-  PATHWAY_LABELS, PATHWAY_COLORS, SECTORS, getPercentageColor,
+  formatCurrency, STATUS_LABELS,
+  PATHWAY_LABELS, SECTORS,
+  FEASIBILITY_STAGE_LABELS, FEASIBILITY_STAGE_BADGE_STYLES,
 } from "@/lib/project-bank-utils"
-import type { ProjectBankProject, ProjectStatus } from "@/types/project-bank"
+import type { ProjectBankProject, ProjectStatus, FeasibilityStage } from "@/types/project-bank"
 
 const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "all", label: "All" },
@@ -25,6 +31,26 @@ const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "approved", label: "Approved" },
   { value: "implementation", label: "Implementation" },
 ]
+
+/** Status → colour-palette badge styles */
+const STATUS_BADGE_STYLES: Record<ProjectStatus, { bg: string; text: string; border: string }> = {
+  nominated:      { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },   // Platinum bg, Blue Slate text
+  screening:      { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },   // Pale Slate bg, Blue Slate text
+  appraisal:      { bg: '#7b95a7', text: '#ffffff', border: '#4c5568' },   // Cool Steel bg, white text
+  approved:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },   // Blue Slate bg, white text
+  implementation: { bg: '#dc2625', text: '#ffffff', border: '#dc2625' },   // Scarlet bg, white text
+  completed:      { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },   // Platinum bg, Cool Steel text
+  rejected:       { bg: '#dc2625', text: '#ffffff', border: '#dc2625' },   // Scarlet bg, white text
+}
+
+/** Format cost as "USD 100m" / "USD 1.2b" style */
+function formatCostUSD(value: number | null | undefined): string {
+  if (value == null) return '—'
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}b`
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`
+  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`
+  return value.toLocaleString()
+}
 
 export default function ProjectListPage() {
   const router = useRouter()
@@ -40,6 +66,7 @@ export default function ProjectListPage() {
   const [perPage, setPerPage] = useState(20)
   const [sortField, setSortField] = useState<string>("created_at")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchProjects() {
@@ -54,6 +81,12 @@ export default function ProjectListPage() {
     }
     fetchProjects()
   }, [])
+
+  const copyToClipboard = (text: string, projectId: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedId(projectId)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   // Status counts
   const statusCounts = useMemo(() => {
@@ -114,25 +147,41 @@ export default function ProjectListPage() {
     }
   }
 
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+    return sortDir === "asc"
+      ? <ArrowUp className="h-3.5 w-3.5 text-foreground" />
+      : <ArrowDown className="h-3.5 w-3.5 text-foreground" />
+  }
+
   const SortHeader = ({ field, children, className }: { field: string; children: React.ReactNode; className?: string }) => (
     <th
-      className={`h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors ${className || ''}`}
+      className={`h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none ${className || ''}`}
       onClick={() => handleSort(field)}
     >
-      <span className="flex items-center gap-1">
+      <span className="flex items-center gap-1.5">
         {children}
-        {sortField === field && (
-          <span className="text-[10px]">{sortDir === "asc" ? "▲" : "▼"}</span>
-        )}
+        <SortIcon field={field} />
       </span>
     </th>
   )
 
+  const colCount = 14
+
   return (
     <MainLayout>
       <div className="w-full">
+        {/* Header with icon + subtitle like Funding Gaps */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">All Projects</h1>
+          <div className="flex items-center gap-3">
+            <ListTodo className="h-7 w-7 text-muted-foreground" />
+            <div>
+              <h1 className="text-2xl font-bold">Project List</h1>
+              <p className="text-muted-foreground text-sm">
+                All projects in the national development pipeline — {filtered.length} projects
+              </p>
+            </div>
+          </div>
           {permissions.canCreateProjects && (
             <Button onClick={() => router.push("/project-bank/new")} className="gap-2">
               <Plus className="h-4 w-4" /> Submit Project
@@ -216,23 +265,27 @@ export default function ProjectListPage() {
             <table className="w-full border-collapse">
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
-                  <SortHeader field="project_code">Code</SortHeader>
                   <SortHeader field="name">Project</SortHeader>
+                  <SortHeader field="nominating_ministry">Ministry</SortHeader>
+                  <SortHeader field="region">Location</SortHeader>
                   <SortHeader field="sector">Sector</SortHeader>
                   <SortHeader field="estimated_cost" className="text-right">Est. Cost</SortHeader>
                   <SortHeader field="firr" className="text-right">FIRR</SortHeader>
                   <SortHeader field="eirr" className="text-right">EIRR</SortHeader>
+                  <SortHeader field="vgf_amount" className="text-right">VGF</SortHeader>
                   <SortHeader field="status">Status</SortHeader>
+                  <SortHeader field="feasibility_stage">Feasibility</SortHeader>
                   <SortHeader field="pathway">Pathway</SortHeader>
                   <SortHeader field="funding_gap" className="text-right">Gap</SortHeader>
                   <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground w-[120px]">Funding</th>
+                  <th className="h-12 px-2 text-center align-middle text-sm font-medium text-muted-foreground w-[44px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
-                      {Array.from({ length: 10 }).map((_, j) => (
+                      {Array.from({ length: colCount }).map((_, j) => (
                         <td key={j} className="px-4 py-2">
                           <div className="h-4 bg-muted animate-pulse rounded w-16" />
                         </td>
@@ -241,7 +294,7 @@ export default function ProjectListPage() {
                   ))
                 ) : paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    <td colSpan={colCount} className="px-4 py-8 text-center text-sm text-muted-foreground">
                       No projects found
                     </td>
                   </tr>
@@ -252,38 +305,104 @@ export default function ProjectListPage() {
                     const committed = cost - gap
                     const committedPct = cost > 0 ? Math.round((committed / cost) * 100) : 0
                     const gapBarPct = maxGap > 0 && gap > 0 ? Math.max(4, Math.round((gap / maxGap) * 100)) : 0
+                    const badgeStyle = STATUS_BADGE_STYLES[p.status] || STATUS_BADGE_STYLES.nominated
                     return (
                     <tr
                       key={p.id}
                       className="group hover:bg-muted transition-colors cursor-pointer"
                       onClick={() => router.push(`/project-bank/${p.id}`)}
                     >
-                      <td className="px-4 py-2 text-sm text-muted-foreground">{p.project_code}</td>
+                      {/* Project Code + Name merged */}
                       <td className="px-4 py-2">
-                        <div className="text-sm font-medium text-foreground">{p.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {p.nominating_ministry}{p.region ? ` · ${p.region}` : ''}
+                        <div className="text-sm font-medium text-foreground leading-tight">{p.name}</div>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="group/code flex items-center gap-1">
+                            <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{p.project_code}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                copyToClipboard(p.project_code, p.id)
+                              }}
+                              className="opacity-0 group-hover/code:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
+                              title="Copy Project Code"
+                            >
+                              {copiedId === p.id ? (
+                                <Check className="w-3 h-3 text-green-500" />
+                              ) : (
+                                <Copy className="w-3 h-3 text-muted-foreground" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-4 py-2 text-sm text-muted-foreground">{p.sector}</td>
-                      <td className="px-4 py-2 text-sm text-right">{formatCurrency(p.estimated_cost, p.currency)}</td>
-                      <td className="px-4 py-2 text-sm text-right" style={{ color: p.firr != null ? (p.firr >= 10 ? '#7b95a7' : '#dc2625') : undefined }}>
-                        {p.firr != null ? <span>{p.firr}%</span> : <span className="text-muted-foreground">—</span>}
+                      {/* Ministry */}
+                      <td className="px-4 py-2 text-sm text-foreground">{p.nominating_ministry || '—'}</td>
+                      {/* Location */}
+                      <td className="px-4 py-2 text-sm text-foreground">{p.region || '—'}</td>
+                      {/* Sector — plain text */}
+                      <td className="px-4 py-2 text-sm text-foreground">{p.sector}</td>
+                      {/* Est. Cost — USD styled like DFMIS */}
+                      <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-medium">
+                        {p.estimated_cost != null ? (
+                          <span><span className="text-muted-foreground font-normal">USD</span> {formatCostUSD(p.estimated_cost)}</span>
+                        ) : '—'}
                       </td>
-                      <td className="px-4 py-2 text-sm text-right" style={{ color: p.eirr != null ? (p.eirr >= 15 ? '#7b95a7' : '#dc2625') : undefined }}>
-                        {p.eirr != null ? <span className="font-semibold">{p.eirr}%</span> : <span className="text-muted-foreground">—</span>}
+                      {/* FIRR — plain text */}
+                      <td className="px-4 py-2 text-sm text-right text-foreground">
+                        {p.firr != null ? `${p.firr}%` : <span className="text-muted-foreground">—</span>}
                       </td>
+                      {/* EIRR — plain text */}
+                      <td className="px-4 py-2 text-sm text-right text-foreground">
+                        {p.eirr != null ? `${p.eirr}%` : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* VGF — USD styled */}
+                      <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-medium">
+                        {p.vgf_amount != null && p.vgf_amount > 0 ? (
+                          <span><span className="text-muted-foreground font-normal">USD</span> {formatCostUSD(p.vgf_amount)}</span>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* Status — colour palette badge */}
                       <td className="px-4 py-2">
-                        <Badge variant={STATUS_BADGE_VARIANT[p.status] as any}>
+                        <span
+                          className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-semibold"
+                          style={{
+                            backgroundColor: badgeStyle.bg,
+                            color: badgeStyle.text,
+                            border: `1px solid ${badgeStyle.border}`,
+                          }}
+                        >
                           {STATUS_LABELS[p.status]}
-                        </Badge>
+                        </span>
                       </td>
-                      <td className={`px-4 py-2 text-sm font-semibold ${p.pathway ? PATHWAY_COLORS[p.pathway] : 'text-muted-foreground'}`}>
+                      {/* Feasibility Stage */}
+                      <td className="px-4 py-2">
+                        {p.feasibility_stage && p.feasibility_stage !== 'registered' ? (() => {
+                          const fsBadge = FEASIBILITY_STAGE_BADGE_STYLES[p.feasibility_stage as FeasibilityStage]
+                          return fsBadge ? (
+                            <span
+                              className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap"
+                              style={{
+                                backgroundColor: fsBadge.bg,
+                                color: fsBadge.text,
+                                border: `1px solid ${fsBadge.border}`,
+                              }}
+                            >
+                              {FEASIBILITY_STAGE_LABELS[p.feasibility_stage as FeasibilityStage]}
+                            </span>
+                          ) : <span className="text-muted-foreground text-sm">—</span>
+                        })() : <span className="text-muted-foreground text-sm">—</span>}
+                      </td>
+                      {/* Pathway — plain text */}
+                      <td className="px-4 py-2 text-sm text-foreground">
                         {p.pathway ? PATHWAY_LABELS[p.pathway] || p.pathway.toUpperCase() : '—'}
                       </td>
+                      {/* Gap */}
                       <td className="px-4 py-2 text-sm text-right" style={{ color: gap > 0 ? '#dc2625' : undefined }}>
-                        {gap > 0 ? <span className="font-semibold">{formatCurrency(gap)}</span> : <span className="text-muted-foreground">—</span>}
+                        {gap > 0 ? (
+                          <span className="font-semibold whitespace-nowrap"><span className="text-muted-foreground font-normal">USD</span> {formatCostUSD(gap)}</span>
+                        ) : <span className="text-muted-foreground">—</span>}
                       </td>
+                      {/* Funding bar */}
                       <td className="px-4 py-2">
                         {gap > 0 ? (
                           <div className="flex items-center gap-2 min-w-[100px]">
@@ -300,6 +419,33 @@ export default function ProjectListPage() {
                         ) : (
                           <span className="text-muted-foreground text-sm">—</span>
                         )}
+                      </td>
+                      {/* Kebab menu */}
+                      <td className="px-2 py-2 text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1 rounded hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/project-bank/${p.id}`)
+                            }}>
+                              View Project
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/project-bank/${p.id}?edit=true`)
+                            }}>
+                              Edit Project
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                     )

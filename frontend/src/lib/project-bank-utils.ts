@@ -1,4 +1,4 @@
-import type { ProjectPathway, ProjectStatus, RoutingResult, AppraisalStage, RoutingOutcome } from '@/types/project-bank';
+import type { ProjectPathway, ProjectStatus, RoutingResult, AppraisalStage, RoutingOutcome, FeasibilityStage, CategoryDecision, PPPSupportMechanism } from '@/types/project-bank';
 
 /**
  * Determines the routing pathway for a project based on FIRR and NDP alignment.
@@ -174,6 +174,126 @@ export const PATHWAY_COLORS: Record<string, string> = {
   domestic_budget: 'text-amber-600',
 };
 
+// ========================================================================
+// Feasibility Study Framework
+// ========================================================================
+
+/** Feasibility stage display labels */
+export const FEASIBILITY_STAGE_LABELS: Record<FeasibilityStage, string> = {
+  registered: 'Registered',
+  fs1_submitted: 'FS-1 Submitted',
+  fs1_desk_screened: 'FS-1 Desk Screened',
+  fs1_passed: 'FS-1 Passed',
+  fs1_returned: 'FS-1 Returned',
+  fs1_rejected: 'FS-1 Rejected',
+  fs2_assigned: 'FS-2 Assigned',
+  fs2_in_progress: 'FS-2 In Progress',
+  fs2_completed: 'FS-2 Completed',
+  categorized: 'Categorized',
+  fs3_in_progress: 'FS-3 In Progress',
+  fs3_completed: 'FS-3 Completed',
+};
+
+/** Feasibility stage badge styles */
+export const FEASIBILITY_STAGE_BADGE_STYLES: Record<FeasibilityStage, { bg: string; text: string; border: string }> = {
+  registered:        { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
+  fs1_submitted:     { bg: '#dbeafe', text: '#1e40af', border: '#93c5fd' },
+  fs1_desk_screened: { bg: '#e0e7ff', text: '#3730a3', border: '#a5b4fc' },
+  fs1_passed:        { bg: '#dcfce7', text: '#166534', border: '#86efac' },
+  fs1_returned:      { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
+  fs1_rejected:      { bg: '#fecaca', text: '#991b1b', border: '#f87171' },
+  fs2_assigned:      { bg: '#e0e7ff', text: '#3730a3', border: '#a5b4fc' },
+  fs2_in_progress:   { bg: '#c7d2fe', text: '#3730a3', border: '#818cf8' },
+  fs2_completed:     { bg: '#dcfce7', text: '#166534', border: '#86efac' },
+  categorized:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  fs3_in_progress:   { bg: '#e9d5ff', text: '#6b21a8', border: '#c084fc' },
+  fs3_completed:     { bg: '#dcfce7', text: '#166534', border: '#86efac' },
+};
+
+/** Feasibility stage progression order */
+export const FEASIBILITY_STAGE_ORDER: FeasibilityStage[] = [
+  'registered',
+  'fs1_submitted', 'fs1_desk_screened', 'fs1_passed',
+  'fs2_assigned', 'fs2_in_progress', 'fs2_completed',
+  'categorized',
+  'fs3_in_progress', 'fs3_completed',
+];
+
+/** Category decision labels */
+export const CATEGORY_LABELS: Record<CategoryDecision, string> = {
+  category_a: 'Category A — Full Private',
+  category_b: 'Category B — Government Budget',
+  category_c: 'Category C — PPP',
+};
+
+/** Short category labels for badges */
+export const CATEGORY_SHORT_LABELS: Record<CategoryDecision, string> = {
+  category_a: 'Private (A)',
+  category_b: 'Gov Budget (B)',
+  category_c: 'PPP (C)',
+};
+
+/** PPP support mechanism labels */
+export const PPP_SUPPORT_MECHANISM_LABELS: Record<PPPSupportMechanism, string> = {
+  vgf: 'Viability Gap Funding (VGF)',
+  mrg: 'Minimum Revenue Guarantee (MRG)',
+  availability_payment: 'Availability Payment',
+  interest_subsidy: 'Interest Subsidy',
+  tax_incentive: 'Tax Incentive',
+  land_grant: 'Land Grant',
+  combined: 'Combined Mechanisms',
+};
+
+/** Public-good sectors that lean toward government budget (Category B) */
+const PUBLIC_GOOD_SECTORS = ['Education', 'Health', 'Governance', 'Social Protection', 'WASH'];
+
+/**
+ * Determines the system's category recommendation based on FIRR/EIRR results.
+ * - Category A (Private): FIRR >= 10% (commercially viable)
+ * - Category C (PPP): FIRR < 10% + NDP-aligned + EIRR >= 15%
+ * - Category B (Gov Budget): FIRR < 10% + NDP-aligned + EIRR < 15%, or public-good sectors
+ */
+export function determineCategoryRecommendation(
+  firr: number | null,
+  eirr: number | null,
+  ndpAligned: boolean,
+  sectorType?: string,
+): CategoryDecision | null {
+  if (firr === null) return null;
+
+  // Commercially viable → private sector
+  if (firr >= 10) return 'category_a';
+
+  // Not NDP-aligned and FIRR < 10% → no recommendation (would be rejected)
+  if (!ndpAligned) return null;
+
+  // Public-good sectors lean toward government budget
+  if (sectorType && PUBLIC_GOOD_SECTORS.includes(sectorType)) return 'category_b';
+
+  // EIRR check for PPP vs government budget
+  if (eirr !== null && eirr >= 15) return 'category_c';
+
+  return 'category_b';
+}
+
+/**
+ * Checks if a project from the same ministry was rejected within the cool-down period.
+ * Client-side helper — the DB trigger enforces this server-side.
+ */
+export function checkCooldownViolation(
+  rejectedAt: string | null,
+  cooldownMonths: number = 6,
+): { blocked: boolean; cooldownEnds: Date | null } {
+  if (!rejectedAt) return { blocked: false, cooldownEnds: null };
+  const rejectedDate = new Date(rejectedAt);
+  const cooldownEnds = new Date(rejectedDate);
+  cooldownEnds.setMonth(cooldownEnds.getMonth() + cooldownMonths);
+  return {
+    blocked: new Date() < cooldownEnds,
+    cooldownEnds,
+  };
+}
+
 /** Format currency value (e.g. $320M, $1.2B) */
 export function formatCurrency(value: number | null | undefined, currency: string = 'USD'): string {
   if (value === null || value === undefined) return '—';
@@ -188,6 +308,22 @@ export function formatCurrency(value: number | null | undefined, currency: strin
     return `${symbol}${(value / 1_000).toFixed(0)}K`;
   }
   return `${symbol}${value.toLocaleString()}`;
+}
+
+/** Format currency as "USD 100M" with separate prefix and amount for split styling */
+export function formatCurrencyParts(value: number | null | undefined, currency: string = 'USD'): { prefix: string; amount: string } | null {
+  if (value === null || value === undefined) return null;
+  const prefix = currency || 'USD';
+  if (value >= 1_000_000_000) {
+    return { prefix, amount: `${(value / 1_000_000_000).toFixed(1)}B` };
+  }
+  if (value >= 1_000_000) {
+    return { prefix, amount: `${(value / 1_000_000).toFixed(1)}M` };
+  }
+  if (value >= 1_000) {
+    return { prefix, amount: `${(value / 1_000).toFixed(0)}K` };
+  }
+  return { prefix, amount: value.toLocaleString() };
 }
 
 /** Format percentage with color class */

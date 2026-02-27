@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { estimateVGF } from '@/lib/eirr-calculator';
-import { formatCurrency, PPP_CONTRACT_TYPE_LABELS } from '@/lib/project-bank-utils';
+import { formatCurrency, PPP_CONTRACT_TYPE_LABELS, PPP_SUPPORT_MECHANISM_LABELS } from '@/lib/project-bank-utils';
 import { DocumentUploadZone } from './DocumentUploadZone';
 import { apiFetch } from '@/lib/api-fetch';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
@@ -148,6 +148,107 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
           </SelectContent>
         </Select>
       </div>
+
+      {/* PPP Support Mechanism (FS-3) */}
+      <div>
+        <Label>PPP Support Mechanism <HelpTooltip text="The government support mechanism for this PPP: VGF (capital subsidy), MRG (revenue guarantee), Availability Payments, or combinations thereof." /></Label>
+        <Select value={formData.ppp_support_mechanism || ''} onValueChange={v => updateField('ppp_support_mechanism', v || null)}>
+          <SelectTrigger><SelectValue placeholder="Select support mechanism..." /></SelectTrigger>
+          <SelectContent>
+            {Object.entries(PPP_SUPPORT_MECHANISM_LABELS).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* MRG Fields */}
+      {(formData.ppp_support_mechanism === 'mrg' || formData.ppp_support_mechanism === 'combined') && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
+          <Label className="text-sm font-medium text-amber-800">Minimum Revenue Guarantee (MRG)</Label>
+          <p className="text-xs text-amber-700">Government guarantees a minimum annual revenue to the private partner. If actual revenue falls below this threshold, the government pays the shortfall.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-amber-600">Guaranteed Minimum Annual Revenue (USD)</label>
+              <Input
+                type="number"
+                value={formData.mrg_guaranteed_minimum ?? ''}
+                onChange={e => updateField('mrg_guaranteed_minimum', e.target.value ? parseFloat(e.target.value) : null)}
+                className="h-8 text-sm"
+                placeholder="e.g. 5000000"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-amber-600">Government Liability Cap (USD)</label>
+              <Input
+                type="number"
+                value={formData.mrg_government_liability_cap ?? ''}
+                onChange={e => updateField('mrg_government_liability_cap', e.target.value ? parseFloat(e.target.value) : null)}
+                className="h-8 text-sm"
+                placeholder="Max total government exposure"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-amber-600">Duration (years)</label>
+              <Input
+                type="number"
+                value={formData.mrg_duration_years ?? ''}
+                onChange={e => updateField('mrg_duration_years', e.target.value ? parseInt(e.target.value) : null)}
+                className="h-8 text-sm"
+                placeholder="e.g. 15"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-xs text-amber-600">Trigger Conditions</label>
+              <Textarea
+                value={formData.mrg_trigger_conditions || ''}
+                onChange={e => updateField('mrg_trigger_conditions', e.target.value)}
+                rows={2} className="text-sm"
+                placeholder="When does the MRG activate? (e.g. actual revenue < 80% of projected revenue)"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Availability Payment Fields */}
+      {(formData.ppp_support_mechanism === 'availability_payment' || formData.ppp_support_mechanism === 'combined') && (
+        <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg space-y-3">
+          <Label className="text-sm font-medium text-teal-800">Availability Payments</Label>
+          <p className="text-xs text-teal-700">Government makes regular payments for making infrastructure available, regardless of actual usage. Payments are subject to service quality conditions.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-teal-600">Annual Payment Amount (USD)</label>
+              <Input
+                type="number"
+                value={formData.availability_payment_amount ?? ''}
+                onChange={e => updateField('availability_payment_amount', e.target.value ? parseFloat(e.target.value) : null)}
+                className="h-8 text-sm"
+                placeholder="e.g. 2000000"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-teal-600">Duration (years)</label>
+              <Input
+                type="number"
+                value={formData.availability_payment_duration_years ?? ''}
+                onChange={e => updateField('availability_payment_duration_years', e.target.value ? parseInt(e.target.value) : null)}
+                className="h-8 text-sm"
+                placeholder="e.g. 20"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-xs text-teal-600">Payment Conditions</label>
+              <Textarea
+                value={formData.availability_payment_conditions || ''}
+                onChange={e => updateField('availability_payment_conditions', e.target.value)}
+                rows={2} className="text-sm"
+                placeholder="Conditions under which availability payments are made or deducted..."
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PPP Contract Type */}
       <div>

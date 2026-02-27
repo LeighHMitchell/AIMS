@@ -36,6 +36,9 @@ const STAGE_FIELDS: Record<string, string[]> = {
     'vgf_amount', 'vgf_calculated', 'vgf_calculation_data', 'vgf_status',
     'dap_compliant', 'dap_notes', 'budget_allocation_status', 'budget_amount',
     'land_parcel_id', 'ppp_contract_type', 'ppp_contract_details', 'equity_ratio',
+    'ppp_support_mechanism',
+    'mrg_guaranteed_minimum', 'mrg_trigger_conditions', 'mrg_government_liability_cap', 'mrg_duration_years',
+    'availability_payment_amount', 'availability_payment_duration_years', 'availability_payment_conditions',
   ],
   dp_consultation: [
     'routing_outcome', 'status', 'pathway',
