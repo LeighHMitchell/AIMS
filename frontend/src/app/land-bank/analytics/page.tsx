@@ -191,15 +191,15 @@ export default function LandBankAnalyticsPage() {
           })}
         </div>
 
-        {/* Charts grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Row 1: Status pie, Classification bar, Count by Region */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {/* Status breakdown */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Parcels by Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
                     data={statusData}
@@ -207,9 +207,9 @@ export default function LandBankAnalyticsPage() {
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    outerRadius={100}
+                    outerRadius={85}
                     label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    fontSize={12}
+                    fontSize={10}
                   >
                     {statusData.map((entry, idx) => (
                       <Cell key={idx} fill={entry.fill} />
@@ -224,10 +224,10 @@ export default function LandBankAnalyticsPage() {
           {/* By classification */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Parcels by Classification</CardTitle>
+              <CardTitle className="text-base">By Classification</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={classData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
                   <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} />
@@ -235,8 +235,8 @@ export default function LandBankAnalyticsPage() {
                     type="category"
                     dataKey="name"
                     stroke={CHART_STRUCTURE_COLORS.axis}
-                    fontSize={11}
-                    width={130}
+                    fontSize={10}
+                    width={110}
                     tick={{ cursor: "pointer" }}
                     onClick={(data: any) => handleDrillDown("classification", data.value)}
                   />
@@ -250,27 +250,24 @@ export default function LandBankAnalyticsPage() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Region charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Count by region */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Parcel Count by Region</CardTitle>
+              <CardTitle className="text-base">Count by Region</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={350}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={regionData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} vertical={false} />
-                  <XAxis dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={10} tickLine={false} angle={-40} textAnchor="end" height={70} />
+                  <XAxis dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={9} tickLine={false} angle={-40} textAnchor="end" height={60} />
                   <YAxis stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
                   <Bar
                     dataKey="count"
                     fill={CHART_COLOR_PALETTE[1]}
                     radius={[2, 2, 0, 0]}
-                    barSize={24}
+                    barSize={18}
                     onClick={(data: any) => handleDrillDown("region", data.name)}
                     cursor="pointer"
                   />
@@ -278,14 +275,17 @@ export default function LandBankAnalyticsPage() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+        </div>
 
+        {/* Row 2: Hectares by Region, Asset Type pie, Title Status pie */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {/* Hectares by region */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Hectares by Region</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={350}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={hectaresRegionData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
                   <XAxis
@@ -295,7 +295,7 @@ export default function LandBankAnalyticsPage() {
                     tickLine={false}
                     tickFormatter={(v: number) => formatHectares(v)}
                   />
-                  <YAxis type="category" dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} width={90} />
+                  <YAxis type="category" dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={10} width={80} />
                   <Tooltip
                     content={({ active, payload }: any) => {
                       if (active && payload?.length) {
@@ -315,10 +315,7 @@ export default function LandBankAnalyticsPage() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </div>
 
-        {/* New charts: Asset Type, Title Status, Ministry */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           {/* By Asset Type */}
           <Card>
             <CardHeader>
@@ -326,7 +323,7 @@ export default function LandBankAnalyticsPage() {
             </CardHeader>
             <CardContent>
               {assetTypeData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={260}>
                   <PieChart>
                     <Pie
                       data={assetTypeData}
@@ -334,7 +331,7 @@ export default function LandBankAnalyticsPage() {
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={85}
                       label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
                       fontSize={10}
                     >
@@ -358,7 +355,7 @@ export default function LandBankAnalyticsPage() {
             </CardHeader>
             <CardContent>
               {titleStatusData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={260}>
                   <PieChart>
                     <Pie
                       data={titleStatusData}
@@ -366,7 +363,7 @@ export default function LandBankAnalyticsPage() {
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={85}
                       label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
                       fontSize={10}
                     >
@@ -382,21 +379,23 @@ export default function LandBankAnalyticsPage() {
               )}
             </CardContent>
           </Card>
+        </div>
 
-          {/* By Ministry */}
-          <Card>
+        {/* Row 3: Ministry bar chart (full width) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="md:col-span-3">
             <CardHeader>
               <CardTitle className="text-base">By Ministry</CardTitle>
             </CardHeader>
             <CardContent>
               {ministryData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={ministryData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
                     <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} />
-                    <YAxis type="category" dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={9} width={130} />
+                    <YAxis type="category" dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={10} width={160} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                    <Bar dataKey="count" radius={[0, 2, 2, 0]} barSize={16}>
+                    <Bar dataKey="count" radius={[0, 2, 2, 0]} barSize={18}>
                       {ministryData.map((entry, idx) => (
                         <Cell key={idx} fill={entry.fill} />
                       ))}

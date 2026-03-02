@@ -146,7 +146,7 @@ export default function LandBankDashboard() {
             </div>
 
             {/* Charts row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               {/* Status breakdown */}
               <Card>
                 <CardHeader>
@@ -204,27 +204,29 @@ export default function LandBankDashboard() {
                   )}
                 </CardContent>
               </Card>
-            </div>
 
-            {/* By region */}
-            {regionChartData.length > 0 && (
-              <Card className="mb-6">
+              {/* By region */}
+              <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Parcels by Region</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={regionChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} vertical={false} />
-                      <XAxis dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} angle={-30} textAnchor="end" height={60} />
-                      <YAxis stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} />
-                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                      <Bar dataKey="count" fill={CHART_COLOR_PALETTE[1]} radius={[2, 2, 0, 0]} barSize={28} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {regionChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={240}>
+                      <BarChart data={regionChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} vertical={false} />
+                        <XAxis dataKey="name" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={10} tickLine={false} angle={-30} textAnchor="end" height={60} />
+                        <YAxis stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                        <Bar dataKey="count" fill={CHART_COLOR_PALETTE[1]} radius={[2, 2, 0, 0]} barSize={20} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-8">No data yet</p>
+                  )}
                 </CardContent>
               </Card>
-            )}
+            </div>
 
             {/* Recent parcels table */}
             {stats.recentParcels.length > 0 && (
@@ -237,7 +239,6 @@ export default function LandBankDashboard() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b bg-surface-muted">
-                          <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Code</th>
                           <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Name</th>
                           <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Region</th>
                           <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Size</th>
@@ -251,8 +252,10 @@ export default function LandBankDashboard() {
                             className="hover:bg-muted/50 cursor-pointer transition-colors"
                             onClick={() => router.push(`/land-bank/${p.id}`)}
                           >
-                            <td className="px-4 py-2.5 font-mono text-xs">{p.parcel_code}</td>
-                            <td className="px-4 py-2.5">{p.name}</td>
+                            <td className="px-4 py-2.5">
+                              <div className="font-medium">{p.name}</div>
+                              <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{p.parcel_code}</span>
+                            </td>
                             <td className="px-4 py-2.5">{p.state_region}</td>
                             <td className="px-4 py-2.5">{formatHectares(p.size_hectares)}</td>
                             <td className="px-4 py-2.5">

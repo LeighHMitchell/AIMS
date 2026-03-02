@@ -27,20 +27,7 @@ export function StageRouting({ wizard }: StageRoutingProps) {
 
   const routing = determineFullRouting(firrPercent, eirrPercent, ndpAligned);
 
-  const COLOR_MAP: Record<string, string> = {
-    green: 'bg-green-50 border-green-300',
-    blue: 'bg-blue-50 border-blue-300',
-    purple: 'bg-purple-50 border-purple-300',
-    amber: 'bg-amber-50 border-amber-300',
-    red: 'bg-red-50 border-red-300',
-  };
-  const TEXT_COLOR_MAP: Record<string, string> = {
-    green: 'text-green-700',
-    blue: 'text-blue-700',
-    purple: 'text-purple-700',
-    amber: 'text-amber-700',
-    red: 'text-red-700',
-  };
+  // All routing outcomes use the neutral sidebar color for visual consistency
   const BADGE_VARIANT_MAP: Record<string, string> = {
     green: 'success',
     blue: 'blue',
@@ -149,7 +136,7 @@ export function StageRouting({ wizard }: StageRoutingProps) {
       </div>
 
       {/* Routing Outcome Badge */}
-      <div className={cn('p-5 rounded-lg border-2', COLOR_MAP[routing.color] || COLOR_MAP.blue)}>
+      <div className="p-5 rounded-lg border-2 bg-[#f6f5f3] border-[#5f7f7a]/20">
         <Badge variant={BADGE_VARIANT_MAP[routing.color] as any} className="mb-2 text-sm">
           {routing.label}
         </Badge>

@@ -38,6 +38,24 @@ export async function POST(
     );
   }
 
+  // For Category C, require risk allocation matrix
+  if (decision === 'category_c') {
+    const { data: riskDoc } = await supabase!
+      .from('project_documents')
+      .select('id')
+      .eq('project_id', id)
+      .eq('document_type', 'risk_allocation_matrix')
+      .limit(1)
+      .single();
+
+    if (!riskDoc) {
+      return NextResponse.json(
+        { error: 'Risk Allocation Matrix document is required for Category C (PPP) projects' },
+        { status: 400 }
+      );
+    }
+  }
+
   // Compute system recommendation
   const recommendation = determineCategoryRecommendation(
     project.firr,
@@ -70,6 +88,7 @@ export async function POST(
     .from('project_bank_projects')
     .update({
       feasibility_stage: newStage,
+      project_stage: 'fs2_categorized',
       category_recommendation: recommendation,
       category_decision: decision,
       category_rationale: rationale || null,

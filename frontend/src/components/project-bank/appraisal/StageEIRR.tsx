@@ -154,20 +154,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
   const firrPercent = formData.firr ?? null;
   const routing = determineFullRouting(firrPercent, eirrResult?.eirr ?? null, true);
 
-  const COLOR_MAP: Record<string, string> = {
-    green: 'bg-green-50 border-green-200',
-    blue: 'bg-blue-50 border-blue-200',
-    purple: 'bg-purple-50 border-purple-200',
-    amber: 'bg-amber-50 border-amber-200',
-    red: 'bg-red-50 border-red-200',
-  };
-  const TEXT_COLOR_MAP: Record<string, string> = {
-    green: 'text-green-700',
-    blue: 'text-blue-700',
-    purple: 'text-purple-700',
-    amber: 'text-amber-700',
-    red: 'text-red-700',
-  };
+  // Routing banner uses neutral sidebar color
 
   // Tornado chart data
   const baseEirr = sensitivityResults.length > 0 ? sensitivityResults[0].firr_or_eirr : null;
@@ -187,8 +174,8 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
       </div>
 
       {/* Explanatory card */}
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
+      <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg">
+        <p className="text-sm text-foreground">
           <strong>What is EIRR?</strong> The Economic Internal Rate of Return measures the project&apos;s value to
           society, not just financial returns. It uses shadow prices to adjust for market distortions such as subsidized
           labour, import duties, and exchange rate premiums.
@@ -236,7 +223,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
               <Label className="text-sm font-medium">Shadow Price Parameters <HelpTooltip text="These conversion factors adjust market prices to reflect true economic values." /></Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
-                  <label className="text-xs text-muted-foreground">Standard Conversion Factor</label>
+                  <label className="text-xs text-muted-foreground">Standard Conversion Factor <HelpTooltip text="Adjusts domestic costs for trade taxes and subsidies. Typically 0.8–1.0 for developing economies." /></label>
                   <Input
                     type="number"
                     step="0.01"
@@ -246,7 +233,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground">Shadow Exchange Rate</label>
+                  <label className="text-xs text-muted-foreground">Shadow Exchange Rate <HelpTooltip text="Adjusts imported goods costs for exchange rate distortions. Typically 1.1–1.3 for controlled exchange rate economies." /></label>
                   <Input
                     type="number"
                     step="0.01"
@@ -256,7 +243,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground">Shadow Wage Rate</label>
+                  <label className="text-xs text-muted-foreground">Shadow Wage Rate <HelpTooltip text="Adjusts labour costs for unemployment and underemployment. Typically 0.5–0.8 where there is surplus labour." /></label>
                   <Input
                     type="number"
                     step="0.01"
@@ -266,7 +253,7 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground">Social Discount Rate (%)</label>
+                  <label className="text-xs text-muted-foreground">Social Discount Rate (%) <HelpTooltip text="The rate at which future economic benefits are discounted to present value. Typically 6–12% for developing countries." /></label>
                   <Input
                     type="number"
                     step="0.1"
@@ -489,8 +476,8 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
 
       {/* Routing Banner */}
       {eirrResult && (
-        <div className={cn('p-4 rounded-lg border', COLOR_MAP[routing.color] || COLOR_MAP.blue)}>
-          <div className={cn('text-sm font-bold mb-1', TEXT_COLOR_MAP[routing.color])}>
+        <div className="p-4 rounded-lg border bg-[#f6f5f3] border-[#5f7f7a]/20">
+          <div className="text-sm font-bold mb-1 text-foreground">
             {routing.label}
           </div>
           <div className="text-sm text-muted-foreground">{routing.description}</div>

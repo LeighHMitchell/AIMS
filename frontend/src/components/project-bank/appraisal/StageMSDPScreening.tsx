@@ -146,9 +146,9 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                 className={cn(
                   'w-full text-left p-3 rounded-lg border transition-colors',
                   isPrimary
-                    ? 'border-green-300 bg-green-50'
+                    ? 'border-[#5f7f7a] bg-[#f6f5f3] ring-2 ring-[#5f7f7a]/20'
                     : isSecondary
-                    ? 'border-blue-300 bg-blue-50'
+                    ? 'border-[#5f7f7a]/60 bg-[#f6f5f3]'
                     : 'border-muted-foreground/20 hover:border-muted-foreground/40',
                 )}
               >
@@ -156,10 +156,10 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                   <span className="text-xs font-mono font-bold text-muted-foreground">{goal.code}</span>
                   <span className="text-sm font-medium">{goal.name}</span>
                   {isPrimary && (
-                    <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-green-200 text-green-800">Primary</span>
+                    <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-[#5f7f7a]/15 text-[#5f7f7a]">Primary</span>
                   )}
                   {isSecondary && (
-                    <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-200 text-blue-800">Secondary</span>
+                    <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-[#5f7f7a]/10 text-[#5f7f7a]">Secondary</span>
                   )}
                 </div>
                 {goal.description && (

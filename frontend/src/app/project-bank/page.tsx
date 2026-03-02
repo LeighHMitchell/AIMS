@@ -207,6 +207,7 @@ export default function ProjectBankDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Pipeline Status</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Project count by appraisal stage</p>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={240}>
@@ -228,7 +229,7 @@ export default function ProjectBankDashboard() {
                         width={100}
                       />
                       <Tooltip content={<PipelineTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                      <Bar dataKey="count" radius={[0, 2, 2, 0]} barSize={20}>
+                      <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
                         {pipelineData.map((entry, idx) => (
                           <Cell key={idx} fill={entry.fill} />
                         ))}
@@ -242,6 +243,7 @@ export default function ProjectBankDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Pathway Breakdown</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Estimated pipeline value by routing pathway</p>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={240}>
@@ -263,7 +265,7 @@ export default function ProjectBankDashboard() {
                         width={110}
                       />
                       <Tooltip content={<PathwayTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                      <Bar dataKey="value" radius={[0, 2, 2, 0]} barSize={20}>
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
                         {pathwayData.map((entry, idx) => (
                           <Cell key={idx} fill={entry.fill} />
                         ))}
@@ -277,6 +279,7 @@ export default function ProjectBankDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">By Sector</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Estimated cost distribution across sectors</p>
                 </CardHeader>
                 <CardContent>
                   {sectorData.length > 0 ? (
@@ -299,7 +302,7 @@ export default function ProjectBankDashboard() {
                           width={120}
                         />
                         <Tooltip content={<SectorTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                        <Bar dataKey="value" fill={CHART_COLOR_PALETTE[1]} radius={[0, 2, 2, 0]} barSize={18} />
+                        <Bar dataKey="value" fill={CHART_COLOR_PALETTE[1]} radius={[0, 4, 4, 0]} barSize={18} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (

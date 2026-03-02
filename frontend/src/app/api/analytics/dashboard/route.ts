@@ -130,6 +130,8 @@ export async function GET(request: NextRequest) {
           // Filter to correct transaction type and status (handle both string and number)
           if (String(t.transaction_type) !== transactionType) return;
           if (t.status !== 'actual') return;
+          // Exclude internal transfers (pooled fund flows) to avoid double-counting
+          if (t.receiver_activity_uuid) return;
           
           if (!dateFrom || new Date(t.transaction_date) >= new Date(dateFrom)) {
             if (!dateTo || new Date(t.transaction_date) <= new Date(dateTo)) {
@@ -343,6 +345,8 @@ export async function GET(request: NextRequest) {
           // Filter to correct transaction type and status (handle both string and number)
           if (String(t.transaction_type) !== transactionType) return;
           if (t.status !== 'actual') return;
+          // Exclude internal transfers (pooled fund flows) to avoid double-counting
+          if (t.receiver_activity_uuid) return;
           
           if (!dateFrom || new Date(t.transaction_date) >= new Date(dateFrom)) {
             if (!dateTo || new Date(t.transaction_date) <= new Date(dateTo)) {
@@ -656,15 +660,17 @@ export async function GET(request: NextRequest) {
           receiver_org_id,
           receiver_org_name,
           receiver_organization:organizations!transactions_receiver_org_id_fkey (
-            id, 
-            name, 
-            acronym, 
+            id,
+            name,
+            acronym,
             Organisation_Type_Code
           )
         `)
         .eq('transaction_type', transactionType)
         .eq('status', 'actual')
         .not('receiver_org_id', 'is', null);
+      // Exclude internal transfers (pooled fund flows)
+      recipientGovQuery = excludeInternalTransfers(recipientGovQuery, [transactionType]);
       
       // Apply date filters at query level for efficiency
       if (dateFrom) {
@@ -827,7 +833,7 @@ export async function GET(request: NextRequest) {
     // ============================================
     // FUNDING BY TYPE (Time Series)
     // ============================================
-    const { data: fundingData } = await supabase
+    let fundingQuery = supabase
       .from('transactions')
       .select(`
         transaction_date,
@@ -839,6 +845,9 @@ export async function GET(request: NextRequest) {
       .eq('transaction_type', transactionType)
       .eq('status', 'actual')
       .order('transaction_date');
+    // Exclude internal transfers (pooled fund flows)
+    fundingQuery = excludeInternalTransfers(fundingQuery, [transactionType]);
+    const { data: fundingData } = await fundingQuery;
 
     const fundingMap = new Map<string, Map<string, number>>();
     

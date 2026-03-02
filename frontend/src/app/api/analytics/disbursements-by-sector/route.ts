@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 import sectorGroupData from '@/data/SectorGroup.json';
 
 // Build sector hierarchy lookup map for O(1) access
@@ -118,6 +119,8 @@ export async function GET(request: NextRequest) {
       .in('activity_id', activityIds)
       .eq('transaction_type', '3')
       .eq('status', 'actual');
+    // Exclude internal transfers (pooled fund flows)
+    transactionsQuery = excludeInternalTransfers(transactionsQuery, ['3']);
 
     if (dateFrom) {
       transactionsQuery = transactionsQuery.gte('transaction_date', dateFrom);

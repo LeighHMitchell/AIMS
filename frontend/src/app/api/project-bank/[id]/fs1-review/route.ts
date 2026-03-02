@@ -74,6 +74,23 @@ export async function POST(
     );
   }
 
+  // When passing to FS-2, verify an FS-1 narrative exists
+  if (decision === 'passed') {
+    const { data: narrative } = await supabase!
+      .from('fs1_narratives')
+      .select('id')
+      .eq('project_id', id)
+      .limit(1)
+      .single();
+
+    if (!narrative) {
+      return NextResponse.json(
+        { error: 'Cannot pass to FS-2: no FS-1 narrative has been submitted for this project' },
+        { status: 400 }
+      );
+    }
+  }
+
   // Insert review
   const { data: review, error: reviewError } = await supabase!
     .from('fs1_reviews')
@@ -100,11 +117,24 @@ export async function POST(
     rejected: 'fs1_rejected',
   };
 
+  // Map to unified project_stage
+  const projectStageMap: Record<string, string> = {
+    screened: 'fs1_submitted',  // still under review in unified model
+    passed: 'fs1_approved',
+    returned: 'fs1_returned',
+    rejected: 'fs1_rejected',
+  };
+
   const updateData: Record<string, any> = {
     feasibility_stage: stageMap[decision],
+    project_stage: projectStageMap[decision],
     updated_at: new Date().toISOString(),
     updated_by: user!.id,
   };
+
+  if (decision === 'returned' || decision === 'rejected') {
+    updateData.review_comments = comments || null;
+  }
 
   if (decision === 'rejected') {
     updateData.fs1_rejected_at = new Date().toISOString();

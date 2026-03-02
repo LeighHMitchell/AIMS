@@ -696,7 +696,7 @@ export default function TransactionsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
+      <div className="w-full space-y-6">
         {/* Header */}
         <div className="flex flex-wrap justify-between items-center mb-6">
           <div>

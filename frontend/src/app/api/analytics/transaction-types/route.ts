@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 import { TRANSACTION_TYPE_LABELS } from '@/types/transaction';
 
 export const dynamic = 'force-dynamic';
@@ -25,9 +26,12 @@ export async function GET() {
     const supabaseAdmin = supabase;
 
     // Get all transactions with their types and values
-    const { data: transactions, error } = await supabaseAdmin
+    // Exclude internal transfers (pooled fund flows) to avoid double-counting
+    let txQuery = supabaseAdmin
       .from('transactions')
       .select('transaction_type, value_usd');
+    txQuery = excludeInternalTransfers(txQuery);
+    const { data: transactions, error } = await txQuery;
 
     if (error) {
       console.error('Error fetching transactions:', error);

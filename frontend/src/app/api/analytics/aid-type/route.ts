@@ -56,7 +56,8 @@ export async function GET(request: NextRequest) {
         title_narrative,
         transactions:transactions!transactions_activity_id_fkey1 (
           transaction_type,
-          value_usd
+          value_usd,
+          receiver_activity_uuid
         )
       `)
       .eq('publication_status', 'published');
@@ -98,6 +99,9 @@ export async function GET(request: NextRequest) {
 
       // Process transactions (USD only)
       activity.transactions?.forEach((transaction: any) => {
+        // Exclude internal transfers (pooled fund flows) to avoid double-counting
+        if (transaction.receiver_activity_uuid) return;
+
         // Parse transaction value (USD only)
         const value = parseFloat(transaction.value_usd?.toString() || '0') || 0;
 

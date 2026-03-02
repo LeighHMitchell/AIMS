@@ -153,13 +153,13 @@ export function SwissChallengeTab({ projectId }: SwissChallengeTabProps) {
                   <div className={cn(
                     "flex items-center justify-center rounded-full w-7 h-7 text-xs font-medium border-2 shrink-0",
                     isComplete ? "bg-green-500 border-green-500 text-white" :
-                    isCurrent ? "bg-purple-500 border-purple-500 text-white" :
+                    isCurrent ? "bg-[#5f7f7a] border-[#5f7f7a] text-white" :
                     "bg-muted border-muted-foreground/20 text-muted-foreground"
                   )}>
                     {isComplete ? <CheckCircle className="h-4 w-4" /> : idx + 1}
                   </div>
                   <div className="ml-1.5 min-w-0">
-                    <div className={cn("text-[11px] font-medium truncate", isCurrent ? "text-purple-600" : isComplete ? "text-green-600" : "text-muted-foreground")}>
+                    <div className={cn("text-[11px] font-medium truncate", isCurrent ? "text-[#5f7f7a]" : isComplete ? "text-green-600" : "text-muted-foreground")}>
                       {PROPOSAL_STATUS_LABELS[step]}
                     </div>
                   </div>

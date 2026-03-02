@@ -22,6 +22,9 @@ export interface ParcelFormData {
   ndp_goal_id: string
   secondary_ndp_goals: string[]
   notes: string
+  submitter_first_name: string
+  submitter_last_name: string
+  submitter_organization: string
   geometry: any | null
 }
 
@@ -64,6 +67,9 @@ export function useParcelWizard(parcelId?: string): UseParcelWizardReturn {
     ndp_goal_id: "",
     secondary_ndp_goals: [],
     notes: "",
+    submitter_first_name: "",
+    submitter_last_name: "",
+    submitter_organization: "",
     geometry: null,
   })
   const [classifications, setClassifications] = useState<{ name: string }[]>([])
@@ -116,6 +122,9 @@ export function useParcelWizard(parcelId?: string): UseParcelWizardReturn {
             ndp_goal_id: parcel.ndp_goal_id || "",
             secondary_ndp_goals: parcel.secondary_ndp_goals || [],
             notes: parcel.notes || "",
+            submitter_first_name: parcel.submitter_first_name || "",
+            submitter_last_name: parcel.submitter_last_name || "",
+            submitter_organization: parcel.submitter_organization || "",
             geometry: parcel.geometry || null,
           })
           setCodeAutoSet(true) // Don't auto-suggest code in edit mode
@@ -208,6 +217,9 @@ export function useParcelWizard(parcelId?: string): UseParcelWizardReturn {
         ndp_goal_id: formData.ndp_goal_id && formData.ndp_goal_id !== "none" ? formData.ndp_goal_id : null,
         secondary_ndp_goals: formData.secondary_ndp_goals || [],
         notes: formData.notes.trim() || null,
+        submitter_first_name: formData.submitter_first_name.trim() || null,
+        submitter_last_name: formData.submitter_last_name.trim() || null,
+        submitter_organization: formData.submitter_organization.trim() || null,
         geometry: formData.geometry,
       }
 

@@ -350,7 +350,6 @@ export default function ParcelsListPage() {
                 <table className="w-full border-collapse">
                   <thead className="bg-surface-muted border-b border-border">
                     <tr>
-                      <SortHeader field="parcel_code">Code</SortHeader>
                       <SortHeader field="name">Name</SortHeader>
                       <SortHeader field="state_region">Region</SortHeader>
                       <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Township</th>
@@ -367,7 +366,7 @@ export default function ParcelsListPage() {
                     {loading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <tr key={i}>
-                          {Array.from({ length: 11 }).map((_, j) => (
+                          {Array.from({ length: 10 }).map((_, j) => (
                             <td key={j} className="px-4 py-2">
                               <div className="h-4 bg-muted animate-pulse rounded w-16" />
                             </td>
@@ -376,7 +375,7 @@ export default function ParcelsListPage() {
                       ))
                     ) : paginated.length === 0 ? (
                       <tr>
-                        <td colSpan={11} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                        <td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">
                           No parcels found
                         </td>
                       </tr>
@@ -387,8 +386,10 @@ export default function ParcelsListPage() {
                           className="group hover:bg-muted transition-colors cursor-pointer"
                           onClick={() => router.push(`/land-bank/${parcel.id}`)}
                         >
-                          <td className="px-4 py-2.5 font-mono text-xs font-medium">{parcel.parcel_code}</td>
-                          <td className="px-4 py-2.5 font-medium max-w-[200px] truncate">{parcel.name}</td>
+                          <td className="px-4 py-2.5 max-w-[240px]">
+                            <div className="font-medium truncate">{parcel.name}</div>
+                            <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{parcel.parcel_code}</span>
+                          </td>
                           <td className="px-4 py-2.5">{parcel.state_region}</td>
                           <td className="px-4 py-2.5 text-muted-foreground">{parcel.township || "—"}</td>
                           <td className="px-4 py-2.5 tabular-nums">{formatHectares(parcel.size_hectares)}</td>

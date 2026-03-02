@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, FileText, Trash2, Download, Loader2 } from "lucide-react"
+import { Upload, FileText, Trash2, Download, Loader2, Star } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import { LAND_DOCUMENT_TYPE_LABELS } from "@/lib/land-bank-utils"
 import type { LandParcelDocument, LandDocumentType } from "@/types/land-bank"
@@ -21,14 +21,22 @@ interface ParcelDocumentUploadProps {
   parcelId: string
   documents: LandParcelDocument[]
   canManage: boolean
+  bannerDocumentId?: string | null
   onDocumentsChange: () => void
+  onBannerChange?: () => void
+}
+
+function isImageMime(mime: string | null): boolean {
+  return !!mime && mime.startsWith("image/")
 }
 
 export function ParcelDocumentUpload({
   parcelId,
   documents,
   canManage,
+  bannerDocumentId,
   onDocumentsChange,
+  onBannerChange,
 }: ParcelDocumentUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [documentType, setDocumentType] = useState<string>("other")
@@ -78,6 +86,20 @@ export function ParcelDocumentUpload({
       // silent
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const handleSetBanner = async (docId: string) => {
+    try {
+      const newBannerId = bannerDocumentId === docId ? null : docId
+      await apiFetch(`/api/land-bank/${parcelId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ banner_document_id: newBannerId }),
+      })
+      onBannerChange?.()
+    } catch {
+      // silent
     }
   }
 
@@ -161,50 +183,79 @@ export function ParcelDocumentUpload({
             </div>
           ) : (
             <div className="divide-y">
-              {documents.map(doc => (
-                <div key={doc.id} className="px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{doc.file_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {LAND_DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
-                        {" · "}
-                        {formatFileSize(doc.file_size)}
-                        {" · "}
-                        {new Date(doc.created_at).toLocaleDateString()}
-                      </p>
-                      {doc.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{doc.description}</p>
+              {documents.map(doc => {
+                const isImage = isImageMime(doc.mime_type)
+                const isBanner = bannerDocumentId === doc.id
+
+                return (
+                  <div key={doc.id} className="px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {isImage && doc.signed_url ? (
+                        <img
+                          src={doc.signed_url}
+                          alt={doc.file_name}
+                          className="h-10 w-10 rounded object-cover shrink-0 border"
+                        />
+                      ) : (
+                        <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {doc.file_name}
+                          {isBanner && (
+                            <span className="ml-1.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Banner</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {LAND_DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
+                          {" · "}
+                          {formatFileSize(doc.file_size)}
+                          {" · "}
+                          {new Date(doc.created_at).toLocaleDateString()}
+                        </p>
+                        {doc.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{doc.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isImage && canManage && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleSetBanner(doc.id)}
+                          title={isBanner ? "Remove banner" : "Set as banner"}
+                          className={isBanner ? "text-amber-500" : ""}
+                        >
+                          <Star className={`h-4 w-4 ${isBanner ? "fill-current" : ""}`} />
+                        </Button>
+                      )}
+                      {doc.signed_url && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                        >
+                          <a href={doc.signed_url} target="_blank" rel="noopener noreferrer" title="Download">
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
+                      {canManage && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(doc.id)}
+                          disabled={deletingId === doc.id}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {doc.signed_url && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        asChild
-                      >
-                        <a href={doc.signed_url} target="_blank" rel="noopener noreferrer" title="Download">
-                          <Download className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
-                    {canManage && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(doc.id)}
-                        disabled={deletingId === doc.id}
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>

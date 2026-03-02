@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 
 // Force dynamic rendering to bypass fetch cache
 export const dynamic = 'force-dynamic'
@@ -119,12 +120,15 @@ export async function GET(request: NextRequest) {
     // Step 5: Fetch all disbursement transactions for included activities
     // STRICT: Only transaction_type = '3' (disbursements)
     // Note: transactions table has value_usd column (not usd_value)
-    const { data: transactions, error: transactionsError } = await supabase
+    let txQuery = supabase
       .from('transactions')
       .select('transaction_date, value, value_usd, currency')
       .in('activity_id', activityIds)
       .eq('transaction_type', '3') // ONLY disbursements
       .order('transaction_date', { ascending: true })
+    // Exclude internal transfers (pooled fund flows)
+    txQuery = excludeInternalTransfers(txQuery, ['3'])
+    const { data: transactions, error: transactionsError } = await txQuery
 
     if (transactionsError) {
       console.error('[PortfolioSpendTrajectory] Error fetching transactions:', transactionsError)

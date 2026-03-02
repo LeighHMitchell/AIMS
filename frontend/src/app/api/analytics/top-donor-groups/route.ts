@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 import { findParentGroup, INSTITUTIONAL_GROUPS } from '@/data/location-groups';
 
 export const dynamic = 'force-dynamic';
@@ -189,12 +190,15 @@ export async function GET(request: NextRequest) {
       // Commitments or Disbursements: From transactions table
       const transactionType = metric === 'commitments' ? '2' : '3';
 
-      const { data: txData, error: txError } = await supabase
+      let txQuery = supabase
         .from('transactions')
         .select('value_usd, value, transaction_date, provider_org_id, activity_id')
         .eq('transaction_type', transactionType)
         .eq('status', 'actual')
         .not('provider_org_id', 'is', null);
+      // Exclude internal transfers (pooled fund flows)
+      txQuery = excludeInternalTransfers(txQuery, [transactionType]);
+      const { data: txData, error: txError } = await txQuery;
 
       if (txError) {
         console.error('[TopDonorGroups] Error fetching transactions:', txError);

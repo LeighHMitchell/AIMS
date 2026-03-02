@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -33,10 +34,13 @@ export async function GET() {
     const activityIds = [...new Set(sectors.map(s => s.activity_id))]
 
     // Fetch transactions for these activities
-    const { data: transactions } = await supabase
+    // Exclude internal transfers (pooled fund flows) to avoid double-counting
+    let txQuery = supabase
       .from('transactions')
       .select('activity_id, transaction_type, value_usd')
       .in('activity_id', activityIds)
+    txQuery = excludeInternalTransfers(txQuery)
+    const { data: transactions } = await txQuery
 
     // Calculate totals per activity
     const activityTotals = new Map<string, { committed: number; disbursed: number }>()

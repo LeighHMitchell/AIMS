@@ -102,7 +102,7 @@ export function SEEDocumentUploadZone({
         {...getRootProps()}
         className={cn(
           'border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors',
-          isDragActive ? 'border-blue-400 bg-blue-50' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+          isDragActive ? 'border-[#5f7f7a] bg-[#f6f5f3]' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
           uploading && 'opacity-50 cursor-wait',
         )}
       >

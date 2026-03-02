@@ -79,6 +79,7 @@ export async function POST(
     .from('project_bank_projects')
     .update({
       feasibility_stage: 'fs2_assigned',
+      project_stage: 'fs2_assigned',
       updated_at: new Date().toISOString(),
       updated_by: user!.id,
     })
@@ -112,6 +113,33 @@ export async function PUT(
 
   if (body.status === 'completed') {
     updateData.completed_at = new Date().toISOString();
+
+    // Require FIRR and EIRR
+    if (body.firr === undefined || body.firr === null || body.eirr === undefined || body.eirr === null) {
+      return NextResponse.json(
+        { error: 'FIRR and EIRR values are required to complete the study' },
+        { status: 400 }
+      );
+    }
+
+    // Require gate documents
+    const { data: docs } = await supabase!
+      .from('project_documents')
+      .select('document_type')
+      .eq('project_id', id)
+      .in('document_type', ['detailed_fs_report', 'cost_benefit_analysis']);
+
+    const docTypes = (docs || []).map((d: { document_type: string }) => d.document_type);
+    const missing: string[] = [];
+    if (!docTypes.includes('detailed_fs_report')) missing.push('Detailed FS Report');
+    if (!docTypes.includes('cost_benefit_analysis')) missing.push('Cost-Benefit Analysis');
+
+    if (missing.length > 0) {
+      return NextResponse.json(
+        { error: `Missing required documents: ${missing.join(', ')}` },
+        { status: 400 }
+      );
+    }
   }
 
   const { data, error } = await supabase!
@@ -132,6 +160,7 @@ export async function PUT(
       .from('project_bank_projects')
       .update({
         feasibility_stage: 'fs2_in_progress',
+        project_stage: 'fs2_in_progress',
         updated_at: new Date().toISOString(),
         updated_by: user!.id,
       })
@@ -140,6 +169,7 @@ export async function PUT(
     // Also store FIRR/EIRR results if provided
     const projectUpdate: Record<string, any> = {
       feasibility_stage: 'fs2_completed',
+      project_stage: 'fs2_completed',
       updated_at: new Date().toISOString(),
       updated_by: user!.id,
     };

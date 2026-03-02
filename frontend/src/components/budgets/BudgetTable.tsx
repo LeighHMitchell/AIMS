@@ -313,23 +313,6 @@ export function BudgetTable({
     <TooltipProvider>
       <div>
         <Table className="min-w-full data-table-balanced">
-          <colgroup>
-            <col style={{ width: '48px' }} />
-            {orderedVisibleColumns.map((colId) => {
-              if (colId === 'activity') return <col key={colId} />;
-              const w =
-                colId === 'reportingOrganisation'
-                  ? '140px'
-                  : ['value', 'valueUsd'].includes(colId)
-                    ? '130px'
-                    : ['periodStart', 'periodEnd', 'valueDate'].includes(colId)
-                      ? '120px'
-                      : '110px';
-              return <col key={colId} style={{ width: w }} />;
-            })}
-            <col style={{ width: '48px' }} />
-            <col style={{ width: '8px' }} />
-          </colgroup>
           <TableHeader>
             <TableRow>
               <th className="h-12 px-4 text-center align-middle data-table-col-checkbox">
@@ -351,8 +334,6 @@ export function BudgetTable({
                 {orderedVisibleColumns.map((colId) => headerMap[colId])}
               </DndColumnProvider>
               <th className="h-12 px-2 data-table-col-actions" />
-              {/* Filler column so row hover extends to the scroll container edge */}
-              <th className="h-12 p-0 bg-surface-muted border-0 data-table-col-filler" aria-hidden="true" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -525,8 +506,6 @@ export function BudgetTable({
                         onDelete={onDelete ? () => onDelete(budgetId) : undefined}
                       />
                     </TableCell>
-                    {/* Filler cell so row hover extends to the scroll container edge */}
-                    <TableCell className="p-0 data-table-col-filler" aria-hidden="true" />
                   </TableRow>
 
                   {/* Expanded Row Content */}

@@ -154,12 +154,12 @@ export default function ProjectListPage() {
       : <ArrowDown className="h-3.5 w-3.5 text-foreground" />
   }
 
-  const SortHeader = ({ field, children, className }: { field: string; children: React.ReactNode; className?: string }) => (
+  const SortHeader = ({ field, children, className, tight }: { field: string; children: React.ReactNode; className?: string; tight?: boolean }) => (
     <th
-      className={`h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none ${className || ''}`}
+      className={`h-10 ${tight ? 'px-2' : 'px-3'} text-left align-middle text-xs font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none whitespace-nowrap ${className || ''}`}
       onClick={() => handleSort(field)}
     >
-      <span className="flex items-center gap-1.5">
+      <span className="flex items-center gap-1">
         {children}
         <SortIcon field={field} />
       </span>
@@ -262,23 +262,23 @@ export default function ProjectListPage() {
         {/* Table */}
         <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse table-auto">
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
-                  <SortHeader field="name">Project</SortHeader>
-                  <SortHeader field="nominating_ministry">Ministry</SortHeader>
-                  <SortHeader field="region">Location</SortHeader>
-                  <SortHeader field="sector">Sector</SortHeader>
-                  <SortHeader field="estimated_cost" className="text-right">Est. Cost</SortHeader>
-                  <SortHeader field="firr" className="text-right">FIRR</SortHeader>
-                  <SortHeader field="eirr" className="text-right">EIRR</SortHeader>
-                  <SortHeader field="vgf_amount" className="text-right">VGF</SortHeader>
-                  <SortHeader field="status">Status</SortHeader>
-                  <SortHeader field="feasibility_stage">Feasibility</SortHeader>
-                  <SortHeader field="pathway">Pathway</SortHeader>
-                  <SortHeader field="funding_gap" className="text-right">Gap</SortHeader>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground w-[120px]">Funding</th>
-                  <th className="h-12 px-2 text-center align-middle text-sm font-medium text-muted-foreground w-[44px]"></th>
+                  <SortHeader field="name" className="min-w-[200px]">Project</SortHeader>
+                  <SortHeader field="nominating_ministry" className="min-w-[140px]">Ministry</SortHeader>
+                  <SortHeader field="region" tight>Location</SortHeader>
+                  <SortHeader field="sector" tight>Sector</SortHeader>
+                  <SortHeader field="estimated_cost" className="text-right" tight>Est. Cost</SortHeader>
+                  <SortHeader field="firr" className="text-right" tight>FIRR</SortHeader>
+                  <SortHeader field="eirr" className="text-right" tight>EIRR</SortHeader>
+                  <SortHeader field="vgf_amount" className="text-right" tight>VGF</SortHeader>
+                  <SortHeader field="status" tight>Status</SortHeader>
+                  <SortHeader field="feasibility_stage" tight>Feasibility</SortHeader>
+                  <SortHeader field="pathway" tight>Pathway</SortHeader>
+                  <SortHeader field="funding_gap" className="text-right" tight>Gap</SortHeader>
+                  <th className="h-10 px-2 text-left align-middle text-xs font-medium text-muted-foreground w-[100px]">Funding</th>
+                  <th className="h-10 px-1 text-center align-middle text-xs font-medium text-muted-foreground w-[36px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
@@ -313,11 +313,11 @@ export default function ProjectListPage() {
                       onClick={() => router.push(`/project-bank/${p.id}`)}
                     >
                       {/* Project Code + Name merged */}
-                      <td className="px-4 py-2">
+                      <td className="px-3 py-2 min-w-[200px]">
                         <div className="text-sm font-medium text-foreground leading-tight">{p.name}</div>
-                        <div className="flex items-center gap-1.5 mt-1">
+                        <div className="flex items-center gap-1.5 mt-0.5">
                           <div className="group/code flex items-center gap-1">
-                            <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{p.project_code}</span>
+                            <span className="text-[11px] font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{p.project_code}</span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -336,35 +336,35 @@ export default function ProjectListPage() {
                         </div>
                       </td>
                       {/* Ministry */}
-                      <td className="px-4 py-2 text-sm text-foreground">{p.nominating_ministry || '—'}</td>
+                      <td className="px-3 py-2 text-sm text-foreground min-w-[140px]">{p.nominating_ministry || '—'}</td>
                       {/* Location */}
-                      <td className="px-4 py-2 text-sm text-foreground">{p.region || '—'}</td>
-                      {/* Sector — plain text */}
-                      <td className="px-4 py-2 text-sm text-foreground">{p.sector}</td>
-                      {/* Est. Cost — USD styled like DFMIS */}
-                      <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-medium">
+                      <td className="px-2 py-2 text-sm text-foreground whitespace-nowrap">{p.region || '—'}</td>
+                      {/* Sector */}
+                      <td className="px-2 py-2 text-sm text-foreground whitespace-nowrap">{p.sector}</td>
+                      {/* Est. Cost */}
+                      <td className="px-2 py-2 text-sm text-right whitespace-nowrap font-medium">
                         {p.estimated_cost != null ? (
-                          <span><span className="text-muted-foreground font-normal">USD</span> {formatCostUSD(p.estimated_cost)}</span>
-                        ) : '—'}
-                      </td>
-                      {/* FIRR — plain text */}
-                      <td className="px-4 py-2 text-sm text-right text-foreground">
-                        {p.firr != null ? `${p.firr}%` : <span className="text-muted-foreground">—</span>}
-                      </td>
-                      {/* EIRR — plain text */}
-                      <td className="px-4 py-2 text-sm text-right text-foreground">
-                        {p.eirr != null ? `${p.eirr}%` : <span className="text-muted-foreground">—</span>}
-                      </td>
-                      {/* VGF — USD styled */}
-                      <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-medium">
-                        {p.vgf_amount != null && p.vgf_amount > 0 ? (
-                          <span><span className="text-muted-foreground font-normal">USD</span> {formatCostUSD(p.vgf_amount)}</span>
+                          <span><span className="text-muted-foreground font-normal text-xs">USD</span> {formatCostUSD(p.estimated_cost)}</span>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
-                      {/* Status — colour palette badge */}
-                      <td className="px-4 py-2">
+                      {/* FIRR */}
+                      <td className="px-2 py-2 text-sm text-right text-foreground whitespace-nowrap">
+                        {p.firr != null ? `${p.firr}%` : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* EIRR */}
+                      <td className="px-2 py-2 text-sm text-right text-foreground whitespace-nowrap">
+                        {p.eirr != null ? `${p.eirr}%` : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* VGF */}
+                      <td className="px-2 py-2 text-sm text-right whitespace-nowrap font-medium">
+                        {p.vgf_amount != null && p.vgf_amount > 0 ? (
+                          <span><span className="text-muted-foreground font-normal text-xs">USD</span> {formatCostUSD(p.vgf_amount)}</span>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* Status */}
+                      <td className="px-2 py-2">
                         <span
-                          className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-semibold"
+                          className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
                           style={{
                             backgroundColor: badgeStyle.bg,
                             color: badgeStyle.text,
@@ -375,12 +375,12 @@ export default function ProjectListPage() {
                         </span>
                       </td>
                       {/* Feasibility Stage */}
-                      <td className="px-4 py-2">
+                      <td className="px-2 py-2">
                         {p.feasibility_stage && p.feasibility_stage !== 'registered' ? (() => {
                           const fsBadge = FEASIBILITY_STAGE_BADGE_STYLES[p.feasibility_stage as FeasibilityStage]
                           return fsBadge ? (
                             <span
-                              className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap"
+                              className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap"
                               style={{
                                 backgroundColor: fsBadge.bg,
                                 color: fsBadge.text,
@@ -392,28 +392,28 @@ export default function ProjectListPage() {
                           ) : <span className="text-muted-foreground text-sm">—</span>
                         })() : <span className="text-muted-foreground text-sm">—</span>}
                       </td>
-                      {/* Pathway — plain text */}
-                      <td className="px-4 py-2 text-sm text-foreground">
+                      {/* Pathway */}
+                      <td className="px-2 py-2 text-sm text-foreground whitespace-nowrap">
                         {p.pathway ? PATHWAY_LABELS[p.pathway] || p.pathway.toUpperCase() : '—'}
                       </td>
                       {/* Gap */}
-                      <td className="px-4 py-2 text-sm text-right" style={{ color: gap > 0 ? '#dc2625' : undefined }}>
+                      <td className="px-2 py-2 text-sm text-right whitespace-nowrap" style={{ color: gap > 0 ? '#dc2625' : undefined }}>
                         {gap > 0 ? (
-                          <span className="font-semibold whitespace-nowrap"><span className="text-muted-foreground font-normal">USD</span> {formatCostUSD(gap)}</span>
+                          <span className="font-semibold"><span className="text-muted-foreground font-normal text-xs">USD</span> {formatCostUSD(gap)}</span>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                       {/* Funding bar */}
-                      <td className="px-4 py-2">
+                      <td className="px-2 py-2">
                         {gap > 0 ? (
-                          <div className="flex items-center gap-2 min-w-[100px]">
-                            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#cfd0d5' }}>
+                          <div className="flex items-center gap-1.5 min-w-[80px]">
+                            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#cfd0d5' }}>
                               <div className="h-full rounded-full" style={{ width: `${gapBarPct}%`, backgroundColor: '#dc2625' }} />
                             </div>
                             <span className="text-[10px] text-muted-foreground whitespace-nowrap">{committedPct}%</span>
                           </div>
                         ) : cost > 0 ? (
-                          <div className="flex items-center gap-2 min-w-[100px]">
-                            <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: '#7b95a7' }} />
+                          <div className="flex items-center gap-1.5 min-w-[80px]">
+                            <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: '#7b95a7' }} />
                             <span className="text-[10px] text-muted-foreground">100%</span>
                           </div>
                         ) : (
@@ -421,7 +421,7 @@ export default function ProjectListPage() {
                         )}
                       </td>
                       {/* Kebab menu */}
-                      <td className="px-2 py-2 text-center">
+                      <td className="px-1 py-2 text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button

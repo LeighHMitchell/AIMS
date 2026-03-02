@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -125,12 +126,15 @@ export async function GET(request: NextRequest) {
     // PAST YEARS + CURRENT YEAR: Activity Transactions
     // Aggregate disbursements (type 3) and expenditures (type 4) by provider org and year
     // ============================================
-    const { data: transactions, error: txError } = await supabase
+    let txQuery = supabase
       .from('transactions')
       .select('provider_org_id, provider_org_name, transaction_type, transaction_date, value_usd, value')
       .in('transaction_type', ['3', '4']) // Disbursements and Expenditures only
       .not('provider_org_id', 'is', null)
       .in('provider_org_id', targetOrgIds)
+    // Exclude internal transfers (pooled fund flows)
+    txQuery = excludeInternalTransfers(txQuery, ['3', '4'])
+    const { data: transactions, error: txError } = await txQuery
 
     if (txError) {
       console.error('[Funding Over Time] Transaction query error:', txError)

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from "react"
 import { useMap } from "@/components/ui/map"
 import { Button } from "@/components/ui/button"
-import { Upload, Trash2, MousePointerClick } from "lucide-react"
+import { Upload, Trash2, MousePointerClick, Minus } from "lucide-react"
 import { LandBankMapShell } from "./LandBankMapShell"
 import type MapLibreGL from "maplibre-gl"
 
@@ -12,17 +12,20 @@ interface ParcelDrawMapProps {
   onChange: (geometry: any | null) => void
 }
 
+type DrawType = "polygon" | "polyline"
+
 function DrawController({ geometry, onChange }: ParcelDrawMapProps) {
   const { map, isLoaded } = useMap()
   const initialized = useRef(false)
   const [drawingMode, setDrawingMode] = useState(false)
+  const [drawType, setDrawType] = useState<DrawType>("polygon")
   const pointsRef = useRef<[number, number][]>([])
 
   // Add draw sources once map is loaded
   useEffect(() => {
     if (!map || !isLoaded || initialized.current) return
 
-    // Source for completed polygon
+    // Source for completed geometry (polygon or polyline)
     if (!map.getSource("drawn-polygon")) {
       map.addSource("drawn-polygon", {
         type: "geojson",
@@ -32,6 +35,7 @@ function DrawController({ geometry, onChange }: ParcelDrawMapProps) {
         id: "drawn-polygon-fill",
         type: "fill",
         source: "drawn-polygon",
+        filter: ["==", "$type", "Polygon"],
         paint: { "fill-color": "#3b82f6", "fill-opacity": 0.3 },
       })
       map.addLayer({
@@ -105,7 +109,10 @@ function DrawController({ geometry, onChange }: ParcelDrawMapProps) {
       if (!drawingMode) return
       e.preventDefault()
       const pts = pointsRef.current
-      if (pts.length >= 3) {
+      if (drawType === "polyline" && pts.length >= 2) {
+        const geom = { type: "LineString" as const, coordinates: pts }
+        onChange(geom)
+      } else if (drawType === "polygon" && pts.length >= 3) {
         const ring = [...pts, pts[0]]
         const geom = { type: "Polygon" as const, coordinates: [ring] }
         onChange(geom)
@@ -135,18 +142,48 @@ function DrawController({ geometry, onChange }: ParcelDrawMapProps) {
     }
   }, [map, drawingMode])
 
+  const startDrawing = (type: DrawType) => {
+    setDrawType(type)
+    setDrawingMode(true)
+  }
+
   return (
     <div className="absolute bottom-3 left-3 z-[1000] flex items-center gap-2">
-      <Button
-        type="button"
-        variant={drawingMode ? "default" : "outline"}
-        size="sm"
-        onClick={() => setDrawingMode(!drawingMode)}
-        className="gap-1 bg-white shadow-md border-gray-300"
-      >
-        <MousePointerClick className="h-3.5 w-3.5" />
-        {drawingMode ? "Drawing... (double-click to finish)" : "Draw Polygon"}
-      </Button>
+      {drawingMode ? (
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          onClick={() => setDrawingMode(false)}
+          className="gap-1 shadow-md"
+        >
+          <MousePointerClick className="h-3.5 w-3.5" />
+          Drawing {drawType}... (double-click to finish)
+        </Button>
+      ) : (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => startDrawing("polygon")}
+            className="gap-1 bg-white shadow-md border-gray-300"
+          >
+            <MousePointerClick className="h-3.5 w-3.5" />
+            Polygon
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => startDrawing("polyline")}
+            className="gap-1 bg-white shadow-md border-gray-300"
+          >
+            <Minus className="h-3.5 w-3.5" />
+            Polyline
+          </Button>
+        </>
+      )}
     </div>
   )
 }
@@ -167,7 +204,7 @@ export function ParcelDrawMap({ geometry, onChange }: ParcelDrawMapProps) {
             onChange(json.features[0].geometry)
           } else if (json.type === "Feature") {
             onChange(json.geometry)
-          } else if (json.type === "Polygon" || json.type === "MultiPolygon") {
+          } else if (json.type === "Polygon" || json.type === "MultiPolygon" || json.type === "LineString") {
             onChange(json)
           }
         } catch {
@@ -296,6 +333,7 @@ function clearDrawPreview(map: MapLibreGL.Map) {
 function extractCoords(geometry: any): [number, number][] {
   if (!geometry) return []
   if (geometry.type === "Point") return [geometry.coordinates]
+  if (geometry.type === "LineString") return geometry.coordinates || []
   if (geometry.type === "Polygon") return geometry.coordinates[0] || []
   if (geometry.type === "MultiPolygon") return (geometry.coordinates[0]?.[0]) || []
   return []

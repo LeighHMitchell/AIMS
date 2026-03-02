@@ -10,7 +10,8 @@ import {
   UserPlus, CheckCircle2, Clock, AlertCircle, FileText, Calendar,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
-import type { FS2Assignment } from "@/types/project-bank"
+import { GateChecklistModal, type ChecklistItem } from "@/components/project-bank/gate-checklist/GateChecklistModal"
+import type { FS2Assignment, ProjectDocument } from "@/types/project-bank"
 
 interface FS2AssignmentPanelProps {
   projectId: string
@@ -32,6 +33,19 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
   // Complete assignment form
   const [firr, setFirr] = useState("")
   const [eirr, setEirr] = useState("")
+
+  // Gate modal state
+  const [showGateModal, setShowGateModal] = useState(false)
+  const [documents, setDocuments] = useState<ProjectDocument[]>([])
+
+  const fetchDocuments = async () => {
+    try {
+      const res = await apiFetch(`/api/project-bank/${projectId}/documents`)
+      if (res.ok) setDocuments(await res.json())
+    } catch { /* ignore */ }
+  }
+
+  useEffect(() => { fetchDocuments() }, [projectId])
 
   useEffect(() => {
     async function fetchAssignment() {
@@ -232,7 +246,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
               <h4 className="text-sm font-medium">Complete Study — Enter Results</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">FIRR (%)</Label>
+                  <Label className="text-xs">FIRR (%) <span className="text-red-500">*</span></Label>
                   <Input
                     type="number"
                     step="0.1"
@@ -242,7 +256,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">EIRR (%)</Label>
+                  <Label className="text-xs">EIRR (%) <span className="text-red-500">*</span></Label>
                   <Input
                     type="number"
                     step="0.1"
@@ -253,17 +267,41 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
                 </div>
               </div>
               <Button
-                onClick={() => handleStatusUpdate("completed")}
-                disabled={submitting}
+                onClick={() => setShowGateModal(true)}
+                disabled={submitting || !firr || !eirr}
                 className="gap-2"
               >
                 <CheckCircle2 className="h-4 w-4" />
-                {submitting ? "Saving..." : "Mark Study Complete"}
+                Mark Study Complete
               </Button>
             </div>
           )}
         </div>
       )}
+
+      {/* Gate 2 checklist modal */}
+      <GateChecklistModal
+        open={showGateModal}
+        onOpenChange={setShowGateModal}
+        title="Complete FS-2 Study"
+        description="Confirm all requirements before marking the feasibility study as complete."
+        projectId={projectId}
+        items={[
+          { key: "firr_confirm", label: `FIRR result: ${firr}%`, type: "checkbox" },
+          { key: "eirr_confirm", label: `EIRR result: ${eirr}%`, type: "checkbox" },
+          { key: "detailed_fs_report", label: "Detailed FS Report", type: "document", documentType: "detailed_fs_report", documentLabel: "Detailed FS Report" },
+          { key: "cost_benefit_analysis", label: "Cost-Benefit Analysis", type: "document", documentType: "cost_benefit_analysis", documentLabel: "Cost-Benefit Analysis" },
+          { key: "financial_model_verified", label: "Financial model has been independently verified", type: "checkbox" },
+        ]}
+        existingDocuments={documents}
+        onDocumentUploaded={fetchDocuments}
+        onConfirm={async () => {
+          await handleStatusUpdate("completed")
+          setShowGateModal(false)
+        }}
+        confirmLabel="Complete Study"
+        confirming={submitting}
+      />
     </div>
   )
 }

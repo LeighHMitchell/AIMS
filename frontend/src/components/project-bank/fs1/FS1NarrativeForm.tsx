@@ -10,7 +10,7 @@ import type { FS1Narrative } from "@/types/project-bank"
 
 const MIN_CHARS = 200
 
-const SECTIONS = [
+export const NARRATIVE_SECTIONS = [
   {
     key: "problem_statement" as const,
     label: "Problem Statement",
@@ -57,7 +57,7 @@ export function FS1NarrativeForm({ projectId, existingNarrative, isResubmission,
   const [error, setError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
-  const allValid = SECTIONS.every(s => (values[s.key]?.trim().length || 0) >= MIN_CHARS)
+  const allValid = NARRATIVE_SECTIONS.every(s => (values[s.key]?.trim().length || 0) >= MIN_CHARS)
 
   const handleSubmit = async () => {
     if (!allValid) return
@@ -127,7 +127,7 @@ export function FS1NarrativeForm({ projectId, existingNarrative, isResubmission,
         </div>
       )}
 
-      {SECTIONS.map(section => {
+      {NARRATIVE_SECTIONS.map(section => {
         const charCount = values[section.key]?.trim().length || 0
         const isValid = charCount >= MIN_CHARS
         return (

@@ -2,10 +2,12 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, Trash2, Loader2 } from 'lucide-react';
+import { Upload, FileText, Trash2, Loader2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { apiFetch } from '@/lib/api-fetch';
 import type { ProjectDocument, DocumentType } from '@/types/project-bank';
+import type { PendingFile } from '@/hooks/use-appraisal-wizard';
 import { cn } from '@/lib/utils';
 
 interface DocumentUploadZoneProps {
@@ -14,6 +16,8 @@ interface DocumentUploadZoneProps {
   documents: ProjectDocument[];
   onDocumentsChange: () => void;
   acceptedTypes?: DocumentType[];
+  pendingFiles?: PendingFile[];
+  onPendingFilesChange?: (files: PendingFile[]) => void;
 }
 
 const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
@@ -32,7 +36,40 @@ const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   funding_request: 'Funding Request',
   cabinet_approval: 'Cabinet Approval',
   monitoring_report: 'Monitoring Report',
+  dap_compliance: 'DAP Compliance Justification',
+  terms_of_reference: 'Terms of Reference (TOR)',
+  budget_estimate: 'Budget Estimate',
+  site_map: 'Site / Location Map',
+  stakeholder_analysis: 'Stakeholder Analysis',
+  endorsement_letter: 'Government Endorsement Letter',
+  proponent_profile: 'Proponent Company Profile',
   other: 'Other',
+};
+
+const DOCUMENT_TYPE_CODES: Record<DocumentType, string> = {
+  concept_note: 'CN',
+  project_proposal: 'PP',
+  preliminary_fs_report: 'PFS',
+  cost_estimate: 'CE',
+  environmental_screening: 'ES',
+  msdp_alignment_justification: 'MAJ',
+  firr_calculation_workbook: 'FIRR',
+  eirr_calculation_workbook: 'EIRR',
+  cost_benefit_analysis: 'CBA',
+  detailed_fs_report: 'DFS',
+  vgf_calculation: 'VGF',
+  risk_allocation_matrix: 'RAM',
+  funding_request: 'FR',
+  cabinet_approval: 'CA',
+  monitoring_report: 'MR',
+  dap_compliance: 'DAP',
+  terms_of_reference: 'TOR',
+  budget_estimate: 'BE',
+  site_map: 'SM',
+  stakeholder_analysis: 'SA',
+  endorsement_letter: 'EL',
+  proponent_profile: 'CPR',
+  other: 'OTH',
 };
 
 function formatFileSize(bytes: number | null): string {
@@ -48,6 +85,8 @@ export function DocumentUploadZone({
   documents,
   onDocumentsChange,
   acceptedTypes,
+  pendingFiles = [],
+  onPendingFilesChange,
 }: DocumentUploadZoneProps) {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -56,7 +95,20 @@ export function DocumentUploadZone({
   const stageDocuments = documents.filter(d => d.upload_stage === stage);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (!projectId || acceptedFiles.length === 0) return;
+    if (acceptedFiles.length === 0) return;
+
+    // If no projectId yet, stage files locally
+    if (!projectId) {
+      if (onPendingFilesChange) {
+        const newPending: PendingFile[] = acceptedFiles.map(file => ({
+          file,
+          type: selectedType,
+          stage,
+        }));
+        onPendingFilesChange([...pendingFiles, ...newPending]);
+      }
+      return;
+    }
 
     setUploading(true);
     try {
@@ -77,7 +129,7 @@ export function DocumentUploadZone({
     } finally {
       setUploading(false);
     }
-  }, [projectId, stage, selectedType, onDocumentsChange]);
+  }, [projectId, stage, selectedType, onDocumentsChange, pendingFiles, onPendingFilesChange]);
 
   const handleDelete = async (docId: string) => {
     if (!projectId) return;
@@ -94,9 +146,16 @@ export function DocumentUploadZone({
     }
   };
 
+  const handleRemovePending = (index: number) => {
+    if (onPendingFilesChange) {
+      const updated = pendingFiles.filter((_, i) => i !== index);
+      onPendingFilesChange(updated);
+    }
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    disabled: !projectId || uploading,
+    disabled: uploading,
     accept: {
       'application/pdf': ['.pdf'],
       'application/vnd.ms-excel': ['.xls'],
@@ -113,50 +172,82 @@ export function DocumentUploadZone({
 
   return (
     <div className="space-y-3">
-      {/* Document type selector */}
+      {/* Document type selector — label removed per plan L.1 */}
       {typeOptions.length > 1 && (
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-muted-foreground">Document type:</label>
-          <select
-            value={selectedType}
-            onChange={e => setSelectedType(e.target.value as DocumentType)}
-            className="text-xs border rounded px-2 py-1 bg-background"
-          >
+        <Select value={selectedType} onValueChange={v => setSelectedType(v as DocumentType)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
             {typeOptions.map(type => (
-              <option key={type} value={type}>{DOCUMENT_TYPE_LABELS[type]}</option>
+              <SelectItem key={type} value={type}>
+                <span className="flex items-center gap-2">
+                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{DOCUMENT_TYPE_CODES[type]}</span>
+                  {DOCUMENT_TYPE_LABELS[type]}
+                </span>
+              </SelectItem>
             ))}
-          </select>
-        </div>
+          </SelectContent>
+        </Select>
       )}
 
-      {/* Dropzone */}
-      {projectId ? (
-        <div
-          {...getRootProps()}
-          className={cn(
-            'border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors',
-            isDragActive ? 'border-blue-400 bg-blue-50' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
-            uploading && 'opacity-50 cursor-wait',
-          )}
-        >
-          <input {...getInputProps()} />
-          {uploading ? (
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Uploading...
+      {/* Dropzone — always active (staging when no projectId) */}
+      <div
+        {...getRootProps()}
+        className={cn(
+          'border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors',
+          isDragActive ? 'border-[#5f7f7a] bg-[#f6f5f3]' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+          uploading && 'opacity-50 cursor-wait',
+        )}
+      >
+        <input {...getInputProps()} />
+        {uploading ? (
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Uploading...
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <Upload className="h-5 w-5 mx-auto text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              {isDragActive ? 'Drop files here' : 'Drag files here or click to upload'}
+            </p>
+            <p className="text-xs text-muted-foreground">PDF, Excel, Word, CSV, images (max 50 MB)</p>
+          </div>
+        )}
+      </div>
+
+      {/* Pending files (pre-save staging) */}
+      {pendingFiles.length > 0 && (
+        <div className="space-y-1.5">
+          {pendingFiles.map((pf, idx) => (
+            <div
+              key={`pending-${idx}`}
+              className="flex items-center justify-between p-2 bg-amber-50 border border-amber-200 rounded-md"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="h-4 w-4 text-amber-600 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-sm truncate">{pf.file.name}</div>
+                  <div className="text-xs text-amber-600 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Pending upload
+                    {' · '}
+                    {DOCUMENT_TYPE_LABELS[pf.type] || pf.type}
+                    {' · '}
+                    {formatFileSize(pf.file.size)}
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleRemovePending(idx)}
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-1">
-              <Upload className="h-5 w-5 mx-auto text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {isDragActive ? 'Drop files here' : 'Drag files here or click to upload'}
-              </p>
-              <p className="text-xs text-muted-foreground">PDF, Excel, Word, CSV, images (max 50 MB)</p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="border-2 border-dashed rounded-lg p-4 text-center opacity-50">
-          <p className="text-sm text-muted-foreground">Save the project first to upload documents</p>
+          ))}
         </div>
       )}
 

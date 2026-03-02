@@ -10,7 +10,7 @@ export default function ResumeAppraisalPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-[960px]">
+      <div className="max-w-[1280px]">
         <h1 className="text-2xl font-bold mb-6">Project Appraisal</h1>
         <AppraisalWizard projectId={id} />
       </div>

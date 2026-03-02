@@ -36,6 +36,7 @@ import {
   Handshake,
   ArrowLeft,
   MapPin,
+  ShieldCheck,
 } from "lucide-react"
 import {
   HomeIcon,
@@ -252,8 +253,16 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "Project List", href: "/project-bank/projects", show: true },
-        { name: "Review Board", href: "/project-bank/review", show: true },
         { name: "Funding Gaps", href: "/project-bank/gaps", show: true },
+      ]
+    },
+    {
+      label: "REVIEW BOARD",
+      icon: ShieldCheck,
+      isAnimated: false,
+      defaultOpen: true,
+      items: [
+        { name: "Review Board", href: "/project-bank/review", show: true },
       ]
     },
     {
@@ -296,7 +305,7 @@ export function SidebarNav({
       items: [
         { name: "Dashboard", href: "/land-bank", show: true },
         { name: "All Parcels", href: "/land-bank/parcels", show: true },
-        { name: "Register New", href: "/land-bank/new", show: canCreateParcels },
+
         { name: "Import Parcels", href: "/land-bank/import", show: canCreateParcels },
         { name: "Analytics", href: "/land-bank/analytics", show: true },
       ]

@@ -62,6 +62,10 @@ export interface LandParcel {
   ndp_goal_id: string | null;
   secondary_ndp_goals: string[];
   notes: string | null;
+  submitter_first_name: string | null;
+  submitter_last_name: string | null;
+  submitter_organization: string | null;
+  banner_document_id: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

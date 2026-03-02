@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 import { AidOnBudgetMetrics, ClassificationType } from "@/types/aid-on-budget";
 
 /**
@@ -31,6 +32,8 @@ export async function GET(request: NextRequest) {
       .select("value_usd")
       .eq("transaction_type", "3") // Disbursements
       .not("value_usd", "is", null);
+    // Exclude internal transfers (pooled fund flows)
+    totalAidQuery = excludeInternalTransfers(totalAidQuery, ["3"]);
 
     if (dateFrom) {
       totalAidQuery = totalAidQuery.gte("transaction_date", dateFrom);
@@ -94,6 +97,8 @@ export async function GET(request: NextRequest) {
       `)
       .eq("transaction_type", "3") // Disbursements
       .not("value_usd", "is", null);
+    // Exclude internal transfers (pooled fund flows)
+    disbursementsQuery = excludeInternalTransfers(disbursementsQuery, ["3"]);
 
     if (dateFrom) {
       disbursementsQuery = disbursementsQuery.gte("transaction_date", dateFrom);
@@ -132,6 +137,8 @@ export async function GET(request: NextRequest) {
       `)
       .eq("transaction_type", "2") // Commitments
       .not("value_usd", "is", null);
+    // Exclude internal transfers (pooled fund flows)
+    commitmentsQuery = excludeInternalTransfers(commitmentsQuery, ["2"]);
 
     if (dateFrom) {
       commitmentsQuery = commitmentsQuery.gte("transaction_date", dateFrom);

@@ -2,13 +2,14 @@
 
 import { useMemo, useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { FormattedNumberInput } from './FormattedNumberInput';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { estimateVGF } from '@/lib/eirr-calculator';
-import { formatCurrency, PPP_CONTRACT_TYPE_LABELS, PPP_SUPPORT_MECHANISM_LABELS } from '@/lib/project-bank-utils';
+import { formatCurrency, PPP_CONTRACT_TYPE_LABELS, PPP_CONTRACT_TYPES, PPP_SUPPORT_MECHANISMS, VGF_MODALITIES, BUDGET_ALLOCATION_STATUSES, PAYMENT_SCHEDULE_TYPES } from '@/lib/project-bank-utils';
 import { DocumentUploadZone } from './DocumentUploadZone';
 import { apiFetch } from '@/lib/api-fetch';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
@@ -24,20 +25,11 @@ interface StagePPPStructuringProps {
   wizard: UseAppraisalWizardReturn;
 }
 
-const VGF_MODALITIES = [
-  { value: 'capital_grant', label: 'Capital Grant (upfront)' },
-  { value: 'annuity', label: 'Annuity Payments' },
-  { value: 'interest_subsidy', label: 'Interest Subsidy' },
-  { value: 'tax_incentive', label: 'Tax Incentive' },
-  { value: 'land_grant', label: 'Land Grant (in-kind)' },
-];
-
 const CHECKLIST_ITEMS = [
-  { key: 'detailed_fs', label: 'Detailed Feasibility Study completed' },
   { key: 'land_identified', label: 'Land parcel identified / reserved' },
   { key: 'dp_consulted', label: 'Development partners consulted' },
   { key: 'budget_allocated', label: 'Budget allocation secured' },
-  { key: 'dap_compliant', label: 'DAP (Development Assistance Policy) compliant' },
+  { key: 'dap_compliant', label: 'Development Assistance Policy (DAP) compliant' },
   { key: 'risk_allocated', label: 'Risk allocation matrix prepared' },
 ];
 
@@ -105,31 +97,29 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
       </div>
 
       {/* VGF Estimation */}
-      <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-3">
-        <Label className="text-sm font-medium text-purple-800">VGF Estimation <HelpTooltip text="Viability Gap Funding — the government subsidy needed to make the project commercially viable at the target FIRR." /></Label>
+      <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
+        <Label className="text-sm font-medium text-foreground">VGF Estimation <HelpTooltip text="Viability Gap Funding — the government subsidy needed to make the project commercially viable at the target FIRR." /></Label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="text-xs text-purple-600">Target FIRR (%)</label>
-            <Input
-              type="number"
-              step="0.5"
+            <label className="text-xs text-muted-foreground">Target FIRR (%) <HelpTooltip text="The minimum financial return needed to attract private investment." /></label>
+            <FormattedNumberInput
               value={targetFIRR}
-              onChange={e => {
-                const v = parseFloat(e.target.value) || 10;
-                updateField('vgf_calculation_data', { ...(formData.vgf_calculation_data || {}), target_firr: v });
+              onChange={v => {
+                updateField('vgf_calculation_data', { ...(formData.vgf_calculation_data || {}), target_firr: v ?? 10 });
               }}
+              decimals={1}
               className="h-8 text-sm"
             />
           </div>
           <div>
-            <label className="text-xs text-purple-600">VGF Amount</label>
-            <div className="text-lg font-bold font-mono text-purple-700 mt-1">
+            <label className="text-xs text-muted-foreground">VGF Amount</label>
+            <div className="text-lg font-bold font-mono text-foreground mt-1">
               {vgfResult ? formatCurrency(vgfResult.gap_amount) : '—'}
             </div>
           </div>
           <div>
-            <label className="text-xs text-purple-600">VGF as % of CAPEX</label>
-            <div className="text-lg font-bold font-mono text-purple-700 mt-1">
+            <label className="text-xs text-muted-foreground">VGF as % of CAPEX</label>
+            <div className="text-lg font-bold font-mono text-foreground mt-1">
               {vgfResult ? `${vgfResult.vgf_as_pct_of_capex.toFixed(1)}%` : '—'}
             </div>
           </div>
@@ -143,7 +133,12 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
           <SelectTrigger><SelectValue placeholder="Select modality..." /></SelectTrigger>
           <SelectContent>
             {VGF_MODALITIES.map(m => (
-              <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              <SelectItem key={m.value} value={m.value}>
+                <span className="inline-flex items-center gap-2 min-w-0">
+                  <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.code}</span>
+                  <span>{m.label}</span>
+                </span>
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -155,8 +150,13 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
         <Select value={formData.ppp_support_mechanism || ''} onValueChange={v => updateField('ppp_support_mechanism', v || null)}>
           <SelectTrigger><SelectValue placeholder="Select support mechanism..." /></SelectTrigger>
           <SelectContent>
-            {Object.entries(PPP_SUPPORT_MECHANISM_LABELS).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
+            {PPP_SUPPORT_MECHANISMS.map(m => (
+              <SelectItem key={m.value} value={m.value}>
+                <span className="inline-flex items-center gap-2 min-w-0">
+                  <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.code}</span>
+                  <span>{m.label}</span>
+                </span>
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -164,42 +164,39 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
 
       {/* MRG Fields */}
       {(formData.ppp_support_mechanism === 'mrg' || formData.ppp_support_mechanism === 'combined') && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
-          <Label className="text-sm font-medium text-amber-800">Minimum Revenue Guarantee (MRG)</Label>
-          <p className="text-xs text-amber-700">Government guarantees a minimum annual revenue to the private partner. If actual revenue falls below this threshold, the government pays the shortfall.</p>
+        <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
+          <Label className="text-sm font-medium text-foreground">Minimum Revenue Guarantee (MRG)</Label>
+          <p className="text-xs text-muted-foreground">Government guarantees a minimum annual revenue to the private partner. If actual revenue falls below this threshold, the government pays the shortfall.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-amber-600">Guaranteed Minimum Annual Revenue (USD)</label>
-              <Input
-                type="number"
-                value={formData.mrg_guaranteed_minimum ?? ''}
-                onChange={e => updateField('mrg_guaranteed_minimum', e.target.value ? parseFloat(e.target.value) : null)}
+              <label className="text-xs text-muted-foreground">Guaranteed Minimum Annual Revenue (USD) <HelpTooltip text="The minimum annual revenue the government guarantees to the private partner." /></label>
+              <FormattedNumberInput
+                value={formData.mrg_guaranteed_minimum ?? null}
+                onChange={v => updateField('mrg_guaranteed_minimum', v)}
                 className="h-8 text-sm"
-                placeholder="e.g. 5000000"
+                placeholder="e.g. 5,000,000"
               />
             </div>
             <div>
-              <label className="text-xs text-amber-600">Government Liability Cap (USD)</label>
-              <Input
-                type="number"
-                value={formData.mrg_government_liability_cap ?? ''}
-                onChange={e => updateField('mrg_government_liability_cap', e.target.value ? parseFloat(e.target.value) : null)}
+              <label className="text-xs text-muted-foreground">Government Liability Cap (USD) <HelpTooltip text="Maximum cumulative government exposure under the MRG." /></label>
+              <FormattedNumberInput
+                value={formData.mrg_government_liability_cap ?? null}
+                onChange={v => updateField('mrg_government_liability_cap', v)}
                 className="h-8 text-sm"
                 placeholder="Max total government exposure"
               />
             </div>
             <div>
-              <label className="text-xs text-amber-600">Duration (years)</label>
-              <Input
-                type="number"
-                value={formData.mrg_duration_years ?? ''}
-                onChange={e => updateField('mrg_duration_years', e.target.value ? parseInt(e.target.value) : null)}
+              <label className="text-xs text-muted-foreground">Duration (years) <HelpTooltip text="How many years the MRG remains in effect." /></label>
+              <FormattedNumberInput
+                value={formData.mrg_duration_years ?? null}
+                onChange={v => updateField('mrg_duration_years', v)}
                 className="h-8 text-sm"
                 placeholder="e.g. 15"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="text-xs text-amber-600">Trigger Conditions</label>
+              <label className="text-xs text-muted-foreground">Trigger Conditions <HelpTooltip text="The conditions under which the MRG payment is activated." /></label>
               <Textarea
                 value={formData.mrg_trigger_conditions || ''}
                 onChange={e => updateField('mrg_trigger_conditions', e.target.value)}
@@ -213,32 +210,30 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
 
       {/* Availability Payment Fields */}
       {(formData.ppp_support_mechanism === 'availability_payment' || formData.ppp_support_mechanism === 'combined') && (
-        <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg space-y-3">
-          <Label className="text-sm font-medium text-teal-800">Availability Payments</Label>
-          <p className="text-xs text-teal-700">Government makes regular payments for making infrastructure available, regardless of actual usage. Payments are subject to service quality conditions.</p>
+        <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
+          <Label className="text-sm font-medium text-foreground">Availability Payments</Label>
+          <p className="text-xs text-muted-foreground">Government makes regular payments for making infrastructure available, regardless of actual usage. Payments are subject to service quality conditions.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-teal-600">Annual Payment Amount (USD)</label>
-              <Input
-                type="number"
-                value={formData.availability_payment_amount ?? ''}
-                onChange={e => updateField('availability_payment_amount', e.target.value ? parseFloat(e.target.value) : null)}
+              <label className="text-xs text-muted-foreground">Annual Payment Amount (USD) <HelpTooltip text="The fixed annual payment made by government for infrastructure availability." /></label>
+              <FormattedNumberInput
+                value={formData.availability_payment_amount ?? null}
+                onChange={v => updateField('availability_payment_amount', v)}
                 className="h-8 text-sm"
-                placeholder="e.g. 2000000"
+                placeholder="e.g. 2,000,000"
               />
             </div>
             <div>
-              <label className="text-xs text-teal-600">Duration (years)</label>
-              <Input
-                type="number"
-                value={formData.availability_payment_duration_years ?? ''}
-                onChange={e => updateField('availability_payment_duration_years', e.target.value ? parseInt(e.target.value) : null)}
+              <label className="text-xs text-muted-foreground">Duration (years) <HelpTooltip text="Length of the availability payment contract period." /></label>
+              <FormattedNumberInput
+                value={formData.availability_payment_duration_years ?? null}
+                onChange={v => updateField('availability_payment_duration_years', v)}
                 className="h-8 text-sm"
                 placeholder="e.g. 20"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="text-xs text-teal-600">Payment Conditions</label>
+              <label className="text-xs text-muted-foreground">Payment Conditions <HelpTooltip text="Conditions under which availability payments are made or deducted." /></label>
               <Textarea
                 value={formData.availability_payment_conditions || ''}
                 onChange={e => updateField('availability_payment_conditions', e.target.value)}
@@ -256,8 +251,13 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
         <Select value={formData.ppp_contract_type || ''} onValueChange={v => updateField('ppp_contract_type', v || null)}>
           <SelectTrigger><SelectValue placeholder="Select contract type..." /></SelectTrigger>
           <SelectContent>
-            {Object.entries(PPP_CONTRACT_TYPE_LABELS).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
+            {PPP_CONTRACT_TYPES.map(ct => (
+              <SelectItem key={ct.value} value={ct.value}>
+                <span className="inline-flex items-center gap-2 min-w-0">
+                  <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{ct.code}</span>
+                  <span>{ct.label}</span>
+                </span>
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -265,15 +265,15 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
 
       {/* Conditional PPP Contract Detail Fields */}
       {formData.ppp_contract_type && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
-          <Label className="text-sm font-medium text-blue-800">
+        <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
+          <Label className="text-sm font-medium text-foreground">
             {PPP_CONTRACT_TYPE_LABELS[formData.ppp_contract_type as string] || 'Contract'} Details
           </Label>
 
           {(formData.ppp_contract_type === 'bot' || formData.ppp_contract_type === 'bto') && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-blue-600">Transfer Date</label>
+                <label className="text-xs text-muted-foreground">Transfer Date <HelpTooltip text="When asset ownership transfers to the government." /></label>
                 <DatePicker
                   value={formData.ppp_contract_details?.transfer_date || ''}
                   onChange={v => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), transfer_date: v || null })}
@@ -283,16 +283,15 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
               {formData.ppp_contract_type === 'bot' && (
                 <>
                   <div>
-                    <label className="text-xs text-blue-600">Concession Period (years)</label>
-                    <Input
-                      type="number"
-                      value={formData.ppp_contract_details?.concession_period_years ?? ''}
-                      onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), concession_period_years: e.target.value ? Number(e.target.value) : null })}
+                    <label className="text-xs text-muted-foreground">Concession Period (years) <HelpTooltip text="Duration the private operator runs the facility before transferring to government." /></label>
+                    <FormattedNumberInput
+                      value={formData.ppp_contract_details?.concession_period_years ?? null}
+                      onChange={v => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), concession_period_years: v })}
                       className="h-8 text-sm"
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="text-xs text-blue-600">Transfer Conditions</label>
+                    <label className="text-xs text-muted-foreground">Transfer Conditions <HelpTooltip text="Terms and conditions governing the asset transfer." /></label>
                     <Textarea
                       value={formData.ppp_contract_details?.transfer_conditions || ''}
                       onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), transfer_conditions: e.target.value })}
@@ -303,11 +302,10 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
               )}
               {formData.ppp_contract_type === 'bto' && (
                 <div>
-                  <label className="text-xs text-blue-600">Operating Period (years)</label>
-                  <Input
-                    type="number"
-                    value={formData.ppp_contract_details?.operating_period_years ?? ''}
-                    onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), operating_period_years: e.target.value ? Number(e.target.value) : null })}
+                  <label className="text-xs text-muted-foreground">Operating Period (years) <HelpTooltip text="Duration the builder operates the asset after transferring ownership." /></label>
+                  <FormattedNumberInput
+                    value={formData.ppp_contract_details?.operating_period_years ?? null}
+                    onChange={v => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), operating_period_years: v })}
                     className="h-8 text-sm"
                   />
                 </div>
@@ -318,7 +316,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
           {formData.ppp_contract_type === 'boo' && (
             <div className="grid grid-cols-1 gap-3">
               <div>
-                <label className="text-xs text-blue-600">Perpetuity Terms</label>
+                <label className="text-xs text-muted-foreground">Perpetuity Terms <HelpTooltip text="Terms governing indefinite private ownership and operation." /></label>
                 <Textarea
                   value={formData.ppp_contract_details?.perpetuity_terms || ''}
                   onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), perpetuity_terms: e.target.value })}
@@ -326,7 +324,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
                 />
               </div>
               <div>
-                <label className="text-xs text-blue-600">Purchase Option Terms</label>
+                <label className="text-xs text-muted-foreground">Purchase Option Terms <HelpTooltip text="Government option to acquire the asset at a future date." /></label>
                 <Textarea
                   value={formData.ppp_contract_details?.purchase_option_terms || ''}
                   onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), purchase_option_terms: e.target.value })}
@@ -339,16 +337,15 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
           {formData.ppp_contract_type === 'btl' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-blue-600">Lease Period (years)</label>
-                <Input
-                  type="number"
-                  value={formData.ppp_contract_details?.lease_period_years ?? ''}
-                  onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), lease_period_years: e.target.value ? Number(e.target.value) : null })}
+                <label className="text-xs text-muted-foreground">Lease Period (years) <HelpTooltip text="Duration of the government lease-back arrangement." /></label>
+                <FormattedNumberInput
+                  value={formData.ppp_contract_details?.lease_period_years ?? null}
+                  onChange={v => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), lease_period_years: v })}
                   className="h-8 text-sm"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="text-xs text-blue-600">Lease Payment Terms</label>
+                <label className="text-xs text-muted-foreground">Lease Payment Terms <HelpTooltip text="Schedule and conditions for lease payments." /></label>
                 <Textarea
                   value={formData.ppp_contract_details?.lease_payment_terms || ''}
                   onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), lease_payment_terms: e.target.value })}
@@ -360,11 +357,10 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
 
           {formData.ppp_contract_type === 'om' && (
             <div>
-              <label className="text-xs text-blue-600">Contract Period (years)</label>
-              <Input
-                type="number"
-                value={formData.ppp_contract_details?.contract_period_years ?? ''}
-                onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), contract_period_years: e.target.value ? Number(e.target.value) : null })}
+              <label className="text-xs text-muted-foreground">Contract Period (years) <HelpTooltip text="Duration of the operations and maintenance contract." /></label>
+              <FormattedNumberInput
+                value={formData.ppp_contract_details?.contract_period_years ?? null}
+                onChange={v => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), contract_period_years: v })}
                 className="h-8 text-sm w-40"
               />
             </div>
@@ -373,7 +369,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
           {formData.ppp_contract_type === 'availability_payment' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="md:col-span-2">
-                <label className="text-xs text-blue-600">Service Level KPIs</label>
+                <label className="text-xs text-muted-foreground">Service Level KPIs <HelpTooltip text="Key Performance Indicators the private partner must meet to receive full availability payments (e.g. uptime %, response times, safety standards)." /></label>
                 <Textarea
                   value={formData.ppp_contract_details?.service_level_kpis || ''}
                   onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), service_level_kpis: e.target.value })}
@@ -381,21 +377,26 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
                 />
               </div>
               <div>
-                <label className="text-xs text-blue-600">Payment Schedule</label>
+                <label className="text-xs text-muted-foreground">Payment Schedule <HelpTooltip text="How frequently availability payments are made to the private partner." /></label>
                 <Select
                   value={formData.ppp_contract_details?.payment_schedule_type || ''}
                   onValueChange={v => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), payment_schedule_type: v })}
                 >
                   <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="annual">Annual</SelectItem>
+                    {PAYMENT_SCHEDULE_TYPES.map(ps => (
+                      <SelectItem key={ps.value} value={ps.value}>
+                        <span className="inline-flex items-center gap-2 min-w-0">
+                          <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{ps.code}</span>
+                          <span>{ps.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="md:col-span-2">
-                <label className="text-xs text-blue-600">Performance Deduction Terms</label>
+                <label className="text-xs text-muted-foreground">Performance Deduction Terms <HelpTooltip text="Rules for reducing availability payments when KPIs are not met (e.g. deduction percentages, grace periods, cure periods)." /></label>
                 <Textarea
                   value={formData.ppp_contract_details?.performance_deduction_terms || ''}
                   onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), performance_deduction_terms: e.target.value })}
@@ -408,7 +409,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
           {formData.ppp_contract_type === 'other' && (
             <div className="grid grid-cols-1 gap-3">
               <div>
-                <label className="text-xs text-blue-600">Custom Type Description</label>
+                <label className="text-xs text-muted-foreground">Custom Type Description <HelpTooltip text="Describe the non-standard PPP contract type being used." /></label>
                 <Input
                   value={formData.ppp_contract_details?.custom_type_description || ''}
                   onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), custom_type_description: e.target.value })}
@@ -416,7 +417,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
                 />
               </div>
               <div>
-                <label className="text-xs text-blue-600">Custom Terms</label>
+                <label className="text-xs text-muted-foreground">Custom Terms <HelpTooltip text="Key contractual terms and conditions for this non-standard arrangement." /></label>
                 <Textarea
                   value={formData.ppp_contract_details?.custom_terms || ''}
                   onChange={e => updateField('ppp_contract_details', { ...(formData.ppp_contract_details || {}), custom_terms: e.target.value })}
@@ -431,14 +432,13 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
       {/* Equity Ratio */}
       <div>
         <Label>Equity Ratio (%) <HelpTooltip text="The private equity contribution as a percentage of total project cost. Per Notification 2/2018: >=30% for projects <=50M USD, >=20% for projects >50M USD." /></Label>
-        <Input
-          type="number"
+        <FormattedNumberInput
+          value={formData.equity_ratio ?? null}
+          onChange={v => updateField('equity_ratio', v)}
+          placeholder="e.g. 25"
+          decimals={1}
           min={0}
           max={100}
-          step={0.1}
-          value={formData.equity_ratio ?? ''}
-          onChange={e => updateField('equity_ratio', e.target.value ? parseFloat(e.target.value) : null)}
-          placeholder="e.g. 25"
           className="w-40"
         />
       </div>
@@ -463,13 +463,16 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
       {/* Land Parcel Selection */}
       <div>
         <Label>Land Parcel (from Land Bank) <HelpTooltip text="Select an available state-owned land parcel to be allocated to this project." /></Label>
-        <Select value={formData.land_parcel_id || ''} onValueChange={v => updateField('land_parcel_id', v || null)}>
+        <Select value={formData.land_parcel_id || 'none'} onValueChange={v => updateField('land_parcel_id', v === 'none' ? null : v)}>
           <SelectTrigger><SelectValue placeholder="Select a parcel..." /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">None selected</SelectItem>
+            <SelectItem value="none">None selected</SelectItem>
             {landParcels.map(p => (
               <SelectItem key={p.id} value={p.id}>
-                {p.name || p.parcel_code} — {p.state_region} ({p.size_hectares} ha)
+                <span className="inline-flex items-center gap-2 min-w-0">
+                  <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{p.parcel_code}</span>
+                  <span>{p.name || p.state_region} ({p.size_hectares} ha)</span>
+                </span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -479,43 +482,57 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
       {/* Budget */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label>Budget Allocation Status</Label>
+          <Label>Budget Allocation Status <HelpTooltip text="Current status of government budget allocation for this project. Indicates whether funds have been requested, approved, or are already in the budget." /></Label>
           <Select value={formData.budget_allocation_status || ''} onValueChange={v => updateField('budget_allocation_status', v)}>
             <SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="not_requested">Not Requested</SelectItem>
-              <SelectItem value="requested">Requested</SelectItem>
-              <SelectItem value="provisional">Provisional</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
+              {BUDGET_ALLOCATION_STATUSES.map(bs => (
+                <SelectItem key={bs.value} value={bs.value}>
+                  <span className="inline-flex items-center gap-2 min-w-0">
+                    <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{bs.code}</span>
+                    <span>{bs.label}</span>
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label>Budget Amount</Label>
-          <Input
-            type="number"
-            value={formData.budget_amount ?? ''}
-            onChange={e => updateField('budget_amount', e.target.value ? parseFloat(e.target.value) : null)}
-            placeholder="Government budget allocation"
+          <Label>Budget Amount (USD) <HelpTooltip text="Total government budget allocated or requested for this project, in US dollars." /></Label>
+          <FormattedNumberInput
+            value={formData.budget_amount ?? null}
+            onChange={v => updateField('budget_amount', v)}
+            placeholder="e.g. 10,000,000"
+            decimals={2}
           />
         </div>
       </div>
 
       {/* DAP Compliance */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
           <Switch
             checked={formData.dap_compliant || false}
             onCheckedChange={v => updateField('dap_compliant', v)}
           />
-          <Label>DAP Compliant</Label>
+          <Label>Development Assistance Policy (DAP) Compliant <HelpTooltip text="Whether this project meets the requirements of the national Development Assistance Policy. DAP ensures that development assistance is aligned with national priorities, is transparently managed, and follows proper procurement and environmental safeguards." /></Label>
         </div>
         <Textarea
           value={formData.dap_notes || ''}
           onChange={e => updateField('dap_notes', e.target.value)}
-          placeholder="Notes on DAP compliance..."
+          placeholder="Explain how this project meets DAP requirements, or describe any exceptions..."
           rows={2}
         />
+        <div>
+          <Label className="mb-2 block text-xs text-muted-foreground">Upload DAP compliance justification or supporting evidence</Label>
+          <DocumentUploadZone
+            projectId={projectId}
+            stage="vgf_assessment"
+            documents={documents.filter(d => d.document_type === 'dap_compliance' || d.document_type === 'other')}
+            onDocumentsChange={refreshDocuments}
+            acceptedTypes={['dap_compliance', 'other']}
+          />
+        </div>
       </div>
 
       {/* Readiness Checklist */}

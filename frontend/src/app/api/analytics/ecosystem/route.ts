@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 
 /**
  * Aid Ecosystem Analytics API
@@ -136,6 +137,9 @@ export async function GET(request: NextRequest) {
         query = query.eq('activity_id', '00000000-0000-0000-0000-000000000000')
       }
     }
+
+    // Exclude internal transfers (pooled fund flows)
+    query = excludeInternalTransfers(query, transactionType !== 'all' ? [transactionType] : undefined)
 
     const { data: transactions, error: txError } = await query
 

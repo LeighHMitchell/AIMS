@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,11 +15,37 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Loader2, MapPin } from "lucide-react"
-import { STATES_REGIONS, TITLE_STATUS_OPTIONS, TITLE_STATUS_LABELS } from "@/lib/land-bank-utils"
-import { NdpGoalSelector } from "@/components/land-bank/NdpGoalSelector"
+import { TITLE_STATUS_OPTIONS, TITLE_STATUS_LABELS, STATE_ID_TO_REGION, REGION_TO_STATE_ID } from "@/lib/land-bank-utils"
+import { StateRegionSelect } from "@/components/forms/StateRegionSelect"
+import { TownshipSelect } from "@/components/forms/TownshipSelect"
+import { cn } from "@/lib/utils"
+import { apiFetch } from "@/lib/api-fetch"
+import myanmarData from "@/data/myanmar-locations.json"
 import { ParcelDrawMap } from "@/components/land-bank/ParcelDrawMap"
 import { ParcelProgressRail } from "./ParcelProgressRail"
 import { useParcelWizard } from "@/hooks/use-parcel-wizard"
+
+/** Resolve township name → myanmar-locations ID */
+function townshipNameToId(name: string | null): string {
+  if (!name) return ""
+  for (const state of myanmarData.states) {
+    const match = state.townships.find(
+      (t) => t.name.toLowerCase() === name.toLowerCase()
+    )
+    if (match) return match.id
+  }
+  return ""
+}
+
+/** Resolve township ID → name */
+function townshipIdToName(id: string): string {
+  if (!id) return ""
+  for (const state of myanmarData.states) {
+    const match = state.townships.find((t) => t.id === id)
+    if (match) return match.name
+  }
+  return ""
+}
 
 interface ParcelWizardProps {
   parcelId?: string
@@ -180,25 +207,28 @@ function StepBasicInfo({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>State/Region *</Label>
-          <Select value={formData.state_region} onValueChange={v => updateField("state_region", v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select region..." />
-            </SelectTrigger>
-            <SelectContent>
-              {STATES_REGIONS.map(r => (
-                <SelectItem key={r} value={r}>{r}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <StateRegionSelect
+            value={REGION_TO_STATE_ID[formData.state_region] || ""}
+            onValueChange={(v) => {
+              const stateId = v as string
+              const regionName = STATE_ID_TO_REGION[stateId] || ""
+              updateField("state_region", regionName)
+              // Reset township when state changes
+              updateField("township", "")
+            }}
+            placeholder="Select region..."
+          />
           {errors.state_region && <p className="text-xs text-destructive">{errors.state_region}</p>}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="wiz-township">Township</Label>
-          <Input
-            id="wiz-township"
-            value={formData.township}
-            onChange={e => updateField("township", e.target.value)}
-            placeholder="e.g. Thilawa"
+          <Label>Township</Label>
+          <TownshipSelect
+            value={townshipNameToId(formData.township)}
+            onValueChange={(id) => {
+              updateField("township", townshipIdToName(id))
+            }}
+            stateId={REGION_TO_STATE_ID[formData.state_region] || undefined}
+            placeholder="Select township..."
           />
         </div>
       </div>
@@ -277,12 +307,45 @@ function StepBasicInfo({
         </div>
       </div>
 
+      {/* Submitter Information */}
+      <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+        <h3 className="text-sm font-semibold">Submitter Information</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="wiz-sub-first">First Name</Label>
+            <Input
+              id="wiz-sub-first"
+              value={formData.submitter_first_name}
+              onChange={e => updateField("submitter_first_name", e.target.value)}
+              placeholder="First name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="wiz-sub-last">Last Name</Label>
+            <Input
+              id="wiz-sub-last"
+              value={formData.submitter_last_name}
+              onChange={e => updateField("submitter_last_name", e.target.value)}
+              placeholder="Last name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="wiz-sub-org">Organization</Label>
+            <Input
+              id="wiz-sub-org"
+              value={formData.submitter_organization}
+              onChange={e => updateField("submitter_organization", e.target.value)}
+              placeholder="Organization"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* NDP/MSDP Goal alignment */}
-      <NdpGoalSelector
+      <NdpGoalCards
         primaryGoalId={formData.ndp_goal_id}
         secondaryGoalIds={formData.secondary_ndp_goals}
-        onPrimaryChange={v => updateField("ndp_goal_id", v)}
-        onSecondaryChange={v => updateField("secondary_ndp_goals", v)}
+        updateField={updateField}
       />
 
       <div className="space-y-2">
@@ -373,6 +436,112 @@ function StepReview({
             No geometry defined
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+/* ─── NDP/MSDP Goal Card Toggle ───────────────────────────── */
+
+interface NdpGoal {
+  id: string
+  code: string
+  name: string
+  description?: string | null
+  is_active?: boolean
+}
+
+function NdpGoalCards({
+  primaryGoalId,
+  secondaryGoalIds,
+  updateField,
+}: {
+  primaryGoalId: string
+  secondaryGoalIds: string[]
+  updateField: ReturnType<typeof useParcelWizard>["updateField"]
+}) {
+  const [goals, setGoals] = useState<NdpGoal[]>([])
+
+  useEffect(() => {
+    async function fetchGoals() {
+      try {
+        const res = await apiFetch("/api/national-development-goals")
+        if (res.ok) setGoals(await res.json())
+      } catch {}
+    }
+    fetchGoals()
+  }, [])
+
+  const activeGoals = goals.filter(g => g.is_active !== false)
+
+  const handleGoalToggle = (goalId: string) => {
+    if (goalId === primaryGoalId) {
+      // Clicking primary: promote first secondary or deselect all
+      if (secondaryGoalIds.length > 0) {
+        const [newPrimary, ...rest] = secondaryGoalIds
+        updateField("ndp_goal_id", newPrimary)
+        updateField("secondary_ndp_goals", rest)
+      } else {
+        updateField("ndp_goal_id", "")
+        updateField("secondary_ndp_goals", [])
+      }
+    } else if (secondaryGoalIds.includes(goalId)) {
+      // Remove from secondary
+      updateField("secondary_ndp_goals", secondaryGoalIds.filter(id => id !== goalId))
+    } else if (!primaryGoalId) {
+      // First selection becomes primary
+      updateField("ndp_goal_id", goalId)
+    } else {
+      // Add as secondary
+      updateField("secondary_ndp_goals", [...secondaryGoalIds, goalId])
+    }
+  }
+
+  if (activeGoals.length === 0) return null
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+      <div>
+        <h3 className="text-sm font-semibold">NDP/MSDP Goal Alignment</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Click to select goals. First selected = primary (green). Additional = secondary (blue).
+        </p>
+      </div>
+      <div className="space-y-2">
+        {activeGoals.map(goal => {
+          const isPrimary = primaryGoalId === goal.id
+          const isSecondary = secondaryGoalIds.includes(goal.id)
+
+          return (
+            <button
+              key={goal.id}
+              type="button"
+              onClick={() => handleGoalToggle(goal.id)}
+              className={cn(
+                "w-full text-left p-3 rounded-lg border transition-colors",
+                isPrimary
+                  ? "border-green-300 bg-green-50"
+                  : isSecondary
+                  ? "border-blue-300 bg-blue-50"
+                  : "border-muted-foreground/20 hover:border-muted-foreground/40",
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold text-muted-foreground">{goal.code}</span>
+                <span className="text-sm font-medium">{goal.name}</span>
+                {isPrimary && (
+                  <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-green-200 text-green-800">Primary</span>
+                )}
+                {isSecondary && (
+                  <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-200 text-blue-800">Secondary</span>
+                )}
+              </div>
+              {goal.description && (
+                <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{goal.description}</div>
+              )}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

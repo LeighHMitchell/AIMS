@@ -1,4 +1,4 @@
-import type { ProjectPathway, ProjectStatus, RoutingResult, AppraisalStage, RoutingOutcome, FeasibilityStage, CategoryDecision, PPPSupportMechanism } from '@/types/project-bank';
+import type { ProjectPathway, ProjectStatus, RoutingResult, AppraisalStage, RoutingOutcome, FeasibilityStage, CategoryDecision, PPPSupportMechanism, ProjectStage, ProjectPhase, FS1Tab } from '@/types/project-bank';
 
 /**
  * Determines the routing pathway for a project based on FIRR and NDP alignment.
@@ -113,6 +113,17 @@ export const PPP_CONTRACT_TYPE_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
+/** PPP Contract Types with codes for dropdown display */
+export const PPP_CONTRACT_TYPES = [
+  { value: 'availability_payment', label: 'Availability Payment', code: 'AP' },
+  { value: 'boo', label: 'Build–Own–Operate', code: 'BOO' },
+  { value: 'bot', label: 'Build–Operate–Transfer', code: 'BOT' },
+  { value: 'btl', label: 'Build–Transfer–Lease', code: 'BTL' },
+  { value: 'bto', label: 'Build–Transfer–Operate', code: 'BTO' },
+  { value: 'om', label: 'Operations & Maintenance', code: 'O&M' },
+  { value: 'other', label: 'Other', code: 'OTH' },
+] as const;
+
 /** SEE Transfer Status labels */
 export const SEE_STATUS_LABELS: Record<string, string> = {
   draft: 'Draft',
@@ -197,7 +208,7 @@ export const FEASIBILITY_STAGE_LABELS: Record<FeasibilityStage, string> = {
 /** Feasibility stage badge styles */
 export const FEASIBILITY_STAGE_BADGE_STYLES: Record<FeasibilityStage, { bg: string; text: string; border: string }> = {
   registered:        { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
-  fs1_submitted:     { bg: '#dbeafe', text: '#1e40af', border: '#93c5fd' },
+  fs1_submitted:     { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
   fs1_desk_screened: { bg: '#e0e7ff', text: '#3730a3', border: '#a5b4fc' },
   fs1_passed:        { bg: '#dcfce7', text: '#166534', border: '#86efac' },
   fs1_returned:      { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
@@ -243,6 +254,41 @@ export const PPP_SUPPORT_MECHANISM_LABELS: Record<PPPSupportMechanism, string> =
   land_grant: 'Land Grant',
   combined: 'Combined Mechanisms',
 };
+
+/** PPP support mechanisms with codes for dropdown display */
+export const PPP_SUPPORT_MECHANISMS = [
+  { value: 'vgf', label: 'Viability Gap Funding', code: 'VGF' },
+  { value: 'mrg', label: 'Minimum Revenue Guarantee', code: 'MRG' },
+  { value: 'availability_payment', label: 'Availability Payment', code: 'AP' },
+  { value: 'interest_subsidy', label: 'Interest Subsidy', code: 'IS' },
+  { value: 'tax_incentive', label: 'Tax Incentive', code: 'TI' },
+  { value: 'land_grant', label: 'Land Grant', code: 'LG' },
+  { value: 'combined', label: 'Combined Mechanisms', code: 'CMB' },
+] as const;
+
+/** VGF modalities with codes for dropdown display */
+export const VGF_MODALITIES = [
+  { value: 'capital_grant', label: 'Capital Grant (upfront)', code: 'CG' },
+  { value: 'annuity', label: 'Annuity Payments', code: 'AP' },
+  { value: 'interest_subsidy', label: 'Interest Subsidy', code: 'IS' },
+  { value: 'tax_incentive', label: 'Tax Incentive', code: 'TI' },
+  { value: 'land_grant', label: 'Land Grant (in-kind)', code: 'LG' },
+] as const;
+
+/** Budget allocation statuses with codes for dropdown display */
+export const BUDGET_ALLOCATION_STATUSES = [
+  { value: 'not_requested', label: 'Not Requested', code: '1' },
+  { value: 'requested', label: 'Requested', code: '2' },
+  { value: 'provisional', label: 'Provisional', code: '3' },
+  { value: 'approved', label: 'Approved', code: '4' },
+] as const;
+
+/** Payment schedule types with codes for dropdown display */
+export const PAYMENT_SCHEDULE_TYPES = [
+  { value: 'monthly', label: 'Monthly', code: 'M' },
+  { value: 'quarterly', label: 'Quarterly', code: 'Q' },
+  { value: 'annual', label: 'Annual', code: 'A' },
+] as const;
 
 /** Public-good sectors that lean toward government budget (Category B) */
 const PUBLIC_GOOD_SECTORS = ['Education', 'Health', 'Governance', 'Social Protection', 'WASH'];
@@ -443,11 +489,11 @@ export const SUB_SECTORS: Record<string, string[]> = {
 
 /** Environmental/social impact level options */
 export const IMPACT_LEVELS = [
-  { value: 'negligible', label: 'Negligible' },
-  { value: 'low', label: 'Low' },
-  { value: 'moderate', label: 'Moderate' },
-  { value: 'significant', label: 'Significant' },
-  { value: 'major', label: 'Major' },
+  { value: 'negligible', label: 'Negligible', code: '1', description: 'No measurable impact expected; routine activities only' },
+  { value: 'low', label: 'Low', code: '2', description: 'Minor, temporary, and easily mitigated effects' },
+  { value: 'moderate', label: 'Moderate', code: '3', description: 'Noticeable effects that require a mitigation plan' },
+  { value: 'significant', label: 'Significant', code: '4', description: 'Substantial effects on ecosystems or communities; full assessment required' },
+  { value: 'major', label: 'Major', code: '5', description: 'Severe, potentially irreversible impacts; independent review required' },
 ] as const;
 
 /** Technical design maturity levels */
@@ -500,8 +546,9 @@ export function determineFullRouting(
   firrPercent: number | null,
   eirrPercent: number | null,
   ndpAligned: boolean,
+  hasData: boolean = false,
 ): FullRoutingResult {
-  if (firrPercent === null) {
+  if (firrPercent === null && !hasData) {
     return {
       outcome: null,
       label: 'Awaiting Financial Analysis',
@@ -511,33 +558,43 @@ export function determineFullRouting(
     };
   }
 
+  if (firrPercent === null && hasData) {
+    return {
+      outcome: null,
+      label: 'FIRR Could Not Be Calculated',
+      description: 'The FIRR requires at least one year with a net outflow (costs exceeding revenue) followed by years with net inflows. Check that your CAPEX figures are realistic — most projects have higher upfront costs than revenue in early years.',
+      color: 'amber',
+      nextSteps: 'Review your cost and revenue projections to ensure they reflect the expected investment profile.',
+    };
+  }
+
   if (firrPercent >= 10 && ndpAligned) {
     return {
       outcome: 'private_with_state_support',
-      label: 'Commercially Viable — Private Sector with State Support',
-      description: `FIRR ${firrPercent.toFixed(1)}% ≥ 10% and MSDP-aligned. Project will be listed for private investment with state land/property support via Project Bank and Land Bank.`,
+      label: 'Likely Commercially Viable — Private Sector with State Support',
+      description: `FIRR ${firrPercent.toFixed(1)}% ≥ 10% and MSDP-aligned. This project is likely to be eligible for private investment with state land/property support via the Project Bank and Land Bank.`,
       color: 'green',
-      nextSteps: 'Proceed to Review & Submit. Project will be listed in the Project Bank for private investor engagement.',
+      nextSteps: 'You may proceed to submit for review. If approved, the project will be listed for private investor engagement.',
     };
   }
 
   if (firrPercent >= 10) {
     return {
       outcome: 'private_no_support',
-      label: 'Commercially Viable — Private Sector',
-      description: `FIRR ${firrPercent.toFixed(1)}% ≥ 10% but not MSDP-aligned. Open to private investment without state support.`,
+      label: 'Likely Commercially Viable — Private Sector',
+      description: `FIRR ${firrPercent.toFixed(1)}% ≥ 10% but not MSDP-aligned. This project may be suitable for private investment without state support.`,
       color: 'blue',
-      nextSteps: 'Proceed to Review & Submit. Project is commercially viable for private investment.',
+      nextSteps: 'You may proceed to submit for review. The review board will make the final determination.',
     };
   }
 
   if (!ndpAligned) {
     return {
       outcome: 'rejected_not_msdp',
-      label: 'Rejected — Not Viable, Not Aligned',
-      description: `FIRR ${firrPercent.toFixed(1)}% < 10% and not MSDP-aligned. No basis for state support or economic analysis.`,
+      label: 'At Risk of Rejection — Below Viability Threshold',
+      description: `FIRR ${firrPercent.toFixed(1)}% is below the 10% commercial viability threshold and the project is not aligned with MSDP. Without alignment, there is no basis for state support or further economic analysis.`,
       color: 'red',
-      nextSteps: 'Project does not qualify for further appraisal. Consider revising the scope or alignment.',
+      nextSteps: 'Consider revising the project scope, improving revenue projections, or establishing MSDP alignment before submitting. The review board is likely to reject projects that are neither commercially viable nor nationally aligned.',
     };
   }
 
@@ -545,28 +602,145 @@ export function determineFullRouting(
   if (eirrPercent === null) {
     return {
       outcome: null,
-      label: 'Requires Economic Analysis',
-      description: `FIRR ${firrPercent.toFixed(1)}% < 10% but MSDP-aligned. Proceed to EIRR assessment to determine economic viability.`,
+      label: 'May Require Economic Analysis',
+      description: `FIRR ${firrPercent.toFixed(1)}% is below 10%, but the project is MSDP-aligned. This means it could still qualify through an economic analysis (EIRR) that measures broader social returns.`,
       color: 'amber',
-      nextSteps: 'Complete the Economic Analysis (EIRR) to determine if the project generates sufficient social returns.',
+      nextSteps: 'Complete the Economic Analysis (EIRR) to demonstrate whether the project generates sufficient social returns to justify public investment.',
     };
   }
 
   if (eirrPercent >= 15) {
     return {
       outcome: 'ppp_mechanism',
-      label: 'Economically Viable — PPP Mechanism',
-      description: `EIRR ${eirrPercent.toFixed(1)}% ≥ 15%. Project qualifies for PPP mechanism with potential Viability Gap Funding.`,
+      label: 'Likely Economically Viable — PPP Mechanism',
+      description: `EIRR ${eirrPercent.toFixed(1)}% ≥ 15%. This project is likely to qualify for a PPP mechanism with potential Viability Gap Funding.`,
       color: 'purple',
-      nextSteps: 'Proceed to PPP/VGF structuring to determine the required subsidy and partnership model.',
+      nextSteps: 'You may proceed to PPP/VGF structuring. The review board will determine the required subsidy and partnership model.',
     };
   }
 
   return {
     outcome: 'rejected_low_eirr',
-    label: 'Rejected — Insufficient Economic Returns',
-    description: `EIRR ${eirrPercent.toFixed(1)}% < 15%. Economic returns insufficient to justify state investment.`,
+    label: 'At Risk of Rejection — Insufficient Economic Returns',
+    description: `EIRR ${eirrPercent.toFixed(1)}% is below the 15% threshold. The economic returns may not be sufficient to justify state investment at this stage.`,
     color: 'red',
-    nextSteps: 'Project does not meet the economic viability threshold. Consider scope revision.',
+    nextSteps: 'Consider revising the project scope or cost structure to improve economic returns before submitting. The review board is likely to reject projects below this threshold.',
   };
+}
+
+// ========================================================================
+// Unified Phase-Gate Utilities
+// ========================================================================
+
+/** Display labels for each unified project stage */
+export const PROJECT_STAGE_LABELS: Record<ProjectStage, string> = {
+  intake_draft: 'Draft',
+  intake_submitted: 'Awaiting Review',
+  intake_approved: 'Approved',
+  intake_returned: 'Returned',
+  intake_rejected: 'Rejected',
+  fs1_draft: 'Feasibility — Draft',
+  fs1_submitted: 'Feasibility — Awaiting Review',
+  fs1_approved: 'Feasibility — Approved',
+  fs1_returned: 'Feasibility — Returned',
+  fs1_rejected: 'Feasibility — Rejected',
+  fs2_assigned: 'Detailed Study — Assigned',
+  fs2_in_progress: 'Detailed Study — In Progress',
+  fs2_completed: 'Detailed Study — Completed',
+  fs2_categorized: 'Categorized',
+  fs3_in_progress: 'PPP Structuring — In Progress',
+  fs3_completed: 'PPP Structuring — Completed',
+};
+
+/** Badge styles for each unified project stage */
+export const PROJECT_STAGE_BADGE_STYLES: Record<ProjectStage, { bg: string; text: string; border: string }> = {
+  intake_draft:     { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
+  intake_submitted: { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
+  intake_approved:  { bg: '#dcfce7', text: '#166534', border: '#86efac' },
+  intake_returned:  { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
+  intake_rejected:  { bg: '#fecaca', text: '#991b1b', border: '#f87171' },
+  fs1_draft:        { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
+  fs1_submitted:    { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
+  fs1_approved:     { bg: '#dcfce7', text: '#166534', border: '#86efac' },
+  fs1_returned:     { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
+  fs1_rejected:     { bg: '#fecaca', text: '#991b1b', border: '#f87171' },
+  fs2_assigned:     { bg: '#e0e7ff', text: '#3730a3', border: '#a5b4fc' },
+  fs2_in_progress:  { bg: '#c7d2fe', text: '#3730a3', border: '#818cf8' },
+  fs2_completed:    { bg: '#dcfce7', text: '#166534', border: '#86efac' },
+  fs2_categorized:  { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  fs3_in_progress:  { bg: '#e9d5ff', text: '#6b21a8', border: '#c084fc' },
+  fs3_completed:    { bg: '#dcfce7', text: '#166534', border: '#86efac' },
+};
+
+/** Extract the phase from a project_stage */
+export function getPhase(stage: ProjectStage): ProjectPhase {
+  // intake_approved means intake is done — the project is now in the FS-1 phase
+  if (stage === 'intake_approved') return 'fs1';
+  if (stage === 'fs1_approved') return 'fs2';
+  if (stage.startsWith('intake_')) return 'intake';
+  if (stage.startsWith('fs1_')) return 'fs1';
+  if (stage.startsWith('fs2_')) return 'fs2';
+  return 'fs3';
+}
+
+/** Phase display labels */
+export const PHASE_LABELS: Record<ProjectPhase, string> = {
+  intake: 'Project Intake',
+  fs1: 'Preliminary Feasibility Study',
+  fs2: 'Detailed Feasibility Study',
+  fs3: 'PPP Transaction Structuring',
+};
+
+/** FS-1 tab labels */
+export const FS1_TAB_LABELS: Record<FS1Tab, string> = {
+  technical: 'Technical',
+  revenue: 'Revenue',
+  environmental: 'Environmental',
+  msdp: 'MSDP Alignment',
+  firr: 'Financial Analysis',
+};
+
+/** Whether a form is locked (read-only) based on project_stage */
+export function isFormLocked(stage: ProjectStage): boolean {
+  // Submitted = awaiting review, rejected = terminal — both lock the form.
+  // Approved and draft/returned are NOT locked (approved means proceed to next phase).
+  return stage.endsWith('_submitted') || stage.endsWith('_rejected');
+}
+
+/** Whether a form is editable (draft or returned) */
+export function isFormEditable(stage: ProjectStage): boolean {
+  return stage.endsWith('_draft') || stage.endsWith('_returned') || stage.endsWith('_approved');
+}
+
+/** Get lock reason message */
+export function getLockMessage(stage: ProjectStage): string | null {
+  if (stage.endsWith('_submitted')) return 'This form is locked — awaiting review board decision.';
+  if (stage.endsWith('_rejected')) return 'This project has been rejected.';
+  return null;
+}
+
+/** Get return message */
+export function getReturnMessage(stage: ProjectStage): string | null {
+  if (stage.endsWith('_returned')) return 'This project was returned. Please address the reviewer\'s comments and resubmit.';
+  return null;
+}
+
+/** Gate status between phases */
+export type GateStatus = 'locked' | 'awaiting_review' | 'approved' | 'returned' | 'rejected';
+
+/** Get the gate status for transitions between phases */
+export function getGateStatus(stage: ProjectStage, gate: 'intake_to_fs1' | 'fs1_to_fs2'): GateStatus {
+  if (gate === 'intake_to_fs1') {
+    if (stage === 'intake_submitted') return 'awaiting_review';
+    if (stage === 'intake_approved' || stage.startsWith('fs1_') || stage.startsWith('fs2_') || stage.startsWith('fs3_')) return 'approved';
+    if (stage === 'intake_returned') return 'returned';
+    if (stage === 'intake_rejected') return 'rejected';
+    return 'locked';
+  }
+  // fs1_to_fs2
+  if (stage === 'fs1_submitted') return 'awaiting_review';
+  if (stage === 'fs1_approved' || stage.startsWith('fs2_') || stage.startsWith('fs3_')) return 'approved';
+  if (stage === 'fs1_returned') return 'returned';
+  if (stage === 'fs1_rejected') return 'rejected';
+  return 'locked';
 }

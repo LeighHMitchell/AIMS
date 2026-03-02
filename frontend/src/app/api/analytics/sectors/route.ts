@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,12 +73,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Get transactions only for published activities (only USD values)
-    const { data: transactions, error: transactionsError } = await supabaseAdmin
+    let txQuery = supabaseAdmin
       .from('transactions')
       .select('activity_id, transaction_type, value_usd')
       .in('transaction_type', ['2', '3', '4']) // Commitment, Disbursement, Expenditure
       .in('activity_id', publishedActivityIds)
       .not('value_usd', 'is', null); // Only include transactions with USD values
+    // Exclude internal transfers (pooled fund flows)
+    txQuery = excludeInternalTransfers(txQuery, ['2', '3', '4']);
+    const { data: transactions, error: transactionsError } = await txQuery;
 
     if (transactionsError) {
       console.error('Error fetching transactions:', transactionsError);

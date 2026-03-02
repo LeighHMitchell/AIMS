@@ -136,6 +136,30 @@ export const LAND_DOCUMENT_TYPE_LABELS: Record<LandDocumentType, string> = {
   other: 'Other',
 };
 
+/** Map myanmar-locations.json state ID → DB region name (short name used in land_parcels) */
+export const STATE_ID_TO_REGION: Record<string, string> = {
+  '01': 'Kachin',
+  '02': 'Kayah',
+  '03': 'Kayin',
+  '04': 'Chin',
+  '05': 'Sagaing',
+  '06': 'Tanintharyi',
+  '07': 'Bago',
+  '08': 'Magway',
+  '09': 'Mandalay',
+  '10': 'Mon',
+  '11': 'Rakhine',
+  '12': 'Yangon',
+  '13': 'Shan',
+  '14': 'Ayeyarwady',
+  '15': 'Naypyitaw',
+};
+
+/** Reverse: DB region name → state ID */
+export const REGION_TO_STATE_ID: Record<string, string> = Object.fromEntries(
+  Object.entries(STATE_ID_TO_REGION).map(([id, name]) => [name, id])
+);
+
 /** History action → human-readable label */
 export const HISTORY_ACTION_LABELS: Record<string, string> = {
   created: 'Parcel registered',

@@ -634,9 +634,9 @@ export default function ProjectDetailPage() {
               <Card>
                 <CardHeader><CardTitle className="text-sm">AIMS Linkage</CardTitle></CardHeader>
                 <CardContent>
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
-                    <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Linked to AIMS</div>
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mb-2">Tracked in the AIMS module</div>
+                  <div className="p-3 bg-[#f6f5f3] rounded-lg border border-[#5f7f7a]/20">
+                    <div className="text-sm font-medium text-foreground mb-1">Linked to AIMS</div>
+                    <div className="text-xs text-muted-foreground mb-2">Tracked in the AIMS module</div>
                     <Button variant="outline" size="sm" className="w-full gap-1.5" asChild>
                       <Link href={`/activities/${project.aims_activity_id}`}>
                         View in AIMS <ExternalLink className="h-3.5 w-3.5" />

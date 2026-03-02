@@ -1658,7 +1658,7 @@ const router = useRouter();
   // Component render
   return (
     <MainLayout>
-      <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
+      <div className="w-full space-y-6">
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center mb-6" data-tour="activities-header">
         <div>
@@ -1885,23 +1885,6 @@ const router = useRouter();
         <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden fade-in" data-tour="activities-table">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse activities-table data-table-balanced">
-              <colgroup>
-                <col style={{ width: '48px' }} />
-                {orderedDraggableColumns.map((colId) => {
-                  if (colId === 'title') return <col key={colId} />;
-                  const w =
-                    colId === 'reportedBy'
-                      ? '140px'
-                      : ['totalBudgeted', 'totalPlannedDisbursement'].includes(colId)
-                        ? '130px'
-                        : ['lastEdited', 'activityStatus'].includes(colId)
-                          ? '120px'
-                          : '110px';
-                  return <col key={colId} style={{ width: w }} />;
-                })}
-                <col style={{ width: '48px' }} />
-                <col style={{ width: '8px' }} />
-              </colgroup>
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
                   {/* Checkbox column - always visible */}
@@ -2529,8 +2512,6 @@ const router = useRouter();
 
                   {/* Actions column - no header text, just kebab in rows */}
                   <th className="h-12 px-2" />
-                  {/* Filler column so row hover extends to the scroll container edge */}
-                  <th className="h-12 p-0 bg-surface-muted border-0 data-table-col-filler" aria-hidden="true" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
@@ -3907,8 +3888,6 @@ const router = useRouter();
                           onDelete={() => setDeleteActivityId(activity.id)}
                         />
                       </td>
-                      {/* Filler cell so row hover extends to the scroll container edge */}
-                      <td className="p-0 data-table-col-filler" aria-hidden="true" />
                     </tr>
                   );
                 })}

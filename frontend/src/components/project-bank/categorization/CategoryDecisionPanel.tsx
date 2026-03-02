@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -12,7 +12,8 @@ import {
   determineCategoryRecommendation,
   CATEGORY_LABELS, CATEGORY_SHORT_LABELS,
 } from "@/lib/project-bank-utils"
-import type { CategoryDecision, ProjectBankProject } from "@/types/project-bank"
+import { GateChecklistModal } from "@/components/project-bank/gate-checklist/GateChecklistModal"
+import type { CategoryDecision, ProjectBankProject, ProjectDocument } from "@/types/project-bank"
 
 interface CategoryDecisionPanelProps {
   project: ProjectBankProject
@@ -49,6 +50,17 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(!!project.category_decision)
+  const [showGateModal, setShowGateModal] = useState(false)
+  const [documents, setDocuments] = useState<ProjectDocument[]>([])
+
+  const fetchDocuments = async () => {
+    try {
+      const res = await apiFetch(`/api/project-bank/${project.id}/documents`)
+      if (res.ok) setDocuments(await res.json())
+    } catch { /* ignore */ }
+  }
+
+  useEffect(() => { fetchDocuments() }, [project.id])
 
   const recommendation = determineCategoryRecommendation(
     project.firr ?? null,
@@ -129,11 +141,11 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
 
       {/* System recommendation */}
       {recommendation && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
-          <p className="text-sm text-blue-800">
+        <div className="rounded-lg border border-[#5f7f7a]/20 bg-[#f6f5f3] px-4 py-3">
+          <p className="text-sm text-foreground">
             <span className="font-semibold">System Recommendation: {CATEGORY_LABELS[recommendation]}</span>
           </p>
-          <p className="text-xs text-blue-700 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Based on FIRR {project.firr ?? "—"}%, EIRR {project.eirr ?? "—"}%,
             NDP-aligned: {project.ndp_aligned ? "Yes" : "No"}, Sector: {project.sector}
           </p>
@@ -157,7 +169,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
               key={card.value}
               className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
                 selected === card.value
-                  ? "border-blue-500 bg-blue-50"
+                  ? "border-[#5f7f7a] bg-[#f6f5f3] ring-2 ring-[#5f7f7a]/20"
                   : "border-border hover:bg-muted/50"
               }`}
             >
@@ -174,7 +186,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
                 <p className="text-sm font-semibold flex items-center gap-2">
                   {card.label}
                   {isRec && (
-                    <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">
+                    <span className="text-[10px] bg-[#5f7f7a]/10 text-[#5f7f7a] px-1.5 py-0.5 rounded font-medium">
                       Recommended
                     </span>
                   )}
@@ -218,13 +230,41 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       )}
 
       <Button
-        onClick={handleSubmit}
+        onClick={() => {
+          if (selected === "category_c") {
+            setShowGateModal(true)
+          } else {
+            handleSubmit()
+          }
+        }}
         disabled={!canSubmit || submitting}
         className="gap-2"
       >
         <ArrowRight className="h-4 w-4" />
         {submitting ? "Saving..." : "Confirm Categorization"}
       </Button>
+
+      {/* Gate 3 checklist modal for Category C */}
+      <GateChecklistModal
+        open={showGateModal}
+        onOpenChange={setShowGateModal}
+        title="Confirm Category C — PPP Pathway"
+        description="Complete all requirements before advancing to FS-3 PPP structuring."
+        projectId={project.id}
+        items={[
+          { key: "fs2_reviewed", label: "FS-2 report findings have been reviewed by senior management", type: "checkbox" },
+          { key: "ppp_confirmed", label: "PPP pathway is confirmed as the preferred delivery mechanism", type: "checkbox" },
+          { key: "risk_allocation_matrix", label: "Risk Allocation Matrix", type: "document", documentType: "risk_allocation_matrix", documentLabel: "Risk Allocation Matrix" },
+        ]}
+        existingDocuments={documents}
+        onDocumentUploaded={fetchDocuments}
+        onConfirm={async () => {
+          await handleSubmit()
+          setShowGateModal(false)
+        }}
+        confirmLabel="Confirm Category C"
+        confirming={submitting}
+      />
     </div>
   )
 }

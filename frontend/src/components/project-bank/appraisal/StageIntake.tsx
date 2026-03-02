@@ -1,13 +1,10 @@
 "use client"
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SECTORS, REGIONS } from '@/lib/project-bank-utils';
-import { PROJECT_TYPES, SUB_SECTORS } from '@/lib/project-bank-utils';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DocumentUploadZone } from './DocumentUploadZone';
 import { HelpTooltip } from './HelpTooltip';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -15,7 +12,12 @@ import { apiFetch } from '@/lib/api-fetch';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
 import { useComplianceRules } from '@/hooks/use-compliance-rules';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, ShieldAlert, Landmark, Lightbulb, CheckCircle2, Upload, X, Move, Image as ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MYANMAR_REGIONS } from '@/data/myanmar-regions';
+import SDGIconHover from '@/components/ui/SDGIconHover';
+import { StageMSDPScreening } from './StageMSDPScreening';
+import type { PendingFile } from '@/hooks/use-appraisal-wizard';
 
 const SDG_GOALS = Array.from({ length: 17 }, (_, i) => ({
   value: String(i + 1),
@@ -25,6 +27,16 @@ const SDG_GOALS = Array.from({ length: 17 }, (_, i) => ({
 /** Red dot indicator for required fields */
 function RequiredDot() {
   return <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" />;
+}
+
+/** Green tick shown when a field has been filled in */
+function FieldCheck({ value }: { value: unknown }) {
+  // Check for non-empty values: non-null, non-undefined, non-empty-string, non-empty-array
+  const filled = Array.isArray(value)
+    ? value.length > 0
+    : value !== null && value !== undefined && value !== '' && value !== 0;
+  if (!filled) return null;
+  return <CheckCircle2 className="inline-block h-3.5 w-3.5 text-green-600 ml-1.5 align-middle" />;
 }
 
 /** Currency formatter for display */
@@ -41,39 +53,114 @@ interface Ministry {
   id: string;
   name: string;
   code?: string;
+  parentId?: string;
+  level: number;
 }
 
+interface PBProjectType {
+  id: string;
+  code: string;
+  name: string;
+}
+
+interface PBSector {
+  id: string;
+  code: string;
+  name: string;
+  sub_sectors: { id: string; name: string }[];
+}
+
+// Group Myanmar regions by type
+const regionStates = MYANMAR_REGIONS.filter(r => r.type === 'State');
+const regionRegions = MYANMAR_REGIONS.filter(r => r.type === 'Region');
+const regionUnionTerritories = MYANMAR_REGIONS.filter(r => r.type === 'Union Territory');
+
 export function StageIntake({ wizard }: StageIntakeProps) {
-  const { formData, updateField, errors, projectId, documents, refreshDocuments } = wizard;
+  const { formData, updateField, errors, projectId, documents, refreshDocuments, pendingFiles, setPendingFiles, isLocked } = wizard;
   const [ministries, setMinistries] = useState<Ministry[]>([]);
+  const [ministriesLoading, setMinistriesLoading] = useState(true);
   const [costDisplay, setCostDisplay] = useState(() => formatCurrencyDisplay(formData.estimated_cost));
+  const [projectTypes, setProjectTypes] = useState<PBProjectType[]>([]);
+  const [projectTypesLoading, setProjectTypesLoading] = useState(true);
+  const [sectors, setSectors] = useState<PBSector[]>([]);
+  const [sectorsLoading, setSectorsLoading] = useState(true);
 
   const { validateMinimumSize } = useComplianceRules();
-  const sectorSubSectors = formData.sector ? SUB_SECTORS[formData.sector] || [] : [];
   const minSizeResult = validateMinimumSize(formData.estimated_cost, formData.currency || 'USD');
 
-  // Fetch line ministries
+  // Cascading sub-sectors from DB sectors
+  const selectedSector = sectors.find(s => s.name === formData.sector);
+  const sectorSubSectors = selectedSector?.sub_sectors || [];
+
+  // Top-level ministries (level 1) for Nominating Ministry dropdown
+  const topLevelMinistries = ministries.filter(m => m.level === 1 || !m.parentId);
+
+  // Find the selected nominating ministry and get its children for Implementing Agency
+  const selectedMinistry = ministries.find(m => m.name === formData.nominating_ministry);
+  const getAllDescendants = (parentId: string): Ministry[] => {
+    const children = ministries.filter(m => m.parentId === parentId);
+    return children.reduce<Ministry[]>((acc, child) => [...acc, child, ...getAllDescendants(child.id)], []);
+  };
+  const agencyOptions = selectedMinistry ? getAllDescendants(selectedMinistry.id) : [];
+
+  const isUnsolicited = formData.origin === 'unsolicited';
+
+  // Fetch all administrative classifications (ministries + departments/offices) from Chart of Accounts
   useEffect(() => {
     async function fetchMinistries() {
       try {
-        const res = await apiFetch('/api/line-ministries');
-        if (res.ok) setMinistries(await res.json());
-      } catch {}
+        const res = await apiFetch('/api/admin/budget-classifications?type=administrative&flat=true&activeOnly=true');
+        if (res.ok) {
+          const json = await res.json();
+          const items = json.data || json;
+          setMinistries(items.map((m: any) => ({ id: m.id, name: m.name, code: m.code, parentId: m.parentId, level: m.level ?? 1 })));
+        }
+      } catch {} finally { setMinistriesLoading(false); }
     }
     fetchMinistries();
   }, []);
 
-  // Parse duration into years + months
-  const durationMonths = formData.estimated_duration_months ?? null;
-  const durationYears = durationMonths !== null ? Math.floor(durationMonths / 12) : '';
-  const durationRemainder = durationMonths !== null ? durationMonths % 12 : '';
+  // Fetch project types from DB
+  useEffect(() => {
+    async function fetchProjectTypes() {
+      try {
+        const res = await apiFetch('/api/pb-project-types');
+        if (res.ok) setProjectTypes(await res.json());
+      } catch {} finally { setProjectTypesLoading(false); }
+    }
+    fetchProjectTypes();
+  }, []);
 
-  const updateDuration = (years: string, months: string) => {
+  // Fetch sectors from DB
+  useEffect(() => {
+    async function fetchSectors() {
+      try {
+        const res = await apiFetch('/api/pb-sectors');
+        if (res.ok) setSectors(await res.json());
+      } catch {} finally { setSectorsLoading(false); }
+    }
+    fetchSectors();
+  }, []);
+
+  // Duration: free-form years + months, store total months in DB, show normalized summary
+  const [durYears, setDurYears] = useState<string>(() => {
+    const m = formData.estimated_duration_months;
+    return m != null ? String(Math.floor(m / 12)) : '';
+  });
+  const [durMonths, setDurMonths] = useState<string>(() => {
+    const m = formData.estimated_duration_months;
+    return m != null ? String(m % 12) : '';
+  });
+
+  const commitDuration = (years: string, months: string) => {
     const y = years === '' ? 0 : parseInt(years) || 0;
     const m = months === '' ? 0 : parseInt(months) || 0;
     const total = y * 12 + m;
     updateField('estimated_duration_months', total > 0 ? total : null);
   };
+
+  // Normalized display for the gray summary
+  const totalDurationMonths = (parseInt(durYears) || 0) * 12 + (parseInt(durMonths) || 0);
 
   const handleCostChange = (value: string) => {
     setCostDisplay(value);
@@ -86,29 +173,151 @@ export function StageIntake({ wizard }: StageIntakeProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={cn('space-y-6', isLocked && 'pointer-events-none opacity-60')}>
+      {/* Page header */}
       <div>
         <h3 className="text-lg font-semibold mb-1">Project Intake</h3>
         <p className="text-sm text-muted-foreground">Enter basic project information and contact details.</p>
       </div>
 
-      {/* ─── Project Origin ─── */}
-      <div id="section-origin" className="scroll-mt-20 rounded-lg border border-muted bg-muted/20 p-4 space-y-4">
-        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Project Origin</h4>
-        <Select value={formData.origin || 'government'} onValueChange={v => updateField('origin', v)}>
-          <SelectTrigger className="w-[280px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="government">Government Nominated</SelectItem>
-            <SelectItem value="unsolicited">Unsolicited Proposal</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* ─── Banner Image Upload ─── */}
+      <div>
+        <Label className="mb-2 block">
+          Project Banner
+          <HelpTooltip text="Upload a banner image (recommended 1200×300 pixels) to visually represent this project. It will appear on the project profile page." />
+          <FieldCheck value={formData.banner} />
+        </Label>
+        {formData.banner ? (
+          <div className="relative h-48 rounded-lg overflow-hidden group">
+            <img
+              src={formData.banner}
+              alt="Project banner"
+              className="w-full h-full object-cover"
+              style={{ objectPosition: `center ${formData.banner_position ?? 50}%` }}
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5 MB'); return; }
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      updateField('banner', reader.result as string);
+                      updateField('banner_position', 50);
+                    };
+                    reader.readAsDataURL(file);
+                    e.target.value = '';
+                  }}
+                />
+                <Button size="sm" variant="secondary" asChild>
+                  <span><Upload className="h-4 w-4 mr-1.5" />Replace</span>
+                </Button>
+              </label>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => { updateField('banner', null); updateField('banner_position', 50); }}
+              >
+                <X className="h-4 w-4 mr-1.5" />Remove
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <label className="block cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5 MB'); return; }
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  updateField('banner', reader.result as string);
+                  updateField('banner_position', 50);
+                };
+                reader.readAsDataURL(file);
+                e.target.value = '';
+              }}
+            />
+            <div className="h-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-gray-400 transition-colors">
+              <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
+              <p className="text-sm font-medium text-gray-700 mb-1">Click or drag image to upload</p>
+              <p className="text-xs text-gray-500">Max size: 5 MB</p>
+            </div>
+          </label>
+        )}
+      </div>
 
-        {formData.origin === 'unsolicited' && (
-          <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-3">
-            <h5 className="text-sm font-medium text-purple-800">Proponent Details</h5>
+      {/* ─── C: Project Origin — Two-Card Layout ─── */}
+      <div id="section-origin" className="scroll-mt-20 space-y-4">
+        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Project Origin</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* GOV card */}
+          <button
+            type="button"
+            onClick={() => updateField('origin', 'government')}
+            className={cn(
+              'relative rounded-lg border-2 p-4 text-left transition-all',
+              (formData.origin || 'government') === 'government'
+                ? 'border-[#5f7f7a] bg-[#f6f5f3] ring-2 ring-[#5f7f7a]/20'
+                : 'border-border hover:border-muted-foreground/50',
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <div className="rounded-md bg-muted p-2">
+                <Landmark className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">Government Nominated</span>
+                  <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">GOV</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Project nominated by a government ministry through official channels</p>
+              </div>
+            </div>
+          </button>
+
+          {/* UNSOL card */}
+          <button
+            type="button"
+            onClick={() => updateField('origin', 'unsolicited')}
+            className={cn(
+              'relative rounded-lg border-2 p-4 text-left transition-all',
+              formData.origin === 'unsolicited'
+                ? 'border-[#5f7f7a] bg-[#f6f5f3] ring-2 ring-[#5f7f7a]/20'
+                : 'border-border hover:border-muted-foreground/50',
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <div className="rounded-md bg-muted p-2">
+                <Lightbulb className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">Unsolicited Proposal</span>
+                  <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">UNSOL</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Project proposed by a private entity or development partner</p>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {/* Proponent details (shown when UNSOL) */}
+        {isUnsolicited && (
+          <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
+            <h5 className="text-sm font-medium text-foreground">Proponent Details</h5>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <Label className="text-xs text-purple-600">Proponent Name</Label>
+                <Label className="text-xs text-muted-foreground">Proponent Name <FieldCheck value={formData.proponent_name} /></Label>
                 <Input
                   value={formData.proponent_name || ''}
                   onChange={e => updateField('proponent_name', e.target.value)}
@@ -116,7 +325,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 />
               </div>
               <div>
-                <Label className="text-xs text-purple-600">Company</Label>
+                <Label className="text-xs text-muted-foreground">Company <FieldCheck value={formData.proponent_company} /></Label>
                 <Input
                   value={formData.proponent_company || ''}
                   onChange={e => updateField('proponent_company', e.target.value)}
@@ -124,7 +333,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 />
               </div>
               <div>
-                <Label className="text-xs text-purple-600">Contact Info</Label>
+                <Label className="text-xs text-muted-foreground">Contact Info <FieldCheck value={formData.proponent_contact} /></Label>
                 <Input
                   value={formData.proponent_contact || ''}
                   onChange={e => updateField('proponent_contact', e.target.value)}
@@ -136,11 +345,12 @@ export function StageIntake({ wizard }: StageIntakeProps) {
         )}
       </div>
 
-      {/* ─── General Info ─── */}
-      <div id="section-general-info" className="scroll-mt-20">
+      {/* ─── B: General Info with "Basic Information" heading ─── */}
+      <div id="section-general-info" className="scroll-mt-20 space-y-4">
+        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Basic Information</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <Label>Project Name <RequiredDot /> <HelpTooltip text="The official name of the project. Use a clear, descriptive title." /></Label>
+            <Label>Project Name <RequiredDot /> <HelpTooltip text="The official name of the project. Use a clear, descriptive title." /> <FieldCheck value={formData.name} /></Label>
             <Input
               value={formData.name || ''}
               onChange={e => updateField('name', e.target.value)}
@@ -149,65 +359,93 @@ export function StageIntake({ wizard }: StageIntakeProps) {
             {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
           </div>
 
+          {/* D: Nominating Ministry — Top-level ministries only */}
           <div>
-            <Label>Nominating Ministry <RequiredDot /> <HelpTooltip text="The government ministry responsible for proposing this project." /></Label>
-            {ministries.length > 0 ? (
-              <Select
-                value={formData.nominating_ministry || ''}
-                onValueChange={v => updateField('nominating_ministry', v)}
-              >
-                <SelectTrigger><SelectValue placeholder="Select ministry..." /></SelectTrigger>
-                <SelectContent>
-                  {ministries.map(m => (
-                    <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input
-                value={formData.nominating_ministry || ''}
-                onChange={e => updateField('nominating_ministry', e.target.value)}
-                placeholder="e.g. Ministry of Construction"
-              />
-            )}
+            <Label>Nominating Ministry <RequiredDot /> <HelpTooltip text="The government ministry responsible for proposing this project." /> <FieldCheck value={formData.nominating_ministry} /></Label>
+            <Select
+              value={formData.nominating_ministry || ''}
+              onValueChange={v => {
+                updateField('nominating_ministry', v);
+                // Clear implementing agency when ministry changes since children are different
+                updateField('implementing_agency', '');
+              }}
+              disabled={ministriesLoading || topLevelMinistries.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={
+                  ministriesLoading ? 'Loading ministries...'
+                    : topLevelMinistries.length === 0 ? 'No ministries available'
+                    : 'Select ministry...'
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                {topLevelMinistries.map(m => (
+                  <SelectItem key={m.id} value={m.name}>
+                    <span className="inline-flex items-center gap-2 min-w-0">
+                      {m.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.code}</span>}
+                      <span>{m.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.nominating_ministry && <p className="text-xs text-red-500 mt-1">{errors.nominating_ministry}</p>}
           </div>
 
+          {/* E: Implementing Agency — cascades from nominating ministry children */}
           <div>
-            <Label>Implementing Agency (IGA) <HelpTooltip text="The agency responsible for implementing the project. May differ from the nominating ministry." /></Label>
-            {ministries.length > 0 ? (
-              <Select
-                value={formData.implementing_agency || ''}
-                onValueChange={v => updateField('implementing_agency', v)}
-              >
-                <SelectTrigger><SelectValue placeholder="Same as nominating ministry" /></SelectTrigger>
-                <SelectContent>
-                  {ministries.map(m => (
-                    <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input
-                value={formData.implementing_agency || ''}
-                onChange={e => updateField('implementing_agency', e.target.value)}
-                placeholder="Same as nominating ministry"
-              />
-            )}
+            <Label>Implementing Agency <HelpTooltip text="The department, directorate, or office within the nominating ministry that will implement the project. Select a ministry first." /> <FieldCheck value={formData.implementing_agency} /></Label>
+            <Select
+              value={formData.implementing_agency || ''}
+              onValueChange={v => updateField('implementing_agency', v)}
+              disabled={!formData.nominating_ministry || agencyOptions.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={
+                  !formData.nominating_ministry ? 'Select a ministry first'
+                    : agencyOptions.length === 0 ? 'No departments found — ministry is the implementer'
+                    : 'Select implementing agency...'
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                {agencyOptions.map(m => (
+                  <SelectItem key={m.id} value={m.name}>
+                    <span className="inline-flex items-center gap-2 min-w-0">
+                      {m.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.code}</span>}
+                      <span className={m.level > 2 ? 'pl-3' : ''}>{m.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
+          {/* F: Project Type — from DB with [CODE] Name */}
           <div>
-            <Label>Project Type <HelpTooltip text="The broad category of this project (infrastructure, social services, etc.)." /></Label>
-            <Select value={formData.project_type || ''} onValueChange={v => updateField('project_type', v)}>
-              <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
+            <Label>Project Type <HelpTooltip text="The broad category of this project (infrastructure, social services, etc.)." /> <FieldCheck value={formData.project_type} /></Label>
+            <Select
+              value={formData.project_type || ''}
+              onValueChange={v => updateField('project_type', v)}
+              disabled={projectTypesLoading && projectTypes.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={projectTypesLoading ? 'Loading types...' : 'Select type...'} />
+              </SelectTrigger>
               <SelectContent>
-                {PROJECT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                {projectTypes.map(t => (
+                  <SelectItem key={t.id} value={t.name}>
+                    <span className="inline-flex items-center gap-2 min-w-0">
+                      <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{t.code}</span>
+                      <span>{t.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label>Estimated Cost <HelpTooltip text="The total estimated project cost including all phases." /></Label>
+            <Label>Estimated Cost <HelpTooltip text="The total estimated project cost including all phases." /> <FieldCheck value={formData.estimated_cost} /></Label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">$</span>
@@ -253,7 +491,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
           )}
 
           <div>
-            <Label>Estimated Start Date <HelpTooltip text="When the project is expected to begin." /></Label>
+            <Label>Estimated Start Date <HelpTooltip text="When the project is expected to begin." /> <FieldCheck value={formData.estimated_start_date} /></Label>
             <DatePicker
               value={formData.estimated_start_date || ''}
               onChange={v => updateField('estimated_start_date', v || null)}
@@ -261,14 +499,19 @@ export function StageIntake({ wizard }: StageIntakeProps) {
             />
           </div>
 
+          {/* Duration Input — free-form, with normalized summary */}
           <div>
-            <Label>Estimated Duration <HelpTooltip text="Total project duration from start to completion." /></Label>
+            <Label>Estimated Duration <HelpTooltip text="Total project duration from start to completion. Enter years and months freely — the total is calculated automatically." /> <FieldCheck value={formData.estimated_duration_months} /></Label>
             <div className="flex gap-2 items-center">
               <Input
                 type="number"
                 min={0}
-                value={durationYears}
-                onChange={e => updateDuration(e.target.value, String(durationRemainder))}
+                value={durYears}
+                onChange={e => {
+                  setDurYears(e.target.value);
+                  commitDuration(e.target.value, durMonths);
+                }}
+                onFocus={e => setTimeout(() => e.target.select(), 0)}
                 placeholder="0"
                 className="w-20"
               />
@@ -276,9 +519,12 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               <Input
                 type="number"
                 min={0}
-                max={11}
-                value={durationRemainder}
-                onChange={e => updateDuration(String(durationYears), e.target.value)}
+                value={durMonths}
+                onChange={e => {
+                  setDurMonths(e.target.value);
+                  commitDuration(durYears, e.target.value);
+                }}
+                onFocus={e => setTimeout(() => e.target.select(), 0)}
                 placeholder="0"
                 className="w-20"
               />
@@ -287,7 +533,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
           </div>
 
           <div className="md:col-span-2">
-            <Label>Description <HelpTooltip text="A brief summary of the project scope and purpose." /></Label>
+            <Label>Description <HelpTooltip text="A brief summary of the project scope and purpose." /> <FieldCheck value={formData.description} /></Label>
             <Textarea
               value={formData.description || ''}
               onChange={e => updateField('description', e.target.value)}
@@ -297,7 +543,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
           </div>
 
           <div className="md:col-span-2">
-            <Label>Objectives <HelpTooltip text="The specific goals this project aims to achieve." /></Label>
+            <Label>Objectives <HelpTooltip text="The specific goals this project aims to achieve." /> <FieldCheck value={formData.objectives} /></Label>
             <Textarea
               value={formData.objectives || ''}
               onChange={e => updateField('objectives', e.target.value)}
@@ -307,7 +553,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
           </div>
 
           <div className="md:col-span-2">
-            <Label>Target Beneficiaries <HelpTooltip text="Who will benefit from this project and how many people are expected to be impacted." /></Label>
+            <Label>Target Beneficiaries <HelpTooltip text="Who will benefit from this project and how many people are expected to be impacted." /> <FieldCheck value={formData.target_beneficiaries} /></Label>
             <Textarea
               value={formData.target_beneficiaries || ''}
               onChange={e => updateField('target_beneficiaries', e.target.value)}
@@ -318,12 +564,19 @@ export function StageIntake({ wizard }: StageIntakeProps) {
         </div>
       </div>
 
-      {/* ─── Contact Officer ─── */}
-      <div id="section-contact-officer" className="scroll-mt-20 rounded-lg border border-muted bg-muted/20 p-4 space-y-4">
-        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Contact Officer</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* ─── I: Contact Officer — Context-Aware Label ─── */}
+      <div id="section-contact-officer" className="scroll-mt-20 p-4 space-y-4">
+        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          {isUnsolicited ? 'Proponent Contact' : 'Contact Officer'}
+        </h4>
+        <p className="text-xs text-muted-foreground -mt-2">
+          {isUnsolicited
+            ? 'The primary contact from the proposing entity.'
+            : 'The government officer responsible for coordinating this project.'}
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Full Name <HelpTooltip text="The primary contact person for this project." /></Label>
+            <Label>Full Name <HelpTooltip text="The primary contact person for this project." /> <FieldCheck value={formData.contact_officer} /></Label>
             <Input
               value={formData.contact_officer || ''}
               onChange={e => updateField('contact_officer', e.target.value)}
@@ -331,7 +584,15 @@ export function StageIntake({ wizard }: StageIntakeProps) {
             />
           </div>
           <div>
-            <Label>Email <HelpTooltip text="Contact officer's email address." /></Label>
+            <Label>Position / Job Title <HelpTooltip text="The contact officer's role or designation within their organisation." /> <FieldCheck value={formData.contact_position} /></Label>
+            <Input
+              value={formData.contact_position || ''}
+              onChange={e => updateField('contact_position', e.target.value)}
+              placeholder="e.g. Director, Deputy Director, Project Manager"
+            />
+          </div>
+          <div>
+            <Label>Email <HelpTooltip text="Contact officer's email address." /> <FieldCheck value={formData.contact_email} /></Label>
             <Input
               type="email"
               value={formData.contact_email || ''}
@@ -340,64 +601,190 @@ export function StageIntake({ wizard }: StageIntakeProps) {
             />
           </div>
           <div>
-            <Label>Phone <HelpTooltip text="Contact officer's phone number." /></Label>
+            <Label>Phone <HelpTooltip text="Contact officer's phone number." /> <FieldCheck value={formData.contact_phone} /></Label>
             <Input
               value={formData.contact_phone || ''}
               onChange={e => updateField('contact_phone', e.target.value)}
               placeholder="+95..."
             />
           </div>
+          <div>
+            <Label>Line Ministry <HelpTooltip text="The ministry the contact officer belongs to." /> <FieldCheck value={formData.contact_ministry} /></Label>
+            <Select
+              value={formData.contact_ministry || ''}
+              onValueChange={v => {
+                updateField('contact_ministry', v);
+                updateField('contact_department', '');
+              }}
+              disabled={ministriesLoading || topLevelMinistries.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={
+                  ministriesLoading ? 'Loading ministries...'
+                    : topLevelMinistries.length === 0 ? 'No ministries available'
+                    : 'Select ministry...'
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                {topLevelMinistries.map(m => (
+                  <SelectItem key={m.id} value={m.name}>
+                    <span className="inline-flex items-center gap-2 min-w-0">
+                      {m.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.code}</span>}
+                      <span>{m.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Department / Sub-entity <HelpTooltip text="The specific department, directorate, or office within the ministry." /> <FieldCheck value={formData.contact_department} /></Label>
+            {(() => {
+              const contactMinistry = ministries.find(m => m.name === formData.contact_ministry);
+              const contactDeptOptions = contactMinistry ? getAllDescendants(contactMinistry.id) : [];
+              return (
+                <Select
+                  value={formData.contact_department || ''}
+                  onValueChange={v => updateField('contact_department', v)}
+                  disabled={!formData.contact_ministry || contactDeptOptions.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={
+                      !formData.contact_ministry ? 'Select a ministry first'
+                        : contactDeptOptions.length === 0 ? 'No sub-entities found'
+                        : 'Select department...'
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contactDeptOptions.map(m => (
+                      <SelectItem key={m.id} value={m.name}>
+                        <span className="inline-flex items-center gap-2 min-w-0">
+                          {m.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.code}</span>}
+                          <span className={m.level > 2 ? 'pl-3' : ''}>{m.name}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              );
+            })()}
+          </div>
         </div>
       </div>
 
-      {/* ─── Sector / Sub-Sector ─── */}
-      <div id="section-sector" className="scroll-mt-20 rounded-lg border border-muted bg-muted/20 p-4 space-y-4">
+      {/* ─── G: Sector / Sub-Sector — from DB, no border/bg ─── */}
+      <div id="section-sector" className="scroll-mt-20 p-4 space-y-4">
         <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Sector / Sub-Sector</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Sector <RequiredDot /> <HelpTooltip text="The primary development sector this project falls under." /></Label>
-            <Select value={formData.sector || ''} onValueChange={v => { updateField('sector', v); updateField('sub_sector', null); }}>
-              <SelectTrigger><SelectValue placeholder="Select sector..." /></SelectTrigger>
+            <Label>Sector <RequiredDot /> <HelpTooltip text="The primary development sector this project falls under." /> <FieldCheck value={formData.sector} /></Label>
+            <Select
+              value={formData.sector || ''}
+              onValueChange={v => { updateField('sector', v); updateField('sub_sector', null); }}
+              disabled={sectorsLoading && sectors.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={sectorsLoading ? 'Loading sectors...' : 'Select sector...'} />
+              </SelectTrigger>
               <SelectContent>
-                {SECTORS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {sectors.map(s => (
+                  <SelectItem key={s.id} value={s.name}>
+                    <span className="inline-flex items-center gap-2 min-w-0">
+                      {s.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.code}</span>}
+                      <span>{s.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {errors.sector && <p className="text-xs text-red-500 mt-1">{errors.sector}</p>}
           </div>
           <div>
-            <Label>Sub-Sector <HelpTooltip text="A more specific category within the selected sector." /></Label>
-            <Select value={formData.sub_sector || ''} onValueChange={v => updateField('sub_sector', v)} disabled={!sectorSubSectors.length}>
-              <SelectTrigger><SelectValue placeholder={sectorSubSectors.length ? 'Select sub-sector...' : 'Select sector first'} /></SelectTrigger>
+            <Label>Sub-Sector <HelpTooltip text="A more specific category within the selected sector." /> <FieldCheck value={formData.sub_sector} /></Label>
+            <Select
+              value={formData.sub_sector || ''}
+              onValueChange={v => updateField('sub_sector', v)}
+              disabled={!sectorSubSectors.length}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={sectorSubSectors.length ? 'Select sub-sector...' : 'Select sector first'} />
+              </SelectTrigger>
               <SelectContent>
-                {sectorSubSectors.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {sectorSubSectors.map((s, idx) => (
+                  <SelectItem key={s.id} value={s.name}>
+                    <span className="inline-flex items-center gap-2 min-w-0">
+                      <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{idx + 1}</span>
+                      <span>{s.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </div>
       </div>
 
-      {/* ─── Region / Townships ─── */}
+      {/* ─── J: Region / Townships — Grouped by type + Nationwide ─── */}
       <div id="section-region" className="scroll-mt-20 rounded-lg border border-muted bg-muted/20 p-4 space-y-4">
         <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Region / Townships</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Region <HelpTooltip text="The state or region where this project will be implemented." /></Label>
+            <Label>Region <HelpTooltip text="The state or region where this project will be implemented." /> <FieldCheck value={formData.region} /></Label>
             <Select value={formData.region || ''} onValueChange={v => updateField('region', v)}>
               <SelectTrigger><SelectValue placeholder="Select region..." /></SelectTrigger>
               <SelectContent>
-                {REGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                <SelectItem value="Nationwide">
+                  <span className="inline-flex items-center gap-2 min-w-0">
+                    <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">ALL</span>
+                    <span>Nationwide</span>
+                  </span>
+                </SelectItem>
+                <SelectGroup>
+                  <SelectLabel>States</SelectLabel>
+                  {regionStates.map(r => (
+                    <SelectItem key={r.name} value={r.name}>
+                      <span className="inline-flex items-center gap-2 min-w-0">
+                        <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{r.st_pcode.replace('MMR', '')}</span>
+                        <span>{r.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Regions</SelectLabel>
+                  {regionRegions.map(r => (
+                    <SelectItem key={r.name} value={r.name}>
+                      <span className="inline-flex items-center gap-2 min-w-0">
+                        <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{r.st_pcode.replace('MMR', '')}</span>
+                        <span>{r.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Union Territories</SelectLabel>
+                  {regionUnionTerritories.map(r => (
+                    <SelectItem key={r.name} value={r.name}>
+                      <span className="inline-flex items-center gap-2 min-w-0">
+                        <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{r.st_pcode.replace('MMR', '')}</span>
+                        <span>{r.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
         </div>
       </div>
 
-      {/* ─── SDG Goals ─── */}
+      {/* ─── K: SDG Goals — Bloom Animation ─── */}
       <div className="md:col-span-2">
-        <Label>SDG Goals <HelpTooltip text="Select the Sustainable Development Goals this project contributes to." /></Label>
+        <Label>SDG Goals <HelpTooltip text="Select the Sustainable Development Goals this project contributes to." /> <FieldCheck value={formData.sdg_goals} /></Label>
         <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 mt-2">
           {SDG_GOALS.map(sdg => {
             const selected = (formData.sdg_goals || []).includes(sdg.value);
+            const padded = sdg.value.padStart(2, '0');
             return (
               <button
                 key={sdg.value}
@@ -410,18 +797,18 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                   );
                 }}
                 className={cn(
-                  'relative aspect-square rounded-lg border-2 transition-all hover:scale-105 overflow-hidden',
+                  'relative aspect-square rounded-lg border-2 transition-all overflow-hidden',
                   selected
                     ? 'border-gray-800 ring-2 ring-gray-800/20 shadow-md'
-                    : 'border-gray-200 hover:border-gray-300 hover:shadow-sm',
+                    : 'border-transparent',
                 )}
               >
-                <Image
-                  src={`/images/sdg/E_SDG_Icons-${sdg.value.padStart(2, '0')}.jpg`}
-                  alt={sdg.label}
-                  fill
-                  className="object-cover"
-                  sizes="80px"
+                <SDGIconHover
+                  src={`/images/sdg/E_SDG_Icons-${padded}.jpg`}
+                  alt={`SDG ${sdg.value}`}
+                  size="lg"
+                  selected={selected}
+                  className="w-full h-full"
                 />
                 {selected && (
                   <div className="absolute bottom-0.5 right-0.5 bg-gray-800 rounded-full p-0.5">
@@ -436,7 +823,12 @@ export function StageIntake({ wizard }: StageIntakeProps) {
         </div>
       </div>
 
-      {/* Document upload */}
+      {/* ─── L: MSDP Alignment Screening ─── */}
+      <div className="md:col-span-2" id="section-msdp">
+        <StageMSDPScreening wizard={wizard} />
+      </div>
+
+      {/* Document upload with pre-save staging */}
       <div>
         <Label className="mb-2 block">Supporting Documents</Label>
         <DocumentUploadZone
@@ -444,7 +836,9 @@ export function StageIntake({ wizard }: StageIntakeProps) {
           stage="intake"
           documents={documents}
           onDocumentsChange={refreshDocuments}
-          acceptedTypes={['concept_note', 'project_proposal', 'other']}
+          acceptedTypes={['concept_note', 'project_proposal', 'terms_of_reference', 'budget_estimate', 'site_map', 'stakeholder_analysis', 'endorsement_letter', 'proponent_profile', 'environmental_screening', 'other']}
+          pendingFiles={pendingFiles}
+          onPendingFilesChange={setPendingFiles}
         />
       </div>
 

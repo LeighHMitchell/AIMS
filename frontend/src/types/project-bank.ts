@@ -11,15 +11,29 @@ export type CommitmentStatus = 'expression_of_interest' | 'pipeline' | 'pledged'
 export type AppraisalType = 'preliminary_fs' | 'detailed_fs' | 'eirr' | 'vgf';
 
 
+/** @deprecated Use ProjectStage instead */
 export type AppraisalStage =
   | 'intake' | 'preliminary_fs' | 'msdp_screening' | 'firr_assessment'
   | 'eirr_assessment' | 'vgf_assessment' | 'dp_consultation' | 'routing_complete' | 'rejected';
+
+// Unified Phase-Gate Stages
+export type ProjectStage =
+  | 'intake_draft' | 'intake_submitted' | 'intake_approved' | 'intake_returned' | 'intake_rejected'
+  | 'fs1_draft' | 'fs1_submitted' | 'fs1_approved' | 'fs1_returned' | 'fs1_rejected'
+  | 'fs2_assigned' | 'fs2_in_progress' | 'fs2_completed' | 'fs2_categorized'
+  | 'fs3_in_progress' | 'fs3_completed';
+
+/** Which high-level phase a project_stage belongs to */
+export type ProjectPhase = 'intake' | 'fs1' | 'fs2' | 'fs3';
+
+/** FS-1 internal tab identifiers */
+export type FS1Tab = 'technical' | 'revenue' | 'environmental' | 'msdp' | 'firr';
 
 export type RoutingOutcome =
   | 'private_with_state_support' | 'private_no_support' | 'ppp_mechanism'
   | 'rejected_not_msdp' | 'rejected_low_eirr';
 
-// Three-Tier Feasibility Study Framework
+/** @deprecated Use ProjectStage instead */
 export type FeasibilityStage =
   | 'registered'
   | 'fs1_submitted' | 'fs1_desk_screened' | 'fs1_passed' | 'fs1_returned' | 'fs1_rejected'
@@ -77,7 +91,11 @@ export type DocumentType =
   | 'cost_estimate' | 'environmental_screening' | 'msdp_alignment_justification'
   | 'firr_calculation_workbook' | 'eirr_calculation_workbook'
   | 'cost_benefit_analysis' | 'detailed_fs_report' | 'vgf_calculation'
-  | 'risk_allocation_matrix' | 'funding_request' | 'cabinet_approval' | 'monitoring_report' | 'other';
+  | 'risk_allocation_matrix' | 'funding_request' | 'cabinet_approval' | 'monitoring_report'
+  | 'dap_compliance'
+  | 'terms_of_reference' | 'budget_estimate' | 'site_map' | 'stakeholder_analysis'
+  | 'endorsement_letter' | 'proponent_profile'
+  | 'other';
 
 // PPP Contract Types (Notification 2/2018)
 export type PPPContractType = 'availability_payment' | 'boo' | 'bot' | 'btl' | 'bto' | 'om' | 'other';
@@ -372,7 +390,10 @@ export interface ProjectBankProject {
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
-  // Appraisal workflow
+  // Unified phase-gate stage
+  project_stage: ProjectStage;
+  review_comments?: string | null;
+  // Appraisal workflow (deprecated — use project_stage)
   appraisal_stage?: AppraisalStage;
   routing_outcome?: RoutingOutcome | null;
   // Intake fields
@@ -417,6 +438,7 @@ export interface ProjectBankProject {
   sector_strategy_reference?: string | null;
   in_sector_investment_plan?: boolean;
   // Calculation data
+  firr_cost_table_data?: CostTableRow[] | null;
   firr_calculation_data?: any | null;
   eirr_calculation_data?: any | null;
   eirr_shadow_prices?: any | null;

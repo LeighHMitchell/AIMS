@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
+import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -13,10 +14,13 @@ export async function GET() {
 
   try {
     // Fetch all transactions
-    const { data: transactions, error: transactionsError } = await supabase
+    // Exclude internal transfers (pooled fund flows) to avoid double-counting
+    let txQuery = supabase
       .from('transactions')
       .select('transaction_type, value_usd, transaction_date')
       .not('transaction_date', 'is', null)
+    txQuery = excludeInternalTransfers(txQuery)
+    const { data: transactions, error: transactionsError } = await txQuery
 
     if (transactionsError) {
       console.error('[Reports API] Error fetching transactions:', transactionsError)
