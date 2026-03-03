@@ -2,9 +2,11 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, Trash2, Loader2, Clock } from 'lucide-react';
+import { Upload, FileText, Trash2, Loader2, Clock, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { apiFetch } from '@/lib/api-fetch';
 import type { ProjectDocument, DocumentType } from '@/types/project-bank';
 import type { PendingFile } from '@/hooks/use-appraisal-wizard';
@@ -23,7 +25,7 @@ interface DocumentUploadZoneProps {
 const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   concept_note: 'Concept Note',
   project_proposal: 'Project Proposal',
-  preliminary_fs_report: 'Preliminary FS Report',
+  preliminary_fs_report: 'Preliminary Feasibility Study Report',
   cost_estimate: 'Cost Estimate',
   environmental_screening: 'Environmental Screening',
   msdp_alignment_justification: 'MSDP Alignment Justification',
@@ -43,6 +45,12 @@ const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   stakeholder_analysis: 'Stakeholder Analysis',
   endorsement_letter: 'Government Endorsement Letter',
   proponent_profile: 'Proponent Company Profile',
+  environmental_impact_assessment: 'Environmental Impact Assessment',
+  social_impact_assessment: 'Social Impact Assessment',
+  land_acquisition_plan: 'Land Acquisition Plan',
+  resettlement_plan: 'Resettlement Plan',
+  technical_design: 'Technical Design',
+  market_assessment: 'Market Assessment',
   other: 'Other',
 };
 
@@ -69,6 +77,12 @@ const DOCUMENT_TYPE_CODES: Record<DocumentType, string> = {
   stakeholder_analysis: 'SA',
   endorsement_letter: 'EL',
   proponent_profile: 'CPR',
+  environmental_impact_assessment: 'EIA',
+  social_impact_assessment: 'SIA',
+  land_acquisition_plan: 'LAP',
+  resettlement_plan: 'RP',
+  technical_design: 'TD',
+  market_assessment: 'MA',
   other: 'OTH',
 };
 
@@ -91,6 +105,10 @@ export function DocumentUploadZone({
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<DocumentType>(acceptedTypes?.[0] || 'other');
+  const [editingDoc, setEditingDoc] = useState<string | null>(null);
+  const [editFileName, setEditFileName] = useState('');
+  const [editDocType, setEditDocType] = useState<DocumentType>('other');
+  const [saving, setSaving] = useState(false);
 
   const stageDocuments = documents.filter(d => d.upload_stage === stage);
 
@@ -150,6 +168,30 @@ export function DocumentUploadZone({
     if (onPendingFilesChange) {
       const updated = pendingFiles.filter((_, i) => i !== index);
       onPendingFilesChange(updated);
+    }
+  };
+
+  const handleStartEdit = (doc: ProjectDocument) => {
+    setEditingDoc(doc.id);
+    setEditFileName(doc.file_name);
+    setEditDocType(doc.document_type);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!projectId || !editingDoc) return;
+    setSaving(true);
+    try {
+      await apiFetch(`/api/project-bank/${projectId}/documents/${editingDoc}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_name: editFileName, document_type: editDocType }),
+      });
+      onDocumentsChange();
+      setEditingDoc(null);
+    } catch (err) {
+      console.error('Edit failed:', err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -269,19 +311,67 @@ export function DocumentUploadZone({
                   </div>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDelete(doc.id)}
-                disabled={deleting === doc.id}
-                className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500"
-              >
-                {deleting === doc.id ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5" />
-                )}
-              </Button>
+              <div className="flex items-center gap-1 shrink-0">
+                <Popover open={editingDoc === doc.id} onOpenChange={(open) => {
+                  if (open) handleStartEdit(doc);
+                  else setEditingDoc(null);
+                }}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-3 space-y-3" align="end">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">File Name</label>
+                      <Input
+                        value={editFileName}
+                        onChange={e => setEditFileName(e.target.value)}
+                        className="mt-1 h-8 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Document Type</label>
+                      <Select value={editDocType} onValueChange={v => setEditDocType(v as DocumentType)}>
+                        <SelectTrigger className="mt-1 h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {typeOptions.map(type => (
+                            <SelectItem key={type} value={type}>
+                              <span className="flex items-center gap-2">
+                                <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{DOCUMENT_TYPE_CODES[type]}</span>
+                                {DOCUMENT_TYPE_LABELS[type]}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button size="sm" onClick={handleSaveEdit} disabled={saving} className="w-full">
+                      {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                      Save
+                    </Button>
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(doc.id)}
+                  disabled={deleting === doc.id}
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500"
+                >
+                  {deleting === doc.id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </div>
             </div>
           ))}
         </div>

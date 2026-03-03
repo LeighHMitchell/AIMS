@@ -3,6 +3,41 @@ import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string; docId: string }> }
+) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  const { id, docId } = await params;
+  const body = await request.json();
+  const updates: Record<string, string> = {};
+
+  if (body.file_name && typeof body.file_name === 'string') {
+    updates.file_name = body.file_name.trim();
+  }
+  if (body.document_type && typeof body.document_type === 'string') {
+    updates.document_type = body.document_type;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+  }
+
+  const { error } = await supabase!
+    .from('project_documents')
+    .update(updates)
+    .eq('id', docId)
+    .eq('project_id', id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string; docId: string }> }

@@ -9,7 +9,7 @@ import { Loader2, Clock, RotateCcw, XCircle, ShieldCheck, Send, AlertCircle } fr
 import { useAppraisalWizard } from '@/hooks/use-appraisal-wizard';
 import { AppraisalProgressRail } from './AppraisalProgressRail';
 import { StageIntake } from './StageIntake';
-import { StagePreliminaryFS } from './StagePreliminaryFS';
+import { StagePreliminaryFS, ViabilityDecisionSidebar } from './StagePreliminaryFS';
 import { StageEIRR } from './StageEIRR';
 import { StagePPPStructuring } from './StagePPPStructuring';
 import { StageRouting } from './StageRouting';
@@ -159,7 +159,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       />
 
       {/* Main Content */}
-      <div>
+      <div className={currentPhase === 'fs1' ? 'mr-[340px]' : ''}>
         {/* Status Banner */}
         {banner && (
           <div className={cn('flex items-start gap-3 p-4 rounded-lg border mb-4', banner.bgClass)}>
@@ -182,6 +182,11 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Viability Decision — sticky sidebar (third grid column, fs1 only) */}
+      {currentPhase === 'fs1' && (
+        <ViabilityDecisionSidebar wizard={wizard} />
+      )}
 
       {/* Fixed Bottom Action Bar */}
       {showFooter && (
@@ -218,7 +223,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
                   className="gap-1.5"
                 >
                   {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  Submit for Review
+                  {currentPhase === 'fs1' ? 'Submit for Review Board Approval' : 'Submit for Review'}
                 </Button>
               )}
               {!canSubmit && (
@@ -244,7 +249,9 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
               Submit {currentPhase === 'intake' ? 'Intake' : 'FS-1'} for Review
             </DialogTitle>
             <DialogDescription>
-              Please confirm you are ready to submit this project for review board assessment.
+              {currentPhase === 'fs1'
+                ? 'Your Preliminary Feasibility Study will be submitted to the Review Board for assessment. The board will evaluate the technical, financial, and environmental data you have provided.'
+                : 'Please confirm you are ready to submit this project for review board assessment.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -260,7 +267,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
               </div>
               <div className="flex items-start gap-3 text-sm">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-                <span>The review board will evaluate the submission and may <strong>approve</strong>, <strong>return for revision</strong>, or <strong>reject</strong> the project.</span>
+                <span>The review board will evaluate the submission and may <strong>approve</strong> (proceed to next phase), <strong>return for revision</strong> (unlock the form for corrections), or <strong>reject</strong> the project (with a 6-month cool-down).</span>
               </div>
             </div>
           </div>

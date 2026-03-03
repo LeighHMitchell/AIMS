@@ -6,7 +6,7 @@ import { AppraisalWizard } from "@/components/project-bank/appraisal/AppraisalWi
 export default function SubmitProjectPage() {
   return (
     <MainLayout>
-      <div className="max-w-[1280px] pb-16">
+      <div className="max-w-[1600px] pb-16">
         <h1 className="text-2xl font-bold mb-6">Submit New Project</h1>
         <AppraisalWizard />
       </div>

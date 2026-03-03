@@ -95,6 +95,9 @@ export type DocumentType =
   | 'dap_compliance'
   | 'terms_of_reference' | 'budget_estimate' | 'site_map' | 'stakeholder_analysis'
   | 'endorsement_letter' | 'proponent_profile'
+  | 'environmental_impact_assessment' | 'social_impact_assessment'
+  | 'land_acquisition_plan' | 'resettlement_plan'
+  | 'technical_design' | 'market_assessment'
   | 'other';
 
 // PPP Contract Types (Notification 2/2018)
@@ -421,12 +424,15 @@ export interface ProjectBankProject {
   has_technical_design?: boolean;
   technical_design_maturity?: string | null;
   environmental_impact_level?: string | null;
+  environmental_impact_description?: string | null;
   social_impact_level?: string | null;
+  social_impact_description?: string | null;
   land_acquisition_required?: boolean;
   resettlement_required?: boolean;
   estimated_affected_households?: number | null;
   has_revenue_component?: boolean;
   revenue_sources?: string[] | null;
+  revenue_source_other_description?: string | null;
   market_assessment_summary?: string | null;
   projected_annual_users?: number | null;
   projected_annual_revenue?: number | null;
@@ -528,7 +534,7 @@ export interface ProjectBankStats {
   activeProjects: number;
   totalPipelineValue: number;
   fundingGap: number;
-  byStatus: Record<ProjectStatus, number>;
+  byStatus: Record<ProjectStatus, { count: number; value: number }>;
   bySector: { sector: string; count: number; value: number }[];
   byPathway: { pathway: string; count: number; value: number }[];
   recentSubmissions: ProjectBankProject[];

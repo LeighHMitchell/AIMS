@@ -1,9 +1,9 @@
 "use client"
 
-import { FileText, Search, ClipboardCheck, ThumbsUp, Hammer, Flag, XCircle } from "lucide-react"
+import { CheckCircle, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { STATUS_ORDER, STATUS_LABELS } from "@/lib/project-bank-utils"
-import type { ProjectBankProject, ProjectStatus } from "@/types/project-bank"
+import { PHASE_LABELS, getPhase } from "@/lib/project-bank-utils"
+import type { ProjectBankProject, ProjectPhase, ProjectStage } from "@/types/project-bank"
 import {
   Stepper,
   StepperItem,
@@ -14,95 +14,61 @@ import {
 } from "@/components/ui/stepper"
 
 interface StatusTimelineProps {
-  currentStatus: ProjectStatus
+  currentStatus: string
   project: ProjectBankProject
 }
 
-const STEP_META: Record<ProjectStatus, {
-  icon: React.ComponentType<{ className?: string }>
-  description: string
-}> = {
-  nominated: { icon: FileText, description: "Submitted to pipeline" },
-  screening: { icon: Search, description: "MSDP alignment" },
-  appraisal: { icon: ClipboardCheck, description: "Economic analysis" },
-  approved: { icon: ThumbsUp, description: "Cleared" },
-  implementation: { icon: Hammer, description: "Active delivery" },
-  completed: { icon: Flag, description: "Finalised" },
-  rejected: { icon: XCircle, description: "Rejected" },
+const PHASE_ORDER: ProjectPhase[] = ['intake', 'fs1', 'fs2', 'fs3']
+
+function formatFullDate(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null
+  return new Date(dateStr).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
 }
 
 export function StatusTimeline({ currentStatus, project }: StatusTimelineProps) {
-  const currentIdx = STATUS_ORDER.indexOf(currentStatus)
-  const isRejected = currentStatus === "rejected"
+  const currentPhase = project.project_stage ? getPhase(project.project_stage) : 'intake'
+  const currentPhaseIdx = PHASE_ORDER.indexOf(currentPhase)
 
-  const timestampMap: Partial<Record<ProjectStatus, string | null>> = {
-    nominated: project.nominated_at,
-    screening: project.screened_at,
-    appraisal: project.appraised_at,
-    approved: project.approved_at,
+  const timestampMap: Record<ProjectPhase, string | null | undefined> = {
+    intake: project.nominated_at,
+    fs1: project.screened_at,
+    fs2: project.appraised_at,
+    fs3: project.approved_at,
   }
 
-  const steps = isRejected ? [...STATUS_ORDER, "rejected" as ProjectStatus] : STATUS_ORDER
-
-  // activeStep is 1-indexed: currentIdx + 1 means "on that step", +1 more for completed
-  // For rejected, highlight up to where it was before rejection
-  const activeStep = isRejected ? currentIdx + 1 : currentIdx + 1
+  // activeStep is 1-indexed: phases before current are complete, current is active
+  const activeStep = currentPhaseIdx + 1
 
   return (
     <div className="rounded-lg border border-border/40 bg-muted/20 px-4 py-5">
       <Stepper activeStep={activeStep}>
-        {steps.map((status, idx) => {
-          const isLast = idx === steps.length - 1
-          const isRejectedStep = status === "rejected"
-          const meta = STEP_META[status]
-          const Icon = meta.icon
-          const ts = timestampMap[status]
-          const rejectedAt = isRejectedStep ? project.rejected_at : null
+        {PHASE_ORDER.map((phase, idx) => {
+          const isLast = idx === PHASE_ORDER.length - 1
+          const ts = timestampMap[phase]
+          const formattedDate = formatFullDate(ts as string | null)
 
           return (
-            <StepperItem key={status} step={idx + 1}>
-              <StepperIndicator
-                className={cn(
-                  isRejectedStep && "border-red-500 bg-red-500 text-white"
+            <StepperItem key={phase} step={idx + 1}>
+              <StepperIndicator>
+                {idx < currentPhaseIdx ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <Circle className="h-4 w-4" />
                 )}
-              >
-                <Icon className="h-4 w-4" />
               </StepperIndicator>
 
-              {!isLast && (
-                <StepperSeparator
-                  className={cn(
-                    isRejectedStep && "bg-red-500"
-                  )}
-                />
-              )}
+              {!isLast && <StepperSeparator />}
 
               <div className="flex flex-col items-center">
-                <StepperTitle
-                  className={cn(
-                    isRejectedStep && "text-red-600 dark:text-red-400 font-semibold"
-                  )}
-                >
-                  {STATUS_LABELS[status]}
-                </StepperTitle>
-                <StepperDescription>
-                  {meta.description}
-                </StepperDescription>
-                {ts && (
-                  <span className="text-[10px] text-muted-foreground/60 mt-0.5 font-mono">
-                    {new Date(ts).toLocaleDateString(undefined, {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </span>
-                )}
-                {rejectedAt && (
-                  <span className="text-[10px] text-red-500/60 mt-0.5 font-mono">
-                    {new Date(rejectedAt).toLocaleDateString(undefined, {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </span>
+                <StepperTitle>{PHASE_LABELS[phase]}</StepperTitle>
+                {formattedDate && (
+                  <StepperDescription>
+                    {formattedDate}
+                  </StepperDescription>
                 )}
               </div>
             </StepperItem>

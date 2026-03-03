@@ -12,11 +12,13 @@ import { apiFetch } from '@/lib/api-fetch';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
 import { useComplianceRules } from '@/hooks/use-compliance-rules';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, ShieldAlert, Landmark, Lightbulb, CheckCircle2, Upload, X, Move, Image as ImageIcon } from 'lucide-react';
+import { AlertTriangle, ShieldAlert, Check, Upload, X, Move, Image as ImageIcon } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { MYANMAR_REGIONS } from '@/data/myanmar-regions';
 import SDGIconHover from '@/components/ui/SDGIconHover';
 import { StageMSDPScreening } from './StageMSDPScreening';
+import { FieldCheck } from './FieldCheck';
 import type { PendingFile } from '@/hooks/use-appraisal-wizard';
 
 const SDG_GOALS = Array.from({ length: 17 }, (_, i) => ({
@@ -27,16 +29,6 @@ const SDG_GOALS = Array.from({ length: 17 }, (_, i) => ({
 /** Red dot indicator for required fields */
 function RequiredDot() {
   return <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" />;
-}
-
-/** Green tick shown when a field has been filled in */
-function FieldCheck({ value }: { value: unknown }) {
-  // Check for non-empty values: non-null, non-undefined, non-empty-string, non-empty-array
-  const filled = Array.isArray(value)
-    ? value.length > 0
-    : value !== null && value !== undefined && value !== '' && value !== 0;
-  if (!filled) return null;
-  return <CheckCircle2 className="inline-block h-3.5 w-3.5 text-green-600 ml-1.5 align-middle" />;
 }
 
 /** Currency formatter for display */
@@ -259,29 +251,29 @@ export function StageIntake({ wizard }: StageIntakeProps) {
       {/* ─── C: Project Origin — Two-Card Layout ─── */}
       <div id="section-origin" className="scroll-mt-20 space-y-4">
         <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Project Origin</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex items-center gap-4">
           {/* GOV card */}
           <button
             type="button"
             onClick={() => updateField('origin', 'government')}
             className={cn(
-              'relative rounded-lg border-2 p-4 text-left transition-all',
+              'relative flex flex-col justify-end flex-1 h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               (formData.origin || 'government') === 'government'
-                ? 'border-[#5f7f7a] bg-[#f6f5f3] ring-2 ring-[#5f7f7a]/20'
-                : 'border-border hover:border-muted-foreground/50',
+                ? 'ring-border bg-primary/5'
+                : 'ring-border bg-background hover:bg-gray-50',
             )}
           >
-            <div className="flex items-start gap-3">
-              <div className="rounded-md bg-muted p-2">
-                <Landmark className="h-5 w-5 text-muted-foreground" />
+            <Image src="/images/origin-government.png" alt="Government Nominated" fill className="object-contain object-top opacity-15 scale-75" />
+            {(formData.origin || 'government') === 'government' && (
+              <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                <Check className="h-3 w-3 text-primary-foreground" />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">Government Nominated</span>
-                  <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">GOV</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Project nominated by a government ministry through official channels</p>
-              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white via-white/95 to-transparent p-3 pt-5">
+              <h4 className="text-sm font-semibold">Government Nominated <span className="text-[10px] font-mono font-normal bg-muted px-1.5 py-0.5 rounded align-middle">GOV</span></h4>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Project nominated by a government ministry through official channels
+              </p>
             </div>
           </button>
 
@@ -290,23 +282,23 @@ export function StageIntake({ wizard }: StageIntakeProps) {
             type="button"
             onClick={() => updateField('origin', 'unsolicited')}
             className={cn(
-              'relative rounded-lg border-2 p-4 text-left transition-all',
+              'relative flex flex-col justify-end flex-1 h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               formData.origin === 'unsolicited'
-                ? 'border-[#5f7f7a] bg-[#f6f5f3] ring-2 ring-[#5f7f7a]/20'
-                : 'border-border hover:border-muted-foreground/50',
+                ? 'ring-border bg-primary/5'
+                : 'ring-border bg-background hover:bg-gray-50',
             )}
           >
-            <div className="flex items-start gap-3">
-              <div className="rounded-md bg-muted p-2">
-                <Lightbulb className="h-5 w-5 text-muted-foreground" />
+            <Image src="/images/origin-unsolicited.png" alt="Unsolicited Proposal" fill className="object-contain object-top opacity-15 scale-75" />
+            {formData.origin === 'unsolicited' && (
+              <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                <Check className="h-3 w-3 text-primary-foreground" />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">Unsolicited Proposal</span>
-                  <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">UNSOL</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Project proposed by a private entity or development partner</p>
-              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white via-white/95 to-transparent p-3 pt-5">
+              <h4 className="text-sm font-semibold">Unsolicited Proposal <span className="text-[10px] font-mono font-normal bg-muted px-1.5 py-0.5 rounded align-middle">UNSOL</span></h4>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Project proposed by a private entity or development partner
+              </p>
             </div>
           </button>
         </div>

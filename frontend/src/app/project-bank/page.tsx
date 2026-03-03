@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FolderKanban, TrendingUp, AlertTriangle, DollarSign } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { FolderKanban, AlertTriangle, DollarSign, Download, ClipboardList } from "lucide-react"
 import {
   ResponsiveContainer,
   BarChart,
@@ -19,6 +20,8 @@ import {
 import { apiFetch } from "@/lib/api-fetch"
 import { formatCurrency, STATUS_LABELS, STATUS_BADGE_VARIANT, PATHWAY_LABELS } from "@/lib/project-bank-utils"
 import { CHART_STRUCTURE_COLORS, CHART_COLOR_PALETTE } from "@/lib/chart-colors"
+import { HelpTooltip } from "@/components/project-bank/appraisal/HelpTooltip"
+import { exportTableToCSV } from "@/lib/csv-export"
 import type { ProjectBankStats } from "@/types/project-bank"
 
 const STATUS_COLORS: Record<string, string> = {
@@ -48,10 +51,35 @@ const formatAxisCurrency = (value: number): string => {
 const formatFullCurrency = (value: number): string =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
 
+type ViewMode = 'count' | 'value'
+
+/** Toggle button group for count vs value */
+function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode) => void }) {
+  return (
+    <div className="inline-flex rounded-md border border-border overflow-hidden text-xs">
+      <button
+        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'count' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+        onClick={() => onChange('count')}
+      >
+        #
+      </button>
+      <button
+        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'value' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+        onClick={() => onChange('value')}
+      >
+        $
+      </button>
+    </div>
+  )
+}
+
 export default function ProjectBankDashboard() {
   const router = useRouter()
   const [stats, setStats] = useState<ProjectBankStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [pipelineViewMode, setPipelineViewMode] = useState<ViewMode>('count')
+  const [pathwayViewMode, setPathwayViewMode] = useState<ViewMode>('value')
+  const [sectorViewMode, setSectorViewMode] = useState<ViewMode>('value')
 
   useEffect(() => {
     async function fetchStats() {
@@ -69,20 +97,19 @@ export default function ProjectBankDashboard() {
     fetchStats()
   }, [])
 
-  const heroCards = stats ? [
-    { label: "Total Projects", value: stats.totalProjects, icon: FolderKanban },
-    { label: "Active Projects", value: stats.activeProjects, icon: TrendingUp },
-    { label: "Total Pipeline Value", value: formatCurrency(stats.totalPipelineValue), icon: DollarSign },
-    { label: "Funding Gap", value: formatCurrency(stats.fundingGap), icon: AlertTriangle },
-  ] : []
-
   const statusOrder = ['nominated', 'screening', 'appraisal', 'approved', 'implementation', 'completed'] as const
+
+  // Projects in Appraisal count (screening + appraisal)
+  const projectsInAppraisal = stats
+    ? (stats.byStatus['screening']?.count || 0) + (stats.byStatus['appraisal']?.count || 0)
+    : 0
 
   // Build Recharts data for Pipeline Status
   const pipelineData = stats
     ? statusOrder.map(status => ({
         name: STATUS_LABELS[status],
-        count: stats.byStatus[status] || 0,
+        count: stats.byStatus[status]?.count || 0,
+        value: stats.byStatus[status]?.value || 0,
         fill: STATUS_COLORS[status] || CHART_COLOR_PALETTE[2],
       }))
     : []
@@ -97,25 +124,43 @@ export default function ProjectBankDashboard() {
       }))
     : []
 
-  // Build Recharts data for Sector horizontal bar chart
-  const sectorData = stats
-    ? stats.bySector
-        .sort((a, b) => b.value - a.value)
-        .map(item => ({
-          name: item.sector,
-          value: item.value,
-          count: item.count,
-        }))
-    : []
+  // Build Recharts data for Sector — top 5 + Other
+  const sectorData = (() => {
+    if (!stats) return []
+    const sorted = [...stats.bySector].sort((a, b) =>
+      sectorViewMode === 'value' ? b.value - a.value : b.count - a.count
+    )
+    if (sorted.length <= 6) {
+      return sorted.map(item => ({
+        name: item.sector,
+        value: item.value,
+        count: item.count,
+      }))
+    }
+    const top5 = sorted.slice(0, 5)
+    const rest = sorted.slice(5)
+    const other = rest.reduce(
+      (acc, item) => ({ count: acc.count + item.count, value: acc.value + item.value }),
+      { count: 0, value: 0 }
+    )
+    return [
+      ...top5.map(item => ({ name: item.sector, value: item.value, count: item.count })),
+      { name: 'Other', value: other.value, count: other.count },
+    ]
+  })()
 
   // Pipeline Status tooltip
   const PipelineTooltip = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
+      const entry = payload[0].payload
       return (
-        <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[140px]">
+        <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[160px]">
           <p className="font-medium text-foreground text-sm mb-1">{label}</p>
           <p className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{payload[0].value}</span> projects
+            Projects: <span className="font-semibold text-foreground">{entry.count}</span>
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Value: <span className="font-semibold text-foreground">{formatFullCurrency(entry.value)}</span>
           </p>
         </div>
       )
@@ -126,17 +171,16 @@ export default function ProjectBankDashboard() {
   // Pathway tooltip
   const PathwayTooltip = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
+      const entry = payload[0].payload
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[160px]">
           <p className="font-medium text-foreground text-sm mb-1">{label}</p>
           <p className="text-sm text-muted-foreground">
-            Value: <span className="font-semibold text-foreground">{formatFullCurrency(payload[0].value)}</span>
+            Projects: <span className="font-semibold text-foreground">{entry.count}</span>
           </p>
-          {payload[0]?.payload?.count !== undefined && (
-            <p className="text-sm text-muted-foreground">
-              Projects: <span className="font-semibold text-foreground">{payload[0].payload.count}</span>
-            </p>
-          )}
+          <p className="text-sm text-muted-foreground">
+            Value: <span className="font-semibold text-foreground">{formatFullCurrency(entry.value)}</span>
+          </p>
         </div>
       )
     }
@@ -146,21 +190,48 @@ export default function ProjectBankDashboard() {
   // Sector tooltip
   const SectorTooltip = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
+      const entry = payload[0].payload
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[160px]">
           <p className="font-medium text-foreground text-sm mb-1">{label}</p>
           <p className="text-sm text-muted-foreground">
-            Value: <span className="font-semibold text-foreground">{formatFullCurrency(payload[0].value)}</span>
+            Projects: <span className="font-semibold text-foreground">{entry.count}</span>
           </p>
-          {payload[0]?.payload?.count !== undefined && (
-            <p className="text-sm text-muted-foreground">
-              Projects: <span className="font-semibold text-foreground">{payload[0].payload.count}</span>
-            </p>
-          )}
+          <p className="text-sm text-muted-foreground">
+            Value: <span className="font-semibold text-foreground">{formatFullCurrency(entry.value)}</span>
+          </p>
         </div>
       )
     }
     return null
+  }
+
+  // CSV export handlers
+  const exportPipelineCSV = () => {
+    const data = pipelineData.map(d => ({ stage: d.name, projects: d.count, estimated_cost: d.value }))
+    exportTableToCSV(
+      data as unknown as Record<string, unknown>[],
+      [{ key: 'stage', label: 'Stage' }, { key: 'projects', label: 'Projects' }, { key: 'estimated_cost', label: 'Estimated Cost' }],
+      'pipeline-status'
+    )
+  }
+
+  const exportPathwayCSV = () => {
+    const data = pathwayData.map(d => ({ pathway: d.name, projects: d.count, estimated_cost: d.value }))
+    exportTableToCSV(
+      data as unknown as Record<string, unknown>[],
+      [{ key: 'pathway', label: 'Pathway' }, { key: 'projects', label: 'Projects' }, { key: 'estimated_cost', label: 'Estimated Cost' }],
+      'pathway-breakdown'
+    )
+  }
+
+  const exportSectorCSV = () => {
+    const data = sectorData.map(d => ({ sector: d.name, projects: d.count, estimated_cost: d.value }))
+    exportTableToCSV(
+      data as unknown as Record<string, unknown>[],
+      [{ key: 'sector', label: 'Sector' }, { key: 'projects', label: 'Projects' }, { key: 'estimated_cost', label: 'Estimated Cost' }],
+      'by-sector'
+    )
   }
 
   return (
@@ -184,30 +255,82 @@ export default function ProjectBankDashboard() {
           </div>
         ) : stats && (
           <>
-            {/* Hero Cards — monochrome icons */}
+            {/* Hero Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {heroCards.map((card) => {
-                const Icon = card.icon
-                return (
-                  <Card key={card.label}>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-muted-foreground">{card.label}</span>
-                        <Icon className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div className="text-2xl font-bold">{card.value}</div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+              {/* Total Projects */}
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Total Projects
+                      <HelpTooltip text="Total number of projects registered in the Project Bank." />
+                    </span>
+                    <FolderKanban className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="text-2xl font-bold">{stats.totalProjects}</div>
+                  <p className="text-xs text-muted-foreground mt-1">{stats.activeProjects} Active</p>
+                </CardContent>
+              </Card>
+
+              {/* Projects in Appraisal */}
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Projects in Appraisal
+                      <HelpTooltip text="Projects currently in screening or appraisal stages of the pipeline." />
+                    </span>
+                    <ClipboardList className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="text-2xl font-bold">{projectsInAppraisal}</div>
+                </CardContent>
+              </Card>
+
+              {/* Total Pipeline Value */}
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Total Pipeline Value
+                      <HelpTooltip text="Sum of estimated costs across all projects in the pipeline." />
+                    </span>
+                    <DollarSign className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="text-2xl font-bold">{formatCurrency(stats.totalPipelineValue)}</div>
+                </CardContent>
+              </Card>
+
+              {/* Funding Gap */}
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Funding Gap
+                      <HelpTooltip text="Total unfunded amount — the difference between estimated cost and secured funding." />
+                    </span>
+                    <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="text-2xl font-bold">{formatCurrency(stats.fundingGap)}</div>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              {/* Pipeline Status — Recharts horizontal bar chart */}
+              {/* Pipeline Status */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Pipeline Status</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">Project count by appraisal stage</p>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">
+                      Pipeline Status
+                      <HelpTooltip text="Number of projects at each stage of the appraisal pipeline." />
+                    </CardTitle>
+                    <div className="flex items-center gap-1.5">
+                      <ViewToggle mode={pipelineViewMode} onChange={setPipelineViewMode} />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exportPipelineCSV}>
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={240}>
@@ -218,7 +341,14 @@ export default function ProjectBankDashboard() {
                       barCategoryGap="20%"
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-                      <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} allowDecimals={false} />
+                      <XAxis
+                        type="number"
+                        stroke={CHART_STRUCTURE_COLORS.axis}
+                        fontSize={11}
+                        tickLine={false}
+                        allowDecimals={false}
+                        tickFormatter={pipelineViewMode === 'value' ? formatAxisCurrency : undefined}
+                      />
                       <YAxis
                         type="category"
                         dataKey="name"
@@ -229,7 +359,7 @@ export default function ProjectBankDashboard() {
                         width={100}
                       />
                       <Tooltip content={<PipelineTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                      <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
+                      <Bar dataKey={pipelineViewMode} radius={[0, 4, 4, 0]} barSize={20}>
                         {pipelineData.map((entry, idx) => (
                           <Cell key={idx} fill={entry.fill} />
                         ))}
@@ -239,11 +369,21 @@ export default function ProjectBankDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Pathway Breakdown — Recharts horizontal bar chart */}
+              {/* Pathway Breakdown */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Pathway Breakdown</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">Estimated pipeline value by routing pathway</p>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">
+                      Pathway Breakdown
+                      <HelpTooltip text="Estimated pipeline value grouped by financing pathway (ODA, PPP, Private, etc.)." />
+                    </CardTitle>
+                    <div className="flex items-center gap-1.5">
+                      <ViewToggle mode={pathwayViewMode} onChange={setPathwayViewMode} />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exportPathwayCSV}>
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={240}>
@@ -254,7 +394,14 @@ export default function ProjectBankDashboard() {
                       barCategoryGap="20%"
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-                      <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} tickFormatter={formatAxisCurrency} />
+                      <XAxis
+                        type="number"
+                        stroke={CHART_STRUCTURE_COLORS.axis}
+                        fontSize={11}
+                        tickLine={false}
+                        allowDecimals={pathwayViewMode === 'value'}
+                        tickFormatter={pathwayViewMode === 'value' ? formatAxisCurrency : undefined}
+                      />
                       <YAxis
                         type="category"
                         dataKey="name"
@@ -265,7 +412,7 @@ export default function ProjectBankDashboard() {
                         width={110}
                       />
                       <Tooltip content={<PathwayTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                      <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                      <Bar dataKey={pathwayViewMode} radius={[0, 4, 4, 0]} barSize={20}>
                         {pathwayData.map((entry, idx) => (
                           <Cell key={idx} fill={entry.fill} />
                         ))}
@@ -275,11 +422,21 @@ export default function ProjectBankDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Sector Distribution — Recharts horizontal bar chart */}
+              {/* Sector Distribution */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">By Sector</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">Estimated cost distribution across sectors</p>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">
+                      By Sector
+                      <HelpTooltip text="Project distribution across economic sectors, showing top 5 sectors plus a combined 'Other' category." />
+                    </CardTitle>
+                    <div className="flex items-center gap-1.5">
+                      <ViewToggle mode={sectorViewMode} onChange={setSectorViewMode} />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exportSectorCSV}>
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {sectorData.length > 0 ? (
@@ -291,7 +448,14 @@ export default function ProjectBankDashboard() {
                         barCategoryGap="16%"
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} horizontal={false} />
-                        <XAxis type="number" stroke={CHART_STRUCTURE_COLORS.axis} fontSize={11} tickLine={false} tickFormatter={formatAxisCurrency} />
+                        <XAxis
+                          type="number"
+                          stroke={CHART_STRUCTURE_COLORS.axis}
+                          fontSize={11}
+                          tickLine={false}
+                          allowDecimals={sectorViewMode === 'value'}
+                          tickFormatter={sectorViewMode === 'value' ? formatAxisCurrency : undefined}
+                        />
                         <YAxis
                           type="category"
                           dataKey="name"
@@ -302,7 +466,7 @@ export default function ProjectBankDashboard() {
                           width={120}
                         />
                         <Tooltip content={<SectorTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                        <Bar dataKey="value" fill={CHART_COLOR_PALETTE[1]} radius={[0, 4, 4, 0]} barSize={18} />
+                        <Bar dataKey={sectorViewMode} fill={CHART_COLOR_PALETTE[1]} radius={[0, 4, 4, 0]} barSize={18} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -322,10 +486,9 @@ export default function ProjectBankDashboard() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b bg-surface-muted">
-                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Code</th>
-                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Project</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Project Title</th>
                         <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Sector</th>
-                        <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Est. Cost</th>
+                        <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Estimated Cost</th>
                         <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Status</th>
                       </tr>
                     </thead>
@@ -336,10 +499,17 @@ export default function ProjectBankDashboard() {
                           className="hover:bg-muted/50 cursor-pointer transition-colors"
                           onClick={() => router.push(`/project-bank/${project.id}`)}
                         >
-                          <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{project.project_code}</td>
-                          <td className="px-4 py-2.5 font-medium">{project.name}</td>
-                          <td className="px-4 py-2.5 text-muted-foreground">{project.sector}</td>
-                          <td className="px-4 py-2.5 text-right font-mono">{formatCurrency(project.estimated_cost)}</td>
+                          <td className="px-4 py-2.5">
+                            <div className="font-medium">{project.name}</div>
+                            <div className="text-xs text-muted-foreground font-mono">{project.project_code}</div>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <div className="text-muted-foreground">{project.sector}</div>
+                            {project.sub_sector && (
+                              <div className="text-xs text-muted-foreground/70">{project.sub_sector}</div>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-right">{formatCurrency(project.estimated_cost)}</td>
                           <td className="px-4 py-2.5">
                             <Badge variant={STATUS_BADGE_VARIANT[project.status as keyof typeof STATUS_BADGE_VARIANT] as any} className="text-[10px]">
                               {STATUS_LABELS[project.status as keyof typeof STATUS_LABELS]}
@@ -349,7 +519,7 @@ export default function ProjectBankDashboard() {
                       ))}
                       {stats.recentSubmissions.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                          <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
                             No recent submissions
                           </td>
                         </tr>

@@ -8,6 +8,7 @@ import { DocumentUploadZone } from './DocumentUploadZone';
 import { HelpTooltip } from './HelpTooltip';
 import { calculateFIRR } from '@/lib/eirr-calculator';
 import { formatCurrency } from '@/lib/project-bank-utils';
+import { FormattedNumberInput } from './FormattedNumberInput';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
 import type { CostTableRow } from '@/types/project-bank';
 import { cn } from '@/lib/utils';
@@ -22,12 +23,12 @@ interface StageFIRRProps {
 }
 
 const SENSITIVITY_SCENARIOS = [
-  { label: 'Base Case', costMult: 1.0, revMult: 1.0 },
-  { label: 'Revenue −10%', costMult: 1.0, revMult: 0.9 },
-  { label: 'Revenue −20%', costMult: 1.0, revMult: 0.8 },
-  { label: 'Costs +10%', costMult: 1.1, revMult: 1.0 },
-  { label: 'Costs +20%', costMult: 1.2, revMult: 1.0 },
-  { label: 'Worst Case', costMult: 1.2, revMult: 0.8 },
+  { label: 'Base Case', costMult: 1.0, revMult: 1.0, tooltip: 'No changes — uses your entered figures as-is.' },
+  { label: 'Revenue −10%', costMult: 1.0, revMult: 0.9, tooltip: 'Tests the impact if revenues come in 10% below projections.' },
+  { label: 'Revenue −20%', costMult: 1.0, revMult: 0.8, tooltip: 'Tests the impact if revenues come in 20% below projections.' },
+  { label: 'Costs +10%', costMult: 1.1, revMult: 1.0, tooltip: 'Tests the impact if all costs (CAPEX + OPEX) are 10% higher than projected.' },
+  { label: 'Costs +20%', costMult: 1.2, revMult: 1.0, tooltip: 'Tests the impact if all costs (CAPEX + OPEX) are 20% higher than projected.' },
+  { label: 'Worst Case', costMult: 1.2, revMult: 0.8, tooltip: 'Combines 20% higher costs with 20% lower revenues — a stress test.' },
 ];
 
 function ComparisonTooltip({ active, payload, label }: any) {
@@ -155,14 +156,6 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
   const xAxisHeight = xAxisAngle === 0 ? 20 : xAxisAngle === -45 ? 50 : 60;
   const xAxisTextAnchor = xAxisAngle === 0 ? 'middle' : 'end';
 
-  // Prepare tornado chart data
-  const baseFirr = sensitivityResults.length > 0 ? sensitivityResults[0].firr : null;
-  const tornadoData = sensitivityResults.slice(1).map(s => ({
-    scenario: s.label,
-    deviation: s.firr !== null && baseFirr !== null ? s.firr - baseFirr : 0,
-    firr: s.firr,
-  })).sort((a, b) => Math.abs(b.deviation) - Math.abs(a.deviation));
-
   return (
     <div className="space-y-6">
       <div>
@@ -178,6 +171,31 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
             <li><strong>Later years with net inflows</strong> — revenue should exceed costs once the project is operational (this represents the return on investment).</li>
           </ul>
           <p>If all years show a net surplus or all years show a net deficit, the FIRR cannot be determined. Most infrastructure projects have high upfront costs and generate returns over time.</p>
+        </div>
+      </div>
+
+      {/* Revenue projection fields — moved here from Revenue tab */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Projected Annual Revenue <HelpTooltip text="Expected annual revenue in USD once the project reaches full operation. Enter the full amount — not abbreviated (e.g. 10,000,000 not 10M)." /></Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">USD</span>
+            <FormattedNumberInput
+              value={formData.projected_annual_revenue ?? null}
+              onChange={v => updateField('projected_annual_revenue', v)}
+              placeholder="10,000,000"
+              decimals={2}
+              className="pl-11"
+            />
+          </div>
+        </div>
+        <div>
+          <Label>Revenue Ramp-up <HelpTooltip text="Number of years before revenue reaches full projected level. During ramp-up, revenue may be lower than the projected annual amount." /></Label>
+          <FormattedNumberInput
+            value={formData.revenue_ramp_up_years ?? null}
+            onChange={v => updateField('revenue_ramp_up_years', v)}
+            placeholder="e.g. 3"
+          />
         </div>
       </div>
 
@@ -238,7 +256,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="p-4 bg-muted/50 rounded-lg">
             <div className="text-xs text-muted-foreground">FIRR <HelpTooltip text="Financial Internal Rate of Return — the discount rate at which NPV equals zero. Calculated from your refined figures." /></div>
-            <div className="text-3xl font-bold tabular-nums mt-1 text-foreground">
+            <div className="text-xl font-bold tabular-nums mt-1 text-foreground">
               {firrResult.firr !== null ? `${firrResult.firr.toFixed(1)}%` : 'N/A'}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -299,7 +317,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
                 <Bar dataKey="Preliminary" fill="#cfd0d5" radius={[2, 2, 0, 0]} />
                 <Bar dataKey="Refined" fill="#4c5568" radius={[2, 2, 0, 0]}>
                   {comparisonView === 'net' && comparisonData.map((entry, idx) => (
-                    <Cell key={idx} fill={entry.Refined >= 0 ? '#22c55e' : '#dc2625'} />
+                    <Cell key={idx} fill={entry.Refined >= 0 ? '#5f7f7a' : '#dc2625'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -308,51 +326,27 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
         </div>
       )}
 
-      {/* Sensitivity Analysis — Tornado Chart + Table */}
+      {/* Sensitivity Analysis — Table */}
       {sensitivityResults.length > 0 && (
         <div>
           <Label className="mb-2 block">Sensitivity Analysis <HelpTooltip text="Shows how FIRR changes under different cost and revenue scenarios." /></Label>
 
-          {/* Tornado Chart */}
-          {tornadoData.length > 0 && baseFirr !== null && (
-            <div className="border rounded-lg p-4 bg-background mb-4">
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={tornadoData} layout="vertical" margin={{ top: 5, right: 30, left: 120, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#cfd0d5" />
-                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `${v > 0 ? '+' : ''}${v.toFixed(1)}pp`} />
-                  <YAxis type="category" dataKey="scenario" tick={{ fontSize: 11 }} width={110} />
-                  <RechartsTooltip
-                    formatter={(value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}pp`}
-                    labelFormatter={(label: string) => label}
-                  />
-                  <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
-                  <Bar dataKey="deviation" fill="#7b95a7">
-                    {tornadoData.map((entry, index) => (
-                      <Cell key={index} fill={entry.deviation >= 0 ? '#22c55e' : '#dc2625'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              <p className="text-xs text-muted-foreground text-center mt-1">
-                Deviation from base case FIRR ({baseFirr.toFixed(1)}%) in percentage points
-              </p>
-            </div>
-          )}
-
-          {/* Table */}
           <div className="overflow-x-auto border rounded-lg">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-surface-muted">
                   <th className="text-left p-2 font-medium text-xs">Scenario</th>
-                  <th className="text-right p-2 font-medium text-xs">FIRR</th>
-                  <th className="text-right p-2 font-medium text-xs">NPV @ 10%</th>
+                  <th className="text-right p-2 font-medium text-xs">FIRR <HelpTooltip text="Financial Internal Rate of Return under this scenario." /></th>
+                  <th className="text-right p-2 font-medium text-xs">NPV @ 10% <HelpTooltip text="Net Present Value discounted at 10% under this scenario." /></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {sensitivityResults.map((s, i) => (
                   <tr key={i} className={i === 0 ? 'font-medium' : ''}>
-                    <td className="p-2 text-sm">{s.label}</td>
+                    <td className="p-2 text-sm">
+                      {s.label}
+                      <HelpTooltip text={SENSITIVITY_SCENARIOS[i].tooltip} />
+                    </td>
                     <td className={cn('p-2 text-right tabular-nums text-sm', s.firr !== null && s.firr >= 10 ? 'text-green-600' : 'text-amber-600')}>
                       {s.firr !== null ? `${s.firr.toFixed(1)}%` : 'N/A'}
                     </td>

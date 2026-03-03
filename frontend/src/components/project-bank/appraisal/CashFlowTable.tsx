@@ -168,7 +168,7 @@ export function CashFlowTable({
                       type="button"
                       onClick={() => setQuickDist(prev => ({ ...prev, [col]: period }))}
                       className={cn(
-                        'text-[10px] px-1.5 py-0.5 rounded transition-colors',
+                        'text-[10px] px-1.5 py-0.5 rounded transition-colors whitespace-nowrap',
                         quickDist[col] === period
                           ? 'bg-[#5f7f7a] text-white font-medium'
                           : 'bg-muted text-muted-foreground hover:bg-muted-foreground/20',
@@ -333,7 +333,7 @@ function CashFlowTooltip({ active, payload, label }: any) {
             <div className="flex items-center gap-2">
               <div
                 className="w-3 h-3 rounded-sm"
-                style={{ backgroundColor: entry.dataKey === 'Net' ? (entry.value >= 0 ? '#22c55e' : '#dc2625') : entry.color }}
+                style={{ backgroundColor: entry.dataKey === 'Net' ? (entry.value >= 0 ? '#5f7f7a' : '#dc2625') : entry.color }}
               />
               <span className="text-sm text-slate-700">{entry.name}</span>
             </div>
@@ -461,7 +461,7 @@ function CashFlowChart({
         </div>
       </div>
       <ResponsiveContainer width="100%" height={240}>
-        <BarChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+        <BarChart data={chartData} barGap={0} barCategoryGap="20%" margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#cfd0d5" />
           <XAxis dataKey="year" tick={{ fontSize: 11 }} angle={xAxisAngle} textAnchor={xAxisTextAnchor} height={xAxisHeight} interval={0} />
           <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K` : String(v)} />
@@ -484,7 +484,7 @@ function CashFlowChart({
                 {isNet && chartData.map((entry, idx) => (
                   <Cell
                     key={idx}
-                    fill={entry.Net >= 0 ? '#22c55e' : '#dc2625'}
+                    fill={entry.Net >= 0 ? '#5f7f7a' : '#dc2625'}
                   />
                 ))}
               </Bar>

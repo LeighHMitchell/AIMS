@@ -164,9 +164,11 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
           'fs_conductor_individual_company',
           'cost_table_data', 'technical_approach', 'technology_methodology',
           'technical_risks', 'has_technical_design', 'technical_design_maturity',
-          'environmental_impact_level', 'social_impact_level',
+          'environmental_impact_level', 'environmental_impact_description',
+          'social_impact_level', 'social_impact_description',
           'land_acquisition_required', 'resettlement_required', 'estimated_affected_households',
-          'has_revenue_component', 'revenue_sources', 'market_assessment_summary',
+          'has_revenue_component', 'revenue_sources', 'revenue_source_other_description',
+          'market_assessment_summary',
           'projected_annual_users', 'projected_annual_revenue', 'revenue_ramp_up_years',
           'msdp_strategy_area', 'secondary_ndp_goals', 'alignment_justification',
           'sector_strategy_reference', 'in_sector_investment_plan',
@@ -242,7 +244,19 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
     }
 
     if (currentStage === 'preliminary_fs') {
-      // Construction/operational periods are optional — only needed for FIRR calculation
+      if (!formData.fs_conductor_type) errs.fs_conductor_type = 'Please select who conducted the feasibility study';
+      if (formData.fs_conductor_type === 'individual' && !formData.fs_conductor_individual_name?.trim()) {
+        errs.fs_conductor_individual_name = 'Individual name is required';
+      }
+      if (formData.fs_conductor_type === 'company' && !formData.fs_conductor_company_name?.trim()) {
+        errs.fs_conductor_company_name = 'Company name is required';
+      }
+      const costTable = formData.cost_table_data as any[] | undefined;
+      if (!costTable || costTable.length === 0) {
+        errs.cost_table_data = 'At least one cost table row is required';
+      }
+      if (!formData.environmental_impact_level) errs.environmental_impact_level = 'Environmental impact level is required';
+      if (!formData.social_impact_level) errs.social_impact_level = 'Social impact level is required';
     }
 
     setErrors(errs);

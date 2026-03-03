@@ -9,7 +9,7 @@ export async function GET() {
 
   const { data: projects, error } = await supabase!
     .from('project_bank_projects')
-    .select('id, name, project_code, sector, status, pathway, estimated_cost, funding_gap, nominating_ministry, region, created_at')
+    .select('id, name, project_code, sector, sub_sector, status, pathway, estimated_cost, funding_gap, nominating_ministry, region, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -19,10 +19,14 @@ export async function GET() {
   const all = projects || [];
   const active = all.filter(p => !['completed', 'rejected'].includes(p.status));
 
-  // Status counts
-  const byStatus: Record<string, number> = {};
+  // Status counts + value
+  const byStatus: Record<string, { count: number; value: number }> = {};
   all.forEach(p => {
-    byStatus[p.status] = (byStatus[p.status] || 0) + 1;
+    const existing = byStatus[p.status] || { count: 0, value: 0 };
+    byStatus[p.status] = {
+      count: existing.count + 1,
+      value: existing.value + (p.estimated_cost || 0),
+    };
   });
 
   // Sector aggregation

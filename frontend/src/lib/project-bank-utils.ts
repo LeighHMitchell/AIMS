@@ -100,6 +100,7 @@ export const PATHWAY_LABELS: Record<string, string> = {
   private_supported: 'Private (Supported)',
   private_unsupported: 'Private',
   domestic_budget: 'Domestic Budget',
+  unassigned: 'Unassigned',
 };
 
 /** PPP Contract Type labels */
@@ -486,6 +487,20 @@ export const SUB_SECTORS: Record<string, string[]> = {
   Tourism: ['Eco-Tourism', 'Heritage Tourism', 'Tourism Infrastructure'],
   Mining: ['Mining Development', 'Artisanal Mining', 'Mine Safety'],
 };
+
+/** Revenue source options for multi-select */
+export const REVENUE_SOURCE_OPTIONS = [
+  'Toll fees',
+  'User charges',
+  'Lease income',
+  'Tariffs',
+  'Advertising revenue',
+  'Concession fees',
+  'Service charges',
+  'Parking fees',
+  'Rental income',
+  'Other',
+] as const;
 
 /** Environmental/social impact level options */
 export const IMPACT_LEVELS = [

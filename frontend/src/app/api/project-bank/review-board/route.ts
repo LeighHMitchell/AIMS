@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     .from('project_bank_projects')
     .select('id, project_code, name, nominating_ministry, sector, region, estimated_cost, currency, feasibility_stage, fs1_rejected_at, created_at, updated_at')
     .in('feasibility_stage', [
-      'fs1_submitted', 'fs1_desk_screened', 'fs1_passed', 'fs1_returned', 'fs1_rejected',
+      'fs1_submitted', 'fs1_desk_screened', 'fs1_returned',
     ])
     .order('updated_at', { ascending: false });
 
@@ -37,9 +37,7 @@ export async function GET(request: Request) {
   const columns = {
     submitted: (projects || []).filter(p => p.feasibility_stage === 'fs1_submitted'),
     desk_screened: (projects || []).filter(p => p.feasibility_stage === 'fs1_desk_screened'),
-    decided: (projects || []).filter(p =>
-      ['fs1_passed', 'fs1_returned', 'fs1_rejected'].includes(p.feasibility_stage || '')
-    ),
+    returned: (projects || []).filter(p => p.feasibility_stage === 'fs1_returned'),
   };
 
   return NextResponse.json(columns);

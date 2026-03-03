@@ -13,8 +13,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
 import {
-  ArrowRight, ChevronRight, ExternalLink, Plus, Calculator,
+  ArrowRight, ChevronRight, ChevronDown, ExternalLink, Plus, Calculator,
   AlertTriangle, DollarSign, CheckCircle, XCircle, Clock,
+  Building2, MapPin, Layers, FileText, User, Mail, Phone, Target,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
@@ -24,8 +25,10 @@ import {
   PPP_CONTRACT_TYPE_LABELS,
   FEASIBILITY_STAGE_LABELS, FEASIBILITY_STAGE_BADGE_STYLES,
   CATEGORY_LABELS,
+  PHASE_LABELS, getPhase,
+  IMPACT_LEVELS, TECHNICAL_MATURITY_LEVELS,
 } from "@/lib/project-bank-utils"
-import type { ProjectBankProject, ProjectBankDonor, ProjectAppraisal, DonorType, InstrumentType, CommitmentStatus, FeasibilityStage } from "@/types/project-bank"
+import type { ProjectBankProject, ProjectBankDonor, ProjectAppraisal, DonorType, InstrumentType, CommitmentStatus, FeasibilityStage, ProjectPhase } from "@/types/project-bank"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatusTimeline } from "@/components/project-bank/StatusTimeline"
 import { SuggestedParcelsCard } from "@/components/project-bank/SuggestedParcelsCard"
@@ -37,6 +40,198 @@ import { MonitoringTab } from "@/components/project-bank/MonitoringTab"
 import { FS1NarrativeForm } from "@/components/project-bank/fs1/FS1NarrativeForm"
 import { FS2AssignmentPanel } from "@/components/project-bank/fs2/FS2AssignmentPanel"
 import { CategoryDecisionPanel } from "@/components/project-bank/categorization/CategoryDecisionPanel"
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+} from "recharts"
+
+/** SDG goal labels for badge display */
+const SDG_LABELS: Record<string, string> = {
+  '1': 'No Poverty', '2': 'Zero Hunger', '3': 'Good Health', '4': 'Quality Education',
+  '5': 'Gender Equality', '6': 'Clean Water', '7': 'Affordable Energy', '8': 'Decent Work',
+  '9': 'Industry & Innovation', '10': 'Reduced Inequalities', '11': 'Sustainable Cities',
+  '12': 'Responsible Consumption', '13': 'Climate Action', '14': 'Life Below Water',
+  '15': 'Life on Land', '16': 'Peace & Justice', '17': 'Partnerships',
+}
+
+/** Document type labels */
+const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  concept_note: 'Concept Note', project_proposal: 'Project Proposal', preliminary_fs_report: 'Preliminary FS Report',
+  cost_estimate: 'Cost Estimate', environmental_screening: 'Environmental Screening',
+  msdp_alignment_justification: 'MSDP Alignment', firr_calculation_workbook: 'FIRR Workbook',
+  eirr_calculation_workbook: 'EIRR Workbook', cost_benefit_analysis: 'Cost–Benefit Analysis',
+  detailed_fs_report: 'Detailed FS Report', vgf_calculation: 'VGF Calculation',
+  risk_allocation_matrix: 'Risk Matrix', funding_request: 'Funding Request',
+  cabinet_approval: 'Cabinet Approval', monitoring_report: 'Monitoring Report',
+  dap_compliance: 'DAP Compliance', terms_of_reference: 'Terms of Reference',
+  budget_estimate: 'Budget Estimate', site_map: 'Site Map',
+  stakeholder_analysis: 'Stakeholder Analysis', endorsement_letter: 'Endorsement Letter',
+  proponent_profile: 'Proponent Profile',
+  environmental_impact_assessment: 'Environmental Impact Assessment',
+  social_impact_assessment: 'Social Impact Assessment',
+  land_acquisition_plan: 'Land Acquisition Plan', resettlement_plan: 'Resettlement Plan',
+  technical_design: 'Technical Design', market_assessment: 'Market Assessment',
+  other: 'Other',
+}
+
+function getActionLabel(phase: ProjectPhase): string {
+  switch (phase) {
+    case 'intake': return 'Edit Intake'
+    case 'fs1': return 'Edit Feasibility Study'
+    default: return 'View Assessment'
+  }
+}
+
+function formatDuration(months: number | null | undefined): string {
+  if (!months) return '—'
+  const years = Math.floor(months / 12)
+  const remaining = months % 12
+  if (years === 0) return `${remaining} month${remaining !== 1 ? 's' : ''}`
+  if (remaining === 0) return `${years} year${years !== 1 ? 's' : ''}`
+  return `${years} year${years !== 1 ? 's' : ''} ${remaining} month${remaining !== 1 ? 's' : ''}`
+}
+
+function formatFullDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—'
+  return new Date(dateStr).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+/** Collapsible section for PFS data display */
+function CollapsibleSection({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="border rounded-lg">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full p-3 text-left hover:bg-muted/50 transition-colors"
+      >
+        <span className="text-sm font-semibold">{title}</span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div className="px-3 pb-3 space-y-2">{children}</div>}
+    </div>
+  )
+}
+
+function PFSField({ label, value }: { label: string; value: string | number | null | undefined }) {
+  if (value === null || value === undefined || value === '') return null
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-sm mt-0.5">{typeof value === 'number' ? value.toLocaleString() : value}</div>
+    </div>
+  )
+}
+
+function PFSDataDisplay({ project }: { project: ProjectBankProject }) {
+  const impactLabel = (level: string | null | undefined) => {
+    if (!level) return '—'
+    const found = IMPACT_LEVELS.find(l => l.value === level)
+    return found ? found.label : level
+  }
+
+  const maturityLabel = (level: string | null | undefined) => {
+    if (!level) return '—'
+    const found = TECHNICAL_MATURITY_LEVELS.find(l => l.value === level)
+    return found ? found.label : level
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Preliminary Feasibility Study Data</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Technical */}
+        {(project.technical_approach || project.technology_methodology || project.technical_risks) && (
+          <CollapsibleSection title="Technical" defaultOpen>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <PFSField label="Technical Approach" value={project.technical_approach} />
+              <PFSField label="Technology / Methodology" value={project.technology_methodology} />
+              <PFSField label="Technical Risks" value={project.technical_risks} />
+              {project.has_technical_design && (
+                <PFSField label="Design Maturity" value={maturityLabel(project.technical_design_maturity)} />
+              )}
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {/* Revenue */}
+        {project.has_revenue_component && (
+          <CollapsibleSection title="Revenue">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <PFSField label="Revenue Sources" value={(project.revenue_sources || []).join(', ')} />
+              <PFSField label="Projected Annual Users" value={project.projected_annual_users} />
+              <PFSField label="Projected Annual Revenue" value={project.projected_annual_revenue ? formatCurrency(project.projected_annual_revenue) : null} />
+              <PFSField label="Revenue Ramp-up" value={project.revenue_ramp_up_years ? `${project.revenue_ramp_up_years} years` : null} />
+              <PFSField label="Market Assessment" value={project.market_assessment_summary} />
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {/* Environmental */}
+        {(project.environmental_impact_level || project.social_impact_level) && (
+          <CollapsibleSection title="Environmental & Social">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <PFSField label="Environmental Impact" value={impactLabel(project.environmental_impact_level)} />
+              <PFSField label="Social Impact" value={impactLabel(project.social_impact_level)} />
+              {project.environmental_impact_description && (
+                <PFSField label="Environmental Description" value={project.environmental_impact_description} />
+              )}
+              {project.social_impact_description && (
+                <PFSField label="Social Description" value={project.social_impact_description} />
+              )}
+              {project.land_acquisition_required && <PFSField label="Land Acquisition" value="Required" />}
+              {project.resettlement_required && (
+                <PFSField label="Resettlement" value={project.estimated_affected_households ? `Required — ~${project.estimated_affected_households} households` : 'Required'} />
+              )}
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {/* Financial Analysis */}
+        {project.firr !== null && (
+          <CollapsibleSection title="Financial Analysis">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="text-xs text-muted-foreground">FIRR</div>
+                <div className="text-lg font-bold tabular-nums mt-0.5">
+                  {project.firr !== null ? `${project.firr.toFixed(1)}%` : '—'}
+                </div>
+              </div>
+              {project.firr_calculation_data && (
+                <>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="text-xs text-muted-foreground">NPV @ 10%</div>
+                    <div className="text-lg font-bold tabular-nums mt-0.5">
+                      {formatCurrency(project.firr_calculation_data.npv_at_10)}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="text-xs text-muted-foreground">Payback Year</div>
+                    <div className="text-lg font-bold tabular-nums mt-0.5">
+                      {project.firr_calculation_data.payback_year || '—'}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="text-xs text-muted-foreground">Total Investment</div>
+                    <div className="text-lg font-bold tabular-nums mt-0.5">
+                      {formatCurrency(project.firr_calculation_data.total_investment)}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </CollapsibleSection>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function ProjectDetailPage() {
   const router = useRouter()
@@ -147,6 +342,12 @@ export default function ProjectDetailPage() {
   const fundingGap = project.funding_gap || 0
   const donorCount = project.donors?.length || 0
   const securedPct = estimatedCost > 0 ? Math.round((totalCommitted / estimatedCost) * 100) : 0
+  const currentPhase = project.project_stage ? getPhase(project.project_stage) : 'intake' as ProjectPhase
+
+  // Stacked bar data for Recharts
+  const financingBarData = [
+    { name: 'Financing', committed: totalCommitted, gap: fundingGap },
+  ]
 
   return (
     <MainLayout>
@@ -162,6 +363,18 @@ export default function ProjectDetailPage() {
             <span>{project.project_code}</span>
           </div>
 
+          {/* Banner image */}
+          {(project as any).banner && (
+            <div className="relative h-48 rounded-lg overflow-hidden mb-4">
+              <img
+                src={(project as any).banner}
+                className="w-full h-full object-cover"
+                style={{ objectPosition: `center ${(project as any).banner_position ?? 50}%` }}
+                alt=""
+              />
+            </div>
+          )}
+
           {/* Title row */}
           <div className="flex items-start justify-between gap-4 mb-1">
             <h1 className="text-3xl font-bold">{project.name}</h1>
@@ -172,7 +385,7 @@ export default function ProjectDetailPage() {
 
           {/* Subtitle: badges + ministry / sector / region */}
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <Badge variant="outline" className="font-mono text-xs">{project.project_code}</Badge>
+            <Badge variant="outline" className="bg-muted/80 px-2 py-0.5 rounded text-xs font-mono">{project.project_code}</Badge>
             <Badge variant={STATUS_BADGE_VARIANT[project.status] as any}>
               {STATUS_LABELS[project.status]}
             </Badge>
@@ -204,40 +417,78 @@ export default function ProjectDetailPage() {
             {project.region ? ` · ${project.region}` : ""}
           </p>
 
-          {/* Financial hero strip */}
+          {/* Hero cards: Ministry / Sector / Location */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
-            {/* Estimated Cost */}
-            <div className="flex items-center gap-4 rounded-lg border bg-card p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: '#f1f4f8' }}>
-                <DollarSign className="h-5 w-5" style={{ color: '#4c5568' }} />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Estimated Cost</div>
-                <div className="text-2xl font-bold font-mono" style={{ color: '#4c5568' }}>{formatCurrency(project.estimated_cost, project.currency)}</div>
-              </div>
+            <div className="rounded-lg border bg-card p-4">
+              <div className="text-xs text-muted-foreground mb-0.5">Ministry</div>
+              <div className="text-sm font-medium">{project.nominating_ministry}</div>
+              {(project as any).implementing_agency && (project as any).implementing_agency !== project.nominating_ministry && (
+                <div className="mt-1">
+                  <div className="text-[10px] text-muted-foreground">Implementing Agency</div>
+                  <div className="text-xs">{(project as any).implementing_agency}</div>
+                </div>
+              )}
             </div>
-
-            {/* Committed */}
-            <div className="flex items-center gap-4 rounded-lg border bg-card p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: '#f1f4f8' }}>
-                <CheckCircle className="h-5 w-5" style={{ color: '#4c5568' }} />
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Committed</div>
-                <div className="text-2xl font-bold font-mono" style={{ color: '#7b95a7' }}>{formatCurrency(totalCommitted, project.currency)}</div>
-                <div className="text-xs text-muted-foreground">{donorCount} donor{donorCount !== 1 ? "s" : ""}</div>
-              </div>
+            <div className="rounded-lg border bg-card p-4">
+              <div className="text-xs text-muted-foreground mb-0.5">Sector</div>
+              <div className="text-sm font-medium">{project.sector}</div>
+              {project.sub_sector && (
+                <div className="mt-1">
+                  <div className="text-[10px] text-muted-foreground">Sub-sector</div>
+                  <div className="text-xs">{project.sub_sector}</div>
+                </div>
+              )}
             </div>
+            <div className="rounded-lg border bg-card p-4">
+              <div className="text-xs text-muted-foreground mb-0.5">Location</div>
+              <div className="text-sm font-medium">{project.region || "—"}</div>
+              {project.townships && project.townships.length > 0 && (
+                <div className="mt-1">
+                  <div className="text-[10px] text-muted-foreground">{project.townships.length} township{project.townships.length !== 1 ? 's' : ''}</div>
+                </div>
+              )}
+            </div>
+          </div>
 
-            {/* Funding Gap */}
-            <div className="flex items-center gap-4 rounded-lg border bg-card p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: '#f1f4f8' }}>
-                <AlertTriangle className="h-5 w-5" style={{ color: '#4c5568' }} />
+          {/* Combined Financing Hero Card with Stacked Bar */}
+          <div className="mt-4">
+            <div className="rounded-lg border bg-card p-4">
+              <div className="text-xs text-muted-foreground mb-3">Project Financing</div>
+              <div className="h-10">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart layout="vertical" data={financingBarData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                    <XAxis type="number" domain={[0, estimatedCost || 1]} hide />
+                    <YAxis type="category" dataKey="name" hide />
+                    <Tooltip
+                      formatter={(value: number) => formatCurrency(value, project.currency)}
+                      contentStyle={{ fontSize: '12px' }}
+                    />
+                    <Bar dataKey="committed" stackId="a" fill="#7b95a7" radius={[4, 0, 0, 4]} name="Committed" />
+                    <Bar dataKey="gap" stackId="a" fill="#dc2625" radius={[0, 4, 4, 0]} name="Funding Gap" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Funding Gap</div>
-                <div className="text-2xl font-bold font-mono" style={{ color: '#dc2625' }}>{formatCurrency(fundingGap, project.currency)}</div>
-                <div className="text-xs text-muted-foreground">{securedPct}% secured</div>
+              <div className="grid grid-cols-3 gap-4 mt-3">
+                <div>
+                  <div className="text-[10px] text-muted-foreground">Committed</div>
+                  <div className="text-sm font-bold" style={{ color: '#7b95a7' }}>
+                    {formatCurrency(totalCommitted, project.currency)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">{donorCount} donor{donorCount !== 1 ? 's' : ''}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground">Funding Gap</div>
+                  <div className="text-sm font-bold" style={{ color: '#dc2625' }}>
+                    {formatCurrency(fundingGap, project.currency)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] text-muted-foreground">Estimated Cost</div>
+                  <div className="text-sm font-bold" style={{ color: '#4c5568' }}>
+                    {formatCurrency(estimatedCost, project.currency)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">{securedPct}% secured</div>
+                </div>
               </div>
             </div>
           </div>
@@ -270,10 +521,10 @@ export default function ProjectDetailPage() {
           {/*  LEFT COLUMN                                               */}
           {/* ---------------------------------------------------------- */}
           <div className="space-y-6">
-            {/* 1. Status Timeline */}
+            {/* 1. Phase-Gate Timeline */}
             <StatusTimeline currentStatus={project.status} project={project} />
 
-            {/* Tabbed content: Overview, Swiss Challenge, Monitoring */}
+            {/* Tabbed content: Overview, Feasibility, Swiss Challenge, Monitoring */}
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="p-1 h-auto bg-background gap-1 border mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -288,89 +539,193 @@ export default function ProjectDetailPage() {
 
               <TabsContent value="overview" className="space-y-6">
 
-            {/* 2. Project Details */}
-            <Card>
-              <CardHeader><CardTitle className="text-base">Project Details</CardTitle></CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    ["Ministry", project.nominating_ministry],
-                    ["IGA", (project as any).implementing_agency || project.nominating_ministry],
-                    ["Sector", project.sector],
-                    ["Region", project.region || "—"],
-                    ["Origin", project.origin],
-                    ...((project as any).ppp_contract_type ? [["PPP Type", PPP_CONTRACT_TYPE_LABELS[(project as any).ppp_contract_type] || (project as any).ppp_contract_type]] : []),
-                  ].map(([label, value], i) => (
-                    <div key={i}>
-                      <div className="text-xs text-muted-foreground mb-0.5">{label}</div>
-                      <div className="text-sm font-medium">{value}</div>
+            {/* Body Content Section */}
+            <div className="space-y-0 divide-y">
+              {/* Project Origin */}
+              {project.origin && (
+                <div className="py-4 first:pt-0">
+                  <div className="text-xs text-muted-foreground mb-0.5">Project Origin</div>
+                  <div className="text-sm font-medium">
+                    {project.origin === 'government' ? 'Government Nominated' : project.origin === 'unsolicited' ? 'Unsolicited Proposal' : project.origin}
+                  </div>
+                </div>
+              )}
+
+              {/* Project Type */}
+              {project.project_type && (
+                <div className="py-4">
+                  <div className="text-xs text-muted-foreground mb-0.5">Project Type</div>
+                  <div className="text-sm font-medium">{project.project_type}</div>
+                </div>
+              )}
+
+              {/* PPP Contract Type */}
+              {(project as any).ppp_contract_type && (
+                <div className="py-4">
+                  <div className="text-xs text-muted-foreground mb-0.5">PPP Contract Type</div>
+                  <div className="text-sm font-medium">{PPP_CONTRACT_TYPE_LABELS[(project as any).ppp_contract_type] || (project as any).ppp_contract_type}</div>
+                </div>
+              )}
+
+              {/* Estimated Start & Duration */}
+              <div className="py-4 grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-muted-foreground mb-0.5">Estimated Start Date</div>
+                  <div className="text-sm font-medium">{formatFullDate(project.estimated_start_date)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-0.5">Estimated Duration</div>
+                  <div className="text-sm font-medium">{formatDuration(project.estimated_duration_months)}</div>
+                </div>
+              </div>
+
+              {/* Description */}
+              {project.description && (
+                <div className="py-4">
+                  <div className="text-xs text-muted-foreground mb-1">Description</div>
+                  <p className="text-sm leading-relaxed">{project.description}</p>
+                </div>
+              )}
+
+              {/* Objectives */}
+              {project.objectives && (
+                <div className="py-4">
+                  <div className="text-xs text-muted-foreground mb-1">Objectives</div>
+                  <p className="text-sm leading-relaxed">{project.objectives}</p>
+                </div>
+              )}
+
+              {/* Target Beneficiaries */}
+              {project.target_beneficiaries && (
+                <div className="py-4">
+                  <div className="text-xs text-muted-foreground mb-1">Target Beneficiaries</div>
+                  <p className="text-sm leading-relaxed">{project.target_beneficiaries}</p>
+                </div>
+              )}
+
+              {/* Contact Officer */}
+              {project.contact_officer && (
+                <div className="py-4">
+                  <div className="text-xs text-muted-foreground mb-2">Contact Officer</div>
+                  <div className="rounded-lg border bg-muted/20 p-3 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-sm font-medium">{project.contact_officer}</span>
                     </div>
-                  ))}
-                </div>
-                {ndpGoal && (
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="text-xs text-muted-foreground mb-0.5">NDP Goal</div>
-                    <div className="text-sm font-medium">{ndpGoal.code} — {ndpGoal.name}</div>
+                    {(project as any).contact_position && (
+                      <div className="text-xs text-muted-foreground ml-5.5">{(project as any).contact_position}</div>
+                    )}
+                    {project.contact_email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs">{project.contact_email}</span>
+                      </div>
+                    )}
+                    {project.contact_phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs">{project.contact_phone}</span>
+                      </div>
+                    )}
+                    {((project as any).contact_ministry || (project as any).contact_department) && (
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs">
+                          {[(project as any).contact_ministry, (project as any).contact_department].filter(Boolean).join(' — ')}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
-                {project.description && (
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="text-xs text-muted-foreground mb-1">Description</div>
-                    <p className="text-sm leading-relaxed">{project.description}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* 3. Financing (moved UP, before Appraisal) */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Financing</CardTitle>
-                  <Button variant="outline" size="sm" onClick={() => setShowDonorModal(true)} className="gap-1.5">
-                    <Plus className="h-3.5 w-3.5" /> Add Donor
-                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <FundingGapBar
-                  totalCost={estimatedCost}
-                  totalCommitted={totalCommitted}
-                  fundingGap={fundingGap}
-                />
+              )}
 
-                {project.donors && project.donors.length > 0 ? (
-                  <div className="mt-4">
-                    <div className="text-sm font-medium mb-2">Donor Commitments</div>
-                    <div className="space-y-2">
-                      {project.donors.map((d: ProjectBankDonor) => (
-                        <div key={d.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
-                          <div>
-                            <div className="text-sm font-medium">{d.donor_name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {d.donor_type ? DONOR_TYPE_LABELS[d.donor_type] : ''}{' '}
-                              {d.instrument_type ? `· ${INSTRUMENT_TYPE_LABELS[d.instrument_type]}` : ''}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-mono font-medium">{formatCurrency(d.amount, d.currency)}</div>
-                            <Badge variant="outline" className="text-[10px]">
-                              {COMMITMENT_STATUS_LABELS[d.commitment_status] || d.commitment_status}
-                            </Badge>
+              {/* SDG Alignment */}
+              {project.sdg_goals && project.sdg_goals.length > 0 && (
+                <div className="py-4">
+                  <div className="text-xs text-muted-foreground mb-2">SDG Alignment</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {project.sdg_goals.map((goal) => (
+                      <Badge key={goal} variant="outline" className="text-xs">
+                        SDG {goal}{SDG_LABELS[goal] ? `: ${SDG_LABELS[goal]}` : ''}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* MSDP Alignment */}
+              {(project.msdp_strategy_area || project.alignment_justification || ndpGoal) && (
+                <div className="py-4">
+                  <div className="text-xs text-muted-foreground mb-2">MSDP Alignment</div>
+                  <div className="space-y-2">
+                    {project.msdp_strategy_area && (
+                      <div>
+                        <div className="text-[10px] text-muted-foreground">Strategy Area</div>
+                        <div className="text-sm">{project.msdp_strategy_area}</div>
+                      </div>
+                    )}
+                    {project.alignment_justification && (
+                      <div>
+                        <div className="text-[10px] text-muted-foreground">Justification</div>
+                        <p className="text-sm leading-relaxed">{project.alignment_justification}</p>
+                      </div>
+                    )}
+                    {ndpGoal && (
+                      <div>
+                        <div className="text-[10px] text-muted-foreground">NDP Goal</div>
+                        <div className="text-sm">{ndpGoal.code} — {ndpGoal.name}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Documents */}
+              {project.documents && project.documents.length > 0 && (
+                <div className="py-4">
+                  <div className="text-xs text-muted-foreground mb-2">Documents</div>
+                  <div className="space-y-1.5">
+                    {project.documents.map((doc: any) => (
+                      <div key={doc.id} className="flex items-center gap-2 p-2 bg-muted/20 rounded-md">
+                        <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm truncate">{doc.file_name}</div>
+                          <div className="text-[10px] text-muted-foreground">{DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Donor Commitments (moved from Financing card) */}
+              {project.donors && project.donors.length > 0 && (
+                <div className="py-4">
+                  <div className="text-xs text-muted-foreground mb-2">Donor Commitments</div>
+                  <div className="space-y-2">
+                    {project.donors.map((d: ProjectBankDonor) => (
+                      <div key={d.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                        <div>
+                          <div className="text-sm font-medium">{d.donor_name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {d.donor_type ? DONOR_TYPE_LABELS[d.donor_type] : ''}{' '}
+                            {d.instrument_type ? `· ${INSTRUMENT_TYPE_LABELS[d.instrument_type]}` : ''}
                           </div>
                         </div>
-                      ))}
-                    </div>
+                        <div className="text-right">
+                          <div className="text-sm font-medium">{formatCurrency(d.amount, d.currency)}</div>
+                          <Badge variant="outline" className="text-[10px]">
+                            {COMMITMENT_STATUS_LABELS[d.commitment_status] || d.commitment_status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ) : (
-                  <div className="mt-4 text-center py-6 text-sm text-muted-foreground">
-                    No donors yet. Click "Add Donor" to record a commitment.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              )}
+            </div>
 
-            {/* 4. Appraisal */}
+            {/* Appraisal Summary */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Appraisal Summary</CardTitle>
@@ -380,7 +735,7 @@ export default function ProjectDetailPage() {
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: '#f1f4f8' }}>
                     <div className="text-xs text-muted-foreground">FIRR</div>
                     <div
-                      className="text-xl font-bold font-mono"
+                      className="text-xl font-bold"
                       style={{ color: project.firr != null ? (project.firr >= 10 ? '#7b95a7' : '#dc2625') : undefined }}
                     >
                       {project.firr != null ? `${project.firr}%` : <span className="text-muted-foreground">—</span>}
@@ -389,7 +744,7 @@ export default function ProjectDetailPage() {
                   <div className="p-4 rounded-lg border" style={{ backgroundColor: '#f1f4f8' }}>
                     <div className="text-xs text-muted-foreground">EIRR</div>
                     <div
-                      className="text-xl font-bold font-mono"
+                      className="text-xl font-bold"
                       style={{ color: project.eirr != null ? (project.eirr >= 15 ? '#7b95a7' : '#dc2625') : undefined }}
                     >
                       {project.eirr != null ? `${project.eirr}%` : <span className="text-muted-foreground">—</span>}
@@ -401,7 +756,7 @@ export default function ProjectDetailPage() {
                 {project.vgf_amount != null && project.vgf_amount > 0 && (
                   <div className="p-4 rounded-lg border mb-4" style={{ backgroundColor: '#f1f4f8', borderColor: '#cfd0d5' }}>
                     <div className="text-xs" style={{ color: '#7b95a7' }}>Viability Gap Funding (VGF)</div>
-                    <div className="text-xl font-bold font-mono" style={{ color: '#4c5568' }}>
+                    <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
                       {formatCurrency(project.vgf_amount, project.currency)}
                     </div>
                   </div>
@@ -419,7 +774,7 @@ export default function ProjectDetailPage() {
                           </div>
                           <div className="flex items-center gap-3">
                             {a.eirr_result != null && (
-                              <span className="text-sm font-mono" style={{ color: a.eirr_result >= 15 ? '#7b95a7' : '#dc2625' }}>
+                              <span className="text-sm" style={{ color: a.eirr_result >= 15 ? '#7b95a7' : '#dc2625' }}>
                                 EIRR: {a.eirr_result}%
                               </span>
                             )}
@@ -437,6 +792,11 @@ export default function ProjectDetailPage() {
               </TabsContent>
 
               <TabsContent value="feasibility" className="space-y-6">
+                {/* PFS Data Display — visible from FS1 stage onward */}
+                {(['fs1', 'fs2', 'fs3'] as ProjectPhase[]).includes(currentPhase) && (project.technical_approach || project.environmental_impact_level || project.has_revenue_component || project.firr !== null) && (
+                  <PFSDataDisplay project={project} />
+                )}
+
                 {/* FS-1 Narrative Submission */}
                 {(project.feasibility_stage === 'registered' || project.feasibility_stage === 'fs1_returned' || !project.feasibility_stage) && (
                   <Card>
@@ -561,7 +921,7 @@ export default function ProjectDetailPage() {
                   >
                     <Link href={`/project-bank/${id}/appraisal`}>
                       <ArrowRight className="h-4 w-4" />
-                      Open Appraisal
+                      {getActionLabel(currentPhase)}
                     </Link>
                   </Button>
                 )}
