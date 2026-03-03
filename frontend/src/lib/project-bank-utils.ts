@@ -201,25 +201,31 @@ export const FEASIBILITY_STAGE_LABELS: Record<FeasibilityStage, string> = {
   fs2_assigned: 'FS-2 Assigned',
   fs2_in_progress: 'FS-2 In Progress',
   fs2_completed: 'FS-2 Completed',
+  fs2_desk_reviewed: 'FS-2 Desk Reviewed',
+  fs2_senior_reviewed: 'FS-2 Senior Reviewed',
+  fs2_returned: 'FS-2 Returned',
   categorized: 'Categorized',
   fs3_in_progress: 'FS-3 In Progress',
   fs3_completed: 'FS-3 Completed',
 };
 
-/** Feasibility stage badge styles */
+/** Feasibility stage badge styles — palette: Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8 */
 export const FEASIBILITY_STAGE_BADGE_STYLES: Record<FeasibilityStage, { bg: string; text: string; border: string }> = {
-  registered:        { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
-  fs1_submitted:     { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
-  fs1_desk_screened: { bg: '#e0e7ff', text: '#3730a3', border: '#a5b4fc' },
-  fs1_passed:        { bg: '#dcfce7', text: '#166534', border: '#86efac' },
-  fs1_returned:      { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
-  fs1_rejected:      { bg: '#fecaca', text: '#991b1b', border: '#f87171' },
-  fs2_assigned:      { bg: '#e0e7ff', text: '#3730a3', border: '#a5b4fc' },
-  fs2_in_progress:   { bg: '#c7d2fe', text: '#3730a3', border: '#818cf8' },
-  fs2_completed:     { bg: '#dcfce7', text: '#166534', border: '#86efac' },
-  categorized:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
-  fs3_in_progress:   { bg: '#e9d5ff', text: '#6b21a8', border: '#c084fc' },
-  fs3_completed:     { bg: '#dcfce7', text: '#166534', border: '#86efac' },
+  registered:          { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
+  fs1_submitted:       { bg: '#f1f4f8', text: '#7b95a7', border: '#7b95a7' },
+  fs1_desk_screened:   { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  fs1_passed:          { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  fs1_returned:        { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },
+  fs1_rejected:        { bg: '#fbe9e9', text: '#dc2625', border: '#dc2625' },
+  fs2_assigned:        { bg: '#f1f4f8', text: '#7b95a7', border: '#7b95a7' },
+  fs2_in_progress:     { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  fs2_completed:       { bg: '#7b95a7', text: '#ffffff', border: '#7b95a7' },
+  fs2_desk_reviewed:   { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  fs2_senior_reviewed: { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  fs2_returned:        { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },
+  categorized:         { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  fs3_in_progress:     { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  fs3_completed:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
 };
 
 /** Feasibility stage progression order */
@@ -651,6 +657,7 @@ export function determineFullRouting(
 export const PROJECT_STAGE_LABELS: Record<ProjectStage, string> = {
   intake_draft: 'Draft',
   intake_submitted: 'Awaiting Review',
+  intake_desk_screened: 'Desk Screened',
   intake_approved: 'Approved',
   intake_returned: 'Returned',
   intake_rejected: 'Rejected',
@@ -662,29 +669,36 @@ export const PROJECT_STAGE_LABELS: Record<ProjectStage, string> = {
   fs2_assigned: 'Detailed Study — Assigned',
   fs2_in_progress: 'Detailed Study — In Progress',
   fs2_completed: 'Detailed Study — Completed',
+  fs2_desk_reviewed: 'Detailed Study — Desk Reviewed',
+  fs2_senior_reviewed: 'Detailed Study — Senior Reviewed',
+  fs2_returned: 'Detailed Study — Returned',
   fs2_categorized: 'Categorized',
   fs3_in_progress: 'PPP Structuring — In Progress',
   fs3_completed: 'PPP Structuring — Completed',
 };
 
-/** Badge styles for each unified project stage */
+/** Badge styles for each unified project stage — palette: Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8 */
 export const PROJECT_STAGE_BADGE_STYLES: Record<ProjectStage, { bg: string; text: string; border: string }> = {
-  intake_draft:     { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
-  intake_submitted: { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
-  intake_approved:  { bg: '#dcfce7', text: '#166534', border: '#86efac' },
-  intake_returned:  { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
-  intake_rejected:  { bg: '#fecaca', text: '#991b1b', border: '#f87171' },
-  fs1_draft:        { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
-  fs1_submitted:    { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' },
-  fs1_approved:     { bg: '#dcfce7', text: '#166534', border: '#86efac' },
-  fs1_returned:     { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
-  fs1_rejected:     { bg: '#fecaca', text: '#991b1b', border: '#f87171' },
-  fs2_assigned:     { bg: '#e0e7ff', text: '#3730a3', border: '#a5b4fc' },
-  fs2_in_progress:  { bg: '#c7d2fe', text: '#3730a3', border: '#818cf8' },
-  fs2_completed:    { bg: '#dcfce7', text: '#166534', border: '#86efac' },
-  fs2_categorized:  { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
-  fs3_in_progress:  { bg: '#e9d5ff', text: '#6b21a8', border: '#c084fc' },
-  fs3_completed:    { bg: '#dcfce7', text: '#166534', border: '#86efac' },
+  intake_draft:          { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
+  intake_submitted:      { bg: '#f1f4f8', text: '#7b95a7', border: '#7b95a7' },
+  intake_desk_screened:  { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  intake_approved:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  intake_returned:       { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },
+  intake_rejected:       { bg: '#fbe9e9', text: '#dc2625', border: '#dc2625' },
+  fs1_draft:             { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
+  fs1_submitted:         { bg: '#f1f4f8', text: '#7b95a7', border: '#7b95a7' },
+  fs1_approved:          { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  fs1_returned:          { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },
+  fs1_rejected:          { bg: '#fbe9e9', text: '#dc2625', border: '#dc2625' },
+  fs2_assigned:          { bg: '#f1f4f8', text: '#7b95a7', border: '#7b95a7' },
+  fs2_in_progress:       { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  fs2_completed:         { bg: '#7b95a7', text: '#ffffff', border: '#7b95a7' },
+  fs2_desk_reviewed:     { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  fs2_senior_reviewed:   { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  fs2_returned:          { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },
+  fs2_categorized:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  fs3_in_progress:       { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  fs3_completed:         { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
 };
 
 /** Extract the phase from a project_stage */
@@ -695,6 +709,7 @@ export function getPhase(stage: ProjectStage): ProjectPhase {
   if (stage.startsWith('intake_')) return 'intake';
   if (stage.startsWith('fs1_')) return 'fs1';
   if (stage.startsWith('fs2_')) return 'fs2';
+  if (stage.startsWith('fs3_')) return 'fs3';
   return 'fs3';
 }
 
@@ -746,7 +761,7 @@ export type GateStatus = 'locked' | 'awaiting_review' | 'approved' | 'returned' 
 /** Get the gate status for transitions between phases */
 export function getGateStatus(stage: ProjectStage, gate: 'intake_to_fs1' | 'fs1_to_fs2'): GateStatus {
   if (gate === 'intake_to_fs1') {
-    if (stage === 'intake_submitted') return 'awaiting_review';
+    if (stage === 'intake_submitted' || stage === 'intake_desk_screened') return 'awaiting_review';
     if (stage === 'intake_approved' || stage.startsWith('fs1_') || stage.startsWith('fs2_') || stage.startsWith('fs3_')) return 'approved';
     if (stage === 'intake_returned') return 'returned';
     if (stage === 'intake_rejected') return 'rejected';

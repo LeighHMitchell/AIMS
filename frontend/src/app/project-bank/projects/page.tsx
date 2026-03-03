@@ -23,13 +23,33 @@ import {
 } from "@/lib/project-bank-utils"
 import type { ProjectBankProject, ProjectStatus, FeasibilityStage } from "@/types/project-bank"
 
-const STATUS_FILTERS: { value: string; label: string }[] = [
+const STATUS_FILTERS: { value: string; label: string; code?: string }[] = [
   { value: "all", label: "All" },
-  { value: "nominated", label: "Nominated" },
-  { value: "screening", label: "Screening" },
-  { value: "appraisal", label: "Appraisal" },
-  { value: "approved", label: "Approved" },
-  { value: "implementation", label: "Implementation" },
+  { value: "nominated", label: "Nominated", code: "1" },
+  { value: "screening", label: "Screening", code: "2" },
+  { value: "appraisal", label: "Appraisal", code: "3" },
+  { value: "approved", label: "Approved", code: "4" },
+  { value: "implementation", label: "Implementation", code: "5" },
+]
+
+const SECTOR_CODES: Record<string, string> = {
+  'Transport': '1', 'Energy': '2', 'Health': '3', 'Education': '4', 'Agriculture': '5',
+  'Water Resources': '6', 'ICT': '7', 'Industrial': '8', 'Environment': '9', 'WASH': '10',
+  'Governance': '11', 'Multi-sector': '12', 'Social Protection': '13', 'Housing': '14',
+  'Banking & Finance': '15', 'Trade': '16', 'Tourism': '17', 'Mining': '18',
+}
+
+const ORIGIN_OPTIONS: { value: string; label: string; code: string }[] = [
+  { value: "government", label: "Government", code: "GOV" },
+  { value: "unsolicited", label: "Unsolicited", code: "UNS" },
+]
+
+const PATHWAY_OPTIONS: { value: string; label: string; code: string }[] = [
+  { value: "oda", label: "ODA", code: "ODA" },
+  { value: "ppp", label: "PPP", code: "PPP" },
+  { value: "private_supported", label: "Private (Supported)", code: "PVS" },
+  { value: "private_unsupported", label: "Private", code: "PVT" },
+  { value: "domestic_budget", label: "Domestic Budget", code: "DOM" },
 ]
 
 /** Status → colour-palette badge styles */
@@ -212,7 +232,10 @@ export default function ProjectListPage() {
               <SelectContent>
                 {STATUS_FILTERS.map(f => (
                   <SelectItem key={f.value} value={f.value}>
-                    {f.label} ({statusCounts[f.value] || 0})
+                    <span className="flex items-center gap-2">
+                      {f.code && <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{f.code}</span>}
+                      {f.label} ({statusCounts[f.value] || 0})
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -226,7 +249,14 @@ export default function ProjectListPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Sectors</SelectItem>
-                {SECTORS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {SECTORS.map(s => (
+                  <SelectItem key={s} value={s}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{SECTOR_CODES[s]}</span>
+                      {s}
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -238,8 +268,14 @@ export default function ProjectListPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Origins</SelectItem>
-                <SelectItem value="government">Government</SelectItem>
-                <SelectItem value="unsolicited">Unsolicited</SelectItem>
+                {ORIGIN_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{o.code}</span>
+                      {o.label}
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -251,8 +287,13 @@ export default function ProjectListPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Pathways</SelectItem>
-                {Object.entries(PATHWAY_LABELS).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                {PATHWAY_OPTIONS.map(pw => (
+                  <SelectItem key={pw.value} value={pw.value}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{pw.code}</span>
+                      {pw.label}
+                    </span>
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -265,11 +306,11 @@ export default function ProjectListPage() {
             <table className="w-full border-collapse table-auto">
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
-                  <SortHeader field="name" className="min-w-[200px]">Project</SortHeader>
-                  <SortHeader field="nominating_ministry" className="min-w-[140px]">Ministry</SortHeader>
+                  <SortHeader field="name" className="min-w-[200px]">Project Title</SortHeader>
+                  <SortHeader field="nominating_ministry" className="min-w-[140px]">Nominating Ministry</SortHeader>
                   <SortHeader field="region" tight>Location</SortHeader>
                   <SortHeader field="sector" tight>Sector</SortHeader>
-                  <SortHeader field="estimated_cost" className="text-right" tight>Est. Cost</SortHeader>
+                  <SortHeader field="estimated_cost" className="text-right" tight>Estimated Cost</SortHeader>
                   <SortHeader field="firr" className="text-right" tight>FIRR</SortHeader>
                   <SortHeader field="eirr" className="text-right" tight>EIRR</SortHeader>
                   <SortHeader field="vgf_amount" className="text-right" tight>VGF</SortHeader>
@@ -314,9 +355,9 @@ export default function ProjectListPage() {
                     >
                       {/* Project Code + Name merged */}
                       <td className="px-3 py-2 min-w-[200px]">
-                        <div className="text-sm font-medium text-foreground leading-tight">{p.name}</div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <div className="group/code flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-medium text-foreground leading-tight">{p.name}</span>
+                          <div className="group/code flex items-center gap-1 flex-shrink-0">
                             <span className="text-[11px] font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{p.project_code}</span>
                             <button
                               onClick={(e) => {
@@ -336,11 +377,21 @@ export default function ProjectListPage() {
                         </div>
                       </td>
                       {/* Ministry */}
-                      <td className="px-3 py-2 text-sm text-foreground min-w-[140px]">{p.nominating_ministry || '—'}</td>
+                      <td className="px-3 py-2 text-sm text-foreground min-w-[140px]">
+                        <div>{p.nominating_ministry || '—'}</div>
+                        {p.implementing_agency && (
+                          <div className="text-xs text-muted-foreground mt-0.5">{p.implementing_agency}</div>
+                        )}
+                      </td>
                       {/* Location */}
                       <td className="px-2 py-2 text-sm text-foreground whitespace-nowrap">{p.region || '—'}</td>
                       {/* Sector */}
-                      <td className="px-2 py-2 text-sm text-foreground whitespace-nowrap">{p.sector}</td>
+                      <td className="px-2 py-2 text-sm text-foreground whitespace-nowrap">
+                        <div>{p.sector}</div>
+                        {p.sub_sector && (
+                          <div className="text-xs text-muted-foreground mt-0.5">{p.sub_sector}</div>
+                        )}
+                      </td>
                       {/* Est. Cost */}
                       <td className="px-2 py-2 text-sm text-right whitespace-nowrap font-medium">
                         {p.estimated_cost != null ? (

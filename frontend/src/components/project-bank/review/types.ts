@@ -5,7 +5,9 @@ export interface ReviewProject {
   project_code: string
   name: string
   nominating_ministry: string
+  implementing_agency: string | null
   sector: string
+  sub_sector: string | null
   region: string | null
   estimated_cost: number | null
   currency: string
@@ -21,7 +23,9 @@ export interface IntakeReviewProject {
   project_code: string
   name: string
   nominating_ministry: string
+  implementing_agency: string | null
   sector: string
+  sub_sector: string | null
   region: string | null
   estimated_cost: number | null
   currency: string
@@ -40,7 +44,9 @@ export interface RejectedProject {
   project_code: string
   name: string
   nominating_ministry: string
+  implementing_agency: string | null
   sector: string
+  sub_sector: string | null
   region: string | null
   estimated_cost: number | null
   currency: string
@@ -66,4 +72,12 @@ export interface ReviewColumns {
   submitted: ReviewProject[]
   desk_screened: ReviewProject[]
   returned: ReviewProject[]
+}
+
+export type IntakeColumnKey = "submitted" | "desk_screened" | "returned"
+
+export interface IntakeReviewColumns {
+  submitted: IntakeReviewProject[]
+  desk_screened: IntakeReviewProject[]
+  returned: IntakeReviewProject[]
 }

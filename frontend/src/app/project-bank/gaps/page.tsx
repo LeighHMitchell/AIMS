@@ -80,7 +80,7 @@ export default function FundingGapsPage() {
           <div>
             <h1 className="text-2xl font-bold">Funding Gaps</h1>
             <p className="text-muted-foreground text-sm">
-              Projects with unsecured financing — {projects.length} projects, {formatSubtitleCurrency(totalGap)} gap
+              Projects in the pipeline that have not yet secured full financing commitments
             </p>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function FundingGapsPage() {
             <table className="w-full border-collapse">
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Project</th>
+                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Project Title</th>
                   <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Sector</th>
                   <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground">Total Cost</th>
                   <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground">Secured</th>
@@ -146,7 +146,12 @@ export default function FundingGapsPage() {
                           </div>
                         </td>
                         {/* Sector — normal text */}
-                        <td className="px-4 py-2 text-sm text-foreground">{p.sector}</td>
+                        <td className="px-4 py-2">
+                          <div className="text-sm text-foreground leading-tight">{p.sector}</div>
+                          {p.sub_sector && (
+                            <div className="text-xs text-muted-foreground mt-0.5">{p.sub_sector}</div>
+                          )}
+                        </td>
                         {/* Total Cost — USD styled */}
                         <td className="px-4 py-2 text-sm text-right whitespace-nowrap font-medium">
                           {p.estimated_cost != null ? (

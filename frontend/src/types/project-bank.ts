@@ -18,9 +18,9 @@ export type AppraisalStage =
 
 // Unified Phase-Gate Stages
 export type ProjectStage =
-  | 'intake_draft' | 'intake_submitted' | 'intake_approved' | 'intake_returned' | 'intake_rejected'
+  | 'intake_draft' | 'intake_submitted' | 'intake_desk_screened' | 'intake_approved' | 'intake_returned' | 'intake_rejected'
   | 'fs1_draft' | 'fs1_submitted' | 'fs1_approved' | 'fs1_returned' | 'fs1_rejected'
-  | 'fs2_assigned' | 'fs2_in_progress' | 'fs2_completed' | 'fs2_categorized'
+  | 'fs2_assigned' | 'fs2_in_progress' | 'fs2_completed' | 'fs2_desk_reviewed' | 'fs2_senior_reviewed' | 'fs2_returned' | 'fs2_categorized'
   | 'fs3_in_progress' | 'fs3_completed';
 
 /** Which high-level phase a project_stage belongs to */
@@ -37,7 +37,7 @@ export type RoutingOutcome =
 export type FeasibilityStage =
   | 'registered'
   | 'fs1_submitted' | 'fs1_desk_screened' | 'fs1_passed' | 'fs1_returned' | 'fs1_rejected'
-  | 'fs2_assigned' | 'fs2_in_progress' | 'fs2_completed'
+  | 'fs2_assigned' | 'fs2_in_progress' | 'fs2_completed' | 'fs2_desk_reviewed' | 'fs2_senior_reviewed' | 'fs2_returned'
   | 'categorized'
   | 'fs3_in_progress' | 'fs3_completed';
 

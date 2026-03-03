@@ -30,9 +30,9 @@ export default function ReviewBoardPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
-            <TabsTrigger value="intake">Intake Reviews</TabsTrigger>
-            <TabsTrigger value="fs1">Preliminary Feasibility Study</TabsTrigger>
-            <TabsTrigger value="fs2">Detailed Feasibility Study</TabsTrigger>
+            <TabsTrigger value="intake">Phase 1: Intake Reviews</TabsTrigger>
+            <TabsTrigger value="fs1">Phase 2: Preliminary Feasibility Study</TabsTrigger>
+            <TabsTrigger value="fs2">Phase 3: Detailed Feasibility Study</TabsTrigger>
             <TabsTrigger value="rejected">Rejected</TabsTrigger>
           </TabsList>
 

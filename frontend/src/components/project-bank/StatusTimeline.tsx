@@ -3,7 +3,7 @@
 import { CheckCircle, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PHASE_LABELS, getPhase } from "@/lib/project-bank-utils"
-import type { ProjectBankProject, ProjectPhase, ProjectStage } from "@/types/project-bank"
+import type { ProjectBankProject, ProjectPhase, ProjectStage, CategoryDecision } from "@/types/project-bank"
 import {
   Stepper,
   StepperItem,
@@ -19,6 +19,21 @@ interface StatusTimelineProps {
 }
 
 const PHASE_ORDER: ProjectPhase[] = ['intake', 'fs1', 'fs2', 'fs3']
+
+const FS3_LABELS: Record<CategoryDecision, string> = {
+  category_a: 'Private Sector Pathway',
+  category_b: 'Government Budget Pathway',
+  category_c: 'PPP Transaction Structuring',
+}
+
+function getPhaseLabel(phase: ProjectPhase, idx: number, categoryDecision?: CategoryDecision | null): string {
+  const num = idx + 1
+  if (phase === 'fs3') {
+    const label = categoryDecision ? FS3_LABELS[categoryDecision] : 'Next Phase'
+    return `Phase ${num}: ${label}`
+  }
+  return `Phase ${num}: ${PHASE_LABELS[phase]}`
+}
 
 function formatFullDate(dateStr: string | null | undefined): string | null {
   if (!dateStr) return null
@@ -64,7 +79,7 @@ export function StatusTimeline({ currentStatus, project }: StatusTimelineProps) 
               {!isLast && <StepperSeparator />}
 
               <div className="flex flex-col items-center">
-                <StepperTitle>{PHASE_LABELS[phase]}</StepperTitle>
+                <StepperTitle>{getPhaseLabel(phase, idx, project.category_decision)}</StepperTitle>
                 {formattedDate && (
                   <StepperDescription>
                     {formattedDate}

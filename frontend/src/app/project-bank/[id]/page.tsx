@@ -19,8 +19,8 @@ import {
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
-  formatCurrency, STATUS_BADGE_VARIANT, STATUS_LABELS, STATUS_ORDER,
-  PATHWAY_LABELS, PATHWAY_COLORS, getNextStatus,
+  formatCurrency, STATUS_BADGE_VARIANT, STATUS_LABELS,
+  PATHWAY_LABELS, PATHWAY_COLORS,
   COMMITMENT_STATUS_LABELS, INSTRUMENT_TYPE_LABELS, DONOR_TYPE_LABELS,
   PPP_CONTRACT_TYPE_LABELS,
   FEASIBILITY_STAGE_LABELS, FEASIBILITY_STAGE_BADGE_STYLES,
@@ -37,9 +37,9 @@ import { EIRRCalculatorModal } from "@/components/project-bank/EIRRCalculatorMod
 import { AddDonorModal } from "@/components/project-bank/AddDonorModal"
 import { SwissChallengeTab } from "@/components/project-bank/SwissChallengeTab"
 import { MonitoringTab } from "@/components/project-bank/MonitoringTab"
-import { FS1NarrativeForm } from "@/components/project-bank/fs1/FS1NarrativeForm"
 import { FS2AssignmentPanel } from "@/components/project-bank/fs2/FS2AssignmentPanel"
 import { CategoryDecisionPanel } from "@/components/project-bank/categorization/CategoryDecisionPanel"
+import { CashFlowTable } from "@/components/project-bank/appraisal/CashFlowTable"
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from "recharts"
@@ -75,8 +75,9 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
 
 function getActionLabel(phase: ProjectPhase): string {
   switch (phase) {
-    case 'intake': return 'Edit Intake'
-    case 'fs1': return 'Edit Feasibility Study'
+    case 'intake':
+    case 'fs1':
+      return 'Edit Submission'
     default: return 'View Assessment'
   }
 }
@@ -233,6 +234,59 @@ function PFSDataDisplay({ project }: { project: ProjectBankProject }) {
   )
 }
 
+const NARRATIVE_SECTION_LABELS: Record<string, string> = {
+  problem_statement: 'Problem Statement',
+  target_beneficiaries: 'Target Beneficiaries',
+  ndp_alignment_justification: 'NDP / MSDP Alignment',
+  expected_outcomes: 'Expected Outcomes & Impact',
+  preliminary_cost_justification: 'Preliminary Cost Justification',
+}
+
+const NARRATIVE_FIELDS = [
+  'problem_statement',
+  'target_beneficiaries',
+  'ndp_alignment_justification',
+  'expected_outcomes',
+  'preliminary_cost_justification',
+] as const
+
+function FS1NarrativeDisplay({ projectId }: { projectId: string }) {
+  const [narrative, setNarrative] = useState<Record<string, any> | null>(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    apiFetch(`/api/project-bank/${projectId}/fs1-narrative`)
+      .then(res => res.ok ? res.json() : [])
+      .then((data: any[]) => {
+        if (data.length > 0) setNarrative(data[0])
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true))
+  }, [projectId])
+
+  if (!loaded) return null
+  if (!narrative) return (
+    <p className="text-sm text-muted-foreground">No narrative submitted yet.</p>
+  )
+
+  return (
+    <div className="space-y-4">
+      {NARRATIVE_FIELDS.map(field => {
+        const value = narrative[field]
+        if (!value) return null
+        return (
+          <div key={field}>
+            <div className="text-xs text-muted-foreground mb-1">
+              {NARRATIVE_SECTION_LABELS[field]}
+            </div>
+            <p className="text-sm leading-relaxed">{value}</p>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function ProjectDetailPage() {
   const router = useRouter()
   const params = useParams()
@@ -254,14 +308,6 @@ export default function ProjectDetailPage() {
   }
 
   useEffect(() => { fetchProject() }, [id])
-
-  const handleAdvanceStatus = async () => {
-    setActionLoading(true)
-    try {
-      const res = await apiFetch(`/api/project-bank/${id}/advance-status`, { method: "POST" })
-      if (res.ok) fetchProject()
-    } catch {} finally { setActionLoading(false) }
-  }
 
   const handleReject = async () => {
     setActionLoading(true)
@@ -335,7 +381,6 @@ export default function ProjectDetailPage() {
     )
   }
 
-  const nextStatus = getNextStatus(project.status)
   const ndpGoal = (project as any).national_development_goals
   const totalCommitted = project.total_committed || 0
   const estimatedCost = project.estimated_cost || 0
@@ -526,7 +571,7 @@ export default function ProjectDetailPage() {
 
             {/* Tabbed content: Overview, Feasibility, Swiss Challenge, Monitoring */}
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-4">
+              <TabsList className="mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="feasibility">Feasibility</TabsTrigger>
                 {project.origin === 'unsolicited' && (
@@ -540,10 +585,10 @@ export default function ProjectDetailPage() {
               <TabsContent value="overview" className="space-y-6">
 
             {/* Body Content Section */}
-            <div className="space-y-0 divide-y">
+            <div className="space-y-4">
               {/* Project Origin */}
               {project.origin && (
-                <div className="py-4 first:pt-0">
+                <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Project Origin</div>
                   <div className="text-sm font-medium">
                     {project.origin === 'government' ? 'Government Nominated' : project.origin === 'unsolicited' ? 'Unsolicited Proposal' : project.origin}
@@ -553,7 +598,7 @@ export default function ProjectDetailPage() {
 
               {/* Project Type */}
               {project.project_type && (
-                <div className="py-4">
+                <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Project Type</div>
                   <div className="text-sm font-medium">{project.project_type}</div>
                 </div>
@@ -561,14 +606,14 @@ export default function ProjectDetailPage() {
 
               {/* PPP Contract Type */}
               {(project as any).ppp_contract_type && (
-                <div className="py-4">
+                <div>
                   <div className="text-xs text-muted-foreground mb-0.5">PPP Contract Type</div>
                   <div className="text-sm font-medium">{PPP_CONTRACT_TYPE_LABELS[(project as any).ppp_contract_type] || (project as any).ppp_contract_type}</div>
                 </div>
               )}
 
               {/* Estimated Start & Duration */}
-              <div className="py-4 grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Estimated Start Date</div>
                   <div className="text-sm font-medium">{formatFullDate(project.estimated_start_date)}</div>
@@ -581,7 +626,7 @@ export default function ProjectDetailPage() {
 
               {/* Description */}
               {project.description && (
-                <div className="py-4">
+                <div>
                   <div className="text-xs text-muted-foreground mb-1">Description</div>
                   <p className="text-sm leading-relaxed">{project.description}</p>
                 </div>
@@ -589,7 +634,7 @@ export default function ProjectDetailPage() {
 
               {/* Objectives */}
               {project.objectives && (
-                <div className="py-4">
+                <div>
                   <div className="text-xs text-muted-foreground mb-1">Objectives</div>
                   <p className="text-sm leading-relaxed">{project.objectives}</p>
                 </div>
@@ -597,7 +642,7 @@ export default function ProjectDetailPage() {
 
               {/* Target Beneficiaries */}
               {project.target_beneficiaries && (
-                <div className="py-4">
+                <div>
                   <div className="text-xs text-muted-foreground mb-1">Target Beneficiaries</div>
                   <p className="text-sm leading-relaxed">{project.target_beneficiaries}</p>
                 </div>
@@ -605,7 +650,7 @@ export default function ProjectDetailPage() {
 
               {/* Contact Officer */}
               {project.contact_officer && (
-                <div className="py-4">
+                <div>
                   <div className="text-xs text-muted-foreground mb-2">Contact Officer</div>
                   <div className="rounded-lg border bg-muted/20 p-3 space-y-1.5">
                     <div className="flex items-center gap-2">
@@ -641,7 +686,7 @@ export default function ProjectDetailPage() {
 
               {/* SDG Alignment */}
               {project.sdg_goals && project.sdg_goals.length > 0 && (
-                <div className="py-4">
+                <div>
                   <div className="text-xs text-muted-foreground mb-2">SDG Alignment</div>
                   <div className="flex flex-wrap gap-1.5">
                     {project.sdg_goals.map((goal) => (
@@ -655,7 +700,7 @@ export default function ProjectDetailPage() {
 
               {/* MSDP Alignment */}
               {(project.msdp_strategy_area || project.alignment_justification || ndpGoal) && (
-                <div className="py-4">
+                <div>
                   <div className="text-xs text-muted-foreground mb-2">MSDP Alignment</div>
                   <div className="space-y-2">
                     {project.msdp_strategy_area && (
@@ -682,7 +727,7 @@ export default function ProjectDetailPage() {
 
               {/* Documents */}
               {project.documents && project.documents.length > 0 && (
-                <div className="py-4">
+                <div>
                   <div className="text-xs text-muted-foreground mb-2">Documents</div>
                   <div className="space-y-1.5">
                     {project.documents.map((doc: any) => (
@@ -700,7 +745,7 @@ export default function ProjectDetailPage() {
 
               {/* Donor Commitments (moved from Financing card) */}
               {project.donors && project.donors.length > 0 && (
-                <div className="py-4">
+                <div>
                   <div className="text-xs text-muted-foreground mb-2">Donor Commitments</div>
                   <div className="space-y-2">
                     {project.donors.map((d: ProjectBankDonor) => (
@@ -797,18 +842,33 @@ export default function ProjectDetailPage() {
                   <PFSDataDisplay project={project} />
                 )}
 
-                {/* FS-1 Narrative Submission */}
-                {(project.feasibility_stage === 'registered' || project.feasibility_stage === 'fs1_returned' || !project.feasibility_stage) && (
+                {/* Cash Flow Table — read-only display when cost table data exists */}
+                {(project.firr_cost_table_data || project.cost_table_data) && (project.firr_cost_table_data || project.cost_table_data)!.length > 0 && (
                   <Card>
-                    <CardContent className="pt-6">
-                      <FS1NarrativeForm
-                        projectId={id}
-                        isResubmission={project.feasibility_stage === 'fs1_returned'}
-                        onSubmitted={fetchProject}
+                    <CardHeader>
+                      <CardTitle className="text-base">Cash Flow Projection</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CashFlowTable
+                        rows={(project.firr_cost_table_data || project.cost_table_data)!}
+                        onChange={() => {}}
+                        readOnly
+                        showNet
+                        showTotals
                       />
                     </CardContent>
                   </Card>
                 )}
+
+                {/* FS-1 Narrative — read-only display */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">FS-1 Narrative</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <FS1NarrativeDisplay projectId={id} />
+                  </CardContent>
+                </Card>
 
                 {/* FS-1 Status Info */}
                 {project.feasibility_stage && ['fs1_submitted', 'fs1_desk_screened'].includes(project.feasibility_stage) && (
@@ -915,24 +975,14 @@ export default function ProjectDetailPage() {
               <CardContent className="space-y-2">
                 {(project as any).appraisal_stage && (project as any).appraisal_stage !== 'routing_complete' && (
                   <Button
-                    className="w-full justify-start gap-2"
-                    variant="outline"
+                    className="w-full justify-start gap-2 bg-black hover:bg-black/90 text-white"
+                    variant="default"
                     asChild
                   >
                     <Link href={`/project-bank/${id}/appraisal`}>
                       <ArrowRight className="h-4 w-4" />
                       {getActionLabel(currentPhase)}
                     </Link>
-                  </Button>
-                )}
-                {nextStatus && project.status !== 'rejected' && (
-                  <Button
-                    className="w-full justify-start gap-2"
-                    onClick={handleAdvanceStatus}
-                    disabled={actionLoading}
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                    Advance to {STATUS_LABELS[nextStatus]}
                   </Button>
                 )}
                 {!project.aims_activity_id && (project.pathway === 'oda' || project.pathway === 'ppp') && (
@@ -973,7 +1023,7 @@ export default function ProjectDetailPage() {
                   <div key={label as string} className="flex justify-between">
                     <span className="text-xs text-muted-foreground">{label}</span>
                     <span className="text-xs font-medium">
-                      {value ? new Date(value as string).toLocaleDateString() : "—"}
+                      {formatFullDate(value as string | null)}
                     </span>
                   </div>
                 ))}
@@ -984,7 +1034,7 @@ export default function ProjectDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-xs text-muted-foreground">Created</span>
-                  <span className="text-xs font-medium">{new Date(project.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs font-medium">{formatFullDate(project.created_at)}</span>
                 </div>
               </CardContent>
             </Card>

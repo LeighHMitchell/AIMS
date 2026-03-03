@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   // Fetch projects in FS-1 review stages
   let query = supabase!
     .from('project_bank_projects')
-    .select('id, project_code, name, nominating_ministry, sector, region, estimated_cost, currency, feasibility_stage, fs1_rejected_at, created_at, updated_at')
+    .select('id, project_code, name, nominating_ministry, implementing_agency, sector, sub_sector, region, estimated_cost, currency, feasibility_stage, project_stage, fs1_rejected_at, created_at, updated_at')
     .in('feasibility_stage', [
       'fs1_submitted', 'fs1_desk_screened', 'fs1_returned',
     ])

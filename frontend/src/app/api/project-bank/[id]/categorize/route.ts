@@ -31,9 +31,9 @@ export async function POST(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
-  if (project.feasibility_stage !== 'fs2_completed') {
+  if (project.feasibility_stage !== 'fs2_completed' && project.feasibility_stage !== 'fs2_senior_reviewed') {
     return NextResponse.json(
-      { error: 'FS-2 must be completed before categorization' },
+      { error: 'FS-2 must be completed and reviewed before categorization' },
       { status: 400 }
     );
   }

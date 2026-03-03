@@ -19,7 +19,7 @@ import {
 } from "@dnd-kit/core"
 import { apiFetch } from "@/lib/api-fetch"
 import {
-  formatCurrency, SECTORS, FEASIBILITY_STAGE_LABELS, FEASIBILITY_STAGE_BADGE_STYLES,
+  formatCurrency, formatCurrencyParts, SECTORS, FEASIBILITY_STAGE_LABELS, FEASIBILITY_STAGE_BADGE_STYLES,
 } from "@/lib/project-bank-utils"
 import type { FeasibilityStage, FS1Narrative } from "@/types/project-bank"
 import { NARRATIVE_SECTIONS } from "@/components/project-bank/fs1/FS1NarrativeForm"
@@ -95,8 +95,6 @@ function DraggableProjectCard({
   })
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null)
 
-  const badgeStyle = FEASIBILITY_STAGE_BADGE_STYLES[project.feasibility_stage]
-
   return (
     <div
       ref={setNodeRef}
@@ -126,20 +124,29 @@ function DraggableProjectCard({
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
       </div>
-      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-        <span>{project.nominating_ministry}</span>
-        <span>·</span>
-        <span>{project.sector}</span>
+      <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span>{project.nominating_ministry}</span>
+          {project.implementing_agency && (
+            <>
+              <span>·</span>
+              <span className="truncate">{project.implementing_agency}</span>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span>{project.sector}</span>
+          {project.sub_sector && (
+            <>
+              <span>·</span>
+              <span className="truncate">{project.sub_sector}</span>
+            </>
+          )}
+        </div>
       </div>
-      <div className="mt-2 flex items-center justify-between">
+      <div className="mt-2">
         <span className="text-xs text-muted-foreground">
           {new Date(project.updated_at).toLocaleDateString()}
-        </span>
-        <span
-          className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold"
-          style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.text, border: `1px solid ${badgeStyle.border}` }}
-        >
-          {FEASIBILITY_STAGE_LABELS[project.feasibility_stage]}
         </span>
       </div>
     </div>
@@ -147,7 +154,6 @@ function DraggableProjectCard({
 }
 
 function ProjectCardOverlay({ project }: { project: ReviewProject }) {
-  const badgeStyle = FEASIBILITY_STAGE_BADGE_STYLES[project.feasibility_stage]
   return (
     <div className="bg-card border border-border rounded-lg p-3 shadow-lg rotate-2 w-[280px]">
       <div className="flex items-start justify-between gap-2">
@@ -159,20 +165,16 @@ function ProjectCardOverlay({ project }: { project: ReviewProject }) {
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
       </div>
-      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-        <span>{project.nominating_ministry}</span>
-        <span>·</span>
-        <span>{project.sector}</span>
+      <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span>{project.nominating_ministry}</span>
+          <span>·</span>
+          <span>{project.sector}</span>
+        </div>
       </div>
-      <div className="mt-2 flex items-center justify-between">
+      <div className="mt-2">
         <span className="text-xs text-muted-foreground">
           {new Date(project.updated_at).toLocaleDateString()}
-        </span>
-        <span
-          className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold"
-          style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.text, border: `1px solid ${badgeStyle.border}` }}
-        >
-          {FEASIBILITY_STAGE_LABELS[project.feasibility_stage]}
         </span>
       </div>
     </div>
@@ -242,13 +244,35 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
       </div>
     ),
   },
-  { key: "nominating_ministry", label: "Ministry" },
-  { key: "sector", label: "Sector" },
+  {
+    key: "nominating_ministry",
+    label: "Ministry",
+    render: (p: ReviewProject) => (
+      <div>
+        <span>{p.nominating_ministry}</span>
+        {p.implementing_agency && <p className="text-xs text-muted-foreground">{p.implementing_agency}</p>}
+      </div>
+    ),
+  },
+  {
+    key: "sector",
+    label: "Sector",
+    render: (p: ReviewProject) => (
+      <div>
+        <span>{p.sector}</span>
+        {p.sub_sector && <p className="text-xs text-muted-foreground">{p.sub_sector}</p>}
+      </div>
+    ),
+  },
   { key: "region", label: "Region", render: (p: ReviewProject) => <span>{p.region || "—"}</span> },
   {
     key: "estimated_cost",
-    label: "Est. Cost",
-    render: (p: ReviewProject) => <span>{formatCurrency(p.estimated_cost, p.currency)}</span>,
+    label: "Estimated Cost",
+    render: (p: ReviewProject) => {
+      const parts = formatCurrencyParts(p.estimated_cost, p.currency)
+      if (!parts) return <span>—</span>
+      return <span><span className="text-muted-foreground">{parts.prefix}</span> {parts.amount}</span>
+    },
   },
   {
     key: "feasibility_stage",
@@ -506,28 +530,28 @@ export function FS1ReviewTab() {
               <div className="flex gap-4 overflow-x-auto pb-4">
                 <DroppableColumn
                   columnKey="submitted"
-                  title="Submitted — Awaiting Desk Review"
+                  title="Step 1: Desk Review"
                   projects={filterProjects(columns.submitted)}
                   count={columns.submitted.length}
-                  color="bg-blue-500"
+                  color="bg-[#7b95a7]"
                   activeSourceColumn={activeSourceColumn}
                   onSelect={handleSelectProject}
                 />
                 <DroppableColumn
                   columnKey="desk_screened"
-                  title="Desk Screened — Awaiting Senior Review"
+                  title="Step 2: Senior Review"
                   projects={filterProjects(columns.desk_screened)}
                   count={columns.desk_screened.length}
-                  color="bg-indigo-500"
+                  color="bg-[#4c5568]"
                   activeSourceColumn={activeSourceColumn}
                   onSelect={handleSelectProject}
                 />
                 <DroppableColumn
                   columnKey="returned"
-                  title="Returned — Awaiting Revision"
+                  title="Returned"
                   projects={filterProjects(columns.returned)}
                   count={columns.returned.length}
-                  color="bg-amber-500"
+                  color="bg-[#dc2625]"
                   activeSourceColumn={activeSourceColumn}
                   onSelect={handleSelectProject}
                 />
@@ -577,10 +601,16 @@ export function FS1ReviewTab() {
                 <div>
                   <span className="text-muted-foreground">Ministry</span>
                   <p className="font-medium">{selectedProject.nominating_ministry}</p>
+                  {selectedProject.implementing_agency && (
+                    <p className="text-xs text-muted-foreground">{selectedProject.implementing_agency}</p>
+                  )}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Sector</span>
                   <p className="font-medium">{selectedProject.sector}</p>
+                  {selectedProject.sub_sector && (
+                    <p className="text-xs text-muted-foreground">{selectedProject.sub_sector}</p>
+                  )}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Region</span>

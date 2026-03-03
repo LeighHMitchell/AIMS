@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, LayoutGrid, Table2, Building2, DollarSign, ChevronRight, Search } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
-  formatCurrency, SECTORS, checkCooldownViolation,
+  formatCurrency, formatCurrencyParts, SECTORS, checkCooldownViolation,
 } from "@/lib/project-bank-utils"
 import type { ProjectStage } from "@/types/project-bank"
 import type { RejectedProject } from "./types"
@@ -29,14 +29,20 @@ function CooldownBadge({ project }: { project: RejectedProject }) {
 
   if (blocked) {
     return (
-      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
+      <span
+        className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border"
+        style={{ backgroundColor: '#fbe9e9', color: '#dc2625', borderColor: '#dc2625' }}
+      >
         Cool-down until {cooldownEnds.toLocaleDateString()}
       </span>
     )
   }
 
   return (
-    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200">
+    <span
+      className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border"
+      style={{ backgroundColor: '#f1f4f8', color: '#4c5568', borderColor: '#cfd0d5' }}
+    >
       Eligible
     </span>
   )
@@ -62,21 +68,46 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
       </div>
     ),
   },
-  { key: "nominating_ministry", label: "Ministry" },
-  { key: "sector", label: "Sector" },
+  {
+    key: "nominating_ministry",
+    label: "Ministry",
+    render: (p: RejectedProject) => (
+      <div>
+        <span>{p.nominating_ministry}</span>
+        {p.implementing_agency && <p className="text-xs text-muted-foreground">{p.implementing_agency}</p>}
+      </div>
+    ),
+  },
+  {
+    key: "sector",
+    label: "Sector",
+    render: (p: RejectedProject) => (
+      <div>
+        <span>{p.sector}</span>
+        {p.sub_sector && <p className="text-xs text-muted-foreground">{p.sub_sector}</p>}
+      </div>
+    ),
+  },
   {
     key: "project_stage",
     label: "Phase",
     render: (p: RejectedProject) => (
-      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
+      <span
+        className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border"
+        style={{ backgroundColor: '#fbe9e9', color: '#dc2625', borderColor: '#dc2625' }}
+      >
         {getRejectionPhase(p.project_stage)}
       </span>
     ),
   },
   {
     key: "estimated_cost",
-    label: "Est. Cost",
-    render: (p: RejectedProject) => <span>{formatCurrency(p.estimated_cost, p.currency)}</span>,
+    label: "Estimated Cost",
+    render: (p: RejectedProject) => {
+      const parts = formatCurrencyParts(p.estimated_cost, p.currency)
+      if (!parts) return <span>—</span>
+      return <span><span className="text-muted-foreground">{parts.prefix}</span> {parts.amount}</span>
+    },
   },
   {
     key: "rejection_reason",
@@ -205,21 +236,32 @@ export function RejectedProjectsTab() {
                     <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{p.project_code}</span>
                   </div>
                   <div className="mt-1">
-                    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                    <span
+                      className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border"
+                      style={{ backgroundColor: '#fbe9e9', color: '#dc2625', borderColor: '#dc2625' }}
+                    >
                       {getRejectionPhase(p.project_stage)}
                     </span>
                   </div>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Building2 className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{p.nominating_ministry}</span>
+                  <div className="text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Building2 className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{p.nominating_ministry}</span>
+                    </div>
+                    {p.implementing_agency && (
+                      <p className="text-muted-foreground/60 ml-4 truncate">{p.implementing_agency}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <DollarSign className="h-3 w-3 shrink-0" />
                     <span>{fmtCost(p.estimated_cost, p.currency) || "—"}</span>
                   </div>
-                  <div className="text-muted-foreground">{p.sector}</div>
+                  <div className="text-muted-foreground">
+                    {p.sector}
+                    {p.sub_sector && <p className="text-muted-foreground/60 truncate">{p.sub_sector}</p>}
+                  </div>
                   {rejectedDate && (
                     <div className="text-muted-foreground">
                       {new Date(rejectedDate).toLocaleDateString()}

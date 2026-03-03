@@ -3,6 +3,28 @@ import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { supabase, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
+  const { id } = await params;
+
+  const { data, error } = await supabase!
+    .from('fs2_reviews')
+    .select('*')
+    .eq('project_id', id)
+    .order('reviewed_at', { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data || []);
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -23,7 +45,7 @@ export async function POST(
   // Validate decision per tier
   const validDecisions: Record<string, string[]> = {
     desk: ['screened', 'returned', 'rejected'],
-    senior: ['approved', 'returned', 'rejected'],
+    senior: ['passed', 'returned', 'rejected'],
   };
 
   if (!decision || !validDecisions[review_tier]?.includes(decision)) {
@@ -40,7 +62,7 @@ export async function POST(
   // Verify project is in correct stage for this review tier
   const { data: project, error: projectError } = await supabase!
     .from('project_bank_projects')
-    .select('project_stage')
+    .select('project_stage, feasibility_stage')
     .eq('id', id)
     .single();
 
@@ -49,8 +71,8 @@ export async function POST(
   }
 
   const validStageForTier: Record<string, string[]> = {
-    desk: ['intake_submitted'],
-    senior: ['intake_desk_screened'],
+    desk: ['fs2_completed'],
+    senior: ['fs2_desk_reviewed'],
   };
 
   if (!validStageForTier[review_tier]?.includes(project.project_stage)) {
@@ -61,60 +83,59 @@ export async function POST(
   }
 
   // Insert review record
-  const { error: reviewError } = await supabase!
-    .from('intake_reviews')
+  const { data: review, error: reviewError } = await supabase!
+    .from('fs2_reviews')
     .insert({
       project_id: id,
       reviewer_id: user!.id,
       review_tier,
       decision,
       comments: comments || null,
-    });
+    })
+    .select()
+    .single();
 
   if (reviewError) {
     return NextResponse.json({ error: reviewError.message }, { status: 500 });
   }
 
-  // Determine new project_stage based on tier + decision
-  let newStage: string;
+  // Determine new stages based on tier + decision
+  let newProjectStage: string;
+  let newFeasibilityStage: string;
+
   if (review_tier === 'desk') {
-    const deskStageMap: Record<string, string> = {
-      screened: 'intake_desk_screened',
-      returned: 'intake_returned',
-      rejected: 'intake_rejected',
+    const stageMap: Record<string, string> = {
+      screened: 'fs2_desk_reviewed',
+      returned: 'fs2_returned',
+      rejected: 'fs2_returned',
     };
-    newStage = deskStageMap[decision];
+    newProjectStage = stageMap[decision];
+    newFeasibilityStage = stageMap[decision];
   } else {
-    const seniorStageMap: Record<string, string> = {
-      approved: 'fs1_draft',
-      returned: 'intake_returned',
-      rejected: 'intake_rejected',
+    const stageMap: Record<string, string> = {
+      passed: 'fs2_senior_reviewed',
+      returned: 'fs2_returned',
+      rejected: 'fs2_returned',
     };
-    newStage = seniorStageMap[decision];
+    newProjectStage = stageMap[decision];
+    newFeasibilityStage = stageMap[decision];
   }
 
   const updateData: Record<string, any> = {
-    project_stage: newStage,
-    review_comments: comments || null,
+    project_stage: newProjectStage,
+    feasibility_stage: newFeasibilityStage,
     updated_at: new Date().toISOString(),
     updated_by: user!.id,
   };
 
-  if (decision === 'rejected') {
-    updateData.rejected_at = new Date().toISOString();
-    updateData.rejection_reason = comments || null;
+  if (decision === 'returned' || decision === 'rejected') {
+    updateData.review_comments = comments || null;
   }
 
-  const { data, error } = await supabase!
+  await supabase!
     .from('project_bank_projects')
     .update(updateData)
-    .eq('id', id)
-    .select()
-    .single();
+    .eq('id', id);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data);
+  return NextResponse.json(review, { status: 201 });
 }
