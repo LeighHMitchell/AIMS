@@ -108,6 +108,9 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
     <div className={cn('space-y-6', isLocked && 'pointer-events-none opacity-60')}>
       <div>
         <h3 className="text-lg font-semibold mb-1">Preliminary Feasibility Study</h3>
+        {formData.project_code && (
+          <p className="text-xs text-muted-foreground font-mono mb-1">{formData.project_code}</p>
+        )}
         <p className="text-sm text-muted-foreground">Technical assessment, revenue projections, environmental screening, and financial analysis.</p>
       </div>
 

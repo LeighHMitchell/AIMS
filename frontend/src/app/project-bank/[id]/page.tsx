@@ -7,11 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog"
 import {
   ArrowRight, ChevronRight, ChevronDown, ExternalLink, Plus, Calculator,
   AlertTriangle, DollarSign, CheckCircle, XCircle, Clock,
@@ -175,8 +171,6 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showEIRRModal, setShowEIRRModal] = useState(false)
   const [showDonorModal, setShowDonorModal] = useState(false)
-  const [showRejectDialog, setShowRejectDialog] = useState(false)
-  const [rejectReason, setRejectReason] = useState("")
   const [actionLoading, setActionLoading] = useState(false)
 
   const fetchProject = async () => {
@@ -188,20 +182,6 @@ export default function ProjectDetailPage() {
 
   useEffect(() => { fetchProject() }, [id])
 
-  const handleReject = async () => {
-    setActionLoading(true)
-    try {
-      const res = await apiFetch(`/api/project-bank/${id}/reject`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: rejectReason }),
-      })
-      if (res.ok) {
-        setShowRejectDialog(false)
-        fetchProject()
-      }
-    } catch {} finally { setActionLoading(false) }
-  }
 
   const handlePublishToAIMS = async () => {
     setActionLoading(true)
@@ -449,7 +429,7 @@ export default function ProjectDetailPage() {
             <StatusTimeline currentStatus={project.status} project={project} />
 
             {/* Tabbed content: Overview, Feasibility, Swiss Challenge, Monitoring */}
-            <Tabs defaultValue="overview" className="w-full">
+            <Tabs defaultValue={(['fs2', 'fs3'] as ProjectPhase[]).includes(currentPhase) ? 'feasibility' : 'overview'} className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="feasibility">Feasibility</TabsTrigger>
@@ -1131,18 +1111,7 @@ export default function ProjectDetailPage() {
                     <ExternalLink className="h-4 w-4" /> Publish to AIMS
                   </Button>
                 )}
-                {project.status !== 'rejected' && project.status !== 'completed' && (
-                  <>
-                    <Separator />
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => setShowRejectDialog(true)}
-                    >
-                      <XCircle className="h-4 w-4" /> Reject
-                    </Button>
-                  </>
-                )}
+                {/* Rejections are handled via the Review Board */}
               </CardContent>
             </Card>
 
@@ -1214,27 +1183,6 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Reject Dialog */}
-      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Reject Project</DialogTitle></DialogHeader>
-          <div className="py-2">
-            <label className="text-sm font-medium mb-1.5 block">Reason for rejection</label>
-            <Textarea
-              value={rejectReason}
-              onChange={e => setRejectReason(e.target.value)}
-              placeholder="Enter reason..."
-              rows={3}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject} disabled={actionLoading}>
-              {actionLoading ? "Rejecting..." : "Reject Project"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* EIRR Calculator Modal */}
       <EIRRCalculatorModal

@@ -41,10 +41,10 @@ export async function POST(
   if (!review_tier || !['desk', 'senior'].includes(review_tier)) {
     return NextResponse.json({ error: 'Invalid review_tier' }, { status: 400 });
   }
-  if (!decision || !['screened', 'passed', 'returned', 'rejected'].includes(decision)) {
+  if (!decision || !['screened', 'passed', 'returned', 'returned_to_desk', 'rejected'].includes(decision)) {
     return NextResponse.json({ error: 'Invalid decision' }, { status: 400 });
   }
-  if ((decision === 'returned' || decision === 'rejected') && !comments) {
+  if ((decision === 'returned' || decision === 'returned_to_desk' || decision === 'rejected') && !comments) {
     return NextResponse.json(
       { error: 'Comments are required for returned or rejected decisions' },
       { status: 400 }
@@ -63,7 +63,7 @@ export async function POST(
   }
 
   const validStageForTier: Record<string, string[]> = {
-    desk: ['fs1_submitted'],
+    desk: ['fs1_submitted', 'fs1_desk_claimed'],
     senior: ['fs1_desk_screened'],
   };
 
@@ -114,6 +114,7 @@ export async function POST(
     screened: 'fs1_desk_screened',
     passed: 'fs1_passed',
     returned: 'fs1_returned',
+    returned_to_desk: 'fs1_submitted',
     rejected: 'fs1_rejected',
   };
 
@@ -122,6 +123,7 @@ export async function POST(
     screened: 'fs1_desk_screened',
     passed: 'fs1_approved',
     returned: 'fs1_returned',
+    returned_to_desk: 'fs1_submitted',
     rejected: 'fs1_rejected',
   };
 
@@ -132,7 +134,7 @@ export async function POST(
     updated_by: user!.id,
   };
 
-  if (decision === 'returned' || decision === 'rejected') {
+  if (decision === 'returned' || decision === 'returned_to_desk' || decision === 'rejected') {
     updateData.review_comments = comments || null;
   }
 

@@ -3,18 +3,18 @@
 
 -- 1. Widen project_stage CHECK to accept new values
 --    (DROP + re-ADD approach since ALTER CONSTRAINT is not supported)
-ALTER TABLE project_bank_projects DROP CONSTRAINT IF EXISTS project_bank_projects_project_stage_check;
-ALTER TABLE project_bank_projects ADD CONSTRAINT project_bank_projects_project_stage_check
+ALTER TABLE project_bank_projects DROP CONSTRAINT IF EXISTS chk_project_stage;
+ALTER TABLE project_bank_projects ADD CONSTRAINT chk_project_stage
   CHECK (project_stage IN (
     'intake_draft', 'intake_submitted', 'intake_desk_screened', 'intake_approved', 'intake_returned', 'intake_rejected',
-    'fs1_draft', 'fs1_submitted', 'fs1_approved', 'fs1_returned', 'fs1_rejected',
+    'fs1_draft', 'fs1_submitted', 'fs1_desk_screened', 'fs1_approved', 'fs1_returned', 'fs1_rejected',
     'fs2_assigned', 'fs2_in_progress', 'fs2_completed', 'fs2_desk_reviewed', 'fs2_senior_reviewed', 'fs2_returned', 'fs2_categorized',
     'fs3_in_progress', 'fs3_completed'
   ));
 
 -- 2. Widen feasibility_stage CHECK to accept new values
-ALTER TABLE project_bank_projects DROP CONSTRAINT IF EXISTS project_bank_projects_feasibility_stage_check;
-ALTER TABLE project_bank_projects ADD CONSTRAINT project_bank_projects_feasibility_stage_check
+ALTER TABLE project_bank_projects DROP CONSTRAINT IF EXISTS chk_feasibility_stage;
+ALTER TABLE project_bank_projects ADD CONSTRAINT chk_feasibility_stage
   CHECK (feasibility_stage IS NULL OR feasibility_stage IN (
     'registered',
     'fs1_submitted', 'fs1_desk_screened', 'fs1_passed', 'fs1_returned', 'fs1_rejected',

@@ -23,14 +23,14 @@ export async function POST(
   // Validate decision per tier
   const validDecisions: Record<string, string[]> = {
     desk: ['screened', 'returned', 'rejected'],
-    senior: ['approved', 'returned', 'rejected'],
+    senior: ['approved', 'returned', 'returned_to_desk', 'rejected'],
   };
 
   if (!decision || !validDecisions[review_tier]?.includes(decision)) {
     return NextResponse.json({ error: 'Invalid decision for this review tier' }, { status: 400 });
   }
 
-  if ((decision === 'returned' || decision === 'rejected') && !comments) {
+  if ((decision === 'returned' || decision === 'returned_to_desk' || decision === 'rejected') && !comments) {
     return NextResponse.json(
       { error: 'Comments are required for returned or rejected decisions' },
       { status: 400 }
@@ -49,7 +49,7 @@ export async function POST(
   }
 
   const validStageForTier: Record<string, string[]> = {
-    desk: ['intake_submitted'],
+    desk: ['intake_submitted', 'intake_desk_claimed'],
     senior: ['intake_desk_screened'],
   };
 
@@ -88,6 +88,7 @@ export async function POST(
     const seniorStageMap: Record<string, string> = {
       approved: 'fs1_draft',
       returned: 'intake_returned',
+      returned_to_desk: 'intake_submitted',
       rejected: 'intake_rejected',
     };
     newStage = seniorStageMap[decision];

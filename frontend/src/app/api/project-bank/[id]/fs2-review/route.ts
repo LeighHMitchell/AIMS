@@ -45,14 +45,14 @@ export async function POST(
   // Validate decision per tier
   const validDecisions: Record<string, string[]> = {
     desk: ['screened', 'returned', 'rejected'],
-    senior: ['passed', 'returned', 'rejected'],
+    senior: ['passed', 'returned', 'returned_to_desk', 'rejected'],
   };
 
   if (!decision || !validDecisions[review_tier]?.includes(decision)) {
     return NextResponse.json({ error: 'Invalid decision for this review tier' }, { status: 400 });
   }
 
-  if ((decision === 'returned' || decision === 'rejected') && !comments) {
+  if ((decision === 'returned' || decision === 'returned_to_desk' || decision === 'rejected') && !comments) {
     return NextResponse.json(
       { error: 'Comments are required for returned or rejected decisions' },
       { status: 400 }
@@ -71,7 +71,7 @@ export async function POST(
   }
 
   const validStageForTier: Record<string, string[]> = {
-    desk: ['fs2_completed'],
+    desk: ['fs2_completed', 'fs2_desk_claimed'],
     senior: ['fs2_desk_reviewed'],
   };
 
@@ -115,6 +115,7 @@ export async function POST(
     const stageMap: Record<string, string> = {
       passed: 'fs2_senior_reviewed',
       returned: 'fs2_returned',
+      returned_to_desk: 'fs2_completed',
       rejected: 'fs2_returned',
     };
     newProjectStage = stageMap[decision];
@@ -128,7 +129,7 @@ export async function POST(
     updated_by: user!.id,
   };
 
-  if (decision === 'returned' || decision === 'rejected') {
+  if (decision === 'returned' || decision === 'returned_to_desk' || decision === 'rejected') {
     updateData.review_comments = comments || null;
   }
 

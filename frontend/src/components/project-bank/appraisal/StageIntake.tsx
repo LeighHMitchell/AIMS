@@ -169,6 +169,9 @@ export function StageIntake({ wizard }: StageIntakeProps) {
       {/* Page header */}
       <div>
         <h3 className="text-lg font-semibold mb-1">Project Intake</h3>
+        {formData.project_code && (
+          <p className="text-xs text-muted-foreground font-mono mb-1">{formData.project_code}</p>
+        )}
         <p className="text-sm text-muted-foreground">Enter basic project information and contact details.</p>
       </div>
 

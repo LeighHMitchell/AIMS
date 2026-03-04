@@ -1,8 +1,8 @@
 "use client"
 
-import { Check, Lock, Clock, ChevronRight, RotateCcw, XCircle, ShieldCheck } from 'lucide-react';
-import type { AppraisalStage, ProjectStage, ProjectPhase, FS1Tab } from '@/types/project-bank';
-import { PHASE_LABELS, FS1_TAB_LABELS, getPhase, getGateStatus } from '@/lib/project-bank-utils';
+import { Check, Lock, Clock, ChevronRight, RotateCcw, XCircle, ShieldCheck, Copy } from 'lucide-react';
+import type { AppraisalStage, ProjectStage, ProjectPhase, FS1Tab, FS2Tab } from '@/types/project-bank';
+import { PHASE_LABELS, FS1_TAB_LABELS, FS2_TAB_LABELS, getPhase, getGateStatus } from '@/lib/project-bank-utils';
 import type { GateStatus } from '@/lib/project-bank-utils';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +22,18 @@ const FS1_TABS: { key: FS1Tab; label: string }[] = [
   { key: 'environmental', label: 'Environmental' },
   { key: 'msdp', label: 'MSDP Alignment' },
   { key: 'firr', label: 'Financial Analysis' },
+];
+
+/** FS-2 tabs */
+const FS2_TABS: { key: FS2Tab; label: string }[] = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'demand', label: 'Demand' },
+  { key: 'technical', label: 'Technical' },
+  { key: 'financial', label: 'Financial' },
+  { key: 'economic', label: 'Economic' },
+  { key: 'environmental', label: 'Environmental' },
+  { key: 'risk', label: 'Risk' },
+  { key: 'implementation', label: 'Implementation' },
 ];
 
 interface GateIndicatorProps {
@@ -52,30 +64,38 @@ function GateIndicator({ status }: GateIndicatorProps) {
 
 interface AppraisalProgressRailProps {
   projectName?: string;
+  projectCode?: string;
   visibleStages: AppraisalStage[];
   currentStage: AppraisalStage;
   projectStage: ProjectStage;
   currentPhase: ProjectPhase;
   fs1ActiveTab: FS1Tab;
+  fs2ActiveTab?: FS2Tab;
   onStageClick: (stage: AppraisalStage) => void;
   onFs1TabClick: (tab: FS1Tab) => void;
+  onFs2TabClick?: (tab: FS2Tab) => void;
   canGoToStage: (stage: AppraisalStage) => boolean;
   isStageComplete: (stage: AppraisalStage) => boolean;
   onReturnToCurrentPhase?: () => void;
+  onPhaseClick?: (phase: ProjectPhase) => void;
 }
 
 export function AppraisalProgressRail({
   projectName,
+  projectCode,
   visibleStages,
   currentStage,
   projectStage,
   currentPhase,
   fs1ActiveTab,
+  fs2ActiveTab,
   onStageClick,
   onFs1TabClick,
+  onFs2TabClick,
   canGoToStage,
   isStageComplete,
   onReturnToCurrentPhase,
+  onPhaseClick,
 }: AppraisalProgressRailProps) {
   const handleSubItemClick = (anchor: string) => {
     document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -89,6 +109,11 @@ export function AppraisalProgressRail({
   const fs1Active = currentPhase === 'fs1';
   const fs1Complete = ['fs2', 'fs3'].includes(currentPhase);
   const fs1Accessible = intakeGate === 'approved';
+  const fs2Active = currentPhase === 'fs2';
+  const fs2Complete = currentPhase === 'fs3';
+  const fs2Accessible = fs1Complete;
+  const fs3Active = currentPhase === 'fs3';
+  const fs3Accessible = fs2Complete;
 
   return (
     <>
@@ -98,9 +123,28 @@ export function AppraisalProgressRail({
           {/* Project name + Phase header */}
           {projectName && (
             <div className="mb-4 pb-3 border-b border-border">
-              <h3 className="text-lg font-bold text-foreground truncate" title={projectName}>
-                {projectName}
-              </h3>
+              <div
+                className="group/name inline cursor-pointer"
+                onClick={() => navigator.clipboard.writeText(projectName)}
+                title="Copy project name"
+              >
+                <h3 className="text-xl font-bold text-foreground inline">
+                  {projectName}
+                </h3>
+                <Copy className="h-3.5 w-3.5 text-muted-foreground inline-block ml-1 opacity-0 group-hover/name:opacity-100 transition-opacity align-middle" />
+              </div>
+              {projectCode && (
+                <div
+                  className="group/code inline-flex items-center gap-1 cursor-pointer mt-1"
+                  onClick={() => navigator.clipboard.writeText(projectCode)}
+                  title="Copy project code"
+                >
+                  <p className="font-mono text-sm text-muted-foreground bg-muted rounded px-1.5 py-0.5">
+                    {projectCode}
+                  </p>
+                  <Copy className="h-3 w-3 text-muted-foreground shrink-0 opacity-0 group-hover/code:opacity-100 transition-opacity" />
+                </div>
+              )}
             </div>
           )}
 
@@ -166,7 +210,10 @@ export function AppraisalProgressRail({
             <div className="flex items-start gap-3">
               <div className="flex flex-col items-center">
                 <button
-                  onClick={() => fs1Active && onReturnToCurrentPhase?.()}
+                  onClick={() => {
+                    if (fs1Active) onReturnToCurrentPhase?.();
+                    else if (fs1Complete) onStageClick('preliminary_fs');
+                  }}
                   disabled={!fs1Active && !fs1Complete}
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
@@ -174,7 +221,7 @@ export function AppraisalProgressRail({
                     fs1Active && !fs1Complete && 'border-gray-600 bg-gray-100 text-gray-800',
                     !fs1Complete && !fs1Active && 'border-gray-300 bg-background text-gray-400',
                     !fs1Accessible && !fs1Active && !fs1Complete && 'opacity-40',
-                    fs1Active && 'cursor-pointer hover:scale-110',
+                    (fs1Active || fs1Complete) && 'cursor-pointer hover:scale-110',
                   )}
                 >
                   {fs1Complete ? <Check className="h-3.5 w-3.5" /> :
@@ -184,12 +231,15 @@ export function AppraisalProgressRail({
                 </button>
               </div>
               <button
-                onClick={() => fs1Active && onReturnToCurrentPhase?.()}
+                onClick={() => {
+                  if (fs1Active) onReturnToCurrentPhase?.();
+                  else if (fs1Complete) onStageClick('preliminary_fs');
+                }}
                 disabled={!fs1Active && !fs1Complete}
                 className={cn(
                   'text-left transition-colors',
                   !fs1Accessible && !fs1Active && !fs1Complete && 'opacity-40',
-                  fs1Active && 'cursor-pointer hover:text-foreground',
+                  (fs1Active || fs1Complete) && 'cursor-pointer hover:text-foreground',
                 )}
               >
                 <span className={cn(
@@ -236,42 +286,124 @@ export function AppraisalProgressRail({
             <GateIndicator status={fs1Gate} />
           )}
 
-          {/* ─── Future phases — dimmed, non-interactive ─── */}
-          <div className="mt-6 pt-5 space-y-6 opacity-40">
-            {/* Detailed Feasibility Study */}
+          {/* ─── Phase 3: FS-2 Detailed Feasibility ─── */}
+          <div className={cn(!fs2Active && !fs2Complete && !fs2Accessible && 'opacity-40')}>
             <div className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center border-2 border-gray-300 bg-background shrink-0">
-                <Lock className="h-3 w-3 text-gray-300" />
+              <div className="flex flex-col items-center">
+                <button
+                  onClick={() => {
+                    if (fs2Active) onReturnToCurrentPhase?.();
+                    else if (fs2Complete) onPhaseClick?.('fs2');
+                  }}
+                  disabled={!fs2Active && !fs2Complete}
+                  className={cn(
+                    'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
+                    fs2Complete && 'bg-gray-800 border-gray-800 text-white',
+                    fs2Active && !fs2Complete && 'border-gray-600 bg-gray-100 text-gray-800',
+                    !fs2Complete && !fs2Active && 'border-gray-300 bg-background text-gray-400',
+                    (fs2Active || fs2Complete) && 'cursor-pointer hover:scale-110',
+                  )}
+                >
+                  {fs2Complete ? <Check className="h-3.5 w-3.5" /> :
+                    !fs2Accessible && !fs2Active ? <Lock className="h-3 w-3 text-gray-300" /> :
+                    <span className={cn('w-2 h-2 rounded-full', fs2Active ? 'bg-gray-600' : 'bg-gray-300')} />
+                  }
+                </button>
               </div>
-              <div>
-                <span className="block text-sm text-gray-400">
+              <button
+                onClick={() => {
+                  if (fs2Active) onReturnToCurrentPhase?.();
+                  else if (fs2Complete) onPhaseClick?.('fs2');
+                }}
+                disabled={!fs2Active && !fs2Complete}
+                className={cn(
+                  'text-left transition-colors',
+                  (fs2Active || fs2Complete) && 'cursor-pointer hover:text-foreground',
+                )}
+              >
+                <span className={cn(
+                  'block text-sm leading-snug',
+                  fs2Active && 'font-semibold text-foreground',
+                  fs2Complete && !fs2Active && 'text-gray-600',
+                  !fs2Complete && !fs2Active && 'text-gray-400',
+                )}>
                   {PHASE_LABELS.fs2}
                 </span>
                 <span className="block text-[11px] text-muted-foreground leading-snug mt-0.5">
                   In-depth analysis by an assigned consultant
                 </span>
-                <span className="block text-[11px] text-muted-foreground/70 leading-snug mt-0.5">
-                  Commissioned after preliminary feasibility is approved
-                </span>
-              </div>
+                {!fs2Accessible && !fs2Active && !fs2Complete && (
+                  <span className="block text-[11px] text-muted-foreground/70 leading-snug mt-0.5">
+                    Commissioned after preliminary feasibility is approved
+                  </span>
+                )}
+              </button>
             </div>
 
-            {/* PPP Transaction Structuring */}
-            <div className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center border-2 border-gray-300 bg-background shrink-0">
-                <Lock className="h-3 w-3 text-gray-300" />
+            {/* FS-2 internal tabs */}
+            {fs2Active && (
+              <div className={cn('ml-[14px] pl-[22px] border-l space-y-1 pt-1 pb-1', 'border-gray-300')}>
+                {FS2_TABS.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => onFs2TabClick?.(tab.key)}
+                    className={cn(
+                      'block w-full text-left text-xs transition-colors py-1 pl-1',
+                      fs2ActiveTab === tab.key
+                        ? 'text-foreground font-semibold'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
-              <div>
-                <span className="block text-sm text-gray-400">
+            )}
+          </div>
+
+          {/* ─── Phase 4: FS-3 PPP Structuring ─── */}
+          <div className={cn(!fs3Active && !fs3Accessible && 'opacity-40')}>
+            <div className="flex items-start gap-3">
+              <div className="flex flex-col items-center">
+                <button
+                  onClick={() => fs3Active && onPhaseClick?.('fs3')}
+                  disabled={!fs3Active}
+                  className={cn(
+                    'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
+                    fs3Active && 'border-gray-600 bg-gray-100 text-gray-800 cursor-pointer hover:scale-110',
+                    !fs3Active && 'border-gray-300 bg-background text-gray-400',
+                  )}
+                >
+                  {!fs3Accessible && !fs3Active ? <Lock className="h-3 w-3 text-gray-300" /> :
+                    <span className={cn('w-2 h-2 rounded-full', fs3Active ? 'bg-gray-600' : 'bg-gray-300')} />
+                  }
+                </button>
+              </div>
+              <button
+                onClick={() => fs3Active && onPhaseClick?.('fs3')}
+                disabled={!fs3Active}
+                className={cn(
+                  'text-left transition-colors',
+                  fs3Active && 'cursor-pointer hover:text-foreground',
+                )}
+              >
+                <span className={cn(
+                  'block text-sm leading-snug',
+                  fs3Active && 'font-semibold text-foreground',
+                  !fs3Active && 'text-gray-400',
+                )}>
                   {PHASE_LABELS.fs3}
                 </span>
                 <span className="block text-[11px] text-muted-foreground leading-snug mt-0.5">
                   Contract design, risk allocation, and VGF assessment
                 </span>
-                <span className="block text-[11px] text-muted-foreground/70 leading-snug mt-0.5">
-                  Available for PPP-routed projects after detailed feasibility
-                </span>
-              </div>
+                {!fs3Accessible && !fs3Active && (
+                  <span className="block text-[11px] text-muted-foreground/70 leading-snug mt-0.5">
+                    Available for PPP-routed projects after detailed feasibility
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -300,14 +432,18 @@ export function AppraisalProgressRail({
             </span>
           </div>
           {/* FS-2 bar */}
-          <div className="flex-1 min-w-0 text-center opacity-40">
-            <div className="h-1.5 rounded-full mb-1 bg-gray-200" />
-            <span className="text-[10px] leading-tight block truncate text-gray-400">FS-2</span>
+          <div className={cn('flex-1 min-w-0 text-center', !fs2Active && !fs2Complete && 'opacity-40')}>
+            <div className={cn('h-1.5 rounded-full mb-1 transition-colors', fs2Complete ? 'bg-gray-700' : fs2Active ? 'bg-gray-500' : 'bg-gray-200')} />
+            <span className={cn('text-[10px] leading-tight block truncate', fs2Active ? 'font-semibold text-foreground' : fs2Complete ? 'text-gray-600' : 'text-gray-400')}>
+              FS-2
+            </span>
           </div>
           {/* FS-3 bar */}
-          <div className="flex-1 min-w-0 text-center opacity-40">
-            <div className="h-1.5 rounded-full mb-1 bg-gray-200" />
-            <span className="text-[10px] leading-tight block truncate text-gray-400">FS-3</span>
+          <div className={cn('flex-1 min-w-0 text-center', !fs3Active && 'opacity-40')}>
+            <div className={cn('h-1.5 rounded-full mb-1 transition-colors', fs3Active ? 'bg-gray-500' : 'bg-gray-200')} />
+            <span className={cn('text-[10px] leading-tight block truncate', fs3Active ? 'font-semibold text-foreground' : 'text-gray-400')}>
+              FS-3
+            </span>
           </div>
         </div>
       </div>

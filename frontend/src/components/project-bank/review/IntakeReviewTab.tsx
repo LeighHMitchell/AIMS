@@ -31,7 +31,7 @@ function fmtCost(value: number | null, currency: string) {
 const DESK_REVIEW_DECISIONS: DecisionOption[] = [
   {
     value: "screened",
-    label: "Pass Desk Screen",
+    label: "Submit for Senior Review",
     description: "Advance to senior review stage",
     image: "/images/review-approve.png",
     alt: "Approval seal",
@@ -59,6 +59,13 @@ const SENIOR_REVIEW_DECISIONS: DecisionOption[] = [
     description: "Unlock the feasibility study phase",
     image: "/images/review-approve.png",
     alt: "Approval seal",
+  },
+  {
+    value: "returned_to_desk",
+    label: "Return to Desk Review",
+    description: "Send back to Step 1 for re-screening",
+    image: "/images/review-return-to-desk.png",
+    alt: "Notes and observations",
   },
   {
     value: "returned",
@@ -165,14 +172,14 @@ function IntakeKanbanCard({ project, onClick }: { project: IntakeReviewProject; 
 }
 
 const KANBAN_COLUMNS: { key: IntakeColumnKey; title: string; color: string }[] = [
-  { key: "submitted", title: "Step 1: Desk Review", color: "bg-[#7b95a7]" },
-  { key: "desk_screened", title: "Step 2: Senior Review", color: "bg-[#4c5568]" },
-  { key: "returned", title: "Returned", color: "bg-[#dc2625]" },
+  { key: "pending", title: "Step 1: Pending Review", color: "bg-[#7b95a7]" },
+  { key: "desk_review", title: "Step 2: Desk Review", color: "bg-[#4c5568]" },
+  { key: "senior_review", title: "Step 3: Senior Review", color: "bg-[#3C6255]" },
 ]
 
 export function IntakeReviewTab() {
   const router = useRouter()
-  const [kanbanColumns, setKanbanColumns] = useState<IntakeReviewColumns>({ submitted: [], desk_screened: [], returned: [] })
+  const [kanbanColumns, setKanbanColumns] = useState<IntakeReviewColumns>({ pending: [], desk_review: [], senior_review: [] })
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"kanban" | "card" | "list" | "table">("kanban")
   const [searchQuery, setSearchQuery] = useState("")
@@ -196,7 +203,7 @@ export function IntakeReviewTab() {
 
   useEffect(() => { fetchKanban() }, [fetchKanban])
 
-  const allProjects = [...kanbanColumns.submitted, ...kanbanColumns.desk_screened, ...kanbanColumns.returned]
+  const allProjects = [...kanbanColumns.pending, ...kanbanColumns.desk_review, ...kanbanColumns.senior_review]
 
   const filterProjects = <T extends IntakeReviewProject>(projects: T[]): T[] => {
     if (!searchQuery) return projects
@@ -211,7 +218,7 @@ export function IntakeReviewTab() {
   }
 
   const getReviewTier = (project: IntakeReviewProject): "desk" | "senior" | null => {
-    if (project.project_stage === "intake_submitted") return "desk"
+    if (project.project_stage === "intake_submitted" || project.project_stage === "intake_desk_claimed") return "desk"
     if (project.project_stage === "intake_desk_screened") return "senior"
     return null
   }
@@ -657,20 +664,69 @@ export function IntakeReviewTab() {
                 </div>
               )}
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => router.push(`/project-bank/${selectedProject.id}`)}
-              >
-                View Full Project Details
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => router.push(`/project-bank/${selectedProject.id}`)}
+                >
+                  View Project Profile
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => router.push(`/project-bank/${selectedProject.id}/appraisal`)}
+                >
+                  View Project Submission Form
+                </Button>
+              </div>
 
-              {/* Review Form — only show for reviewable stages */}
-              {(selectedProject.project_stage === "intake_submitted" || selectedProject.project_stage === "intake_desk_screened") && (
+              {/* Claim for Review — pending projects */}
+              {selectedProject.project_stage === "intake_submitted" && (
+                <div className="border-t border-border pt-6 space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    This project is pending review. Claim it to begin desk review.
+                  </p>
+                  {error && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                      <p className="text-sm text-red-800">{error}</p>
+                    </div>
+                  )}
+                  <Button
+                    onClick={async () => {
+                      setSubmitting(true)
+                      setError(null)
+                      try {
+                        const res = await apiFetch(`/api/project-bank/${selectedProject.id}/claim-review`, { method: "POST" })
+                        if (!res.ok) {
+                          const data = await res.json()
+                          setError(data.error || "Failed to claim project")
+                          return
+                        }
+                        setSelectedProject(null)
+                        fetchKanban()
+                      } catch {
+                        setError("Network error. Please try again.")
+                      } finally {
+                        setSubmitting(false)
+                      }
+                    }}
+                    disabled={submitting}
+                    className="w-full"
+                  >
+                    {submitting ? "Claiming..." : "Claim for Desk Review"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Review Form — desk review (claimed) or senior review (desk_screened) */}
+              {(selectedProject.project_stage === "intake_desk_claimed" || selectedProject.project_stage === "intake_desk_screened") && (
                 <div className="border-t border-border pt-6 space-y-4">
                   <h3 className="text-sm font-semibold">
-                    {selectedProject.project_stage === "intake_submitted" ? "Desk Review" : "Senior Review"}
+                    {selectedProject.project_stage === "intake_desk_claimed" ? "Desk Review" : "Senior Review"}
                   </h3>
 
                   {error && (
@@ -692,7 +748,7 @@ export function IntakeReviewTab() {
                   <div className="space-y-2">
                     <Label className="text-sm">
                       Comments
-                      {(decision === "returned" || decision === "rejected") && (
+                      {(decision === "returned" || decision === "returned_to_desk" || decision === "rejected") && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
                     </Label>
@@ -709,24 +765,12 @@ export function IntakeReviewTab() {
                     disabled={
                       !decision ||
                       submitting ||
-                      ((decision === "returned" || decision === "rejected") && !comments.trim())
+                      ((decision === "returned" || decision === "returned_to_desk" || decision === "rejected") && !comments.trim())
                     }
                     className="w-full"
                   >
                     {submitting ? "Submitting..." : "Submit Review"}
                   </Button>
-                </div>
-              )}
-
-              {/* Returned info */}
-              {selectedProject.project_stage === "intake_returned" && (
-                <div className="border-t border-border pt-6">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className="font-semibold">Returned for Revision</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This project was returned for revision. It will reappear in the Desk Review column once the submitter resubmits.
-                  </p>
                 </div>
               )}
             </div>

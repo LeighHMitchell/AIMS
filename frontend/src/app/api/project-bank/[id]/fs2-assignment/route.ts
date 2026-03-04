@@ -107,6 +107,7 @@ export async function PUT(
   };
 
   if (body.status) updateData.status = body.status;
+  if (body.assigned_to !== undefined) updateData.assigned_to = body.assigned_to;
   if (body.notes !== undefined) updateData.notes = body.notes;
   if (body.deadline !== undefined) updateData.deadline = body.deadline;
   if (body.report_document_id !== undefined) updateData.report_document_id = body.report_document_id;

@@ -97,6 +97,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     'ppp_contract_type', 'ppp_contract_details', 'implementing_agency', 'equity_ratio',
     'proponent_name', 'proponent_company', 'proponent_contact',
     'banner', 'banner_position',
+    'fs2_study_data',
   ];
 
   allowedFields.forEach(field => {

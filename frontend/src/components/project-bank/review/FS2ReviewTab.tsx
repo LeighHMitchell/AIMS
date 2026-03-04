@@ -8,93 +8,21 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  Loader2, LayoutGrid, Table2, KanbanSquare, Building2, DollarSign, MapPin,
-  ChevronRight, X, AlertCircle, ExternalLink, CheckCircle2, Search,
+  ChevronRight, AlertCircle, Loader2, Inbox, Search,
+  KanbanSquare, Table2, X,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
   formatCurrency, formatCurrencyParts, SECTORS, PROJECT_STAGE_LABELS, PROJECT_STAGE_BADGE_STYLES,
-  CATEGORY_SHORT_LABELS, CATEGORY_LABELS, determineCategoryRecommendation,
+  CATEGORY_LABELS, determineCategoryRecommendation,
 } from "@/lib/project-bank-utils"
-import type { ProjectStage, CategoryDecision } from "@/types/project-bank"
+import type { CategoryDecision } from "@/types/project-bank"
+import type { FS2ReviewProject, FS2ReviewColumns, FS2ColumnKey, DecisionOption } from "./types"
 import { ReviewDecisionCards } from "./ReviewDecisionCards"
-import type { DecisionOption } from "./types"
 import { ReviewTableView } from "./ReviewTableView"
 import type { ReviewTableColumn } from "./ReviewTableView"
 
-interface FS2Project {
-  id: string
-  project_code: string
-  name: string
-  nominating_ministry: string
-  implementing_agency: string | null
-  sector: string
-  sub_sector: string | null
-  region: string | null
-  estimated_cost: number | null
-  currency: string
-  project_stage: ProjectStage
-  firr: number | null
-  eirr: number | null
-  ndp_aligned: boolean
-  category_decision: string | null
-  category_recommendation: string | null
-  aims_activity_id: string | null
-  updated_at: string
-}
-
-const FS2_STAGES: ProjectStage[] = [
-  "fs2_assigned", "fs2_in_progress", "fs2_completed",
-  "fs2_desk_reviewed", "fs2_senior_reviewed", "fs2_returned", "fs2_categorized",
-]
-
-interface FS2Columns {
-  assigned: FS2Project[]
-  in_progress: FS2Project[]
-  completed: FS2Project[]
-  desk_reviewed: FS2Project[]
-  categorized: FS2Project[]
-  returned: FS2Project[]
-}
-
-const KANBAN_COLUMNS: { key: keyof FS2Columns; title: string; color: string }[] = [
-  { key: "assigned", title: "Assigned", color: "bg-[#7b95a7]" },
-  { key: "in_progress", title: "In Progress", color: "bg-[#4c5568]" },
-  { key: "completed", title: "Step 1: Desk Review", color: "bg-[#cfd0d5]" },
-  { key: "desk_reviewed", title: "Step 2: Senior Review", color: "bg-[#7b95a7]" },
-  { key: "categorized", title: "Categorized", color: "bg-[#4c5568]" },
-  { key: "returned", title: "Returned", color: "bg-[#dc2625]" },
-]
-
-const CATEGORY_DECISION_LABELS: Record<string, string> = {
-  category_a: "Private Investment",
-  category_b: "Government Budget",
-  category_c: "Public-Private Partnership",
-}
-
-const CATEGORY_DECISIONS: DecisionOption[] = [
-  {
-    value: "category_a",
-    label: "Private Investment",
-    description: "Commercially viable, proceed to investor engagement",
-    image: "/images/category-private.png",
-    alt: "Private investment",
-  },
-  {
-    value: "category_b",
-    label: "Government Budget",
-    description: "Funded through domestic public expenditure",
-    image: "/images/category-gov-budget.png",
-    alt: "Government budget",
-  },
-  {
-    value: "category_c",
-    label: "Public-Private Partnership",
-    description: "PPP mechanism with government viability support",
-    image: "/images/category-ppp.png",
-    alt: "PPP mechanism",
-  },
-]
+/* ── Decision options ──────────────────────────────────── */
 
 const DESK_REVIEW_DECISIONS: DecisionOption[] = [
   {
@@ -129,6 +57,13 @@ const SENIOR_REVIEW_DECISIONS: DecisionOption[] = [
     alt: "Approval seal",
   },
   {
+    value: "returned_to_desk",
+    label: "Return to Desk Review",
+    description: "Send back to Step 1 for re-screening",
+    image: "/images/review-return-to-desk.png",
+    alt: "Notes and observations",
+  },
+  {
     value: "returned",
     label: "Return for Revision",
     description: "Send back for further work",
@@ -144,6 +79,32 @@ const SENIOR_REVIEW_DECISIONS: DecisionOption[] = [
   },
 ]
 
+const CATEGORY_DECISIONS: DecisionOption[] = [
+  {
+    value: "category_a",
+    label: "Private Investment",
+    description: "Commercially viable, proceed to investor engagement",
+    image: "/images/category-private.png",
+    alt: "Private investment",
+  },
+  {
+    value: "category_b",
+    label: "Government Budget",
+    description: "Funded through domestic public expenditure",
+    image: "/images/category-gov-budget.png",
+    alt: "Government budget",
+  },
+  {
+    value: "category_c",
+    label: "Public-Private Partnership",
+    description: "PPP mechanism with government viability support",
+    image: "/images/category-ppp.png",
+    alt: "PPP mechanism",
+  },
+]
+
+/* ── Helpers ────────────────────────────────────────────── */
+
 function fmtCost(value: number | null, currency: string) {
   if (!value) return null
   if (value >= 1_000_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000_000).toFixed(1)}m`
@@ -151,11 +112,22 @@ function fmtCost(value: number | null, currency: string) {
   return formatCurrency(value, currency)
 }
 
+/* ── Kanban columns config ─────────────────────────────── */
+
+const KANBAN_COLUMNS: { key: FS2ColumnKey; title: string; color: string }[] = [
+  { key: "pending", title: "Step 1: Pending Review", color: "bg-[#7b95a7]" },
+  { key: "desk_review", title: "Step 2: Desk Review", color: "bg-[#4c5568]" },
+  { key: "senior_review", title: "Step 3: Senior Review", color: "bg-[#3C6255]" },
+  { key: "categorized", title: "Categorized", color: "bg-[#cfd0d5]" },
+]
+
+/* ── Table columns ─────────────────────────────────────── */
+
 const TABLE_COLUMNS: ReviewTableColumn[] = [
   {
     key: "name",
     label: "Project",
-    render: (p: FS2Project) => (
+    render: (p: FS2ReviewProject) => (
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium truncate">{p.name}</p>
@@ -167,7 +139,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
   {
     key: "nominating_ministry",
     label: "Ministry",
-    render: (p: FS2Project) => (
+    render: (p: FS2ReviewProject) => (
       <div>
         <span>{p.nominating_ministry}</span>
         {p.implementing_agency && <p className="text-xs text-muted-foreground">{p.implementing_agency}</p>}
@@ -177,18 +149,18 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
   {
     key: "sector",
     label: "Sector",
-    render: (p: FS2Project) => (
+    render: (p: FS2ReviewProject) => (
       <div>
         <span>{p.sector}</span>
         {p.sub_sector && <p className="text-xs text-muted-foreground">{p.sub_sector}</p>}
       </div>
     ),
   },
-  { key: "region", label: "Region", render: (p: FS2Project) => <span>{p.region || "—"}</span> },
+  { key: "region", label: "Region", render: (p: FS2ReviewProject) => <span>{p.region || "—"}</span> },
   {
     key: "estimated_cost",
     label: "Estimated Cost",
-    render: (p: FS2Project) => {
+    render: (p: FS2ReviewProject) => {
       const parts = formatCurrencyParts(p.estimated_cost, p.currency)
       if (!parts) return <span>—</span>
       return <span><span className="text-muted-foreground">{parts.prefix}</span> {parts.amount}</span>
@@ -197,7 +169,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
   {
     key: "project_stage",
     label: "Stage",
-    render: (p: FS2Project) => {
+    render: (p: FS2ReviewProject) => {
       const style = PROJECT_STAGE_BADGE_STYLES[p.project_stage]
       return (
         <span
@@ -211,7 +183,9 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
   },
 ]
 
-function KanbanCard({ project, onClick }: { project: FS2Project; onClick: () => void }) {
+/* ── Kanban card ───────────────────────────────────────── */
+
+function FS2KanbanCard({ project, onClick }: { project: FS2ReviewProject; onClick: () => void }) {
   return (
     <div
       onClick={onClick}
@@ -240,83 +214,73 @@ function KanbanCard({ project, onClick }: { project: FS2Project; onClick: () => 
           )}
         </div>
       </div>
-      {project.category_decision && (
-        <div className="mt-2">
-          <span
-            className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border"
-            style={{ backgroundColor: '#f1f4f8', color: '#4c5568', borderColor: '#7b95a7' }}
-          >
-            {CATEGORY_DECISION_LABELS[project.category_decision] || project.category_decision}
-          </span>
-        </div>
-      )}
-      <div className="mt-2 flex items-center justify-between">
+      <div className="mt-2">
         <span className="text-xs text-muted-foreground">
           {new Date(project.updated_at).toLocaleDateString()}
         </span>
-        <div className="flex items-center gap-1.5">
-          {project.aims_activity_id && (
-            <a
-              href={`/activities/${project.aims_activity_id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border transition-colors"
-              style={{ backgroundColor: '#f1f4f8', color: '#7b95a7', borderColor: '#7b95a7' }}
-            >
-              View in AIMS
-            </a>
-          )}
-        </div>
       </div>
     </div>
   )
 }
 
+/* ── Main component ────────────────────────────────────── */
+
 export function FS2ReviewTab() {
   const router = useRouter()
-  const [projects, setProjects] = useState<FS2Project[]>([])
+  const [kanbanColumns, setKanbanColumns] = useState<FS2ReviewColumns>({ pending: [], desk_review: [], senior_review: [], categorized: [] })
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<"kanban" | "card" | "table">("kanban")
+  const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban")
   const [searchQuery, setSearchQuery] = useState("")
   const [sectorFilter, setSectorFilter] = useState("")
 
   // Modal state
-  const [selectedProject, setSelectedProject] = useState<FS2Project | null>(null)
-  const [categoryDecision, setCategoryDecision] = useState("")
-  const [rationale, setRationale] = useState("")
+  const [selectedProject, setSelectedProject] = useState<FS2ReviewProject | null>(null)
   const [reviewDecision, setReviewDecision] = useState("")
   const [reviewComments, setReviewComments] = useState("")
+  const [categoryDecision, setCategoryDecision] = useState("")
+  const [rationale, setRationale] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchProjects = useCallback(async () => {
+  const fetchBoard = useCallback(async () => {
     try {
-      const res = await apiFetch("/api/project-bank?status=all")
-      if (res.ok) {
-        const all = await res.json()
-        setProjects(all.filter((p: any) => FS2_STAGES.includes(p.project_stage)))
-      }
+      const params = new URLSearchParams()
+      if (sectorFilter) params.set("sector", sectorFilter)
+      const res = await apiFetch(`/api/project-bank/review-board/fs2?${params}`)
+      if (res.ok) setKanbanColumns(await res.json())
     } catch {} finally {
       setLoading(false)
     }
-  }, [])
+  }, [sectorFilter])
 
-  useEffect(() => { fetchProjects() }, [fetchProjects])
+  useEffect(() => { fetchBoard() }, [fetchBoard])
 
-  const openModal = (p: FS2Project) => {
+  const allProjects = [...kanbanColumns.pending, ...kanbanColumns.desk_review, ...kanbanColumns.senior_review, ...kanbanColumns.categorized]
+
+  const filterProjects = <T extends FS2ReviewProject>(projects: T[]): T[] => {
+    if (!searchQuery) return projects
+    const q = searchQuery.toLowerCase()
+    return projects.filter(p =>
+      p.name.toLowerCase().includes(q) || p.project_code.toLowerCase().includes(q) || p.nominating_ministry.toLowerCase().includes(q)
+    )
+  }
+
+  const openReview = (p: FS2ReviewProject) => {
     setSelectedProject(p)
-    setCategoryDecision("")
-    setRationale("")
     setReviewDecision("")
     setReviewComments("")
+    setCategoryDecision("")
+    setRationale("")
     setError(null)
   }
 
+  /* ── Review submit (desk + senior) ── */
   const handleReviewSubmit = async () => {
     if (!selectedProject || !reviewDecision) return
     setSubmitting(true)
     setError(null)
 
-    const reviewTier = selectedProject.project_stage === "fs2_completed" ? "desk" : "senior"
+    const reviewTier = (selectedProject.project_stage === "fs2_completed" || selectedProject.project_stage === "fs2_desk_claimed") ? "desk" : "senior"
 
     try {
       const res = await apiFetch(`/api/project-bank/${selectedProject.id}/fs2-review`, {
@@ -336,7 +300,7 @@ export function FS2ReviewTab() {
       }
 
       setSelectedProject(null)
-      fetchProjects()
+      fetchBoard()
     } catch {
       setError("Network error. Please try again.")
     } finally {
@@ -344,6 +308,7 @@ export function FS2ReviewTab() {
     }
   }
 
+  /* ── Categorization submit ── */
   const handleCategorize = async () => {
     if (!selectedProject || !categoryDecision) return
     setSubmitting(true)
@@ -366,7 +331,7 @@ export function FS2ReviewTab() {
       }
 
       setSelectedProject(null)
-      fetchProjects()
+      fetchBoard()
     } catch {
       setError("Network error. Please try again.")
     } finally {
@@ -374,50 +339,7 @@ export function FS2ReviewTab() {
     }
   }
 
-  const handlePublishToAims = async () => {
-    if (!selectedProject) return
-    setSubmitting(true)
-    setError(null)
-
-    try {
-      const res = await apiFetch("/api/project-bank/publish-to-aims", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: selectedProject.id }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        setError(data.error || "Failed to publish to AIMS")
-        return
-      }
-
-      setSelectedProject(null)
-      fetchProjects()
-    } catch {
-      setError("Network error. Please try again.")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const filteredProjects = projects.filter(p => {
-    if (sectorFilter && p.sector !== sectorFilter) return false
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      return p.name.toLowerCase().includes(q) || p.project_code.toLowerCase().includes(q) || p.nominating_ministry.toLowerCase().includes(q)
-    }
-    return true
-  })
-
-  const columns: FS2Columns = {
-    assigned: filteredProjects.filter(p => p.project_stage === "fs2_assigned"),
-    in_progress: filteredProjects.filter(p => p.project_stage === "fs2_in_progress"),
-    completed: filteredProjects.filter(p => p.project_stage === "fs2_completed"),
-    desk_reviewed: filteredProjects.filter(p => p.project_stage === "fs2_desk_reviewed"),
-    categorized: filteredProjects.filter(p => p.project_stage === "fs2_categorized" || p.project_stage === "fs2_senior_reviewed"),
-    returned: filteredProjects.filter(p => p.project_stage === "fs2_returned"),
-  }
+  /* ── Render ── */
 
   if (loading) {
     return (
@@ -427,8 +349,11 @@ export function FS2ReviewTab() {
     )
   }
 
+  const filteredAll = filterProjects(allProjects)
+
   return (
     <>
+      {/* Filters + View Toggle */}
       <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200 mb-4">
         <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
           <Label className="text-xs text-muted-foreground">Search</Label>
@@ -466,14 +391,6 @@ export function FS2ReviewTab() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setViewMode("card")}
-            className={`rounded-none h-9 ${viewMode === "card" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             onClick={() => setViewMode("table")}
             className={`rounded-l-none h-9 ${viewMode === "table" ? "bg-slate-200 text-slate-900" : "text-slate-400"}`}
           >
@@ -486,20 +403,20 @@ export function FS2ReviewTab() {
       {viewMode === "kanban" && (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {KANBAN_COLUMNS.map(col => (
-            <div key={col.key} className="flex-1 min-w-[220px]">
+            <div key={col.key} className="flex-1 min-w-[280px]">
               <div className="flex items-center gap-2 mb-3">
                 <div className={`w-2 h-2 rounded-full ${col.color}`} />
                 <h3 className="text-sm font-semibold">{col.title}</h3>
                 <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
-                  {columns[col.key].length}
+                  {kanbanColumns[col.key].length}
                 </span>
               </div>
               <div className="space-y-2 min-h-[200px] bg-muted/30 rounded-lg p-2">
-                {columns[col.key].length === 0 ? (
+                {filterProjects(kanbanColumns[col.key]).length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-8">No projects</p>
                 ) : (
-                  columns[col.key].map(p => (
-                    <KanbanCard key={p.id} project={p} onClick={() => openModal(p)} />
+                  filterProjects(kanbanColumns[col.key]).map(p => (
+                    <FS2KanbanCard key={p.id} project={p} onClick={() => openReview(p)} />
                   ))
                 )}
               </div>
@@ -508,77 +425,13 @@ export function FS2ReviewTab() {
         </div>
       )}
 
-      {/* Card View */}
-      {viewMode === "card" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredProjects.length === 0 ? (
-            <div className="col-span-full text-center py-12 text-muted-foreground">
-              <p className="text-sm">No projects in Detailed Feasibility Study pipeline</p>
-            </div>
-          ) : filteredProjects.map(p => {
-            const style = PROJECT_STAGE_BADGE_STYLES[p.project_stage]
-            return (
-              <div
-                key={p.id}
-                onClick={() => openModal(p)}
-                className="bg-card border border-border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{p.project_code}</span>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div className="text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Building2 className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{p.nominating_ministry}</span>
-                    </div>
-                    {p.implementing_agency && (
-                      <p className="text-muted-foreground/60 ml-4 truncate">{p.implementing_agency}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{p.region || "—"}</span>
-                  </div>
-                  <div className="text-muted-foreground">
-                    {p.sector}
-                    {p.sub_sector && <p className="text-muted-foreground/60 truncate">{p.sub_sector}</p>}
-                  </div>
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <DollarSign className="h-3 w-3 shrink-0" />
-                    <span>{fmtCost(p.estimated_cost, p.currency) || "—"}</span>
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(p.updated_at).toLocaleDateString()}
-                  </span>
-                  <span
-                    className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold"
-                    style={{ backgroundColor: style.bg, color: style.text, border: `1px solid ${style.border}` }}
-                  >
-                    {PROJECT_STAGE_LABELS[p.project_stage]}
-                  </span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
       {/* Table View */}
       {viewMode === "table" && (
         <ReviewTableView
-          projects={filteredProjects}
+          projects={filteredAll}
           columns={TABLE_COLUMNS}
-          onRowClick={openModal}
-          emptyMessage="No projects in Detailed Feasibility Study pipeline"
+          onRowClick={openReview}
+          emptyMessage="No projects awaiting FS-2 review"
         />
       )}
 
@@ -622,28 +475,26 @@ export function FS2ReviewTab() {
                   <span className="text-muted-foreground">Estimated Amount</span>
                   <p className="font-medium">{formatCurrency(selectedProject.estimated_cost, selectedProject.currency)}</p>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Stage</span>
-                  <p className="font-medium">{PROJECT_STAGE_LABELS[selectedProject.project_stage]}</p>
-                </div>
-                {selectedProject.category_decision && (
-                  <div>
-                    <span className="text-muted-foreground">Category</span>
-                    <p className="font-medium">
-                      {CATEGORY_LABELS[selectedProject.category_decision as CategoryDecision] || selectedProject.category_decision}
-                    </p>
-                  </div>
-                )}
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => router.push(`/project-bank/${selectedProject.id}`)}
-              >
-                View Full Project Details
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => router.push(`/project-bank/${selectedProject.id}`)}
+                >
+                  View Project Profile
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => router.push(`/project-bank/${selectedProject.id}/appraisal`)}
+                >
+                  View Project Submission Form
+                </Button>
+              </div>
 
               {error && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2">
@@ -652,35 +503,41 @@ export function FS2ReviewTab() {
                 </div>
               )}
 
-              {/* Assigned / In Progress — informational */}
-              {(selectedProject.project_stage === "fs2_assigned" || selectedProject.project_stage === "fs2_in_progress") && (
-                <div className="border-t border-border pt-6">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4" />
-                    <span>
-                      {selectedProject.project_stage === "fs2_assigned"
-                        ? "This project has been assigned for a Detailed Feasibility Study. The study team will update its progress on the project detail page."
-                        : "The Detailed Feasibility Study is in progress. Once completed, the project can be reviewed here."
-                      }
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Returned — informational */}
-              {selectedProject.project_stage === "fs2_returned" && (
-                <div className="border-t border-border pt-6">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className="font-semibold">Returned for Revision</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This project was returned during review. The study team should address feedback and resubmit.
-                  </p>
-                </div>
-              )}
-
-              {/* Completed — desk review form */}
+              {/* Claim for Review — pending projects */}
               {selectedProject.project_stage === "fs2_completed" && (
+                <div className="border-t border-border pt-6 space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    This study is complete and pending review. Claim it to begin desk review.
+                  </p>
+                  <Button
+                    onClick={async () => {
+                      setSubmitting(true)
+                      setError(null)
+                      try {
+                        const res = await apiFetch(`/api/project-bank/${selectedProject.id}/claim-review`, { method: "POST" })
+                        if (!res.ok) {
+                          const data = await res.json()
+                          setError(data.error || "Failed to claim project")
+                          return
+                        }
+                        setSelectedProject(null)
+                        fetchBoard()
+                      } catch {
+                        setError("Network error. Please try again.")
+                      } finally {
+                        setSubmitting(false)
+                      }
+                    }}
+                    disabled={submitting}
+                    className="w-full"
+                  >
+                    {submitting ? "Claiming..." : "Claim for Desk Review"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Desk Review form (fs2_desk_claimed) */}
+              {selectedProject.project_stage === "fs2_desk_claimed" && (
                 <div className="border-t border-border pt-6 space-y-4">
                   <h3 className="text-sm font-semibold">Desk Review</h3>
 
@@ -696,7 +553,7 @@ export function FS2ReviewTab() {
                   <div className="space-y-2">
                     <Label className="text-sm">
                       Comments
-                      {(reviewDecision === "returned" || reviewDecision === "rejected") && (
+                      {(reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
                     </Label>
@@ -713,7 +570,7 @@ export function FS2ReviewTab() {
                     disabled={
                       !reviewDecision ||
                       submitting ||
-                      ((reviewDecision === "returned" || reviewDecision === "rejected") && !reviewComments.trim())
+                      ((reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && !reviewComments.trim())
                     }
                     className="w-full"
                   >
@@ -722,7 +579,7 @@ export function FS2ReviewTab() {
                 </div>
               )}
 
-              {/* Desk Reviewed — senior review form */}
+              {/* Step 2: Senior Review form (fs2_desk_reviewed) */}
               {selectedProject.project_stage === "fs2_desk_reviewed" && (
                 <div className="border-t border-border pt-6 space-y-4">
                   <h3 className="text-sm font-semibold">Senior Review</h3>
@@ -739,7 +596,7 @@ export function FS2ReviewTab() {
                   <div className="space-y-2">
                     <Label className="text-sm">
                       Comments
-                      {(reviewDecision === "returned" || reviewDecision === "rejected") && (
+                      {(reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
                     </Label>
@@ -756,7 +613,7 @@ export function FS2ReviewTab() {
                     disabled={
                       !reviewDecision ||
                       submitting ||
-                      ((reviewDecision === "returned" || reviewDecision === "rejected") && !reviewComments.trim())
+                      ((reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && !reviewComments.trim())
                     }
                     className="w-full"
                   >
@@ -765,7 +622,7 @@ export function FS2ReviewTab() {
                 </div>
               )}
 
-              {/* Senior Reviewed — categorization form */}
+              {/* Step 3: Categorization form (fs2_senior_reviewed) */}
               {selectedProject.project_stage === "fs2_senior_reviewed" && (() => {
                 const recommendation = determineCategoryRecommendation(
                   selectedProject.firr,
@@ -852,45 +709,6 @@ export function FS2ReviewTab() {
                   </div>
                 )
               })()}
-
-              {/* Categorized — show decision + AIMS action */}
-              {selectedProject.project_stage === "fs2_categorized" && (
-                <div className="border-t border-border pt-6 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    <span className="text-sm font-semibold">
-                      {CATEGORY_LABELS[selectedProject.category_decision as CategoryDecision] || "Categorized"}
-                    </span>
-                  </div>
-
-                  {selectedProject.aims_activity_id ? (
-                    <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
-                      <p className="text-sm text-blue-800 mb-2">This project has been published to AIMS.</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/activities/${selectedProject.aims_activity_id}`)}
-                      >
-                        <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                        View in AIMS
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <p className="text-xs text-muted-foreground">
-                        This project has been categorized but not yet published to the AIMS/DFMIS. Publishing will create an activity record in the AIMS.
-                      </p>
-                      <Button
-                        onClick={handlePublishToAims}
-                        disabled={submitting}
-                        className="w-full"
-                      >
-                        {submitting ? "Publishing..." : "Publish to AIMS"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>

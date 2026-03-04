@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   Home,
   Activity,
@@ -89,6 +89,7 @@ export function SidebarNav({
 }: SidebarNavProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "EXPLORE": true,
     "PROFILES": true,
@@ -99,6 +100,7 @@ export function SidebarNav({
     "OPERATIONS": true,
     "SUPPORT": true,
     "PROJECTS": true,
+    "REVIEW BOARD": true,
     "SEE TRANSFERS": true,
     "MONITORING": true,
     "LAND BANK": true,
@@ -262,7 +264,10 @@ export function SidebarNav({
       isAnimated: false,
       defaultOpen: true,
       items: [
-        { name: "Review Board", href: "/project-bank/review", show: true },
+        { name: "Phase 1: Intake Reviews", href: "/project-bank/review?tab=intake", show: true },
+        { name: "Phase 2: Preliminary Study", href: "/project-bank/review?tab=fs1", show: true },
+        { name: "Phase 3: Detailed Study", href: "/project-bank/review?tab=fs2", show: true },
+        { name: "Rejected", href: "/project-bank/review?tab=rejected", show: true },
       ]
     },
     {
@@ -639,9 +644,23 @@ export function SidebarNav({
                           // For top-level module routes (e.g. /project-bank, /dashboard), only match exact path
                           // to prevent the "Dashboard" sub-item from highlighting on child routes
                           const isExactOnly = topLevelItems.some(t => t.href === item.href)
-                          const isActive = isExactOnly
-                            ? pathname === item.href
-                            : pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href + '/'))
+                          // Handle items with query params (e.g. /project-bank/review?tab=intake)
+                          const isActive = (() => {
+                            if (item.href.includes('?')) {
+                              const [itemPath, itemQuery] = item.href.split('?')
+                              if (pathname !== itemPath) return false
+                              const itemParams = new URLSearchParams(itemQuery)
+                              const entries = Array.from(itemParams.entries())
+                              // Default: if no query param in URL, match the first item (default tab)
+                              if (entries.length > 0 && !searchParams.get(entries[0][0])) {
+                                return entries[0][1] === 'intake' // default tab
+                              }
+                              return entries.every(([k, v]) => searchParams.get(k) === v)
+                            }
+                            return isExactOnly
+                              ? pathname === item.href
+                              : pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href + '/'))
+                          })()
 
                           const itemCount = countMap[item.href]
 

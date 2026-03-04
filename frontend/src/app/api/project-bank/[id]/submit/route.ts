@@ -12,16 +12,16 @@ export async function POST(
 
   const { id } = await params;
   const body = await request.json();
-  const { phase } = body; // 'intake' or 'fs1'
+  const { phase } = body; // 'intake', 'fs1', or 'fs2'
 
-  if (!phase || !['intake', 'fs1'].includes(phase)) {
-    return NextResponse.json({ error: 'Invalid phase — must be "intake" or "fs1"' }, { status: 400 });
+  if (!phase || !['intake', 'fs1', 'fs2'].includes(phase)) {
+    return NextResponse.json({ error: 'Invalid phase — must be "intake", "fs1", or "fs2"' }, { status: 400 });
   }
 
   // Verify project is in correct stage for submission
   const { data: project, error: projectError } = await supabase!
     .from('project_bank_projects')
-    .select('project_stage, name, nominating_ministry, sector')
+    .select('project_stage, name, nominating_ministry, sector, fs2_study_data')
     .eq('id', id)
     .single();
 
@@ -32,6 +32,7 @@ export async function POST(
   const validSubmitStages: Record<string, string[]> = {
     intake: ['intake_draft', 'intake_returned'],
     fs1: ['fs1_draft', 'fs1_returned'],
+    fs2: ['fs2_in_progress', 'fs2_assigned', 'fs2_returned'],
   };
 
   if (!validSubmitStages[phase].includes(project.project_stage)) {
@@ -54,13 +55,38 @@ export async function POST(
     }
   }
 
-  const newStage = phase === 'intake' ? 'intake_submitted' : 'fs1_submitted';
+  // Validate FS-2 submission
+  if (phase === 'fs2') {
+    const studyData = (project as any).fs2_study_data || {};
+    if (!studyData.study_date) {
+      return NextResponse.json({ error: 'Study date is required for FS-2 submission' }, { status: 400 });
+    }
+    if (!studyData.conductor_type) {
+      return NextResponse.json({ error: 'Conductor type is required for FS-2 submission' }, { status: 400 });
+    }
+
+    // Check for detailed_fs_report document
+    const { data: docs } = await supabase!
+      .from('project_documents')
+      .select('id')
+      .eq('project_id', id)
+      .eq('document_type', 'detailed_fs_report')
+      .limit(1);
+
+    if (!docs || docs.length === 0) {
+      return NextResponse.json({ error: 'A detailed feasibility study report document is required' }, { status: 400 });
+    }
+  }
+
+  const newStage = phase === 'intake' ? 'intake_submitted'
+    : phase === 'fs1' ? 'fs1_submitted'
+    : 'fs2_completed';
 
   const { data, error } = await supabase!
     .from('project_bank_projects')
     .update({
       project_stage: newStage,
-      ...(phase === 'fs1' && { feasibility_stage: newStage }),
+      ...((phase === 'fs1' || phase === 'fs2') && { feasibility_stage: newStage }),
       review_comments: null, // Clear previous return comments
       updated_at: new Date().toISOString(),
       updated_by: user!.id,

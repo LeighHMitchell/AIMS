@@ -18,9 +18,9 @@ export type AppraisalStage =
 
 // Unified Phase-Gate Stages
 export type ProjectStage =
-  | 'intake_draft' | 'intake_submitted' | 'intake_desk_screened' | 'intake_approved' | 'intake_returned' | 'intake_rejected'
-  | 'fs1_draft' | 'fs1_submitted' | 'fs1_approved' | 'fs1_returned' | 'fs1_rejected'
-  | 'fs2_assigned' | 'fs2_in_progress' | 'fs2_completed' | 'fs2_desk_reviewed' | 'fs2_senior_reviewed' | 'fs2_returned' | 'fs2_categorized'
+  | 'intake_draft' | 'intake_submitted' | 'intake_desk_claimed' | 'intake_desk_screened' | 'intake_approved' | 'intake_returned' | 'intake_rejected'
+  | 'fs1_draft' | 'fs1_submitted' | 'fs1_desk_claimed' | 'fs1_approved' | 'fs1_returned' | 'fs1_rejected'
+  | 'fs2_assigned' | 'fs2_in_progress' | 'fs2_completed' | 'fs2_desk_claimed' | 'fs2_desk_reviewed' | 'fs2_senior_reviewed' | 'fs2_returned' | 'fs2_categorized'
   | 'fs3_in_progress' | 'fs3_completed';
 
 /** Which high-level phase a project_stage belongs to */
@@ -28,6 +28,29 @@ export type ProjectPhase = 'intake' | 'fs1' | 'fs2' | 'fs3';
 
 /** FS-1 internal tab identifiers */
 export type FS1Tab = 'technical' | 'revenue' | 'environmental' | 'msdp' | 'firr';
+
+/** FS-2 internal tab identifiers */
+export type FS2Tab = 'overview' | 'demand' | 'technical' | 'financial' | 'economic' | 'environmental' | 'risk' | 'implementation';
+
+/** FS-2 risk register row */
+export interface FS2RiskRow {
+  id: string;
+  category: string;
+  description: string;
+  likelihood: 'low' | 'medium' | 'high' | '';
+  impact: 'low' | 'medium' | 'high' | '';
+  mitigation: string;
+  owner: string;
+}
+
+/** FS-2 implementation milestone row */
+export interface FS2MilestoneRow {
+  id: string;
+  phase: string;
+  start_month: string;
+  end_month: string;
+  activities: string;
+}
 
 export type RoutingOutcome =
   | 'private_with_state_support' | 'private_no_support' | 'ppp_mechanism'
@@ -467,6 +490,8 @@ export interface ProjectBankProject {
   category_decision?: CategoryDecision | null;
   category_rationale?: string | null;
   proceeding_independently?: boolean;
+  // FS-2 study data (JSONB)
+  fs2_study_data?: Record<string, any> | null;
   // FS-3 PPP Support Mechanisms
   ppp_support_mechanism?: PPPSupportMechanism | null;
   mrg_guaranteed_minimum?: number | null;

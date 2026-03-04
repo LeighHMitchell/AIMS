@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  UserPlus, CheckCircle2, Clock, AlertCircle, FileText, Calendar,
+  UserPlus, CheckCircle2, Clock, AlertCircle, FileText, Calendar, Pencil, X, Save,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import { GateChecklistModal, type ChecklistItem } from "@/components/project-bank/gate-checklist/GateChecklistModal"
@@ -29,6 +29,12 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
   const [assignedTo, setAssignedTo] = useState("")
   const [deadline, setDeadline] = useState("")
   const [notes, setNotes] = useState("")
+
+  // Edit assignment form
+  const [editing, setEditing] = useState(false)
+  const [editAssignedTo, setEditAssignedTo] = useState("")
+  const [editDeadline, setEditDeadline] = useState("")
+  const [editNotes, setEditNotes] = useState("")
 
   // Complete assignment form
   const [firr, setFirr] = useState("")
@@ -134,12 +140,54 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
     }
   }
 
+  const startEditing = () => {
+    if (!assignment) return
+    setEditAssignedTo(assignment.assigned_to)
+    setEditDeadline(assignment.deadline ? assignment.deadline.slice(0, 10) : "")
+    setEditNotes(assignment.notes || "")
+    setEditing(true)
+  }
+
+  const handleEditSave = async () => {
+    if (!assignment || !editAssignedTo.trim()) return
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      const res = await apiFetch(`/api/project-bank/${projectId}/fs2-assignment`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignment_id: assignment.id,
+          assigned_to: editAssignedTo,
+          deadline: editDeadline || null,
+          notes: editNotes || null,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || "Failed to update assignment")
+        return
+      }
+
+      const data = await res.json()
+      setAssignment(data)
+      setEditing(false)
+      onUpdated?.()
+    } catch {
+      setError("Network error")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   if (loading) {
     return <div className="h-32 bg-muted animate-pulse rounded-lg" />
   }
 
-  // Only show for projects that have passed FS-1
-  const canAssign = feasibilityStage === "fs1_passed" && !assignment
+  // Only show for projects that have passed FS-1 (legacy or unified stage)
+  const canAssign = (feasibilityStage === "fs1_passed" || feasibilityStage === "fs2_assigned" || feasibilityStage === "fs1_approved") && !assignment
 
   return (
     <div className="space-y-4">
@@ -196,36 +244,44 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
       )}
 
       {/* Assignment details */}
-      {assignment && (
+      {assignment && !editing && (
         <div className="border border-border rounded-lg p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground text-xs">Assigned To</span>
-              <p className="font-medium">{assignment.assigned_to}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground text-xs">Status</span>
-              <p className="font-medium capitalize flex items-center gap-1.5">
-                {assignment.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />}
-                {assignment.status === "in_progress" && <Clock className="h-3.5 w-3.5 text-blue-600" />}
-                {assignment.status === "overdue" && <AlertCircle className="h-3.5 w-3.5 text-red-600" />}
-                {assignment.status.replace(/_/g, " ")}
-              </p>
-            </div>
-            {assignment.deadline && (
+          <div className="flex items-start justify-between">
+            <div className="grid grid-cols-2 gap-4 text-sm flex-1">
               <div>
-                <span className="text-muted-foreground text-xs">Deadline</span>
-                <p className="font-medium flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  {new Date(assignment.deadline).toLocaleDateString()}
+                <span className="text-muted-foreground text-xs">Assigned To</span>
+                <p className="font-medium">{assignment.assigned_to}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground text-xs">Status</span>
+                <p className="font-medium capitalize flex items-center gap-1.5">
+                  {assignment.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />}
+                  {assignment.status === "in_progress" && <Clock className="h-3.5 w-3.5 text-blue-600" />}
+                  {assignment.status === "overdue" && <AlertCircle className="h-3.5 w-3.5 text-red-600" />}
+                  {assignment.status.replace(/_/g, " ")}
                 </p>
               </div>
-            )}
-            {assignment.notes && (
-              <div className="col-span-2">
-                <span className="text-muted-foreground text-xs">Notes</span>
-                <p className="text-sm">{assignment.notes}</p>
-              </div>
+              {assignment.deadline && (
+                <div>
+                  <span className="text-muted-foreground text-xs">Deadline</span>
+                  <p className="font-medium flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    {new Date(assignment.deadline).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+              {assignment.notes && (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground text-xs">Notes</span>
+                  <p className="text-sm">{assignment.notes}</p>
+                </div>
+              )}
+            </div>
+            {assignment.status !== "completed" && (
+              <Button variant="ghost" size="sm" onClick={startEditing} className="gap-1.5 shrink-0">
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </Button>
             )}
           </div>
 
@@ -276,6 +332,50 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
               </Button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Inline edit form */}
+      {assignment && editing && (
+        <div className="border border-border rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium">Edit Assignment</h4>
+            <Button variant="ghost" size="sm" onClick={() => setEditing(false)} className="gap-1.5">
+              <X className="h-3.5 w-3.5" />
+              Cancel
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Consultant / Firm Name</Label>
+              <Input
+                value={editAssignedTo}
+                onChange={e => setEditAssignedTo(e.target.value)}
+                placeholder="e.g. Myanmar Infrastructure Advisory"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Deadline</Label>
+              <Input
+                type="date"
+                value={editDeadline}
+                onChange={e => setEditDeadline(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Notes</Label>
+            <Textarea
+              value={editNotes}
+              onChange={e => setEditNotes(e.target.value)}
+              rows={2}
+              placeholder="Special instructions or terms of reference..."
+            />
+          </div>
+          <Button onClick={handleEditSave} disabled={!editAssignedTo.trim() || submitting} className="gap-2">
+            <Save className="h-4 w-4" />
+            {submitting ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       )}
 

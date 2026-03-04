@@ -18,6 +18,7 @@ import type {
   ProjectStage,
   ProjectPhase,
   FS1Tab,
+  FS2Tab,
   AppraisalStage,
   RoutingOutcome,
   ProjectBankProject,
@@ -45,6 +46,10 @@ export interface UseAppraisalWizardReturn {
   // FS-1 internal tab
   fs1ActiveTab: FS1Tab;
   setFs1ActiveTab: (tab: FS1Tab) => void;
+  // FS-2 internal tab
+  fs2ActiveTab: FS2Tab;
+  setFs2ActiveTab: (tab: FS2Tab) => void;
+  updateFS2Field: (subKey: string, value: any) => void;
   // Form data
   formData: Record<string, any>;
   documents: ProjectDocument[];
@@ -91,6 +96,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
   const [projectStage, setProjectStage] = useState<ProjectStage>('intake_draft');
   const [currentStage, setCurrentStage] = useState<AppraisalStage>('intake');
   const [fs1ActiveTab, setFs1ActiveTab] = useState<FS1Tab>('technical');
+  const [fs2ActiveTab, setFs2ActiveTab] = useState<FS2Tab>('overview');
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [documents, setDocuments] = useState<ProjectDocument[]>([]);
   const [isLoading, setIsLoading] = useState(!!initialProjectId);
@@ -146,7 +152,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
         // Populate form data from project
         const data: Record<string, any> = {};
         const fields = [
-          'name', 'nominating_ministry', 'sector', 'region', 'estimated_cost', 'currency',
+          'name', 'project_code', 'nominating_ministry', 'sector', 'region', 'estimated_cost', 'currency',
           'description', 'contact_officer', 'contact_email', 'contact_phone',
           'contact_position', 'contact_ministry', 'contact_department',
           'project_type', 'sub_sector', 'townships', 'estimated_start_date',
@@ -177,9 +183,10 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
           'eirr', 'eirr_date', 'eirr_calculation_data', 'eirr_shadow_prices',
           'vgf_amount', 'vgf_calculated', 'vgf_calculation_data', 'vgf_status',
           'dap_compliant', 'dap_notes', 'budget_allocation_status', 'budget_amount',
-          'land_parcel_id', 'routing_outcome', 'status', 'pathway',
+          'land_parcel_id', 'routing_outcome', 'status', 'pathway', 'feasibility_stage',
           'ppp_contract_type', 'ppp_contract_details', 'equity_ratio',
           'banner', 'banner_position',
+          'fs2_study_data',
         ];
         fields.forEach(f => {
           if ((project as any)[f] !== undefined) {
@@ -234,6 +241,14 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
     setFormData(prev => ({ ...prev, ...updates }));
   }, []);
 
+  /** Shallow-merge a key/value into fs2_study_data */
+  const updateFS2Field = useCallback((subKey: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      fs2_study_data: { ...(prev.fs2_study_data || {}), [subKey]: value },
+    }));
+  }, []);
+
   const validateCurrentStage = useCallback((): Record<string, string> => {
     const errs: Record<string, string> = {};
 
@@ -259,9 +274,21 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
       if (!formData.social_impact_level) errs.social_impact_level = 'Social impact level is required';
     }
 
+    // FS-2 validation
+    if (currentPhase === 'fs2') {
+      const sd = formData.fs2_study_data || {};
+      if (!sd.study_date) errs.study_date = 'Study date is required';
+      if (!sd.conductor_type) errs.conductor_type = 'Please select who conducted the study';
+      if (!sd.demand_methodology) errs.demand_methodology = 'Demand methodology is required';
+      const costTable = formData.firr_cost_table_data as any[] | undefined;
+      if (!costTable || costTable.length === 0) {
+        errs.firr_cost_table_data = 'Financial analysis cost table is required';
+      }
+    }
+
     setErrors(errs);
     return errs;
-  }, [currentStage, formData]);
+  }, [currentStage, currentPhase, formData]);
 
   const isStageComplete = useCallback((stage: AppraisalStage): boolean => {
     const idx = APPRAISAL_STAGE_ORDER.indexOf(stage);
@@ -343,11 +370,13 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
       }
 
       // Update existing project
-      // Transition project_stage to fs1_draft when first saving in FS1 phase
+      // Transition project_stage on first save in a new phase
       const effectiveProjectStage =
         currentPhase === 'fs1' && projectStage === 'intake_approved'
           ? 'fs1_draft'
-          : undefined;
+          : currentPhase === 'fs2' && projectStage === 'fs2_assigned'
+            ? 'fs2_in_progress'
+            : undefined;
 
       const res = await apiFetch(`/api/project-bank/${projectId}`, {
         method: 'PUT',
@@ -414,7 +443,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
     await saveStageData();
   }, [saveStageData]);
 
-  // Submit for review (intake or FS-1). Returns true on success.
+  // Submit for review (intake, FS-1, or FS-2). Returns true on success.
   const submitForReview = useCallback(async (): Promise<boolean> => {
     if (!projectId) return false;
 
@@ -428,7 +457,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
 
     setIsSaving(true);
     try {
-      const phase = currentPhase === 'intake' ? 'intake' : 'fs1';
+      const phase = currentPhase === 'intake' ? 'intake' : currentPhase === 'fs2' ? 'fs2' : 'fs1';
       const res = await apiFetch(`/api/project-bank/${projectId}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -441,7 +470,9 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
         return false;
       }
 
-      const newStage = phase === 'intake' ? 'intake_submitted' : 'fs1_submitted';
+      const newStage = phase === 'intake' ? 'intake_submitted'
+        : phase === 'fs2' ? 'fs2_completed'
+        : 'fs1_submitted';
       setProjectStage(newStage as ProjectStage);
       return true;
     } catch {
@@ -471,6 +502,9 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
     visibleStages,
     fs1ActiveTab,
     setFs1ActiveTab,
+    fs2ActiveTab,
+    setFs2ActiveTab,
+    updateFS2Field,
     formData,
     documents,
     isLoading,

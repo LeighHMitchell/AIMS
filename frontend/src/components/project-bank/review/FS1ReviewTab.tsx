@@ -28,14 +28,14 @@ import { ReviewDecisionCards } from "./ReviewDecisionCards"
 import { ReviewTableView } from "./ReviewTableView"
 import type { ReviewTableColumn } from "./ReviewTableView"
 
-const VALID_TRANSITIONS: Record<string, { target: ColumnKey; review_tier: string; decision: string }> = {
-  "submitted->desk_screened": { target: "desk_screened", review_tier: "desk", decision: "screened" },
+const VALID_TRANSITIONS: Record<string, { target: ColumnKey; action: string }> = {
+  "pending->desk_review": { target: "desk_review", action: "claim" },
 }
 
 const DESK_REVIEW_DECISIONS: DecisionOption[] = [
   {
     value: "screened",
-    label: "Pass Desk Screen",
+    label: "Submit for Senior Review",
     description: "Advance to senior review stage",
     image: "/images/review-approve.png",
     alt: "Approval seal",
@@ -63,6 +63,13 @@ const SENIOR_REVIEW_DECISIONS: DecisionOption[] = [
     description: "Advance to Detailed Feasibility Study",
     image: "/images/review-approve.png",
     alt: "Approval seal",
+  },
+  {
+    value: "returned_to_desk",
+    label: "Return to Desk Review",
+    description: "Send back to Step 1 for re-screening",
+    image: "/images/review-return-to-desk.png",
+    alt: "Notes and observations",
   },
   {
     value: "returned",
@@ -288,7 +295,7 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
 
 export function FS1ReviewTab() {
   const router = useRouter()
-  const [columns, setColumns] = useState<ReviewColumns>({ submitted: [], desk_screened: [], returned: [] })
+  const [columns, setColumns] = useState<ReviewColumns>({ pending: [], desk_review: [], senior_review: [] })
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban")
   const [sectorFilter, setSectorFilter] = useState("")
@@ -389,14 +396,13 @@ export function FS1ReviewTab() {
     }))
 
     try {
-      const res = await apiFetch(`/api/project-bank/${project.id}/fs1-review`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          review_tier: transition.review_tier,
-          decision: transition.decision,
-        }),
-      })
+      const res = transition.action === "claim"
+        ? await apiFetch(`/api/project-bank/${project.id}/claim-review`, { method: "POST" })
+        : await apiFetch(`/api/project-bank/${project.id}/fs1-review`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ review_tier: "desk", decision: "screened" }),
+          })
 
       if (!res.ok) {
         setColumns(prevColumns)
@@ -413,7 +419,7 @@ export function FS1ReviewTab() {
     setSubmittingReview(true)
     setReviewError(null)
 
-    const reviewTier = selectedProject.project_stage === "fs1_submitted" ? "desk" : "senior"
+    const reviewTier = (selectedProject.project_stage === "fs1_submitted" || selectedProject.project_stage === "fs1_desk_claimed") ? "desk" : "senior"
 
     try {
       const res = await apiFetch(`/api/project-bank/${selectedProject.id}/fs1-review`, {
@@ -444,12 +450,12 @@ export function FS1ReviewTab() {
   }
 
   const getDecisionCards = (stage: string): DecisionOption[] => {
-    if (stage === "fs1_submitted") return DESK_REVIEW_DECISIONS
+    if (stage === "fs1_submitted" || stage === "fs1_desk_claimed") return DESK_REVIEW_DECISIONS
     return SENIOR_REVIEW_DECISIONS
   }
 
   // Flatten all columns for table view
-  const allProjects = [...columns.submitted, ...columns.desk_screened, ...columns.returned]
+  const allProjects = [...columns.pending, ...columns.desk_review, ...columns.senior_review]
 
   return (
     <>
@@ -524,29 +530,29 @@ export function FS1ReviewTab() {
             >
               <div className="flex gap-4 overflow-x-auto pb-4">
                 <DroppableColumn
-                  columnKey="submitted"
-                  title="Step 1: Desk Review"
-                  projects={filterProjects(columns.submitted)}
-                  count={columns.submitted.length}
+                  columnKey="pending"
+                  title="Step 1: Pending Review"
+                  projects={filterProjects(columns.pending)}
+                  count={columns.pending.length}
                   color="bg-[#7b95a7]"
                   activeSourceColumn={activeSourceColumn}
                   onSelect={handleSelectProject}
                 />
                 <DroppableColumn
-                  columnKey="desk_screened"
-                  title="Step 2: Senior Review"
-                  projects={filterProjects(columns.desk_screened)}
-                  count={columns.desk_screened.length}
+                  columnKey="desk_review"
+                  title="Step 2: Desk Review"
+                  projects={filterProjects(columns.desk_review)}
+                  count={columns.desk_review.length}
                   color="bg-[#4c5568]"
                   activeSourceColumn={activeSourceColumn}
                   onSelect={handleSelectProject}
                 />
                 <DroppableColumn
-                  columnKey="returned"
-                  title="Returned"
-                  projects={filterProjects(columns.returned)}
-                  count={columns.returned.length}
-                  color="bg-[#dc2625]"
+                  columnKey="senior_review"
+                  title="Step 3: Senior Review"
+                  projects={filterProjects(columns.senior_review)}
+                  count={columns.senior_review.length}
+                  color="bg-[#3C6255]"
                   activeSourceColumn={activeSourceColumn}
                   onSelect={handleSelectProject}
                 />
@@ -617,14 +623,24 @@ export function FS1ReviewTab() {
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => router.push(`/project-bank/${selectedProject.id}`)}
-              >
-                View Full Project Details
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => router.push(`/project-bank/${selectedProject.id}`)}
+                >
+                  View Project Profile
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => router.push(`/project-bank/${selectedProject.id}/appraisal`)}
+                >
+                  View Project Submission Form
+                </Button>
+              </div>
 
               {narrativeLoading && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
@@ -653,10 +669,50 @@ export function FS1ReviewTab() {
                 </div>
               )}
 
-              {(selectedProject.project_stage === "fs1_submitted" || selectedProject.project_stage === "fs1_desk_screened") && (
+              {/* Claim for Review — pending projects */}
+              {selectedProject.project_stage === "fs1_submitted" && (
+                <div className="border-t border-border pt-6 space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    This project is pending review. Claim it to begin desk review.
+                  </p>
+                  {reviewError && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                      <p className="text-sm text-red-800">{reviewError}</p>
+                    </div>
+                  )}
+                  <Button
+                    onClick={async () => {
+                      setSubmittingReview(true)
+                      setReviewError(null)
+                      try {
+                        const res = await apiFetch(`/api/project-bank/${selectedProject.id}/claim-review`, { method: "POST" })
+                        if (!res.ok) {
+                          const data = await res.json()
+                          setReviewError(data.error || "Failed to claim project")
+                          return
+                        }
+                        setSelectedProject(null)
+                        fetchBoard()
+                      } catch {
+                        setReviewError("Network error. Please try again.")
+                      } finally {
+                        setSubmittingReview(false)
+                      }
+                    }}
+                    disabled={submittingReview}
+                    className="w-full"
+                  >
+                    {submittingReview ? "Claiming..." : "Claim for Desk Review"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Review Form — desk review (claimed) or senior review (desk_screened) */}
+              {(selectedProject.project_stage === "fs1_desk_claimed" || selectedProject.project_stage === "fs1_desk_screened") && (
                 <div className="border-t border-border pt-6 space-y-4">
                   <h3 className="text-sm font-semibold">
-                    {selectedProject.project_stage === "fs1_submitted" ? "Desk Review" : "Senior Review"}
+                    {selectedProject.project_stage === "fs1_desk_claimed" ? "Desk Review" : "Senior Review"}
                   </h3>
 
                   {reviewError && (
@@ -678,7 +734,7 @@ export function FS1ReviewTab() {
                   <div className="space-y-2">
                     <Label className="text-sm">
                       Comments
-                      {(reviewDecision === "returned" || reviewDecision === "rejected") && (
+                      {(reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && (
                         <span className="text-red-500 ml-1">*</span>
                       )}
                     </Label>
@@ -719,7 +775,7 @@ export function FS1ReviewTab() {
                     disabled={
                       !reviewDecision ||
                       submittingReview ||
-                      ((reviewDecision === "returned" || reviewDecision === "rejected") && !reviewComments.trim()) ||
+                      ((reviewDecision === "returned" || reviewDecision === "returned_to_desk" || reviewDecision === "rejected") && !reviewComments.trim()) ||
                       (reviewDecision === "passed" && selectedProject.project_stage === "fs1_desk_screened" &&
                         !["narrative_reviewed", "ndp_alignment", "cost_estimate"].every(k => gateChecks[k]))
                     }
@@ -730,19 +786,6 @@ export function FS1ReviewTab() {
                 </div>
               )}
 
-              {selectedProject.project_stage === "fs1_returned" && (
-                <div className="border-t border-border pt-6">
-                  <div className="flex items-center gap-2">
-                    <RotateCcw className="h-5 w-5 text-amber-600" />
-                    <span className="text-sm font-semibold">
-                      {FEASIBILITY_STAGE_LABELS[selectedProject.project_stage]}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This project was returned for revision. It will reappear in the Submitted column once the submitter resubmits.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -66,18 +66,46 @@ export interface DecisionOption {
   alt: string
 }
 
-export type ColumnKey = "submitted" | "desk_screened" | "returned"
+export type ColumnKey = "pending" | "desk_review" | "senior_review"
 
 export interface ReviewColumns {
-  submitted: ReviewProject[]
-  desk_screened: ReviewProject[]
-  returned: ReviewProject[]
+  pending: ReviewProject[]
+  desk_review: ReviewProject[]
+  senior_review: ReviewProject[]
 }
 
-export type IntakeColumnKey = "submitted" | "desk_screened" | "returned"
+export type IntakeColumnKey = "pending" | "desk_review" | "senior_review"
 
 export interface IntakeReviewColumns {
-  submitted: IntakeReviewProject[]
-  desk_screened: IntakeReviewProject[]
-  returned: IntakeReviewProject[]
+  pending: IntakeReviewProject[]
+  desk_review: IntakeReviewProject[]
+  senior_review: IntakeReviewProject[]
+}
+
+export interface FS2ReviewProject {
+  id: string
+  project_code: string
+  name: string
+  nominating_ministry: string
+  implementing_agency: string | null
+  sector: string
+  sub_sector: string | null
+  region: string | null
+  estimated_cost: number | null
+  currency: string
+  project_stage: ProjectStage
+  firr: number | null
+  eirr: number | null
+  ndp_aligned: boolean
+  category_recommendation: string | null
+  updated_at: string
+}
+
+export type FS2ColumnKey = "pending" | "desk_review" | "senior_review" | "categorized"
+
+export interface FS2ReviewColumns {
+  pending: FS2ReviewProject[]
+  desk_review: FS2ReviewProject[]
+  senior_review: FS2ReviewProject[]
+  categorized: FS2ReviewProject[]
 }

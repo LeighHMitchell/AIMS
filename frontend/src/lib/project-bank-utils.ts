@@ -1,4 +1,4 @@
-import type { ProjectPathway, ProjectStatus, RoutingResult, AppraisalStage, RoutingOutcome, FeasibilityStage, CategoryDecision, PPPSupportMechanism, ProjectStage, ProjectPhase, FS1Tab } from '@/types/project-bank';
+import type { ProjectPathway, ProjectStatus, RoutingResult, AppraisalStage, RoutingOutcome, FeasibilityStage, CategoryDecision, PPPSupportMechanism, ProjectStage, ProjectPhase, FS1Tab, FS2Tab } from '@/types/project-bank';
 
 /**
  * Determines the routing pathway for a project based on FIRR and NDP alignment.
@@ -656,20 +656,23 @@ export function determineFullRouting(
 /** Display labels for each unified project stage */
 export const PROJECT_STAGE_LABELS: Record<ProjectStage, string> = {
   intake_draft: 'Draft',
-  intake_submitted: 'Awaiting Review',
-  intake_desk_screened: 'Desk Screened',
+  intake_submitted: 'Pending Review',
+  intake_desk_claimed: 'Desk Review',
+  intake_desk_screened: 'Senior Review',
   intake_approved: 'Approved',
   intake_returned: 'Returned',
   intake_rejected: 'Rejected',
   fs1_draft: 'Feasibility — Draft',
-  fs1_submitted: 'Feasibility — Awaiting Review',
+  fs1_submitted: 'Feasibility — Pending Review',
+  fs1_desk_claimed: 'Feasibility — Desk Review',
   fs1_approved: 'Feasibility — Approved',
   fs1_returned: 'Feasibility — Returned',
   fs1_rejected: 'Feasibility — Rejected',
   fs2_assigned: 'Detailed Study — Assigned',
   fs2_in_progress: 'Detailed Study — In Progress',
   fs2_completed: 'Detailed Study — Completed',
-  fs2_desk_reviewed: 'Detailed Study — Desk Reviewed',
+  fs2_desk_claimed: 'Detailed Study — Desk Review',
+  fs2_desk_reviewed: 'Detailed Study — Senior Review',
   fs2_senior_reviewed: 'Detailed Study — Senior Reviewed',
   fs2_returned: 'Detailed Study — Returned',
   fs2_categorized: 'Categorized',
@@ -681,19 +684,22 @@ export const PROJECT_STAGE_LABELS: Record<ProjectStage, string> = {
 export const PROJECT_STAGE_BADGE_STYLES: Record<ProjectStage, { bg: string; text: string; border: string }> = {
   intake_draft:          { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
   intake_submitted:      { bg: '#f1f4f8', text: '#7b95a7', border: '#7b95a7' },
-  intake_desk_screened:  { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  intake_desk_claimed:   { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  intake_desk_screened:  { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
   intake_approved:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
   intake_returned:       { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },
   intake_rejected:       { bg: '#fbe9e9', text: '#dc2625', border: '#dc2625' },
   fs1_draft:             { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
   fs1_submitted:         { bg: '#f1f4f8', text: '#7b95a7', border: '#7b95a7' },
+  fs1_desk_claimed:      { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
   fs1_approved:          { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
   fs1_returned:          { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },
   fs1_rejected:          { bg: '#fbe9e9', text: '#dc2625', border: '#dc2625' },
   fs2_assigned:          { bg: '#f1f4f8', text: '#7b95a7', border: '#7b95a7' },
   fs2_in_progress:       { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
   fs2_completed:         { bg: '#7b95a7', text: '#ffffff', border: '#7b95a7' },
-  fs2_desk_reviewed:     { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  fs2_desk_claimed:      { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
+  fs2_desk_reviewed:     { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
   fs2_senior_reviewed:   { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
   fs2_returned:          { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },
   fs2_categorized:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
@@ -730,11 +736,25 @@ export const FS1_TAB_LABELS: Record<FS1Tab, string> = {
   firr: 'Financial Analysis',
 };
 
+/** FS-2 tab labels */
+export const FS2_TAB_LABELS: Record<FS2Tab, string> = {
+  overview: 'Study Overview',
+  demand: 'Demand Analysis',
+  technical: 'Technical Analysis',
+  financial: 'Financial Analysis',
+  economic: 'Economic Analysis',
+  environmental: 'Environmental & Social',
+  risk: 'Risk Assessment',
+  implementation: 'Implementation',
+};
+
 /** Whether a form is locked (read-only) based on project_stage */
 export function isFormLocked(stage: ProjectStage): boolean {
   // Submitted = awaiting review, rejected = terminal — both lock the form.
   // Approved and draft/returned are NOT locked (approved means proceed to next phase).
-  return stage.endsWith('_submitted') || stage.endsWith('_rejected');
+  // FS-2 completed/reviewed/categorized stages lock the form.
+  const fs2LockedStages: ProjectStage[] = ['fs2_completed', 'fs2_desk_reviewed', 'fs2_senior_reviewed', 'fs2_categorized'];
+  return stage.endsWith('_submitted') || stage.endsWith('_rejected') || fs2LockedStages.includes(stage);
 }
 
 /** Whether a form is editable (draft or returned) */
@@ -759,18 +779,24 @@ export function getReturnMessage(stage: ProjectStage): string | null {
 export type GateStatus = 'locked' | 'awaiting_review' | 'approved' | 'returned' | 'rejected';
 
 /** Get the gate status for transitions between phases */
-export function getGateStatus(stage: ProjectStage, gate: 'intake_to_fs1' | 'fs1_to_fs2'): GateStatus {
+export function getGateStatus(stage: ProjectStage, gate: 'intake_to_fs1' | 'fs1_to_fs2' | 'fs2_to_fs3'): GateStatus {
   if (gate === 'intake_to_fs1') {
-    if (stage === 'intake_submitted' || stage === 'intake_desk_screened') return 'awaiting_review';
+    if (stage === 'intake_submitted' || stage === 'intake_desk_claimed' || stage === 'intake_desk_screened') return 'awaiting_review';
     if (stage === 'intake_approved' || stage.startsWith('fs1_') || stage.startsWith('fs2_') || stage.startsWith('fs3_')) return 'approved';
     if (stage === 'intake_returned') return 'returned';
     if (stage === 'intake_rejected') return 'rejected';
     return 'locked';
   }
-  // fs1_to_fs2
-  if (stage === 'fs1_submitted') return 'awaiting_review';
-  if (stage === 'fs1_approved' || stage.startsWith('fs2_') || stage.startsWith('fs3_')) return 'approved';
-  if (stage === 'fs1_returned') return 'returned';
-  if (stage === 'fs1_rejected') return 'rejected';
+  if (gate === 'fs1_to_fs2') {
+    if (stage === 'fs1_submitted') return 'awaiting_review';
+    if (stage === 'fs1_approved' || stage.startsWith('fs2_') || stage.startsWith('fs3_')) return 'approved';
+    if (stage === 'fs1_returned') return 'returned';
+    if (stage === 'fs1_rejected') return 'rejected';
+    return 'locked';
+  }
+  // fs2_to_fs3
+  if (stage === 'fs2_completed' || stage === 'fs2_desk_reviewed' || stage === 'fs2_senior_reviewed') return 'awaiting_review';
+  if (stage === 'fs2_categorized' || stage.startsWith('fs3_')) return 'approved';
+  if (stage === 'fs2_returned') return 'returned';
   return 'locked';
 }
