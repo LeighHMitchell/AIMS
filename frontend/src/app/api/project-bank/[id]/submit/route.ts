@@ -60,6 +60,7 @@ export async function POST(
     .from('project_bank_projects')
     .update({
       project_stage: newStage,
+      ...(phase === 'fs1' && { feasibility_stage: newStage }),
       review_comments: null, // Clear previous return comments
       updated_at: new Date().toISOString(),
       updated_by: user!.id,

@@ -227,22 +227,16 @@ function KanbanCard({ project, onClick }: { project: FS2Project; onClick: () => 
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
       </div>
       <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
+        <div>
           <span>{project.nominating_ministry}</span>
           {project.implementing_agency && (
-            <>
-              <span>·</span>
-              <span className="truncate">{project.implementing_agency}</span>
-            </>
+            <p className="text-muted-foreground/60 truncate">{project.implementing_agency}</p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div>
           <span>{project.sector}</span>
           {project.sub_sector && (
-            <>
-              <span>·</span>
-              <span className="truncate">{project.sub_sector}</span>
-            </>
+            <p className="text-muted-foreground/60 truncate">{project.sub_sector}</p>
           )}
         </div>
       </div>
@@ -539,9 +533,14 @@ export function FS2ReviewTab() {
                   <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Building2 className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{p.nominating_ministry}</span>
+                  <div className="text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Building2 className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{p.nominating_ministry}</span>
+                    </div>
+                    {p.implementing_agency && (
+                      <p className="text-muted-foreground/60 ml-4 truncate">{p.implementing_agency}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <MapPin className="h-3 w-3 shrink-0" />
@@ -549,7 +548,7 @@ export function FS2ReviewTab() {
                   </div>
                   <div className="text-muted-foreground">
                     {p.sector}
-                    {p.sub_sector && <span className="text-muted-foreground/60"> · {p.sub_sector}</span>}
+                    {p.sub_sector && <p className="text-muted-foreground/60 truncate">{p.sub_sector}</p>}
                   </div>
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <DollarSign className="h-3 w-3 shrink-0" />

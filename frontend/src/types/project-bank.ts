@@ -534,6 +534,7 @@ export interface ProjectBankStats {
   activeProjects: number;
   totalPipelineValue: number;
   fundingGap: number;
+  fundingGapProjects: number;
   byStatus: Record<ProjectStatus, { count: number; value: number }>;
   bySector: { sector: string; count: number; value: number }[];
   byPathway: { pathway: string; count: number; value: number }[];

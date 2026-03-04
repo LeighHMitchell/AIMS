@@ -9,7 +9,7 @@ export async function GET() {
 
   const { data: projects, error } = await supabase!
     .from('project_bank_projects')
-    .select('id, name, project_code, sector, sub_sector, status, pathway, estimated_cost, funding_gap, nominating_ministry, region, created_at')
+    .select('id, name, project_code, sector, sub_sector, status, pathway, estimated_cost, funding_gap, nominating_ministry, implementing_agency, project_type, estimated_start_date, region, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -63,9 +63,10 @@ export async function GET() {
     activeProjects: active.length,
     totalPipelineValue: all.reduce((sum, p) => sum + (p.estimated_cost || 0), 0),
     fundingGap: all.reduce((sum, p) => sum + (p.funding_gap || 0), 0),
+    fundingGapProjects: all.filter(p => p.funding_gap && p.funding_gap > 0).length,
     byStatus,
     bySector,
     byPathway,
-    recentSubmissions: all.slice(0, 5),
+    recentSubmissions: all,
   });
 }

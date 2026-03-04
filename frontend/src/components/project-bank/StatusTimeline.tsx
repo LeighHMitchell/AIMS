@@ -3,6 +3,7 @@
 import { CheckCircle, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PHASE_LABELS, getPhase } from "@/lib/project-bank-utils"
+import { HelpTooltip } from "@/components/project-bank/appraisal/HelpTooltip"
 import type { ProjectBankProject, ProjectPhase, ProjectStage, CategoryDecision } from "@/types/project-bank"
 import {
   Stepper,
@@ -20,6 +21,13 @@ interface StatusTimelineProps {
 
 const PHASE_ORDER: ProjectPhase[] = ['intake', 'fs1', 'fs2', 'fs3']
 
+const PHASE_DESCRIPTIONS: Record<ProjectPhase, string> = {
+  intake: 'The nominating ministry submits the project proposal with basic details — sector, location, estimated cost, and objectives.',
+  fs1: 'A preliminary feasibility study covering technical approach, revenue potential, environmental/social screening, MSDP alignment, and financial analysis (FIRR).',
+  fs2: 'An independent detailed study conducted by assigned consultants, covering engineering design, full cost–benefit analysis, and risk assessment.',
+  fs3: 'Based on the category decision, the project proceeds to either private sector listing, government budget allocation, or PPP transaction structuring with VGF/MRG mechanisms.',
+}
+
 const FS3_LABELS: Record<CategoryDecision, string> = {
   category_a: 'Private Sector Pathway',
   category_b: 'Government Budget Pathway',
@@ -29,7 +37,7 @@ const FS3_LABELS: Record<CategoryDecision, string> = {
 function getPhaseLabel(phase: ProjectPhase, idx: number, categoryDecision?: CategoryDecision | null): string {
   const num = idx + 1
   if (phase === 'fs3') {
-    const label = categoryDecision ? FS3_LABELS[categoryDecision] : 'Next Phase'
+    const label = categoryDecision ? FS3_LABELS[categoryDecision] : 'Pathway to be Determined'
     return `Phase ${num}: ${label}`
   }
   return `Phase ${num}: ${PHASE_LABELS[phase]}`
@@ -79,7 +87,10 @@ export function StatusTimeline({ currentStatus, project }: StatusTimelineProps) 
               {!isLast && <StepperSeparator />}
 
               <div className="flex flex-col items-center">
-                <StepperTitle>{getPhaseLabel(phase, idx, project.category_decision)}</StepperTitle>
+                <StepperTitle>
+                  {getPhaseLabel(phase, idx, project.category_decision)}
+                  <HelpTooltip text={PHASE_DESCRIPTIONS[phase]} />
+                </StepperTitle>
                 {formattedDate && (
                   <StepperDescription>
                     {formattedDate}

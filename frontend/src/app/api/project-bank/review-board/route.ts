@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   let query = supabase!
     .from('project_bank_projects')
     .select('id, project_code, name, nominating_ministry, implementing_agency, sector, sub_sector, region, estimated_cost, currency, feasibility_stage, project_stage, fs1_rejected_at, created_at, updated_at')
-    .in('feasibility_stage', [
+    .in('project_stage', [
       'fs1_submitted', 'fs1_desk_screened', 'fs1_returned',
     ])
     .order('updated_at', { ascending: false });
@@ -35,9 +35,9 @@ export async function GET(request: Request) {
 
   // Group by stage for Kanban columns
   const columns = {
-    submitted: (projects || []).filter(p => p.feasibility_stage === 'fs1_submitted'),
-    desk_screened: (projects || []).filter(p => p.feasibility_stage === 'fs1_desk_screened'),
-    returned: (projects || []).filter(p => p.feasibility_stage === 'fs1_returned'),
+    submitted: (projects || []).filter(p => p.project_stage === 'fs1_submitted'),
+    desk_screened: (projects || []).filter(p => p.project_stage === 'fs1_desk_screened'),
+    returned: (projects || []).filter(p => p.project_stage === 'fs1_returned'),
   };
 
   return NextResponse.json(columns);

@@ -54,7 +54,7 @@ export async function POST(
   // Verify project is in correct stage for this review tier
   const { data: project, error: projectError } = await supabase!
     .from('project_bank_projects')
-    .select('feasibility_stage')
+    .select('project_stage')
     .eq('id', id)
     .single();
 
@@ -67,7 +67,7 @@ export async function POST(
     senior: ['fs1_desk_screened'],
   };
 
-  if (!validStageForTier[review_tier]?.includes(project.feasibility_stage || '')) {
+  if (!validStageForTier[review_tier]?.includes(project.project_stage || '')) {
     return NextResponse.json(
       { error: `Project is not in the correct stage for ${review_tier} review` },
       { status: 400 }
@@ -119,7 +119,7 @@ export async function POST(
 
   // Map to unified project_stage
   const projectStageMap: Record<string, string> = {
-    screened: 'fs1_submitted',  // still under review in unified model
+    screened: 'fs1_desk_screened',
     passed: 'fs1_approved',
     returned: 'fs1_returned',
     rejected: 'fs1_rejected',

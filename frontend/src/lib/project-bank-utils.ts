@@ -61,13 +61,13 @@ export function determineRouting(firr: number | null, ndpAligned: boolean): Rout
 
 /** Status → Badge variant mapping */
 export const STATUS_BADGE_VARIANT: Record<ProjectStatus, string> = {
-  nominated: 'blue',
-  screening: 'amber',
-  appraisal: 'purple',
-  approved: 'success',
-  implementation: 'teal',
-  completed: 'gray',
-  rejected: 'destructive',
+  nominated: 'pb-entry',
+  screening: 'pb-progress',
+  appraisal: 'pb-review',
+  approved: 'pb-approved',
+  implementation: 'pb-active',
+  completed: 'pb-done',
+  rejected: 'pb-rejected',
 };
 
 /** Status display labels */
@@ -350,7 +350,7 @@ export function checkCooldownViolation(
 /** Format currency value (e.g. $320M, $1.2B) */
 export function formatCurrency(value: number | null | undefined, currency: string = 'USD'): string {
   if (value === null || value === undefined) return '—';
-  const symbol = currency === 'USD' ? '$' : currency + ' ';
+  const symbol = currency + ' ';
   if (value >= 1_000_000_000) {
     return `${symbol}${(value / 1_000_000_000).toFixed(1)}B`;
   }

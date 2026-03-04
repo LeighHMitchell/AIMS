@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertTriangle, ChevronLeft, ChevronRight, Copy, Check, MoreVertical } from "lucide-react"
+import { AlertTriangle, ChevronLeft, ChevronRight, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -33,21 +33,14 @@ function formatCostUSD(value: number | null | undefined): string {
   return value.toLocaleString()
 }
 
-/** Format for subtitle summary */
-function formatSubtitleCurrency(value: number): string {
-  if (value >= 1_000_000_000) return `USD ${(value / 1_000_000_000).toFixed(1)}b`
-  if (value >= 1_000_000) return `USD ${(value / 1_000_000).toFixed(1)}m`
-  if (value >= 1_000) return `USD ${(value / 1_000).toFixed(0)}k`
-  return `USD ${value.toLocaleString()}`
-}
-
 export default function FundingGapsPage() {
   const router = useRouter()
   const [projects, setProjects] = useState<ProjectBankProject[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(20)
-  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [sortField, setSortField] = useState<string>("funding_gap")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
 
   useEffect(() => {
     async function fetchProjects() {
@@ -59,18 +52,63 @@ export default function FundingGapsPage() {
     fetchProjects()
   }, [])
 
-  const copyToClipboard = (text: string, projectId: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedId(projectId)
-    setTimeout(() => setCopiedId(null), 2000)
-  }
+  const sorted = useMemo(() => {
+    return [...projects].sort((a, b) => {
+      let aVal: any, bVal: any
+      if (sortField === 'secured') {
+        aVal = (a.estimated_cost || 0) - (a.funding_gap || 0)
+        bVal = (b.estimated_cost || 0) - (b.funding_gap || 0)
+      } else if (sortField === 'progress') {
+        aVal = a.estimated_cost ? ((a.estimated_cost - (a.funding_gap || 0)) / a.estimated_cost) : 0
+        bVal = b.estimated_cost ? ((b.estimated_cost - (b.funding_gap || 0)) / b.estimated_cost) : 0
+      } else {
+        aVal = (a as any)[sortField]
+        bVal = (b as any)[sortField]
+      }
+      if (aVal == null && bVal == null) return 0
+      if (aVal == null) return 1
+      if (bVal == null) return -1
+      const cmp = typeof aVal === 'string' ? aVal.localeCompare(bVal) : aVal - bVal
+      return sortDir === "asc" ? cmp : -cmp
+    })
+  }, [projects, sortField, sortDir])
 
-  const totalGap = projects.reduce((sum, p) => sum + (p.funding_gap || 0), 0)
-  const totalPages = Math.max(1, Math.ceil(projects.length / perPage))
-  const paginated = projects.slice((page - 1) * perPage, page * perPage)
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage))
+  const paginated = sorted.slice((page - 1) * perPage, page * perPage)
   const startIndex = (page - 1) * perPage
 
-  const colCount = 9
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir(d => d === "asc" ? "desc" : "asc")
+    } else {
+      setSortField(field)
+      setSortDir("asc")
+    }
+  }
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />
+    return sortDir === "asc"
+      ? <ArrowUp className="h-3.5 w-3.5 text-foreground" />
+      : <ArrowDown className="h-3.5 w-3.5 text-foreground" />
+  }
+
+  const SortHeader = ({ field, children, className }: { field: string; children: React.ReactNode; className?: string }) => {
+    const isRight = className?.includes('text-right')
+    return (
+      <th
+        className={`h-10 px-4 align-middle text-xs font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none whitespace-nowrap ${className || 'text-left'}`}
+        onClick={() => handleSort(field)}
+      >
+        <span className={`flex items-center gap-1 ${isRight ? 'justify-end' : ''}`}>
+          {children}
+          <SortIcon field={field} />
+        </span>
+      </th>
+    )
+  }
+
+  const colCount = 8
 
   return (
     <MainLayout>
@@ -90,14 +128,14 @@ export default function FundingGapsPage() {
             <table className="w-full border-collapse">
               <thead className="bg-surface-muted border-b border-border">
                 <tr>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Project Title</th>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Sector</th>
-                  <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground">Total Cost</th>
-                  <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground">Secured</th>
-                  <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground">Gap</th>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Progress</th>
-                  <th className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="h-12 px-2 text-center align-middle text-sm font-medium text-muted-foreground w-[44px]"></th>
+                  <SortHeader field="name">Project Title</SortHeader>
+                  <SortHeader field="sector">Sector</SortHeader>
+                  <SortHeader field="estimated_cost" className="text-right">Total Cost</SortHeader>
+                  <SortHeader field="secured" className="text-right">Secured</SortHeader>
+                  <SortHeader field="funding_gap" className="text-right">Gap</SortHeader>
+                  <SortHeader field="progress">Progress</SortHeader>
+                  <SortHeader field="status">Status</SortHeader>
+                  <th className="h-10 px-2 text-center align-middle text-xs font-medium text-muted-foreground w-[44px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
@@ -122,28 +160,12 @@ export default function FundingGapsPage() {
                         className="group hover:bg-muted transition-colors cursor-pointer"
                         onClick={() => router.push(`/project-bank/${p.id}`)}
                       >
-                        {/* Project Code + Name merged */}
-                        <td className="px-4 py-2">
-                          <div className="text-sm font-medium text-foreground leading-tight">{p.name}</div>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <div className="group/code flex items-center gap-1">
-                              <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{p.project_code}</span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  copyToClipboard(p.project_code, p.id)
-                                }}
-                                className="opacity-0 group-hover/code:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
-                                title="Copy Project Code"
-                              >
-                                {copiedId === p.id ? (
-                                  <Check className="w-3 h-3 text-green-500" />
-                                ) : (
-                                  <Copy className="w-3 h-3 text-muted-foreground" />
-                                )}
-                              </button>
-                            </div>
-                          </div>
+                        {/* Project Code + Name merged — single line like Project List */}
+                        <td className="px-4 py-2 min-w-[200px]">
+                          <span className="text-sm font-medium text-foreground">{p.name}</span>
+                          {p.project_code && (
+                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2">{p.project_code}</span>
+                          )}
                         </td>
                         {/* Sector — normal text */}
                         <td className="px-4 py-2">

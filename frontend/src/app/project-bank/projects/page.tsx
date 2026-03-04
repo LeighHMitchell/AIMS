@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import {
   Plus, Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown,
-  Copy, Check, MoreVertical, ListTodo,
+  MoreVertical, ListTodo,
 } from "lucide-react"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -86,8 +86,6 @@ export default function ProjectListPage() {
   const [perPage, setPerPage] = useState(20)
   const [sortField, setSortField] = useState<string>("created_at")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
-  const [copiedId, setCopiedId] = useState<string | null>(null)
-
   useEffect(() => {
     async function fetchProjects() {
       try {
@@ -101,12 +99,6 @@ export default function ProjectListPage() {
     }
     fetchProjects()
   }, [])
-
-  const copyToClipboard = (text: string, projectId: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedId(projectId)
-    setTimeout(() => setCopiedId(null), 2000)
-  }
 
   // Status counts
   const statusCounts = useMemo(() => {
@@ -134,9 +126,16 @@ export default function ProjectListPage() {
     }
 
     // Sort
+    const getFundedPct = (p: ProjectBankProject) => {
+      const cost = p.estimated_cost || 0
+      if (cost <= 0) return null
+      const gap = p.funding_gap && p.funding_gap > 0 ? p.funding_gap : 0
+      return Math.round(((cost - gap) / cost) * 100)
+    }
+
     list = [...list].sort((a, b) => {
-      const aVal = (a as any)[sortField]
-      const bVal = (b as any)[sortField]
+      const aVal = sortField === 'funded_pct' ? getFundedPct(a) : (a as any)[sortField]
+      const bVal = sortField === 'funded_pct' ? getFundedPct(b) : (b as any)[sortField]
       if (aVal == null && bVal == null) return 0
       if (aVal == null) return 1
       if (bVal == null) return -1
@@ -318,7 +317,7 @@ export default function ProjectListPage() {
                   <SortHeader field="feasibility_stage" tight>Feasibility</SortHeader>
                   <SortHeader field="pathway" tight>Pathway</SortHeader>
                   <SortHeader field="funding_gap" className="text-right" tight>Gap</SortHeader>
-                  <th className="h-10 px-2 text-left align-middle text-xs font-medium text-muted-foreground w-[100px]">Funding</th>
+                  <SortHeader field="funded_pct" tight className="w-[100px]">Funding</SortHeader>
                   <th className="h-10 px-1 text-center align-middle text-xs font-medium text-muted-foreground w-[36px]"></th>
                 </tr>
               </thead>
@@ -355,26 +354,10 @@ export default function ProjectListPage() {
                     >
                       {/* Project Code + Name merged */}
                       <td className="px-3 py-2 min-w-[200px]">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-medium text-foreground leading-tight">{p.name}</span>
-                          <div className="group/code flex items-center gap-1 flex-shrink-0">
-                            <span className="text-[11px] font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{p.project_code}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                copyToClipboard(p.project_code, p.id)
-                              }}
-                              className="opacity-0 group-hover/code:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
-                              title="Copy Project Code"
-                            >
-                              {copiedId === p.id ? (
-                                <Check className="w-3 h-3 text-green-500" />
-                              ) : (
-                                <Copy className="w-3 h-3 text-muted-foreground" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
+                        <span className="text-sm font-medium text-foreground">{p.name}</span>
+                        {p.project_code && (
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2">{p.project_code}</span>
+                        )}
                       </td>
                       {/* Ministry */}
                       <td className="px-3 py-2 text-sm text-foreground min-w-[140px]">

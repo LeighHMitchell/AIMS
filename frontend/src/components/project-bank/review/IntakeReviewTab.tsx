@@ -142,22 +142,16 @@ function IntakeKanbanCard({ project, onClick }: { project: IntakeReviewProject; 
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
       </div>
       <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
+        <div>
           <span>{project.nominating_ministry}</span>
           {project.implementing_agency && (
-            <>
-              <span>·</span>
-              <span className="truncate">{project.implementing_agency}</span>
-            </>
+            <p className="text-muted-foreground/60 truncate">{project.implementing_agency}</p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div>
           <span>{project.sector}</span>
           {project.sub_sector && (
-            <>
-              <span>·</span>
-              <span className="truncate">{project.sub_sector}</span>
-            </>
+            <p className="text-muted-foreground/60 truncate">{project.sub_sector}</p>
           )}
         </div>
       </div>
@@ -437,14 +431,13 @@ export function IntakeReviewTab() {
                       <Copy className="h-3 w-3 text-white" />
                     </button>
                   </div>
-                  <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-300">
-                    <Building2 className="h-3 w-3" />
-                    <span className="truncate">{p.nominating_ministry}</span>
+                  <div className="mt-1 text-[11px] text-gray-300">
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{p.nominating_ministry}</span>
+                    </div>
                     {p.implementing_agency && (
-                      <>
-                        <span>·</span>
-                        <span className="truncate">{p.implementing_agency}</span>
-                      </>
+                      <p className="ml-[18px] text-gray-400 truncate">{p.implementing_agency}</p>
                     )}
                   </div>
                 </div>

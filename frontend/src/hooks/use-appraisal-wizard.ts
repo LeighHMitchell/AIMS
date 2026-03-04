@@ -251,7 +251,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
       if (formData.fs_conductor_type === 'company' && !formData.fs_conductor_company_name?.trim()) {
         errs.fs_conductor_company_name = 'Company name is required';
       }
-      const costTable = formData.cost_table_data as any[] | undefined;
+      const costTable = formData.firr_cost_table_data as any[] | undefined;
       if (!costTable || costTable.length === 0) {
         errs.cost_table_data = 'At least one cost table row is required';
       }
@@ -343,12 +343,19 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
       }
 
       // Update existing project
+      // Transition project_stage to fs1_draft when first saving in FS1 phase
+      const effectiveProjectStage =
+        currentPhase === 'fs1' && projectStage === 'intake_approved'
+          ? 'fs1_draft'
+          : undefined;
+
       const res = await apiFetch(`/api/project-bank/${projectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           appraisal_stage: nextStage || currentStage,
+          ...(effectiveProjectStage && { project_stage: effectiveProjectStage }),
         }),
       });
 
@@ -358,6 +365,11 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
         return false;
       }
 
+      // Update local state to reflect the stage transition
+      if (effectiveProjectStage) {
+        setProjectStage(effectiveProjectStage as ProjectStage);
+      }
+
       return true;
     } catch (err) {
       setErrors({ _form: 'Network error. Please try again.' });
@@ -365,7 +377,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
     } finally {
       setIsSaving(false);
     }
-  }, [projectId, currentStage, formData, pendingFiles]);
+  }, [projectId, currentStage, currentPhase, projectStage, formData, pendingFiles]);
 
   const saveAndContinue = useCallback(async () => {
     const validationErrors = validateCurrentStage();

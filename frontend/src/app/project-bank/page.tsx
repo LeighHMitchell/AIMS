@@ -6,7 +6,8 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { FolderKanban, AlertTriangle, DollarSign, Download, ClipboardList } from "lucide-react"
+import { FolderKanban, AlertTriangle, DollarSign, Download, ClipboardList, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   ResponsiveContainer,
   BarChart,
@@ -58,13 +59,13 @@ function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode
   return (
     <div className="inline-flex rounded-md border border-border overflow-hidden text-xs">
       <button
-        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'count' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'count' ? 'bg-slate-200 text-slate-900' : 'bg-background text-muted-foreground hover:bg-muted'}`}
         onClick={() => onChange('count')}
       >
         #
       </button>
       <button
-        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'value' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}
+        className={`px-2 py-0.5 font-medium transition-colors ${mode === 'value' ? 'bg-slate-200 text-slate-900' : 'bg-background text-muted-foreground hover:bg-muted'}`}
         onClick={() => onChange('value')}
       >
         $
@@ -80,6 +81,27 @@ export default function ProjectBankDashboard() {
   const [pipelineViewMode, setPipelineViewMode] = useState<ViewMode>('count')
   const [pathwayViewMode, setPathwayViewMode] = useState<ViewMode>('value')
   const [sectorViewMode, setSectorViewMode] = useState<ViewMode>('value')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageLimit, setPageLimit] = useState(10)
+  const [sortField, setSortField] = useState<string>('created_at')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+    setCurrentPage(1)
+  }
+
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 text-gray-400" />
+    return sortOrder === 'asc'
+      ? <ArrowUp className="h-3.5 w-3.5 text-gray-400" />
+      : <ArrowDown className="h-3.5 w-3.5 text-gray-400" />
+  }
 
   useEffect(() => {
     async function fetchStats() {
@@ -116,12 +138,14 @@ export default function ProjectBankDashboard() {
 
   // Build Recharts data for Pathway Breakdown
   const pathwayData = stats
-    ? stats.byPathway.map(item => ({
-        name: PATHWAY_LABELS[item.pathway] || item.pathway,
-        value: item.value,
-        count: item.count,
-        fill: PATHWAY_CHART_COLORS[item.pathway] || CHART_COLOR_PALETTE[2],
-      }))
+    ? [...stats.byPathway]
+        .sort((a, b) => pathwayViewMode === 'value' ? b.value - a.value : b.count - a.count)
+        .map(item => ({
+          name: PATHWAY_LABELS[item.pathway] || item.pathway,
+          value: item.value,
+          count: item.count,
+          fill: PATHWAY_CHART_COLORS[item.pathway] || CHART_COLOR_PALETTE[2],
+        }))
     : []
 
   // Build Recharts data for Sector — top 5 + Other
@@ -311,6 +335,7 @@ export default function ProjectBankDashboard() {
                     <AlertTriangle className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div className="text-2xl font-bold">{formatCurrency(stats.fundingGap)}</div>
+                  <p className="text-xs text-muted-foreground mt-1">{stats.fundingGapProjects} project{stats.fundingGapProjects !== 1 ? 's' : ''} with gaps</p>
                 </CardContent>
               </Card>
             </div>
@@ -476,59 +501,197 @@ export default function ProjectBankDashboard() {
               </Card>
             </div>
 
-            {/* Recent Submissions — Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Recent Submissions</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-surface-muted">
-                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Project Title</th>
-                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Sector</th>
-                        <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Estimated Cost</th>
-                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {stats.recentSubmissions.map((project: any) => (
-                        <tr
-                          key={project.id}
-                          className="hover:bg-muted/50 cursor-pointer transition-colors"
-                          onClick={() => router.push(`/project-bank/${project.id}`)}
-                        >
-                          <td className="px-4 py-2.5">
-                            <div className="font-medium">{project.name}</div>
-                            <div className="text-xs text-muted-foreground font-mono">{project.project_code}</div>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <div className="text-muted-foreground">{project.sector}</div>
-                            {project.sub_sector && (
-                              <div className="text-xs text-muted-foreground/70">{project.sub_sector}</div>
+            {/* Recent Submissions — Paginated Table */}
+            {(() => {
+              const allSubmissions = [...stats.recentSubmissions].sort((a: any, b: any) => {
+                const getValue = (p: any) => {
+                  switch (sortField) {
+                    case 'name': return (p.name || '').toLowerCase()
+                    case 'sector': return (p.sector || '').toLowerCase()
+                    case 'nominating_ministry': return (p.nominating_ministry || '').toLowerCase()
+                    case 'project_type': return (p.project_type || '').toLowerCase()
+                    case 'region': return (p.region || '').toLowerCase()
+                    case 'estimated_start_date': return p.estimated_start_date || ''
+                    case 'estimated_cost': return p.estimated_cost || 0
+                    case 'status': return p.status || ''
+                    case 'created_at': return p.created_at || ''
+                    default: return ''
+                  }
+                }
+                const aVal = getValue(a)
+                const bVal = getValue(b)
+                if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1
+                if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1
+                return 0
+              })
+              const totalItems = allSubmissions.length
+              const totalPages = Math.max(1, Math.ceil(totalItems / pageLimit))
+              const safePage = Math.min(currentPage, totalPages)
+              const startIndex = (safePage - 1) * pageLimit
+              const endIndex = Math.min(startIndex + pageLimit, totalItems)
+              const pageItems = allSubmissions.slice(startIndex, endIndex)
+
+              return (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Recent Submissions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b bg-surface-muted">
+                              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('name')}>
+                                <div className="flex items-center gap-1">Project Title {getSortIcon('name')}</div>
+                              </th>
+                              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('sector')}>
+                                <div className="flex items-center gap-1">Sector {getSortIcon('sector')}</div>
+                              </th>
+                              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('nominating_ministry')}>
+                                <div className="flex items-center gap-1">Ministry / Agency {getSortIcon('nominating_ministry')}</div>
+                              </th>
+                              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('project_type')}>
+                                <div className="flex items-center gap-1">Project Type {getSortIcon('project_type')}</div>
+                              </th>
+                              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('region')}>
+                                <div className="flex items-center gap-1">State / Region {getSortIcon('region')}</div>
+                              </th>
+                              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('estimated_start_date')}>
+                                <div className="flex items-center gap-1">Estimated Start Date {getSortIcon('estimated_start_date')}</div>
+                              </th>
+                              <th className="text-right px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('estimated_cost')}>
+                                <div className="flex items-center justify-end gap-1">Estimated Cost {getSortIcon('estimated_cost')}</div>
+                              </th>
+                              <th className="text-left px-4 py-2.5 font-medium text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('status')}>
+                                <div className="flex items-center gap-1">Status {getSortIcon('status')}</div>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {pageItems.map((project: any) => (
+                              <tr
+                                key={project.id}
+                                className="hover:bg-muted/50 cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                  if (e.metaKey || e.ctrlKey) {
+                                    window.open(`/project-bank/${project.id}`, '_blank')
+                                  } else {
+                                    router.push(`/project-bank/${project.id}`)
+                                  }
+                                }}
+                                onAuxClick={(e) => {
+                                  if (e.button === 1) {
+                                    window.open(`/project-bank/${project.id}`, '_blank')
+                                  }
+                                }}
+                              >
+                                <td className="px-4 py-2.5">
+                                  <a href={`/project-bank/${project.id}`} onClick={(e) => e.preventDefault()} className="font-medium">{project.name}</a>
+                                  {project.project_code && (
+                                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2">{project.project_code}</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <div>{project.sector}</div>
+                                  {project.sub_sector && (
+                                    <div className="text-xs text-muted-foreground/70">{project.sub_sector}</div>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <div>{project.nominating_ministry || '—'}</div>
+                                  {project.implementing_agency && (
+                                    <div className="text-xs text-muted-foreground/70">{project.implementing_agency}</div>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2.5 text-muted-foreground">{project.project_type || '—'}</td>
+                                <td className="px-4 py-2.5 text-muted-foreground">{project.region || '—'}</td>
+                                <td className="px-4 py-2.5 text-muted-foreground">{project.estimated_start_date ? new Date(project.estimated_start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                                <td className="px-4 py-2.5 text-right font-medium">
+                                  <span className="text-muted-foreground font-normal text-xs">USD</span>{' '}
+                                  {formatCurrency(project.estimated_cost, '').trim()}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <Badge variant={STATUS_BADGE_VARIANT[project.status as keyof typeof STATUS_BADGE_VARIANT] as any} className="text-[10px]">
+                                    {STATUS_LABELS[project.status as keyof typeof STATUS_LABELS]}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            ))}
+                            {totalItems === 0 && (
+                              <tr>
+                                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                                  No recent submissions
+                                </td>
+                              </tr>
                             )}
-                          </td>
-                          <td className="px-4 py-2.5 text-right">{formatCurrency(project.estimated_cost)}</td>
-                          <td className="px-4 py-2.5">
-                            <Badge variant={STATUS_BADGE_VARIANT[project.status as keyof typeof STATUS_BADGE_VARIANT] as any} className="text-[10px]">
-                              {STATUS_LABELS[project.status as keyof typeof STATUS_LABELS]}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                      {stats.recentSubmissions.length === 0 && (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                            No recent submissions
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {totalItems > 0 && (
+                    <div className="bg-card rounded-lg border border-border shadow-sm p-4 mt-4">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                          Showing {startIndex + 1} to {endIndex} of {totalItems} projects
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={safePage === 1}>
+                            <ChevronLeft className="h-4 w-4" /> First
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setCurrentPage(Math.max(1, safePage - 1))} disabled={safePage === 1}>
+                            <ChevronLeft className="h-4 w-4" /> Previous
+                          </Button>
+
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNum: number
+                            if (totalPages <= 5) pageNum = i + 1
+                            else if (safePage <= 3) pageNum = i + 1
+                            else if (safePage >= totalPages - 2) pageNum = totalPages - 4 + i
+                            else pageNum = safePage - 2 + i
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-8 h-8 p-0 ${safePage === pageNum ? 'bg-slate-200 text-slate-900' : ''}`}
+                              >
+                                {pageNum}
+                              </Button>
+                            )
+                          })}
+
+                          <Button variant="outline" size="sm" onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))} disabled={safePage === totalPages}>
+                            Next <ChevronRight className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)} disabled={safePage === totalPages}>
+                            Last <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm text-gray-600">Items per page:</label>
+                          <Select value={pageLimit.toString()} onValueChange={(v) => { setPageLimit(Number(v)); setCurrentPage(1); }}>
+                            <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="10">10</SelectItem>
+                              <SelectItem value="20">20</SelectItem>
+                              <SelectItem value="25">25</SelectItem>
+                              <SelectItem value="50">50</SelectItem>
+                              <SelectItem value="100">100</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           </>
         )}
       </div>

@@ -33,6 +33,15 @@ const badgeVariants = cva(
         violet: "bg-violet-200 text-slate-900 border border-violet-300 hover:bg-violet-300",
         fuchsia: "bg-fuchsia-200 text-slate-900 border border-fuchsia-300 hover:bg-fuchsia-300",
         
+        // Project Bank pipeline variants (app palette)
+        "pb-entry": "bg-[#f1f4f8] text-[#4c5568] border border-[#cfd0d5]",
+        "pb-progress": "bg-[#e8ecf1] text-[#4c5568] border border-[#7b95a7]",
+        "pb-review": "bg-[#7b95a7] text-white border border-[#4c5568]",
+        "pb-approved": "bg-[#4c5568] text-white border border-[#4c5568]",
+        "pb-active": "bg-[#4c5568] text-white border border-[#4c5568]",
+        "pb-done": "bg-[#cfd0d5] text-[#4c5568] border border-[#cfd0d5]",
+        "pb-rejected": "bg-[#dc2625] text-white border border-[#dc2625]",
+
         // Dark variants for role badges
         "dark-blue": "bg-blue-700 text-white border border-blue-800 hover:bg-blue-800",
         "light-blue": "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200",

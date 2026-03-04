@@ -51,6 +51,7 @@ function GateIndicator({ status }: GateIndicatorProps) {
 }
 
 interface AppraisalProgressRailProps {
+  projectName?: string;
   visibleStages: AppraisalStage[];
   currentStage: AppraisalStage;
   projectStage: ProjectStage;
@@ -60,9 +61,11 @@ interface AppraisalProgressRailProps {
   onFs1TabClick: (tab: FS1Tab) => void;
   canGoToStage: (stage: AppraisalStage) => boolean;
   isStageComplete: (stage: AppraisalStage) => boolean;
+  onReturnToCurrentPhase?: () => void;
 }
 
 export function AppraisalProgressRail({
+  projectName,
   visibleStages,
   currentStage,
   projectStage,
@@ -72,6 +75,7 @@ export function AppraisalProgressRail({
   onFs1TabClick,
   canGoToStage,
   isStageComplete,
+  onReturnToCurrentPhase,
 }: AppraisalProgressRailProps) {
   const handleSubItemClick = (anchor: string) => {
     document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -91,19 +95,21 @@ export function AppraisalProgressRail({
       {/* Desktop: vertical rail */}
       <nav className="hidden lg:block w-[240px] shrink-0">
         <div className="sticky top-24 space-y-3">
-          {/* Phase header */}
-          <div className="mb-4 pb-3 border-b border-border">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Phase-Gate Appraisal
-            </span>
-          </div>
+          {/* Project name + Phase header */}
+          {projectName && (
+            <div className="mb-4 pb-3 border-b border-border">
+              <h3 className="text-lg font-bold text-foreground truncate" title={projectName}>
+                {projectName}
+              </h3>
+            </div>
+          )}
 
           {/* ─── Phase 1: Project Intake ─── */}
           <div>
             <div className="flex items-start gap-3">
               <div className="flex flex-col items-center">
                 <button
-                  onClick={() => intakeActive && onStageClick('intake')}
+                  onClick={() => (intakeActive || intakeComplete) && onStageClick('intake')}
                   disabled={!intakeActive && !intakeComplete}
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
@@ -117,7 +123,7 @@ export function AppraisalProgressRail({
                 </button>
               </div>
               <button
-                onClick={() => intakeActive && onStageClick('intake')}
+                onClick={() => (intakeActive || intakeComplete) && onStageClick('intake')}
                 disabled={!intakeActive && !intakeComplete}
                 className={cn('text-left transition-colors', (intakeActive || intakeComplete) && 'cursor-pointer hover:text-foreground')}
               >
@@ -159,22 +165,33 @@ export function AppraisalProgressRail({
           <div>
             <div className="flex items-start gap-3">
               <div className="flex flex-col items-center">
-                <div
+                <button
+                  onClick={() => fs1Active && onReturnToCurrentPhase?.()}
+                  disabled={!fs1Active && !fs1Complete}
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
                     fs1Complete && 'bg-gray-800 border-gray-800 text-white',
                     fs1Active && !fs1Complete && 'border-gray-600 bg-gray-100 text-gray-800',
                     !fs1Complete && !fs1Active && 'border-gray-300 bg-background text-gray-400',
                     !fs1Accessible && !fs1Active && !fs1Complete && 'opacity-40',
+                    fs1Active && 'cursor-pointer hover:scale-110',
                   )}
                 >
                   {fs1Complete ? <Check className="h-3.5 w-3.5" /> :
                     !fs1Accessible && !fs1Active ? <Lock className="h-3 w-3 text-gray-300" /> :
                     <span className={cn('w-2 h-2 rounded-full', fs1Active ? 'bg-gray-600' : 'bg-gray-300')} />
                   }
-                </div>
+                </button>
               </div>
-              <div className={cn(!fs1Accessible && !fs1Active && !fs1Complete && 'opacity-40')}>
+              <button
+                onClick={() => fs1Active && onReturnToCurrentPhase?.()}
+                disabled={!fs1Active && !fs1Complete}
+                className={cn(
+                  'text-left transition-colors',
+                  !fs1Accessible && !fs1Active && !fs1Complete && 'opacity-40',
+                  fs1Active && 'cursor-pointer hover:text-foreground',
+                )}
+              >
                 <span className={cn(
                   'block text-sm leading-snug',
                   fs1Active && 'font-semibold text-foreground',
@@ -189,7 +206,7 @@ export function AppraisalProgressRail({
                 <span className="block text-[11px] text-muted-foreground/70 leading-snug mt-0.5">
                   Unlocked after intake is approved by review board
                 </span>
-              </div>
+              </button>
             </div>
 
             {/* FS-1 internal tabs */}

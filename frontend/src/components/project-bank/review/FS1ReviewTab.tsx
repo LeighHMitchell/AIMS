@@ -21,7 +21,7 @@ import { apiFetch } from "@/lib/api-fetch"
 import {
   formatCurrency, formatCurrencyParts, SECTORS, FEASIBILITY_STAGE_LABELS, FEASIBILITY_STAGE_BADGE_STYLES,
 } from "@/lib/project-bank-utils"
-import type { FeasibilityStage, FS1Narrative } from "@/types/project-bank"
+import type { FS1Narrative } from "@/types/project-bank"
 import { NARRATIVE_SECTIONS } from "@/components/project-bank/fs1/FS1NarrativeForm"
 import type { ReviewProject, ColumnKey, ReviewColumns, DecisionOption } from "./types"
 import { ReviewDecisionCards } from "./ReviewDecisionCards"
@@ -125,22 +125,16 @@ function DraggableProjectCard({
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
       </div>
       <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
+        <div>
           <span>{project.nominating_ministry}</span>
           {project.implementing_agency && (
-            <>
-              <span>·</span>
-              <span className="truncate">{project.implementing_agency}</span>
-            </>
+            <p className="text-muted-foreground/60 truncate">{project.implementing_agency}</p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div>
           <span>{project.sector}</span>
           {project.sub_sector && (
-            <>
-              <span>·</span>
-              <span className="truncate">{project.sub_sector}</span>
-            </>
+            <p className="text-muted-foreground/60 truncate">{project.sub_sector}</p>
           )}
         </div>
       </div>
@@ -275,16 +269,17 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     },
   },
   {
-    key: "feasibility_stage",
+    key: "project_stage",
     label: "Stage",
     render: (p: ReviewProject) => {
-      const style = FEASIBILITY_STAGE_BADGE_STYLES[p.feasibility_stage]
+      const stage = p.project_stage || p.feasibility_stage
+      const style = FEASIBILITY_STAGE_BADGE_STYLES[stage]
       return (
         <span
           className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold"
-          style={{ backgroundColor: style.bg, color: style.text, border: `1px solid ${style.border}` }}
+          style={{ backgroundColor: style?.bg, color: style?.text, border: `1px solid ${style?.border}` }}
         >
-          {FEASIBILITY_STAGE_LABELS[p.feasibility_stage]}
+          {FEASIBILITY_STAGE_LABELS[stage] || stage}
         </span>
       )
     },
@@ -418,7 +413,7 @@ export function FS1ReviewTab() {
     setSubmittingReview(true)
     setReviewError(null)
 
-    const reviewTier = selectedProject.feasibility_stage === "fs1_submitted" ? "desk" : "senior"
+    const reviewTier = selectedProject.project_stage === "fs1_submitted" ? "desk" : "senior"
 
     try {
       const res = await apiFetch(`/api/project-bank/${selectedProject.id}/fs1-review`, {
@@ -448,7 +443,7 @@ export function FS1ReviewTab() {
     }
   }
 
-  const getDecisionCards = (stage: FeasibilityStage): DecisionOption[] => {
+  const getDecisionCards = (stage: string): DecisionOption[] => {
     if (stage === "fs1_submitted") return DESK_REVIEW_DECISIONS
     return SENIOR_REVIEW_DECISIONS
   }
@@ -658,10 +653,10 @@ export function FS1ReviewTab() {
                 </div>
               )}
 
-              {(selectedProject.feasibility_stage === "fs1_submitted" || selectedProject.feasibility_stage === "fs1_desk_screened") && (
+              {(selectedProject.project_stage === "fs1_submitted" || selectedProject.project_stage === "fs1_desk_screened") && (
                 <div className="border-t border-border pt-6 space-y-4">
                   <h3 className="text-sm font-semibold">
-                    {selectedProject.feasibility_stage === "fs1_submitted" ? "Desk Review" : "Senior Review"}
+                    {selectedProject.project_stage === "fs1_submitted" ? "Desk Review" : "Senior Review"}
                   </h3>
 
                   {reviewError && (
@@ -674,7 +669,7 @@ export function FS1ReviewTab() {
                   <div className="space-y-2">
                     <Label className="text-sm">Decision</Label>
                     <ReviewDecisionCards
-                      options={getDecisionCards(selectedProject.feasibility_stage)}
+                      options={getDecisionCards(selectedProject.project_stage)}
                       selected={reviewDecision}
                       onSelect={setReviewDecision}
                     />
@@ -695,7 +690,7 @@ export function FS1ReviewTab() {
                     />
                   </div>
 
-                  {reviewDecision === "passed" && selectedProject.feasibility_stage === "fs1_desk_screened" && (
+                  {reviewDecision === "passed" && selectedProject.project_stage === "fs1_desk_screened" && (
                     <div className="border border-border rounded-lg p-4 space-y-3">
                       <h4 className="text-sm font-semibold">Gate Checklist</h4>
                       <p className="text-xs text-muted-foreground">
@@ -725,7 +720,7 @@ export function FS1ReviewTab() {
                       !reviewDecision ||
                       submittingReview ||
                       ((reviewDecision === "returned" || reviewDecision === "rejected") && !reviewComments.trim()) ||
-                      (reviewDecision === "passed" && selectedProject.feasibility_stage === "fs1_desk_screened" &&
+                      (reviewDecision === "passed" && selectedProject.project_stage === "fs1_desk_screened" &&
                         !["narrative_reviewed", "ndp_alignment", "cost_estimate"].every(k => gateChecks[k]))
                     }
                     className="w-full"
@@ -735,12 +730,12 @@ export function FS1ReviewTab() {
                 </div>
               )}
 
-              {selectedProject.feasibility_stage === "fs1_returned" && (
+              {selectedProject.project_stage === "fs1_returned" && (
                 <div className="border-t border-border pt-6">
                   <div className="flex items-center gap-2">
                     <RotateCcw className="h-5 w-5 text-amber-600" />
                     <span className="text-sm font-semibold">
-                      {FEASIBILITY_STAGE_LABELS[selectedProject.feasibility_stage]}
+                      {FEASIBILITY_STAGE_LABELS[selectedProject.project_stage]}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">

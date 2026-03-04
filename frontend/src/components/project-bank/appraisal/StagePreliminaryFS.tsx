@@ -23,7 +23,8 @@ import { calculateFIRR } from '@/lib/eirr-calculator';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
 import type { FS1Tab } from '@/types/project-bank';
 import { cn } from '@/lib/utils';
-import { User, Building2, ChevronsUpDown } from 'lucide-react';
+import { AlertTriangle, Check, ChevronsUpDown } from 'lucide-react';
+import Image from 'next/image';
 
 function RequiredDot() {
   return <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" />;
@@ -220,27 +221,28 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
         <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Feasibility Study Conducted By</h4>
 
         {/* Individual vs Company selector */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={() => !isLocked && updateField('fs_conductor_type', 'individual')}
             disabled={isLocked}
             className={cn(
-              'relative rounded-lg border-2 text-left transition-all overflow-hidden',
+              'relative flex flex-col justify-end flex-1 h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               formData.fs_conductor_type === 'individual'
-                ? 'border-[#5f7f7a] bg-[#f6f5f3] ring-2 ring-[#5f7f7a]/20'
-                : 'border-border hover:border-muted-foreground/50',
+                ? 'ring-border bg-primary/5'
+                : 'ring-gray-300 bg-background hover:bg-gray-50',
               isLocked && 'opacity-60 cursor-not-allowed',
             )}
           >
-            <div className="flex items-stretch">
-              <div className="w-24 bg-muted flex items-center justify-center shrink-0">
-                <User className="h-10 w-10 text-muted-foreground/40" />
+            <Image src="/images/fs-conductor-individual.png" alt="Individual" fill className="object-contain object-top opacity-15 scale-75" />
+            {formData.fs_conductor_type === 'individual' && (
+              <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                <Check className="h-3 w-3 text-primary-foreground" />
               </div>
-              <div className="p-4">
-                <span className="font-medium text-sm">Individual</span>
-                <p className="text-xs text-muted-foreground mt-1">The study was conducted by an individual consultant or specialist</p>
-              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white via-white/95 to-transparent p-3 pt-5">
+              <h4 className="text-sm font-semibold">Individual</h4>
+              <p className="mt-1 text-xs text-muted-foreground">The study was conducted by an individual consultant or specialist</p>
             </div>
           </button>
           <button
@@ -248,21 +250,22 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
             onClick={() => !isLocked && updateField('fs_conductor_type', 'company')}
             disabled={isLocked}
             className={cn(
-              'relative rounded-lg border-2 text-left transition-all overflow-hidden',
+              'relative flex flex-col justify-end flex-1 h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               formData.fs_conductor_type === 'company'
-                ? 'border-[#5f7f7a] bg-[#f6f5f3] ring-2 ring-[#5f7f7a]/20'
-                : 'border-border hover:border-muted-foreground/50',
+                ? 'ring-border bg-primary/5'
+                : 'ring-gray-300 bg-background hover:bg-gray-50',
               isLocked && 'opacity-60 cursor-not-allowed',
             )}
           >
-            <div className="flex items-stretch">
-              <div className="w-24 bg-muted flex items-center justify-center shrink-0">
-                <Building2 className="h-10 w-10 text-muted-foreground/40" />
+            <Image src="/images/fs-conductor-company.png" alt="Company / Firm" fill className="object-contain object-top opacity-15 scale-75" />
+            {formData.fs_conductor_type === 'company' && (
+              <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                <Check className="h-3 w-3 text-primary-foreground" />
               </div>
-              <div className="p-4">
-                <span className="font-medium text-sm">Company / Firm</span>
-                <p className="text-xs text-muted-foreground mt-1">The study was conducted by a consulting firm or organisation</p>
-              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white via-white/95 to-transparent p-3 pt-5">
+              <h4 className="text-sm font-semibold">Company / Firm</h4>
+              <p className="mt-1 text-xs text-muted-foreground">The study was conducted by a consulting firm or organisation</p>
             </div>
           </button>
         </div>
@@ -355,6 +358,44 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
           acceptedTypes={['preliminary_fs_report', 'cost_estimate', 'cost_benefit_analysis', 'other']}
         />
       </div>
+
+      {/* Validation error summary — map error keys to their tabs */}
+      {(() => {
+        const errorTabMap: Record<string, { tab: FS1Tab; label: string }> = {
+          fs_conductor_type: { tab: 'technical', label: 'Technical' },
+          fs_conductor_individual_name: { tab: 'technical', label: 'Technical' },
+          fs_conductor_company_name: { tab: 'technical', label: 'Technical' },
+          cost_table_data: { tab: 'firr', label: 'Financial Analysis' },
+          environmental_impact_level: { tab: 'environmental', label: 'Environmental' },
+          social_impact_level: { tab: 'environmental', label: 'Environmental' },
+        };
+        const fieldErrors = Object.keys(errors).filter(k => k !== '_form' && errorTabMap[k]);
+        if (fieldErrors.length === 0) return null;
+        const tabsWithErrors = Array.from(new Set(fieldErrors.map(k => errorTabMap[k]!.tab)));
+        const tabLabels = Array.from(new Set(fieldErrors.map(k => errorTabMap[k]!.label)));
+        return (
+          <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+            <div className="text-sm text-amber-800">
+              <p className="font-medium">Please complete required fields before continuing:</p>
+              <ul className="mt-1 space-y-0.5">
+                {fieldErrors.map(k => (
+                  <li key={k}>
+                    <button
+                      type="button"
+                      className="underline hover:text-amber-900"
+                      onClick={() => setFs1ActiveTab(errorTabMap[k]!.tab)}
+                    >
+                      {errors[k]}
+                    </button>
+                    <span className="text-amber-600 text-xs ml-1">({errorTabMap[k]!.label} tab)</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* FS-1 Internal Tabs */}
       <Tabs value={fs1ActiveTab} onValueChange={handleTabChange}>

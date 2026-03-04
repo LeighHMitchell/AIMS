@@ -15,7 +15,7 @@ import {
 import {
   ArrowRight, ChevronRight, ChevronDown, ExternalLink, Plus, Calculator,
   AlertTriangle, DollarSign, CheckCircle, XCircle, Clock,
-  Building2, MapPin, Layers, FileText, User, Mail, Phone, Target,
+  Building2, MapPin, Layers, FileText, User, Mail, Phone, Target, Globe, Briefcase,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
@@ -101,22 +101,6 @@ function formatFullDate(dateStr: string | null | undefined): string {
 }
 
 /** Collapsible section for PFS data display */
-function CollapsibleSection({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <div className="border rounded-lg">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full p-3 text-left hover:bg-muted/50 transition-colors"
-      >
-        <span className="text-sm font-semibold">{title}</span>
-        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && <div className="px-3 pb-3 space-y-2">{children}</div>}
-    </div>
-  )
-}
 
 function PFSField({ label, value }: { label: string; value: string | number | null | undefined }) {
   if (value === null || value === undefined || value === '') return null
@@ -128,111 +112,6 @@ function PFSField({ label, value }: { label: string; value: string | number | nu
   )
 }
 
-function PFSDataDisplay({ project }: { project: ProjectBankProject }) {
-  const impactLabel = (level: string | null | undefined) => {
-    if (!level) return '—'
-    const found = IMPACT_LEVELS.find(l => l.value === level)
-    return found ? found.label : level
-  }
-
-  const maturityLabel = (level: string | null | undefined) => {
-    if (!level) return '—'
-    const found = TECHNICAL_MATURITY_LEVELS.find(l => l.value === level)
-    return found ? found.label : level
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Preliminary Feasibility Study Data</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Technical */}
-        {(project.technical_approach || project.technology_methodology || project.technical_risks) && (
-          <CollapsibleSection title="Technical" defaultOpen>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <PFSField label="Technical Approach" value={project.technical_approach} />
-              <PFSField label="Technology / Methodology" value={project.technology_methodology} />
-              <PFSField label="Technical Risks" value={project.technical_risks} />
-              {project.has_technical_design && (
-                <PFSField label="Design Maturity" value={maturityLabel(project.technical_design_maturity)} />
-              )}
-            </div>
-          </CollapsibleSection>
-        )}
-
-        {/* Revenue */}
-        {project.has_revenue_component && (
-          <CollapsibleSection title="Revenue">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <PFSField label="Revenue Sources" value={(project.revenue_sources || []).join(', ')} />
-              <PFSField label="Projected Annual Users" value={project.projected_annual_users} />
-              <PFSField label="Projected Annual Revenue" value={project.projected_annual_revenue ? formatCurrency(project.projected_annual_revenue) : null} />
-              <PFSField label="Revenue Ramp-up" value={project.revenue_ramp_up_years ? `${project.revenue_ramp_up_years} years` : null} />
-              <PFSField label="Market Assessment" value={project.market_assessment_summary} />
-            </div>
-          </CollapsibleSection>
-        )}
-
-        {/* Environmental */}
-        {(project.environmental_impact_level || project.social_impact_level) && (
-          <CollapsibleSection title="Environmental & Social">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <PFSField label="Environmental Impact" value={impactLabel(project.environmental_impact_level)} />
-              <PFSField label="Social Impact" value={impactLabel(project.social_impact_level)} />
-              {project.environmental_impact_description && (
-                <PFSField label="Environmental Description" value={project.environmental_impact_description} />
-              )}
-              {project.social_impact_description && (
-                <PFSField label="Social Description" value={project.social_impact_description} />
-              )}
-              {project.land_acquisition_required && <PFSField label="Land Acquisition" value="Required" />}
-              {project.resettlement_required && (
-                <PFSField label="Resettlement" value={project.estimated_affected_households ? `Required — ~${project.estimated_affected_households} households` : 'Required'} />
-              )}
-            </div>
-          </CollapsibleSection>
-        )}
-
-        {/* Financial Analysis */}
-        {project.firr !== null && (
-          <CollapsibleSection title="Financial Analysis">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <div className="text-xs text-muted-foreground">FIRR</div>
-                <div className="text-lg font-bold tabular-nums mt-0.5">
-                  {project.firr !== null ? `${project.firr.toFixed(1)}%` : '—'}
-                </div>
-              </div>
-              {project.firr_calculation_data && (
-                <>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-muted-foreground">NPV @ 10%</div>
-                    <div className="text-lg font-bold tabular-nums mt-0.5">
-                      {formatCurrency(project.firr_calculation_data.npv_at_10)}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-muted-foreground">Payback Year</div>
-                    <div className="text-lg font-bold tabular-nums mt-0.5">
-                      {project.firr_calculation_data.payback_year || '—'}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-muted-foreground">Total Investment</div>
-                    <div className="text-lg font-bold tabular-nums mt-0.5">
-                      {formatCurrency(project.firr_calculation_data.total_investment)}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </CollapsibleSection>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
 
 const NARRATIVE_SECTION_LABELS: Record<string, string> = {
   problem_statement: 'Problem Statement',
@@ -585,190 +464,349 @@ export default function ProjectDetailPage() {
               <TabsContent value="overview" className="space-y-6">
 
             {/* Body Content Section */}
-            <div className="space-y-4">
-              {/* Project Origin */}
-              {project.origin && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-0.5">Project Origin</div>
-                  <div className="text-sm font-medium">
-                    {project.origin === 'government' ? 'Government Nominated' : project.origin === 'unsolicited' ? 'Unsolicited Proposal' : project.origin}
+            <Card>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                {/* ── Left Column ── */}
+                <div className="space-y-4">
+                  {/* Project Origin */}
+                  {project.origin && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-0.5">Project Origin</div>
+                      <div className="text-sm font-medium">
+                        {project.origin === 'government' ? 'Government Nominated' : project.origin === 'unsolicited' ? 'Unsolicited Proposal' : project.origin}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Proponent Details (unsolicited only) */}
+                  {project.origin === 'unsolicited' && ((project as any).proponent_name || (project as any).proponent_company || (project as any).proponent_contact) && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-0.5">Proponent Details</div>
+                      <div className="text-sm space-y-0.5">
+                        {(project as any).proponent_name && <div className="font-medium">{(project as any).proponent_name}</div>}
+                        {(project as any).proponent_company && <div className="text-muted-foreground">{(project as any).proponent_company}</div>}
+                        {(project as any).proponent_contact && <div className="text-muted-foreground">{(project as any).proponent_contact}</div>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Project Type */}
+                  {project.project_type && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-0.5">Project Type</div>
+                      <div className="text-sm font-medium">{project.project_type}</div>
+                    </div>
+                  )}
+
+                  {/* PPP Contract Type */}
+                  {(project as any).ppp_contract_type && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-0.5">PPP Contract Type</div>
+                      <div className="text-sm font-medium">{PPP_CONTRACT_TYPE_LABELS[(project as any).ppp_contract_type] || (project as any).ppp_contract_type}</div>
+                    </div>
+                  )}
+
+                  {/* Estimated Start & Duration */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-0.5">Estimated Start Date</div>
+                      <div className="text-sm font-medium">{formatFullDate(project.estimated_start_date)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-0.5">Estimated Duration</div>
+                      <div className="text-sm font-medium">{formatDuration(project.estimated_duration_months)}</div>
+                    </div>
+                    {project.construction_period_years != null && (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5">Construction Period</div>
+                        <div className="text-sm font-medium">{project.construction_period_years} year{project.construction_period_years !== 1 ? 's' : ''}</div>
+                      </div>
+                    )}
+                    {project.operational_period_years != null && (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5">Operational Period</div>
+                        <div className="text-sm font-medium">{project.operational_period_years} year{project.operational_period_years !== 1 ? 's' : ''}</div>
+                      </div>
+                    )}
+                    {project.project_life_years != null && (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5">Project Life</div>
+                        <div className="text-sm font-medium">{project.project_life_years} year{project.project_life_years !== 1 ? 's' : ''}</div>
+                      </div>
+                    )}
+                    {project.preliminary_fs_date && (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5">Preliminary FS Date</div>
+                        <div className="text-sm font-medium">{formatFullDate(project.preliminary_fs_date)}</div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
 
-              {/* Project Type */}
-              {project.project_type && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-0.5">Project Type</div>
-                  <div className="text-sm font-medium">{project.project_type}</div>
-                </div>
-              )}
+                  {/* Description */}
+                  {project.description && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Description</div>
+                      <p className="text-sm leading-relaxed">{project.description}</p>
+                    </div>
+                  )}
 
-              {/* PPP Contract Type */}
-              {(project as any).ppp_contract_type && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-0.5">PPP Contract Type</div>
-                  <div className="text-sm font-medium">{PPP_CONTRACT_TYPE_LABELS[(project as any).ppp_contract_type] || (project as any).ppp_contract_type}</div>
-                </div>
-              )}
+                  {/* Objectives */}
+                  {project.objectives && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Objectives</div>
+                      <p className="text-sm leading-relaxed">{project.objectives}</p>
+                    </div>
+                  )}
 
-              {/* Estimated Start & Duration */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-0.5">Estimated Start Date</div>
-                  <div className="text-sm font-medium">{formatFullDate(project.estimated_start_date)}</div>
+                  {/* Target Beneficiaries */}
+                  {project.target_beneficiaries && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Target Beneficiaries</div>
+                      <p className="text-sm leading-relaxed">{project.target_beneficiaries}</p>
+                    </div>
+                  )}
+
+                  {/* Documents */}
+                  {project.documents && project.documents.length > 0 && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-2">Documents</div>
+                      <div className="space-y-1.5">
+                        {project.documents.map((doc: any) => (
+                          <div key={doc.id} className="flex items-center gap-2 p-2 bg-muted/20 rounded-md">
+                            <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm truncate">{doc.file_name}</div>
+                              <div className="text-[10px] text-muted-foreground">{DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <div className="text-xs text-muted-foreground mb-0.5">Estimated Duration</div>
-                  <div className="text-sm font-medium">{formatDuration(project.estimated_duration_months)}</div>
+
+                {/* ── Right Column ── */}
+                <div className="space-y-4">
+                  {/* Contact Officer */}
+                  {project.contact_officer && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-2">Contact Officer</div>
+                      <div className="rounded-lg border bg-muted/20 p-3 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <User className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-sm font-medium">{project.contact_officer}</span>
+                        </div>
+                        {(project as any).contact_position && (
+                          <div className="text-xs text-muted-foreground ml-5.5">{(project as any).contact_position}</div>
+                        )}
+                        {project.contact_email && (
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-xs">{project.contact_email}</span>
+                          </div>
+                        )}
+                        {project.contact_phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-xs">{project.contact_phone}</span>
+                          </div>
+                        )}
+                        {((project as any).contact_ministry || (project as any).contact_department) && (
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-xs">
+                              {[(project as any).contact_ministry, (project as any).contact_department].filter(Boolean).join(' — ')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* FS Conductor Details */}
+                  {(() => {
+                    const p = project as any
+                    const isConductor = p.fs_conductor_type === 'individual'
+                      ? (p.fs_conductor_individual_name || p.fs_conductor_individual_email || p.fs_conductor_individual_phone)
+                      : p.fs_conductor_type === 'company'
+                      ? (p.fs_conductor_company_name || p.fs_conductor_company_email || p.fs_conductor_company_phone)
+                      : false
+                    if (!isConductor) return null
+                    return (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-2">Feasibility Study Conductor</div>
+                        <div className="rounded-lg border bg-muted/20 p-3 space-y-1.5">
+                          {p.fs_conductor_type === 'individual' ? (
+                            <>
+                              {p.fs_conductor_individual_name && (
+                                <div className="flex items-center gap-2">
+                                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-sm font-medium">{p.fs_conductor_individual_name}</span>
+                                </div>
+                              )}
+                              {p.fs_conductor_individual_job_title && (
+                                <div className="flex items-center gap-2">
+                                  <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-xs">{p.fs_conductor_individual_job_title}</span>
+                                </div>
+                              )}
+                              {p.fs_conductor_individual_company && (
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-xs">{p.fs_conductor_individual_company}</span>
+                                </div>
+                              )}
+                              {p.fs_conductor_individual_email && (
+                                <div className="flex items-center gap-2">
+                                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-xs">{p.fs_conductor_individual_email}</span>
+                                </div>
+                              )}
+                              {p.fs_conductor_individual_phone && (
+                                <div className="flex items-center gap-2">
+                                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-xs">{p.fs_conductor_individual_phone}</span>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {p.fs_conductor_company_name && (
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-sm font-medium">{p.fs_conductor_company_name}</span>
+                                </div>
+                              )}
+                              {p.fs_conductor_contact_person && (
+                                <div className="flex items-center gap-2">
+                                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-xs">{p.fs_conductor_contact_person}</span>
+                                </div>
+                              )}
+                              {p.fs_conductor_company_address && (
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-xs">{p.fs_conductor_company_address}</span>
+                                </div>
+                              )}
+                              {p.fs_conductor_company_email && (
+                                <div className="flex items-center gap-2">
+                                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-xs">{p.fs_conductor_company_email}</span>
+                                </div>
+                              )}
+                              {p.fs_conductor_company_phone && (
+                                <div className="flex items-center gap-2">
+                                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-xs">{p.fs_conductor_company_phone}</span>
+                                </div>
+                              )}
+                              {p.fs_conductor_company_website && (
+                                <div className="flex items-center gap-2">
+                                  <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-xs">{p.fs_conductor_company_website}</span>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* SDG Alignment */}
+                  {project.sdg_goals && project.sdg_goals.length > 0 && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-2">SDG Alignment</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {project.sdg_goals.map((goal) => (
+                          <Badge key={goal} variant="outline" className="text-xs">
+                            SDG {goal}{SDG_LABELS[goal] ? `: ${SDG_LABELS[goal]}` : ''}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* MSDP Alignment */}
+                  {(project.msdp_strategy_area || project.alignment_justification || ndpGoal || project.sector_strategy_reference || project.in_sector_investment_plan != null || (project.secondary_ndp_goals && project.secondary_ndp_goals.length > 0)) && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-2">MSDP Alignment</div>
+                      <div className="space-y-2">
+                        {project.msdp_strategy_area && (
+                          <div>
+                            <div className="text-[10px] text-muted-foreground">Strategy Area</div>
+                            <div className="text-sm">{project.msdp_strategy_area}</div>
+                          </div>
+                        )}
+                        {project.alignment_justification && (
+                          <div>
+                            <div className="text-[10px] text-muted-foreground">Justification</div>
+                            <p className="text-sm leading-relaxed">{project.alignment_justification}</p>
+                          </div>
+                        )}
+                        {project.sector_strategy_reference && (
+                          <div>
+                            <div className="text-[10px] text-muted-foreground">Sector Strategy Reference</div>
+                            <div className="text-sm">{project.sector_strategy_reference}</div>
+                          </div>
+                        )}
+                        {project.in_sector_investment_plan != null && (
+                          <div>
+                            <div className="text-[10px] text-muted-foreground">Included in Sector Investment Plan</div>
+                            <div className="text-sm">{project.in_sector_investment_plan ? 'Yes' : 'No'}</div>
+                          </div>
+                        )}
+                        {ndpGoal && (
+                          <div>
+                            <div className="text-[10px] text-muted-foreground">NDP Goal</div>
+                            <div className="text-sm">{ndpGoal.code} — {ndpGoal.name}</div>
+                          </div>
+                        )}
+                        {project.secondary_ndp_goals && project.secondary_ndp_goals.length > 0 && (
+                          <div>
+                            <div className="text-[10px] text-muted-foreground">Secondary NDP Goals</div>
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                              {project.secondary_ndp_goals.map((goal) => (
+                                <Badge key={goal} variant="outline" className="text-xs">{goal}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Donor Commitments */}
+                  {project.donors && project.donors.length > 0 && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-2">Donor Commitments</div>
+                      <div className="space-y-2">
+                        {project.donors.map((d: ProjectBankDonor) => (
+                          <div key={d.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                            <div>
+                              <div className="text-sm font-medium">{d.donor_name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {d.donor_type ? DONOR_TYPE_LABELS[d.donor_type] : ''}{' '}
+                                {d.instrument_type ? `· ${INSTRUMENT_TYPE_LABELS[d.instrument_type]}` : ''}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium">{formatCurrency(d.amount, d.currency)}</div>
+                              <Badge variant="outline" className="text-[10px]">
+                                {COMMITMENT_STATUS_LABELS[d.commitment_status] || d.commitment_status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Description */}
-              {project.description && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Description</div>
-                  <p className="text-sm leading-relaxed">{project.description}</p>
-                </div>
-              )}
-
-              {/* Objectives */}
-              {project.objectives && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Objectives</div>
-                  <p className="text-sm leading-relaxed">{project.objectives}</p>
-                </div>
-              )}
-
-              {/* Target Beneficiaries */}
-              {project.target_beneficiaries && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Target Beneficiaries</div>
-                  <p className="text-sm leading-relaxed">{project.target_beneficiaries}</p>
-                </div>
-              )}
-
-              {/* Contact Officer */}
-              {project.contact_officer && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-2">Contact Officer</div>
-                  <div className="rounded-lg border bg-muted/20 p-3 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <User className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-sm font-medium">{project.contact_officer}</span>
-                    </div>
-                    {(project as any).contact_position && (
-                      <div className="text-xs text-muted-foreground ml-5.5">{(project as any).contact_position}</div>
-                    )}
-                    {project.contact_email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-xs">{project.contact_email}</span>
-                      </div>
-                    )}
-                    {project.contact_phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-xs">{project.contact_phone}</span>
-                      </div>
-                    )}
-                    {((project as any).contact_ministry || (project as any).contact_department) && (
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-xs">
-                          {[(project as any).contact_ministry, (project as any).contact_department].filter(Boolean).join(' — ')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* SDG Alignment */}
-              {project.sdg_goals && project.sdg_goals.length > 0 && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-2">SDG Alignment</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {project.sdg_goals.map((goal) => (
-                      <Badge key={goal} variant="outline" className="text-xs">
-                        SDG {goal}{SDG_LABELS[goal] ? `: ${SDG_LABELS[goal]}` : ''}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* MSDP Alignment */}
-              {(project.msdp_strategy_area || project.alignment_justification || ndpGoal) && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-2">MSDP Alignment</div>
-                  <div className="space-y-2">
-                    {project.msdp_strategy_area && (
-                      <div>
-                        <div className="text-[10px] text-muted-foreground">Strategy Area</div>
-                        <div className="text-sm">{project.msdp_strategy_area}</div>
-                      </div>
-                    )}
-                    {project.alignment_justification && (
-                      <div>
-                        <div className="text-[10px] text-muted-foreground">Justification</div>
-                        <p className="text-sm leading-relaxed">{project.alignment_justification}</p>
-                      </div>
-                    )}
-                    {ndpGoal && (
-                      <div>
-                        <div className="text-[10px] text-muted-foreground">NDP Goal</div>
-                        <div className="text-sm">{ndpGoal.code} — {ndpGoal.name}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Documents */}
-              {project.documents && project.documents.length > 0 && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-2">Documents</div>
-                  <div className="space-y-1.5">
-                    {project.documents.map((doc: any) => (
-                      <div key={doc.id} className="flex items-center gap-2 p-2 bg-muted/20 rounded-md">
-                        <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm truncate">{doc.file_name}</div>
-                          <div className="text-[10px] text-muted-foreground">{DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Donor Commitments (moved from Financing card) */}
-              {project.donors && project.donors.length > 0 && (
-                <div>
-                  <div className="text-xs text-muted-foreground mb-2">Donor Commitments</div>
-                  <div className="space-y-2">
-                    {project.donors.map((d: ProjectBankDonor) => (
-                      <div key={d.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
-                        <div>
-                          <div className="text-sm font-medium">{d.donor_name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {d.donor_type ? DONOR_TYPE_LABELS[d.donor_type] : ''}{' '}
-                            {d.instrument_type ? `· ${INSTRUMENT_TYPE_LABELS[d.instrument_type]}` : ''}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium">{formatCurrency(d.amount, d.currency)}</div>
-                          <Badge variant="outline" className="text-[10px]">
-                            {COMMITMENT_STATUS_LABELS[d.commitment_status] || d.commitment_status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            </CardContent>
+            </Card>
 
             {/* Appraisal Summary */}
             <Card>
@@ -837,17 +875,140 @@ export default function ProjectDetailPage() {
               </TabsContent>
 
               <TabsContent value="feasibility" className="space-y-6">
-                {/* PFS Data Display — visible from FS1 stage onward */}
-                {(['fs1', 'fs2', 'fs3'] as ProjectPhase[]).includes(currentPhase) && (project.technical_approach || project.environmental_impact_level || project.has_revenue_component || project.firr !== null) && (
-                  <PFSDataDisplay project={project} />
-                )}
+                {/* Preliminary Feasibility Study Data — two-column card */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Preliminary Feasibility Study Data</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                      {/* ── Left Column ── */}
+                      <div className="space-y-5">
+                        {/* Technical */}
+                        {(['fs1', 'fs2', 'fs3'] as ProjectPhase[]).includes(currentPhase) && (project.technical_approach || project.technology_methodology || project.technical_risks) && (
+                          <div>
+                            <div className="text-xs font-semibold mb-2">Technical</div>
+                            <div className="space-y-2">
+                              <PFSField label="Technical Approach" value={project.technical_approach} />
+                              <PFSField label="Technology / Methodology" value={project.technology_methodology} />
+                              <PFSField label="Technical Risks" value={project.technical_risks} />
+                              {project.has_technical_design && (
+                                <PFSField label="Design Maturity" value={(() => { const f = TECHNICAL_MATURITY_LEVELS.find(l => l.value === project.technical_design_maturity); return f ? f.label : project.technical_design_maturity || null })()} />
+                              )}
+                            </div>
+                          </div>
+                        )}
 
-                {/* Cash Flow Table — read-only display when cost table data exists */}
+                        {/* Revenue */}
+                        {project.has_revenue_component && (
+                          <div>
+                            <div className="text-xs font-semibold mb-2">Revenue</div>
+                            <div className="space-y-2">
+                              <PFSField label="Revenue Sources" value={(project.revenue_sources || []).join(', ')} />
+                              <PFSField label="Projected Annual Users" value={project.projected_annual_users} />
+                              <PFSField label="Projected Annual Revenue" value={project.projected_annual_revenue ? formatCurrency(project.projected_annual_revenue) : null} />
+                              <PFSField label="Revenue Ramp-up" value={project.revenue_ramp_up_years ? `${project.revenue_ramp_up_years} years` : null} />
+                              <PFSField label="Market Assessment" value={project.market_assessment_summary} />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Environmental & Social */}
+                        {(project.environmental_impact_level || project.social_impact_level) && (
+                          <div>
+                            <div className="text-xs font-semibold mb-2">Environmental & Social</div>
+                            <div className="space-y-2">
+                              <PFSField label="Environmental Impact" value={(() => { const f = IMPACT_LEVELS.find(l => l.value === project.environmental_impact_level); return f ? f.label : project.environmental_impact_level || null })()} />
+                              <PFSField label="Social Impact" value={(() => { const f = IMPACT_LEVELS.find(l => l.value === project.social_impact_level); return f ? f.label : project.social_impact_level || null })()} />
+                              {project.environmental_impact_description && (
+                                <PFSField label="Environmental Description" value={project.environmental_impact_description} />
+                              )}
+                              {project.social_impact_description && (
+                                <PFSField label="Social Description" value={project.social_impact_description} />
+                              )}
+                              {project.land_acquisition_required && <PFSField label="Land Acquisition" value="Required" />}
+                              {project.resettlement_required && (
+                                <PFSField label="Resettlement" value={project.estimated_affected_households ? `Required — ~${project.estimated_affected_households} households` : 'Required'} />
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ── Right Column ── */}
+                      <div className="space-y-5">
+                        {/* Narrative */}
+                        <div>
+                          <div className="text-xs font-semibold mb-2">Preliminary Feasibility Narrative</div>
+                          <FS1NarrativeDisplay projectId={id} />
+                        </div>
+
+                        {/* FS-1 Status Info */}
+                        {project.feasibility_stage && ['fs1_submitted', 'fs1_desk_screened'].includes(project.feasibility_stage) && (
+                          <div className="flex items-center gap-3 p-3 rounded-lg border bg-blue-50/50">
+                            <Clock className="h-5 w-5 text-blue-600 shrink-0" />
+                            <div>
+                              <h3 className="text-sm font-semibold">FS-1 Under Review</h3>
+                              <p className="text-xs text-muted-foreground">
+                                {project.feasibility_stage === 'fs1_submitted'
+                                  ? 'Your narrative is awaiting desk review.'
+                                  : 'Your narrative passed desk review and is awaiting senior review.'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* FS-1 Rejected */}
+                        {project.feasibility_stage === 'fs1_rejected' && (
+                          <div className="flex items-center gap-3 p-3 rounded-lg border border-red-200 bg-red-50/50">
+                            <XCircle className="h-5 w-5 text-red-600 shrink-0" />
+                            <div>
+                              <h3 className="text-sm font-semibold text-red-700">FS-1 Rejected</h3>
+                              {project.fs1_rejected_at && (
+                                <p className="text-xs text-muted-foreground">
+                                  Cool-down until {new Date(new Date(project.fs1_rejected_at).getTime() + 6 * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* FS-2 Assignment */}
+                        {project.feasibility_stage && ['fs1_passed', 'fs2_assigned', 'fs2_in_progress', 'fs2_completed'].includes(project.feasibility_stage) && (
+                          <FS2AssignmentPanel
+                            projectId={id}
+                            feasibilityStage={project.feasibility_stage}
+                            onUpdated={fetchProject}
+                          />
+                        )}
+
+                        {/* Category Decision */}
+                        {project.feasibility_stage && ['fs2_completed', 'categorized', 'fs3_in_progress', 'fs3_completed'].includes(project.feasibility_stage) && (
+                          <CategoryDecisionPanel
+                            project={project}
+                            onCategorized={fetchProject}
+                          />
+                        )}
+
+                        {/* Category display */}
+                        {project.category_decision && project.feasibility_stage === 'categorized' && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+                            <span className="font-semibold">{CATEGORY_LABELS[project.category_decision]}</span>
+                            {project.category_decision === 'category_c' && (
+                              <p className="text-muted-foreground text-xs ml-1">
+                                — Requires FS-3 PPP Structuring
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Cash Flow Projection */}
                 {(project.firr_cost_table_data || project.cost_table_data) && (project.firr_cost_table_data || project.cost_table_data)!.length > 0 && (
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Cash Flow Projection</CardTitle>
-                    </CardHeader>
+                    <CardHeader className="bg-surface-muted rounded-t-lg"><CardTitle className="text-base">Cash Flow Projection</CardTitle></CardHeader>
                     <CardContent>
                       <CashFlowTable
                         rows={(project.firr_cost_table_data || project.cost_table_data)!}
@@ -860,91 +1021,66 @@ export default function ProjectDetailPage() {
                   </Card>
                 )}
 
-                {/* FS-1 Narrative — read-only display */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">FS-1 Narrative</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <FS1NarrativeDisplay projectId={id} />
-                  </CardContent>
-                </Card>
-
-                {/* FS-1 Status Info */}
-                {project.feasibility_stage && ['fs1_submitted', 'fs1_desk_screened'].includes(project.feasibility_stage) && (
+                {/* Financial Analysis */}
+                {project.firr !== null && (
                   <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-blue-600" />
-                        <div>
-                          <h3 className="text-sm font-semibold">FS-1 Under Review</h3>
-                          <p className="text-xs text-muted-foreground">
-                            {project.feasibility_stage === 'fs1_submitted'
-                              ? 'Your narrative is awaiting desk review.'
-                              : 'Your narrative passed desk review and is awaiting senior review.'}
-                          </p>
+                    <CardHeader><CardTitle className="text-base">Financial Analysis</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="p-3 bg-surface-muted rounded-lg">
+                          <div className="text-xs text-muted-foreground">FIRR</div>
+                          <div className="text-lg font-bold tabular-nums mt-0.5">
+                            {project.firr !== null ? `${project.firr.toFixed(1)}%` : '—'}
+                          </div>
                         </div>
+                        {project.firr_calculation_data && (
+                          <>
+                            <div className="p-3 bg-surface-muted rounded-lg">
+                              <div className="text-xs text-muted-foreground">NPV @ 10%</div>
+                              <div className="text-lg font-bold tabular-nums mt-0.5">
+                                {formatCurrency(project.firr_calculation_data.npv_at_10)}
+                              </div>
+                            </div>
+                            <div className="p-3 bg-surface-muted rounded-lg">
+                              <div className="text-xs text-muted-foreground">Payback Year</div>
+                              <div className="text-lg font-bold tabular-nums mt-0.5">
+                                {project.firr_calculation_data.payback_year || '—'}
+                              </div>
+                            </div>
+                            <div className="p-3 bg-surface-muted rounded-lg">
+                              <div className="text-xs text-muted-foreground">Total Investment</div>
+                              <div className="text-lg font-bold tabular-nums mt-0.5">
+                                {formatCurrency(project.firr_calculation_data.total_investment)}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* FS-1 Rejected */}
-                {project.feasibility_stage === 'fs1_rejected' && (
-                  <Card className="border-red-200">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-3">
-                        <XCircle className="h-5 w-5 text-red-600" />
-                        <div>
-                          <h3 className="text-sm font-semibold text-red-700">FS-1 Rejected</h3>
-                          {project.fs1_rejected_at && (
-                            <p className="text-xs text-muted-foreground">
-                              Cool-down until {new Date(new Date(project.fs1_rejected_at).getTime() + 6 * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
-                            </p>
-                          )}
+                      {/* Sensitivity Analysis */}
+                      {project.firr_calculation_data?.sensitivity && Array.isArray(project.firr_calculation_data.sensitivity) && project.firr_calculation_data.sensitivity.length > 0 && (
+                        <div className="mt-4">
+                          <div className="text-xs font-medium text-muted-foreground mb-2">Sensitivity Analysis</div>
+                          <div className="border rounded-lg overflow-hidden">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-surface-muted">
+                                  <th className="text-left px-3 py-1.5 text-xs font-medium text-muted-foreground">Scenario</th>
+                                  <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground">FIRR</th>
+                                  <th className="text-right px-3 py-1.5 text-xs font-medium text-muted-foreground">NPV</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {project.firr_calculation_data.sensitivity.map((row: any, i: number) => (
+                                  <tr key={i} className={i % 2 === 0 ? '' : 'bg-muted/20'}>
+                                    <td className="px-3 py-1.5">{row.label || row.scenario || '—'}</td>
+                                    <td className="px-3 py-1.5 text-right tabular-nums">{row.firr != null ? `${Number(row.firr).toFixed(1)}%` : '—'}</td>
+                                    <td className="px-3 py-1.5 text-right tabular-nums">{row.npv != null ? formatCurrency(row.npv) : '—'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* FS-2 Assignment Panel — shows for fs1_passed and beyond */}
-                {project.feasibility_stage && ['fs1_passed', 'fs2_assigned', 'fs2_in_progress', 'fs2_completed'].includes(project.feasibility_stage) && (
-                  <Card>
-                    <CardContent className="pt-6">
-                      <FS2AssignmentPanel
-                        projectId={id}
-                        feasibilityStage={project.feasibility_stage}
-                        onUpdated={fetchProject}
-                      />
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Category Decision Panel — shows after FS-2 complete */}
-                {project.feasibility_stage && ['fs2_completed', 'categorized', 'fs3_in_progress', 'fs3_completed'].includes(project.feasibility_stage) && (
-                  <Card>
-                    <CardContent className="pt-6">
-                      <CategoryDecisionPanel
-                        project={project}
-                        onCategorized={fetchProject}
-                      />
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Category display for already-categorized */}
-                {project.category_decision && project.feasibility_stage === 'categorized' && (
-                  <Card>
-                    <CardContent className="pt-6 text-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                        <span className="font-semibold">{CATEGORY_LABELS[project.category_decision]}</span>
-                      </div>
-                      {project.category_decision === 'category_c' && (
-                        <p className="text-muted-foreground text-xs">
-                          This project requires FS-3 PPP Structuring. Open the Appraisal wizard to configure VGF, MRG, and other support mechanisms.
-                        </p>
                       )}
                     </CardContent>
                   </Card>

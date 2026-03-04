@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Clock, RotateCcw, XCircle, ShieldCheck, Send, AlertCircle } from 'lucide-react';
+import { Loader2, Clock, RotateCcw, XCircle, ShieldCheck, Send, AlertCircle, ArrowLeft, Eye } from 'lucide-react';
 import { useAppraisalWizard } from '@/hooks/use-appraisal-wizard';
 import { AppraisalProgressRail } from './AppraisalProgressRail';
 import { StageIntake } from './StageIntake';
@@ -49,6 +49,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
   } = wizard;
 
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [viewingIntake, setViewingIntake] = useState(false);
 
   if (isLoading) {
     return (
@@ -60,7 +61,26 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
 
   const isFirstStage = currentStageIndex === 0;
 
+  /** Intercept stage clicks: viewing intake from FS1 sets read-only mode */
+  const handleStageClick = (stage: Parameters<typeof goToStage>[0]) => {
+    if (stage === 'intake' && currentPhase !== 'intake') {
+      setViewingIntake(true);
+      return;
+    }
+    setViewingIntake(false);
+    goToStage(stage);
+  };
+
   const renderStage = () => {
+    // Read-only intake view from a later phase
+    if (viewingIntake && currentPhase !== 'intake') {
+      return (
+        <div className="pointer-events-none opacity-75">
+          <StageIntake wizard={wizard} />
+        </div>
+      );
+    }
+
     // In the unified model, intake and FS-1 are the two main editable phases
     if (currentPhase === 'intake') {
       return <StageIntake wizard={wizard} />;
@@ -147,21 +167,49 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
 
       {/* Progress Rail */}
       <AppraisalProgressRail
+        projectName={wizard.formData.name}
         visibleStages={visibleStages}
         currentStage={currentStage}
         projectStage={projectStage}
         currentPhase={currentPhase}
         fs1ActiveTab={fs1ActiveTab}
-        onStageClick={goToStage}
-        onFs1TabClick={setFs1ActiveTab}
+        onStageClick={handleStageClick}
+        onFs1TabClick={(tab) => {
+          setViewingIntake(false);
+          setFs1ActiveTab(tab);
+          // After React re-renders, scroll the tab content into view
+          requestAnimationFrame(() => {
+            const el = document.getElementById(`section-${tab}`);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            else window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        }}
         canGoToStage={canGoToStage}
         isStageComplete={isStageComplete}
+        onReturnToCurrentPhase={() => setViewingIntake(false)}
       />
 
       {/* Main Content */}
-      <div className={currentPhase === 'fs1' ? 'mr-[340px]' : ''}>
+      <div className={currentPhase === 'fs1' && !viewingIntake ? 'mr-[340px]' : ''}>
+        {/* Read-only intake viewing banner */}
+        {viewingIntake && (
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 mb-4">
+            <Eye className="h-4 w-4 text-amber-600 shrink-0" />
+            <span className="text-sm text-amber-800 font-medium flex-1">Viewing intake data (read-only)</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setViewingIntake(false)}
+              className="gap-1.5 shrink-0"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to Feasibility Study
+            </Button>
+          </div>
+        )}
+
         {/* Status Banner */}
-        {banner && (
+        {!viewingIntake && banner && (
           <div className={cn('flex items-start gap-3 p-4 rounded-lg border mb-4', banner.bgClass)}>
             <banner.icon className={cn('h-5 w-5 mt-0.5 shrink-0', banner.iconClass)} />
             <div>
@@ -184,12 +232,12 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       </div>
 
       {/* Viability Decision — sticky sidebar (third grid column, fs1 only) */}
-      {currentPhase === 'fs1' && (
+      {currentPhase === 'fs1' && !viewingIntake && (
         <ViabilityDecisionSidebar wizard={wizard} />
       )}
 
       {/* Fixed Bottom Action Bar */}
-      {showFooter && (
+      {showFooter && !viewingIntake && (
         <footer className="fixed bottom-0 left-72 right-0 z-[60] bg-card/60 backdrop-blur-md border-t py-4 px-8">
           <div className="flex items-center justify-between max-w-[1280px]">
             <Button
@@ -246,7 +294,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
           <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg">
             <DialogTitle className="flex items-center gap-2">
               <Send className="h-5 w-5" />
-              Submit {currentPhase === 'intake' ? 'Intake' : 'FS-1'} for Review
+              Submit {currentPhase === 'intake' ? 'Intake' : 'Preliminary Feasibility Study'} for Review
             </DialogTitle>
             <DialogDescription>
               {currentPhase === 'fs1'

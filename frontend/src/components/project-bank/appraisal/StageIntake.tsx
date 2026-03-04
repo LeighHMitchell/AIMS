@@ -303,10 +303,54 @@ export function StageIntake({ wizard }: StageIntakeProps) {
           </button>
         </div>
 
-        {/* Proponent details (shown when UNSOL) */}
+        {/* Contact Officer (shown when GOV) */}
+        {!isUnsolicited && (
+          <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
+            <h5 className="text-sm font-medium text-foreground">Contact Officer</h5>
+            <p className="text-xs text-muted-foreground -mt-1">The government officer responsible for coordinating this project.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Full Name <FieldCheck value={formData.contact_officer} /></Label>
+                <Input
+                  value={formData.contact_officer || ''}
+                  onChange={e => updateField('contact_officer', e.target.value)}
+                  placeholder="Full name"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Position / Job Title <FieldCheck value={formData.contact_position} /></Label>
+                <Input
+                  value={formData.contact_position || ''}
+                  onChange={e => updateField('contact_position', e.target.value)}
+                  placeholder="e.g. Director, Project Manager"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Email <FieldCheck value={formData.contact_email} /></Label>
+                <Input
+                  type="email"
+                  value={formData.contact_email || ''}
+                  onChange={e => updateField('contact_email', e.target.value)}
+                  placeholder="email@gov.mm"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Phone <FieldCheck value={formData.contact_phone} /></Label>
+                <Input
+                  value={formData.contact_phone || ''}
+                  onChange={e => updateField('contact_phone', e.target.value)}
+                  placeholder="+95..."
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Proponent Details (shown when UNSOL) */}
         {isUnsolicited && (
           <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
             <h5 className="text-sm font-medium text-foreground">Proponent Details</h5>
+            <p className="text-xs text-muted-foreground -mt-1">The primary contact from the proposing entity.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Proponent Name <FieldCheck value={formData.proponent_name} /></Label>
@@ -556,113 +600,8 @@ export function StageIntake({ wizard }: StageIntakeProps) {
         </div>
       </div>
 
-      {/* ─── I: Contact Officer — Context-Aware Label ─── */}
-      <div id="section-contact-officer" className="scroll-mt-20 p-4 space-y-4">
-        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          {isUnsolicited ? 'Proponent Contact' : 'Contact Officer'}
-        </h4>
-        <p className="text-xs text-muted-foreground -mt-2">
-          {isUnsolicited
-            ? 'The primary contact from the proposing entity.'
-            : 'The government officer responsible for coordinating this project.'}
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label>Full Name <HelpTooltip text="The primary contact person for this project." /> <FieldCheck value={formData.contact_officer} /></Label>
-            <Input
-              value={formData.contact_officer || ''}
-              onChange={e => updateField('contact_officer', e.target.value)}
-              placeholder="Full name"
-            />
-          </div>
-          <div>
-            <Label>Position / Job Title <HelpTooltip text="The contact officer's role or designation within their organisation." /> <FieldCheck value={formData.contact_position} /></Label>
-            <Input
-              value={formData.contact_position || ''}
-              onChange={e => updateField('contact_position', e.target.value)}
-              placeholder="e.g. Director, Deputy Director, Project Manager"
-            />
-          </div>
-          <div>
-            <Label>Email <HelpTooltip text="Contact officer's email address." /> <FieldCheck value={formData.contact_email} /></Label>
-            <Input
-              type="email"
-              value={formData.contact_email || ''}
-              onChange={e => updateField('contact_email', e.target.value)}
-              placeholder="email@gov.mm"
-            />
-          </div>
-          <div>
-            <Label>Phone <HelpTooltip text="Contact officer's phone number." /> <FieldCheck value={formData.contact_phone} /></Label>
-            <Input
-              value={formData.contact_phone || ''}
-              onChange={e => updateField('contact_phone', e.target.value)}
-              placeholder="+95..."
-            />
-          </div>
-          <div>
-            <Label>Line Ministry <HelpTooltip text="The ministry the contact officer belongs to." /> <FieldCheck value={formData.contact_ministry} /></Label>
-            <Select
-              value={formData.contact_ministry || ''}
-              onValueChange={v => {
-                updateField('contact_ministry', v);
-                updateField('contact_department', '');
-              }}
-              disabled={ministriesLoading || topLevelMinistries.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={
-                  ministriesLoading ? 'Loading ministries...'
-                    : topLevelMinistries.length === 0 ? 'No ministries available'
-                    : 'Select ministry...'
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {topLevelMinistries.map(m => (
-                  <SelectItem key={m.id} value={m.name}>
-                    <span className="inline-flex items-center gap-2 min-w-0">
-                      {m.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.code}</span>}
-                      <span>{m.name}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Department / Sub-entity <HelpTooltip text="The specific department, directorate, or office within the ministry." /> <FieldCheck value={formData.contact_department} /></Label>
-            {(() => {
-              const contactMinistry = ministries.find(m => m.name === formData.contact_ministry);
-              const contactDeptOptions = contactMinistry ? getAllDescendants(contactMinistry.id) : [];
-              return (
-                <Select
-                  value={formData.contact_department || ''}
-                  onValueChange={v => updateField('contact_department', v)}
-                  disabled={!formData.contact_ministry || contactDeptOptions.length === 0}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={
-                      !formData.contact_ministry ? 'Select a ministry first'
-                        : contactDeptOptions.length === 0 ? 'No sub-entities found'
-                        : 'Select department...'
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contactDeptOptions.map(m => (
-                      <SelectItem key={m.id} value={m.name}>
-                        <span className="inline-flex items-center gap-2 min-w-0">
-                          {m.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.code}</span>}
-                          <span className={m.level > 2 ? 'pl-3' : ''}>{m.name}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              );
-            })()}
-          </div>
-        </div>
-      </div>
+      {/* Contact Officer section removed — now inline under Project Origin */}
+      <div id="section-contact-officer" className="scroll-mt-20" />
 
       {/* ─── G: Sector / Sub-Sector — from DB, no border/bg ─── */}
       <div id="section-sector" className="scroll-mt-20 p-4 space-y-4">
