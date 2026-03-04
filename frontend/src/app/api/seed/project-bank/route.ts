@@ -1,4 +1,4 @@
-okimport { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { verifyCronSecret } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
