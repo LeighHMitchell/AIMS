@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X, Zap } from 'lucide-react';
 import { HelpTooltip } from './HelpTooltip';
 import { FormattedNumberInput } from './FormattedNumberInput';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
@@ -137,7 +137,9 @@ export function CashFlowTable({
             variant="outline"
             size="sm"
             onClick={() => setQuickEntry(!quickEntry)}
+            className="gap-1.5"
           >
+            <Zap className="h-3.5 w-3.5" />
             {quickEntry ? 'Manual Entry' : 'Quick Entry'}
           </Button>
         </div>

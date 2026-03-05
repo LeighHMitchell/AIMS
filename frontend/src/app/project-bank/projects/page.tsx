@@ -19,9 +19,8 @@ import { useUser } from "@/hooks/useUser"
 import {
   formatCurrency, STATUS_LABELS,
   PATHWAY_LABELS, SECTORS,
-  FEASIBILITY_STAGE_LABELS, FEASIBILITY_STAGE_BADGE_STYLES,
 } from "@/lib/project-bank-utils"
-import type { ProjectBankProject, ProjectStatus, FeasibilityStage } from "@/types/project-bank"
+import type { ProjectBankProject } from "@/types/project-bank"
 
 const STATUS_FILTERS: { value: string; label: string; code?: string }[] = [
   { value: "all", label: "All" },
@@ -52,17 +51,6 @@ const PATHWAY_OPTIONS: { value: string; label: string; code: string }[] = [
   { value: "domestic_budget", label: "Domestic Budget", code: "DOM" },
 ]
 
-/** Status → colour-palette badge styles */
-const STATUS_BADGE_STYLES: Record<ProjectStatus, { bg: string; text: string; border: string }> = {
-  nominated:      { bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },   // Platinum bg, Blue Slate text
-  screening:      { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },   // Pale Slate bg, Blue Slate text
-  appraisal:      { bg: '#7b95a7', text: '#ffffff', border: '#4c5568' },   // Cool Steel bg, white text
-  approved:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },   // Blue Slate bg, white text
-  implementation: { bg: '#dc2625', text: '#ffffff', border: '#dc2625' },   // Scarlet bg, white text
-  completed:      { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },   // Platinum bg, Cool Steel text
-  rejected:       { bg: '#dc2625', text: '#ffffff', border: '#dc2625' },   // Scarlet bg, white text
-}
-
 /** Format cost as "USD 100m" / "USD 1.2b" style */
 function formatCostUSD(value: number | null | undefined): string {
   if (value == null) return '—'
@@ -70,6 +58,55 @@ function formatCostUSD(value: number | null | undefined): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`
   if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`
   return value.toLocaleString()
+}
+
+/** Derive 1–3 stacked pipeline badges from project_stage + status */
+function getPipelineBadges(p: ProjectBankProject): { label: string; bg: string; text: string; border: string }[] {
+  const badges: { label: string; bg: string; text: string; border: string }[] = []
+  const stage = p.project_stage || ''
+
+  // Phase badge (always shown)
+  if (stage.startsWith('intake_')) {
+    badges.push({ label: 'Project Intake', bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' })
+  } else if (stage.startsWith('fs1_')) {
+    badges.push({ label: 'Preliminary FS', bg: '#7b95a7', text: '#ffffff', border: '#4c5568' })
+  } else if (stage.startsWith('fs2_')) {
+    badges.push({ label: 'Detailed FS', bg: '#4c5568', text: '#ffffff', border: '#4c5568' })
+  } else if (stage.startsWith('fs3_')) {
+    badges.push({ label: 'PPP Structuring', bg: '#4c5568', text: '#ffffff', border: '#4c5568' })
+  } else {
+    // Fallback: derive from status
+    const statusPhase: Record<string, { label: string; bg: string; text: string; border: string }> = {
+      nominated:      { label: 'Project Intake', bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
+      screening:      { label: 'Project Intake', bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' },
+      appraisal:      { label: 'Appraisal',      bg: '#7b95a7', text: '#ffffff', border: '#4c5568' },
+      approved:       { label: 'Approved',        bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+      implementation: { label: 'Implementation',  bg: '#dc2625', text: '#ffffff', border: '#dc2625' },
+    }
+    const fb = statusPhase[p.status]
+    if (fb) badges.push(fb)
+    else badges.push({ label: 'Project Intake', bg: '#f1f4f8', text: '#4c5568', border: '#cfd0d5' })
+  }
+
+  // Review badge (only when project_stage contains a review sub-stage)
+  if (/_desk_claimed$|_desk_screened$|_desk_reviewed$/.test(stage)) {
+    badges.push({ label: 'Desk Review', bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' })
+  } else if (/_senior_reviewed$/.test(stage)) {
+    badges.push({ label: 'Senior Review', bg: '#7b95a7', text: '#ffffff', border: '#4c5568' })
+  }
+
+  // Status badge (only for later pipeline statuses, and only when we have a real project_stage so the phase badge isn't already showing these)
+  if (stage) {
+    if (p.status === 'appraisal') {
+      badges.push({ label: 'Appraisal', bg: '#7b95a7', text: '#ffffff', border: '#4c5568' })
+    } else if (p.status === 'approved') {
+      badges.push({ label: 'Approved', bg: '#4c5568', text: '#ffffff', border: '#4c5568' })
+    } else if (p.status === 'implementation') {
+      badges.push({ label: 'Implementation', bg: '#dc2625', text: '#ffffff', border: '#dc2625' })
+    }
+  }
+
+  return badges
 }
 
 export default function ProjectListPage() {
@@ -313,8 +350,8 @@ export default function ProjectListPage() {
                   <SortHeader field="firr" className="text-right" tight>FIRR</SortHeader>
                   <SortHeader field="eirr" className="text-right" tight>EIRR</SortHeader>
                   <SortHeader field="vgf_amount" className="text-right" tight>VGF</SortHeader>
-                  <SortHeader field="status" tight>Status</SortHeader>
-                  <SortHeader field="feasibility_stage" tight>Feasibility</SortHeader>
+                  <SortHeader field="latest_score" className="text-right" tight>Score</SortHeader>
+                  <SortHeader field="project_stage" tight>Pipeline Stage</SortHeader>
                   <SortHeader field="pathway" tight>Pathway</SortHeader>
                   <SortHeader field="funding_gap" className="text-right" tight>Gap</SortHeader>
                   <SortHeader field="funded_pct" tight className="w-[100px]">Funding</SortHeader>
@@ -345,7 +382,6 @@ export default function ProjectListPage() {
                     const committed = cost - gap
                     const committedPct = cost > 0 ? Math.round((committed / cost) * 100) : 0
                     const gapBarPct = maxGap > 0 && gap > 0 ? Math.max(4, Math.round((gap / maxGap) * 100)) : 0
-                    const badgeStyle = STATUS_BADGE_STYLES[p.status] || STATUS_BADGE_STYLES.nominated
                     return (
                     <tr
                       key={p.id}
@@ -395,36 +431,40 @@ export default function ProjectListPage() {
                           <span><span className="text-muted-foreground font-normal text-xs">USD</span> {formatCostUSD(p.vgf_amount)}</span>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
-                      {/* Status */}
-                      <td className="px-2 py-2">
-                        <span
-                          className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
-                          style={{
-                            backgroundColor: badgeStyle.bg,
-                            color: badgeStyle.text,
-                            border: `1px solid ${badgeStyle.border}`,
-                          }}
-                        >
-                          {STATUS_LABELS[p.status]}
-                        </span>
+                      {/* Score */}
+                      <td className="px-2 py-2 text-sm text-right whitespace-nowrap">
+                        {(p as any).latest_score != null ? (
+                          <span
+                            className="font-semibold"
+                            style={{
+                              color: Number((p as any).latest_score) >= 70 ? '#4c5568'
+                                : Number((p as any).latest_score) >= 40 ? '#7b95a7'
+                                : '#dc2625',
+                            }}
+                          >
+                            {Number((p as any).latest_score).toFixed(0)}
+                          </span>
+                        ) : <span className="text-muted-foreground">—</span>}
                       </td>
-                      {/* Feasibility Stage */}
+                      {/* Pipeline Stage */}
                       <td className="px-2 py-2">
-                        {p.feasibility_stage && p.feasibility_stage !== 'registered' ? (() => {
-                          const fsBadge = FEASIBILITY_STAGE_BADGE_STYLES[p.feasibility_stage as FeasibilityStage]
-                          return fsBadge ? (
+                        {(() => {
+                          const badges = getPipelineBadges(p)
+                          const combined = badges.map(b => b.label).join(' \u00b7 ')
+                          const first = badges[0]
+                          return (
                             <span
                               className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap"
                               style={{
-                                backgroundColor: fsBadge.bg,
-                                color: fsBadge.text,
-                                border: `1px solid ${fsBadge.border}`,
+                                backgroundColor: first.bg,
+                                color: first.text,
+                                border: `1px solid ${first.border}`,
                               }}
                             >
-                              {FEASIBILITY_STAGE_LABELS[p.feasibility_stage as FeasibilityStage]}
+                              {combined}
                             </span>
-                          ) : <span className="text-muted-foreground text-sm">—</span>
-                        })() : <span className="text-muted-foreground text-sm">—</span>}
+                          )
+                        })()}
                       </td>
                       {/* Pathway */}
                       <td className="px-2 py-2 text-sm text-foreground whitespace-nowrap">

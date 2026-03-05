@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { calculateAndStoreScore } from '@/lib/scoring-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,6 +138,11 @@ export async function POST(
     .from('project_bank_projects')
     .update(updateData)
     .eq('id', id);
+
+  // Fire-and-forget: calculate FS-2 score after screening/approval
+  if (decision === 'screened' || decision === 'passed') {
+    calculateAndStoreScore(supabase!, id, 'fs2', user!.id, `fs2_review_${decision}`).catch(() => {});
+  }
 
   return NextResponse.json(review, { status: 201 });
 }

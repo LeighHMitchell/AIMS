@@ -117,15 +117,13 @@ function TreeNode({
           )}
         </button>
 
-        {/* Code */}
-        <span className="w-[80px] flex-shrink-0">
-          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded inline-block">
+        {/* Code + Name */}
+        <span className="text-sm flex-[3] min-w-0 break-words">
+          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded inline-block mr-2 align-middle">
             {node.code}
           </span>
+          {node.name}
         </span>
-
-        {/* Name */}
-        <span className="text-sm flex-1 min-w-0 break-words">{node.name}</span>
 
         {/* Local Name */}
         <span className="hidden md:block text-xs text-muted-foreground italic flex-1 min-w-0 truncate">
@@ -617,10 +615,9 @@ export function BudgetClassificationsManagement() {
                 Collapse All
               </Button>
               <Button
-                variant={isLocked ? "outline" : "default"}
                 size="sm"
                 onClick={() => setIsLocked(!isLocked)}
-                className={isLocked ? "" : "bg-amber-500 hover:bg-amber-600 text-white"}
+                className={isLocked ? "bg-[#dc2626] hover:bg-[#b91c1c] text-white" : "bg-[#ea580c] hover:bg-[#c2410c] text-white"}
                 title={isLocked ? "Click to unlock editing" : "Click to lock editing"}
               >
                 {isLocked ? (
@@ -662,26 +659,11 @@ export function BudgetClassificationsManagement() {
                 <div className="flex items-center gap-4 py-3 px-3 text-sm font-medium text-muted-foreground">
                   <div className="w-5 flex-shrink-0" /> {/* Spacer for expand icon */}
                   <button
-                    className="flex items-center gap-1 hover:text-foreground transition-colors w-[80px] flex-shrink-0"
+                    className="flex items-center gap-1 hover:text-foreground transition-colors flex-[3] min-w-0"
                     onClick={() => toggleSort("code")}
                   >
-                    Code
-                    {sortColumn === "code" ? (
-                      sortDirection === "asc" ? (
-                        <ArrowUp className="h-3 w-3" />
-                      ) : (
-                        <ArrowDown className="h-3 w-3" />
-                      )
-                    ) : (
-                      <ArrowUpDown className="h-3 w-3 opacity-50" />
-                    )}
-                  </button>
-                  <button
-                    className="flex items-center gap-1 hover:text-foreground transition-colors flex-1 min-w-0"
-                    onClick={() => toggleSort("name")}
-                  >
-                    Name
-                    {sortColumn === "name" ? (
+                    Code / Name
+                    {sortColumn === "code" || sortColumn === "name" ? (
                       sortDirection === "asc" ? (
                         <ArrowUp className="h-3 w-3" />
                       ) : (
@@ -802,7 +784,7 @@ export function BudgetClassificationsManagement() {
                     {(
                       Object.keys(CLASSIFICATION_TYPE_LABELS) as ClassificationType[]
                     ).map((type) => (
-                      <SelectItem key={type} value={type}>
+                      <SelectItem key={type} value={type} triggerLabel={CLASSIFICATION_TYPE_LABELS[type]}>
                         <div>
                           <div>{CLASSIFICATION_TYPE_LABELS[type]}</div>
                           <div className="text-xs text-muted-foreground">

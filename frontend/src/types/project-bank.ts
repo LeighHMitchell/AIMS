@@ -501,6 +501,10 @@ export interface ProjectBankProject {
   availability_payment_amount?: number | null;
   availability_payment_duration_years?: number | null;
   availability_payment_conditions?: string | null;
+  // Scoring
+  latest_score?: number | null;
+  latest_score_stage?: ScoringStage | null;
+  latest_score_id?: string | null;
   // Joined fields
   ndp_goal?: NationalDevelopmentGoal | null;
   donors?: ProjectBankDonor[];
@@ -570,4 +574,100 @@ export interface ModuleStats {
   projectBank: { projects: number; fundingGaps: number };
   aims: { activities: number; donors: number };
   landBank: { parcels: number; hectaresAvailable: number };
+}
+
+// ============================================================
+// Scoring System Types
+// ============================================================
+
+export type ScoringStage = 'intake' | 'fs1' | 'fs2';
+
+export type ScoringDimension =
+  | 'msdp_alignment'
+  | 'financial_viability'
+  | 'technical_maturity'
+  | 'environmental_social_risk'
+  | 'institutional_capacity';
+
+export type ScoringRuleType =
+  | 'boolean_field'
+  | 'not_null'
+  | 'array_length'
+  | 'numeric_threshold'
+  | 'enum_map'
+  | 'text_length'
+  | 'document_exists'
+  | 'json_field_exists'
+  | 'risk_register_quality'
+  | 'count_filled_fields';
+
+export interface SubCriterionThreshold {
+  min: number;
+  points: number;
+}
+
+export interface SubCriterionConfig {
+  key: string;
+  label: string;
+  rule_type: ScoringRuleType;
+  field_path: string;
+  max_points: number;
+  thresholds?: SubCriterionThreshold[];
+  enum_values?: Record<string, number>;
+}
+
+export interface ScoringCriterion {
+  id: string;
+  rubric_version_id: string;
+  stage: ScoringStage;
+  dimension: ScoringDimension;
+  dimension_weight: number;
+  sub_criteria: SubCriterionConfig[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScoringRubricVersion {
+  id: string;
+  version_number: number;
+  label: string;
+  description: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  activated_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DimensionScoreResult {
+  dimension: ScoringDimension;
+  raw_score: number;
+  max_score: number;
+  normalized: number;
+  weighted: number;
+  weight: number;
+  sub_scores: {
+    key: string;
+    label: string;
+    earned: number;
+    max: number;
+  }[];
+}
+
+export interface ScoreResult {
+  composite_score: number;
+  dimension_scores: Record<ScoringDimension, DimensionScoreResult>;
+}
+
+export interface ProjectScore {
+  id: string;
+  project_id: string;
+  rubric_version_id: string;
+  stage: ScoringStage;
+  composite_score: number;
+  dimension_scores: Record<ScoringDimension, DimensionScoreResult>;
+  triggered_by: string;
+  calculated_at: string;
+  calculated_by: string | null;
+  rubric_version?: ScoringRubricVersion;
 }

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { calculateAndStoreScore } from '@/lib/scoring-helpers';
+import type { ScoringStage } from '@/types/project-bank';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,6 +100,9 @@ export async function POST(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // Fire-and-forget: calculate score for this stage
+  calculateAndStoreScore(supabase!, id, phase as ScoringStage, user!.id, 'submission').catch(() => {});
 
   return NextResponse.json(data);
 }

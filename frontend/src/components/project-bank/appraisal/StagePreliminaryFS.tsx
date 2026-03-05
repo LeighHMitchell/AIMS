@@ -715,7 +715,7 @@ export function ViabilityDecisionSidebar({ wizard }: { wizard: UseAppraisalWizar
     : 'border-l-muted-foreground';
 
   return (
-    <div className={cn('fixed top-28 right-8 w-[320px] z-50 p-4 rounded-lg border-l-4 border shadow-lg bg-[#f6f5f3] border-[#5f7f7a]/20', routingBorderColor)}>
+    <div className={cn('p-4 rounded-lg border-l-4 border shadow-lg bg-[#f6f5f3] border-[#5f7f7a]/20', routingBorderColor)}>
       <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Viability Decision</div>
       <div className="text-sm font-bold mb-1 text-foreground">
         {routing.label}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Clock, RotateCcw, XCircle, ShieldCheck, Send, AlertCircle, ArrowLeft, Eye } from 'lucide-react';
+import { Loader2, Clock, RotateCcw, XCircle, ShieldCheck, Send, AlertCircle, ArrowLeft, Eye, Lock, LockOpen } from 'lucide-react';
 import { useAppraisalWizard } from '@/hooks/use-appraisal-wizard';
 import { AppraisalProgressRail } from './AppraisalProgressRail';
 import { StageIntake } from './StageIntake';
@@ -18,6 +18,7 @@ import { FS2AssignmentPanel } from '@/components/project-bank/fs2/FS2AssignmentP
 import { CategoryDecisionPanel } from '@/components/project-bank/categorization/CategoryDecisionPanel';
 import { ContextualHelpButton } from '@/components/project-bank/ContextualHelpButton';
 import { cn } from '@/lib/utils';
+import { AppraisalScoreSidebar } from '@/components/project-bank/scoring/AppraisalScoreSidebar';
 import type { ProjectPhase } from '@/types/project-bank';
 
 const VALIDATION_FIELD_LABELS: Record<string, string> = {
@@ -73,9 +74,13 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [overrideLock, setOverrideLock] = useState(false);
   const [viewingIntake, setViewingIntake] = useState(false);
   const [viewingFS1, setViewingFS1] = useState(false);
   const [viewingPhase, setViewingPhase] = useState<ProjectPhase | null>(null);
+  const [viewingIntakeUnlocked, setViewingIntakeUnlocked] = useState(false);
+  const [viewingFS1Unlocked, setViewingFS1Unlocked] = useState(false);
+  const [viewingPhaseUnlocked, setViewingPhaseUnlocked] = useState(false);
 
   if (isLoading) {
     return (
@@ -85,12 +90,18 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
     );
   }
 
+  const effectiveLocked = isLocked && !overrideLock;
+  // Override wizard.isLocked so child stage components respect the unlock
+  const effectiveWizard = effectiveLocked === isLocked ? wizard : { ...wizard, isLocked: false };
   const isFirstStage = currentStageIndex === 0;
 
   const clearViewing = () => {
     setViewingIntake(false);
     setViewingFS1(false);
     setViewingPhase(null);
+    setViewingIntakeUnlocked(false);
+    setViewingFS1Unlocked(false);
+    setViewingPhaseUnlocked(false);
   };
 
   /** Intercept stage clicks: viewing intake/FS-1 from a later phase sets read-only mode */
@@ -115,37 +126,37 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
     setViewingPhase(phase);
   };
 
+  // Wizard override with isLocked forced false (for unlocked viewing of prior phases)
+  const unlockedWizard = { ...wizard, isLocked: false };
+
   const renderStage = () => {
-    // Read-only intake view from a later phase
+    // Read-only intake view from a later phase (unless unlocked)
     if (viewingIntake && currentPhase !== 'intake') {
-      return (
-        <div className="pointer-events-none opacity-75">
-          <StageIntake wizard={wizard} />
-        </div>
+      const content = <StageIntake wizard={viewingIntakeUnlocked ? unlockedWizard : wizard} />;
+      return viewingIntakeUnlocked ? content : (
+        <div className="pointer-events-none opacity-75">{content}</div>
       );
     }
 
-    // Read-only FS-1 view from FS-2+ phase
+    // Read-only FS-1 view from FS-2+ phase (unless unlocked)
     if (viewingFS1 && currentPhase !== 'fs1') {
-      return (
-        <div className="pointer-events-none opacity-75">
-          <StagePreliminaryFS wizard={wizard} />
-        </div>
+      const content = <StagePreliminaryFS wizard={viewingFS1Unlocked ? unlockedWizard : wizard} />;
+      return viewingFS1Unlocked ? content : (
+        <div className="pointer-events-none opacity-75">{content}</div>
       );
     }
 
-    // Viewing FS-2 phase data from a later phase (read-only)
+    // Viewing FS-2 phase data from a later phase (read-only, unless unlocked)
     if (viewingPhase === 'fs2' && currentPhase !== 'fs2') {
-      return (
-        <div className="pointer-events-none opacity-75">
-          <StageDetailedFS wizard={wizard} />
-        </div>
+      const content = <StageDetailedFS wizard={viewingPhaseUnlocked ? unlockedWizard : wizard} />;
+      return viewingPhaseUnlocked ? content : (
+        <div className="pointer-events-none opacity-75">{content}</div>
       );
     }
 
     // FS-2 active phase
     if (viewingPhase === null && currentPhase === 'fs2') {
-      return <StageDetailedFS wizard={wizard} />;
+      return <StageDetailedFS wizard={effectiveWizard} />;
     }
 
     if (viewingPhase === 'fs3' || (viewingPhase === null && currentPhase === 'fs3')) {
@@ -158,27 +169,27 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
             )}
             <p className="text-sm text-muted-foreground">Contract design, risk allocation, and VGF assessment.</p>
           </div>
-          <StageRouting wizard={wizard} />
+          <StageRouting wizard={effectiveWizard} />
         </div>
       );
     }
 
     // In the unified model, intake and FS-1 are the two main editable phases
     if (currentPhase === 'intake') {
-      return <StageIntake wizard={wizard} />;
+      return <StageIntake wizard={effectiveWizard} />;
     }
     if (currentPhase === 'fs1') {
-      return <StagePreliminaryFS wizard={wizard} />;
+      return <StagePreliminaryFS wizard={effectiveWizard} />;
     }
 
     // Legacy stages for EIRR/VGF/Routing (FS-2+ phases)
     switch (currentStage) {
       case 'eirr_assessment':
-        return <StageEIRR wizard={wizard} />;
+        return <StageEIRR wizard={effectiveWizard} />;
       case 'vgf_assessment':
-        return <StagePPPStructuring wizard={wizard} />;
+        return <StagePPPStructuring wizard={effectiveWizard} />;
       case 'dp_consultation':
-        return <StageRouting wizard={wizard} />;
+        return <StageRouting wizard={effectiveWizard} />;
       default:
         return <div className="text-muted-foreground">Unknown stage: {currentStage}</div>;
     }
@@ -268,10 +279,10 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
 
   const banner = getBannerConfig();
 
-  const showFooter = (currentStage !== 'dp_consultation' || currentPhase === 'fs2') && !isLocked;
+  const showFooter = (currentStage !== 'dp_consultation' || currentPhase === 'fs2') && !effectiveLocked;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 pb-20">
+    <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_320px] gap-6 pb-20">
       {/* Contextual Help Button */}
       <ContextualHelpButton stage={currentStage} />
 
@@ -312,32 +323,87 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       />
 
       {/* Main Content */}
-      <div className={(currentPhase === 'fs1' || viewingFS1) && !viewingIntake && !viewingPhase ? 'mr-[340px]' : ''}>
+      <div>
         {/* Read-only viewing banners */}
         {viewingIntake && (
-          <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 mb-4">
-            <Eye className="h-4 w-4 text-amber-600 shrink-0" />
-            <span className="text-sm text-amber-800 font-medium flex-1">Viewing intake data (read-only)</span>
+          <div className={cn(
+            'flex items-center gap-3 p-3 rounded-lg border mb-4',
+            viewingIntakeUnlocked ? 'border-orange-300 bg-orange-50' : 'border-amber-200 bg-amber-50',
+          )}>
+            <Eye className={cn('h-4 w-4 shrink-0', viewingIntakeUnlocked ? 'text-orange-600' : 'text-amber-600')} />
+            <span className={cn('text-sm font-medium flex-1', viewingIntakeUnlocked ? 'text-orange-800' : 'text-amber-800')}>
+              {viewingIntakeUnlocked ? 'Editing intake data — remember to save changes' : 'Viewing intake data (read-only)'}
+            </span>
+            <Button
+              size="sm"
+              onClick={() => setViewingIntakeUnlocked(prev => !prev)}
+              className={cn(
+                'shrink-0 gap-1.5 text-white',
+                !viewingIntakeUnlocked
+                  ? 'bg-[#dc2626] hover:bg-[#b91c1c]'
+                  : 'bg-[#ea580c] hover:bg-[#c2410c]'
+              )}
+            >
+              {viewingIntakeUnlocked ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+              {viewingIntakeUnlocked ? 'Re-lock' : 'Unlock'}
+            </Button>
             <Button size="sm" variant="outline" onClick={clearViewing} className="gap-1.5 shrink-0">
               <ArrowLeft className="h-3.5 w-3.5" /> Back
             </Button>
           </div>
         )}
         {viewingFS1 && (
-          <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 mb-4">
-            <Eye className="h-4 w-4 text-amber-600 shrink-0" />
-            <span className="text-sm text-amber-800 font-medium flex-1">Viewing Preliminary Feasibility Study data (read-only)</span>
+          <div className={cn(
+            'flex items-center gap-3 p-3 rounded-lg border mb-4',
+            viewingFS1Unlocked ? 'border-orange-300 bg-orange-50' : 'border-amber-200 bg-amber-50',
+          )}>
+            <Eye className={cn('h-4 w-4 shrink-0', viewingFS1Unlocked ? 'text-orange-600' : 'text-amber-600')} />
+            <span className={cn('text-sm font-medium flex-1', viewingFS1Unlocked ? 'text-orange-800' : 'text-amber-800')}>
+              {viewingFS1Unlocked ? 'Editing Preliminary Feasibility Study data — remember to save changes' : 'Viewing Preliminary Feasibility Study data (read-only)'}
+            </span>
+            <Button
+              size="sm"
+              onClick={() => setViewingFS1Unlocked(prev => !prev)}
+              className={cn(
+                'shrink-0 gap-1.5 text-white',
+                !viewingFS1Unlocked
+                  ? 'bg-[#dc2626] hover:bg-[#b91c1c]'
+                  : 'bg-[#ea580c] hover:bg-[#c2410c]'
+              )}
+            >
+              {viewingFS1Unlocked ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+              {viewingFS1Unlocked ? 'Re-lock' : 'Unlock'}
+            </Button>
             <Button size="sm" variant="outline" onClick={clearViewing} className="gap-1.5 shrink-0">
               <ArrowLeft className="h-3.5 w-3.5" /> Back
             </Button>
           </div>
         )}
         {viewingPhase && viewingPhase !== currentPhase && (
-          <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 mb-4">
-            <Eye className="h-4 w-4 text-amber-600 shrink-0" />
-            <span className="text-sm text-amber-800 font-medium flex-1">
-              Viewing {viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : 'PPP Transaction Structuring'} data
+          <div className={cn(
+            'flex items-center gap-3 p-3 rounded-lg border mb-4',
+            viewingPhaseUnlocked ? 'border-orange-300 bg-orange-50' : 'border-amber-200 bg-amber-50',
+          )}>
+            <Eye className={cn('h-4 w-4 shrink-0', viewingPhaseUnlocked ? 'text-orange-600' : 'text-amber-600')} />
+            <span className={cn('text-sm font-medium flex-1', viewingPhaseUnlocked ? 'text-orange-800' : 'text-amber-800')}>
+              {viewingPhaseUnlocked
+                ? `Editing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : 'PPP Transaction Structuring'} data — remember to save changes`
+                : `Viewing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : 'PPP Transaction Structuring'} data (read-only)`
+              }
             </span>
+            <Button
+              size="sm"
+              onClick={() => setViewingPhaseUnlocked(prev => !prev)}
+              className={cn(
+                'shrink-0 gap-1.5 text-white',
+                !viewingPhaseUnlocked
+                  ? 'bg-[#dc2626] hover:bg-[#b91c1c]'
+                  : 'bg-[#ea580c] hover:bg-[#c2410c]'
+              )}
+            >
+              {viewingPhaseUnlocked ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+              {viewingPhaseUnlocked ? 'Re-lock' : 'Unlock'}
+            </Button>
             <Button size="sm" variant="outline" onClick={clearViewing} className="gap-1.5 shrink-0">
               <ArrowLeft className="h-3.5 w-3.5" /> Back
             </Button>
@@ -348,7 +414,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
         {!viewingIntake && !viewingFS1 && !viewingPhase && banner && (
           <div className={cn('flex items-start gap-3 p-4 rounded-lg border mb-4', banner.bgClass)}>
             <banner.icon className={cn('h-5 w-5 mt-0.5 shrink-0', banner.iconClass)} />
-            <div>
+            <div className="flex-1">
               <p className={cn('text-sm font-medium', banner.textClass)}>{banner.text}</p>
               {reviewComments && (projectStage === 'intake_returned' || projectStage === 'fs1_returned' || projectStage === 'fs2_returned') && (
                 <div className="mt-2 p-3 bg-white/60 rounded border border-amber-200">
@@ -357,6 +423,21 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
                 </div>
               )}
             </div>
+            {isLocked && (
+              <Button
+                size="sm"
+                onClick={() => setOverrideLock(prev => !prev)}
+                className={cn(
+                  'shrink-0 gap-1.5 text-white',
+                  !overrideLock
+                    ? 'bg-[#dc2626] hover:bg-[#b91c1c]'
+                    : 'bg-[#ea580c] hover:bg-[#c2410c]'
+                )}
+              >
+                {overrideLock ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                {overrideLock ? 'Unlocked — Click to Re-lock' : 'Locked — Click to Unlock'}
+              </Button>
+            )}
           </div>
         )}
 
@@ -367,28 +448,48 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
         </Card>
       </div>
 
-      {/* Viability Decision — sticky sidebar (fs1 phase or viewing FS-1 read-only) */}
-      {(currentPhase === 'fs1' || viewingFS1) && !viewingIntake && !viewingPhase && (
-        <ViabilityDecisionSidebar wizard={wizard} />
+      {/* Right sidebar — score + viability decision */}
+      {wizardProjectId ? (
+        <div className="sticky top-6 space-y-3 self-start">
+          <AppraisalScoreSidebar
+            projectId={wizardProjectId}
+            stage={viewingIntake ? 'intake' : viewingFS1 ? 'fs1' : viewingPhase === 'fs2' ? 'fs2' : (currentPhase === 'intake' ? 'intake' : currentPhase === 'fs1' ? 'fs1' : 'fs2')}
+          />
+          {(currentPhase === 'fs1' || viewingFS1) && !viewingIntake && !viewingPhase && (
+            <ViabilityDecisionSidebar wizard={wizard} />
+          )}
+        </div>
+      ) : (
+        <div />
       )}
 
       {/* Fixed Bottom Action Bar */}
-      {showFooter && !viewingIntake && !viewingFS1 && !viewingPhase && (
+      {((showFooter && !viewingIntake && !viewingFS1 && !viewingPhase) || viewingIntakeUnlocked || viewingFS1Unlocked || viewingPhaseUnlocked) && (
         <footer className="fixed bottom-0 left-72 right-0 z-[60] bg-card/60 backdrop-blur-md border-t py-4 px-8">
           <div className="flex items-center justify-between max-w-[1280px]">
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (isFirstStage && currentPhase === 'intake') {
-                  router.back();
-                } else {
-                  saveAndBack();
-                }
-              }}
-              disabled={isSaving}
-            >
-              {isFirstStage && currentPhase === 'intake' ? '← Cancel' : '← Back'}
-            </Button>
+            {(viewingIntakeUnlocked || viewingFS1Unlocked || viewingPhaseUnlocked) ? (
+              <Button
+                variant="outline"
+                onClick={clearViewing}
+                disabled={isSaving}
+              >
+                <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Current Phase
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (isFirstStage && currentPhase === 'intake') {
+                    router.back();
+                  } else {
+                    saveAndBack();
+                  }
+                }}
+                disabled={isSaving}
+              >
+                {isFirstStage && currentPhase === 'intake' ? '← Cancel' : '← Back'}
+              </Button>
+            )}
 
             <div className="flex items-center gap-2">
               <Button
@@ -399,7 +500,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
                 Save Draft
               </Button>
-              {canSubmit && (
+              {!viewingIntakeUnlocked && !viewingFS1Unlocked && !viewingPhaseUnlocked && canSubmit && (
                 <Button
                   variant="default"
                   onClick={() => {
@@ -418,7 +519,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
                   {currentPhase === 'fs1' || currentPhase === 'fs2' ? 'Submit for Review Board Approval' : 'Submit for Review'}
                 </Button>
               )}
-              {!canSubmit && (
+              {!viewingIntakeUnlocked && !viewingFS1Unlocked && !viewingPhaseUnlocked && !canSubmit && (
                 <Button
                   onClick={saveAndContinue}
                   disabled={isSaving}

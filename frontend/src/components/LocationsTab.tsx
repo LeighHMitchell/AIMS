@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 import { useUser } from '@/hooks/useUser';
 import { useFieldAutosave } from '@/hooks/use-field-autosave-new';
@@ -434,6 +435,7 @@ export default function LocationsTab({
           ))}
         </div>
       ) : (
+        <TooltipProvider>
         <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
@@ -481,8 +483,19 @@ export default function LocationsTab({
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-[300px]">
-                      <div className="whitespace-normal break-words flex items-start gap-1.5">
-                        <span>{location.activity_location_description || location.description || '-'}</span>
+                      <div className="flex items-start gap-1.5">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="line-clamp-3 whitespace-normal break-words cursor-default">
+                              {location.activity_location_description || location.description || '-'}
+                            </span>
+                          </TooltipTrigger>
+                          {(location.activity_location_description || location.description) && (
+                            <TooltipContent side="top" className="max-w-sm">
+                              <p>{location.activity_location_description || location.description}</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
                         {location.id && (
                           <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
                         )}
@@ -516,6 +529,7 @@ export default function LocationsTab({
             </TableBody>
           </Table>
         </div>
+        </TooltipProvider>
       )}
 
       {/* Location Modal */}

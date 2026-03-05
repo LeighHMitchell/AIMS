@@ -122,8 +122,8 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="demand">Demand</TabsTrigger>
           <TabsTrigger value="technical">Technical</TabsTrigger>
-          <TabsTrigger value="financial">Financial</TabsTrigger>
-          <TabsTrigger value="economic">Economic</TabsTrigger>
+          <TabsTrigger value="financial">Financial Internal Rate of Return</TabsTrigger>
+          <TabsTrigger value="economic">Economic Internal Rate of Return</TabsTrigger>
           <TabsTrigger value="environmental">Environmental</TabsTrigger>
           <TabsTrigger value="risk">Risk</TabsTrigger>
           <TabsTrigger value="implementation">Implementation</TabsTrigger>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { calculateAndStoreScore } from '@/lib/scoring-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -115,6 +116,11 @@ export async function POST(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Fire-and-forget: recalculate intake score after review decision
+  if (decision === 'screened' || decision === 'approved') {
+    calculateAndStoreScore(supabase!, id, 'intake', user!.id, `intake_review_${decision}`).catch(() => {});
   }
 
   return NextResponse.json(data);

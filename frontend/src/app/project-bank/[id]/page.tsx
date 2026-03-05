@@ -36,6 +36,8 @@ import { MonitoringTab } from "@/components/project-bank/MonitoringTab"
 import { FS2AssignmentPanel } from "@/components/project-bank/fs2/FS2AssignmentPanel"
 import { CategoryDecisionPanel } from "@/components/project-bank/categorization/CategoryDecisionPanel"
 import { CashFlowTable } from "@/components/project-bank/appraisal/CashFlowTable"
+import { ProjectScoreCard } from "@/components/project-bank/scoring/ProjectScoreCard"
+import { ProjectScoringTab } from "@/components/project-bank/scoring/ProjectScoringTab"
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from "recharts"
@@ -433,6 +435,7 @@ export default function ProjectDetailPage() {
               <TabsList className="mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="feasibility">Feasibility</TabsTrigger>
+                <TabsTrigger value="scoring">Scoring</TabsTrigger>
                 {project.origin === 'unsolicited' && (
                   <TabsTrigger value="swiss-challenge">Swiss Challenge</TabsTrigger>
                 )}
@@ -1067,6 +1070,10 @@ export default function ProjectDetailPage() {
                 )}
               </TabsContent>
 
+              <TabsContent value="scoring">
+                <ProjectScoringTab projectId={id} />
+              </TabsContent>
+
               {project.origin === 'unsolicited' && (
                 <TabsContent value="swiss-challenge">
                   <SwissChallengeTab projectId={id} />
@@ -1114,6 +1121,9 @@ export default function ProjectDetailPage() {
                 {/* Rejections are handled via the Review Board */}
               </CardContent>
             </Card>
+
+            {/* 1b. Project Score */}
+            <ProjectScoreCard projectId={id} />
 
             {/* 2. Project Info — audit trail timestamps */}
             <Card>
