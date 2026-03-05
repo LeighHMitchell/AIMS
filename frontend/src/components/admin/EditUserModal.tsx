@@ -17,7 +17,7 @@ import { AddressSearch, AddressComponents } from "@/components/ui/address-search
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload"
 import { User, UserRole, USER_ROLES, ROLE_LABELS } from "@/types/user"
 import { Organization } from "@/types/user"
-import { Edit, AlertCircle, Loader2, Save, X, Lock, Unlock } from "lucide-react"
+import { Pencil, AlertCircle, Loader2, Save, X, Lock, Unlock } from "lucide-react"
 import { toast } from "sonner"
 import { LockedField } from "@/components/ui/locked-field"
 import { OrganizationDropdownWithLogo, OrganizationWithLogo } from "@/components/ui/organization-dropdown-with-logo"
