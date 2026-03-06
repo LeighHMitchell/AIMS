@@ -580,7 +580,7 @@ export interface ModuleStats {
 // Scoring System Types
 // ============================================================
 
-export type ScoringStage = 'intake' | 'fs1' | 'fs2';
+export type ScoringStage = 'intake' | 'fs1' | 'fs2' | 'fs3';
 
 export type ScoringDimension =
   | 'msdp_alignment'

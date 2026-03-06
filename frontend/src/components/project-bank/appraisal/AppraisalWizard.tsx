@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Clock, RotateCcw, XCircle, ShieldCheck, Send, AlertCircle, ArrowLeft, Eye, Lock, LockOpen } from 'lucide-react';
+import { Loader2, Clock, RotateCcw, XCircle, ShieldCheck, Send, AlertCircle, ArrowLeft, Eye, Lock, LockOpen, Save } from 'lucide-react';
 import { useAppraisalWizard } from '@/hooks/use-appraisal-wizard';
 import { AppraisalProgressRail } from './AppraisalProgressRail';
 import { StageIntake } from './StageIntake';
@@ -159,19 +159,17 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       return <StageDetailedFS wizard={effectiveWizard} />;
     }
 
-    if (viewingPhase === 'fs3' || (viewingPhase === null && currentPhase === 'fs3')) {
-      return (
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-lg font-semibold mb-1">PPP Transaction Structuring</h3>
-            {wizard.formData.project_code && (
-              <p className="text-xs text-muted-foreground font-mono mb-1">{wizard.formData.project_code}</p>
-            )}
-            <p className="text-sm text-muted-foreground">Contract design, risk allocation, and VGF assessment.</p>
-          </div>
-          <StageRouting wizard={effectiveWizard} />
-        </div>
+    // FS-3 read-only viewing from later phase
+    if (viewingPhase === 'fs3' && currentPhase !== 'fs3') {
+      const content = <StagePPPStructuring wizard={viewingPhaseUnlocked ? unlockedWizard : wizard} />;
+      return viewingPhaseUnlocked ? content : (
+        <div className="pointer-events-none opacity-75">{content}</div>
       );
+    }
+
+    // FS-3 active phase
+    if (viewingPhase === 'fs3' || (viewingPhase === null && currentPhase === 'fs3')) {
+      return <StagePPPStructuring wizard={effectiveWizard} />;
     }
 
     // In the unified model, intake and FS-1 are the two main editable phases
@@ -198,7 +196,8 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
   // Determine if we can show the submit button
   const canSubmit = (currentPhase === 'intake' && (projectStage === 'intake_draft' || projectStage === 'intake_returned'))
     || (currentPhase === 'fs1' && (projectStage === 'fs1_draft' || projectStage === 'fs1_returned'))
-    || (currentPhase === 'fs2' && (projectStage === 'fs2_in_progress' || projectStage === 'fs2_assigned' || projectStage === 'fs2_returned'));
+    || (currentPhase === 'fs2' && (projectStage === 'fs2_in_progress' || projectStage === 'fs2_assigned' || projectStage === 'fs2_returned'))
+    || (currentPhase === 'fs3' && (projectStage === 'fs3_in_progress' || projectStage === 'fs3_returned'));
 
   // Status banner config
   const getBannerConfig = () => {
@@ -279,7 +278,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
 
   const banner = getBannerConfig();
 
-  const showFooter = (currentStage !== 'dp_consultation' || currentPhase === 'fs2') && !effectiveLocked;
+  const showFooter = (currentStage !== 'dp_consultation' || currentPhase === 'fs2' || currentPhase === 'fs3') && !effectiveLocked;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_320px] gap-6 pb-20">
@@ -387,8 +386,8 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
             <Eye className={cn('h-4 w-4 shrink-0', viewingPhaseUnlocked ? 'text-orange-600' : 'text-amber-600')} />
             <span className={cn('text-sm font-medium flex-1', viewingPhaseUnlocked ? 'text-orange-800' : 'text-amber-800')}>
               {viewingPhaseUnlocked
-                ? `Editing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : 'PPP Transaction Structuring'} data — remember to save changes`
-                : `Viewing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : 'PPP Transaction Structuring'} data (read-only)`
+                ? `Editing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : 'PPP / VGF Structuring'} data — remember to save changes`
+                : `Viewing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : 'PPP / VGF Structuring'} data (read-only)`
               }
             </span>
             <Button
@@ -453,7 +452,9 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
         <div className="sticky top-6 space-y-3 self-start">
           <AppraisalScoreSidebar
             projectId={wizardProjectId}
-            stage={viewingIntake ? 'intake' : viewingFS1 ? 'fs1' : viewingPhase === 'fs2' ? 'fs2' : (currentPhase === 'intake' ? 'intake' : currentPhase === 'fs1' ? 'fs1' : 'fs2')}
+            stage={viewingIntake ? 'intake' : viewingFS1 ? 'fs1' : viewingPhase === 'fs2' ? 'fs2' : viewingPhase === 'fs3' ? 'fs3' : (currentPhase === 'intake' ? 'intake' : currentPhase === 'fs1' ? 'fs1' : currentPhase === 'fs3' ? 'fs3' : 'fs2')}
+            formData={wizard.formData}
+            documents={wizard.documents}
           />
           {(currentPhase === 'fs1' || viewingFS1) && !viewingIntake && !viewingPhase && (
             <ViabilityDecisionSidebar wizard={wizard} />
@@ -464,7 +465,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       )}
 
       {/* Fixed Bottom Action Bar */}
-      {((showFooter && !viewingIntake && !viewingFS1 && !viewingPhase) || viewingIntakeUnlocked || viewingFS1Unlocked || viewingPhaseUnlocked) && (
+      {((showFooter && !viewingIntake && !viewingFS1 && (!viewingPhase || viewingPhase === currentPhase)) || viewingIntakeUnlocked || viewingFS1Unlocked || viewingPhaseUnlocked) && (
         <footer className="fixed bottom-0 left-72 right-0 z-[60] bg-card/60 backdrop-blur-md border-t py-4 px-8">
           <div className="flex items-center justify-between max-w-[1280px]">
             {(viewingIntakeUnlocked || viewingFS1Unlocked || viewingPhaseUnlocked) ? (
@@ -492,41 +493,76 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
             )}
 
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={saveDraft}
-                disabled={isSaving}
-              >
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
-                Save Draft
-              </Button>
-              {!viewingIntakeUnlocked && !viewingFS1Unlocked && !viewingPhaseUnlocked && canSubmit && (
-                <Button
-                  variant="default"
-                  onClick={() => {
-                    const errs = wizard.validateCurrentStage();
-                    if (Object.keys(errs).length > 0) {
-                      setValidationErrors(errs);
-                      setShowValidationErrors(true);
-                    } else {
-                      setShowSubmitDialog(true);
-                    }
-                  }}
-                  disabled={isSaving}
-                  className="gap-1.5"
-                >
-                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  {currentPhase === 'fs1' || currentPhase === 'fs2' ? 'Submit for Review Board Approval' : 'Submit for Review'}
-                </Button>
-              )}
-              {!viewingIntakeUnlocked && !viewingFS1Unlocked && !viewingPhaseUnlocked && !canSubmit && (
-                <Button
-                  onClick={saveAndContinue}
-                  disabled={isSaving}
-                >
-                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
-                  Continue →
-                </Button>
+              {(viewingIntakeUnlocked || viewingFS1Unlocked || viewingPhaseUnlocked) ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={saveDraft}
+                    disabled={isSaving}
+                    className="gap-1.5"
+                  >
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save Changes
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      await saveDraft();
+                      clearViewing();
+                    }}
+                    disabled={isSaving}
+                    className="gap-1.5"
+                  >
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                    Save &amp; Re-lock
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={saveDraft}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
+                    Save Draft
+                  </Button>
+                  {canSubmit && (
+                    <Button
+                      variant="default"
+                      onClick={() => {
+                        const errs = wizard.validateCurrentStage();
+                        if (Object.keys(errs).length > 0) {
+                          setValidationErrors(errs);
+                          setShowValidationErrors(true);
+                        } else {
+                          setShowSubmitDialog(true);
+                        }
+                      }}
+                      disabled={isSaving}
+                      className="gap-1.5"
+                    >
+                      {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      {currentPhase === 'fs1' || currentPhase === 'fs2' || currentPhase === 'fs3' ? 'Submit for Review Board Approval' : 'Submit for Review'}
+                    </Button>
+                  )}
+                  {!canSubmit && (
+                    <Button
+                      onClick={() => {
+                        const errs = wizard.validateCurrentStage();
+                        if (Object.keys(errs).length > 0) {
+                          setValidationErrors(errs);
+                          setShowValidationErrors(true);
+                        } else {
+                          saveAndContinue();
+                        }
+                      }}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
+                      Continue →
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -542,7 +578,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
               Missing Required Information
             </DialogTitle>
             <DialogDescription>
-              Please complete the following fields before submitting for review.
+              Please complete the following fields before continuing.
             </DialogDescription>
           </DialogHeader>
 

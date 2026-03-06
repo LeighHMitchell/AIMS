@@ -14,10 +14,10 @@ export async function POST(
 
   const { id } = await params;
   const body = await request.json();
-  const { phase } = body; // 'intake', 'fs1', or 'fs2'
+  const { phase } = body; // 'intake', 'fs1', 'fs2', or 'fs3'
 
-  if (!phase || !['intake', 'fs1', 'fs2'].includes(phase)) {
-    return NextResponse.json({ error: 'Invalid phase — must be "intake", "fs1", or "fs2"' }, { status: 400 });
+  if (!phase || !['intake', 'fs1', 'fs2', 'fs3'].includes(phase)) {
+    return NextResponse.json({ error: 'Invalid phase — must be "intake", "fs1", "fs2", or "fs3"' }, { status: 400 });
   }
 
   // Verify project is in correct stage for submission
@@ -35,6 +35,7 @@ export async function POST(
     intake: ['intake_draft', 'intake_returned'],
     fs1: ['fs1_draft', 'fs1_returned'],
     fs2: ['fs2_in_progress', 'fs2_assigned', 'fs2_returned'],
+    fs3: ['fs3_in_progress', 'fs3_returned'],
   };
 
   if (!validSubmitStages[phase].includes(project.project_stage)) {
@@ -82,13 +83,14 @@ export async function POST(
 
   const newStage = phase === 'intake' ? 'intake_submitted'
     : phase === 'fs1' ? 'fs1_submitted'
+    : phase === 'fs3' ? 'fs3_completed'
     : 'fs2_completed';
 
   const { data, error } = await supabase!
     .from('project_bank_projects')
     .update({
       project_stage: newStage,
-      ...((phase === 'fs1' || phase === 'fs2') && { feasibility_stage: newStage }),
+      ...((phase === 'fs1' || phase === 'fs2' || phase === 'fs3') && { feasibility_stage: newStage }),
       review_comments: null, // Clear previous return comments
       updated_at: new Date().toISOString(),
       updated_by: user!.id,

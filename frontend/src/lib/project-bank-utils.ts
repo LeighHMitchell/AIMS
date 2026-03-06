@@ -724,7 +724,7 @@ export const PHASE_LABELS: Record<ProjectPhase, string> = {
   intake: 'Project Intake',
   fs1: 'Preliminary Feasibility Study',
   fs2: 'Detailed Feasibility Study',
-  fs3: 'PPP Transaction Structuring',
+  fs3: 'PPP / VGF Structuring',
 };
 
 /** FS-1 tab labels */

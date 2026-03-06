@@ -2,16 +2,18 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Loader2, RefreshCw } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
+import { DimensionHelpIcon } from "./DimensionHelpIcon"
 import type { ProjectScore, ScoringDimension, ScoringStage } from "@/types/project-bank"
 
-const STAGE_LABELS: Record<ScoringStage, string> = {
-  intake: 'Intake',
-  fs1: 'FS-1',
-  fs2: 'FS-2',
+const STAGES: ScoringStage[] = ['intake', 'fs1', 'fs2']
+
+const STAGE_TITLES: Record<ScoringStage, string> = {
+  intake: 'Project Intake',
+  fs1: 'Preliminary Feasibility',
+  fs2: 'Detailed Feasibility',
 }
 
 const DIMENSION_LABELS: Record<ScoringDimension, string> = {
@@ -36,30 +38,35 @@ function getScoreColor(score: number): string {
   return '#dc2625'
 }
 
-function getScoreBg(score: number): string {
-  if (score >= 70) return '#f1f4f8'
-  if (score >= 40) return '#e8edf2'
-  return '#fef2f2'
-}
-
 interface ProjectScoreCardProps {
   projectId: string
   onViewDetails?: () => void
 }
 
 export function ProjectScoreCard({ projectId, onViewDetails }: ProjectScoreCardProps) {
-  const [score, setScore] = useState<ProjectScore | null>(null)
+  const [stageScores, setStageScores] = useState<Record<ScoringStage, ProjectScore | null>>({
+    intake: null, fs1: null, fs2: null,
+  })
   const [loading, setLoading] = useState(true)
   const [recalculating, setRecalculating] = useState(false)
 
-  const fetchScore = async () => {
+  const fetchScores = async () => {
     try {
-      const res = await apiFetch(`/api/project-bank/${projectId}/score/latest`)
-      if (res.ok) {
-        setScore(await res.json())
-        setLoading(false)
-      } else {
-        setLoading(false)
+      const [intakeRes, fs1Res, fs2Res] = await Promise.all([
+        apiFetch(`/api/project-bank/${projectId}/score/latest?stage=intake`),
+        apiFetch(`/api/project-bank/${projectId}/score/latest?stage=fs1`),
+        apiFetch(`/api/project-bank/${projectId}/score/latest?stage=fs2`),
+      ])
+
+      const intake = intakeRes.ok ? await intakeRes.json() : null
+      const fs1 = fs1Res.ok ? await fs1Res.json() : null
+      const fs2 = fs2Res.ok ? await fs2Res.json() : null
+
+      setStageScores({ intake, fs1, fs2 })
+      setLoading(false)
+
+      // Auto-calculate if no scores exist at all
+      if (!intake && !fs1 && !fs2) {
         autoCalculate()
       }
     } catch { setLoading(false) }
@@ -69,30 +76,37 @@ export function ProjectScoreCard({ projectId, onViewDetails }: ProjectScoreCardP
     if (recalculating) return
     setRecalculating(true)
     try {
-      const res = await apiFetch(`/api/project-bank/${projectId}/score`, { method: 'POST' })
-      if (res.ok) setScore(await res.json())
+      const res = await apiFetch(`/api/project-bank/${projectId}/score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all_stages: true }),
+      })
+      if (res.ok) await fetchScores()
     } catch {} finally { setRecalculating(false) }
   }
 
-  useEffect(() => { fetchScore() }, [projectId])
+  useEffect(() => { fetchScores() }, [projectId])
 
   const handleRecalculate = async () => {
     setRecalculating(true)
     try {
-      const res = await apiFetch(`/api/project-bank/${projectId}/score`, { method: 'POST' })
-      if (res.ok) {
-        const data = await res.json()
-        setScore(data)
-      }
+      const res = await apiFetch(`/api/project-bank/${projectId}/score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all_stages: true }),
+      })
+      if (res.ok) await fetchScores()
     } catch {} finally {
       setRecalculating(false)
     }
   }
 
+  const scoredStages = STAGES.filter(s => stageScores[s] !== null)
+
   if (loading) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-sm">Project Score</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-sm">Project Scores</CardTitle></CardHeader>
         <CardContent>
           <div className="flex justify-center py-4">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -102,117 +116,146 @@ export function ProjectScoreCard({ projectId, onViewDetails }: ProjectScoreCardP
     )
   }
 
-  const compositeScore = score ? Number(score.composite_score) : 0
-  const color = getScoreColor(compositeScore)
-  const bg = getScoreBg(compositeScore)
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm">Project Score</CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={handleRecalculate}
-            disabled={recalculating}
-            title="Recalculate Score"
-          >
-            {recalculating ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5" />
-            )}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {!score ? (
+  if (scoredStages.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm">Project Scores</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={handleRecalculate}
+              disabled={recalculating}
+              title="Calculate Scores"
+            >
+              {recalculating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
           <div className="flex items-center justify-center gap-2 py-4">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Calculating score...</span>
+            <span className="text-xs text-muted-foreground">Calculating scores...</span>
           </div>
-        ) : (
-          <>
-            {/* Composite score ring */}
-            <div className="flex items-center gap-3">
-              <div
-                className="relative w-14 h-14 flex-shrink-0"
-                style={{ '--score-color': color } as React.CSSProperties}
-              >
-                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                  <circle
-                    cx="18" cy="18" r="15.5"
-                    fill="none"
-                    stroke="#e2e8f0"
-                    strokeWidth="3"
-                  />
-                  <circle
-                    cx="18" cy="18" r="15.5"
-                    fill="none"
-                    stroke={color}
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeDasharray={`${compositeScore * 0.974} 100`}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-bold" style={{ color }}>
-                    {compositeScore.toFixed(0)}
-                  </span>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {scoredStages.map(stage => {
+        const score = stageScores[stage]!
+        const compositeScore = Number(score.composite_score)
+        const color = getScoreColor(compositeScore)
+
+        return (
+          <Card key={stage}>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">{STAGE_TITLES[stage]} Score</CardTitle>
+                {stage === scoredStages[scoredStages.length - 1] && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={handleRecalculate}
+                    disabled={recalculating}
+                    title="Recalculate All Scores"
+                  >
+                    {recalculating ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Score ring + label */}
+              <div className="flex items-center gap-3">
+                <div className="relative w-14 h-14 flex-shrink-0">
+                  <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                    <circle
+                      cx="18" cy="18" r="15.5"
+                      fill="none"
+                      stroke="#e2e8f0"
+                      strokeWidth="3"
+                    />
+                    <circle
+                      cx="18" cy="18" r="15.5"
+                      fill="none"
+                      stroke={color}
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeDasharray={`${compositeScore * 0.974} 100`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-sm font-bold" style={{ color }}>
+                      {compositeScore.toFixed(0)}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium">Weighted Total</div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">across all 5 dimensions</p>
                 </div>
               </div>
-              <div>
-                <div className="text-xs font-medium">Composite Score</div>
-                <Badge variant="outline" className="text-[10px] mt-0.5">
-                  {STAGE_LABELS[score.stage]}
-                </Badge>
+
+              {/* Dimension bars */}
+              <div className="space-y-1.5">
+                {DIMENSIONS.map(d => {
+                  const ds = score.dimension_scores[d]
+                  if (!ds) return null
+                  const normalized = ds.normalized
+                  return (
+                    <div key={d}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[10px] text-muted-foreground truncate flex items-center gap-0.5">
+                          {DIMENSION_LABELS[d]}
+                          <DimensionHelpIcon dimension={d} stage={stage} subScores={ds.sub_scores} />
+                        </span>
+                        <span className="text-[10px] font-medium" style={{ color: getScoreColor(normalized) }}>
+                          {normalized.toFixed(0)}
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#e2e8f0' }}>
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${Math.min(100, normalized)}%`,
+                            backgroundColor: getScoreColor(normalized),
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        )
+      })}
 
-            {/* Dimension bars */}
-            <div className="space-y-1.5">
-              {DIMENSIONS.map(d => {
-                const ds = score.dimension_scores[d]
-                if (!ds) return null
-                const normalized = ds.normalized
-                return (
-                  <div key={d}>
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-[10px] text-muted-foreground truncate">{DIMENSION_LABELS[d]}</span>
-                      <span className="text-[10px] font-medium" style={{ color: getScoreColor(normalized) }}>
-                        {normalized.toFixed(0)}
-                      </span>
-                    </div>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#e2e8f0' }}>
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${Math.min(100, normalized)}%`,
-                          backgroundColor: getScoreColor(normalized),
-                        }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* View Details link */}
-            {onViewDetails && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-xs"
-                onClick={onViewDetails}
-              >
-                View Details
-              </Button>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+      {/* View Details link */}
+      {onViewDetails && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full text-xs"
+          onClick={onViewDetails}
+        >
+          View Details
+        </Button>
+      )}
+    </div>
   )
 }

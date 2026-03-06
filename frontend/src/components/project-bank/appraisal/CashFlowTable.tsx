@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Plus, Trash2, X, Zap } from 'lucide-react';
 import { HelpTooltip } from './HelpTooltip';
 import { FormattedNumberInput } from './FormattedNumberInput';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
+import { BarChart3, LineChart as LineChartIcon } from 'lucide-react';
 import type { CostTableRow } from '@/types/project-bank';
 import { cn } from '@/lib/utils';
 
@@ -365,6 +366,7 @@ function CashFlowChart({
   onChartModeChange: (mode: 'annual' | 'cumulative') => void;
 }) {
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
+  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
 
   const chartData = useMemo(() => {
     if (chartMode === 'annual') {
@@ -444,55 +446,104 @@ function CashFlowChart({
     <div className="border rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cash Flow Overview</h4>
-        <div className="flex gap-0.5">
-          {(['annual', 'cumulative'] as const).map(mode => (
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 border rounded-md p-0.5">
             <button
-              key={mode}
               type="button"
-              onClick={() => onChartModeChange(mode)}
-              className={cn(
-                'text-[10px] px-2 py-0.5 rounded transition-colors',
-                chartMode === mode
-                  ? 'bg-slate-200 text-slate-900 font-semibold'
-                  : 'text-gray-600 hover:bg-gray-100',
-              )}
+              onClick={() => setChartType('bar')}
+              className={cn('p-1 rounded', chartType === 'bar' ? 'bg-muted' : 'hover:bg-muted/50')}
+              title="Bar chart"
             >
-              {mode === 'annual' ? 'Annual' : 'Cumulative'}
+              <BarChart3 className="h-3.5 w-3.5" />
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => setChartType('line')}
+              className={cn('p-1 rounded', chartType === 'line' ? 'bg-muted' : 'hover:bg-muted/50')}
+              title="Line chart"
+            >
+              <LineChartIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="flex gap-0.5">
+            {(['annual', 'cumulative'] as const).map(mode => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => onChartModeChange(mode)}
+                className={cn(
+                  'text-[10px] px-2 py-0.5 rounded transition-colors',
+                  chartMode === mode
+                    ? 'bg-slate-200 text-slate-900 font-semibold'
+                    : 'text-gray-600 hover:bg-gray-100',
+                )}
+              >
+                {mode === 'annual' ? 'Annual' : 'Cumulative'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={240}>
-        <BarChart data={chartData} barGap={0} barCategoryGap="20%" margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#cfd0d5" />
-          <XAxis dataKey="year" tick={{ fontSize: 11 }} angle={xAxisAngle} textAnchor={xAxisTextAnchor} height={xAxisHeight} interval={0} />
-          <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K` : String(v)} />
-          <Tooltip content={<CashFlowTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
-          <ReferenceLine y={0} stroke="#4c5568" strokeWidth={1} />
-          <Legend content={renderLegend} />
-          {chartKeys.map(key => {
-            const isHidden = hiddenKeys.has(key);
-            const isNet = key === 'Net';
-            const baseColor = isNet ? '#dc2625' : CHART_COLORS[key === 'CAPEX' ? 'capex' : key === 'OPEX' ? 'opex' : 'revenue'];
+        {chartType === 'bar' ? (
+          <BarChart data={chartData} barGap={0} barCategoryGap="20%" margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#cfd0d5" />
+            <XAxis dataKey="year" tick={{ fontSize: 11 }} angle={xAxisAngle} textAnchor={xAxisTextAnchor} height={xAxisHeight} interval={0} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K` : String(v)} />
+            <Tooltip content={<CashFlowTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
+            <ReferenceLine y={0} stroke="#4c5568" strokeWidth={1} />
+            <Legend content={renderLegend} />
+            {chartKeys.map(key => {
+              const isHidden = hiddenKeys.has(key);
+              const isNet = key === 'Net';
+              const baseColor = isNet ? '#dc2625' : CHART_COLORS[key === 'CAPEX' ? 'capex' : key === 'OPEX' ? 'opex' : 'revenue'];
 
-            return (
-              <Bar
-                key={key}
-                dataKey={key}
-                fill={baseColor}
-                radius={[2, 2, 0, 0]}
-                hide={isHidden}
-              >
-                {isNet && chartData.map((entry, idx) => (
-                  <Cell
-                    key={idx}
-                    fill={entry.Net >= 0 ? '#5f7f7a' : '#dc2625'}
-                  />
-                ))}
-              </Bar>
-            );
-          })}
-        </BarChart>
+              return (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  fill={baseColor}
+                  radius={[2, 2, 0, 0]}
+                  hide={isHidden}
+                >
+                  {isNet && chartData.map((entry, idx) => (
+                    <Cell
+                      key={idx}
+                      fill={entry.Net >= 0 ? '#5f7f7a' : '#dc2625'}
+                    />
+                  ))}
+                </Bar>
+              );
+            })}
+          </BarChart>
+        ) : (
+          <LineChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#cfd0d5" />
+            <XAxis dataKey="year" tick={{ fontSize: 11 }} angle={xAxisAngle} textAnchor={xAxisTextAnchor} height={xAxisHeight} interval={0} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K` : String(v)} />
+            <Tooltip content={<CashFlowTooltip />} />
+            <ReferenceLine y={0} stroke="#4c5568" strokeWidth={1} />
+            <Legend content={renderLegend} />
+            {chartKeys.map(key => {
+              const isHidden = hiddenKeys.has(key);
+              const isNet = key === 'Net';
+              const baseColor = isNet ? '#dc2625' : CHART_COLORS[key === 'CAPEX' ? 'capex' : key === 'OPEX' ? 'opex' : 'revenue'];
+
+              return (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stroke={baseColor}
+                  strokeWidth={isNet ? 2.5 : 2}
+                  strokeDasharray={isNet ? '5 3' : undefined}
+                  dot={false}
+                  hide={isHidden}
+                />
+              );
+            })}
+          </LineChart>
+        )}
       </ResponsiveContainer>
     </div>
   );

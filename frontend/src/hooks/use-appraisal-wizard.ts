@@ -457,7 +457,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
 
     setIsSaving(true);
     try {
-      const phase = currentPhase === 'intake' ? 'intake' : currentPhase === 'fs2' ? 'fs2' : 'fs1';
+      const phase = currentPhase === 'intake' ? 'intake' : currentPhase === 'fs2' ? 'fs2' : currentPhase === 'fs3' ? 'fs3' : 'fs1';
       const res = await apiFetch(`/api/project-bank/${projectId}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -472,6 +472,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
 
       const newStage = phase === 'intake' ? 'intake_submitted'
         : phase === 'fs2' ? 'fs2_completed'
+        : phase === 'fs3' ? 'fs3_completed'
         : 'fs1_submitted';
       setProjectStage(newStage as ProjectStage);
       return true;

@@ -36,8 +36,8 @@ import { MonitoringTab } from "@/components/project-bank/MonitoringTab"
 import { FS2AssignmentPanel } from "@/components/project-bank/fs2/FS2AssignmentPanel"
 import { CategoryDecisionPanel } from "@/components/project-bank/categorization/CategoryDecisionPanel"
 import { CashFlowTable } from "@/components/project-bank/appraisal/CashFlowTable"
+import { EconomicAnalysisCharts } from "@/components/project-bank/appraisal/EconomicAnalysisCharts"
 import { ProjectScoreCard } from "@/components/project-bank/scoring/ProjectScoreCard"
-import { ProjectScoringTab } from "@/components/project-bank/scoring/ProjectScoringTab"
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from "recharts"
@@ -245,7 +245,7 @@ export default function ProjectDetailPage() {
   const ndpGoal = (project as any).national_development_goals
   const totalCommitted = project.total_committed || 0
   const estimatedCost = project.estimated_cost || 0
-  const fundingGap = project.funding_gap || 0
+  const fundingGap = project.funding_gap || Math.max(0, estimatedCost - totalCommitted)
   const donorCount = project.donors?.length || 0
   const securedPct = estimatedCost > 0 ? Math.round((totalCommitted / estimatedCost) * 100) : 0
   const currentPhase = project.project_stage ? getPhase(project.project_stage) : 'intake' as ProjectPhase
@@ -370,7 +370,7 @@ export default function ProjectDetailPage() {
                       contentStyle={{ fontSize: '12px' }}
                     />
                     <Bar dataKey="committed" stackId="a" fill="#7b95a7" radius={[4, 0, 0, 4]} name="Committed" />
-                    <Bar dataKey="gap" stackId="a" fill="#dc2625" radius={[0, 4, 4, 0]} name="Funding Gap" />
+                    <Bar dataKey="gap" stackId="a" fill="#d4d4d8" radius={[0, 4, 4, 0]} name="Funding Gap" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -435,7 +435,6 @@ export default function ProjectDetailPage() {
               <TabsList className="mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="feasibility">Feasibility</TabsTrigger>
-                <TabsTrigger value="scoring">Scoring</TabsTrigger>
                 {project.origin === 'unsolicited' && (
                   <TabsTrigger value="swiss-challenge">Swiss Challenge</TabsTrigger>
                 )}
@@ -971,18 +970,6 @@ export default function ProjectDetailPage() {
                           />
                         )}
 
-                        {/* Category display */}
-                        {project.category_decision && project.feasibility_stage === 'categorized' && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-                            <span className="font-semibold">{CATEGORY_LABELS[project.category_decision]}</span>
-                            {project.category_decision === 'category_c' && (
-                              <p className="text-muted-foreground text-xs ml-1">
-                                — Requires FS-3 PPP Structuring
-                              </p>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -1068,10 +1055,16 @@ export default function ProjectDetailPage() {
                     </CardContent>
                   </Card>
                 )}
-              </TabsContent>
 
-              <TabsContent value="scoring">
-                <ProjectScoringTab projectId={id} />
+                {/* Economic Analysis Charts */}
+                {project.eirr_calculation_data && (
+                  <EconomicAnalysisCharts
+                    eirrCalculationData={project.eirr_calculation_data}
+                    eirr={project.eirr}
+                    eirrNpv={project.eirr_calculation_data?.npv}
+                    eirrBcr={project.eirr_calculation_data?.bcr}
+                  />
+                )}
               </TabsContent>
 
               {project.origin === 'unsolicited' && (
@@ -1122,7 +1115,34 @@ export default function ProjectDetailPage() {
               </CardContent>
             </Card>
 
-            {/* 1b. Project Score */}
+            {/* 1b. Categorization Result */}
+            {project.category_decision && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Categorization</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2.5">
+                  <div className="p-2.5 bg-surface-muted rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />
+                      <span className="text-sm font-semibold">{CATEGORY_LABELS[project.category_decision]}</span>
+                    </div>
+                    {project.category_recommendation && project.category_recommendation !== project.category_decision && (
+                      <div className="text-[10px] text-muted-foreground mt-1 ml-6">
+                        System recommended: {CATEGORY_LABELS[project.category_recommendation]}
+                      </div>
+                    )}
+                  </div>
+                  {project.category_rationale && (
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      {project.category_rationale}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 1c. Project Score */}
             <ProjectScoreCard projectId={id} />
 
             {/* 2. Project Info — audit trail timestamps */}
