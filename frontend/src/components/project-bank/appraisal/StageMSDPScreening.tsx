@@ -1,13 +1,14 @@
 "use client"
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 import { HelpTooltip } from './HelpTooltip';
+import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 import type { NationalDevelopmentGoal } from '@/types/project-bank';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
 import { cn } from '@/lib/utils';
@@ -20,9 +21,65 @@ interface StageMSDPScreeningProps {
   wizard: UseAppraisalWizardReturn;
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  includedInNationalPlan: 'National Development Plans',
+  linkedToGovFramework: 'Government Results Frameworks',
+  mutualAccountabilityFramework: 'Accountability Frameworks',
+  capacityDevFromNationalPlan: 'National Capacity Plans',
+};
+
+/** MSDP strategies keyed by goal number (1–5), sourced from MSDP 2018–2030 */
+const MSDP_STRATEGIES: Record<number, { code: string; name: string }[]> = {
+  1: [
+    { code: '1.1', name: 'Secure and further foster Union-wide peace' },
+    { code: '1.2', name: 'Promote equitable and conflict-sensitive socio-economic development throughout all States and Regions' },
+    { code: '1.3', name: 'Promote greater access to justice, individual rights and adherence to the rule of law' },
+    { code: '1.4', name: 'Enhance good governance, institutional performance and improve the efficiency of administrative decision making at all levels' },
+    { code: '1.5', name: 'Increase the ability of all people to engage with government' },
+  ],
+  2: [
+    { code: '2.1', name: 'Effectively manage the exchange rate and balance of payments' },
+    { code: '2.2', name: 'Reduce inflation and maintain monetary stability' },
+    { code: '2.3', name: 'Increase domestic revenue mobilisation through a fair, efficient and transparent taxation system' },
+    { code: '2.4', name: 'Strengthen public financial management to support stability and the efficient allocation of public resources' },
+    { code: '2.5', name: 'Enhance the efficiency and competitiveness of State Economic Enterprises' },
+  ],
+  3: [
+    { code: '3.1', name: 'Create an enabling environment supporting a diverse and productive economy through inclusive agricultural, aquacultural and polycultural practices' },
+    { code: '3.2', name: 'Support job creation in industry and services, especially through developing small and medium-sized enterprises' },
+    { code: '3.3', name: 'Provide a secure, conducive investment enabling environment which eases the cost of doing business' },
+    { code: '3.4', name: 'Further reform our trade sector and strengthen regional and international cooperation and linkages' },
+    { code: '3.5', name: 'Increase broad-based access to financial services and strengthen the financial system overall' },
+    { code: '3.6', name: 'Build a priority infrastructure base that facilitates sustainable growth and economic diversification' },
+    { code: '3.7', name: 'Encourage greater creativity and innovation' },
+  ],
+  4: [
+    { code: '4.1', name: 'Improve equitable access to high quality lifelong educational opportunities' },
+    { code: '4.2', name: 'Strengthen health services systems enabling the provision of universal health care using a path that is explicitly pro-poor' },
+    { code: '4.3', name: 'Expand an adaptive and systems-based social safety net and extend social protection services throughout the life cycle' },
+    { code: '4.4', name: 'Increase secure access to food that is safe and well-balanced' },
+    { code: '4.5', name: 'Protect the rights and harness the productivity of all, including migrant workers' },
+  ],
+  5: [
+    { code: '5.1', name: 'Ensure a clean environment together with healthy and functioning ecosystems' },
+    { code: '5.2', name: 'Increase climate change resilience, reduce exposure to disasters and shocks while protecting livelihoods' },
+    { code: '5.3', name: 'Enable safe and equitable access to water and sanitation in ways that ensure environmental sustainability' },
+    { code: '5.4', name: 'Provide affordable and reliable energy to populations and industries via an appropriate energy generation mix' },
+    { code: '5.5', name: 'Improve land governance and sustainable management of resource-based industries' },
+    { code: '5.6', name: 'Manage cities, towns, historical and cultural centres efficiently and sustainably' },
+  ],
+};
+
+/** Extract goal number from an NDP goal code like "MSDP-3" → 3 */
+function goalNumber(code: string): number {
+  const m = code.match(/(\d+)$/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
 export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
   const { formData, updateField, errors } = wizard;
   const [goals, setGoals] = useState<NationalDevelopmentGoal[]>([]);
+  const [strategyOptions, setStrategyOptions] = useState<MultiSelectOption[]>([]);
 
   useEffect(() => {
     async function fetchGoals() {
@@ -34,10 +91,57 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
     fetchGoals();
   }, []);
 
+  useEffect(() => {
+    async function fetchStrategyOptions() {
+      try {
+        const res = await apiFetch('/api/admin/aid-effectiveness-options?activeOnly=true');
+        if (res.ok) {
+          const json = await res.json();
+          const items = json.data || [];
+          setStrategyOptions(
+            items.map((item: any) => ({
+              value: item.label,
+              label: item.acronym ? `${item.acronym} — ${item.label}` : item.label,
+              group: CATEGORY_LABELS[item.category] || item.category,
+            }))
+          );
+        }
+      } catch {}
+    }
+    fetchStrategyOptions();
+  }, []);
+
   const activeGoals = goals.filter(g => g.is_active);
   const selectedGoalId = formData.ndp_goal_id;
   const secondaryGoals: string[] = formData.secondary_ndp_goals || [];
   const ndpAligned = formData.ndp_aligned;
+
+  // Build the list of MSDP strategies available based on selected goals
+  const selectedGoalNumbers = useMemo(() => {
+    const allSelectedIds = [selectedGoalId, ...secondaryGoals].filter(Boolean) as string[];
+    return allSelectedIds
+      .map(id => {
+        const goal = goals.find(g => g.id === id);
+        return goal ? goalNumber(goal.code) : 0;
+      })
+      .filter(n => n > 0);
+  }, [selectedGoalId, secondaryGoals, goals]);
+
+  const availableStrategies = useMemo(() => {
+    const result: { goalNum: number; goalName: string; strategies: { code: string; name: string }[] }[] = [];
+    selectedGoalNumbers.forEach(num => {
+      const strategies = MSDP_STRATEGIES[num];
+      if (strategies) {
+        const goal = goals.find(g => goalNumber(g.code) === num);
+        result.push({
+          goalNum: num,
+          goalName: goal ? goal.name : `Goal ${num}`,
+          strategies,
+        });
+      }
+    });
+    return result;
+  }, [selectedGoalNumbers, goals]);
 
   /** Handle selecting / deselecting an NDP goal */
   const handleGoalToggle = (goalId: string) => {
@@ -52,6 +156,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
         updateField('ndp_goal_id', null);
         updateField('secondary_ndp_goals', []);
         updateField('ndp_aligned', false);
+        updateField('msdp_strategy_area', null);
       }
     } else if (secondaryGoals.includes(goalId)) {
       // Remove from secondary
@@ -70,6 +175,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
     updateField('ndp_goal_id', null);
     updateField('secondary_ndp_goals', []);
     updateField('ndp_aligned', false);
+    updateField('msdp_strategy_area', null);
   };
 
   const isGoalSelected = (goalId: string) => goalId === selectedGoalId || secondaryGoals.includes(goalId);
@@ -108,35 +214,31 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
       {/* Primary NDP Goal Selection */}
       <div>
         <Label className="mb-2 block">
-          NDP Goals <RequiredDot />
-          <HelpTooltip text="Select one or more National Development Plan goals. The first selected goal becomes the primary. Click additional goals to add as secondary." />
+          MSDP Goals <RequiredDot />
+          <HelpTooltip text="Select one or more MSDP goals. The first selected goal becomes the primary. Click additional goals to add as secondary." />
         </Label>
-        <p className="text-xs text-muted-foreground mb-3">
-          Click to select goals. The first selected goal is the <strong>primary</strong>. Additional selections are secondary goals.
-        </p>
-        <div className="space-y-2">
+        <div className="grid grid-cols-3 gap-3">
           {/* Not aligned option */}
           <button
             type="button"
             onClick={handleNotAligned}
             className={cn(
-              'w-full text-left p-3 rounded-lg border transition-colors',
+              'aspect-square flex flex-col items-center justify-center text-center p-3 rounded-lg border transition-colors',
               !ndpAligned
                 ? 'border-amber-300 bg-amber-50'
                 : 'border-muted-foreground/20 hover:border-muted-foreground/40',
             )}
           >
-            <div className="text-sm font-medium">Not aligned with MSDP</div>
-            <div className="text-xs text-muted-foreground">
-              This project does not align with any NDP strategic area.
+            <div className="text-sm font-medium">Not aligned</div>
+            <div className="text-[10px] text-muted-foreground mt-1 line-clamp-2">
+              Does not align with any NDP strategic area
             </div>
           </button>
 
-          {/* NDP Goals as cards */}
+          {/* NDP Goals as square cards */}
           {activeGoals.map(goal => {
             const isPrimary = selectedGoalId === goal.id;
             const isSecondary = secondaryGoals.includes(goal.id);
-            const isSelected = isPrimary || isSecondary;
 
             return (
               <button
@@ -144,7 +246,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                 type="button"
                 onClick={() => handleGoalToggle(goal.id)}
                 className={cn(
-                  'w-full text-left p-3 rounded-lg border transition-colors',
+                  'aspect-square relative flex flex-col items-center justify-center text-center p-3 rounded-lg border transition-colors',
                   isPrimary
                     ? 'border-[#5f7f7a] bg-[#f6f5f3] ring-2 ring-[#5f7f7a]/20'
                     : isSecondary
@@ -152,19 +254,16 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                     : 'border-muted-foreground/20 hover:border-muted-foreground/40',
                 )}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-muted-foreground">{goal.code}</span>
-                  <span className="text-sm font-medium">{goal.name}</span>
-                  {isPrimary && (
-                    <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-[#5f7f7a]/15 text-[#5f7f7a]">Primary</span>
-                  )}
-                  {isSecondary && (
-                    <span className="ml-auto text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-[#5f7f7a]/10 text-[#5f7f7a]">Secondary</span>
-                  )}
-                </div>
-                {goal.description && (
-                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{goal.description}</div>
+                {(isPrimary || isSecondary) && (
+                  <span className={cn(
+                    'absolute top-1.5 right-1.5 text-[8px] font-semibold uppercase px-1.5 py-0.5 rounded-full',
+                    isPrimary ? 'bg-[#5f7f7a]/15 text-[#5f7f7a]' : 'bg-[#5f7f7a]/10 text-[#5f7f7a]',
+                  )}>
+                    {isPrimary ? 'Primary' : 'Secondary'}
+                  </span>
                 )}
+                <span className="text-xs font-mono font-bold text-muted-foreground">{goal.code}</span>
+                <span className="text-xs font-medium mt-1 leading-tight line-clamp-3">{goal.name}</span>
               </button>
             );
           })}
@@ -175,16 +274,58 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
       {ndpAligned && (
         <>
           <div>
-            <Label>MSDP Strategy Area <HelpTooltip text="The specific MSDP strategy or action area this project supports." /></Label>
-            <Input
+            <Label>MSDP Strategy <HelpTooltip text="Select the specific MSDP strategy this project supports. Options are filtered by your selected goals above." /></Label>
+            <Select
               value={formData.msdp_strategy_area || ''}
-              onChange={e => updateField('msdp_strategy_area', e.target.value)}
-              placeholder="e.g. Strategy 5.4: Transport and ICT Infrastructure"
-            />
+              onValueChange={v => updateField('msdp_strategy_area', v)}
+              disabled={availableStrategies.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={
+                  availableStrategies.length === 0
+                    ? 'Select a goal first'
+                    : 'Select MSDP strategy...'
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                {availableStrategies.map(group => (
+                  <SelectGroup key={group.goalNum}>
+                    <SelectLabel>Goal {group.goalNum}: {group.goalName}</SelectLabel>
+                    {group.strategies.map(s => (
+                      <SelectItem key={s.code} value={`Strategy ${s.code}: ${s.name}`}>
+                        <span className="inline-flex items-center gap-2 min-w-0">
+                          <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.code}</span>
+                          <span>{s.name}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <Label>Alignment Justification <HelpTooltip text="Explain how this project directly contributes to the selected NDP goals." /></Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="mb-0">Alignment Justification <HelpTooltip text="Explain how this project directly contributes to the selected NDP goals." /></Label>
+              {(() => {
+                const len = (formData.alignment_justification || '').length;
+                const remaining = 200 - len;
+                if (remaining <= 0) {
+                  return (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      {len} characters
+                    </span>
+                  );
+                }
+                return (
+                  <span className="text-xs text-muted-foreground">
+                    {remaining} more character{remaining !== 1 ? 's' : ''} needed
+                  </span>
+                );
+              })()}
+            </div>
             <Textarea
               value={formData.alignment_justification || ''}
               onChange={e => updateField('alignment_justification', e.target.value)}
@@ -194,11 +335,15 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
           </div>
 
           <div>
-            <Label>Sector Strategy Reference <HelpTooltip text="Reference to the national sector strategy or master plan this project implements." /></Label>
-            <Input
-              value={formData.sector_strategy_reference || ''}
-              onChange={e => updateField('sector_strategy_reference', e.target.value)}
-              placeholder="e.g. National Transport Master Plan 2020"
+            <Label>Sector Strategy Reference <HelpTooltip text="Select one or more government planning documents or frameworks that this project implements." /></Label>
+            <MultiSelect
+              options={strategyOptions}
+              selected={formData.sector_strategy_reference || []}
+              onChange={v => updateField('sector_strategy_reference', v.length > 0 ? v : null)}
+              placeholder="Select planning documents..."
+              searchable
+              searchPlaceholder="Filter documents..."
+              selectedLabel="document(s)"
             />
           </div>
 
@@ -212,9 +357,6 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
         </>
       )}
 
-      {errors._form && (
-        <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg p-3">{errors._form}</p>
-      )}
     </div>
   );
 }

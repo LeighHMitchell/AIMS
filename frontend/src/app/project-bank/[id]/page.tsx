@@ -571,13 +571,13 @@ export default function ProjectDetailPage() {
                 {/* ── Right Column ── */}
                 <div className="space-y-4">
                   {/* Contact Officer */}
-                  {project.contact_officer && (
+                  {((project as any).contact_officer_first_name || (project as any).contact_officer_last_name || project.contact_officer) && (
                     <div>
                       <div className="text-xs text-muted-foreground mb-2">Contact Officer</div>
                       <div className="rounded-lg border bg-muted/20 p-3 space-y-1.5">
                         <div className="flex items-center gap-2">
                           <User className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-sm font-medium">{project.contact_officer}</span>
+                          <span className="text-sm font-medium">{[(project as any).contact_officer_first_name, (project as any).contact_officer_last_name].filter(Boolean).join(' ') || project.contact_officer}</span>
                         </div>
                         {(project as any).contact_position && (
                           <div className="text-xs text-muted-foreground ml-5.5">{(project as any).contact_position}</div>
@@ -728,10 +728,10 @@ export default function ProjectDetailPage() {
                             <p className="text-sm leading-relaxed">{project.alignment_justification}</p>
                           </div>
                         )}
-                        {project.sector_strategy_reference && (
+                        {project.sector_strategy_reference && project.sector_strategy_reference.length > 0 && (
                           <div>
                             <div className="text-[10px] text-muted-foreground">Sector Strategy Reference</div>
-                            <div className="text-sm">{project.sector_strategy_reference}</div>
+                            <div className="text-sm">{project.sector_strategy_reference.join(', ')}</div>
                           </div>
                         )}
                         {project.in_sector_investment_plan != null && (

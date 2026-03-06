@@ -643,10 +643,10 @@ export function IntakeReviewTab() {
                   <span className="text-muted-foreground">Estimated Amount</span>
                   <p className="font-medium">{formatCurrency(selectedProject.estimated_cost, selectedProject.currency)}</p>
                 </div>
-                {selectedProject.contact_officer && (
+                {(selectedProject.contact_officer_first_name || selectedProject.contact_officer_last_name || selectedProject.contact_officer) && (
                   <div>
                     <span className="text-muted-foreground">Contact Officer</span>
-                    <p className="font-medium">{selectedProject.contact_officer}</p>
+                    <p className="font-medium">{[selectedProject.contact_officer_first_name, selectedProject.contact_officer_last_name].filter(Boolean).join(' ') || selectedProject.contact_officer}</p>
                   </div>
                 )}
                 {selectedProject.contact_email && (

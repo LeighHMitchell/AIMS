@@ -32,6 +32,8 @@ export interface IntakeReviewProject {
   project_stage: ProjectStage
   description: string | null
   contact_officer: string | null
+  contact_officer_first_name: string | null
+  contact_officer_last_name: string | null
   contact_email: string | null
   banner: string | null
   banner_position: number | null
@@ -108,4 +110,32 @@ export interface FS2ReviewColumns {
   desk_review: FS2ReviewProject[]
   senior_review: FS2ReviewProject[]
   categorized: FS2ReviewProject[]
+}
+
+export interface CategorizedProject {
+  id: string
+  project_code: string
+  name: string
+  nominating_ministry: string
+  implementing_agency: string | null
+  sector: string
+  sub_sector: string | null
+  region: string | null
+  estimated_cost: number | null
+  currency: string
+  project_stage: ProjectStage
+  pathway: string | null
+  category_decision: string | null
+  firr: number | null
+  eirr: number | null
+  ndp_aligned: boolean
+  updated_at: string
+}
+
+export type CategorizedColumnKey = "private" | "government" | "ppp"
+
+export interface CategorizedColumns {
+  private: CategorizedProject[]
+  government: CategorizedProject[]
+  ppp: CategorizedProject[]
 }

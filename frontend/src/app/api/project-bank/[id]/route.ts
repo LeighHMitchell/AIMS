@@ -70,7 +70,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     'nominated_at', 'screened_at', 'appraised_at', 'approved_at',
     // Appraisal wizard fields
     'appraisal_stage', 'routing_outcome', 'project_stage', 'review_comments',
-    'contact_officer', 'contact_email', 'contact_phone',
+    'contact_officer', 'contact_officer_first_name', 'contact_officer_last_name',
+    'contact_email', 'contact_phone',
     'contact_position', 'contact_ministry', 'contact_department',
     'project_type', 'sub_sector', 'townships',
     'estimated_start_date', 'estimated_duration_months',
@@ -95,7 +96,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     'vgf_calculation_data', 'vgf_status',
     'dap_compliant', 'dap_notes', 'budget_allocation_status', 'budget_amount',
     'ppp_contract_type', 'ppp_contract_details', 'implementing_agency', 'equity_ratio',
-    'proponent_name', 'proponent_company', 'proponent_contact',
+    'proponent_name', 'proponent_first_name', 'proponent_last_name',
+    'proponent_company', 'proponent_contact',
     'banner', 'banner_position',
     'fs2_study_data',
   ];

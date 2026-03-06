@@ -153,12 +153,14 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
         const data: Record<string, any> = {};
         const fields = [
           'name', 'project_code', 'nominating_ministry', 'sector', 'region', 'estimated_cost', 'currency',
-          'description', 'contact_officer', 'contact_email', 'contact_phone',
+          'description', 'contact_officer', 'contact_officer_first_name', 'contact_officer_last_name',
+          'contact_email', 'contact_phone',
           'contact_position', 'contact_ministry', 'contact_department',
           'project_type', 'sub_sector', 'townships', 'estimated_start_date',
           'estimated_duration_months', 'objectives', 'target_beneficiaries',
           'sdg_goals', 'ndp_goal_id', 'ndp_aligned', 'origin',
-          'implementing_agency', 'proponent_name', 'proponent_company', 'proponent_contact',
+          'implementing_agency', 'proponent_name', 'proponent_first_name', 'proponent_last_name',
+          'proponent_company', 'proponent_contact',
           'construction_period_years', 'operational_period_years', 'project_life_years',
           'construction_period_months_remainder', 'operational_period_months_remainder',
           'preliminary_fs_summary', 'preliminary_fs_date', 'preliminary_fs_conducted_by',

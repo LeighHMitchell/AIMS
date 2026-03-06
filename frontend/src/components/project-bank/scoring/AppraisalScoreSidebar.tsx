@@ -122,8 +122,6 @@ export function AppraisalScoreSidebar({ projectId, stage, formData, documents, c
     } catch {} finally { setRecalculating(false) }
   }
 
-  if (!projectId) return null
-
   // Use live score if available, otherwise fall back to saved
   const hasLive = !!liveScore
   const displayScore = liveScore || (savedScore ? {
@@ -141,20 +139,22 @@ export function AppraisalScoreSidebar({ projectId, stage, formData, documents, c
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {stage ? STAGE_TITLES[stage] : 'Project Score'}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0"
-          onClick={handleRecalculate}
-          disabled={recalculating}
-          title="Recalculate & Save Score"
-        >
-          {recalculating ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3 w-3" />
-          )}
-        </Button>
+        {projectId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={handleRecalculate}
+            disabled={recalculating}
+            title="Recalculate & Save Score"
+          >
+            {recalculating ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+          </Button>
+        )}
       </div>
 
       {loading && !hasLive ? (

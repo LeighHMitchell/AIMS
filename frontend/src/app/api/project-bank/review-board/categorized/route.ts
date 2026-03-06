@@ -12,8 +12,8 @@ export async function GET(request: Request) {
 
   let query = supabase!
     .from('project_bank_projects')
-    .select('id, project_code, name, nominating_ministry, implementing_agency, sector, sub_sector, region, estimated_cost, currency, project_stage, description, contact_officer, contact_officer_first_name, contact_officer_last_name, contact_email, banner, banner_position, created_at, updated_at')
-    .in('project_stage', ['intake_submitted', 'intake_desk_claimed', 'intake_desk_screened'])
+    .select('id, project_code, name, nominating_ministry, implementing_agency, sector, sub_sector, region, estimated_cost, currency, project_stage, pathway, category_decision, firr, eirr, ndp_aligned, updated_at')
+    .in('project_stage', ['fs2_categorized', 'fs3_in_progress', 'fs3_completed'])
     .order('updated_at', { ascending: false });
 
   if (sector) {
@@ -26,10 +26,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const all = projects || [];
+
   const columns = {
-    pending: (projects || []).filter(p => p.project_stage === 'intake_submitted'),
-    desk_review: (projects || []).filter(p => p.project_stage === 'intake_desk_claimed'),
-    senior_review: (projects || []).filter(p => p.project_stage === 'intake_desk_screened'),
+    private: all.filter(p => p.category_decision === 'category_a'),
+    government: all.filter(p => p.category_decision === 'category_b'),
+    ppp: all.filter(p => p.category_decision === 'category_c'),
   };
 
   return NextResponse.json(columns);

@@ -8,9 +8,10 @@ import { KanbanSquare } from "lucide-react"
 import { IntakeReviewTab } from "@/components/project-bank/review/IntakeReviewTab"
 import { FS1ReviewTab } from "@/components/project-bank/review/FS1ReviewTab"
 import { FS2ReviewTab } from "@/components/project-bank/review/FS2ReviewTab"
+import { CategorizedTab } from "@/components/project-bank/review/CategorizedTab"
 import { RejectedProjectsTab } from "@/components/project-bank/review/RejectedProjectsTab"
 
-const VALID_TABS = ["intake", "fs1", "fs2", "rejected"]
+const VALID_TABS = ["intake", "fs1", "fs2", "categorized", "rejected"]
 
 export default function ReviewBoardPage() {
   const searchParams = useSearchParams()
@@ -53,6 +54,7 @@ export default function ReviewBoardPage() {
             <TabsTrigger value="intake">Phase 1: Intake Reviews</TabsTrigger>
             <TabsTrigger value="fs1">Phase 2: Preliminary Feasibility Study</TabsTrigger>
             <TabsTrigger value="fs2">Phase 3: Detailed Feasibility Study</TabsTrigger>
+            <TabsTrigger value="categorized">Phase 4: Categorized Projects</TabsTrigger>
             <TabsTrigger value="rejected">Rejected</TabsTrigger>
           </TabsList>
 
@@ -66,6 +68,10 @@ export default function ReviewBoardPage() {
 
           <TabsContent value="fs2">
             <FS2ReviewTab />
+          </TabsContent>
+
+          <TabsContent value="categorized">
+            <CategorizedTab />
           </TabsContent>
 
           <TabsContent value="rejected">

@@ -48,6 +48,8 @@ function buildProjects() {
     estimated_duration_months: 36,
     project_type: 'Infrastructure',
     contact_officer: 'U Kyaw Win',
+    contact_officer_first_name: 'Kyaw',
+    contact_officer_last_name: 'Win',
     contact_email: 'kyawwin@mopfi.gov.mm',
     contact_phone: '+95-67-407-234',
     contact_position: 'Director',
@@ -74,7 +76,7 @@ function buildProjects() {
     revenue_ramp_up_years: 3,
     msdp_strategy_area: 'Goal 3: Job Creation & Private Sector-Led Growth',
     alignment_justification: 'Directly supports MSDP Strategy 3.4 on improving transport and ICT connectivity to reduce cost of doing business, create employment opportunities, and support regional economic integration across Myanmar.',
-    sector_strategy_reference: 'National Transport Master Plan 2025–2040',
+    sector_strategy_reference: ['National Transport Master Plan 2025–2040'],
     in_sector_investment_plan: true,
     ...extra,
   });

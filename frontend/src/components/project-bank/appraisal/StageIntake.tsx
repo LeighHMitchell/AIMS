@@ -154,10 +154,25 @@ export function StageIntake({ wizard }: StageIntakeProps) {
   // Normalized display for the gray summary
   const totalDurationMonths = (parseInt(durYears) || 0) * 12 + (parseInt(durMonths) || 0);
 
-  const handleCostChange = (value: string) => {
-    setCostDisplay(value);
-    const raw = parseFloat(value.replace(/,/g, ''));
+  const handleCostChange = (value: string, inputEl?: HTMLInputElement) => {
+    // Strip non-numeric chars except decimal point
+    const stripped = value.replace(/[^0-9.]/g, '');
+    const raw = parseFloat(stripped);
     updateField('estimated_cost', isNaN(raw) ? null : raw);
+
+    // Format with commas while preserving cursor position
+    const formatted = stripped ? formatCurrencyDisplay(parseFloat(stripped) || 0) || stripped : '';
+    const prevLen = value.length;
+    setCostDisplay(formatted);
+
+    if (inputEl) {
+      const cursorPos = inputEl.selectionStart || 0;
+      const diff = formatted.length - prevLen;
+      requestAnimationFrame(() => {
+        const newPos = Math.max(0, cursorPos + diff);
+        inputEl.setSelectionRange(newPos, newPos);
+      });
+    }
   };
 
   const handleCostBlur = () => {
@@ -254,29 +269,27 @@ export function StageIntake({ wizard }: StageIntakeProps) {
       {/* ─── C: Project Origin — Two-Card Layout ─── */}
       <div id="section-origin" className="scroll-mt-20 space-y-4">
         <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Project Origin</h4>
-        <div className="flex items-center gap-4">
+        <div className="flex gap-4">
           {/* GOV card */}
           <button
             type="button"
             onClick={() => updateField('origin', 'government')}
             className={cn(
-              'relative flex flex-col justify-end flex-1 h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
+              'relative flex flex-col justify-end w-[260px] h-[200px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               (formData.origin || 'government') === 'government'
                 ? 'ring-border bg-primary/5'
                 : 'ring-border bg-background hover:bg-gray-50',
             )}
           >
-            <Image src="/images/origin-government.png" alt="Government Nominated" fill className="object-contain object-top opacity-15 scale-75" />
+            <Image src="/images/origin-government.png" alt="Government Nominated" fill className="object-contain object-bottom object-left opacity-15 scale-75 origin-bottom-left" />
             {(formData.origin || 'government') === 'government' && (
               <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                 <Check className="h-3 w-3 text-primary-foreground" />
               </div>
             )}
-            <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white via-white/95 to-transparent p-3 pt-5">
+            <div className="relative z-10 p-3">
               <h4 className="text-sm font-semibold">Government Nominated <span className="text-[10px] font-mono font-normal bg-muted px-1.5 py-0.5 rounded align-middle">GOV</span></h4>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Project nominated by a government ministry through official channels
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">Nominated by a government ministry</p>
             </div>
           </button>
 
@@ -285,23 +298,21 @@ export function StageIntake({ wizard }: StageIntakeProps) {
             type="button"
             onClick={() => updateField('origin', 'unsolicited')}
             className={cn(
-              'relative flex flex-col justify-end flex-1 h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
+              'relative flex flex-col justify-end w-[260px] h-[200px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               formData.origin === 'unsolicited'
                 ? 'ring-border bg-primary/5'
                 : 'ring-border bg-background hover:bg-gray-50',
             )}
           >
-            <Image src="/images/origin-unsolicited.png" alt="Unsolicited Proposal" fill className="object-contain object-top opacity-15 scale-75" />
+            <Image src="/images/origin-unsolicited.png" alt="Unsolicited Proposal" fill className="object-contain object-bottom object-left opacity-15 scale-75 origin-bottom-left" />
             {formData.origin === 'unsolicited' && (
               <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                 <Check className="h-3 w-3 text-primary-foreground" />
               </div>
             )}
-            <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white via-white/95 to-transparent p-3 pt-5">
+            <div className="relative z-10 p-3">
               <h4 className="text-sm font-semibold">Unsolicited Proposal <span className="text-[10px] font-mono font-normal bg-muted px-1.5 py-0.5 rounded align-middle">UNSOL</span></h4>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Project proposed by a private entity or development partner
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">Proposed by a private entity or partner</p>
             </div>
           </button>
         </div>
@@ -313,11 +324,19 @@ export function StageIntake({ wizard }: StageIntakeProps) {
             <p className="text-xs text-muted-foreground -mt-1">The government officer responsible for coordinating this project.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-muted-foreground">Full Name <FieldCheck value={formData.contact_officer} /></Label>
+                <Label className="text-xs text-muted-foreground">First Name <FieldCheck value={formData.contact_officer_first_name} /></Label>
                 <Input
-                  value={formData.contact_officer || ''}
-                  onChange={e => updateField('contact_officer', e.target.value)}
-                  placeholder="Full name"
+                  value={formData.contact_officer_first_name || ''}
+                  onChange={e => updateField('contact_officer_first_name', e.target.value)}
+                  placeholder="First name"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Last Name <FieldCheck value={formData.contact_officer_last_name} /></Label>
+                <Input
+                  value={formData.contact_officer_last_name || ''}
+                  onChange={e => updateField('contact_officer_last_name', e.target.value)}
+                  placeholder="Last name"
                 />
               </div>
               <div>
@@ -327,6 +346,47 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                   onChange={e => updateField('contact_position', e.target.value)}
                   placeholder="e.g. Director, Project Manager"
                 />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Ministry <FieldCheck value={formData.contact_ministry} /></Label>
+                <Select
+                  value={formData.contact_ministry || ''}
+                  onValueChange={v => {
+                    updateField('contact_ministry', v);
+                    updateField('contact_department', '');
+                  }}
+                  disabled={ministriesLoading || topLevelMinistries.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={ministriesLoading ? 'Loading...' : 'Select ministry...'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {topLevelMinistries.map(m => (
+                      <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Department <FieldCheck value={formData.contact_department} /></Label>
+                <Select
+                  value={formData.contact_department || ''}
+                  onValueChange={v => updateField('contact_department', v)}
+                  disabled={!formData.contact_ministry}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={!formData.contact_ministry ? 'Select ministry first' : 'Select department...'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const contactMin = ministries.find(m => m.name === formData.contact_ministry);
+                      const depts = contactMin ? getAllDescendants(contactMin.id) : [];
+                      return depts.map(d => (
+                        <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                      ));
+                    })()}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Email <FieldCheck value={formData.contact_email} /></Label>
@@ -354,13 +414,21 @@ export function StageIntake({ wizard }: StageIntakeProps) {
           <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
             <h5 className="text-sm font-medium text-foreground">Proponent Details</h5>
             <p className="text-xs text-muted-foreground -mt-1">The primary contact from the proposing entity.</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-muted-foreground">Proponent Name <FieldCheck value={formData.proponent_name} /></Label>
+                <Label className="text-xs text-muted-foreground">First Name <FieldCheck value={formData.proponent_first_name} /></Label>
                 <Input
-                  value={formData.proponent_name || ''}
-                  onChange={e => updateField('proponent_name', e.target.value)}
-                  placeholder="Full name"
+                  value={formData.proponent_first_name || ''}
+                  onChange={e => updateField('proponent_first_name', e.target.value)}
+                  placeholder="First name"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Last Name <FieldCheck value={formData.proponent_last_name} /></Label>
+                <Input
+                  value={formData.proponent_last_name || ''}
+                  onChange={e => updateField('proponent_last_name', e.target.value)}
+                  placeholder="Last name"
                 />
               </div>
               <div>
@@ -395,7 +463,6 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               onChange={e => updateField('name', e.target.value)}
               placeholder="e.g. Mandalay–Myitkyina Highway"
             />
-            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
           </div>
 
           {/* D: Nominating Ministry — Top-level ministries only */}
@@ -428,7 +495,6 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 ))}
               </SelectContent>
             </Select>
-            {errors.nominating_ministry && <p className="text-xs text-red-500 mt-1">{errors.nominating_ministry}</p>}
           </div>
 
           {/* E: Implementing Agency — cascades from nominating ministry children */}
@@ -490,12 +556,8 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">$</span>
                 <Input
                   value={costDisplay}
-                  onChange={e => handleCostChange(e.target.value)}
+                  onChange={e => handleCostChange(e.target.value, e.target)}
                   onBlur={handleCostBlur}
-                  onFocus={() => {
-                    // Show raw number on focus for editing
-                    if (formData.estimated_cost) setCostDisplay(String(formData.estimated_cost));
-                  }}
                   placeholder="e.g. 85,000,000"
                   className="pl-7"
                 />
@@ -631,7 +693,6 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 ))}
               </SelectContent>
             </Select>
-            {errors.sector && <p className="text-xs text-red-500 mt-1">{errors.sector}</p>}
           </div>
           <div>
             <Label>Sub-Sector <HelpTooltip text="A more specific category within the selected sector." /> <FieldCheck value={formData.sub_sector} /></Label>
@@ -776,9 +837,6 @@ export function StageIntake({ wizard }: StageIntakeProps) {
         />
       </div>
 
-      {errors._form && (
-        <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg p-3">{errors._form}</p>
-      )}
     </div>
   );
 }

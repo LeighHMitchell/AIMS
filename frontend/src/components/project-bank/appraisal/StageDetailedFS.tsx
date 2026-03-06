@@ -141,7 +141,6 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
                   placeholder="Pick date"
                 />
               </div>
-              {errors.study_date && <p className="text-xs text-red-500 mt-1">{errors.study_date}</p>}
             </div>
             <div>
               <Label>Conducted By <RequiredDot /></Label>
@@ -152,7 +151,6 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
                   <SelectItem value="company">Consulting Firm / Company</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.conductor_type && <p className="text-xs text-red-500 mt-1">{errors.conductor_type}</p>}
             </div>
           </div>
 
@@ -201,7 +199,6 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
               rows={3}
               disabled={isLocked}
             />
-            {errors.demand_methodology && <p className="text-xs text-red-500 mt-1">{errors.demand_methodology}</p>}
           </div>
 
           <div>
@@ -681,9 +678,6 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
         </TabsContent>
       </Tabs>
 
-      {errors._form && (
-        <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg p-3">{errors._form}</p>
-      )}
     </div>
   );
 }

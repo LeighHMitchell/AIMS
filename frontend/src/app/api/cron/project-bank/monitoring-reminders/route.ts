@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         // Get project info for notification
         const { data: project } = await supabase
           .from('project_bank_projects')
-          .select('name, created_by, contact_officer')
+          .select('name, created_by, contact_officer, contact_officer_first_name, contact_officer_last_name')
           .eq('id', report.project_id)
           .single();
 

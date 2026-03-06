@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ const VALIDATION_FIELD_LABELS: Record<string, string> = {
   conductor_type: 'Study Conductor Type',
   demand_methodology: 'Demand Methodology',
   firr_cost_table_data: 'Financial Analysis Cost Table',
+  _form: 'Save Error',
 };
 
 interface AppraisalWizardProps {
@@ -81,6 +82,14 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
   const [viewingIntakeUnlocked, setViewingIntakeUnlocked] = useState(false);
   const [viewingFS1Unlocked, setViewingFS1Unlocked] = useState(false);
   const [viewingPhaseUnlocked, setViewingPhaseUnlocked] = useState(false);
+
+  // Surface API/network errors (_form) in the validation errors modal
+  useEffect(() => {
+    if (wizard.errors._form) {
+      setValidationErrors({ _form: wizard.errors._form });
+      setShowValidationErrors(true);
+    }
+  }, [wizard.errors._form]);
 
   if (isLoading) {
     return (
@@ -448,21 +457,17 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
       </div>
 
       {/* Right sidebar — score + viability decision */}
-      {wizardProjectId ? (
-        <div className="sticky top-6 space-y-3 self-start">
-          <AppraisalScoreSidebar
-            projectId={wizardProjectId}
-            stage={viewingIntake ? 'intake' : viewingFS1 ? 'fs1' : viewingPhase === 'fs2' ? 'fs2' : viewingPhase === 'fs3' ? 'fs3' : (currentPhase === 'intake' ? 'intake' : currentPhase === 'fs1' ? 'fs1' : currentPhase === 'fs3' ? 'fs3' : 'fs2')}
-            formData={wizard.formData}
-            documents={wizard.documents}
-          />
-          {(currentPhase === 'fs1' || viewingFS1) && !viewingIntake && !viewingPhase && (
-            <ViabilityDecisionSidebar wizard={wizard} />
-          )}
-        </div>
-      ) : (
-        <div />
-      )}
+      <div className="sticky top-6 space-y-3 self-start">
+        <AppraisalScoreSidebar
+          projectId={wizardProjectId || undefined}
+          stage={viewingIntake ? 'intake' : viewingFS1 ? 'fs1' : viewingPhase === 'fs2' ? 'fs2' : viewingPhase === 'fs3' ? 'fs3' : (currentPhase === 'intake' ? 'intake' : currentPhase === 'fs1' ? 'fs1' : currentPhase === 'fs3' ? 'fs3' : 'fs2')}
+          formData={wizard.formData}
+          documents={wizard.documents}
+        />
+        {(currentPhase === 'fs1' || viewingFS1) && !viewingIntake && !viewingPhase && (
+          <ViabilityDecisionSidebar wizard={wizard} />
+        )}
+      </div>
 
       {/* Fixed Bottom Action Bar */}
       {((showFooter && !viewingIntake && !viewingFS1 && (!viewingPhase || viewingPhase === currentPhase)) || viewingIntakeUnlocked || viewingFS1Unlocked || viewingPhaseUnlocked) && (

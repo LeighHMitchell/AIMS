@@ -424,6 +424,8 @@ export interface ProjectBankProject {
   routing_outcome?: RoutingOutcome | null;
   // Intake fields
   contact_officer?: string | null;
+  contact_officer_first_name?: string | null;
+  contact_officer_last_name?: string | null;
   contact_email?: string | null;
   contact_phone?: string | null;
   project_type?: string | null;
@@ -464,7 +466,7 @@ export interface ProjectBankProject {
   msdp_strategy_area?: string | null;
   secondary_ndp_goals?: string[] | null;
   alignment_justification?: string | null;
-  sector_strategy_reference?: string | null;
+  sector_strategy_reference?: string[] | null;
   in_sector_investment_plan?: boolean;
   // Calculation data
   firr_cost_table_data?: CostTableRow[] | null;

@@ -6,7 +6,8 @@ export const dynamic = 'force-dynamic';
 const STAGE_FIELDS: Record<string, string[]> = {
   intake: [
     'name', 'nominating_ministry', 'sector', 'region', 'estimated_cost', 'currency',
-    'description', 'contact_officer', 'contact_email', 'contact_phone',
+    'description', 'contact_officer', 'contact_officer_first_name', 'contact_officer_last_name',
+    'contact_email', 'contact_phone',
     'project_type', 'sub_sector', 'townships', 'estimated_start_date',
     'estimated_duration_months', 'objectives', 'target_beneficiaries',
     'sdg_goals', 'ndp_goal_id', 'ndp_aligned', 'implementing_agency',

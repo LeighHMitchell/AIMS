@@ -148,7 +148,6 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
             />
             <span className="text-xs text-muted-foreground">months</span>
           </div>
-          {errors.construction_period_years && <p className="text-xs text-red-500 mt-1">{errors.construction_period_years}</p>}
         </div>
         <div>
           <Label>Operational Period <RequiredDot /> <HelpTooltip text="How long the project will operate after construction." /></Label>
@@ -182,7 +181,6 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
             />
             <span className="text-xs text-muted-foreground">months</span>
           </div>
-          {errors.operational_period_years && <p className="text-xs text-red-500 mt-1">{errors.operational_period_years}</p>}
         </div>
         <div>
           <Label>Project Life <HelpTooltip text="Total project lifespan — auto-calculated from construction + operational periods." /></Label>
@@ -272,7 +270,6 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
             </div>
           </button>
         </div>
-        {errors.fs_conductor_type && <p className="text-xs text-red-500">{errors.fs_conductor_type}</p>}
 
         {/* Individual details */}
         {formData.fs_conductor_type === 'individual' && (
@@ -282,7 +279,6 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               <div>
                 <Label className="text-xs text-muted-foreground">Full Name</Label>
                 <Input value={formData.fs_conductor_individual_name || ''} onChange={e => updateField('fs_conductor_individual_name', e.target.value)} placeholder="Full name" disabled={isLocked} />
-                {errors.fs_conductor_individual_name && <p className="text-xs text-red-500 mt-1">{errors.fs_conductor_individual_name}</p>}
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Job Title</Label>
@@ -312,7 +308,6 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               <div>
                 <Label className="text-xs text-muted-foreground">Company Name</Label>
                 <Input value={formData.fs_conductor_company_name || ''} onChange={e => updateField('fs_conductor_company_name', e.target.value)} placeholder="Company or firm name" disabled={isLocked} />
-                {errors.fs_conductor_company_name && <p className="text-xs text-red-500 mt-1">{errors.fs_conductor_company_name}</p>}
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Contact Person</Label>
@@ -594,7 +589,6 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.environmental_impact_level && <p className="text-xs text-red-500 mt-1">{errors.environmental_impact_level}</p>}
             </div>
             <div>
               <Label>Social Impact Level <FieldCheck value={formData.social_impact_level} /> <HelpTooltip text="The expected level of social impact, including displacement and community effects." /></Label>
@@ -614,7 +608,6 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.social_impact_level && <p className="text-xs text-red-500 mt-1">{errors.social_impact_level}</p>}
             </div>
           </div>
 
@@ -688,9 +681,6 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
 
       </Tabs>
 
-      {errors._form && (
-        <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg p-3">{errors._form}</p>
-      )}
     </div>
   );
 }

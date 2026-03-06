@@ -88,12 +88,14 @@ export async function POST(request: Request) {
 
   // Intake fields
   const intakeFields = [
-    'contact_officer', 'contact_email', 'contact_phone',
+    'contact_officer', 'contact_officer_first_name', 'contact_officer_last_name',
+    'contact_email', 'contact_phone',
     'contact_position', 'contact_ministry', 'contact_department',
     'project_type', 'sub_sector', 'townships',
     'estimated_start_date', 'estimated_duration_months',
     'objectives', 'target_beneficiaries', 'implementing_agency',
-    'proponent_name', 'proponent_company', 'proponent_contact',
+    'proponent_name', 'proponent_first_name', 'proponent_last_name',
+    'proponent_company', 'proponent_contact',
     'banner', 'banner_position',
   ];
   intakeFields.forEach(field => {
