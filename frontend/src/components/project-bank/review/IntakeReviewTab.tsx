@@ -13,20 +13,13 @@ import {
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
-  formatCurrency, formatCurrencyParts, SECTORS, PROJECT_STAGE_LABELS, PROJECT_STAGE_BADGE_STYLES,
+  formatCurrency, formatCurrencyParts, fmtCost, SECTORS, PROJECT_STAGE_LABELS, PROJECT_STAGE_BADGE_STYLES,
 } from "@/lib/project-bank-utils"
 import type { IntakeReviewProject, IntakeReviewColumns, IntakeColumnKey, DecisionOption } from "./types"
 import { ReviewDecisionCards } from "./ReviewDecisionCards"
 import { ReviewTableView } from "./ReviewTableView"
 import type { ReviewTableColumn } from "./ReviewTableView"
 
-/** Compact currency formatter for cards */
-function fmtCost(value: number | null, currency: string) {
-  if (!value) return null
-  if (value >= 1_000_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000_000).toFixed(1)}m`
-  if (value >= 1_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000).toFixed(0)}k`
-  return formatCurrency(value, currency)
-}
 
 const DESK_REVIEW_DECISIONS: DecisionOption[] = [
   {
@@ -378,26 +371,28 @@ export function IntakeReviewTab() {
       {/* Kanban View */}
       {viewMode === "kanban" && (
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {KANBAN_COLUMNS.map(col => (
-            <div key={col.key} className="flex-1 min-w-[280px]">
-              <div className="flex items-center gap-2 mb-3">
-                <div className={`w-2 h-2 rounded-full ${col.color}`} />
-                <h3 className="text-sm font-semibold">{col.title}</h3>
-                <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
-                  {kanbanColumns[col.key].length}
-                </span>
+          {KANBAN_COLUMNS.map(col => {
+            const filtered = filterProjects(kanbanColumns[col.key])
+            return (
+              <div key={col.key} className="flex-1 min-w-[280px]">
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-sm font-semibold">{col.title}</h3>
+                  <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+                    {kanbanColumns[col.key].length}
+                  </span>
+                </div>
+                <div className="space-y-2 min-h-[200px] bg-muted/30 rounded-lg p-2">
+                  {filtered.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-8">No projects</p>
+                  ) : (
+                    filtered.map(p => (
+                      <IntakeKanbanCard key={p.id} project={p} onClick={() => openReview(p)} />
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="space-y-2 min-h-[200px] bg-muted/30 rounded-lg p-2">
-                {filterProjects(kanbanColumns[col.key]).length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-8">No projects</p>
-                ) : (
-                  filterProjects(kanbanColumns[col.key]).map(p => (
-                    <IntakeKanbanCard key={p.id} project={p} onClick={() => openReview(p)} />
-                  ))
-                )}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

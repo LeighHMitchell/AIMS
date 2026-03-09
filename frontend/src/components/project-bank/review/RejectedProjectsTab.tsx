@@ -4,16 +4,133 @@ import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, LayoutGrid, Table2, Building2, DollarSign, ChevronRight, Search } from "lucide-react"
+import { Loader2, LayoutGrid, Table2, Building2, DollarSign, ChevronRight, Search, RotateCcw, X } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
-  formatCurrency, formatCurrencyParts, SECTORS, checkCooldownViolation,
+  formatCurrencyParts, fmtCost, SECTORS, checkCooldownViolation,
 } from "@/lib/project-bank-utils"
 import type { ProjectStage } from "@/types/project-bank"
 import type { RejectedProject } from "./types"
 import { ReviewTableView } from "./ReviewTableView"
 import type { ReviewTableColumn } from "./ReviewTableView"
+
+/* ── Recovery helpers ─────────────────────────────────────────── */
+
+interface RecoveryTarget { value: ProjectStage; label: string }
+
+const RECOVERY_TARGETS: Record<string, RecoveryTarget[]> = {
+  intake_rejected: [
+    { value: "intake_draft", label: "Intake (Draft)" },
+  ],
+  fs1_rejected: [
+    { value: "intake_draft", label: "Intake (Draft)" },
+    { value: "fs1_draft", label: "Preliminary Feasibility (Draft)" },
+  ],
+}
+
+/* ── Recovery Modal ───────────────────────────────────────────── */
+
+function RecoverModal({
+  project,
+  onClose,
+  onSuccess,
+}: {
+  project: RejectedProject
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const targets = RECOVERY_TARGETS[project.project_stage] || []
+  const [targetStage, setTargetStage] = useState<ProjectStage>(targets[0]?.value ?? "intake_draft")
+  const [reason, setReason] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+
+  async function handleRecover() {
+    setSaving(true)
+    setError("")
+    try {
+      const res = await apiFetch(`/api/project-bank/${project.id}/recover`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target_stage: targetStage, reason: reason.trim() || undefined }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setError(body.error || "Recovery failed")
+        return
+      }
+      onSuccess()
+    } catch {
+      setError("Network error")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 bg-surface-muted rounded-t-lg border-b">
+          <h3 className="text-sm font-semibold">Recover Project</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+          {/* Project info */}
+          <div>
+            <p className="text-sm font-medium">{project.name}</p>
+            <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+              {project.project_code}
+            </span>
+          </div>
+
+          {/* Target stage */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Recover to</Label>
+            <Select value={targetStage} onValueChange={v => setTargetStage(v as ProjectStage)}>
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {targets.map(t => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Optional reason */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Notes (optional)</Label>
+            <Textarea
+              placeholder="Reason for recovery…"
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              rows={3}
+              className="text-sm"
+            />
+          </div>
+
+          {error && <p className="text-xs text-red-600">{error}</p>}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 px-5 py-3 border-t">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button size="sm" onClick={handleRecover} disabled={saving}>
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+            Recover
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function getRejectionPhase(stage: ProjectStage): string {
   if (stage === "intake_rejected") return "Intake"
@@ -46,13 +163,6 @@ function CooldownBadge({ project }: { project: RejectedProject }) {
       Eligible
     </span>
   )
-}
-
-function fmtCost(value: number | null, currency: string) {
-  if (!value) return null
-  if (value >= 1_000_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000_000).toFixed(1)}m`
-  if (value >= 1_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000).toFixed(0)}k`
-  return formatCurrency(value, currency)
 }
 
 const TABLE_COLUMNS: ReviewTableColumn[] = [
@@ -139,6 +249,7 @@ export function RejectedProjectsTab() {
   const [viewMode, setViewMode] = useState<"card" | "table">("card")
   const [searchQuery, setSearchQuery] = useState("")
   const [sectorFilter, setSectorFilter] = useState("")
+  const [recoverProject, setRecoverProject] = useState<RejectedProject | null>(null)
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -273,8 +384,17 @@ export function RejectedProjectsTab() {
                     {p.rejection_reason || p.review_comments}
                   </p>
                 )}
-                <div className="mt-3">
+                <div className="mt-3 flex items-center justify-between">
                   <CooldownBadge project={p} />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => setRecoverProject(p)}
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Recover
+                  </Button>
                 </div>
               </div>
             )
@@ -285,9 +405,37 @@ export function RejectedProjectsTab() {
       {viewMode === "table" && (
         <ReviewTableView
           projects={filteredProjects}
-          columns={TABLE_COLUMNS}
+          columns={[
+            ...TABLE_COLUMNS,
+            {
+              key: "actions",
+              label: "",
+              render: (p: RejectedProject) => (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={e => { e.stopPropagation(); setRecoverProject(p) }}
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Recover
+                </Button>
+              ),
+            },
+          ]}
           onRowClick={() => {}}
           emptyMessage="No rejected projects"
+        />
+      )}
+
+      {recoverProject && (
+        <RecoverModal
+          project={recoverProject}
+          onClose={() => setRecoverProject(null)}
+          onSuccess={() => {
+            setRecoverProject(null)
+            fetchProjects()
+          }}
         />
       )}
     </>

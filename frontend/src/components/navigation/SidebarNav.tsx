@@ -267,7 +267,7 @@ export function SidebarNav({
         { name: "Phase 1: Intake Reviews", href: "/project-bank/review?tab=intake", show: true },
         { name: "Phase 2: Preliminary Study", href: "/project-bank/review?tab=fs1", show: true },
         { name: "Phase 3: Detailed Study", href: "/project-bank/review?tab=fs2", show: true },
-        { name: "Phase 4: Categorized", href: "/project-bank/review?tab=categorized", show: true },
+        { name: "Categorized", href: "/project-bank/review?tab=categorized", show: true },
         { name: "Rejected", href: "/project-bank/review?tab=rejected", show: true },
       ]
     },

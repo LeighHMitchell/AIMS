@@ -66,7 +66,7 @@ export interface UseAppraisalWizardReturn {
   canGoToStage: (stage: AppraisalStage) => boolean;
   saveAndContinue: () => Promise<void>;
   saveAndBack: () => Promise<void>;
-  saveDraft: () => Promise<void>;
+  saveDraft: () => Promise<boolean>;
   submitForReview: () => Promise<boolean>;
   updateField: (key: string, value: any) => void;
   updateFields: (updates: Record<string, any>) => void;
@@ -187,8 +187,25 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
           'dap_compliant', 'dap_notes', 'budget_allocation_status', 'budget_amount',
           'land_parcel_id', 'routing_outcome', 'status', 'pathway', 'feasibility_stage',
           'ppp_contract_type', 'ppp_contract_details', 'equity_ratio',
+          'ppp_support_mechanism',
+          'mrg_guaranteed_minimum', 'mrg_trigger_conditions', 'mrg_government_liability_cap', 'mrg_duration_years',
+          'availability_payment_amount', 'availability_payment_duration_years', 'availability_payment_conditions',
           'banner', 'banner_position',
           'fs2_study_data',
+          'category_decision', 'category_recommendation', 'category_rationale',
+          'aims_activity_id',
+          // Category A (Private Investment)
+          'private_partner_name', 'private_partner_experience', 'investor_commitments',
+          'procurement_method', 'procurement_timeline', 'concession_period_years',
+          'security_arrangements', 'financial_closure_target', 'private_structuring_data',
+          // Category B (Government Budget)
+          'budget_source', 'budget_fiscal_year', 'annual_operating_cost',
+          'maintenance_responsibility', 'procurement_method_gov',
+          'implementation_agency_confirmed', 'cost_recovery_mechanism', 'handover_timeline', 'gov_structuring_data',
+          // Category D (ODA)
+          'oda_donor_type', 'oda_donor_name', 'oda_financing_type',
+          'oda_grant_amount', 'oda_loan_amount', 'oda_counterpart_funding',
+          'oda_conditions', 'oda_iati_sector_code', 'oda_activity_description', 'oda_structuring_data',
         ];
         fields.forEach(f => {
           if ((project as any)[f] !== undefined) {
@@ -378,7 +395,9 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
           ? 'fs1_draft'
           : currentPhase === 'fs2' && projectStage === 'fs2_assigned'
             ? 'fs2_in_progress'
-            : undefined;
+            : currentPhase === 'fs3' && projectStage === 'fs2_categorized'
+              ? 'fs3_in_progress'
+              : undefined;
 
       const res = await apiFetch(`/api/project-bank/${projectId}`, {
         method: 'PUT',
@@ -441,8 +460,8 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
     }
   }, [visibleStages, currentStage, saveStageData]);
 
-  const saveDraft = useCallback(async () => {
-    await saveStageData();
+  const saveDraft = useCallback(async (): Promise<boolean> => {
+    return saveStageData();
   }, [saveStageData]);
 
   // Submit for review (intake, FS-1, or FS-2). Returns true on success.

@@ -8,12 +8,13 @@ import { apiFetch } from "@/lib/api-fetch"
 import { DimensionHelpIcon } from "./DimensionHelpIcon"
 import type { ProjectScore, ScoringDimension, ScoringStage } from "@/types/project-bank"
 
-const STAGES: ScoringStage[] = ['intake', 'fs1', 'fs2']
+const STAGES: ScoringStage[] = ['intake', 'fs1', 'fs2', 'fs3']
 
 const STAGE_TITLES: Record<ScoringStage, string> = {
   intake: 'Project Intake',
   fs1: 'Preliminary Feasibility',
   fs2: 'Detailed Feasibility',
+  fs3: 'PPP / VGF Structuring',
 }
 
 const DIMENSION_LABELS: Record<ScoringDimension, string> = {
@@ -45,28 +46,30 @@ interface ProjectScoreCardProps {
 
 export function ProjectScoreCard({ projectId, onViewDetails }: ProjectScoreCardProps) {
   const [stageScores, setStageScores] = useState<Record<ScoringStage, ProjectScore | null>>({
-    intake: null, fs1: null, fs2: null,
+    intake: null, fs1: null, fs2: null, fs3: null,
   })
   const [loading, setLoading] = useState(true)
   const [recalculating, setRecalculating] = useState(false)
 
   const fetchScores = async () => {
     try {
-      const [intakeRes, fs1Res, fs2Res] = await Promise.all([
+      const [intakeRes, fs1Res, fs2Res, fs3Res] = await Promise.all([
         apiFetch(`/api/project-bank/${projectId}/score/latest?stage=intake`),
         apiFetch(`/api/project-bank/${projectId}/score/latest?stage=fs1`),
         apiFetch(`/api/project-bank/${projectId}/score/latest?stage=fs2`),
+        apiFetch(`/api/project-bank/${projectId}/score/latest?stage=fs3`),
       ])
 
       const intake = intakeRes.ok ? await intakeRes.json() : null
       const fs1 = fs1Res.ok ? await fs1Res.json() : null
       const fs2 = fs2Res.ok ? await fs2Res.json() : null
+      const fs3 = fs3Res.ok ? await fs3Res.json() : null
 
-      setStageScores({ intake, fs1, fs2 })
+      setStageScores({ intake, fs1, fs2, fs3 })
       setLoading(false)
 
       // Auto-calculate if no scores exist at all
-      if (!intake && !fs1 && !fs2) {
+      if (!intake && !fs1 && !fs2 && !fs3) {
         autoCalculate()
       }
     } catch { setLoading(false) }

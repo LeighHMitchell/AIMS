@@ -32,6 +32,7 @@ const FS3_LABELS: Record<CategoryDecision, string> = {
   category_a: 'Private Sector Pathway',
   category_b: 'Government Budget Pathway',
   category_c: 'PPP / VGF Structuring',
+  category_d: 'Development Partner (ODA) Pathway',
 }
 
 function getPhaseLabel(phase: ProjectPhase, idx: number, categoryDecision?: CategoryDecision | null): string {

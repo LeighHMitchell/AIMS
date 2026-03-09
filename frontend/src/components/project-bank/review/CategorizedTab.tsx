@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  ChevronRight, Loader2, Inbox, Search,
-  KanbanSquare, Table2,
+  Loader2, Search,
+  KanbanSquare, Table2, FileText, ClipboardList,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
@@ -24,7 +24,15 @@ const KANBAN_COLUMNS: { key: CategorizedColumnKey; title: string; color: string 
   { key: "private", title: "Category A: Private Investment", color: "bg-green-600" },
   { key: "government", title: "Category B: Government Budget", color: "bg-amber-600" },
   { key: "ppp", title: "Category C: PPP / VGF Structuring", color: "bg-purple-600" },
+  { key: "oda", title: "Category D: Development Partner (ODA)", color: "bg-blue-600" },
 ]
+
+const CATEGORY_STYLES: Record<string, { label: string; bg: string; text: string; border: string }> = {
+  category_a: { label: "Private (A)", bg: "#dcfce7", text: "#166534", border: "#bbf7d0" },
+  category_b: { label: "Gov Budget (B)", bg: "#fef3c7", text: "#92400e", border: "#fde68a" },
+  category_c: { label: "PPP (C)", bg: "#f3e8ff", text: "#6b21a8", border: "#e9d5ff" },
+  category_d: { label: "ODA (D)", bg: "#dbeafe", text: "#1e40af", border: "#bfdbfe" },
+}
 
 /* ── Table columns ─────────────────────────────────────── */
 
@@ -34,10 +42,8 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     label: "Project",
     render: (p: CategorizedProject) => (
       <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium truncate">{p.name}</p>
-          <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{p.project_code}</span>
-        </div>
+        <span className="text-sm font-medium">{p.name}</span>{" "}
+        <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap inline-block">{p.project_code}</span>
       </div>
     ),
   },
@@ -75,15 +81,13 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
     key: "category_decision",
     label: "Category",
     render: (p: CategorizedProject) => {
-      const labels: Record<string, { label: string; color: string }> = {
-        category_a: { label: "Private (A)", color: "bg-green-100 text-green-800 border-green-200" },
-        category_b: { label: "Gov Budget (B)", color: "bg-amber-100 text-amber-800 border-amber-200" },
-        category_c: { label: "PPP (C)", color: "bg-purple-100 text-purple-800 border-purple-200" },
-      }
-      const info = p.category_decision ? labels[p.category_decision] : null
+      const info = p.category_decision ? CATEGORY_STYLES[p.category_decision] : null
       if (!info) return <span>—</span>
       return (
-        <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border ${info.color}`}>
+        <span
+          className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold"
+          style={{ backgroundColor: info.bg, color: info.text, border: `1px solid ${info.border}` }}
+        >
           {info.label}
         </span>
       )
@@ -108,22 +112,18 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
 
 /* ── Kanban card ───────────────────────────────────────── */
 
-function CategorizedKanbanCard({ project, onClick }: { project: CategorizedProject; onClick: () => void }) {
+function CategorizedKanbanCard({ project, onProfile, onForm }: { project: CategorizedProject; onProfile: () => void; onForm: () => void }) {
+  const [expanded, setExpanded] = useState(false)
   const style = PROJECT_STAGE_BADGE_STYLES[project.project_stage]
 
   return (
     <div
-      onClick={onClick}
-      className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow"
+      className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => setExpanded(prev => !prev)}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium truncate">{project.name}</p>
-            <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{project.project_code}</span>
-          </div>
-        </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+      <div className="min-w-0">
+        <span className="text-sm font-medium">{project.name}</span>{" "}
+        <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap inline-block">{project.project_code}</span>
       </div>
       <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
         <div>
@@ -150,6 +150,16 @@ function CategorizedKanbanCard({ project, onClick }: { project: CategorizedProje
           {new Date(project.updated_at).toLocaleDateString()}
         </span>
       </div>
+      {expanded && (
+        <div className="mt-2 flex items-center gap-1.5 border-t pt-2">
+          <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={e => { e.stopPropagation(); onProfile() }}>
+            <FileText className="h-3 w-3" /> Profile
+          </Button>
+          <Button size="sm" className="flex-1 h-7 text-xs gap-1 bg-black hover:bg-black/90 text-white" onClick={e => { e.stopPropagation(); onForm() }}>
+            <ClipboardList className="h-3 w-3" /> Entry Form
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -158,7 +168,7 @@ function CategorizedKanbanCard({ project, onClick }: { project: CategorizedProje
 
 export function CategorizedTab() {
   const router = useRouter()
-  const [kanbanColumns, setKanbanColumns] = useState<CategorizedColumns>({ private: [], government: [], ppp: [] })
+  const [kanbanColumns, setKanbanColumns] = useState<CategorizedColumns>({ private: [], government: [], ppp: [], oda: [] })
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban")
   const [searchQuery, setSearchQuery] = useState("")
@@ -177,7 +187,7 @@ export function CategorizedTab() {
 
   useEffect(() => { fetchBoard() }, [fetchBoard])
 
-  const allProjects = [...kanbanColumns.private, ...kanbanColumns.government, ...kanbanColumns.ppp]
+  const allProjects = [...kanbanColumns.private, ...kanbanColumns.government, ...kanbanColumns.ppp, ...kanbanColumns.oda]
 
   const filterProjects = <T extends CategorizedProject>(projects: T[]): T[] => {
     if (!searchQuery) return projects
@@ -248,30 +258,33 @@ export function CategorizedTab() {
       {/* Kanban View */}
       {viewMode === "kanban" && (
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {KANBAN_COLUMNS.map(col => (
-            <div key={col.key} className="flex-1 min-w-[280px]">
-              <div className="flex items-center gap-2 mb-3">
-                <div className={`w-2 h-2 rounded-full ${col.color}`} />
-                <h3 className="text-sm font-semibold">{col.title}</h3>
-                <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
-                  {kanbanColumns[col.key].length}
-                </span>
+          {KANBAN_COLUMNS.map(col => {
+            const filtered = filterProjects(kanbanColumns[col.key])
+            return (
+              <div key={col.key} className="flex-1 min-w-[280px]">
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-sm font-semibold">{col.title}</h3>
+                  <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+                    {kanbanColumns[col.key].length}
+                  </span>
+                </div>
+                <div className="space-y-2 min-h-[200px] bg-muted/30 rounded-lg p-2">
+                  {filtered.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-8">No projects</p>
+                  ) : (
+                    filtered.map(p => (
+                      <CategorizedKanbanCard
+                        key={p.id}
+                        project={p}
+                        onProfile={() => router.push(`/project-bank/${p.id}`)}
+                        onForm={() => router.push(`/project-bank/${p.id}/appraisal`)}
+                      />
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="space-y-2 min-h-[200px] bg-muted/30 rounded-lg p-2">
-                {filterProjects(kanbanColumns[col.key]).length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-8">No projects</p>
-                ) : (
-                  filterProjects(kanbanColumns[col.key]).map(p => (
-                    <CategorizedKanbanCard
-                      key={p.id}
-                      project={p}
-                      onClick={() => router.push(`/project-bank/${p.id}`)}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -279,8 +292,24 @@ export function CategorizedTab() {
       {viewMode === "table" && (
         <ReviewTableView
           projects={filteredAll}
-          columns={TABLE_COLUMNS}
-          onRowClick={p => router.push(`/project-bank/${p.id}`)}
+          columns={[
+            ...TABLE_COLUMNS,
+            {
+              key: "actions",
+              label: "",
+              render: (p: CategorizedProject) => (
+                <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                  <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => router.push(`/project-bank/${p.id}`)}>
+                    <FileText className="h-3 w-3" /> Profile
+                  </Button>
+                  <Button size="sm" className="h-7 text-xs gap-1 bg-black hover:bg-black/90 text-white" onClick={() => router.push(`/project-bank/${p.id}/appraisal`)}>
+                    <ClipboardList className="h-3 w-3" /> Entry Form
+                  </Button>
+                </div>
+              ),
+            },
+          ]}
+          onRowClick={() => {}}
           emptyMessage="No categorized projects found"
         />
       )}

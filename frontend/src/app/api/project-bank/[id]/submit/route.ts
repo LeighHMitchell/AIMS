@@ -35,7 +35,7 @@ export async function POST(
     intake: ['intake_draft', 'intake_returned'],
     fs1: ['fs1_draft', 'fs1_returned'],
     fs2: ['fs2_in_progress', 'fs2_assigned', 'fs2_returned'],
-    fs3: ['fs3_in_progress', 'fs3_returned'],
+    fs3: ['fs2_categorized', 'fs3_in_progress', 'fs3_returned'],
   };
 
   if (!validSubmitStages[phase].includes(project.project_stage)) {

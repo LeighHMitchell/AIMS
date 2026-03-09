@@ -72,7 +72,7 @@ export function StageRouting({ wizard }: StageRoutingProps) {
       }
 
       // Save routing outcome
-      await apiFetch(`/api/project-bank/${projectId}/appraisal-stage`, {
+      const routingRes = await apiFetch(`/api/project-bank/${projectId}/appraisal-stage`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -81,11 +81,20 @@ export function StageRouting({ wizard }: StageRoutingProps) {
             routing_outcome: routing.outcome,
             status,
             pathway,
-            ...(status === 'rejected' ? { rejection_reason: routing.description } : {}),
+            ...(status === 'rejected' ? {
+              rejection_reason: routing.description,
+              rejected_at: new Date().toISOString(),
+            } : {}),
           },
           advance: 'routing_complete',
         }),
       });
+
+      if (!routingRes.ok) {
+        const errData = await routingRes.json().catch(() => ({}));
+        console.error('Routing submission failed:', errData);
+        return;
+      }
 
       // Create AIMS activity for PPP/ODA projects
       if (pathway === 'ppp' || pathway === 'oda') {
@@ -96,7 +105,7 @@ export function StageRouting({ wizard }: StageRoutingProps) {
             body: JSON.stringify({ project_id: projectId }),
           });
         } catch {
-          // Non-critical
+          // Non-critical — project is still submitted
         }
       }
 

@@ -60,10 +60,10 @@ export async function POST(
     }
   }
 
-  // Check project exists and is in valid state
+  // Check project exists and is in valid state — gate on project_stage
   const { data: project, error: projectError } = await supabase!
     .from('project_bank_projects')
-    .select('feasibility_stage, fs1_resubmission_count')
+    .select('project_stage, fs1_resubmission_count')
     .eq('id', id)
     .single();
 
@@ -71,15 +71,15 @@ export async function POST(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
-  const validStages = ['registered', 'fs1_returned'];
-  if (!validStages.includes(project.feasibility_stage || 'registered')) {
+  const validStages = ['intake_approved', 'fs1_draft', 'fs1_returned'];
+  if (!validStages.includes(project.project_stage || 'intake_draft')) {
     return NextResponse.json(
       { error: 'Project is not in a valid state for FS-1 submission' },
       { status: 400 }
     );
   }
 
-  const isResubmission = project.feasibility_stage === 'fs1_returned';
+  const isResubmission = project.project_stage === 'fs1_returned';
   const version = (project.fs1_resubmission_count || 0) + 1;
 
   // Insert narrative
@@ -102,8 +102,9 @@ export async function POST(
     return NextResponse.json({ error: narrativeError.message }, { status: 500 });
   }
 
-  // Update project stage
+  // Update project stage — write both for backward compat
   const updateData: Record<string, any> = {
+    project_stage: 'fs1_submitted',
     feasibility_stage: 'fs1_submitted',
     updated_at: new Date().toISOString(),
     updated_by: user!.id,

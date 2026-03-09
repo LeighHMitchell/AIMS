@@ -21,7 +21,7 @@ export type ProjectStage =
   | 'intake_draft' | 'intake_submitted' | 'intake_desk_claimed' | 'intake_desk_screened' | 'intake_approved' | 'intake_returned' | 'intake_rejected'
   | 'fs1_draft' | 'fs1_submitted' | 'fs1_desk_claimed' | 'fs1_approved' | 'fs1_returned' | 'fs1_rejected'
   | 'fs2_assigned' | 'fs2_in_progress' | 'fs2_completed' | 'fs2_desk_claimed' | 'fs2_desk_reviewed' | 'fs2_senior_reviewed' | 'fs2_returned' | 'fs2_categorized'
-  | 'fs3_in_progress' | 'fs3_completed';
+  | 'fs3_in_progress' | 'fs3_completed' | 'fs3_returned';
 
 /** Which high-level phase a project_stage belongs to */
 export type ProjectPhase = 'intake' | 'fs1' | 'fs2' | 'fs3';
@@ -62,9 +62,9 @@ export type FeasibilityStage =
   | 'fs1_submitted' | 'fs1_desk_screened' | 'fs1_passed' | 'fs1_returned' | 'fs1_rejected'
   | 'fs2_assigned' | 'fs2_in_progress' | 'fs2_completed' | 'fs2_desk_reviewed' | 'fs2_senior_reviewed' | 'fs2_returned'
   | 'categorized'
-  | 'fs3_in_progress' | 'fs3_completed';
+  | 'fs3_in_progress' | 'fs3_completed' | 'fs3_returned';
 
-export type CategoryDecision = 'category_a' | 'category_b' | 'category_c';
+export type CategoryDecision = 'category_a' | 'category_b' | 'category_c' | 'category_d';
 
 export type PPPSupportMechanism = 'vgf' | 'mrg' | 'availability_payment' | 'interest_subsidy' | 'tax_incentive' | 'land_grant' | 'combined';
 
@@ -503,6 +503,37 @@ export interface ProjectBankProject {
   availability_payment_amount?: number | null;
   availability_payment_duration_years?: number | null;
   availability_payment_conditions?: string | null;
+  // FS-3 Category A (Private Investment)
+  private_partner_name?: string | null;
+  private_partner_experience?: string | null;
+  investor_commitments?: string | null;
+  procurement_method?: string | null;
+  procurement_timeline?: string | null;
+  concession_period_years?: number | null;
+  security_arrangements?: string | null;
+  financial_closure_target?: string | null;
+  private_structuring_data?: Record<string, any> | null;
+  // FS-3 Category B (Government Budget)
+  budget_source?: string | null;
+  budget_fiscal_year?: string | null;
+  annual_operating_cost?: number | null;
+  maintenance_responsibility?: string | null;
+  procurement_method_gov?: string | null;
+  implementation_agency_confirmed?: boolean | null;
+  cost_recovery_mechanism?: string | null;
+  handover_timeline?: string | null;
+  gov_structuring_data?: Record<string, any> | null;
+  // FS-3 Category D (ODA)
+  oda_donor_type?: string | null;
+  oda_donor_name?: string | null;
+  oda_financing_type?: string | null;
+  oda_grant_amount?: number | null;
+  oda_loan_amount?: number | null;
+  oda_counterpart_funding?: number | null;
+  oda_conditions?: string | null;
+  oda_iati_sector_code?: string | null;
+  oda_activity_description?: string | null;
+  oda_structuring_data?: Record<string, any> | null;
   // Scoring
   latest_score?: number | null;
   latest_score_stage?: ScoringStage | null;

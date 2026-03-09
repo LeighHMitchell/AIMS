@@ -132,10 +132,11 @@ export interface CategorizedProject {
   updated_at: string
 }
 
-export type CategorizedColumnKey = "private" | "government" | "ppp"
+export type CategorizedColumnKey = "private" | "government" | "ppp" | "oda"
 
 export interface CategorizedColumns {
   private: CategorizedProject[]
   government: CategorizedProject[]
   ppp: CategorizedProject[]
+  oda: CategorizedProject[]
 }

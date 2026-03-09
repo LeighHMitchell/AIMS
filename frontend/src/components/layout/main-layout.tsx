@@ -86,7 +86,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
 
       {/* Main Content Area with left margin */}
       <main
-        className={`flex-1 ${mainMargin} overflow-y-auto relative scrollbar-thin`}
+        className={`flex-1 ${mainMargin} overflow-y-auto relative scrollbar-thin scrollbar-track-transparent`}
       >
         {/* Hydration-safe Top Navigation */}
         <TopNav 

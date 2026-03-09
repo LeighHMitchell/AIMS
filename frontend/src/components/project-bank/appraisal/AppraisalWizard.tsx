@@ -13,13 +13,17 @@ import { StagePreliminaryFS, ViabilityDecisionSidebar } from './StagePreliminary
 import { StageDetailedFS } from './StageDetailedFS';
 import { StageEIRR } from './StageEIRR';
 import { StagePPPStructuring } from './StagePPPStructuring';
+import { StagePrivateInvestment } from './StagePrivateInvestment';
+import { StageGovernmentBudget } from './StageGovernmentBudget';
+import { StageODATransfer } from './StageODATransfer';
 import { StageRouting } from './StageRouting';
 import { FS2AssignmentPanel } from '@/components/project-bank/fs2/FS2AssignmentPanel';
 import { CategoryDecisionPanel } from '@/components/project-bank/categorization/CategoryDecisionPanel';
 import { ContextualHelpButton } from '@/components/project-bank/ContextualHelpButton';
 import { cn } from '@/lib/utils';
 import { AppraisalScoreSidebar } from '@/components/project-bank/scoring/AppraisalScoreSidebar';
-import type { ProjectPhase } from '@/types/project-bank';
+import type { ProjectPhase, CategoryDecision } from '@/types/project-bank';
+import { getFs3Label } from '@/lib/project-bank-utils';
 
 const VALIDATION_FIELD_LABELS: Record<string, string> = {
   name: 'Project Name',
@@ -138,6 +142,15 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
   // Wizard override with isLocked forced false (for unlocked viewing of prior phases)
   const unlockedWizard = { ...wizard, isLocked: false };
 
+  /** Dispatch FS-3 form component based on category_decision */
+  const renderFs3ByCategory = (w: typeof wizard) => {
+    const cat = w.formData.category_decision as CategoryDecision | null | undefined;
+    if (cat === 'category_a') return <StagePrivateInvestment wizard={w} />;
+    if (cat === 'category_b') return <StageGovernmentBudget wizard={w} />;
+    if (cat === 'category_d') return <StageODATransfer wizard={w} />;
+    return <StagePPPStructuring wizard={w} />;
+  };
+
   const renderStage = () => {
     // Read-only intake view from a later phase (unless unlocked)
     if (viewingIntake && currentPhase !== 'intake') {
@@ -170,7 +183,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
 
     // FS-3 read-only viewing from later phase
     if (viewingPhase === 'fs3' && currentPhase !== 'fs3') {
-      const content = <StagePPPStructuring wizard={viewingPhaseUnlocked ? unlockedWizard : wizard} />;
+      const content = renderFs3ByCategory(viewingPhaseUnlocked ? unlockedWizard : wizard);
       return viewingPhaseUnlocked ? content : (
         <div className="pointer-events-none opacity-75">{content}</div>
       );
@@ -178,7 +191,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
 
     // FS-3 active phase
     if (viewingPhase === 'fs3' || (viewingPhase === null && currentPhase === 'fs3')) {
-      return <StagePPPStructuring wizard={effectiveWizard} />;
+      return renderFs3ByCategory(effectiveWizard);
     }
 
     // In the unified model, intake and FS-1 are the two main editable phases
@@ -206,7 +219,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
   const canSubmit = (currentPhase === 'intake' && (projectStage === 'intake_draft' || projectStage === 'intake_returned'))
     || (currentPhase === 'fs1' && (projectStage === 'fs1_draft' || projectStage === 'fs1_returned'))
     || (currentPhase === 'fs2' && (projectStage === 'fs2_in_progress' || projectStage === 'fs2_assigned' || projectStage === 'fs2_returned'))
-    || (currentPhase === 'fs3' && (projectStage === 'fs3_in_progress' || projectStage === 'fs3_returned'));
+    || (currentPhase === 'fs3' && (projectStage === 'fs2_categorized' || projectStage === 'fs3_in_progress' || projectStage === 'fs3_returned'));
 
   // Status banner config
   const getBannerConfig = () => {
@@ -276,7 +289,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
     if (projectStage === 'fs2_categorized') {
       return {
         icon: ShieldCheck,
-        text: 'Detailed Feasibility Study approved and categorized. The project may proceed to PPP structuring.',
+        text: `Detailed Feasibility Study approved and categorized. The project may now proceed to ${getFs3Label(wizard.formData.category_decision as CategoryDecision | null)}.`,
         bgClass: 'bg-green-50 border-green-200',
         textClass: 'text-green-800',
         iconClass: 'text-green-600',
@@ -328,6 +341,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
         isStageComplete={isStageComplete}
         onReturnToCurrentPhase={clearViewing}
         onPhaseClick={handlePhaseClick}
+        categoryDecision={wizard.formData.category_decision as CategoryDecision | null}
       />
 
       {/* Main Content */}
@@ -395,8 +409,8 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
             <Eye className={cn('h-4 w-4 shrink-0', viewingPhaseUnlocked ? 'text-orange-600' : 'text-amber-600')} />
             <span className={cn('text-sm font-medium flex-1', viewingPhaseUnlocked ? 'text-orange-800' : 'text-amber-800')}>
               {viewingPhaseUnlocked
-                ? `Editing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : 'PPP / VGF Structuring'} data — remember to save changes`
-                : `Viewing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : 'PPP / VGF Structuring'} data (read-only)`
+                ? `Editing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : getFs3Label(wizard.formData.category_decision as CategoryDecision | null)} data — remember to save changes`
+                : `Viewing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : getFs3Label(wizard.formData.category_decision as CategoryDecision | null)} data (read-only)`
               }
             </span>
             <Button
@@ -613,7 +627,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
           <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg">
             <DialogTitle className="flex items-center gap-2">
               <Send className="h-5 w-5" />
-              Submit {currentPhase === 'intake' ? 'Intake' : currentPhase === 'fs2' ? 'Detailed Feasibility Study' : 'Preliminary Feasibility Study'} for Review
+              Submit {currentPhase === 'intake' ? 'Intake' : currentPhase === 'fs2' ? 'Detailed Feasibility Study' : currentPhase === 'fs3' ? getFs3Label(wizard.formData.category_decision as CategoryDecision | null) : 'Preliminary Feasibility Study'} for Review
             </DialogTitle>
             <DialogDescription>
               {currentPhase === 'fs2'

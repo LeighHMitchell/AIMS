@@ -193,20 +193,21 @@ export const PATHWAY_COLORS: Record<string, string> = {
 /** Feasibility stage display labels */
 export const FEASIBILITY_STAGE_LABELS: Record<FeasibilityStage, string> = {
   registered: 'Registered',
-  fs1_submitted: 'FS-1 Submitted',
-  fs1_desk_screened: 'FS-1 Desk Screened',
-  fs1_passed: 'FS-1 Passed',
-  fs1_returned: 'FS-1 Returned',
-  fs1_rejected: 'FS-1 Rejected',
-  fs2_assigned: 'FS-2 Assigned',
-  fs2_in_progress: 'FS-2 In Progress',
-  fs2_completed: 'FS-2 Completed',
-  fs2_desk_reviewed: 'FS-2 Desk Reviewed',
-  fs2_senior_reviewed: 'FS-2 Senior Reviewed',
-  fs2_returned: 'FS-2 Returned',
+  fs1_submitted: 'PFS Submitted',
+  fs1_desk_screened: 'PFS Desk Screened',
+  fs1_passed: 'PFS Passed',
+  fs1_returned: 'PFS Returned',
+  fs1_rejected: 'PFS Rejected',
+  fs2_assigned: 'DFS Assigned',
+  fs2_in_progress: 'DFS In Progress',
+  fs2_completed: 'DFS Completed',
+  fs2_desk_reviewed: 'DFS Desk Reviewed',
+  fs2_senior_reviewed: 'DFS Senior Reviewed',
+  fs2_returned: 'DFS Returned',
   categorized: 'Categorized',
   fs3_in_progress: 'FS-3 In Progress',
   fs3_completed: 'FS-3 Completed',
+  fs3_returned: 'FS-3 Returned',
 };
 
 /** Feasibility stage badge styles — palette: Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8 */
@@ -226,6 +227,7 @@ export const FEASIBILITY_STAGE_BADGE_STYLES: Record<FeasibilityStage, { bg: stri
   categorized:         { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
   fs3_in_progress:     { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
   fs3_completed:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  fs3_returned:        { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },
 };
 
 /** Feasibility stage progression order */
@@ -242,6 +244,7 @@ export const CATEGORY_LABELS: Record<CategoryDecision, string> = {
   category_a: 'Category A — Full Private',
   category_b: 'Category B — Government Budget',
   category_c: 'Category C — PPP',
+  category_d: 'Category D — Development Partner (ODA)',
 };
 
 /** Short category labels for badges */
@@ -249,6 +252,7 @@ export const CATEGORY_SHORT_LABELS: Record<CategoryDecision, string> = {
   category_a: 'Private (A)',
   category_b: 'Gov Budget (B)',
   category_c: 'PPP (C)',
+  category_d: 'ODA (D)',
 };
 
 /** PPP support mechanism labels */
@@ -261,6 +265,36 @@ export const PPP_SUPPORT_MECHANISM_LABELS: Record<PPPSupportMechanism, string> =
   land_grant: 'Land Grant',
   combined: 'Combined Mechanisms',
 };
+
+/** Category A: Private procurement methods */
+export const PROCUREMENT_METHODS = [
+  { value: 'competitive_bid', label: 'Competitive Bidding', code: 'CB' },
+  { value: 'direct_negotiation', label: 'Direct Negotiation', code: 'DN' },
+  { value: 'swiss_challenge', label: 'Swiss Challenge', code: 'SC' },
+  { value: 'unsolicited_proposal', label: 'Unsolicited Proposal', code: 'UP' },
+] as const;
+
+/** Category B: Government procurement methods */
+export const GOV_PROCUREMENT_METHODS = [
+  { value: 'open_tender', label: 'Open Tender', code: 'OT' },
+  { value: 'restricted', label: 'Restricted Tender', code: 'RT' },
+  { value: 'direct', label: 'Direct Procurement', code: 'DP' },
+  { value: 'community', label: 'Community Procurement', code: 'CP' },
+] as const;
+
+/** Category D: ODA donor types */
+export const ODA_DONOR_TYPES = [
+  { value: 'bilateral', label: 'Bilateral', code: 'BI' },
+  { value: 'multilateral', label: 'Multilateral', code: 'ML' },
+  { value: 'un_agency', label: 'UN Agency', code: 'UN' },
+] as const;
+
+/** Category D: ODA financing types */
+export const ODA_FINANCING_TYPES = [
+  { value: 'grant', label: 'Grant', code: 'GR' },
+  { value: 'concessional_loan', label: 'Concessional Loan', code: 'CL' },
+  { value: 'mixed', label: 'Mixed (Grant + Loan)', code: 'MX' },
+] as const;
 
 /** PPP support mechanisms with codes for dropdown display */
 export const PPP_SUPPORT_MECHANISMS = [
@@ -303,8 +337,9 @@ const PUBLIC_GOOD_SECTORS = ['Education', 'Health', 'Governance', 'Social Protec
 /**
  * Determines the system's category recommendation based on FIRR/EIRR results.
  * - Category A (Private): FIRR >= 10% (commercially viable)
- * - Category C (PPP): FIRR < 10% + NDP-aligned + EIRR >= 15%
- * - Category B (Gov Budget): FIRR < 10% + NDP-aligned + EIRR < 15%, or public-good sectors
+ * - Category C (PPP): FIRR < 10% + NDP-aligned + EIRR >= 15% + non-public-good sector
+ * - Category D (ODA): FIRR < 10% + NDP-aligned + EIRR >= 15% + public-good sector
+ * - Category B (Gov Budget): FIRR < 10% + NDP-aligned + EIRR < 15%, or public-good sectors with low EIRR
  */
 export function determineCategoryRecommendation(
   firr: number | null,
@@ -320,11 +355,16 @@ export function determineCategoryRecommendation(
   // Not NDP-aligned and FIRR < 10% → no recommendation (would be rejected)
   if (!ndpAligned) return null;
 
-  // Public-good sectors lean toward government budget
-  if (sectorType && PUBLIC_GOOD_SECTORS.includes(sectorType)) return 'category_b';
+  // EIRR >= 15%: socially viable, check sector for PPP vs ODA
+  if (eirr !== null && eirr >= 15) {
+    // Public-good sectors → ODA/development partner funding
+    if (sectorType && PUBLIC_GOOD_SECTORS.includes(sectorType)) return 'category_d';
+    // Non-public-good sectors → PPP mechanism
+    return 'category_c';
+  }
 
-  // EIRR check for PPP vs government budget
-  if (eirr !== null && eirr >= 15) return 'category_c';
+  // Public-good sectors with low EIRR → government budget
+  if (sectorType && PUBLIC_GOOD_SECTORS.includes(sectorType)) return 'category_b';
 
   return 'category_b';
 }
@@ -633,10 +673,10 @@ export function determineFullRouting(
   if (eirrPercent >= 15) {
     return {
       outcome: 'ppp_mechanism',
-      label: 'Likely Economically Viable — PPP Mechanism',
-      description: `EIRR ${eirrPercent.toFixed(1)}% ≥ 15%. This project is likely to qualify for a PPP mechanism with potential Viability Gap Funding.`,
+      label: 'Likely Economically Viable — PPP or ODA Pathway',
+      description: `EIRR ${eirrPercent.toFixed(1)}% ≥ 15%. This project is likely to qualify for a PPP mechanism or development partner funding. The review board will determine the appropriate category based on sector and project characteristics.`,
       color: 'purple',
-      nextSteps: 'You may proceed to PPP/VGF structuring. The review board will determine the required subsidy and partnership model.',
+      nextSteps: 'You may proceed to submit for review. The review board will categorize the project and determine the delivery pathway.',
     };
   }
 
@@ -662,22 +702,23 @@ export const PROJECT_STAGE_LABELS: Record<ProjectStage, string> = {
   intake_approved: 'Approved',
   intake_returned: 'Returned',
   intake_rejected: 'Rejected',
-  fs1_draft: 'Feasibility — Draft',
-  fs1_submitted: 'Feasibility — Pending Review',
-  fs1_desk_claimed: 'Feasibility — Desk Review',
-  fs1_approved: 'Feasibility — Approved',
-  fs1_returned: 'Feasibility — Returned',
-  fs1_rejected: 'Feasibility — Rejected',
-  fs2_assigned: 'Detailed Study — Assigned',
-  fs2_in_progress: 'Detailed Study — In Progress',
-  fs2_completed: 'Detailed Study — Completed',
-  fs2_desk_claimed: 'Detailed Study — Desk Review',
-  fs2_desk_reviewed: 'Detailed Study — Senior Review',
-  fs2_senior_reviewed: 'Detailed Study — Senior Reviewed',
-  fs2_returned: 'Detailed Study — Returned',
+  fs1_draft: 'PFS — Draft',
+  fs1_submitted: 'PFS — Pending Review',
+  fs1_desk_claimed: 'PFS — Desk Review',
+  fs1_approved: 'PFS — Approved',
+  fs1_returned: 'PFS — Returned',
+  fs1_rejected: 'PFS — Rejected',
+  fs2_assigned: 'DFS — Assigned',
+  fs2_in_progress: 'DFS — In Progress',
+  fs2_completed: 'DFS — Completed',
+  fs2_desk_claimed: 'DFS — Desk Review',
+  fs2_desk_reviewed: 'DFS — Senior Review',
+  fs2_senior_reviewed: 'DFS — Senior Reviewed',
+  fs2_returned: 'DFS — Returned',
   fs2_categorized: 'Categorized',
   fs3_in_progress: 'PPP Structuring — In Progress',
   fs3_completed: 'PPP Structuring — Completed',
+  fs3_returned: 'PPP Structuring — Returned',
 };
 
 /** Badge styles for each unified project stage — palette: Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8 */
@@ -705,6 +746,7 @@ export const PROJECT_STAGE_BADGE_STYLES: Record<ProjectStage, { bg: string; text
   fs2_categorized:       { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
   fs3_in_progress:       { bg: '#cfd0d5', text: '#4c5568', border: '#7b95a7' },
   fs3_completed:         { bg: '#4c5568', text: '#ffffff', border: '#4c5568' },
+  fs3_returned:          { bg: '#f1f4f8', text: '#7b95a7', border: '#cfd0d5' },
 };
 
 /** Extract the phase from a project_stage */
@@ -712,6 +754,8 @@ export function getPhase(stage: ProjectStage): ProjectPhase {
   // intake_approved means intake is done — the project is now in the FS-1 phase
   if (stage === 'intake_approved') return 'fs1';
   if (stage === 'fs1_approved') return 'fs2';
+  // fs2_categorized means FS-2 is complete — the project is now in the FS-3 phase
+  if (stage === 'fs2_categorized') return 'fs3';
   if (stage.startsWith('intake_')) return 'intake';
   if (stage.startsWith('fs1_')) return 'fs1';
   if (stage.startsWith('fs2_')) return 'fs2';
@@ -726,6 +770,34 @@ export const PHASE_LABELS: Record<ProjectPhase, string> = {
   fs2: 'Detailed Feasibility Study',
   fs3: 'PPP / VGF Structuring',
 };
+
+/** Category-aware FS-3 phase labels */
+export const FS3_CATEGORY_LABELS: Record<string, string> = {
+  category_a: 'Private Investment Structuring',
+  category_b: 'Government Budget Structuring',
+  category_c: 'PPP / VGF Structuring',
+  category_d: 'AIMS Transfer Preparation',
+};
+
+/** Category-aware FS-3 descriptions for progress rail */
+export const FS3_CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  category_a: 'Investor identification, procurement, and financial closure',
+  category_b: 'Budget allocation, implementation agency, and cost recovery',
+  category_c: 'Contract design, risk allocation, and VGF assessment',
+  category_d: 'Donor details, financing, and transfer to AIMS',
+};
+
+/** Get FS-3 label based on category decision */
+export function getFs3Label(category?: CategoryDecision | null): string {
+  if (category && FS3_CATEGORY_LABELS[category]) return FS3_CATEGORY_LABELS[category];
+  return PHASE_LABELS.fs3;
+}
+
+/** Get FS-3 description based on category decision */
+export function getFs3Description(category?: CategoryDecision | null): string {
+  if (category && FS3_CATEGORY_DESCRIPTIONS[category]) return FS3_CATEGORY_DESCRIPTIONS[category];
+  return 'Contract design, risk allocation, and VGF assessment';
+}
 
 /** FS-1 tab labels */
 export const FS1_TAB_LABELS: Record<FS1Tab, string> = {
@@ -752,8 +824,9 @@ export const FS2_TAB_LABELS: Record<FS2Tab, string> = {
 export function isFormLocked(stage: ProjectStage): boolean {
   // Submitted = awaiting review, rejected = terminal — both lock the form.
   // Approved and draft/returned are NOT locked (approved means proceed to next phase).
-  // FS-2 completed/reviewed/categorized stages lock the form.
-  const fs2LockedStages: ProjectStage[] = ['fs2_completed', 'fs2_desk_reviewed', 'fs2_senior_reviewed', 'fs2_categorized'];
+  // FS-2 completed/reviewed stages lock the form.
+  // fs2_categorized is NOT locked — it means FS-3 is now editable.
+  const fs2LockedStages: ProjectStage[] = ['fs2_completed', 'fs2_desk_reviewed', 'fs2_senior_reviewed'];
   return stage.endsWith('_submitted') || stage.endsWith('_rejected') || fs2LockedStages.includes(stage);
 }
 
@@ -799,4 +872,12 @@ export function getGateStatus(stage: ProjectStage, gate: 'intake_to_fs1' | 'fs1_
   if (stage === 'fs2_categorized' || stage.startsWith('fs3_')) return 'approved';
   if (stage === 'fs2_returned') return 'returned';
   return 'locked';
+}
+
+/** Compact currency formatter for kanban/card views */
+export function fmtCost(value: number | null, currency: string): string | null {
+  if (!value) return null
+  if (value >= 1_000_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000_000).toFixed(1)}m`
+  if (value >= 1_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000).toFixed(0)}k`
+  return formatCurrency(value, currency)
 }

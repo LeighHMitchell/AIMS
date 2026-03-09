@@ -319,13 +319,13 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
   }, [econCosts, benefitsForCalc, shadowPrices]);
 
   // Save EIRR result to form
-  useMemo(() => {
+  useEffect(() => {
     if (eirrResult) {
       updateField('eirr', eirrResult.eirr);
       updateField('eirr_date', new Date().toISOString().slice(0, 10));
       updateField('eirr_shadow_prices', shadowPrices);
     }
-  }, [eirrResult?.eirr]);
+  }, [eirrResult?.eirr]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const firrPercent = formData.firr ?? null;
   const routing = determineFullRouting(firrPercent, eirrResult?.eirr ?? null, true);

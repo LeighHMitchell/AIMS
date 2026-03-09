@@ -103,7 +103,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
   }, [refinedData]);
 
   // Store FIRR result in form data whenever it changes
-  useMemo(() => {
+  useEffect(() => {
     if (firrResult) {
       updateField('firr', firrResult.firr);
       updateField('firr_date', new Date().toISOString().slice(0, 10));
@@ -113,7 +113,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
         calculated_at: new Date().toISOString(),
       });
     }
-  }, [firrResult?.firr]);
+  }, [firrResult?.firr]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Comparison chart data — preliminary vs refined totals per year
   const [comparisonView, setComparisonView] = useState<'net' | 'capex' | 'opex' | 'revenue'>('net');

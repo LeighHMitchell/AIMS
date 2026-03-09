@@ -54,7 +54,7 @@ export default function ReviewBoardPage() {
             <TabsTrigger value="intake">Phase 1: Intake Reviews</TabsTrigger>
             <TabsTrigger value="fs1">Phase 2: Preliminary Feasibility Study</TabsTrigger>
             <TabsTrigger value="fs2">Phase 3: Detailed Feasibility Study</TabsTrigger>
-            <TabsTrigger value="categorized">Phase 4: Categorized Projects</TabsTrigger>
+            <TabsTrigger value="categorized">Categorized Projects</TabsTrigger>
             <TabsTrigger value="rejected">Rejected</TabsTrigger>
           </TabsList>
 

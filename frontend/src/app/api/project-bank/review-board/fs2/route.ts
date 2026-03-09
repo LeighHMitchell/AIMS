@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   let query = supabase!
     .from('project_bank_projects')
     .select('id, project_code, name, nominating_ministry, implementing_agency, sector, sub_sector, region, estimated_cost, currency, project_stage, firr, eirr, ndp_aligned, category_recommendation, updated_at')
-    .in('project_stage', ['fs2_completed', 'fs2_desk_claimed', 'fs2_desk_reviewed', 'fs2_senior_reviewed', 'fs2_categorized'])
+    .in('project_stage', ['fs2_completed', 'fs2_desk_claimed', 'fs2_desk_reviewed', 'fs2_senior_reviewed'])
     .order('updated_at', { ascending: false });
 
   if (sector) {
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     pending: (projects || []).filter(p => p.project_stage === 'fs2_completed'),
     desk_review: (projects || []).filter(p => p.project_stage === 'fs2_desk_claimed'),
     senior_review: (projects || []).filter(p => p.project_stage === 'fs2_desk_reviewed'),
-    categorized: (projects || []).filter(p => p.project_stage === 'fs2_senior_reviewed' || p.project_stage === 'fs2_categorized'),
+    categorized: (projects || []).filter(p => p.project_stage === 'fs2_senior_reviewed'),
   };
 
   return NextResponse.json(columns);

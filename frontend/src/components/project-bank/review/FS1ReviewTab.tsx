@@ -32,6 +32,12 @@ const VALID_TRANSITIONS: Record<string, { target: ColumnKey; action: string }> =
   "pending->desk_review": { target: "desk_review", action: "claim" },
 }
 
+const GATE_CHECKLIST_ITEMS = [
+  { key: "narrative_reviewed", label: "I have reviewed the Preliminary Feasibility narrative" },
+  { key: "ndp_alignment", label: "NDP/MSDP alignment is satisfactory" },
+  { key: "cost_estimate", label: "Preliminary cost estimate is reasonable" },
+]
+
 const DESK_REVIEW_DECISIONS: DecisionOption[] = [
   {
     value: "screened",
@@ -212,7 +218,6 @@ function DroppableColumn({
   return (
     <div className="flex-1 min-w-[280px]">
       <div className="flex items-center gap-2 mb-3">
-        <div className={`w-2 h-2 rounded-full ${color}`} />
         <h3 className="text-sm font-semibold">{title}</h3>
         <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">{count}</span>
       </div>
@@ -752,11 +757,7 @@ export function FS1ReviewTab() {
                       <p className="text-xs text-muted-foreground">
                         All items must be confirmed before advancing to Detailed Feasibility Study.
                       </p>
-                      {[
-                        { key: "narrative_reviewed", label: "I have reviewed the Preliminary Feasibility narrative" },
-                        { key: "ndp_alignment", label: "NDP/MSDP alignment is satisfactory" },
-                        { key: "cost_estimate", label: "Preliminary cost estimate is reasonable" },
-                      ].map(item => (
+                      {GATE_CHECKLIST_ITEMS.map(item => (
                         <label key={item.key} className="flex items-center gap-2 cursor-pointer">
                           <Checkbox
                             checked={gateChecks[item.key] || false}

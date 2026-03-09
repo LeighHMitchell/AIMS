@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, X, Zap } from 'lucide-react';
+import { Plus, Trash2, X, Zap, ChevronDown } from 'lucide-react';
 import { HelpTooltip } from './HelpTooltip';
 import { FormattedNumberInput } from './FormattedNumberInput';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
-import { BarChart3, LineChart as LineChartIcon } from 'lucide-react';
+import { BarChart3, LineChart as LineChartIcon, Download } from 'lucide-react';
 import type { CostTableRow } from '@/types/project-bank';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,7 @@ interface CashFlowTableProps {
   showNet?: boolean;
   showTotals?: boolean;
   readOnly?: boolean;
+  chartFirst?: boolean;
   startYear?: number;
   constructionYears?: number;
   operationalYears?: number;
@@ -46,11 +47,13 @@ export function CashFlowTable({
   showNet = true,
   showTotals = true,
   readOnly = false,
+  chartFirst = false,
   startYear,
   constructionYears,
   operationalYears,
 }: CashFlowTableProps) {
   const [chartMode, setChartMode] = useState<'annual' | 'cumulative'>('annual');
+  const [tableExpanded, setTableExpanded] = useState(false);
   const [quickEntry, setQuickEntry] = useState(false);
   const [quickTotals, setQuickTotals] = useState({ capex: null as number | null, opex: null as number | null, revenue: null as number | null });
   type DistPeriod = 'construction' | 'operational' | 'all';
@@ -129,8 +132,8 @@ export function CashFlowTable({
     { capex: 0, opex: 0, revenue: 0 }
   );
 
-  return (
-    <div className="space-y-3">
+  const tableSection = (
+    <>
       {!readOnly && (
         <div className="flex items-center gap-2 flex-wrap">
           <Button
@@ -309,8 +312,38 @@ export function CashFlowTable({
           </Button>
         </div>
       )}
+    </>
+  );
 
-      {rows.length > 0 && <CashFlowChart rows={rows} columns={columns} chartMode={chartMode} onChartModeChange={setChartMode} />}
+  const chartSection = rows.length > 0 ? (
+    <CashFlowChart rows={rows} columns={columns} chartMode={chartMode} onChartModeChange={setChartMode} />
+  ) : null;
+
+  if (chartFirst) {
+    return (
+      <div className="space-y-3">
+        {chartSection}
+        {rows.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setTableExpanded(!tableExpanded)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-1.5"
+            >
+              <ChevronDown className={cn('h-4 w-4 transition-transform', tableExpanded && 'rotate-180')} />
+              <span>{tableExpanded ? 'Hide' : 'Show'} detailed table ({rows.length} years)</span>
+            </button>
+            {tableExpanded && <div className="space-y-3 mt-2">{tableSection}</div>}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {tableSection}
+      {chartSection}
     </div>
   );
 }
@@ -404,6 +437,27 @@ function CashFlowChart({
   const xAxisHeight = xAxisAngle === 0 ? 20 : xAxisAngle === -45 ? 50 : 60;
   const xAxisTextAnchor = xAxisAngle === 0 ? 'middle' : 'end';
 
+  const downloadCsv = () => {
+    const headers = ['Year', ...columns.map(c => COLUMN_LABELS[c]), 'Net'];
+    const csvRows = [headers.join(',')];
+    rows.forEach(row => {
+      const net = (row.revenue || 0) - (row.capex || 0) - (row.opex || 0);
+      const values = [
+        row.year,
+        ...columns.map(c => row[c as keyof CostTableRow] || 0),
+        net,
+      ];
+      csvRows.push(values.join(','));
+    });
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cash-flow.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleLegendClick = (dataKey: string) => {
     setHiddenKeys(prev => {
       const next = new Set(prev);
@@ -482,6 +536,15 @@ function CashFlowChart({
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={downloadCsv}
+            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border text-gray-600 hover:bg-gray-100 transition-colors"
+            title="Download CSV"
+          >
+            <Download className="h-3 w-3" />
+            CSV
+          </button>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={240}>

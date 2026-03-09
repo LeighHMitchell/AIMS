@@ -19,32 +19,36 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
-  // Fetch donors
-  const { data: donors } = await supabase!
-    .from('project_bank_donors')
-    .select('*')
-    .eq('project_id', id)
-    .order('created_at', { ascending: false });
+  // Fetch relations in parallel
+  const [donorsResult, appraisalsResult, documentsResult] = await Promise.all([
+    supabase!
+      .from('project_bank_donors')
+      .select('*')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false }),
+    supabase!
+      .from('project_appraisals')
+      .select('*')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false }),
+    supabase!
+      .from('project_documents')
+      .select('*')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false }),
+  ]);
 
-  // Fetch appraisals
-  const { data: appraisals } = await supabase!
-    .from('project_appraisals')
-    .select('*')
-    .eq('project_id', id)
-    .order('created_at', { ascending: false });
-
-  // Fetch documents
-  const { data: documents } = await supabase!
-    .from('project_documents')
-    .select('*')
-    .eq('project_id', id)
-    .order('created_at', { ascending: false });
+  const warnings: string[] = [];
+  if (donorsResult.error) warnings.push(`donors: ${donorsResult.error.message}`);
+  if (appraisalsResult.error) warnings.push(`appraisals: ${appraisalsResult.error.message}`);
+  if (documentsResult.error) warnings.push(`documents: ${documentsResult.error.message}`);
 
   return NextResponse.json({
     ...project,
-    donors: donors || [],
-    appraisals: appraisals || [],
-    documents: documents || [],
+    donors: donorsResult.data || [],
+    appraisals: appraisalsResult.data || [],
+    documents: documentsResult.data || [],
+    ...(warnings.length > 0 && { _warnings: warnings }),
   });
 }
 
@@ -60,16 +64,17 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     updated_by: user!.id,
   };
 
+  // Workflow-critical fields are NOT allowed here — they must go through
+  // dedicated transition routes (submit, categorize, recover, claim-review, etc.)
   const allowedFields = [
     'name', 'description', 'nominating_ministry', 'sector', 'region',
     'estimated_cost', 'currency', 'ndp_goal_id', 'ndp_aligned', 'sdg_goals',
-    'firr', 'eirr', 'firr_date', 'eirr_date', 'status', 'pathway',
+    'firr', 'eirr', 'firr_date', 'eirr_date',
     'vgf_amount', 'vgf_calculated', 'land_parcel_id',
     'total_committed', 'total_disbursed', 'funding_gap',
-    'aims_activity_id', 'rejection_reason', 'rejected_at',
+    'aims_activity_id',
     'nominated_at', 'screened_at', 'appraised_at', 'approved_at',
-    // Appraisal wizard fields
-    'appraisal_stage', 'routing_outcome', 'project_stage', 'review_comments',
+    'appraisal_stage', 'routing_outcome',
     'contact_officer', 'contact_officer_first_name', 'contact_officer_last_name',
     'contact_email', 'contact_phone',
     'contact_position', 'contact_ministry', 'contact_department',
@@ -100,6 +105,22 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     'proponent_company', 'proponent_contact',
     'banner', 'banner_position',
     'fs2_study_data',
+    // FS-3 PPP support mechanisms
+    'ppp_support_mechanism',
+    'mrg_guaranteed_minimum', 'mrg_trigger_conditions', 'mrg_government_liability_cap', 'mrg_duration_years',
+    'availability_payment_amount', 'availability_payment_duration_years', 'availability_payment_conditions',
+    // Category A (Private Investment)
+    'private_partner_name', 'private_partner_experience', 'investor_commitments',
+    'procurement_method', 'procurement_timeline', 'concession_period_years',
+    'security_arrangements', 'financial_closure_target', 'private_structuring_data',
+    // Category B (Government Budget)
+    'budget_source', 'budget_fiscal_year', 'annual_operating_cost',
+    'maintenance_responsibility', 'procurement_method_gov',
+    'implementation_agency_confirmed', 'cost_recovery_mechanism', 'handover_timeline', 'gov_structuring_data',
+    // Category D (ODA)
+    'oda_donor_type', 'oda_donor_name', 'oda_financing_type',
+    'oda_grant_amount', 'oda_loan_amount', 'oda_counterpart_funding',
+    'oda_conditions', 'oda_iati_sector_code', 'oda_activity_description', 'oda_structuring_data',
   ];
 
   allowedFields.forEach(field => {
@@ -107,6 +128,26 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       updateData[field] = body[field];
     }
   });
+
+  // Allow project_stage only for safe "first save in new phase" transitions.
+  // All other stage changes must go through dedicated transition routes.
+  if (body.project_stage) {
+    const SAFE_DRAFT_TRANSITIONS: Record<string, string> = {
+      intake_approved: 'fs1_draft',
+      fs2_assigned: 'fs2_in_progress',
+      fs2_categorized: 'fs3_in_progress',
+    };
+
+    const { data: current } = await supabase!
+      .from('project_bank_projects')
+      .select('project_stage')
+      .eq('id', id)
+      .single();
+
+    if (current && SAFE_DRAFT_TRANSITIONS[current.project_stage] === body.project_stage) {
+      updateData.project_stage = body.project_stage;
+    }
+  }
 
   const { data, error } = await supabase!
     .from('project_bank_projects')
@@ -123,10 +164,21 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
   const { id } = await params;
+
+  // Only admins may delete projects
+  const { data: dbUser } = await supabase!
+    .from('users')
+    .select('role')
+    .eq('id', user!.id)
+    .single();
+
+  if (!dbUser || !['admin', 'super_admin', 'super_user'].includes(dbUser.role)) {
+    return NextResponse.json({ error: 'Admin access required to delete projects' }, { status: 403 });
+  }
 
   const { error } = await supabase!
     .from('project_bank_projects')

@@ -1,8 +1,8 @@
 "use client"
 
 import { Check, Lock, Clock, ChevronRight, RotateCcw, XCircle, ShieldCheck, Copy } from 'lucide-react';
-import type { AppraisalStage, ProjectStage, ProjectPhase, FS1Tab, FS2Tab } from '@/types/project-bank';
-import { PHASE_LABELS, FS1_TAB_LABELS, FS2_TAB_LABELS, getPhase, getGateStatus } from '@/lib/project-bank-utils';
+import type { AppraisalStage, ProjectStage, ProjectPhase, FS1Tab, FS2Tab, CategoryDecision } from '@/types/project-bank';
+import { PHASE_LABELS, FS1_TAB_LABELS, FS2_TAB_LABELS, getPhase, getGateStatus, getFs3Label, getFs3Description } from '@/lib/project-bank-utils';
 import type { GateStatus } from '@/lib/project-bank-utils';
 import { cn } from '@/lib/utils';
 
@@ -78,6 +78,7 @@ interface AppraisalProgressRailProps {
   isStageComplete: (stage: AppraisalStage) => boolean;
   onReturnToCurrentPhase?: () => void;
   onPhaseClick?: (phase: ProjectPhase) => void;
+  categoryDecision?: CategoryDecision | null;
 }
 
 export function AppraisalProgressRail({
@@ -96,6 +97,7 @@ export function AppraisalProgressRail({
   isStageComplete,
   onReturnToCurrentPhase,
   onPhaseClick,
+  categoryDecision,
 }: AppraisalProgressRailProps) {
   const handleSubItemClick = (anchor: string) => {
     document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -393,14 +395,14 @@ export function AppraisalProgressRail({
                   fs3Active && 'font-semibold text-foreground',
                   !fs3Active && 'text-gray-400',
                 )}>
-                  {PHASE_LABELS.fs3}
+                  {getFs3Label(categoryDecision)}
                 </span>
                 <span className="block text-[11px] text-muted-foreground leading-snug mt-0.5">
-                  Contract design, risk allocation, and VGF assessment
+                  {getFs3Description(categoryDecision)}
                 </span>
                 {!fs3Accessible && !fs3Active && (
                   <span className="block text-[11px] text-muted-foreground/70 leading-snug mt-0.5">
-                    Available for PPP-routed projects after detailed feasibility
+                    Available after detailed feasibility is categorized
                   </span>
                 )}
               </button>

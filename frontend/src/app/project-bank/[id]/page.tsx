@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -272,11 +273,13 @@ export default function ProjectDetailPage() {
           {/* Banner image */}
           {(project as any).banner && (
             <div className="relative h-48 rounded-lg overflow-hidden mb-4">
-              <img
+              <Image
                 src={(project as any).banner}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
                 style={{ objectPosition: `center ${(project as any).banner_position ?? 50}%` }}
                 alt=""
+                unoptimized
               />
             </div>
           )}
@@ -284,9 +287,6 @@ export default function ProjectDetailPage() {
           {/* Title row */}
           <div className="flex items-start justify-between gap-4 mb-1">
             <h1 className="text-3xl font-bold">{project.name}</h1>
-            {project.ndp_aligned && (
-              <Badge variant="success" className="shrink-0 mt-1">NDP Aligned</Badge>
-            )}
           </div>
 
           {/* Subtitle: badges + ministry / sector / region */}
@@ -923,14 +923,14 @@ export default function ProjectDetailPage() {
                           <FS1NarrativeDisplay projectId={id} />
                         </div>
 
-                        {/* FS-1 Status Info */}
-                        {project.feasibility_stage && ['fs1_submitted', 'fs1_desk_screened'].includes(project.feasibility_stage) && (
+                        {/* FS-1 Status Info — gate on project_stage */}
+                        {project.project_stage && ['fs1_submitted', 'fs1_desk_claimed'].includes(project.project_stage) && (
                           <div className="flex items-center gap-3 p-3 rounded-lg border bg-blue-50/50">
                             <Clock className="h-5 w-5 text-blue-600 shrink-0" />
                             <div>
                               <h3 className="text-sm font-semibold">FS-1 Under Review</h3>
                               <p className="text-xs text-muted-foreground">
-                                {project.feasibility_stage === 'fs1_submitted'
+                                {project.project_stage === 'fs1_submitted'
                                   ? 'Your narrative is awaiting desk review.'
                                   : 'Your narrative passed desk review and is awaiting senior review.'}
                               </p>
@@ -939,7 +939,7 @@ export default function ProjectDetailPage() {
                         )}
 
                         {/* FS-1 Rejected */}
-                        {project.feasibility_stage === 'fs1_rejected' && (
+                        {project.project_stage === 'fs1_rejected' && (
                           <div className="flex items-center gap-3 p-3 rounded-lg border border-red-200 bg-red-50/50">
                             <XCircle className="h-5 w-5 text-red-600 shrink-0" />
                             <div>
@@ -953,17 +953,17 @@ export default function ProjectDetailPage() {
                           </div>
                         )}
 
-                        {/* FS-2 Assignment */}
-                        {project.feasibility_stage && ['fs1_passed', 'fs2_assigned', 'fs2_in_progress', 'fs2_completed'].includes(project.feasibility_stage) && (
+                        {/* FS-2 Assignment — gate on project_stage */}
+                        {project.project_stage && ['fs1_approved', 'fs2_assigned', 'fs2_in_progress', 'fs2_completed'].includes(project.project_stage) && (
                           <FS2AssignmentPanel
                             projectId={id}
-                            feasibilityStage={project.feasibility_stage}
+                            feasibilityStage={project.project_stage}
                             onUpdated={fetchProject}
                           />
                         )}
 
-                        {/* Category Decision */}
-                        {project.feasibility_stage && ['fs2_completed', 'categorized', 'fs3_in_progress', 'fs3_completed'].includes(project.feasibility_stage) && (
+                        {/* Category Decision — only show when senior-reviewed and not yet categorized */}
+                        {project.project_stage === 'fs2_senior_reviewed' && !project.category_decision && (
                           <CategoryDecisionPanel
                             project={project}
                             onCategorized={fetchProject}
@@ -974,22 +974,6 @@ export default function ProjectDetailPage() {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Cash Flow Projection */}
-                {(project.firr_cost_table_data || project.cost_table_data) && (project.firr_cost_table_data || project.cost_table_data)!.length > 0 && (
-                  <Card>
-                    <CardHeader className="bg-surface-muted rounded-t-lg"><CardTitle className="text-base">Cash Flow Projection</CardTitle></CardHeader>
-                    <CardContent>
-                      <CashFlowTable
-                        rows={(project.firr_cost_table_data || project.cost_table_data)!}
-                        onChange={() => {}}
-                        readOnly
-                        showNet
-                        showTotals
-                      />
-                    </CardContent>
-                  </Card>
-                )}
 
                 {/* Financial Analysis */}
                 {project.firr !== null && (
@@ -1052,6 +1036,23 @@ export default function ProjectDetailPage() {
                           </div>
                         </div>
                       )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Cash Flow Projection */}
+                {(project.firr_cost_table_data || project.cost_table_data) && (project.firr_cost_table_data || project.cost_table_data)!.length > 0 && (
+                  <Card>
+                    <CardHeader><CardTitle className="text-base">Cash Flow Projection</CardTitle></CardHeader>
+                    <CardContent>
+                      <CashFlowTable
+                        rows={(project.firr_cost_table_data || project.cost_table_data)!}
+                        onChange={() => {}}
+                        readOnly
+                        chartFirst
+                        showNet
+                        showTotals
+                      />
                     </CardContent>
                   </Card>
                 )}

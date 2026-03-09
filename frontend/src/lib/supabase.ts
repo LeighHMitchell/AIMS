@@ -520,6 +520,58 @@ export type Database = {
           ppp_contract_details: any | null
           implementing_agency: string | null
           equity_ratio: number | null
+          // Unified phase-gate workflow
+          project_stage: string | null
+          review_comments: string | null
+          feasibility_stage: string | null
+          fs1_rejected_at: string | null
+          fs1_resubmission_count: number | null
+          category_recommendation: string | null
+          category_decision: string | null
+          category_rationale: string | null
+          proceeding_independently: boolean | null
+          fs2_study_data: any | null
+          firr_cost_table_data: any | null
+          // FS-3 PPP support mechanisms
+          ppp_support_mechanism: string | null
+          mrg_guaranteed_minimum: number | null
+          mrg_trigger_conditions: string | null
+          mrg_government_liability_cap: number | null
+          mrg_duration_years: number | null
+          availability_payment_amount: number | null
+          availability_payment_duration_years: number | null
+          availability_payment_conditions: string | null
+          // Category A (Private Investment)
+          private_partner_name: string | null
+          private_partner_experience: string | null
+          investor_commitments: string | null
+          procurement_method: string | null
+          procurement_timeline: string | null
+          concession_period_years: number | null
+          security_arrangements: string | null
+          financial_closure_target: string | null
+          private_structuring_data: any | null
+          // Category B (Government Budget)
+          budget_source: string | null
+          budget_fiscal_year: string | null
+          annual_operating_cost: number | null
+          maintenance_responsibility: string | null
+          procurement_method_gov: string | null
+          implementation_agency_confirmed: boolean | null
+          cost_recovery_mechanism: string | null
+          handover_timeline: string | null
+          gov_structuring_data: any | null
+          // Category D (ODA)
+          oda_donor_type: string | null
+          oda_donor_name: string | null
+          oda_financing_type: string | null
+          oda_grant_amount: number | null
+          oda_loan_amount: number | null
+          oda_counterpart_funding: number | null
+          oda_conditions: string | null
+          oda_iati_sector_code: string | null
+          oda_activity_description: string | null
+          oda_structuring_data: any | null
         }
         Insert: Omit<Database['public']['Tables']['project_bank_projects']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['project_bank_projects']['Insert']>

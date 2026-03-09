@@ -186,7 +186,6 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
     return <div className="h-32 bg-muted animate-pulse rounded-lg" />
   }
 
-  // Only show for projects that have passed FS-1 (legacy or unified stage)
   const canAssign = (feasibilityStage === "fs1_passed" || feasibilityStage === "fs2_assigned" || feasibilityStage === "fs1_approved") && !assignment
 
   return (

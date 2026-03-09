@@ -41,10 +41,10 @@ export async function POST(
     return NextResponse.json({ error: 'assigned_to is required' }, { status: 400 });
   }
 
-  // Verify project passed FS-1
+  // Verify project passed FS-1 — gate on project_stage
   const { data: project, error: projectError } = await supabase!
     .from('project_bank_projects')
-    .select('feasibility_stage')
+    .select('project_stage')
     .eq('id', id)
     .single();
 
@@ -52,7 +52,7 @@ export async function POST(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
-  if (project.feasibility_stage !== 'fs1_passed') {
+  if (project.project_stage !== 'fs1_approved') {
     return NextResponse.json(
       { error: 'Project must pass FS-1 before FS-2 can be assigned' },
       { status: 400 }

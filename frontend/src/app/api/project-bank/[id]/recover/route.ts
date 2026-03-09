@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import type { ProjectStage } from '@/types/project-bank';
 
 export const dynamic = 'force-dynamic';
 
-/** Claim a project for desk review — moves it from Pending to Desk Review column */
+/** Which target stages each rejection source may recover to */
+const ALLOWED_TARGETS: Record<string, ProjectStage[]> = {
+  intake_rejected: ['intake_draft'],
+  fs1_rejected: ['intake_draft', 'fs1_draft'],
+};
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -11,7 +17,7 @@ export async function POST(
   const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
-  // Claiming for review is a reviewer-only action
+  // Recovery is a reviewer/admin action
   const { data: dbUser } = await supabase!
     .from('users')
     .select('role')
@@ -19,12 +25,20 @@ export async function POST(
     .single();
 
   if (!dbUser || !['admin', 'super_admin', 'super_user', 'reviewer'].includes(dbUser.role)) {
-    return NextResponse.json({ error: 'Reviewer access required' }, { status: 403 });
+    return NextResponse.json({ error: 'Reviewer access required for project recovery' }, { status: 403 });
   }
 
   const { id } = await params;
+  const { target_stage, reason } = await request.json() as {
+    target_stage?: ProjectStage;
+    reason?: string;
+  };
 
-  // Fetch current stage
+  if (!target_stage) {
+    return NextResponse.json({ error: 'target_stage is required' }, { status: 400 });
+  }
+
+  // Fetch current project
   const { data: project, error: projectError } = await supabase!
     .from('project_bank_projects')
     .select('project_stage')
@@ -35,17 +49,17 @@ export async function POST(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
-  // Map pending stages to claimed stages
-  const claimMap: Record<string, string> = {
-    intake_submitted: 'intake_desk_claimed',
-    fs1_submitted: 'fs1_desk_claimed',
-    fs2_completed: 'fs2_desk_claimed',
-  };
-
-  const newStage = claimMap[project.project_stage];
-  if (!newStage) {
+  const allowed = ALLOWED_TARGETS[project.project_stage];
+  if (!allowed) {
     return NextResponse.json(
-      { error: 'Project is not in a claimable stage' },
+      { error: 'Project is not in a rejected stage' },
+      { status: 400 }
+    );
+  }
+
+  if (!allowed.includes(target_stage)) {
+    return NextResponse.json(
+      { error: `Cannot recover ${project.project_stage} to ${target_stage}` },
       { status: 400 }
     );
   }
@@ -53,7 +67,11 @@ export async function POST(
   const { data, error } = await supabase!
     .from('project_bank_projects')
     .update({
-      project_stage: newStage,
+      project_stage: target_stage,
+      rejection_reason: null,
+      rejected_at: null,
+      fs1_rejected_at: null,
+      review_comments: null,
       updated_at: new Date().toISOString(),
       updated_by: user!.id,
     })

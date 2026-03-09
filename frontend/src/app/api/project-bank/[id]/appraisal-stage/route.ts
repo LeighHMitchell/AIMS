@@ -40,9 +40,22 @@ const STAGE_FIELDS: Record<string, string[]> = {
     'ppp_support_mechanism',
     'mrg_guaranteed_minimum', 'mrg_trigger_conditions', 'mrg_government_liability_cap', 'mrg_duration_years',
     'availability_payment_amount', 'availability_payment_duration_years', 'availability_payment_conditions',
+    // Category A (Private Investment)
+    'private_partner_name', 'private_partner_experience', 'investor_commitments',
+    'procurement_method', 'procurement_timeline', 'concession_period_years',
+    'security_arrangements', 'financial_closure_target', 'private_structuring_data',
+    // Category B (Government Budget)
+    'budget_source', 'budget_fiscal_year', 'annual_operating_cost',
+    'maintenance_responsibility', 'procurement_method_gov',
+    'implementation_agency_confirmed', 'implementing_agency',
+    'cost_recovery_mechanism', 'handover_timeline', 'gov_structuring_data',
+    // Category D (ODA)
+    'oda_donor_type', 'oda_donor_name', 'oda_financing_type',
+    'oda_grant_amount', 'oda_loan_amount', 'oda_counterpart_funding',
+    'oda_conditions', 'oda_iati_sector_code', 'oda_activity_description', 'oda_structuring_data',
   ],
   dp_consultation: [
-    'routing_outcome', 'status', 'pathway',
+    'routing_outcome', 'status', 'pathway', 'rejection_reason', 'rejected_at',
   ],
 };
 

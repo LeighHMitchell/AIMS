@@ -11,19 +11,30 @@ export async function POST(
   const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
 
+  // Categorization is a reviewer-only action
+  const { data: dbUser } = await supabase!
+    .from('users')
+    .select('role')
+    .eq('id', user!.id)
+    .single();
+
+  if (!dbUser || !['admin', 'super_admin', 'super_user', 'reviewer'].includes(dbUser.role)) {
+    return NextResponse.json({ error: 'Reviewer access required for categorization' }, { status: 403 });
+  }
+
   const { id } = await params;
   const body = await request.json();
 
   const { decision, rationale } = body;
 
-  if (!decision || !['category_a', 'category_b', 'category_c'].includes(decision)) {
+  if (!decision || !['category_a', 'category_b', 'category_c', 'category_d'].includes(decision)) {
     return NextResponse.json({ error: 'Invalid category decision' }, { status: 400 });
   }
 
-  // Fetch project for auto-recommendation
+  // Fetch project — gate on project_stage (single source of truth for workflow)
   const { data: project, error: projectError } = await supabase!
     .from('project_bank_projects')
-    .select('feasibility_stage, firr, eirr, ndp_aligned, sector')
+    .select('project_stage, firr, eirr, ndp_aligned, sector')
     .eq('id', id)
     .single();
 
@@ -31,9 +42,10 @@ export async function POST(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
-  if (project.feasibility_stage !== 'fs2_completed' && project.feasibility_stage !== 'fs2_senior_reviewed') {
+  const categorizableStages = ['fs2_senior_reviewed'];
+  if (!categorizableStages.includes(project.project_stage)) {
     return NextResponse.json(
-      { error: 'FS-2 must be completed and reviewed before categorization' },
+      { error: 'FS-2 must be completed and senior-reviewed before categorization' },
       { status: 400 }
     );
   }
@@ -74,20 +86,20 @@ export async function POST(
 
   // Determine pathway based on category decision
   let pathway: string | null = null;
-  let newStage = 'categorized';
   if (decision === 'category_a') {
     pathway = 'private_supported';
   } else if (decision === 'category_b') {
     pathway = 'domestic_budget';
   } else if (decision === 'category_c') {
     pathway = 'ppp';
-    newStage = 'categorized'; // Will proceed to fs3
+  } else if (decision === 'category_d') {
+    pathway = 'oda';
   }
 
   const { data, error } = await supabase!
     .from('project_bank_projects')
     .update({
-      feasibility_stage: newStage,
+      feasibility_stage: 'categorized',
       project_stage: 'fs2_categorized',
       category_recommendation: recommendation,
       category_decision: decision,

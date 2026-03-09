@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   let query = supabase!
     .from('project_bank_projects')
     .select('id, project_code, name, nominating_ministry, implementing_agency, sector, sub_sector, region, estimated_cost, currency, project_stage, pathway, category_decision, firr, eirr, ndp_aligned, updated_at')
-    .in('project_stage', ['fs2_categorized', 'fs3_in_progress', 'fs3_completed'])
+    .in('project_stage', ['fs2_categorized', 'fs3_in_progress', 'fs3_completed', 'fs3_returned'])
     .order('updated_at', { ascending: false });
 
   if (sector) {
@@ -32,6 +32,7 @@ export async function GET(request: Request) {
     private: all.filter(p => p.category_decision === 'category_a'),
     government: all.filter(p => p.category_decision === 'category_b'),
     ppp: all.filter(p => p.category_decision === 'category_c'),
+    oda: all.filter(p => p.category_decision === 'category_d'),
   };
 
   return NextResponse.json(columns);

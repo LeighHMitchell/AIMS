@@ -8,12 +8,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  ChevronRight, AlertCircle, Loader2, Inbox, Search,
+  ChevronRight, AlertCircle, Loader2, Search,
   KanbanSquare, Table2, X,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
-  formatCurrency, formatCurrencyParts, SECTORS, PROJECT_STAGE_LABELS, PROJECT_STAGE_BADGE_STYLES,
+  formatCurrency, formatCurrencyParts, fmtCost, SECTORS, PROJECT_STAGE_LABELS, PROJECT_STAGE_BADGE_STYLES,
   CATEGORY_LABELS, determineCategoryRecommendation,
 } from "@/lib/project-bank-utils"
 import type { CategoryDecision } from "@/types/project-bank"
@@ -101,16 +101,14 @@ const CATEGORY_DECISIONS: DecisionOption[] = [
     image: "/images/category-ppp.png",
     alt: "PPP mechanism",
   },
+  {
+    value: "category_d",
+    label: "Development Partner (ODA)",
+    description: "Funded through bilateral or multilateral development partners",
+    image: "/images/category-oda.png",
+    alt: "ODA funding",
+  },
 ]
-
-/* ── Helpers ────────────────────────────────────────────── */
-
-function fmtCost(value: number | null, currency: string) {
-  if (!value) return null
-  if (value >= 1_000_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000_000).toFixed(1)}m`
-  if (value >= 1_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000).toFixed(0)}k`
-  return formatCurrency(value, currency)
-}
 
 /* ── Kanban columns config ─────────────────────────────── */
 
@@ -118,7 +116,7 @@ const KANBAN_COLUMNS: { key: FS2ColumnKey; title: string; color: string }[] = [
   { key: "pending", title: "Step 1: Pending Review", color: "bg-[#7b95a7]" },
   { key: "desk_review", title: "Step 2: Desk Review", color: "bg-[#4c5568]" },
   { key: "senior_review", title: "Step 3: Senior Review", color: "bg-[#3C6255]" },
-  { key: "categorized", title: "Categorized", color: "bg-[#cfd0d5]" },
+  { key: "categorized", title: "Step 4: Awaiting Categorization", color: "bg-[#cfd0d5]" },
 ]
 
 /* ── Table columns ─────────────────────────────────────── */
@@ -402,26 +400,28 @@ export function FS2ReviewTab() {
       {/* Kanban View */}
       {viewMode === "kanban" && (
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {KANBAN_COLUMNS.map(col => (
-            <div key={col.key} className="flex-1 min-w-[280px]">
-              <div className="flex items-center gap-2 mb-3">
-                <div className={`w-2 h-2 rounded-full ${col.color}`} />
-                <h3 className="text-sm font-semibold">{col.title}</h3>
-                <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
-                  {kanbanColumns[col.key].length}
-                </span>
+          {KANBAN_COLUMNS.map(col => {
+            const filtered = filterProjects(kanbanColumns[col.key])
+            return (
+              <div key={col.key} className="flex-1 min-w-[280px]">
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-sm font-semibold">{col.title}</h3>
+                  <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+                    {kanbanColumns[col.key].length}
+                  </span>
+                </div>
+                <div className="space-y-2 min-h-[200px] bg-muted/30 rounded-lg p-2">
+                  {filtered.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-8">No projects</p>
+                  ) : (
+                    filtered.map(p => (
+                      <FS2KanbanCard key={p.id} project={p} onClick={() => openReview(p)} />
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="space-y-2 min-h-[200px] bg-muted/30 rounded-lg p-2">
-                {filterProjects(kanbanColumns[col.key]).length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-8">No projects</p>
-                ) : (
-                  filterProjects(kanbanColumns[col.key]).map(p => (
-                    <FS2KanbanCard key={p.id} project={p} onClick={() => openReview(p)} />
-                  ))
-                )}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

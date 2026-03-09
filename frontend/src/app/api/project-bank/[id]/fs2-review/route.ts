@@ -63,7 +63,7 @@ export async function POST(
   // Verify project is in correct stage for this review tier
   const { data: project, error: projectError } = await supabase!
     .from('project_bank_projects')
-    .select('project_stage, feasibility_stage')
+    .select('project_stage')
     .eq('id', id)
     .single();
 

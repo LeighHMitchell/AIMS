@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
-  CheckCircle2, AlertCircle, Building, Wallet, Handshake, ArrowRight,
+  CheckCircle2, AlertCircle, Building, Wallet, Handshake, ArrowRight, Globe,
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
@@ -41,6 +41,13 @@ const CATEGORY_CARDS: { value: CategoryDecision; label: string; description: str
     description: "Economically viable but not commercially. Proceeds to FS-3 for PPP structuring (VGF, MRG, etc.).",
     icon: Handshake,
     color: "text-purple-600",
+  },
+  {
+    value: "category_d",
+    label: "Category D — Development Partner (ODA)",
+    description: "Public-good sector with social returns. Proceeds to AIMS transfer preparation with development partner funding.",
+    icon: Globe,
+    color: "text-cyan-600",
   },
 ]
 
