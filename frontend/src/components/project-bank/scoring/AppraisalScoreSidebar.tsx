@@ -135,26 +135,10 @@ export function AppraisalScoreSidebar({ projectId, stage, formData, documents, c
 
   return (
     <div className={`p-4 rounded-lg border shadow-lg bg-[#f6f5f3] border-[#5f7f7a]/20 ${className || ''}`}>
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2">
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {stage ? STAGE_TITLES[stage] : 'Project Score'}
         </div>
-        {projectId && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={handleRecalculate}
-            disabled={recalculating}
-            title="Recalculate & Save Score"
-          >
-            {recalculating ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3 w-3" />
-            )}
-          </Button>
-        )}
       </div>
 
       {loading && !hasLive ? (
@@ -175,7 +159,7 @@ export function AppraisalScoreSidebar({ projectId, stage, formData, documents, c
             </span>
             <span className="text-sm text-muted-foreground">/100</span>
             <span className="text-[10px] text-muted-foreground ml-auto">
-              {hasLive ? 'Live' : STAGE_LABELS[activeStage]}
+              {hasLive ? '' : STAGE_LABELS[activeStage]}
             </span>
           </div>
 

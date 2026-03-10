@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
-  formatCurrency, formatCurrencyParts, SECTORS, PROJECT_STAGE_LABELS, PROJECT_STAGE_BADGE_STYLES,
+  formatCurrency, formatCurrencyParts, REGIONS, PROJECT_STAGE_LABELS, PROJECT_STAGE_BADGE_STYLES,
 } from "@/lib/project-bank-utils"
 import type { CategorizedProject, CategorizedColumns, CategorizedColumnKey } from "./types"
 import { ReviewTableView } from "./ReviewTableView"
@@ -115,56 +115,83 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
 function CategorizedKanbanCard({ project, onProfile, onForm }: { project: CategorizedProject; onProfile: () => void; onForm: () => void }) {
   const [expanded, setExpanded] = useState(false)
   const style = PROJECT_STAGE_BADGE_STYLES[project.project_stage]
+  const costParts = formatCurrencyParts(project.estimated_cost, project.currency)
 
   return (
     <div
-      className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+      className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer relative"
       onClick={() => setExpanded(prev => !prev)}
     >
-      <div className="min-w-0">
-        <span className="text-sm font-medium">{project.name}</span>{" "}
-        <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap inline-block">{project.project_code}</span>
-      </div>
-      <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-        <div>
-          <span>{project.nominating_ministry}</span>
-          {project.implementing_agency && (
-            <p className="text-muted-foreground/60 truncate">{project.implementing_agency}</p>
-          )}
-        </div>
-        <div>
-          <span>{project.sector}</span>
-          {project.sub_sector && (
-            <p className="text-muted-foreground/60 truncate">{project.sub_sector}</p>
-          )}
-        </div>
-      </div>
-      <div className="mt-2 flex items-center justify-between">
-        <span
-          className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold"
-          style={{ backgroundColor: style.bg, color: style.text, border: `1px solid ${style.border}` }}
-        >
-          {PROJECT_STAGE_LABELS[project.project_stage]}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {new Date(project.updated_at).toLocaleDateString()}
-        </span>
-      </div>
-      {expanded && (
-        <div className="mt-2 flex items-center gap-1.5 border-t pt-2">
-          <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={e => { e.stopPropagation(); onProfile() }}>
-            <FileText className="h-3 w-3" /> Profile
-          </Button>
-          <Button size="sm" className="flex-1 h-7 text-xs gap-1 bg-black hover:bg-black/90 text-white" onClick={e => { e.stopPropagation(); onForm() }}>
-            <ClipboardList className="h-3 w-3" /> Entry Form
-          </Button>
+      {project.banner && (
+        <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none">
+          <img
+            src={project.banner}
+            alt=""
+            className="h-full w-full object-cover"
+            style={{ objectPosition: `center ${project.banner_position ?? 50}%`, maskImage: 'linear-gradient(to right, transparent, black 40%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 40%)' }}
+          />
         </div>
       )}
+      <div className="relative p-3">
+        <div className="min-w-0">
+          <span className="text-sm font-medium">{project.name}</span>{" "}
+          <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap inline-block">{project.project_code}</span>
+        </div>
+        <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+          <div>
+            <span>{project.nominating_ministry}</span>
+            {project.implementing_agency && (
+              <p className="text-muted-foreground/60 truncate">{project.implementing_agency}</p>
+            )}
+          </div>
+          <div>
+            <span>{project.sector}</span>
+            {project.sub_sector && (
+              <p className="text-muted-foreground/60 truncate">{project.sub_sector}</p>
+            )}
+          </div>
+        </div>
+        {costParts && (
+          <div className="mt-1.5">
+            <span className="text-xs font-medium"><span className="text-muted-foreground">{costParts.prefix}</span> {costParts.amount}</span>
+          </div>
+        )}
+        <div className="mt-2 flex items-center justify-between">
+          <span
+            className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold"
+            style={{ backgroundColor: style.bg, color: style.text, border: `1px solid ${style.border}` }}
+          >
+            {PROJECT_STAGE_LABELS[project.project_stage]}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {new Date(project.updated_at).toLocaleDateString()}
+          </span>
+        </div>
+        {expanded && (
+          <div className="mt-2 flex items-center gap-1.5 border-t pt-2">
+            <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={e => { e.stopPropagation(); onProfile() }}>
+              <FileText className="h-3 w-3" /> Profile
+            </Button>
+            <Button size="sm" className="flex-1 h-7 text-xs gap-1 bg-black hover:bg-black/90 text-white" onClick={e => { e.stopPropagation(); onForm() }}>
+              <ClipboardList className="h-3 w-3" /> Project Appraisal
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 /* ── Main component ────────────────────────────────────── */
+
+const CATEGORY_FILTER_OPTIONS = [
+  { value: "category_a", label: "Category A: Private" },
+  { value: "category_b", label: "Category B: Government" },
+  { value: "category_c", label: "Category C: PPP" },
+  { value: "category_d", label: "Category D: ODA" },
+]
+
+interface PBSector { id: string; code: string; name: string }
 
 export function CategorizedTab() {
   const router = useRouter()
@@ -173,17 +200,26 @@ export function CategorizedTab() {
   const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban")
   const [searchQuery, setSearchQuery] = useState("")
   const [sectorFilter, setSectorFilter] = useState("")
+  const [regionFilter, setRegionFilter] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState("")
+  const [sectors, setSectors] = useState<PBSector[]>([])
+
+  useEffect(() => {
+    apiFetch('/api/pb-sectors').then(r => r.ok ? r.json() : []).then(setSectors).catch(() => {})
+  }, [])
 
   const fetchBoard = useCallback(async () => {
     try {
       const params = new URLSearchParams()
       if (sectorFilter) params.set("sector", sectorFilter)
+      if (regionFilter) params.set("region", regionFilter)
+      if (categoryFilter) params.set("category", categoryFilter)
       const res = await apiFetch(`/api/project-bank/review-board/categorized?${params}`)
       if (res.ok) setKanbanColumns(await res.json())
     } catch {} finally {
       setLoading(false)
     }
-  }, [sectorFilter])
+  }, [sectorFilter, regionFilter, categoryFilter])
 
   useEffect(() => { fetchBoard() }, [fetchBoard])
 
@@ -226,12 +262,43 @@ export function CategorizedTab() {
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground">Sector</Label>
           <Select value={sectorFilter || "all"} onValueChange={v => setSectorFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-[160px] h-9">
+            <SelectTrigger className="w-[200px] h-9">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sectors</SelectItem>
-              {SECTORS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {sectors.map(s => (
+                <SelectItem key={s.id} value={s.name}>
+                  <span className="inline-flex items-center gap-2">
+                    {s.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.code}</span>}
+                    <span>{s.name}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Region</Label>
+          <Select value={regionFilter || "all"} onValueChange={v => setRegionFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-[160px] h-9">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Regions</SelectItem>
+              {REGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Category</Label>
+          <Select value={categoryFilter || "all"} onValueChange={v => setCategoryFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-[180px] h-9">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {CATEGORY_FILTER_OPTIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -303,7 +370,7 @@ export function CategorizedTab() {
                     <FileText className="h-3 w-3" /> Profile
                   </Button>
                   <Button size="sm" className="h-7 text-xs gap-1 bg-black hover:bg-black/90 text-white" onClick={() => router.push(`/project-bank/${p.id}/appraisal`)}>
-                    <ClipboardList className="h-3 w-3" /> Entry Form
+                    <ClipboardList className="h-3 w-3" /> Project Appraisal
                   </Button>
                 </div>
               ),

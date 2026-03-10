@@ -19,7 +19,7 @@ import {
 } from "@dnd-kit/core"
 import { apiFetch } from "@/lib/api-fetch"
 import {
-  formatCurrency, formatCurrencyParts, SECTORS, FEASIBILITY_STAGE_LABELS, FEASIBILITY_STAGE_BADGE_STYLES,
+  formatCurrency, formatCurrencyParts, REGIONS, FEASIBILITY_STAGE_LABELS, FEASIBILITY_STAGE_BADGE_STYLES,
 } from "@/lib/project-bank-utils"
 import type { FS1Narrative } from "@/types/project-bank"
 import { NARRATIVE_SECTIONS } from "@/components/project-bank/fs1/FS1NarrativeForm"
@@ -108,12 +108,14 @@ function DraggableProjectCard({
   })
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null)
 
+  const costParts = formatCurrencyParts(project.estimated_cost, project.currency)
+
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow touch-none ${
+      className={`bg-card border border-border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow touch-none relative ${
         isDragging ? "opacity-50" : ""
       }`}
       onPointerDown={(e) => {
@@ -128,33 +130,55 @@ function DraggableProjectCard({
         onSelect(project)
       }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium truncate">{project.name}</p>
-            <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{project.project_code}</span>
+      {project.banner && (
+        <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none">
+          <img
+            src={project.banner}
+            alt=""
+            className="h-full w-full object-cover"
+            style={{ objectPosition: `center ${project.banner_position ?? 50}%`, maskImage: 'linear-gradient(to right, transparent, black 40%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 40%)' }}
+          />
+        </div>
+      )}
+      <div className="relative p-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium truncate">{project.name}</p>
+              <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{project.project_code}</span>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+        </div>
+        <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+          <div>
+            <span>{project.nominating_ministry}</span>
+            {project.implementing_agency && (
+              <p className="text-muted-foreground/60 truncate">{project.implementing_agency}</p>
+            )}
+          </div>
+          <div>
+            <span>{project.sector}</span>
+            {project.sub_sector && (
+              <p className="text-muted-foreground/60 truncate">{project.sub_sector}</p>
+            )}
           </div>
         </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-      </div>
-      <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-        <div>
-          <span>{project.nominating_ministry}</span>
-          {project.implementing_agency && (
-            <p className="text-muted-foreground/60 truncate">{project.implementing_agency}</p>
+        {costParts && (
+          <div className="mt-1.5">
+            <span className="text-xs font-medium"><span className="text-muted-foreground">{costParts.prefix}</span> {costParts.amount}</span>
+          </div>
+        )}
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {new Date(project.updated_at).toLocaleDateString()}
+          </span>
+          {project.reviewer_name && (
+            <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5 truncate max-w-[120px]">
+              {project.reviewer_name}
+            </span>
           )}
         </div>
-        <div>
-          <span>{project.sector}</span>
-          {project.sub_sector && (
-            <p className="text-muted-foreground/60 truncate">{project.sub_sector}</p>
-          )}
-        </div>
-      </div>
-      <div className="mt-2">
-        <span className="text-xs text-muted-foreground">
-          {new Date(project.updated_at).toLocaleDateString()}
-        </span>
       </div>
     </div>
   )
@@ -298,13 +322,21 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
   },
 ]
 
+interface PBSector { id: string; code: string; name: string }
+
 export function FS1ReviewTab() {
   const router = useRouter()
   const [columns, setColumns] = useState<ReviewColumns>({ pending: [], desk_review: [], senior_review: [] })
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban")
   const [sectorFilter, setSectorFilter] = useState("")
+  const [regionFilter, setRegionFilter] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
+  const [sectors, setSectors] = useState<PBSector[]>([])
+
+  useEffect(() => {
+    apiFetch('/api/pb-sectors').then(r => r.ok ? r.json() : []).then(setSectors).catch(() => {})
+  }, [])
 
   const [draggedProject, setDraggedProject] = useState<ReviewProject | null>(null)
   const [activeSourceColumn, setActiveSourceColumn] = useState<ColumnKey | null>(null)
@@ -328,12 +360,13 @@ export function FS1ReviewTab() {
     try {
       const params = new URLSearchParams()
       if (sectorFilter) params.set("sector", sectorFilter)
+      if (regionFilter) params.set("region", regionFilter)
       const res = await apiFetch(`/api/project-bank/review-board?${params}`)
       if (res.ok) setColumns(await res.json())
     } catch {} finally {
       setLoading(false)
     }
-  }, [sectorFilter])
+  }, [sectorFilter, regionFilter])
 
   useEffect(() => { fetchBoard() }, [fetchBoard])
 
@@ -481,12 +514,31 @@ export function FS1ReviewTab() {
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground">Sector</Label>
           <Select value={sectorFilter || "all"} onValueChange={v => setSectorFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-[160px] h-9">
+            <SelectTrigger className="w-[200px] h-9">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sectors</SelectItem>
-              {SECTORS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {sectors.map(s => (
+                <SelectItem key={s.id} value={s.name}>
+                  <span className="inline-flex items-center gap-2">
+                    {s.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.code}</span>}
+                    <span>{s.name}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Region</Label>
+          <Select value={regionFilter || "all"} onValueChange={v => setRegionFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-[160px] h-9">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Regions</SelectItem>
+              {REGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -536,7 +588,7 @@ export function FS1ReviewTab() {
               <div className="flex gap-4 overflow-x-auto pb-4">
                 <DroppableColumn
                   columnKey="pending"
-                  title="Step 1: Pending Review"
+                  title="Step 1: Pending Desk Review"
                   projects={filterProjects(columns.pending)}
                   count={columns.pending.length}
                   color="bg-[#7b95a7]"
@@ -554,7 +606,7 @@ export function FS1ReviewTab() {
                 />
                 <DroppableColumn
                   columnKey="senior_review"
-                  title="Step 3: Senior Review"
+                  title="Step 3: Pending Senior Review"
                   projects={filterProjects(columns.senior_review)}
                   count={columns.senior_review.length}
                   color="bg-[#3C6255]"

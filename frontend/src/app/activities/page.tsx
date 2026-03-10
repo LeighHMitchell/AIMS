@@ -114,7 +114,6 @@ import {
   ACTIVITY_COLUMN_ORDER_LOCALSTORAGE_KEY,
 } from "./columns";
 import { SortableTableHeader } from "@/components/ui/sortable-table-header";
-import { DndColumnProvider } from "@/components/ui/dnd-column-provider";
 import { useColumnOrder } from "@/hooks/use-column-order";
 import { apiFetch } from '@/lib/api-fetch';
 import { getActivityStatusLabel } from '@/lib/activity-status-utils';
@@ -536,7 +535,7 @@ function ActivitiesPageContent() {
   // Column visibility state with localStorage persistence
   const [visibleColumns, setVisibleColumns] = useState<ActivityColumnId[]>(defaultVisibleActivityColumns);
 
-  const { getOrderedVisibleColumns, handleReorder: handleColumnReorder } = useColumnOrder<ActivityColumnId>({
+  const { getOrderedVisibleColumns } = useColumnOrder<ActivityColumnId>({
     storageKey: ACTIVITY_COLUMN_ORDER_LOCALSTORAGE_KEY,
     columns: activityColumns,
   });
@@ -1899,8 +1898,7 @@ const router = useRouter();
                     </div>
                   </th>
                   
-                  {/* Draggable column headers */}
-                  <DndColumnProvider items={orderedDraggableColumns} onReorder={handleColumnReorder}>
+                  {/* Column headers */}
                     {orderedDraggableColumns.map((colId) => {
                       const actHeaderMap: Record<string, React.ReactNode> = {
                         title: (
@@ -2508,13 +2506,12 @@ const router = useRouter();
                         <th key={colId} className="h-12 px-4 text-left align-middle text-sm font-medium text-muted-foreground" />
                       );
                     })}
-                  </DndColumnProvider>
 
                   {/* Actions column - no header text, just kebab in rows */}
                   <th className="h-12 px-2" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border bg-background">
+              <tbody className="divide-y divide-border">
                 {paginatedActivities.map(activity => {
                   const organizationAcronyms = getOrganizationAcronyms(activity);
                   const acronymsText = formatOrganizationAcronyms(organizationAcronyms);
@@ -2528,7 +2525,7 @@ const router = useRouter();
                   return (
                     <tr
                       key={activity.id}
-                      className={`group hover:bg-muted [&:hover>td]:bg-muted transition-colors ${isSelected ? 'bg-muted border-border' : ''}`}
+                      className={`group hover:bg-muted transition-colors ${isSelected ? 'bg-muted border-border' : ''}`}
                     >
                       {/* Checkbox cell - always visible */}
                       <td className="px-4 py-2 text-center" onClick={(e) => e.stopPropagation()}>

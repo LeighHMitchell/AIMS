@@ -166,19 +166,22 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
           'preliminary_fs_summary', 'preliminary_fs_date', 'preliminary_fs_conducted_by',
           'fs_conductor_type', 'fs_conductor_company_name', 'fs_conductor_company_address',
           'fs_conductor_company_phone', 'fs_conductor_company_email', 'fs_conductor_company_website',
-          'fs_conductor_contact_person',
-          'fs_conductor_individual_name', 'fs_conductor_individual_email',
+          'fs_conductor_contact_person', 'fs_conductor_contact_person_first_name',
+          'fs_conductor_contact_person_last_name', 'fs_conductor_contact_person_title',
+          'fs_conductor_individual_name', 'fs_conductor_individual_first_name',
+          'fs_conductor_individual_last_name', 'fs_conductor_individual_email',
           'fs_conductor_individual_phone', 'fs_conductor_individual_job_title',
-          'fs_conductor_individual_company',
+          'fs_conductor_individual_company', 'fs_conductor_individual_address',
           'cost_table_data', 'technical_approach', 'technology_methodology',
           'technical_risks', 'has_technical_design', 'technical_design_maturity',
           'environmental_impact_level', 'environmental_impact_description',
           'social_impact_level', 'social_impact_description',
-          'land_acquisition_required', 'resettlement_required', 'estimated_affected_households',
+          'land_acquisition_required', 'land_acquisition_hectares', 'land_acquisition_details',
+          'resettlement_required', 'estimated_affected_households', 'resettlement_details',
           'has_revenue_component', 'revenue_sources', 'revenue_source_other_description',
           'market_assessment_summary',
           'projected_annual_users', 'projected_annual_revenue', 'revenue_ramp_up_years',
-          'msdp_strategy_area', 'secondary_ndp_goals', 'alignment_justification',
+          'msdp_strategy_area', 'msdp_strategies', 'secondary_ndp_goals', 'alignment_justification',
           'sector_strategy_reference', 'in_sector_investment_plan',
           'firr', 'firr_date', 'firr_calculation_data',
           'firr_cost_table_data',
@@ -279,8 +282,8 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
 
     if (currentStage === 'preliminary_fs') {
       if (!formData.fs_conductor_type) errs.fs_conductor_type = 'Please select who conducted the feasibility study';
-      if (formData.fs_conductor_type === 'individual' && !formData.fs_conductor_individual_name?.trim()) {
-        errs.fs_conductor_individual_name = 'Individual name is required';
+      if (formData.fs_conductor_type === 'individual' && !formData.fs_conductor_individual_first_name?.trim()) {
+        errs.fs_conductor_individual_first_name = 'First name is required';
       }
       if (formData.fs_conductor_type === 'company' && !formData.fs_conductor_company_name?.trim()) {
         errs.fs_conductor_company_name = 'Company name is required';

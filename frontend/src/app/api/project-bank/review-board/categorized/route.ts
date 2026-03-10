@@ -9,15 +9,23 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const sector = searchParams.get('sector');
+  const region = searchParams.get('region');
+  const category = searchParams.get('category');
 
   let query = supabase!
     .from('project_bank_projects')
-    .select('id, project_code, name, nominating_ministry, implementing_agency, sector, sub_sector, region, estimated_cost, currency, project_stage, pathway, category_decision, firr, eirr, ndp_aligned, updated_at')
+    .select('id, project_code, name, nominating_ministry, implementing_agency, sector, sub_sector, region, estimated_cost, currency, project_stage, pathway, category_decision, firr, eirr, ndp_aligned, banner, banner_position, updated_at')
     .in('project_stage', ['fs2_categorized', 'fs3_in_progress', 'fs3_completed', 'fs3_returned'])
     .order('updated_at', { ascending: false });
 
   if (sector) {
     query = query.eq('sector', sector);
+  }
+  if (region) {
+    query = query.eq('region', region);
+  }
+  if (category) {
+    query = query.eq('category_decision', category);
   }
 
   const { data: projects, error } = await query;

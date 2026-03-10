@@ -30,7 +30,7 @@ const VALIDATION_FIELD_LABELS: Record<string, string> = {
   nominating_ministry: 'Nominating Ministry',
   sector: 'Sector',
   fs_conductor_type: 'Feasibility Study Conductor',
-  fs_conductor_individual_name: 'Individual Conductor Name',
+  fs_conductor_individual_first_name: 'Individual Conductor First Name',
   fs_conductor_company_name: 'Company Conductor Name',
   cost_table_data: 'Financial Analysis Cost Table',
   environmental_impact_level: 'Environmental Impact Level',

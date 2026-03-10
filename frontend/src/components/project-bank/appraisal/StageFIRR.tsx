@@ -174,30 +174,28 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
         </div>
       </div>
 
-      {/* Revenue projection fields — moved here from Revenue tab */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label>Projected Annual Revenue <HelpTooltip text="Expected annual revenue in USD once the project reaches full operation. Enter the full amount — not abbreviated (e.g. 10,000,000 not 10M)." /></Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">USD</span>
+      {/* Revenue projection fields — quick summary, collapsed when cash flow table has data */}
+      {!refinedData.some(r => (r.revenue || 0) > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label>Projected Annual Revenue (USD) <HelpTooltip text="Expected annual revenue in USD once the project reaches full operation. This is a quick estimate — for detailed year-by-year projections, enter revenue directly in the Refined Cash Flow Table below." /></Label>
             <FormattedNumberInput
               value={formData.projected_annual_revenue ?? null}
               onChange={v => updateField('projected_annual_revenue', v)}
               placeholder="10,000,000"
               decimals={2}
-              className="pl-11"
+            />
+          </div>
+          <div>
+            <Label>Revenue Ramp-up <HelpTooltip text="Number of years before revenue reaches full projected level. During ramp-up, revenue may be lower than the projected annual amount." /></Label>
+            <FormattedNumberInput
+              value={formData.revenue_ramp_up_years ?? null}
+              onChange={v => updateField('revenue_ramp_up_years', v)}
+              placeholder="e.g. 3"
             />
           </div>
         </div>
-        <div>
-          <Label>Revenue Ramp-up <HelpTooltip text="Number of years before revenue reaches full projected level. During ramp-up, revenue may be lower than the projected annual amount." /></Label>
-          <FormattedNumberInput
-            value={formData.revenue_ramp_up_years ?? null}
-            onChange={v => updateField('revenue_ramp_up_years', v)}
-            placeholder="e.g. 3"
-          />
-        </div>
-      </div>
+      )}
 
       {/* Preliminary vs Refined summary cards */}
       {preliminaryData.length > 0 && refinedData.length > 0 && (

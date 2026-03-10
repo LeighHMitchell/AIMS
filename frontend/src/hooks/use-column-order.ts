@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { arrayMove } from "@dnd-kit/sortable";
 import { ColumnConfig } from "@/components/ui/column-selector";
 
 interface UseColumnOrderOptions<T extends string> {
@@ -14,7 +13,7 @@ interface UseColumnOrderOptions<T extends string> {
 interface UseColumnOrderReturn<T extends string> {
   /** Returns visible columns in user-chosen order */
   getOrderedVisibleColumns: (visibleColumns: T[]) => T[];
-  /** Handle reorder from drag-and-drop */
+  /** Handle reorder (no-op, kept for API compatibility) */
   handleReorder: (activeId: string, overId: string) => void;
   /** Reset to default config order */
   resetOrder: () => void;
@@ -60,22 +59,10 @@ export function useColumnOrder<T extends string>({
     [columnOrder]
   );
 
+  // No-op — drag-and-drop reordering removed
   const handleReorder = useCallback(
-    (activeId: string, overId: string) => {
-      setColumnOrder((prev) => {
-        const oldIndex = prev.indexOf(activeId as T);
-        const newIndex = prev.indexOf(overId as T);
-        if (oldIndex === -1 || newIndex === -1) return prev;
-        const next = arrayMove(prev, oldIndex, newIndex);
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(next));
-        } catch {
-          // Ignore storage errors
-        }
-        return next;
-      });
-    },
-    [storageKey]
+    (_activeId: string, _overId: string) => {},
+    []
   );
 
   const resetOrder = useCallback(() => {

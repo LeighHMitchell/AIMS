@@ -24,9 +24,9 @@ interface CashFlowTableProps {
 }
 
 const COLUMN_LABELS: Record<string, string> = {
-  capex: 'CAPEX',
-  opex: 'OPEX',
-  revenue: 'Revenue',
+  capex: 'CAPEX (USD)',
+  opex: 'OPEX (USD)',
+  revenue: 'Revenue (USD)',
 };
 
 const COLUMN_HELP: Record<string, string> = {
@@ -289,9 +289,9 @@ export function CashFlowTable({
                 ))}
                 {showNet && (
                   <td className={cn(
-                    'p-2 text-right tabular-nums text-sm',
+                    'p-2 tabular-nums text-sm font-medium',
                     totals.revenue - totals.capex - totals.opex >= 0 ? 'text-green-600' : 'text-red-600',
-                  )}>
+                  )} style={{ textAlign: 'right' }}>
                     {formatNum(totals.revenue - totals.capex - totals.opex)}
                   </td>
                 )}

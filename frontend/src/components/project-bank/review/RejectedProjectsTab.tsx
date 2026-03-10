@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, LayoutGrid, Table2, Building2, DollarSign, ChevronRight, Search, RotateCcw, X } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
-  formatCurrencyParts, fmtCost, SECTORS, checkCooldownViolation,
+  formatCurrencyParts, fmtCost, REGIONS, checkCooldownViolation,
 } from "@/lib/project-bank-utils"
 import type { ProjectStage } from "@/types/project-bank"
 import type { RejectedProject } from "./types"
@@ -243,13 +243,21 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
   },
 ]
 
+interface PBSector { id: string; code: string; name: string }
+
 export function RejectedProjectsTab() {
   const [projects, setProjects] = useState<RejectedProject[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"card" | "table">("card")
   const [searchQuery, setSearchQuery] = useState("")
   const [sectorFilter, setSectorFilter] = useState("")
+  const [regionFilter, setRegionFilter] = useState("")
+  const [sectors, setSectors] = useState<PBSector[]>([])
   const [recoverProject, setRecoverProject] = useState<RejectedProject | null>(null)
+
+  useEffect(() => {
+    apiFetch('/api/pb-sectors').then(r => r.ok ? r.json() : []).then(setSectors).catch(() => {})
+  }, [])
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -266,6 +274,7 @@ export function RejectedProjectsTab() {
 
   const filteredProjects = projects.filter(p => {
     if (sectorFilter && p.sector !== sectorFilter) return false
+    if (regionFilter && p.region !== regionFilter) return false
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       return p.name.toLowerCase().includes(q) || p.project_code.toLowerCase().includes(q) || p.nominating_ministry.toLowerCase().includes(q)
@@ -299,12 +308,31 @@ export function RejectedProjectsTab() {
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground">Sector</Label>
           <Select value={sectorFilter || "all"} onValueChange={v => setSectorFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-[160px] h-9">
+            <SelectTrigger className="w-[200px] h-9">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sectors</SelectItem>
-              {SECTORS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {sectors.map(s => (
+                <SelectItem key={s.id} value={s.name}>
+                  <span className="inline-flex items-center gap-2">
+                    {s.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.code}</span>}
+                    <span>{s.name}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Region</Label>
+          <Select value={regionFilter || "all"} onValueChange={v => setRegionFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-[160px] h-9">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Regions</SelectItem>
+              {REGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

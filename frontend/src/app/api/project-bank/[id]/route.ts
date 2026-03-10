@@ -43,11 +43,22 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (appraisalsResult.error) warnings.push(`appraisals: ${appraisalsResult.error.message}`);
   if (documentsResult.error) warnings.push(`documents: ${documentsResult.error.message}`);
 
+  // Generate signed URLs for documents
+  const docsWithUrls = await Promise.all(
+    (documentsResult.data || []).map(async (doc: any) => {
+      if (!doc.file_path) return { ...doc, signed_url: null };
+      const { data: signedData } = await supabase!.storage
+        .from('project-documents')
+        .createSignedUrl(doc.file_path, 3600);
+      return { ...doc, signed_url: signedData?.signedUrl || null };
+    })
+  );
+
   return NextResponse.json({
     ...project,
     donors: donorsResult.data || [],
     appraisals: appraisalsResult.data || [],
-    documents: documentsResult.data || [],
+    documents: docsWithUrls,
     ...(warnings.length > 0 && { _warnings: warnings }),
   });
 }
@@ -85,17 +96,20 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     'preliminary_fs_summary', 'preliminary_fs_date', 'preliminary_fs_conducted_by',
     'fs_conductor_type', 'fs_conductor_company_name', 'fs_conductor_company_address',
     'fs_conductor_company_phone', 'fs_conductor_company_email', 'fs_conductor_company_website',
-    'fs_conductor_contact_person',
-    'fs_conductor_individual_name', 'fs_conductor_individual_email',
+    'fs_conductor_contact_person', 'fs_conductor_contact_person_first_name',
+    'fs_conductor_contact_person_last_name', 'fs_conductor_contact_person_title',
+    'fs_conductor_individual_name', 'fs_conductor_individual_first_name',
+    'fs_conductor_individual_last_name', 'fs_conductor_individual_email',
     'fs_conductor_individual_phone', 'fs_conductor_individual_job_title',
-    'fs_conductor_individual_company',
+    'fs_conductor_individual_company', 'fs_conductor_individual_address',
     'cost_table_data', 'technical_approach', 'technology_methodology',
     'technical_risks', 'has_technical_design', 'technical_design_maturity',
     'environmental_impact_level', 'social_impact_level',
-    'land_acquisition_required', 'resettlement_required', 'estimated_affected_households',
+    'land_acquisition_required', 'land_acquisition_hectares', 'land_acquisition_details',
+    'resettlement_required', 'estimated_affected_households', 'resettlement_details',
     'has_revenue_component', 'revenue_sources', 'market_assessment_summary',
     'projected_annual_users', 'projected_annual_revenue', 'revenue_ramp_up_years',
-    'msdp_strategy_area', 'secondary_ndp_goals', 'alignment_justification',
+    'msdp_strategy_area', 'msdp_strategies', 'secondary_ndp_goals', 'alignment_justification',
     'sector_strategy_reference', 'in_sector_investment_plan',
     'firr_cost_table_data', 'firr_calculation_data', 'eirr_calculation_data', 'eirr_shadow_prices',
     'vgf_calculation_data', 'vgf_status',

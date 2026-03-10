@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle } from 'lucide-react';
+import Image from 'next/image';
 import { apiFetch } from '@/lib/api-fetch';
 import { HelpTooltip } from './HelpTooltip';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
@@ -70,6 +70,14 @@ const MSDP_STRATEGIES: Record<number, { code: string; name: string }[]> = {
   ],
 };
 
+const MSDP_GOAL_IMAGES: Record<number, string> = {
+  1: '/images/msdp-goal-1.png',
+  2: '/images/msdp-goal-2.png',
+  3: '/images/msdp-goal-3.png',
+  4: '/images/msdp-goal-4.png',
+  5: '/images/msdp-goal-5.png',
+};
+
 /** Extract goal number from an NDP goal code like "MSDP-3" → 3 */
 function goalNumber(code: string): number {
   const m = code.match(/(\d+)$/);
@@ -99,11 +107,21 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
           const json = await res.json();
           const items = json.data || [];
           setStrategyOptions(
-            items.map((item: any) => ({
-              value: item.label,
-              label: item.acronym ? `${item.acronym} — ${item.label}` : item.label,
-              group: CATEGORY_LABELS[item.category] || item.category,
-            }))
+            items.map((item: any) => {
+              const year = item.start_date ? new Date(item.start_date).getFullYear() : null;
+              const endYear = item.end_date ? new Date(item.end_date).getFullYear() : null;
+              const yearRange = year && endYear ? `${year}–${endYear}` : year ? `${year}–` : '';
+              const ministries = Array.isArray(item.responsible_ministries) && item.responsible_ministries.length > 0
+                ? item.responsible_ministries.map((m: any) => m.code || m.name).join(', ')
+                : '';
+              const subtitle = [yearRange, ministries].filter(Boolean).join(' · ');
+              return {
+                value: item.label,
+                label: item.acronym ? `${item.acronym} — ${item.label}` : item.label,
+                group: CATEGORY_LABELS[item.category] || item.category,
+                subtitle,
+              };
+            })
           );
         }
       } catch {}
@@ -217,28 +235,33 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
           MSDP Goals <RequiredDot />
           <HelpTooltip text="Select one or more MSDP goals. The first selected goal becomes the primary. Click additional goals to add as secondary." />
         </Label>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3 max-w-[396px]">
           {/* Not aligned option */}
           <button
             type="button"
             onClick={handleNotAligned}
             className={cn(
-              'aspect-square flex flex-col items-center justify-center text-center p-3 rounded-lg border transition-colors',
+              'relative flex flex-col justify-end w-[120px] h-[120px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               !ndpAligned
-                ? 'border-amber-300 bg-amber-50'
-                : 'border-muted-foreground/20 hover:border-muted-foreground/40',
+                ? 'ring-amber-300 bg-amber-50'
+                : 'ring-border bg-background hover:bg-gray-50',
             )}
           >
-            <div className="text-sm font-medium">Not aligned</div>
-            <div className="text-[10px] text-muted-foreground mt-1 line-clamp-2">
-              Does not align with any NDP strategic area
+            <Image src="/images/msdp-not-aligned.png" alt="Not aligned" fill className="object-contain opacity-15" style={{ objectPosition: 'left bottom' }} />
+            <div className="relative z-10 p-2">
+              <div className="text-[10px] font-medium">Not aligned</div>
+              <div className="text-[9px] text-muted-foreground mt-0.5 line-clamp-2">
+                Does not align with any NDP strategic area
+              </div>
             </div>
           </button>
 
-          {/* NDP Goals as square cards */}
+          {/* NDP Goals as cards with images */}
           {activeGoals.map(goal => {
             const isPrimary = selectedGoalId === goal.id;
             const isSecondary = secondaryGoals.includes(goal.id);
+            const gNum = goalNumber(goal.code);
+            const goalImage = MSDP_GOAL_IMAGES[gNum];
 
             return (
               <button
@@ -246,24 +269,34 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                 type="button"
                 onClick={() => handleGoalToggle(goal.id)}
                 className={cn(
-                  'aspect-square relative flex flex-col items-center justify-center text-center p-3 rounded-lg border transition-colors',
+                  'relative flex flex-col justify-end w-[120px] h-[120px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
                   isPrimary
-                    ? 'border-[#5f7f7a] bg-[#f6f5f3] ring-2 ring-[#5f7f7a]/20'
+                    ? 'ring-[#5f7f7a] bg-[#f6f5f3] ring-2'
                     : isSecondary
-                    ? 'border-[#5f7f7a]/60 bg-[#f6f5f3]'
-                    : 'border-muted-foreground/20 hover:border-muted-foreground/40',
+                    ? 'ring-[#5f7f7a]/60 bg-[#f6f5f3]'
+                    : 'ring-border bg-background hover:bg-gray-50',
                 )}
               >
+                {goalImage && (
+                  <Image src={goalImage} alt={goal.name} fill className="object-contain object-bottom-left opacity-15" style={{ objectPosition: 'left bottom' }} />
+                )}
+                {(isPrimary || isSecondary) && (
+                  <div className="absolute top-1.5 right-1.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                    <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                  </div>
+                )}
                 {(isPrimary || isSecondary) && (
                   <span className={cn(
-                    'absolute top-1.5 right-1.5 text-[8px] font-semibold uppercase px-1.5 py-0.5 rounded-full',
+                    'absolute top-1.5 left-1.5 z-10 text-[7px] font-semibold uppercase px-1 py-0.5 rounded-full',
                     isPrimary ? 'bg-[#5f7f7a]/15 text-[#5f7f7a]' : 'bg-[#5f7f7a]/10 text-[#5f7f7a]',
                   )}>
                     {isPrimary ? 'Primary' : 'Secondary'}
                   </span>
                 )}
-                <span className="text-xs font-mono font-bold text-muted-foreground">{goal.code}</span>
-                <span className="text-xs font-medium mt-1 leading-tight line-clamp-3">{goal.name}</span>
+                <div className="relative z-10 p-2">
+                  <span className="text-[10px] font-mono font-bold text-muted-foreground">{goal.code}</span>
+                  <span className="text-[10px] font-medium mt-0.5 leading-tight line-clamp-3 block">{goal.name}</span>
+                </div>
               </button>
             );
           })}
@@ -274,35 +307,53 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
       {ndpAligned && (
         <>
           <div>
-            <Label>MSDP Strategy <HelpTooltip text="Select the specific MSDP strategy this project supports. Options are filtered by your selected goals above." /></Label>
-            <Select
-              value={formData.msdp_strategy_area || ''}
-              onValueChange={v => updateField('msdp_strategy_area', v)}
-              disabled={availableStrategies.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={
-                  availableStrategies.length === 0
-                    ? 'Select a goal first'
-                    : 'Select MSDP strategy...'
-                } />
-              </SelectTrigger>
-              <SelectContent>
+            <Label>MSDP Strategies <HelpTooltip text="Select one or more MSDP strategies this project supports. Options are filtered by your selected goals above." /></Label>
+            {availableStrategies.length === 0 ? (
+              <p className="text-sm text-muted-foreground mt-1">Select a goal first</p>
+            ) : (
+              <div className="space-y-3 mt-1">
                 {availableStrategies.map(group => (
-                  <SelectGroup key={group.goalNum}>
-                    <SelectLabel>Goal {group.goalNum}: {group.goalName}</SelectLabel>
-                    {group.strategies.map(s => (
-                      <SelectItem key={s.code} value={`Strategy ${s.code}: ${s.name}`}>
-                        <span className="inline-flex items-center gap-2 min-w-0">
-                          <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.code}</span>
-                          <span>{s.name}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
+                  <div key={group.goalNum}>
+                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Goal {group.goalNum}: {group.goalName}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {group.strategies.map(s => {
+                        const strategyValue = `Strategy ${s.code}: ${s.name}`;
+                        const selectedStrategies: string[] = formData.msdp_strategies || (formData.msdp_strategy_area ? [formData.msdp_strategy_area] : []);
+                        const isSelected = selectedStrategies.includes(strategyValue);
+                        return (
+                          <button
+                            key={s.code}
+                            type="button"
+                            onClick={() => {
+                              const current: string[] = formData.msdp_strategies || (formData.msdp_strategy_area ? [formData.msdp_strategy_area] : []);
+                              if (isSelected) {
+                                const updated = current.filter((v: string) => v !== strategyValue);
+                                updateField('msdp_strategies', updated.length > 0 ? updated : null);
+                                updateField('msdp_strategy_area', updated[0] || null);
+                              } else {
+                                const updated = [...current, strategyValue];
+                                updateField('msdp_strategies', updated);
+                                updateField('msdp_strategy_area', updated[0]);
+                              }
+                            }}
+                            className={cn(
+                              'inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium border transition-colors text-left',
+                              isSelected
+                                ? 'bg-primary/10 border-primary/30 text-foreground'
+                                : 'bg-background border-border text-muted-foreground hover:bg-muted/50',
+                            )}
+                          >
+                            <span className="font-mono font-bold shrink-0">{s.code}</span>
+                            <span className="line-clamp-1">{s.name}</span>
+                            {isSelected && <span className="text-xs leading-none ml-0.5">×</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            )}
           </div>
 
           <div>
@@ -321,7 +372,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                 }
                 return (
                   <span className="text-xs text-muted-foreground">
-                    {remaining} more character{remaining !== 1 ? 's' : ''} needed
+                    {remaining} more character{remaining !== 1 ? 's' : ''} suggested
                   </span>
                 );
               })()}
@@ -334,7 +385,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
             />
           </div>
 
-          <div>
+          <div className="max-w-md">
             <Label>Sector Strategy Reference <HelpTooltip text="Select one or more government planning documents or frameworks that this project implements." /></Label>
             <MultiSelect
               options={strategyOptions}
@@ -344,6 +395,14 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
               searchable
               searchPlaceholder="Filter documents..."
               selectedLabel="document(s)"
+              renderOption={(option) => (
+                <div className="py-0.5">
+                  <div className="text-sm">{option.label}</div>
+                  {option.subtitle && (
+                    <div className="text-[10px] text-muted-foreground">{option.subtitle}</div>
+                  )}
+                </div>
+              )}
             />
           </div>
 
@@ -352,7 +411,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
               checked={formData.in_sector_investment_plan || false}
               onCheckedChange={v => updateField('in_sector_investment_plan', v)}
             />
-            <Label>Included in sector investment plan</Label>
+            <Label>Included in sector investment plan <HelpTooltip text="A sector investment plan is a government-endorsed, costed programme of priority projects within a specific sector (e.g. transport, energy, health). Toggle this on if the project appears in an approved sector investment plan, public investment programme (PIP), or equivalent prioritised pipeline." /></Label>
           </div>
         </>
       )}

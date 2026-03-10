@@ -818,6 +818,18 @@ body:has([data-radix-dialog-content]) {
   min-width: 100%;
 }
 
+/* Make the title column (first data column after checkbox) stretch to fill remaining space */
+.activities-table .data-table-col-activity {
+  width: 100%;
+}
+
+/* Row hover: paint bg on every td so highlight covers full width
+   (needed because a higher-specificity rule resets td backgrounds) */
+.activities-table tbody tr:hover > td,
+.activities-table tbody tr.bg-muted > td {
+  background-color: hsl(var(--muted)) !important;
+}
+
 /* Data tables (Activities, Transactions, Planned Disbursements, Budgets): fill container width */
 .data-table-balanced {
   width: 100%;
@@ -834,10 +846,6 @@ table td:has(div:contains("AA-AAA")) {
   text-align: left !important;
 }
 
-/* Show drag grip handle on column header hover */
-.sortable-th:hover .grip-handle {
-  opacity: 1;
-}
 
 /* Debug overlay for test marker - temporarily disabled */
 .leaflet-container.debug-mode::after {

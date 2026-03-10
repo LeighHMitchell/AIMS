@@ -9,7 +9,7 @@ export async function GET() {
 
   const { data: projects, error } = await supabase!
     .from('project_bank_projects')
-    .select('id, project_code, name, nominating_ministry, implementing_agency, sector, sub_sector, region, estimated_cost, currency, project_stage, rejection_reason, review_comments, rejected_at, fs1_rejected_at, updated_at')
+    .select('id, project_code, name, nominating_ministry, implementing_agency, sector, sub_sector, region, estimated_cost, currency, project_stage, rejection_reason, review_comments, rejected_at, fs1_rejected_at, banner, banner_position, updated_at')
     .in('project_stage', ['intake_rejected', 'fs1_rejected'])
     .order('updated_at', { ascending: false });
 

@@ -14,6 +14,9 @@ export interface ReviewProject {
   feasibility_stage: FeasibilityStage
   project_stage: ProjectStage
   fs1_rejected_at: string | null
+  banner: string | null
+  banner_position: number | null
+  reviewer_name: string | null
   created_at: string
   updated_at: string
 }
@@ -37,6 +40,7 @@ export interface IntakeReviewProject {
   contact_email: string | null
   banner: string | null
   banner_position: number | null
+  reviewer_name: string | null
   created_at: string
   updated_at: string
 }
@@ -57,6 +61,8 @@ export interface RejectedProject {
   review_comments: string | null
   rejected_at: string | null
   fs1_rejected_at: string | null
+  banner: string | null
+  banner_position: number | null
   updated_at: string
 }
 
@@ -100,6 +106,9 @@ export interface FS2ReviewProject {
   eirr: number | null
   ndp_aligned: boolean
   category_recommendation: string | null
+  banner: string | null
+  banner_position: number | null
+  reviewer_name: string | null
   updated_at: string
 }
 
@@ -129,6 +138,8 @@ export interface CategorizedProject {
   firr: number | null
   eirr: number | null
   ndp_aligned: boolean
+  banner: string | null
+  banner_position: number | null
   updated_at: string
 }
 

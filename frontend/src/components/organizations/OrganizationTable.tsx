@@ -25,7 +25,6 @@ import {
   getSortIcon,
 } from "@/components/ui/table";
 import { SortableTableHeader } from "@/components/ui/sortable-table-header";
-import { DndColumnProvider } from "@/components/ui/dnd-column-provider";
 import { useColumnOrder } from "@/hooks/use-column-order";
 import {
   organizationColumns,
@@ -308,9 +307,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <DndColumnProvider items={orderedColumns} onReorder={handleReorder}>
                 {orderedColumns.map((colId) => headerMap[colId])}
-              </DndColumnProvider>
               <th className="h-12 px-4 text-right align-middle text-sm font-medium text-muted-foreground w-[13%]">
                 Actions
               </th>

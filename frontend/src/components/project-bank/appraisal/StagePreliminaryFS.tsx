@@ -23,11 +23,30 @@ import { calculateFIRR } from '@/lib/eirr-calculator';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
 import type { FS1Tab } from '@/types/project-bank';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Check, ChevronsUpDown } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle, ChevronsUpDown } from 'lucide-react';
 import Image from 'next/image';
 
 function RequiredDot() {
   return <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" />;
+}
+
+function CharacterSuggestion({ value, min = 200 }: { value: string | null | undefined; min?: number }) {
+  const len = (value || '').length;
+  if (len === 0) return null;
+  const remaining = min - len;
+  if (remaining <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-green-600">
+        <CheckCircle className="h-3.5 w-3.5" />
+        {len} characters
+      </span>
+    );
+  }
+  return (
+    <span className="text-xs text-muted-foreground">
+      {remaining} more character{remaining !== 1 ? 's' : ''} suggested
+    </span>
+  );
 }
 
 interface StagePreliminaryFSProps {
@@ -98,19 +117,10 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
     }
   };
 
-  const routingBorderColor = routing.color === 'green' ? 'border-l-green-500'
-    : routing.color === 'blue' ? 'border-l-blue-500'
-    : routing.color === 'amber' ? 'border-l-amber-500'
-    : routing.color === 'red' ? 'border-l-red-500'
-    : 'border-l-muted-foreground';
-
   return (
     <div className={cn('space-y-6', isLocked && 'pointer-events-none opacity-60')}>
       <div>
         <h3 className="text-lg font-semibold mb-1">Preliminary Feasibility Study</h3>
-        {formData.project_code && (
-          <p className="text-xs text-muted-foreground font-mono mb-1">{formData.project_code}</p>
-        )}
         <p className="text-sm text-muted-foreground">Technical assessment, revenue projections, environmental screening, and financial analysis.</p>
       </div>
 
@@ -228,20 +238,20 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
             onClick={() => !isLocked && updateField('fs_conductor_type', 'individual')}
             disabled={isLocked}
             className={cn(
-              'relative flex flex-col justify-end flex-1 h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
+              'relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               formData.fs_conductor_type === 'individual'
                 ? 'ring-border bg-primary/5'
-                : 'ring-gray-300 bg-background hover:bg-gray-50',
+                : 'ring-border bg-background hover:bg-gray-50',
               isLocked && 'opacity-60 cursor-not-allowed',
             )}
           >
-            <Image src="/images/fs-conductor-individual.png" alt="Individual" fill className="object-contain object-top opacity-15 scale-75" />
+            <Image src="/images/fs-conductor-individual.png" alt="Individual" fill className="object-cover opacity-15" />
             {formData.fs_conductor_type === 'individual' && (
               <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                 <Check className="h-3 w-3 text-primary-foreground" />
               </div>
             )}
-            <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white via-white/95 to-transparent p-3 pt-5">
+            <div className="relative z-10 p-3">
               <h4 className="text-sm font-semibold">Individual</h4>
               <p className="mt-1 text-xs text-muted-foreground">The study was conducted by an individual consultant or specialist</p>
             </div>
@@ -251,20 +261,20 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
             onClick={() => !isLocked && updateField('fs_conductor_type', 'company')}
             disabled={isLocked}
             className={cn(
-              'relative flex flex-col justify-end flex-1 h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
+              'relative flex flex-col justify-end w-[180px] h-[160px] rounded-lg shadow-sm ring-1 ring-inset text-left transition-all overflow-hidden',
               formData.fs_conductor_type === 'company'
                 ? 'ring-border bg-primary/5'
-                : 'ring-gray-300 bg-background hover:bg-gray-50',
+                : 'ring-border bg-background hover:bg-gray-50',
               isLocked && 'opacity-60 cursor-not-allowed',
             )}
           >
-            <Image src="/images/fs-conductor-company.png" alt="Company / Firm" fill className="object-contain object-top opacity-15 scale-75" />
+            <Image src="/images/fs-conductor-company.png" alt="Company / Firm" fill className="object-cover opacity-15" />
             {formData.fs_conductor_type === 'company' && (
               <div className="absolute top-2 right-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                 <Check className="h-3 w-3 text-primary-foreground" />
               </div>
             )}
-            <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-white via-white/95 to-transparent p-3 pt-5">
+            <div className="relative z-10 p-3">
               <h4 className="text-sm font-semibold">Company / Firm</h4>
               <p className="mt-1 text-xs text-muted-foreground">The study was conducted by a consulting firm or organisation</p>
             </div>
@@ -277,16 +287,24 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
             <h5 className="text-sm font-medium">Individual Details</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-muted-foreground">Full Name</Label>
-                <Input value={formData.fs_conductor_individual_name || ''} onChange={e => updateField('fs_conductor_individual_name', e.target.value)} placeholder="Full name" disabled={isLocked} />
+                <Label className="text-xs text-muted-foreground">First Name</Label>
+                <Input value={formData.fs_conductor_individual_first_name || ''} onChange={e => updateField('fs_conductor_individual_first_name', e.target.value)} placeholder="First name" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Job Title</Label>
+                <Label className="text-xs text-muted-foreground">Last Name</Label>
+                <Input value={formData.fs_conductor_individual_last_name || ''} onChange={e => updateField('fs_conductor_individual_last_name', e.target.value)} placeholder="Last name" disabled={isLocked} />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Title</Label>
                 <Input value={formData.fs_conductor_individual_job_title || ''} onChange={e => updateField('fs_conductor_individual_job_title', e.target.value)} placeholder="e.g. Senior Infrastructure Consultant" disabled={isLocked} />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Associated Company</Label>
                 <Input value={formData.fs_conductor_individual_company || ''} onChange={e => updateField('fs_conductor_individual_company', e.target.value)} placeholder="Company or organisation name" disabled={isLocked} />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Address</Label>
+                <Input value={formData.fs_conductor_individual_address || ''} onChange={e => updateField('fs_conductor_individual_address', e.target.value)} placeholder="Address" disabled={isLocked} />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Email</Label>
@@ -305,13 +323,21 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
           <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
             <h5 className="text-sm font-medium">Company Details</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
+              <div className="md:col-span-2">
                 <Label className="text-xs text-muted-foreground">Company Name</Label>
                 <Input value={formData.fs_conductor_company_name || ''} onChange={e => updateField('fs_conductor_company_name', e.target.value)} placeholder="Company or firm name" disabled={isLocked} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Contact Person</Label>
-                <Input value={formData.fs_conductor_contact_person || ''} onChange={e => updateField('fs_conductor_contact_person', e.target.value)} placeholder="Primary contact name" disabled={isLocked} />
+                <Label className="text-xs text-muted-foreground">Contact Person First Name</Label>
+                <Input value={formData.fs_conductor_contact_person_first_name || ''} onChange={e => updateField('fs_conductor_contact_person_first_name', e.target.value)} placeholder="First name" disabled={isLocked} />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Contact Person Last Name</Label>
+                <Input value={formData.fs_conductor_contact_person_last_name || ''} onChange={e => updateField('fs_conductor_contact_person_last_name', e.target.value)} placeholder="Last name" disabled={isLocked} />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Contact Person Title</Label>
+                <Input value={formData.fs_conductor_contact_person_title || ''} onChange={e => updateField('fs_conductor_contact_person_title', e.target.value)} placeholder="e.g. Project Manager" disabled={isLocked} />
               </div>
               <div className="md:col-span-2">
                 <Label className="text-xs text-muted-foreground">Address</Label>
@@ -361,7 +387,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
       {(() => {
         const errorTabMap: Record<string, { tab: FS1Tab; label: string }> = {
           fs_conductor_type: { tab: 'technical', label: 'Technical' },
-          fs_conductor_individual_name: { tab: 'technical', label: 'Technical' },
+          fs_conductor_individual_first_name: { tab: 'technical', label: 'Technical' },
           fs_conductor_company_name: { tab: 'technical', label: 'Technical' },
           cost_table_data: { tab: 'firr', label: 'Financial Analysis' },
           environmental_impact_level: { tab: 'environmental', label: 'Environmental' },
@@ -408,7 +434,10 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
         {/* Technical Tab */}
         <TabsContent value="technical" className="space-y-4 mt-4" id="section-technical">
           <div>
-            <Label>Technical Approach <FieldCheck value={formData.technical_approach} /> <HelpTooltip text="Describe the proposed technical approach, construction methods, and key design features." /></Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="mb-0">Technical Approach <FieldCheck value={formData.technical_approach} /> <HelpTooltip text="Describe the proposed technical approach, construction methods, and key design features. Minimum 200 characters recommended." /></Label>
+              <CharacterSuggestion value={formData.technical_approach} />
+            </div>
             <Textarea
               value={formData.technical_approach || ''}
               onChange={e => updateField('technical_approach', e.target.value)}
@@ -418,7 +447,10 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
             />
           </div>
           <div>
-            <Label>Technology / Methodology <FieldCheck value={formData.technology_methodology} /> <HelpTooltip text="Key technologies, equipment, and methodologies to be used." /></Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="mb-0">Technology / Methodology <FieldCheck value={formData.technology_methodology} /> <HelpTooltip text="Key technologies, equipment, and methodologies to be used. Minimum 200 characters recommended." /></Label>
+              <CharacterSuggestion value={formData.technology_methodology} />
+            </div>
             <Textarea
               value={formData.technology_methodology || ''}
               onChange={e => updateField('technology_methodology', e.target.value)}
@@ -428,7 +460,10 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
             />
           </div>
           <div>
-            <Label>Technical Risks <FieldCheck value={formData.technical_risks} /> <HelpTooltip text="Key technical risks and proposed mitigation strategies." /></Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="mb-0">Technical Risks <FieldCheck value={formData.technical_risks} /> <HelpTooltip text="Key technical risks and proposed mitigation strategies. Minimum 200 characters recommended." /></Label>
+              <CharacterSuggestion value={formData.technical_risks} />
+            </div>
             <Textarea
               value={formData.technical_risks || ''}
               onChange={e => updateField('technical_risks', e.target.value)}
@@ -443,7 +478,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               onCheckedChange={v => updateField('has_technical_design', v)}
               disabled={isLocked}
             />
-            <Label>Technical design exists <FieldCheck value={formData.has_technical_design} /></Label>
+            <Label>Technical design exists <FieldCheck value={formData.has_technical_design} /> <HelpTooltip text="A technical design is a separate engineering document — such as drawings, specifications, or bills of quantities — that details how the project will be built. This is different from the feasibility study, which assesses whether the project is viable. Toggle this on if any level of technical design work has been completed." /></Label>
           </div>
           {formData.has_technical_design && (
             <>
@@ -485,46 +520,43 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               onCheckedChange={v => updateField('has_revenue_component', v)}
               disabled={isLocked}
             />
-            <Label>Project has revenue-generating component <FieldCheck value={formData.has_revenue_component} /></Label>
+            <Label>Project has revenue-generating component <FieldCheck value={formData.has_revenue_component} /> <HelpTooltip text="A revenue-generating component is any part of the project that is expected to produce income — for example, user fees, tolls, lease payments, or sales of goods and services. If the project will generate any direct income (not just economic benefits), toggle this on." /></Label>
           </div>
 
           {formData.has_revenue_component && (
             <>
               <div>
                 <Label>Revenue Sources <FieldCheck value={formData.revenue_sources} /> <HelpTooltip text="Select all applicable sources of revenue for this project." /></Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between font-normal" disabled={isLocked}>
-                      {(formData.revenue_sources || []).length > 0
-                        ? (formData.revenue_sources as string[]).join(', ')
-                        : 'Select revenue sources...'}
-                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[320px] p-3" align="start">
-                    <div className="space-y-2">
-                      {REVENUE_SOURCE_OPTIONS.map(option => {
-                        const selected = (formData.revenue_sources || []).includes(option);
-                        return (
-                          <label key={option} className="flex items-center gap-2 cursor-pointer text-sm">
-                            <Checkbox
-                              checked={selected}
-                              onCheckedChange={(checked) => {
-                                const current: string[] = formData.revenue_sources || [];
-                                if (checked) {
-                                  updateField('revenue_sources', [...current, option]);
-                                } else {
-                                  updateField('revenue_sources', current.filter((s: string) => s !== option));
-                                }
-                              }}
-                            />
-                            {option}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {REVENUE_SOURCE_OPTIONS.map(option => {
+                    const selected = (formData.revenue_sources || []).includes(option);
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        disabled={isLocked}
+                        onClick={() => {
+                          const current: string[] = formData.revenue_sources || [];
+                          if (selected) {
+                            updateField('revenue_sources', current.filter((s: string) => s !== option));
+                          } else {
+                            updateField('revenue_sources', [...current, option]);
+                          }
+                        }}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border transition-colors',
+                          selected
+                            ? 'bg-primary/10 border-primary/30 text-foreground'
+                            : 'bg-background border-border text-muted-foreground hover:bg-muted/50',
+                          isLocked && 'opacity-60 cursor-not-allowed',
+                        )}
+                      >
+                        {option}
+                        {selected && <span className="text-xs leading-none">×</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {(formData.revenue_sources || []).includes('Other') && (
@@ -545,7 +577,10 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
                 <FormattedNumberInput value={formData.projected_annual_users ?? null} onChange={v => updateField('projected_annual_users', v)} placeholder="e.g. 50,000" />
               </div>
               <div>
-                <Label>Market Assessment Summary <FieldCheck value={formData.market_assessment_summary} /> <HelpTooltip text="Summary of demand analysis, market conditions, and revenue projections." /></Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="mb-0">Market Assessment Summary <FieldCheck value={formData.market_assessment_summary} /> <HelpTooltip text="Summary of demand analysis, market conditions, and revenue projections. Minimum 200 characters recommended." /></Label>
+                  <CharacterSuggestion value={formData.market_assessment_summary} />
+                </div>
                 <Textarea
                   value={formData.market_assessment_summary || ''}
                   onChange={e => updateField('market_assessment_summary', e.target.value)}
@@ -572,7 +607,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
         <TabsContent value="environmental" className="space-y-4 mt-4" id="section-environmental">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Environmental Impact Level <FieldCheck value={formData.environmental_impact_level} /> <HelpTooltip text="The expected level of environmental impact from this project." /></Label>
+              <Label>Environmental Impact Level <FieldCheck value={formData.environmental_impact_level} /> <HelpTooltip text="Consider the scale and reversibility of effects on air, water, soil, biodiversity, and natural habitats. Category A means significant, irreversible impacts (e.g. large dams, deforestation). Category B means moderate, localised impacts that can be mitigated. Category C means minimal or no adverse environmental effects." /></Label>
               <Select value={formData.environmental_impact_level || ''} onValueChange={v => updateField('environmental_impact_level', v)} disabled={isLocked}>
                 <SelectTrigger className="text-left"><SelectValue placeholder="Select level..." /></SelectTrigger>
                 <SelectContent>
@@ -591,7 +626,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               </Select>
             </div>
             <div>
-              <Label>Social Impact Level <FieldCheck value={formData.social_impact_level} /> <HelpTooltip text="The expected level of social impact, including displacement and community effects." /></Label>
+              <Label>Social Impact Level <FieldCheck value={formData.social_impact_level} /> <HelpTooltip text="Consider effects on livelihoods, health, cultural heritage, indigenous peoples, and community cohesion. Category A means large-scale displacement, significant livelihood disruption, or impacts on vulnerable groups. Category B means localised or temporary effects on communities that can be managed. Category C means negligible social disruption." /></Label>
               <Select value={formData.social_impact_level || ''} onValueChange={v => updateField('social_impact_level', v)} disabled={isLocked}>
                 <SelectTrigger className="text-left"><SelectValue placeholder="Select level..." /></SelectTrigger>
                 <SelectContent>
@@ -613,7 +648,10 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
 
           {formData.environmental_impact_level && (
             <div>
-              <Label>Environmental Impact Description <FieldCheck value={formData.environmental_impact_description} /> <HelpTooltip text="Describe the expected environmental impacts and proposed mitigation measures." /></Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="mb-0">Environmental Impact Description <FieldCheck value={formData.environmental_impact_description} /> <HelpTooltip text="Describe the expected environmental impacts and proposed mitigation measures. Minimum 200 characters recommended." /></Label>
+                <CharacterSuggestion value={formData.environmental_impact_description} />
+              </div>
               <Textarea
                 value={formData.environmental_impact_description || ''}
                 onChange={e => updateField('environmental_impact_description', e.target.value)}
@@ -626,7 +664,10 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
 
           {formData.social_impact_level && (
             <div>
-              <Label>Social Impact Description <FieldCheck value={formData.social_impact_description} /> <HelpTooltip text="Describe the expected social impacts, affected communities, and mitigation measures." /></Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="mb-0">Social Impact Description <FieldCheck value={formData.social_impact_description} /> <HelpTooltip text="Describe the expected social impacts, affected communities, and mitigation measures. Minimum 200 characters recommended." /></Label>
+                <CharacterSuggestion value={formData.social_impact_description} />
+              </div>
               <Textarea
                 value={formData.social_impact_description || ''}
                 onChange={e => updateField('social_impact_description', e.target.value)}
@@ -639,18 +680,55 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
 
           <div className="flex items-center gap-3">
             <Switch checked={formData.land_acquisition_required || false} onCheckedChange={v => updateField('land_acquisition_required', v)} disabled={isLocked} />
-            <Label>Land acquisition required <FieldCheck value={formData.land_acquisition_required} /></Label>
+            <Label>Land acquisition required <FieldCheck value={formData.land_acquisition_required} /> <HelpTooltip text="Toggle this on if the project requires purchasing, leasing, or otherwise acquiring land that is not already owned or controlled by the implementing agency." /></Label>
           </div>
+
+          {formData.land_acquisition_required && (
+            <div className="pl-12 space-y-3">
+              <div>
+                <Label>Estimated Land Required (hectares) <FieldCheck value={formData.land_acquisition_hectares} /> <HelpTooltip text="Approximate total land area needed for the project." /></Label>
+                <FormattedNumberInput value={formData.land_acquisition_hectares ?? null} onChange={v => updateField('land_acquisition_hectares', v)} placeholder="e.g. 25" />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="mb-0">Land Acquisition Details <FieldCheck value={formData.land_acquisition_details} /> <HelpTooltip text="Provide further details on the land acquisition — location, current use, ownership, and any known issues. Minimum 200 characters recommended." /></Label>
+                  <CharacterSuggestion value={formData.land_acquisition_details} />
+                </div>
+                <Textarea
+                  value={formData.land_acquisition_details || ''}
+                  onChange={e => updateField('land_acquisition_details', e.target.value)}
+                  placeholder="Describe the land to be acquired, its location, current use, ownership status, and any anticipated challenges..."
+                  rows={3}
+                  disabled={isLocked}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <Switch checked={formData.resettlement_required || false} onCheckedChange={v => updateField('resettlement_required', v)} disabled={isLocked} />
-            <Label>Resettlement required <FieldCheck value={formData.resettlement_required} /></Label>
+            <Label>Resettlement required <FieldCheck value={formData.resettlement_required} /> <HelpTooltip text="Toggle this on if any people, households, or businesses will need to be physically relocated or will lose access to their land, resources, or livelihoods as a result of the project." /></Label>
           </div>
 
           {formData.resettlement_required && (
-            <div>
-              <Label>Estimated Affected Households <FieldCheck value={formData.estimated_affected_households} /> <HelpTooltip text="Number of households that may need to be resettled." /></Label>
-              <FormattedNumberInput value={formData.estimated_affected_households ?? null} onChange={v => updateField('estimated_affected_households', v)} placeholder="e.g. 150" />
+            <div className="pl-12 space-y-3">
+              <div>
+                <Label>Estimated Affected Households <FieldCheck value={formData.estimated_affected_households} /> <HelpTooltip text="Number of households that may need to be resettled." /></Label>
+                <FormattedNumberInput value={formData.estimated_affected_households ?? null} onChange={v => updateField('estimated_affected_households', v)} placeholder="e.g. 150" />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="mb-0">Resettlement Details <FieldCheck value={formData.resettlement_details} /> <HelpTooltip text="Provide further details on the resettlement — affected communities, proposed relocation sites, and compensation approach. Minimum 200 characters recommended." /></Label>
+                  <CharacterSuggestion value={formData.resettlement_details} />
+                </div>
+                <Textarea
+                  value={formData.resettlement_details || ''}
+                  onChange={e => updateField('resettlement_details', e.target.value)}
+                  placeholder="Describe the affected communities, scale of displacement, proposed relocation arrangements, and compensation plans..."
+                  rows={3}
+                  disabled={isLocked}
+                />
+              </div>
             </div>
           )}
 
@@ -698,14 +776,8 @@ export function ViabilityDecisionSidebar({ wizard }: { wizard: UseAppraisalWizar
   const hasData = refinedData.some((r: Record<string, number>) => (r.capex || 0) > 0 || (r.opex || 0) > 0 || (r.revenue || 0) > 0);
   const routing = determineFullRouting(firrResult?.firr ?? null, null, ndpAligned, hasData);
 
-  const routingBorderColor = routing.color === 'green' ? 'border-l-green-500'
-    : routing.color === 'blue' ? 'border-l-blue-500'
-    : routing.color === 'amber' ? 'border-l-amber-500'
-    : routing.color === 'red' ? 'border-l-red-500'
-    : 'border-l-muted-foreground';
-
   return (
-    <div className={cn('p-4 rounded-lg border-l-4 border shadow-lg bg-[#f6f5f3] border-[#5f7f7a]/20', routingBorderColor)}>
+    <div className="p-4 rounded-lg border shadow-lg bg-[#f6f5f3] border-[#5f7f7a]/20">
       <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Viability Decision</div>
       <div className="text-sm font-bold mb-1 text-foreground">
         {routing.label}

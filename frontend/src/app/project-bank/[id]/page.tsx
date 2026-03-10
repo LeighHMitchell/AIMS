@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
-  ArrowRight, ChevronRight, ChevronDown, ExternalLink, Plus, Calculator,
+  ArrowRight, ChevronRight, ChevronDown, ExternalLink, Plus, Calculator, Download,
   AlertTriangle, DollarSign, CheckCircle, XCircle, Clock,
   Building2, MapPin, Layers, FileText, User, Mail, Phone, Target, Globe, Briefcase,
 } from "lucide-react"
@@ -435,6 +435,9 @@ export default function ProjectDetailPage() {
               <TabsList className="mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="feasibility">Feasibility</TabsTrigger>
+                {project.documents && project.documents.length > 0 && (
+                  <TabsTrigger value="documents">Documents</TabsTrigger>
+                )}
                 {project.origin === 'unsolicited' && (
                   <TabsTrigger value="swiss-challenge">Swiss Challenge</TabsTrigger>
                 )}
@@ -549,21 +552,13 @@ export default function ProjectDetailPage() {
                     </div>
                   )}
 
-                  {/* Documents */}
+                  {/* Documents summary — link to Documents tab */}
                   {project.documents && project.documents.length > 0 && (
                     <div>
-                      <div className="text-xs text-muted-foreground mb-2">Documents</div>
-                      <div className="space-y-1.5">
-                        {project.documents.map((doc: any) => (
-                          <div key={doc.id} className="flex items-center gap-2 p-2 bg-muted/20 rounded-md">
-                            <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <div className="text-sm truncate">{doc.file_name}</div>
-                              <div className="text-[10px] text-muted-foreground">{DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <div className="text-xs text-muted-foreground mb-1">Documents</div>
+                      <p className="text-sm text-muted-foreground">
+                        {project.documents.length} document{project.documents.length !== 1 ? 's' : ''} uploaded — see the <button type="button" className="text-foreground underline underline-offset-2 hover:no-underline" onClick={() => { const el = document.querySelector('[data-value="documents"]') as HTMLButtonElement; el?.click(); }}>Documents tab</button> to view and download.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -610,7 +605,7 @@ export default function ProjectDetailPage() {
                   {(() => {
                     const p = project as any
                     const isConductor = p.fs_conductor_type === 'individual'
-                      ? (p.fs_conductor_individual_name || p.fs_conductor_individual_email || p.fs_conductor_individual_phone)
+                      ? (p.fs_conductor_individual_first_name || p.fs_conductor_individual_last_name || p.fs_conductor_individual_email || p.fs_conductor_individual_phone)
                       : p.fs_conductor_type === 'company'
                       ? (p.fs_conductor_company_name || p.fs_conductor_company_email || p.fs_conductor_company_phone)
                       : false
@@ -621,10 +616,10 @@ export default function ProjectDetailPage() {
                         <div className="rounded-lg border bg-muted/20 p-3 space-y-1.5">
                           {p.fs_conductor_type === 'individual' ? (
                             <>
-                              {p.fs_conductor_individual_name && (
+                              {(p.fs_conductor_individual_first_name || p.fs_conductor_individual_last_name) && (
                                 <div className="flex items-center gap-2">
                                   <User className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-sm font-medium">{p.fs_conductor_individual_name}</span>
+                                  <span className="text-sm font-medium">{[p.fs_conductor_individual_first_name, p.fs_conductor_individual_last_name].filter(Boolean).join(' ')}</span>
                                 </div>
                               )}
                               {p.fs_conductor_individual_job_title && (
@@ -660,10 +655,10 @@ export default function ProjectDetailPage() {
                                   <span className="text-sm font-medium">{p.fs_conductor_company_name}</span>
                                 </div>
                               )}
-                              {p.fs_conductor_contact_person && (
+                              {(p.fs_conductor_contact_person_first_name || p.fs_conductor_contact_person_last_name) && (
                                 <div className="flex items-center gap-2">
                                   <User className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="text-xs">{p.fs_conductor_contact_person}</span>
+                                  <span className="text-xs">{[p.fs_conductor_contact_person_first_name, p.fs_conductor_contact_person_last_name].filter(Boolean).join(' ')}</span>
                                 </div>
                               )}
                               {p.fs_conductor_company_address && (
@@ -1067,6 +1062,93 @@ export default function ProjectDetailPage() {
                   />
                 )}
               </TabsContent>
+
+              {/* Documents Tab */}
+              {project.documents && project.documents.length > 0 && (
+                <TabsContent value="documents" className="space-y-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      {(() => {
+                        const docs = project.documents as any[];
+                        const STAGE_LABELS: Record<string, string> = {
+                          intake: 'Project Intake',
+                          preliminary_fs: 'Preliminary Feasibility Study',
+                          detailed_fs: 'Detailed Feasibility Study',
+                          firr_assessment: 'Financial Analysis',
+                          eirr_assessment: 'Economic Analysis',
+                          ppp_structuring: 'PPP / VGF Structuring',
+                        };
+                        // Group by upload stage
+                        const grouped: Record<string, any[]> = {};
+                        docs.forEach(doc => {
+                          const stage = doc.upload_stage || 'other';
+                          if (!grouped[stage]) grouped[stage] = [];
+                          grouped[stage].push(doc);
+                        });
+                        const stageOrder = ['intake', 'preliminary_fs', 'detailed_fs', 'firr_assessment', 'eirr_assessment', 'ppp_structuring', 'other'];
+                        const sortedStages = Object.keys(grouped).sort((a, b) => {
+                          const ai = stageOrder.indexOf(a);
+                          const bi = stageOrder.indexOf(b);
+                          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+                        });
+
+                        return (
+                          <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-lg font-semibold">Project Documents</h3>
+                              <span className="text-sm text-muted-foreground">{docs.length} document{docs.length !== 1 ? 's' : ''}</span>
+                            </div>
+                            {sortedStages.map(stage => (
+                              <div key={stage}>
+                                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                                  {STAGE_LABELS[stage] || 'Other Documents'}
+                                </h4>
+                                <div className="space-y-1.5">
+                                  {grouped[stage].map((doc: any) => (
+                                    <div key={doc.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors group">
+                                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="text-sm font-medium truncate">{doc.file_name}</div>
+                                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                          <span>{DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}</span>
+                                          {doc.file_size && (
+                                            <>
+                                              <span>·</span>
+                                              <span>{doc.file_size >= 1048576 ? `${(doc.file_size / 1048576).toFixed(1)} MB` : `${Math.round(doc.file_size / 1024)} KB`}</span>
+                                            </>
+                                          )}
+                                          {doc.created_at && (
+                                            <>
+                                              <span>·</span>
+                                              <span>{new Date(doc.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {doc.signed_url && (
+                                        <a
+                                          href={doc.signed_url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          download={doc.file_name}
+                                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                                        >
+                                          <Download className="h-3.5 w-3.5" />
+                                          Download
+                                        </a>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
 
               {project.origin === 'unsolicited' && (
                 <TabsContent value="swiss-challenge">

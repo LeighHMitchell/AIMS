@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 import {
-  formatCurrency, formatCurrencyParts, fmtCost, SECTORS, PROJECT_STAGE_LABELS, PROJECT_STAGE_BADGE_STYLES,
+  formatCurrency, formatCurrencyParts, fmtCost, REGIONS, PROJECT_STAGE_LABELS, PROJECT_STAGE_BADGE_STYLES,
   CATEGORY_LABELS, determineCategoryRecommendation,
 } from "@/lib/project-bank-utils"
 import type { CategoryDecision } from "@/types/project-bank"
@@ -113,10 +113,10 @@ const CATEGORY_DECISIONS: DecisionOption[] = [
 /* ── Kanban columns config ─────────────────────────────── */
 
 const KANBAN_COLUMNS: { key: FS2ColumnKey; title: string; color: string }[] = [
-  { key: "pending", title: "Step 1: Pending Review", color: "bg-[#7b95a7]" },
+  { key: "pending", title: "Step 1: Pending Desk Review", color: "bg-[#7b95a7]" },
   { key: "desk_review", title: "Step 2: Desk Review", color: "bg-[#4c5568]" },
-  { key: "senior_review", title: "Step 3: Senior Review", color: "bg-[#3C6255]" },
-  { key: "categorized", title: "Step 4: Awaiting Categorization", color: "bg-[#cfd0d5]" },
+  { key: "senior_review", title: "Step 3: Pending Senior Review", color: "bg-[#3C6255]" },
+  { key: "categorized", title: "Step 4: Senior Review", color: "bg-[#cfd0d5]" },
 ]
 
 /* ── Table columns ─────────────────────────────────────── */
@@ -184,44 +184,69 @@ const TABLE_COLUMNS: ReviewTableColumn[] = [
 /* ── Kanban card ───────────────────────────────────────── */
 
 function FS2KanbanCard({ project, onClick }: { project: FS2ReviewProject; onClick: () => void }) {
+  const costParts = formatCurrencyParts(project.estimated_cost, project.currency)
   return (
     <div
       onClick={onClick}
-      className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow"
+      className="bg-card border border-border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow relative"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium truncate">{project.name}</p>
-            <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{project.project_code}</span>
+      {project.banner && (
+        <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none">
+          <img
+            src={project.banner}
+            alt=""
+            className="h-full w-full object-cover"
+            style={{ objectPosition: `center ${project.banner_position ?? 50}%`, maskImage: 'linear-gradient(to right, transparent, black 40%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 40%)' }}
+          />
+        </div>
+      )}
+      <div className="relative p-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium truncate">{project.name}</p>
+              <span className="font-mono text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded shrink-0">{project.project_code}</span>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+        </div>
+        <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+          <div>
+            <span>{project.nominating_ministry}</span>
+            {project.implementing_agency && (
+              <p className="text-muted-foreground/60 truncate">{project.implementing_agency}</p>
+            )}
+          </div>
+          <div>
+            <span>{project.sector}</span>
+            {project.sub_sector && (
+              <p className="text-muted-foreground/60 truncate">{project.sub_sector}</p>
+            )}
           </div>
         </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-      </div>
-      <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-        <div>
-          <span>{project.nominating_ministry}</span>
-          {project.implementing_agency && (
-            <p className="text-muted-foreground/60 truncate">{project.implementing_agency}</p>
+        {costParts && (
+          <div className="mt-1.5">
+            <span className="text-xs font-medium"><span className="text-muted-foreground">{costParts.prefix}</span> {costParts.amount}</span>
+          </div>
+        )}
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {new Date(project.updated_at).toLocaleDateString()}
+          </span>
+          {project.reviewer_name && (
+            <span className="text-[10px] text-muted-foreground bg-muted rounded px-1.5 py-0.5 truncate max-w-[120px]">
+              {project.reviewer_name}
+            </span>
           )}
         </div>
-        <div>
-          <span>{project.sector}</span>
-          {project.sub_sector && (
-            <p className="text-muted-foreground/60 truncate">{project.sub_sector}</p>
-          )}
-        </div>
-      </div>
-      <div className="mt-2">
-        <span className="text-xs text-muted-foreground">
-          {new Date(project.updated_at).toLocaleDateString()}
-        </span>
       </div>
     </div>
   )
 }
 
 /* ── Main component ────────────────────────────────────── */
+
+interface PBSector { id: string; code: string; name: string }
 
 export function FS2ReviewTab() {
   const router = useRouter()
@@ -230,6 +255,12 @@ export function FS2ReviewTab() {
   const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban")
   const [searchQuery, setSearchQuery] = useState("")
   const [sectorFilter, setSectorFilter] = useState("")
+  const [regionFilter, setRegionFilter] = useState("")
+  const [sectors, setSectors] = useState<PBSector[]>([])
+
+  useEffect(() => {
+    apiFetch('/api/pb-sectors').then(r => r.ok ? r.json() : []).then(setSectors).catch(() => {})
+  }, [])
 
   // Modal state
   const [selectedProject, setSelectedProject] = useState<FS2ReviewProject | null>(null)
@@ -244,12 +275,13 @@ export function FS2ReviewTab() {
     try {
       const params = new URLSearchParams()
       if (sectorFilter) params.set("sector", sectorFilter)
+      if (regionFilter) params.set("region", regionFilter)
       const res = await apiFetch(`/api/project-bank/review-board/fs2?${params}`)
       if (res.ok) setKanbanColumns(await res.json())
     } catch {} finally {
       setLoading(false)
     }
-  }, [sectorFilter])
+  }, [sectorFilter, regionFilter])
 
   useEffect(() => { fetchBoard() }, [fetchBoard])
 
@@ -368,12 +400,31 @@ export function FS2ReviewTab() {
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground">Sector</Label>
           <Select value={sectorFilter || "all"} onValueChange={v => setSectorFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-[160px] h-9">
+            <SelectTrigger className="w-[200px] h-9">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sectors</SelectItem>
-              {SECTORS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {sectors.map(s => (
+                <SelectItem key={s.id} value={s.name}>
+                  <span className="inline-flex items-center gap-2">
+                    {s.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.code}</span>}
+                    <span>{s.name}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Region</Label>
+          <Select value={regionFilter || "all"} onValueChange={v => setRegionFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-[160px] h-9">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Regions</SelectItem>
+              {REGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

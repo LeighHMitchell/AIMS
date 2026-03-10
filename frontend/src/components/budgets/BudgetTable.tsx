@@ -30,7 +30,6 @@ import { ColumnSelector } from "@/components/ui/column-selector";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { SortableTableHeader } from "@/components/ui/sortable-table-header";
-import { DndColumnProvider } from "@/components/ui/dnd-column-provider";
 import { useColumnOrder } from "@/hooks/use-column-order";
 import {
   BudgetColumnId,
@@ -330,9 +329,7 @@ export function BudgetTable({
                   </div>
                 )}
               </th>
-              <DndColumnProvider items={orderedVisibleColumns} onReorder={handleReorder}>
                 {orderedVisibleColumns.map((colId) => headerMap[colId])}
-              </DndColumnProvider>
               <th className="h-12 px-2 data-table-col-actions" />
             </TableRow>
           </TableHeader>

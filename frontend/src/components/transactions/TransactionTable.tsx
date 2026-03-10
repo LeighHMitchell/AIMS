@@ -51,7 +51,6 @@ import { TIED_STATUS_LABELS } from "@/types/transaction";
 import { TransactionColumnId } from "@/app/transactions/page";
 import { TransactionActionMenu } from "@/components/transactions/TransactionActionMenu";
 import { SortableTableHeader } from "@/components/ui/sortable-table-header";
-import { DndColumnProvider } from "@/components/ui/dnd-column-provider";
 import { useColumnOrder } from "@/hooks/use-column-order";
 import { transactionColumns, TRANSACTION_COLUMN_ORDER_LOCALSTORAGE_KEY } from "@/app/transactions/columns";
 
@@ -644,7 +643,6 @@ export function TransactionTable({
                 </div>
               )}
             </th>
-            <DndColumnProvider items={orderedDraggableColumns} onReorder={handleReorder}>
               {orderedDraggableColumns.map((colId) => {
                 const txHeaderMap: Record<string, React.ReactNode> = {
                   activity: variant === "full" ? (
@@ -707,7 +705,6 @@ export function TransactionTable({
                 };
                 return txHeaderMap[colId] || null;
               })}
-            </DndColumnProvider>
             {/* Actions - always visible, no header text */}
             <th className="h-12 px-2 data-table-col-actions" />
           </TableRow>
