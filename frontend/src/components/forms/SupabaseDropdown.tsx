@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import {
   Select,
   SelectContent,
@@ -36,8 +36,6 @@ interface SupabaseDropdownProps {
   placeholder?: string;
   className?: string;
   onValueChange?: (value: string) => void;
-  supabaseUrl?: string;
-  supabaseAnonKey?: string;
 }
 
 export function SupabaseDropdown({
@@ -51,16 +49,11 @@ export function SupabaseDropdown({
   placeholder = "Select an option",
   className,
   onValueChange,
-  supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 }: SupabaseDropdownProps) {
   const [value, setValue] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Initialize Supabase client
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   // Fetch initial value on mount
   useEffect(() => {
@@ -93,7 +86,7 @@ export function SupabaseDropdown({
     if (rowId && table && column) {
       fetchInitialValue();
     }
-  }, [rowId, table, column, supabase, label]);
+  }, [rowId, table, column, label]);
 
   // Handle value change and update Supabase
   const handleValueChange = async (newValue: string) => {

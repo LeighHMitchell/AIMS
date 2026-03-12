@@ -49,16 +49,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updateData.is_active = isActive;
     }
 
-    if (responsibleMinistries !== undefined) {
-      const ministriesJson = Array.isArray(responsibleMinistries)
-        ? responsibleMinistries.map((m: { id: string; code: string; name: string }) => ({
-            id: m.id,
-            code: m.code,
-            name: m.name,
-          }))
-        : [];
-      updateData.responsible_ministries = ministriesJson;
-    }
+    // responsibleMinistries handled via junction table below, not on main table
 
     if (acronym !== undefined) {
       updateData.acronym = acronym?.trim() || null;

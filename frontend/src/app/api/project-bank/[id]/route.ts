@@ -70,6 +70,24 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const body = await request.json();
 
+  // Verify ownership or privileged role before allowing edits
+  const [{ data: project }, { data: dbUser }] = await Promise.all([
+    supabase!.from('project_bank_projects').select('created_by').eq('id', id).single(),
+    supabase!.from('users').select('role').eq('id', user!.id).single(),
+  ]);
+
+  if (!project) {
+    return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  }
+
+  const privilegedRoles = ['admin', 'super_admin', 'super_user', 'gov_partner_tier_1'];
+  const isOwner = project.created_by === user!.id;
+  const isPrivileged = dbUser && privilegedRoles.includes(dbUser.role);
+
+  if (!isOwner && !isPrivileged) {
+    return NextResponse.json({ error: 'You do not have permission to edit this project' }, { status: 403 });
+  }
+
   const updateData: Record<string, any> = {
     updated_at: new Date().toISOString(),
     updated_by: user!.id,

@@ -20,15 +20,29 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid phase — must be "intake", "fs1", "fs2", or "fs3"' }, { status: 400 });
   }
 
-  // Verify project is in correct stage for submission
+  // Verify project exists and check ownership/role
   const { data: project, error: projectError } = await supabase!
     .from('project_bank_projects')
-    .select('project_stage, name, nominating_ministry, sector, fs2_study_data')
+    .select('project_stage, name, nominating_ministry, sector, fs2_study_data, created_by')
     .eq('id', id)
     .single();
 
   if (projectError || !project) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  }
+
+  const { data: dbUser } = await supabase!
+    .from('users')
+    .select('role')
+    .eq('id', user!.id)
+    .single();
+
+  const privilegedRoles = ['admin', 'super_admin', 'super_user', 'gov_partner_tier_1'];
+  const isOwner = project.created_by === user!.id;
+  const isPrivileged = dbUser && privilegedRoles.includes(dbUser.role);
+
+  if (!isOwner && !isPrivileged) {
+    return NextResponse.json({ error: 'You do not have permission to submit this project' }, { status: 403 });
   }
 
   const validSubmitStages: Record<string, string[]> = {

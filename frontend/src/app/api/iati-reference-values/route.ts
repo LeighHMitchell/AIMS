@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-simple';
+import { createSupabaseClient } from '@/lib/supabase-simple';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const fieldName = searchParams.get('field_name');
     
-    const supabase = createClient();
+    const supabase = createSupabaseClient();
     
     if (!supabase) {
       console.warn('Failed to connect to database, using fallback data');

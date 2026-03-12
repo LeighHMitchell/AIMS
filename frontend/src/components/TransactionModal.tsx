@@ -325,6 +325,7 @@ interface TransactionModalProps {
   isSubmitting?: boolean;
   geographyLevel?: 'activity' | 'transaction'; // Whether geography is set at activity or transaction level
   activitySectors?: ActivitySector[]; // Sectors defined at activity level
+  isPooledFund?: boolean; // Whether the parent activity is a pooled fund
 }
 
 export default function TransactionModal({
@@ -344,7 +345,8 @@ export default function TransactionModal({
   defaultModalityOverride = false,
   isSubmitting,
   geographyLevel = 'activity',
-  activitySectors = []
+  activitySectors = [],
+  isPooledFund = false
 }: TransactionModalProps) {
   const { partners } = usePartners();
   const { participatingOrganizations } = useParticipatingOrganizations({ activityId });
@@ -1006,6 +1008,21 @@ export default function TransactionModal({
       isSubmittingRef.current = false;
       return;
     }
+
+    // Pooled fund: warn if outgoing transaction is not linked to a child activity
+    if (isPooledFund) {
+      const txType = submissionData.transaction_type?.toString();
+      if (['2', '3', '4'].includes(txType || '') && !submissionData.receiver_activity_uuid) {
+        toast.warning("This disbursement isn't linked to a child activity. It will be counted in portfolio totals, which may cause double-counting.", {
+          duration: 8000,
+        });
+      } else if (['1', '11', '13'].includes(txType || '') && !submissionData.provider_activity_uuid) {
+        toast.warning("This incoming transaction isn't linked to a provider activity. It will be counted in portfolio totals, which may cause double-counting.", {
+          duration: 8000,
+        });
+      }
+    }
+
     try {
       let response;
       
@@ -1872,8 +1889,8 @@ export default function TransactionModal({
               </div>
 
               {/* Provider Organization Activity ID */}
-              <div className="space-y-2">
-                <LabelWithInfoAndSave 
+              <div className={`space-y-2 ${isPooledFund && ['1', '11', '13'].includes(formData.transaction_type || '') ? 'rounded-lg border-2 border-amber-400 bg-amber-50/50 p-3' : ''}`}>
+                <LabelWithInfoAndSave
                   helpText="Link to the IATI activity of the provider organization"
                   isSaving={providerActivityAutosave.isSaving}
                   isSaved={providerActivityAutosave.isSaved}
@@ -1881,7 +1898,10 @@ export default function TransactionModal({
                 >
                   Provider Activity
                 </LabelWithInfoAndSave>
-                
+                {isPooledFund && ['1', '11', '13'].includes(formData.transaction_type || '') && !formData.provider_activity_uuid && (
+                  <p className="text-xs text-amber-700 font-medium">Link to provider activity to avoid double-counting in reports</p>
+                )}
+
                 {/* Show warning UI if IATI reference exists but not linked to database */}
                 {formData.provider_org_activity_id && !formData.provider_activity_uuid ? (
                   <div className="space-y-2">
@@ -2076,8 +2096,8 @@ export default function TransactionModal({
               </div>
 
               {/* Receiver Organization Activity ID */}
-              <div className="space-y-2">
-                <LabelWithInfoAndSave 
+              <div className={`space-y-2 ${isPooledFund && ['2', '3', '4'].includes(formData.transaction_type || '') ? 'rounded-lg border-2 border-amber-400 bg-amber-50/50 p-3' : ''}`}>
+                <LabelWithInfoAndSave
                   helpText="Link to the IATI activity of the receiver organization"
                   isSaving={receiverActivityAutosave.isSaving}
                   isSaved={receiverActivityAutosave.isSaved}
@@ -2085,6 +2105,9 @@ export default function TransactionModal({
                 >
                   Receiver Activity
                 </LabelWithInfoAndSave>
+                {isPooledFund && ['2', '3', '4'].includes(formData.transaction_type || '') && !formData.receiver_activity_uuid && (
+                  <p className="text-xs text-amber-700 font-medium">Link to child activity to avoid double-counting in reports</p>
+                )}
                 
                 {/* Show warning UI if IATI reference exists but not linked to database */}
                 {formData.receiver_org_activity_id && !formData.receiver_activity_uuid ? (

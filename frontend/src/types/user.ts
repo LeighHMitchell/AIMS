@@ -79,6 +79,7 @@ export interface User {
   authProvider?: 'email' | 'google' | 'apple'; // How the user authenticates
   createdAt: string;
   updatedAt: string;
+  onboardingCompleted?: boolean;
   createdBy?: string;
   reportedByOrgId?: string;
 }

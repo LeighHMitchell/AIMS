@@ -117,12 +117,13 @@ function TreeNode({
           )}
         </button>
 
-        {/* Code + Name */}
+        {/* Code + Name + Acronym */}
         <span className="text-sm flex-[3] min-w-0 break-words">
           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded inline-block mr-2 align-middle">
             {node.code}
           </span>
           {node.name}
+          {node.acronym && <span className="ml-1">({node.acronym})</span>}
         </span>
 
         {/* Local Name */}
@@ -225,6 +226,7 @@ export function BudgetClassificationsManagement() {
   const [formData, setFormData] = useState<BudgetClassificationFormData>({
     code: "",
     name: "",
+    acronym: "",
     nameLocal: "",
     description: "",
     classificationType: "functional",
@@ -313,6 +315,7 @@ export function BudgetClassificationsManagement() {
     setFormData({
       code: "",
       name: "",
+      acronym: "",
       nameLocal: "",
       description: "",
       classificationType: parent?.classificationType || "functional",
@@ -330,6 +333,7 @@ export function BudgetClassificationsManagement() {
     setFormData({
       code: item.code,
       name: item.name,
+      acronym: item.acronym || "",
       nameLocal: item.nameLocal || "",
       description: item.description || "",
       classificationType: item.classificationType,
@@ -807,6 +811,19 @@ export function BudgetClassificationsManagement() {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 placeholder="e.g., Health"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="acronym">Acronym</Label>
+              <Input
+                id="acronym"
+                value={formData.acronym || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, acronym: e.target.value })
+                }
+                placeholder="e.g., MoE"
+                maxLength={20}
               />
             </div>
 

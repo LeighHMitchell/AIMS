@@ -4,6 +4,9 @@ import { User, UserRole, UserPermissions, getUserPermissions, USER_ROLES, Organi
 import { useRouter } from "next/navigation";
 import { supabase } from '@/lib/supabase';
 import { apiFetch } from '@/lib/api-fetch';
+import dynamic from "next/dynamic";
+
+const OnboardingModal = dynamic(() => import("@/components/onboarding/OnboardingModal"), { ssr: false });
 
 interface UserContextType {
   user: User | null;
@@ -28,6 +31,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null); // Always start with null to prevent hydration mismatches
   const [isLoading, setIsLoading] = useState(true); // Start with loading true
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const router = useRouter();
 
   // Load user from localStorage and setup Supabase auth listener
@@ -36,7 +40,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (storedUser) {
       try {
         console.log("[useUser] Found stored user after mount");
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed);
+        if (parsed.onboardingCompleted === false) {
+          setShowOnboarding(true);
+        }
       } catch (error) {
         console.error('[useUser] Failed to parse stored user:', error);
         localStorage.removeItem('aims_user');
@@ -144,8 +152,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const handleSetUser = (newUser: User | null) => {
     if (newUser) {
       localStorage.setItem('aims_user', JSON.stringify(newUser));
+      // Show onboarding if user hasn't completed it
+      if (newUser.onboardingCompleted === false) {
+        setShowOnboarding(true);
+      }
     } else {
       localStorage.removeItem('aims_user');
+      setShowOnboarding(false);
     }
     setUser(newUser);
   };
@@ -190,9 +203,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
+  const handleOnboardingComplete = (updatedUser: User) => {
+    handleSetUser(updatedUser);
+    setShowOnboarding(false);
+  };
+
   return (
     <UserContext.Provider value={{ user, permissions, setUser: handleSetUser, refreshUser, logout, isLoading }}>
       {children}
+      {showOnboarding && user && (
+        <OnboardingModal user={user} onComplete={handleOnboardingComplete} />
+      )}
     </UserContext.Provider>
   );
 }

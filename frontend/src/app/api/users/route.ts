@@ -109,7 +109,8 @@ export async function GET(request: NextRequest) {
       city: user.city,
       stateProvince: user.state_province,
       country: user.country,
-      postalCode: user.postal_code
+      postalCode: user.postal_code,
+      onboardingCompleted: user.onboarding_completed,
     });
 
     const transformedData = Array.isArray(data)
@@ -189,7 +190,7 @@ export async function POST(request: NextRequest) {
     // Create auth user first
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
-      password: body.password || `TempPass${Date.now()}!`,
+      password: body.password || (crypto.randomUUID() + '!Aa1'),
       email_confirm: true,
     });
 
@@ -382,7 +383,7 @@ export async function PUT(request: NextRequest) {
       'telephone', 'website', 'mailing_address', 'avatar_url',
       'contact_type', 'fax_number', 'notes',
       'address_line_1', 'address_line_2', 'city', 'state_province', 'country', 'postal_code',
-      'default_activity_columns'
+      'default_activity_columns', 'onboarding_completed'
     ];
 
     for (const field of allowedFields) {
@@ -510,7 +511,8 @@ export async function PUT(request: NextRequest) {
       city: data.city,
       stateProvince: data.state_province,
       country: data.country,
-      postalCode: data.postal_code
+      postalCode: data.postal_code,
+      onboardingCompleted: data.onboarding_completed,
     };
 
     return NextResponse.json(transformedData);

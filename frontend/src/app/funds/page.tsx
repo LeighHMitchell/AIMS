@@ -266,10 +266,10 @@ export default function FundsPage() {
               return (
                 <Card
                   key={fund.id}
-                  className="border border-gray-300 rounded-lg relative overflow-hidden"
+                  className="bg-card border border-border hover:border-border hover:shadow-lg transition-all duration-300 ease-in-out shadow-sm rounded-lg relative"
                 >
                   {fund.banner && (
-                    <div className="relative h-32 w-full overflow-hidden">
+                    <div className="relative h-32 w-full overflow-hidden rounded-t-lg">
                       <img
                         src={fund.banner}
                         alt=""
@@ -510,10 +510,10 @@ export default function FundsPage() {
                     <div className="mb-3">
                       <p className="text-xs text-muted-foreground mb-1">Fund Flow</p>
                       <FundFlowSankey
-                        fundTitle={fund.title}
+                        fundTitle={fund.acronym ? `${fund.title} (${fund.acronym})` : fund.title}
                         topDonors={fund.topDonors}
                         topChildFlows={fund.childFlows}
-                        height={120}
+                        height={150}
                         className="w-full"
                       />
                     </div>

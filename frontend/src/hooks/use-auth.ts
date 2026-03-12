@@ -8,6 +8,6 @@ export function useAuth() {
     loading: isLoading,
     error: null,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAdmin: user?.role === 'super_user' || user?.role === 'admin',
   }
 } 

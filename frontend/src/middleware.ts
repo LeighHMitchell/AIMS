@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
+const ALLOWED_ORIGINS = new Set(
+  (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3000')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean)
+)
+
+function isOriginAllowed(origin: string | null): boolean {
+  if (!origin) return false
+  return ALLOWED_ORIGINS.has(origin)
+}
+
 export async function middleware(request: NextRequest) {
   // Create a response that we can modify
   let response = NextResponse.next({
@@ -56,17 +68,28 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Handle CORS for all API routes
+  // Handle CORS for all API routes — only allow configured origins
   if (isApiRoute) {
+    const origin = request.headers.get('origin')
+    const allowedOrigin = isOriginAllowed(origin) ? origin! : ''
+
     if (request.method === 'OPTIONS') {
       const corsResponse = new NextResponse(null, { status: 200 });
-      corsResponse.headers.set('Access-Control-Allow-Origin', '*');
+      if (allowedOrigin) {
+        corsResponse.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+        corsResponse.headers.set('Access-Control-Allow-Credentials', 'true');
+        corsResponse.headers.set('Vary', 'Origin');
+      }
       corsResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       corsResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
       return corsResponse;
     }
 
-    response.headers.set('Access-Control-Allow-Origin', '*');
+    if (allowedOrigin) {
+      response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      response.headers.set('Vary', 'Origin');
+    }
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
   }

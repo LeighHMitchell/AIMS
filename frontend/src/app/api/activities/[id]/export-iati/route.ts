@@ -29,9 +29,11 @@ interface Transaction {
   provider_org_name?: string;
   provider_org_ref?: string;
   provider_org_type?: string;
+  provider_activity_ref?: string;
   receiver_org_name?: string;
   receiver_org_ref?: string;
   receiver_org_type?: string;
+  receiver_activity_ref?: string;
   aid_type?: string;
   aid_type_vocabulary?: string;
   flow_type?: string;
@@ -79,11 +81,43 @@ export async function GET(
       );
     }
 
-    // Fetch related activities
-    const { data: relatedActivities } = await supabase
+    // Fetch related activities from the legacy related_activities table (stores external IATI identifiers)
+    const { data: legacyRelatedActivities } = await supabase
       .from('related_activities')
       .select('relationship_type, iati_identifier')
       .eq('source_activity_id', id);
+
+    // Also fetch from activity_relationships (used by pooled fund UI and Linked Activities tab)
+    // Join to activities to resolve their IATI identifiers
+    const { data: activityRelationships } = await supabase
+      .from('activity_relationships')
+      .select(`
+        relationship_type,
+        activities!related_activity_id (
+          iati_identifier,
+          iati_id
+        )
+      `)
+      .eq('activity_id', id);
+
+    // Merge both sources, deduplicating by IATI identifier
+    const relatedActivitiesMap = new Map<string, RelatedActivity>();
+    for (const r of (legacyRelatedActivities || [])) {
+      if (r.iati_identifier) {
+        relatedActivitiesMap.set(r.iati_identifier, r);
+      }
+    }
+    for (const r of (activityRelationships || [])) {
+      const linked = r.activities as any;
+      const iatiId = linked?.iati_identifier || linked?.iati_id;
+      if (iatiId) {
+        relatedActivitiesMap.set(iatiId, {
+          relationship_type: r.relationship_type,
+          iati_identifier: iatiId,
+        });
+      }
+    }
+    const relatedActivities = Array.from(relatedActivitiesMap.values());
 
     // Fetch participating organizations
     const { data: contributors } = await supabase
@@ -101,13 +135,38 @@ export async function GET(
       .eq('activity_id', id);
 
     // Fetch transactions
-    const { data: transactions } = await supabase
+    const { data: rawTransactions } = await supabase
       .from('transactions')
       .select('*')
       .eq('activity_id', id);
 
+    // Resolve provider_activity_uuid and receiver_activity_uuid to IATI identifiers
+    const linkedUuids = new Set<string>();
+    for (const t of (rawTransactions || [])) {
+      if (t.provider_activity_uuid) linkedUuids.add(t.provider_activity_uuid);
+      if (t.receiver_activity_uuid) linkedUuids.add(t.receiver_activity_uuid);
+    }
+    const activityRefMap: Record<string, string> = {};
+    if (linkedUuids.size > 0) {
+      const { data: linkedActivities } = await supabase
+        .from('activities')
+        .select('id, iati_identifier, iati_id')
+        .in('id', Array.from(linkedUuids));
+      for (const a of (linkedActivities || [])) {
+        const iatiId = a.iati_identifier || a.iati_id;
+        if (iatiId) activityRefMap[a.id] = iatiId;
+      }
+    }
+
+    // Annotate transactions with resolved activity-ref values
+    const transactions: Transaction[] = (rawTransactions || []).map((t: any) => ({
+      ...t,
+      provider_activity_ref: t.provider_activity_uuid ? activityRefMap[t.provider_activity_uuid] : undefined,
+      receiver_activity_ref: t.receiver_activity_uuid ? activityRefMap[t.receiver_activity_uuid] : undefined,
+    }));
+
     // Build XML
-    const xml = buildIATIXML(activity, relatedActivities || [], contributors || [], transactions || []);
+    const xml = buildIATIXML(activity, relatedActivities, contributors || [], transactions);
 
     // Return XML with proper content type
     return new NextResponse(xml, {
@@ -152,9 +211,14 @@ function buildIATIXML(
     'implementing': '4'
   };
 
+  // IATI hierarchy: pooled funds are hierarchy=1 (parent), child activities are hierarchy=2.
+  // Fall back to the stored hierarchy column, then to 1 as the default for standard activities.
+  const hierarchyValue = activity.hierarchy ?? (activity.is_pooled_fund ? 1 : undefined);
+  const hierarchyAttr = hierarchyValue != null ? ` hierarchy="${hierarchyValue}"` : '';
+
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <iati-activities version="2.03" generated-datetime="${new Date().toISOString()}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://iatistandard.org/203/schema/downloads/iati-activities-schema.xsd">
-  <iati-activity last-updated-datetime="${activity.updated_at || new Date().toISOString()}" xml:lang="en" default-currency="${activity.default_currency || 'USD'}">`;
+  <iati-activity last-updated-datetime="${activity.updated_at || new Date().toISOString()}" xml:lang="en" default-currency="${activity.default_currency || 'USD'}"${hierarchyAttr}>`;
 
   // IATI Identifier
   if (activity.iati_id) {
@@ -266,11 +330,12 @@ function buildIATIXML(
       </description>`;
     }
 
-    if (trans.provider_org_name || trans.provider_org_ref) {
+    if (trans.provider_org_name || trans.provider_org_ref || trans.provider_activity_ref) {
       xml += `
       <provider-org`;
       if (trans.provider_org_ref) xml += ` ref="${escapeXml(trans.provider_org_ref)}"`;
       if (trans.provider_org_type) xml += ` type="${trans.provider_org_type}"`;
+      if (trans.provider_activity_ref) xml += ` provider-activity-id="${escapeXml(trans.provider_activity_ref)}"`;
       xml += `>`;
       if (trans.provider_org_name) {
         xml += `
@@ -280,11 +345,12 @@ function buildIATIXML(
       </provider-org>`;
     }
 
-    if (trans.receiver_org_name || trans.receiver_org_ref) {
+    if (trans.receiver_org_name || trans.receiver_org_ref || trans.receiver_activity_ref) {
       xml += `
       <receiver-org`;
       if (trans.receiver_org_ref) xml += ` ref="${escapeXml(trans.receiver_org_ref)}"`;
       if (trans.receiver_org_type) xml += ` type="${trans.receiver_org_type}"`;
+      if (trans.receiver_activity_ref) xml += ` receiver-activity-id="${escapeXml(trans.receiver_activity_ref)}"`;
       xml += `>`;
       if (trans.receiver_org_name) {
         xml += `

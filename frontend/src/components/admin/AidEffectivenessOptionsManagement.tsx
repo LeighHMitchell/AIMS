@@ -109,16 +109,27 @@ function FlexibleDateInput({
   const year = dateValue ? new Date(dateValue + "T00:00:00").getFullYear().toString() : "";
   const month = dateValue ? String(new Date(dateValue + "T00:00:00").getMonth() + 1).padStart(2, "0") : "";
 
+  const [yearInput, setYearInput] = React.useState(year);
+  React.useEffect(() => { setYearInput(year); }, [year]);
+
   const setYear = (y: string) => {
+    setYearInput(y);
     const yr = parseInt(y) || 0;
-    if (yr < 1900 || yr > 2100) { onDateChange(""); return; }
-    onDateChange(`${yr}-01-01`);
+    if (yr >= 1900 && yr <= 2100) {
+      onDateChange(`${yr}-01-01`);
+    } else if (y === "") {
+      onDateChange("");
+    }
   };
 
   const setMonthYear = (m: string, y: string) => {
+    setYearInput(y);
     const yr = parseInt(y) || 0;
-    if (yr < 1900 || yr > 2100) { onDateChange(""); return; }
-    onDateChange(`${yr}-${m}-01`);
+    if (yr >= 1900 && yr <= 2100) {
+      onDateChange(`${yr}-${m}-01`);
+    } else if (y === "") {
+      onDateChange("");
+    }
   };
 
   return (
@@ -143,7 +154,7 @@ function FlexibleDateInput({
           min={1900}
           max={2100}
           placeholder="e.g. 2025"
-          value={year}
+          value={yearInput}
           onChange={(e) => setYear(e.target.value)}
           className="w-28"
         />
@@ -165,7 +176,7 @@ function FlexibleDateInput({
             min={1900}
             max={2100}
             placeholder="Year"
-            value={year}
+            value={yearInput}
             onChange={(e) => setMonthYear(month || "01", e.target.value)}
             className="w-28"
           />
@@ -352,7 +363,8 @@ export function AidEffectivenessOptionsManagement() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to save option");
+        const msg = result.details ? `${result.error}: ${result.details}` : result.error;
+        throw new Error(msg || "Failed to save option");
       }
 
       toast.success(
@@ -462,7 +474,12 @@ export function AidEffectivenessOptionsManagement() {
                 <div className="flex items-center gap-2">
                   <span className="font-medium truncate">
                     {option.label}
-                    {option.acronym && <span className="text-muted-foreground"> ({option.acronym})</span>}
+                    {(option.start_date || option.end_date) && (
+                      <> {formatDateWithPrecision(option.start_date, option.start_date_precision)}
+                      {option.start_date && option.end_date ? "–" : ""}
+                      {formatDateWithPrecision(option.end_date, option.end_date_precision)}</>
+                    )}
+                    {option.acronym && ` (${option.acronym})`}
                   </span>
                   {!option.is_active && (
                     <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-full">
@@ -470,13 +487,6 @@ export function AidEffectivenessOptionsManagement() {
                     </span>
                   )}
                 </div>
-                {(option.start_date || option.end_date) && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {formatDateWithPrecision(option.start_date, option.start_date_precision)}
-                    {option.start_date && option.end_date ? " – " : ""}
-                    {formatDateWithPrecision(option.end_date, option.end_date_precision)}
-                  </p>
-                )}
                 {option.description && (
                   <p className="text-sm text-muted-foreground mt-0.5 truncate">
                     {option.description}

@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import {
   Plus, Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown,
-  MoreVertical, ListTodo,
+  MoreVertical, ListTodo, Copy, Check,
 } from "lucide-react"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { toast } from "sonner"
 import { apiFetch } from "@/lib/api-fetch"
 import { useUser } from "@/hooks/useUser"
 import {
@@ -123,6 +124,15 @@ export default function ProjectListPage() {
   const [perPage, setPerPage] = useState(20)
   const [sortField, setSortField] = useState<string>("created_at")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const copyToClipboard = (text: string, field: string, projectId: string) => {
+    navigator.clipboard.writeText(text)
+    const key = `${projectId}-${field}`
+    setCopiedId(key)
+    toast.success(`Copied to clipboard`)
+    setTimeout(() => setCopiedId(prev => prev === key ? null : prev), 2000)
+  }
   useEffect(() => {
     async function fetchProjects() {
       try {
@@ -222,7 +232,7 @@ export default function ProjectListPage() {
     </th>
   )
 
-  const colCount = 14
+  const colCount = 15
 
   return (
     <MainLayout>
@@ -351,6 +361,7 @@ export default function ProjectListPage() {
                   <SortHeader field="eirr" className="text-right" tight>EIRR</SortHeader>
                   <SortHeader field="vgf_amount" className="text-right" tight>VGF</SortHeader>
                   <SortHeader field="latest_score" className="text-right" tight>Score</SortHeader>
+                  <SortHeader field="created_at" tight>Date Added</SortHeader>
                   <SortHeader field="project_stage" tight>Pipeline Stage</SortHeader>
                   <SortHeader field="pathway" tight>Pathway</SortHeader>
                   <SortHeader field="funding_gap" className="text-right" tight>Gap</SortHeader>
@@ -390,10 +401,46 @@ export default function ProjectListPage() {
                     >
                       {/* Project Code + Name merged */}
                       <td className="px-3 py-2 min-w-[200px]">
-                        <span className="text-sm font-medium text-foreground">{p.name}</span>
-                        {p.project_code && (
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-2">{p.project_code}</span>
-                        )}
+                        <div className="space-y-1">
+                          <div className="group/title flex items-start gap-1">
+                            <span className="text-sm font-medium text-foreground leading-tight">{p.name}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                e.preventDefault()
+                                copyToClipboard(p.name, 'name', p.id)
+                              }}
+                              className="flex-shrink-0 mt-0.5 opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 hover:text-gray-700"
+                              title="Copy Project Title"
+                            >
+                              {copiedId === `${p.id}-name` ? (
+                                <Check className="w-3 h-3 text-green-500" />
+                              ) : (
+                                <Copy className="w-3 h-3 text-muted-foreground" />
+                              )}
+                            </button>
+                          </div>
+                          {p.project_code && (
+                            <div className="group/code flex items-center gap-1 whitespace-nowrap">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{p.project_code}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  e.preventDefault()
+                                  copyToClipboard(p.project_code, 'code', p.id)
+                                }}
+                                className="opacity-0 group-hover/code:opacity-100 transition-opacity duration-200 hover:text-gray-700 flex-shrink-0"
+                                title="Copy Project ID"
+                              >
+                                {copiedId === `${p.id}-code` ? (
+                                  <Check className="w-3 h-3 text-green-500" />
+                                ) : (
+                                  <Copy className="w-3 h-3 text-muted-foreground" />
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </td>
                       {/* Ministry */}
                       <td className="px-3 py-2 text-sm text-foreground min-w-[140px]">
@@ -445,6 +492,10 @@ export default function ProjectListPage() {
                             {Number((p as any).latest_score).toFixed(0)}
                           </span>
                         ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* Date Added */}
+                      <td className="px-2 py-2 text-sm text-muted-foreground whitespace-nowrap">
+                        {p.created_at ? new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                       </td>
                       {/* Pipeline Stage */}
                       <td className="px-2 py-2">

@@ -278,6 +278,25 @@ export function EnhancedFinancesSection({
 
         {/* Default Values Tab */}
         <TabsContent value="defaults" className="space-y-4">
+          {/* Pooled fund aid type guidance */}
+          {general?.is_pooled_fund === true && !general?.defaultAidType?.match(/^B0/) && (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <span className="mt-0.5 shrink-0 text-amber-500">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+              </span>
+              <div>
+                <p className="font-medium">Set a pooled fund aid type for IATI compliance</p>
+                <p className="mt-1 text-amber-700">
+                  This is marked as a pooled fund. The IATI standard expects a B-category aid type such as{' '}
+                  <strong>B04</strong> (Basket funds / pooled funding),{' '}
+                  <strong>B031</strong> (Multi-donor/multi-entity), or{' '}
+                  <strong>B032</strong> (Multi-donor/single-entity). Select one below under Default Aid Type.
+                </p>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Default Fields */}
             <div className="lg:col-span-2 space-y-4">
@@ -482,6 +501,7 @@ export function EnhancedFinancesSection({
             initialTransactionId={initialTransactionId}
             geographyLevel={geographyLevel}
             activitySectors={activitySectors}
+            isPooledFund={general?.is_pooled_fund === true}
           />
         </TabsContent>
 

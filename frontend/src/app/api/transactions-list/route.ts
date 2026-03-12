@@ -68,6 +68,8 @@ export async function GET(request: NextRequest) {
         finance_type,
         flow_type,
         aid_type,
+        provider_activity_uuid,
+        receiver_activity_uuid,
         created_at
       `, { count: 'exact' });
 

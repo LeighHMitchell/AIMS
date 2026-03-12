@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
-  console.log('[Auth Change Password] Starting request');
-  
   try {
-    const supabase = getSupabaseAdmin();
+    const { supabase, user, response: authResponse } = await requireAuth();
+    if (authResponse) return authResponse;
     
-    if (!supabase) {
-      console.error('[Auth Change Password] Supabase client not initialized');
-      return NextResponse.json(
-        { error: 'Database connection not available' },
-        { status: 503 }
-      );
-    }
-    
-    const { currentPassword, newPassword, userId } = await request.json();
+    const { currentPassword, newPassword } = await request.json();
     
     if (!currentPassword || !newPassword) {
       return NextResponse.json(
@@ -31,19 +23,9 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Get the current user from the session
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      );
-    }
-    
-    // Verify current password by attempting to sign in
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user.email!,
+    // Verify current password by attempting to sign in with the user's session client
+    const { error: signInError } = await supabase!.auth.signInWithPassword({
+      email: user!.email!,
       password: currentPassword
     });
     
@@ -54,10 +36,20 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Update password using Supabase Auth
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: newPassword
-    });
+    // Use admin client to update password (updateUser on the session client
+    // may not have the required permissions depending on Supabase config)
+    const adminClient = getSupabaseAdmin();
+    if (!adminClient) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
+    const { error: updateError } = await adminClient.auth.admin.updateUserById(
+      user!.id,
+      { password: newPassword }
+    );
     
     if (updateError) {
       console.error('[Auth Change Password] Update error:', updateError);
@@ -66,8 +58,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    
-    console.log('[Auth Change Password] Password changed successfully for user:', user.id);
     
     return NextResponse.json({ 
       success: true, 

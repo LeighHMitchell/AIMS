@@ -193,7 +193,8 @@ export default function AuthCallbackPage() {
       // If no specific destination, route based on organization assignment
       const next = searchParams.get('next');
       const defaultRoute = getHomeRouteFromApiData(userProfile);
-      const redirectTo = next || defaultRoute;
+      const isValidRedirect = next && next.startsWith('/') && !next.startsWith('//') && !next.includes('://');
+      const redirectTo = isValidRedirect ? next : defaultRoute;
       console.log('[Auth Callback] Redirecting to:', redirectTo, 'organizationId:', userProfile?.organizationId);
       
       // Small delay before redirect to ensure state is saved

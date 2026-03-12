@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
     const {
       code,
       name,
+      acronym,
       nameLocal,
       description,
       classificationType,
@@ -152,6 +153,7 @@ export async function POST(request: NextRequest) {
       .insert({
         code,
         name,
+        acronym: acronym || null,
         name_local: nameLocal,
         description,
         classification_type: classificationType,

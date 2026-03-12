@@ -828,27 +828,12 @@ export async function POST(request: NextRequest) {
 
           // Apply flexible field mappings - check multiple possible keys for each field
           for (const mapping of flexibleFieldMappings) {
-            // #region agent log
-            if (mapping.dbField === 'capital_spend_percentage') {
-              fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'import-as-reporting-org/route.ts:753',message:'Capital spend mapping check',data:{sourceKeys:mapping.sourceKeys,fieldsKeys:Object.keys(fields||{}),fieldsHasCapitalSpend:fields?.['iati-activity/capital-spend'],fieldsHasCapitalSpendAttr:fields?.['iati-activity/capital-spend[@percentage]'],fieldsHasCapitalSpendPct:fields?.['capital_spend_percentage']},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-            }
-            // #endregion
             // Check if any of the source keys are selected in fields
             const isSelected = mapping.sourceKeys.some(key => fields[key]);
-            // #region agent log
-            if (mapping.dbField === 'capital_spend_percentage') {
-              fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'import-as-reporting-org/route.ts:755',message:'Capital spend isSelected result',data:{isSelected,matchedKeys:mapping.sourceKeys.filter(key=>fields?.[key])},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-            }
-            // #endregion
             if (!isSelected) continue;
 
             // Find the value from any of the source keys
             let value = findValueFromKeys(iati_data, mapping.sourceKeys);
-            // #region agent log
-            if (mapping.dbField === 'capital_spend_percentage') {
-              fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'import-as-reporting-org/route.ts:759',message:'Capital spend value lookup',data:{valueFound:value,iatiDataKeys:Object.keys(iati_data||{}),iatiDataCapitalSpend:iati_data?.capital_spend_percentage,iatiDataCapitalSpendStr:iati_data?.['capital_spend_percentage']},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
-            }
-            // #endregion
             
             // Apply extraction function if provided
             if (value !== undefined && mapping.extractFn) {
@@ -858,11 +843,6 @@ export async function POST(request: NextRequest) {
             if (value !== undefined && value !== null) {
               activityInsert[mapping.dbField] = value;
               console.log(`[Import as Reporting Org] Set ${mapping.dbField} = ${value}`);
-              // #region agent log
-              if (mapping.dbField === 'capital_spend_percentage') {
-                fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'import-as-reporting-org/route.ts:768',message:'Capital spend value SET SUCCESS',data:{finalValue:value,dbField:mapping.dbField},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
-              }
-              // #endregion
             }
           }
 

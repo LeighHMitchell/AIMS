@@ -140,7 +140,15 @@ class SupabaseConnectionManager {
         .range(offset, offset + limit - 1)
       
       if (search) {
-        query = query.or(`title_narrative.ilike.%${search}%,iati_identifier.ilike.%${search}%`)
+        const sanitized = search
+          .replace(/\\/g, '\\\\')
+          .replace(/%/g, '\\%')
+          .replace(/_/g, '\\_')
+          .replace(/,/g, '')
+          .replace(/\./g, '')
+          .replace(/\(/g, '')
+          .replace(/\)/g, '');
+        query = query.or(`title_narrative.ilike.%${sanitized}%,iati_identifier.ilike.%${sanitized}%`)
       }
       
       return await query

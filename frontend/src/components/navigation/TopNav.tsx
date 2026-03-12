@@ -3,7 +3,6 @@
 import React, { useState } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Menu } from "bloom-menu"
 import { Badge } from "@/components/ui/badge"
 import { UserAvatar } from "@/components/ui/user-avatar"
 import { LogOut, Briefcase, Settings, Shield, MessageSquare, Eye, HelpCircle, Share, Info, Bell, Bookmark, FolderKanban, BarChart3, MapPin } from "lucide-react"
@@ -17,6 +16,14 @@ import { AskQuestionModal } from "@/components/faq/AskQuestionModal"
 import { NotificationBell } from "@/components/notifications/NotificationBell"
 import { AboutModal } from "@/components/ui/about-modal"
 import { TourButton } from "@/components/tour/TourButton"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu"
 
 interface TopNavProps {
   user?: {
@@ -40,16 +47,12 @@ interface TopNavProps {
   onLogout?: () => void
 }
 
-const itemClass = "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-neutral-600 hover:text-neutral-900 cursor-pointer transition-colors"
-const dangerItemClass = "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-red-500 hover:text-red-600 cursor-pointer transition-colors"
-
 export function TopNav({ user, onLogout }: TopNavProps) {
   const pathname = usePathname();
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isAskQuestionModalOpen, setIsAskQuestionModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Determine if share button should be shown (hide on admin, profile, settings pages)
   const hideShareOnPages = ['/admin', '/profile', '/settings'];
@@ -85,6 +88,14 @@ export function TopNav({ user, onLogout }: TopNavProps) {
     return fullName || user.name || "User";
   };
 
+  const currentMod = getCurrentModule(pathname || '')
+
+  const modules = [
+    { label: 'DFMIS', href: '/dashboard', icon: BarChart3, module: 'aims' as const },
+    { label: 'Project Bank', href: '/project-bank', icon: FolderKanban, module: 'project-bank' as const },
+    { label: 'Land Bank', href: '/land-bank', icon: MapPin, module: 'land-bank' as const },
+  ]
+
   return (
     <nav className="border-b sticky top-0 z-[9999] bg-white/60 dark:bg-gray-900/60 backdrop-blur-md">
       <div className="flex h-16 items-center px-6">
@@ -106,154 +117,144 @@ export function TopNav({ user, onLogout }: TopNavProps) {
             />
           )}
 
-          {/* User Menu with Bloom Menu */}
+          {/* User Menu */}
           {user && (
-            <Menu.Root
-              direction="bottom"
-              anchor="end"
-              open={isMenuOpen}
-              onOpenChange={setIsMenuOpen}
-            >
-              <Menu.Container
-                buttonSize={{ width: 190, height: 40 }}
-                menuWidth={280}
-                menuRadius={20}
-                buttonRadius={9999}
-                className="bg-white border border-neutral-200 shadow-none relative z-[9999]"
-              >
-                <Menu.Trigger>
-                  <div className="flex items-center gap-2 px-2 h-10">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-2 h-10 rounded-full border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                  <UserAvatar
+                    src={user.profilePicture}
+                    seed={user.id || user.email}
+                    name={getFullName(user)}
+                    size="md"
+                  />
+                  <span className="text-sm font-medium text-neutral-700">{getFullName(user)}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[280px] p-2">
+                {/* User Info Header */}
+                <div className="px-3 py-3 mb-2">
+                  <div className="flex items-center gap-3">
                     <UserAvatar
                       src={user.profilePicture}
                       seed={user.id || user.email}
                       name={getFullName(user)}
-                      size="md"
+                      size="lg"
                     />
-                    <span className="text-sm font-medium text-neutral-700">{getFullName(user)}</span>
-                  </div>
-                </Menu.Trigger>
-                <Menu.Content className="p-2">
-                  {/* User Info Header */}
-                  <div className="px-3 py-3 mb-2">
-                    <div className="flex items-center gap-3">
-                      <UserAvatar
-                        src={user.profilePicture}
-                        seed={user.id || user.email}
-                        name={getFullName(user)}
-                        size="lg"
-                      />
-                      <div className="flex flex-col space-y-0.5 flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-tight truncate">{getFullName(user)}</p>
-                        <p className="text-xs leading-tight text-neutral-500 truncate">{user.email}</p>
-                        <p className="text-xs leading-tight text-neutral-400 truncate">
-                          {user.organization?.name || user.organisation || 'No Organization'}
-                        </p>
-                      </div>
+                    <div className="flex flex-col space-y-0.5 flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-tight truncate">{getFullName(user)}</p>
+                      <p className="text-xs leading-tight text-neutral-500 truncate">{user.email}</p>
+                      <p className="text-xs leading-tight text-neutral-400 truncate">
+                        {user.organization?.name || user.organisation || 'No Organization'}
+                      </p>
                     </div>
-                    {user.role && (
-                      <div className="mt-3 pt-3 border-t border-neutral-100">
-                        <Badge
-                          variant={getRoleBadgeVariant(user.role)}
-                          className="w-fit"
-                        >
-                          {getRoleDisplayLabel(user.role)}
-                        </Badge>
-                      </div>
-                    )}
                   </div>
-
-                  {/* Module Switcher */}
-                  <div className="border-t border-neutral-200 my-1" />
-                  <div className="px-3 py-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Modules</span>
-                  </div>
-                  {[
-                    { label: 'DFMIS', href: '/dashboard', icon: BarChart3, module: 'aims' as const },
-                    { label: 'Project Bank', href: '/project-bank', icon: FolderKanban, module: 'project-bank' as const },
-                    { label: 'Land Bank', href: '/land-bank', icon: MapPin, module: 'land-bank' as const },
-                  ].map(mod => {
-                    const currentMod = getCurrentModule(pathname || '')
-                    const isActive = currentMod === mod.module
-                    const ModIcon = mod.icon
-                    return (
-                      <Link
-                        key={mod.module}
-                        href={mod.href}
-                        className={`${itemClass} ${isActive ? 'bg-neutral-100 font-medium' : ''}`}
-                        onClick={() => setIsMenuOpen(false)}
+                  {user.role && (
+                    <div className="mt-3 pt-3 border-t border-neutral-100">
+                      <Badge
+                        variant={getRoleBadgeVariant(user.role)}
+                        className="w-fit"
                       >
+                        {getRoleDisplayLabel(user.role)}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                {/* Module Switcher */}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                  Modules
+                </DropdownMenuLabel>
+                {modules.map(mod => {
+                  const isActive = currentMod === mod.module
+                  const ModIcon = mod.icon
+                  return (
+                    <DropdownMenuItem key={mod.module} asChild className={isActive ? 'bg-neutral-100 font-medium' : ''}>
+                      <Link href={mod.href} className="flex items-center gap-2 cursor-pointer">
                         <ModIcon className="h-4 w-4" />
                         <span>{mod.label}</span>
                         {isActive && <span className="ml-auto text-[10px] text-neutral-400">Current</span>}
                       </Link>
-                    )
-                  })}
-                  <div className="border-t border-neutral-200 my-1" />
+                    </DropdownMenuItem>
+                  )
+                })}
 
-                  <Link href="/profile" className={itemClass} onClick={() => setIsMenuOpen(false)}>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
                     <Settings className="h-4 w-4" />
                     <span>My Profile</span>
                   </Link>
+                </DropdownMenuItem>
 
-                  <Link href="/dashboard?tab=my-portfolio" className={itemClass} onClick={() => setIsMenuOpen(false)}>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard?tab=my-portfolio" className="flex items-center gap-2 cursor-pointer">
                     <Briefcase className="h-4 w-4" />
                     <span>My Portfolio</span>
                   </Link>
+                </DropdownMenuItem>
 
-                  <Link href="/dashboard?tab=notifications" className={itemClass} onClick={() => setIsMenuOpen(false)}>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard?tab=notifications" className="flex items-center gap-2 cursor-pointer">
                     <Bell className="h-4 w-4" />
                     <span>Notifications</span>
                   </Link>
+                </DropdownMenuItem>
 
-                  <Link href="/dashboard?tab=bookmarks" className={itemClass} onClick={() => setIsMenuOpen(false)}>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard?tab=bookmarks" className="flex items-center gap-2 cursor-pointer">
                     <Bookmark className="h-4 w-4" />
                     <span>Bookmarks</span>
                   </Link>
+                </DropdownMenuItem>
 
-                  <Menu.Item className={itemClass} onSelect={() => setIsAskQuestionModalOpen(true)}>
-                    <HelpCircle className="h-4 w-4" />
-                    <span>Ask a Question</span>
-                  </Menu.Item>
+                <DropdownMenuItem className="cursor-pointer" onSelect={() => setIsAskQuestionModalOpen(true)}>
+                  <HelpCircle className="h-4 w-4" />
+                  <span>Ask a Question</span>
+                </DropdownMenuItem>
 
-                  <div className="border-t border-neutral-100 my-1" />
+                <DropdownMenuSeparator />
 
-                  <Menu.Item className={itemClass} onSelect={() => setIsFeedbackModalOpen(true)}>
-                    <MessageSquare className="h-4 w-4" />
-                    <span>Share Feedback</span>
-                  </Menu.Item>
+                <DropdownMenuItem className="cursor-pointer" onSelect={() => setIsFeedbackModalOpen(true)}>
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Share Feedback</span>
+                </DropdownMenuItem>
 
-                  {user.role === USER_ROLES.SUPER_USER && (
-                    <Link href="/admin?tab=feedback" className={itemClass} onClick={() => setIsMenuOpen(false)}>
+                {user.role === USER_ROLES.SUPER_USER && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin?tab=feedback" className="flex items-center gap-2 cursor-pointer">
                       <Eye className="h-4 w-4" />
                       <span>View Feedback</span>
                     </Link>
-                  )}
+                  </DropdownMenuItem>
+                )}
 
-                  <div className="border-t border-neutral-100 my-1" />
+                <DropdownMenuSeparator />
 
-                  {user.role === USER_ROLES.SUPER_USER && (
-                    <Link href="/admin" className={itemClass} onClick={() => setIsMenuOpen(false)}>
+                {user.role === USER_ROLES.SUPER_USER && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="flex items-center gap-2 cursor-pointer">
                       <Shield className="h-4 w-4" />
                       <span>Admin</span>
                     </Link>
-                  )}
+                  </DropdownMenuItem>
+                )}
 
-                  <div className="border-t border-neutral-100 my-1" />
+                <DropdownMenuItem className="cursor-pointer" onSelect={() => setIsAboutModalOpen(true)}>
+                  <Info className="h-4 w-4" />
+                  <span>About</span>
+                </DropdownMenuItem>
 
-                  <Menu.Item className={itemClass} onSelect={() => setIsAboutModalOpen(true)}>
-                    <Info className="h-4 w-4" />
-                    <span>About</span>
-                  </Menu.Item>
+                <DropdownMenuSeparator />
 
-                  <div className="border-t border-neutral-100 my-1" />
-
-                  <Menu.Item className={dangerItemClass} onSelect={onLogout}>
-                    <LogOut className="h-4 w-4" />
-                    <span>Log out</span>
-                  </Menu.Item>
-                </Menu.Content>
-              </Menu.Container>
-            </Menu.Root>
+                <DropdownMenuItem className="text-red-500 focus:text-red-600 cursor-pointer" onSelect={onLogout}>
+                  <LogOut className="h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
 
           {/* Share Button - hidden on admin, profile, and settings pages */}

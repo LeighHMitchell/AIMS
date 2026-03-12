@@ -74,8 +74,8 @@ export function ReportCard({
     <Card className="flex flex-col h-full hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <div className="p-2 bg-muted rounded-lg">
+            <Icon className="h-5 w-5 text-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <CardTitle className="text-base font-semibold">{title}</CardTitle>

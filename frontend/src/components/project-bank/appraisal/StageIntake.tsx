@@ -19,6 +19,8 @@ import { MYANMAR_REGIONS } from '@/data/myanmar-regions';
 import SDGIconHover from '@/components/ui/SDGIconHover';
 import { StageMSDPScreening } from './StageMSDPScreening';
 import { FieldCheck } from './FieldCheck';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { CurrencySelector } from '@/components/forms/CurrencySelector';
 import type { PendingFile } from '@/hooks/use-appraisal-wizard';
 
 const SDG_GOALS = Array.from({ length: 17 }, (_, i) => ({
@@ -45,6 +47,7 @@ interface Ministry {
   id: string;
   name: string;
   code?: string;
+  acronym?: string;
   parentId?: string;
   level: number;
 }
@@ -105,7 +108,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
         if (res.ok) {
           const json = await res.json();
           const items = json.data || json;
-          setMinistries(items.map((m: any) => ({ id: m.id, name: m.name, code: m.code, parentId: m.parentId, level: m.level ?? 1 })));
+          setMinistries(items.map((m: any) => ({ id: m.id, name: m.name, code: m.code, acronym: m.acronym, parentId: m.parentId, level: m.level ?? 1 })));
         }
       } catch {} finally { setMinistriesLoading(false); }
     }
@@ -362,31 +365,42 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {topLevelMinistries.map(m => (
-                      <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
+                      <SelectItem key={m.id} value={m.name}>
+                        <span className="inline-flex items-center gap-2 min-w-0">
+                          {m.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.code}</span>}
+                          <span>{m.name}{m.acronym ? ` (${m.acronym})` : ''}</span>
+                        </span>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Department <FieldCheck value={formData.contact_department} /></Label>
-                <Select
-                  value={formData.contact_department || ''}
-                  onValueChange={v => updateField('contact_department', v)}
-                  disabled={!formData.contact_ministry}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={!formData.contact_ministry ? 'Select ministry first' : 'Select department...'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(() => {
-                      const contactMin = ministries.find(m => m.name === formData.contact_ministry);
-                      const depts = contactMin ? getAllDescendants(contactMin.id) : [];
-                      return depts.map(d => (
-                        <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                      ));
-                    })()}
-                  </SelectContent>
-                </Select>
+                {(() => {
+                  const contactMin = ministries.find(m => m.name === formData.contact_ministry);
+                  const depts = contactMin ? getAllDescendants(contactMin.id) : [];
+                  return (
+                    <Select
+                      value={formData.contact_department || ''}
+                      onValueChange={v => updateField('contact_department', v)}
+                      disabled={!formData.contact_ministry || depts.length === 0}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={
+                          !formData.contact_ministry ? 'Select ministry first'
+                            : depts.length === 0 ? 'No departments found'
+                            : 'Select department...'
+                        } />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {depts.map(d => (
+                          <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Email <FieldCheck value={formData.contact_email} /></Label>
@@ -401,8 +415,16 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                 <Label className="text-xs text-muted-foreground">Phone <FieldCheck value={formData.contact_phone} /></Label>
                 <Input
                   value={formData.contact_phone || ''}
-                  onChange={e => updateField('contact_phone', e.target.value)}
-                  placeholder="+95..."
+                  onChange={e => {
+                    // Strip non-digit characters except leading +
+                    const raw = e.target.value.replace(/[^\d+]/g, '');
+                    // Format in groups of 3: +95 123 456 789
+                    const digits = raw.startsWith('+') ? raw.slice(1) : raw;
+                    const prefix = raw.startsWith('+') ? '+' : '';
+                    const formatted = prefix + digits.replace(/(\d{3})(?=\d)/g, '$1 ');
+                    updateField('contact_phone', formatted);
+                  }}
+                  placeholder="+95 123 456 789"
                 />
               </div>
             </div>
@@ -468,33 +490,27 @@ export function StageIntake({ wizard }: StageIntakeProps) {
           {/* D: Nominating Ministry — Top-level ministries only */}
           <div>
             <Label>Nominating Ministry <RequiredDot /> <HelpTooltip text="The government ministry responsible for proposing this project." /> <FieldCheck value={formData.nominating_ministry} /></Label>
-            <Select
+            <SearchableSelect
+              options={topLevelMinistries.map(m => ({
+                value: m.name,
+                label: m.acronym ? `${m.name} (${m.acronym})` : m.name,
+                code: m.code,
+              }))}
               value={formData.nominating_ministry || ''}
               onValueChange={v => {
                 updateField('nominating_ministry', v);
-                // Clear implementing agency when ministry changes since children are different
                 updateField('implementing_agency', '');
               }}
+              placeholder={
+                ministriesLoading ? 'Loading ministries...'
+                  : topLevelMinistries.length === 0 ? 'No ministries available'
+                  : 'Select ministry...'
+              }
+              searchPlaceholder="Search ministries..."
+              emptyText="No ministries found."
               disabled={ministriesLoading || topLevelMinistries.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={
-                  ministriesLoading ? 'Loading ministries...'
-                    : topLevelMinistries.length === 0 ? 'No ministries available'
-                    : 'Select ministry...'
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {topLevelMinistries.map(m => (
-                  <SelectItem key={m.id} value={m.name}>
-                    <span className="inline-flex items-center gap-2 min-w-0">
-                      {m.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{m.code}</span>}
-                      <span>{m.name}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              showValueCode={false}
+            />
           </div>
 
           {/* E: Implementing Agency — cascades from nominating ministry children */}
@@ -562,15 +578,12 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                   className="pl-7"
                 />
               </div>
-              <Select value={formData.currency || 'USD'} onValueChange={v => updateField('currency', v)}>
-                <SelectTrigger className="w-[90px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="MMK">MMK</SelectItem>
-                  <SelectItem value="JPY">JPY</SelectItem>
-                </SelectContent>
-              </Select>
+              <CurrencySelector
+                value={formData.currency || 'USD'}
+                onValueChange={v => updateField('currency', v || 'USD')}
+                showCodeOnly
+                className="w-[110px] pb-0"
+              />
             </div>
           </div>
 
@@ -669,41 +682,38 @@ export function StageIntake({ wizard }: StageIntakeProps) {
       <div id="section-contact-officer" className="scroll-mt-20" />
 
       {/* ─── G: Sector / Sub-Sector — from DB, no border/bg ─── */}
-      <div id="section-sector" className="scroll-mt-20 p-4 space-y-4">
+      <div id="section-sector" className="scroll-mt-20 space-y-4">
         <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Sector / Sub-Sector</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Sector <RequiredDot /> <HelpTooltip text="The primary development sector this project falls under." /> <FieldCheck value={formData.sector} /></Label>
-            <Select
+            <SearchableSelect
+              options={sectors.map(s => ({
+                value: s.name,
+                label: s.name,
+                code: s.code,
+              }))}
               value={formData.sector || ''}
-              onValueChange={v => { updateField('sector', v); updateField('sub_sector', null); }}
+              onValueChange={v => { updateField('sector', v || ''); updateField('sub_sector', null); }}
+              placeholder={sectorsLoading ? 'Loading sectors...' : 'Select sector...'}
+              searchPlaceholder="Search sectors..."
+              emptyText="No sectors found."
               disabled={sectorsLoading && sectors.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={sectorsLoading ? 'Loading sectors...' : 'Select sector...'} />
-              </SelectTrigger>
-              <SelectContent>
-                {sectors.map(s => (
-                  <SelectItem key={s.id} value={s.name}>
-                    <span className="inline-flex items-center gap-2 min-w-0">
-                      {s.code && <span className="shrink-0 font-mono text-xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.code}</span>}
-                      <span>{s.name}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              showValueCode={false}
+              clearable
+            />
           </div>
           <div>
             <Label>Sub-Sector <HelpTooltip text="A more specific category within the selected sector." /> <FieldCheck value={formData.sub_sector} /></Label>
-            <Select
-              value={formData.sub_sector || ''}
-              onValueChange={v => updateField('sub_sector', v)}
-              disabled={!sectorSubSectors.length}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={sectorSubSectors.length ? 'Select sub-sector...' : 'Select sector first'} />
-              </SelectTrigger>
+            <div className="relative">
+              <Select
+                value={formData.sub_sector || ''}
+                onValueChange={v => updateField('sub_sector', v)}
+                disabled={!sectorSubSectors.length}
+              >
+                <SelectTrigger className={formData.sub_sector ? 'pr-8' : ''}>
+                  <SelectValue placeholder={sectorSubSectors.length ? 'Select sub-sector...' : 'Select sector first'} />
+                </SelectTrigger>
               <SelectContent>
                 {sectorSubSectors.map((s, idx) => (
                   <SelectItem key={s.id} value={s.name}>
@@ -714,13 +724,24 @@ export function StageIntake({ wizard }: StageIntakeProps) {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+              </Select>
+              {formData.sub_sector && (
+                <button
+                  type="button"
+                  onClick={() => updateField('sub_sector', null)}
+                  className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-muted flex items-center justify-center"
+                  aria-label="Clear sub-sector"
+                >
+                  <X className="h-3 w-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* ─── J: Region / Townships — Grouped by type + Nationwide ─── */}
-      <div id="section-region" className="scroll-mt-20 rounded-lg border border-muted bg-muted/20 p-4 space-y-4">
+      <div id="section-region" className="scroll-mt-20 space-y-4">
         <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Region / Townships</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>

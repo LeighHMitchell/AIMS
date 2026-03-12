@@ -104,12 +104,13 @@ export function FundFlowSankey({
     let nodeIndex = 0
     const donorIndices: number[] = []
     topDonors.forEach((d, i) => {
-      nodes.push({ id: `donor-${i}`, name: d.acronym || d.name || 'Donor' })
+      const donorLabel = d.acronym ? `${d.name} (${d.acronym})` : (d.name || 'Donor')
+      nodes.push({ id: `donor-${i}`, name: donorLabel })
       donorIndices.push(nodeIndex++)
     })
 
     const fundIndex = nodeIndex++
-    nodes.push({ id: 'fund', name: fundTitle.length > 20 ? fundTitle.slice(0, 17) + '…' : fundTitle })
+    nodes.push({ id: 'fund', name: fundTitle })
 
     // Only add third tier (child activities) when there are flows with dollar values
     const childIndices: number[] = []
@@ -131,11 +132,11 @@ export function FundFlowSankey({
 
     if (links.length === 0) return null
 
-    const margin = { top: 4, right: 4, bottom: 4, left: 4 }
+    const margin = { top: 4, right: 8, bottom: 4, left: 8 }
     try {
       const sankey = d3Sankey.sankey<any, any>()
         .nodeWidth(8)
-        .nodePadding(6)
+        .nodePadding(10)
         .nodeId((d: any, i: number) => i)
         .nodeAlign(d3Sankey.sankeyLeft)
         .extent([
@@ -202,18 +203,62 @@ export function FundFlowSankey({
       rect.setAttribute('rx', 2)
       svg.appendChild(rect)
 
-      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+      const isCenterNode = node.id === 'fund'
       const midX = (node.x0 + node.x1) / 2
-      const isLeft = midX < width / 2
-      label.setAttribute('x', isLeft ? node.x1 + 4 : node.x0 - 4)
-      label.setAttribute('y', (node.y0 + node.y1) / 2)
-      label.setAttribute('dy', '0.35em')
-      label.setAttribute('text-anchor', isLeft ? 'start' : 'end')
-      label.setAttribute('font-size', '9')
-      label.setAttribute('fill', 'currentColor')
-      label.setAttribute('class', 'fill-foreground')
-      label.textContent = node.name
-      svg.appendChild(label)
+      const isLeft = !isCenterNode && midX < width / 2
+      const nodeHeight = Math.max(1, node.y1 - node.y0)
+      const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject')
+      const div = document.createElement('div')
+      div.style.fontSize = '9px'
+      div.style.lineHeight = '1.2'
+      div.style.color = 'currentColor'
+      div.style.wordBreak = 'break-word'
+      div.className = 'text-foreground'
+      div.textContent = node.name
+
+      if (isCenterNode) {
+        // Center node: horizontal wrapping label left-aligned to the node bar
+        const labelW = 90
+        fo.setAttribute('width', String(labelW))
+        fo.setAttribute('height', String(Math.max(nodeHeight, 60)))
+        fo.setAttribute('x', String(node.x0 - labelW - 4))
+        fo.setAttribute('y', String(node.y0))
+        div.style.textAlign = 'left'
+        div.style.fontSize = '8px'
+        div.style.fontWeight = '600'
+        div.style.lineHeight = '1.3'
+        div.style.display = 'flex'
+        div.style.alignItems = 'center'
+        div.style.height = '100%'
+      } else if (isLeft) {
+        // Left (donor) nodes: label to the right of the bar
+        const labelWidth = width - node.x1 - 6
+        fo.setAttribute('width', String(Math.max(labelWidth, 40)))
+        fo.setAttribute('height', String(Math.max(nodeHeight + 16, 28)))
+        fo.setAttribute('x', String(node.x1 + 4))
+        fo.setAttribute('y', String(node.y0 - 4))
+        div.style.textAlign = 'left'
+        div.style.overflow = 'hidden'
+        div.style.display = '-webkit-box'
+        div.style.setProperty('-webkit-line-clamp', '2')
+        div.style.setProperty('-webkit-box-orient', 'vertical')
+      } else {
+        // Right (child activity) nodes: label to the left of the bar, wrapping
+        const labelW = 90
+        fo.setAttribute('width', String(labelW))
+        fo.setAttribute('height', String(Math.max(nodeHeight, 60)))
+        fo.setAttribute('x', String(node.x0 - labelW - 4))
+        fo.setAttribute('y', String(node.y0))
+        div.style.textAlign = 'left'
+        div.style.fontSize = '8px'
+        div.style.lineHeight = '1.3'
+        div.style.display = 'flex'
+        div.style.alignItems = 'center'
+        div.style.height = '100%'
+      }
+
+      fo.appendChild(div)
+      svg.appendChild(fo)
     })
   }, [layout, width, topDonors.length])
 
@@ -235,6 +280,7 @@ export function FundFlowSankey({
         ref={svgRef}
         width={width}
         height={height}
+        style={{ overflow: 'visible' }}
       />
       {hoveredLink !== null && tooltipInfo && (
         <div

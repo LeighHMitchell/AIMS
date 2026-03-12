@@ -61,6 +61,9 @@ import {
 } from "lucide-react";
 import { apiFetch } from '@/lib/api-fetch';
 import { Checkbox } from "@/components/ui/checkbox";
+import dynamic from "next/dynamic";
+
+const OnboardingModal = dynamic(() => import("@/components/onboarding/OnboardingModal"), { ssr: false });
 import {
   activityColumns,
   activityColumnGroups,
@@ -243,6 +246,7 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [phoneDropdownOpen, setPhoneDropdownOpen] = useState(false);
   const [faxDropdownOpen, setFaxDropdownOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Handlers to ensure only one phone/fax dropdown is open at a time
   const handlePhoneDropdownChange = (open: boolean) => {
@@ -820,10 +824,16 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     {!isEditing ? (
-                      <Button onClick={handleEditClick} size="sm">
-                        <Pencil className="h-4 w-4 mr-2 text-white" />
-                        Edit Profile
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setShowOnboarding(true)}>
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          Setup Wizard
+                        </Button>
+                        <Button onClick={handleEditClick} size="sm">
+                          <Pencil className="h-4 w-4 mr-2 text-white" />
+                          Edit Profile
+                        </Button>
+                      </div>
                     ) : (
                       <div className="flex gap-2">
                         <Button variant="outline" onClick={handleCancel} size="sm">
@@ -1491,6 +1501,18 @@ export default function ProfilePage() {
           userId={user.id}
           userName={user.name || user.email}
         />
+
+        {/* Onboarding Setup Wizard */}
+        {showOnboarding && (
+          <OnboardingModal
+            user={user}
+            onComplete={(updatedUser) => {
+              setUser(updatedUser);
+              setShowOnboarding(false);
+              toast.success("Profile updated successfully");
+            }}
+          />
+        )}
       </div>
     </MainLayout>
   );

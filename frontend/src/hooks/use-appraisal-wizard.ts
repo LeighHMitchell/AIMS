@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api-fetch';
 import { calculateFIRR } from '@/lib/eirr-calculator';
@@ -93,6 +93,8 @@ function projectStageToAppraisalStage(stage: ProjectStage): AppraisalStage {
 export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizardReturn {
   const router = useRouter();
   const [projectId, setProjectId] = useState<string | null>(initialProjectId || null);
+  // Ref keeps the ID in sync for use within async callbacks where state is stale
+  const projectIdRef = useRef<string | null>(initialProjectId || null);
   const [projectStage, setProjectStage] = useState<ProjectStage>('intake_draft');
   const [currentStage, setCurrentStage] = useState<AppraisalStage>('intake');
   const [fs1ActiveTab, setFs1ActiveTab] = useState<FS1Tab>('technical');
@@ -218,6 +220,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
 
         setFormData(data);
         setDocuments(project.documents || []);
+        projectIdRef.current = initialProjectId ?? null;
         setProjectId(initialProjectId ?? null);
         setReviewComments(project.review_comments || null);
 
@@ -366,6 +369,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
         }
 
         const project = await res.json();
+        projectIdRef.current = project.id;
         setProjectId(project.id);
         window.history.replaceState(null, '', `/project-bank/${project.id}/appraisal`);
 
@@ -469,20 +473,24 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
 
   // Submit for review (intake, FS-1, or FS-2). Returns true on success.
   const submitForReview = useCallback(async (): Promise<boolean> => {
-    if (!projectId) return false;
-
     // Validate before submission
     const validationErrors = validateCurrentStage();
     if (Object.keys(validationErrors).length > 0) return false;
 
-    // Save current data first
+    // Save (or create) the project first — this also sets projectIdRef.current for new projects
     const saved = await saveStageData();
     if (!saved) return false;
+
+    const idToSubmit = projectIdRef.current;
+    if (!idToSubmit) {
+      setErrors({ _form: 'Unable to determine project ID after save. Please try again.' });
+      return false;
+    }
 
     setIsSaving(true);
     try {
       const phase = currentPhase === 'intake' ? 'intake' : currentPhase === 'fs2' ? 'fs2' : currentPhase === 'fs3' ? 'fs3' : 'fs1';
-      const res = await apiFetch(`/api/project-bank/${projectId}/submit`, {
+      const res = await apiFetch(`/api/project-bank/${idToSubmit}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phase }),
@@ -506,7 +514,7 @@ export function useAppraisalWizard(initialProjectId?: string): UseAppraisalWizar
     } finally {
       setIsSaving(false);
     }
-  }, [projectId, currentPhase, validateCurrentStage, saveStageData]);
+  }, [currentPhase, validateCurrentStage, saveStageData]);
 
   const refreshDocuments = useCallback(async () => {
     if (!projectId) return;

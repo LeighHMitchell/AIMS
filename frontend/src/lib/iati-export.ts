@@ -53,13 +53,16 @@ export function generateTransactionXML(transaction: Transaction): string {
   }
   
   // Provider organization
-  if (transaction.provider_org_name || transaction.provider_org_ref) {
+  if (transaction.provider_org_name || transaction.provider_org_ref || (transaction as any).provider_activity_ref) {
     const providerAttrs: string[] = [];
     if (transaction.provider_org_ref) {
       providerAttrs.push(`ref="${escapeXML(transaction.provider_org_ref)}"`);
     }
     if (transaction.provider_org_type) {
       providerAttrs.push(`type="${transaction.provider_org_type}"`);
+    }
+    if ((transaction as any).provider_activity_ref) {
+      providerAttrs.push(`provider-activity-id="${escapeXML((transaction as any).provider_activity_ref)}"`);
     }
     
     xml.push(`  <provider-org ${providerAttrs.join(' ')}>`);
@@ -74,13 +77,16 @@ export function generateTransactionXML(transaction: Transaction): string {
   }
   
   // Receiver organization
-  if (transaction.receiver_org_name || transaction.receiver_org_ref) {
+  if (transaction.receiver_org_name || transaction.receiver_org_ref || (transaction as any).receiver_activity_ref) {
     const receiverAttrs: string[] = [];
     if (transaction.receiver_org_ref) {
       receiverAttrs.push(`ref="${escapeXML(transaction.receiver_org_ref)}"`);
     }
     if (transaction.receiver_org_type) {
       receiverAttrs.push(`type="${transaction.receiver_org_type}"`);
+    }
+    if ((transaction as any).receiver_activity_ref) {
+      receiverAttrs.push(`receiver-activity-id="${escapeXML((transaction as any).receiver_activity_ref)}"`);
     }
     
     xml.push(`  <receiver-org ${receiverAttrs.join(' ')}>`);
@@ -190,12 +196,15 @@ export function generateActivityXML(
 ): string {
   const xml: string[] = [];
   
-  // Activity element with optional humanitarian attribute
+  // Activity element with optional humanitarian and hierarchy attributes.
+  // Pooled funds are hierarchy=1 (parent); fall back to the stored hierarchy column.
   const humanitarianAttr = activity.humanitarian ? ' humanitarian="1"' : '';
+  const hierarchyValue = activity.hierarchy ?? (activity.is_pooled_fund ? 1 : undefined);
+  const hierarchyAttr = hierarchyValue != null ? ` hierarchy="${hierarchyValue}"` : '';
   xml.push(`<iati-activity 
     default-currency="${activity.currency || 'USD'}"
     last-updated-datetime="${new Date().toISOString()}"
-    xml:lang="${activity.language || 'en'}"${humanitarianAttr}>`);
+    xml:lang="${activity.language || 'en'}"${humanitarianAttr}${hierarchyAttr}>`);
   
   // Activity identifier
   xml.push(`  <iati-identifier>${escapeXML(activity.iati_identifier || activity.iati_id)}</iati-identifier>`);

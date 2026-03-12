@@ -34,6 +34,3 @@ export function createSupabaseClient() {
 
   return createClient(supabaseUrl, supabaseAnonKey)
 }
-
-// Export createClient function for API routes (same as createSupabaseAdmin)
-export { createSupabaseAdmin as createClient }

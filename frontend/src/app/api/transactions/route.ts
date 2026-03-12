@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { TransactionType } from '@/types/transaction';
-import { createClient } from '@/lib/supabase-simple';
+import { createSupabaseClient } from '@/lib/supabase-simple';
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import {
   cleanTransactionFields,
@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 
 // Helper function to fetch linked transactions for all activities
 async function fetchAllLinkedTransactions(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Awaited<ReturnType<typeof createSupabaseClient>>,
   activityIds: string[]
 ) {
   if (activityIds.length === 0) return [];
@@ -454,7 +454,7 @@ export async function GET(request: Request) {
 
 // Helper function to validate IATI field values
 async function validateIATIFields(body: any) {
-  const supabase = createClient();
+  const supabase = createSupabaseClient();
   const errors: string[] = [];
   
   if (!supabase) {

@@ -8559,11 +8559,6 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
           }
         });
 
-        // #region agent log
-        const capitalSpendField = parsedFields.find(f => f.fieldName === 'Capital Spend Percentage');
-        fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'IatiImportTab.tsx:8559',message:'Client: Building selectedFieldsMap',data:{capitalSpendField:capitalSpendField?{fieldName:capitalSpendField.fieldName,iatiPath:capitalSpendField.iatiPath,selected:capitalSpendField.selected,importValue:capitalSpendField.importValue}:null,selectedFieldsMapKeys:Object.keys(selectedFieldsMap),hasCapitalSpendKey:!!selectedFieldsMap['iati-activity/capital-spend'],hasCapitalSpendAttrKey:!!selectedFieldsMap['iati-activity/capital-spend[@percentage]'],updateDataCapitalSpend:updateData.capital_spend_percentage},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1-client'})}).catch(()=>{});
-        // #endregion
-
         response = await apiFetch('/api/iati/import-as-reporting-org', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

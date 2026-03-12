@@ -234,7 +234,7 @@ export default function ReportsPage() {
         {/* Header */}
         <header>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
-            <FileText className="h-8 w-8 text-blue-600" />
+            <FileText className="h-8 w-8 text-foreground" />
             Reports
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">

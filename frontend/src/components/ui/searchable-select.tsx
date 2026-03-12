@@ -24,6 +24,7 @@ export interface SearchableSelectOption {
   label: string
   description?: string
   code?: string  // Optional code to display as a badge before the label
+  rightLabel?: string  // Optional text to display on the right side of the row
   category?: string
   icon?: React.ReactNode
 }
@@ -40,6 +41,7 @@ interface SearchableSelectProps {
   showValueCode?: boolean
   dropdownClassName?: string
   triggerIcon?: React.ReactNode
+  clearable?: boolean // Show an X button to clear the selection
   open?: boolean // Controlled open state
   onOpenChange?: (open: boolean) => void // Callback when open state changes
 }
@@ -54,6 +56,7 @@ export function SearchableSelect({
   className,
   disabled = false,
   showValueCode = true,
+  clearable = false,
   dropdownClassName,
   triggerIcon,
   open: controlledOpen,
@@ -103,7 +106,8 @@ export function SearchableSelect({
           item.value.toLowerCase().includes(searchLower) ||
           item.label.toLowerCase().includes(searchLower) ||
           (item.description && item.description.toLowerCase().includes(searchLower)) ||
-          (item.code && item.code.toLowerCase().includes(searchLower))
+          (item.code && item.code.toLowerCase().includes(searchLower)) ||
+          (item.rightLabel && item.rightLabel.toLowerCase().includes(searchLower))
         )
       })
       
@@ -170,7 +174,22 @@ export function SearchableSelect({
             {selectedOption?.icon}
             {selectedOption ? selectedOption.label : placeholder}
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <div className="flex items-center gap-1 shrink-0">
+            {clearable && selectedOption && (
+              <span
+                role="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onValueChange("")
+                }}
+                className="h-4 w-4 rounded-full hover:bg-muted flex items-center justify-center cursor-pointer"
+                aria-label="Clear selection"
+              >
+                <X className="h-3 w-3 text-muted-foreground" />
+              </span>
+            )}
+            <ChevronsUpDown className="h-4 w-4 opacity-50" />
+          </div>
         </PopoverTrigger>
         <PopoverContent
           ref={contentRef}
@@ -227,18 +246,23 @@ export function SearchableSelect({
                             value === option.value ? "opacity-100" : "opacity-0"
                           )}
                         />
-                        <div className="flex flex-col gap-0.5 flex-1">
+                        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             {option.icon}
-                            {showValueCode && (
+                            {option.code && (
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                                {option.code}
+                              </span>
+                            )}
+                            {showValueCode && !option.code && (
                               <span className="font-mono text-xs text-muted-foreground">
                                 {option.value}
                               </span>
                             )}
                             <span className="truncate">{option.label}</span>
-                            {option.code && (
-                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
-                                {option.code}
+                            {option.rightLabel && (
+                              <span className="ml-auto text-xs text-muted-foreground shrink-0">
+                                {option.rightLabel}
                               </span>
                             )}
                           </div>

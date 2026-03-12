@@ -114,12 +114,15 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
               const ministries = Array.isArray(item.responsible_ministries) && item.responsible_ministries.length > 0
                 ? item.responsible_ministries.map((m: any) => m.code || m.name).join(', ')
                 : '';
-              const subtitle = [yearRange, ministries].filter(Boolean).join(' · ');
+              // Build label: "Name 2024–2028 (NDS)"
+              let label = item.label;
+              if (yearRange) label += ` ${yearRange}`;
+              if (item.acronym) label += ` (${item.acronym})`;
               return {
                 value: item.label,
-                label: item.acronym ? `${item.acronym} — ${item.label}` : item.label,
+                label,
                 group: CATEGORY_LABELS[item.category] || item.category,
-                subtitle,
+                subtitle: ministries || undefined,
               };
             })
           );
@@ -158,7 +161,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
         });
       }
     });
-    return result;
+    return result.sort((a, b) => a.goalNum - b.goalNum);
   }, [selectedGoalNumbers, goals]);
 
   /** Handle selecting / deselecting an NDP goal */
@@ -290,12 +293,16 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
                     'absolute top-1.5 left-1.5 z-10 text-[7px] font-semibold uppercase px-1 py-0.5 rounded-full',
                     isPrimary ? 'bg-[#5f7f7a]/15 text-[#5f7f7a]' : 'bg-[#5f7f7a]/10 text-[#5f7f7a]',
                   )}>
-                    {isPrimary ? 'Primary' : 'Secondary'}
+                    {isPrimary ? 'Primary' : (() => {
+                      const idx = secondaryGoals.indexOf(goal.id);
+                      const labels = ['Secondary', 'Tertiary', 'Quaternary', 'Quinary'];
+                      return labels[idx] || `#${idx + 2}`;
+                    })()}
                   </span>
                 )}
                 <div className="relative z-10 p-2">
-                  <span className="text-[10px] font-mono font-bold text-muted-foreground">{goal.code}</span>
-                  <span className="text-[10px] font-medium mt-0.5 leading-tight line-clamp-3 block">{goal.name}</span>
+                  <span className="text-[10px] font-medium leading-tight line-clamp-3 block">Goal {gNum}: {goal.name}</span>
+                  <span className="text-[8px] font-mono text-muted-foreground mt-0.5 block">{goal.code}</span>
                 </div>
               </button>
             );
@@ -358,7 +365,7 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <Label className="mb-0">Alignment Justification <HelpTooltip text="Explain how this project directly contributes to the selected NDP goals." /></Label>
+              <Label className="mb-0">MSDP Alignment Justification <HelpTooltip text="Explain how this project directly contributes to the selected MSDP goals and strategies." /></Label>
               {(() => {
                 const len = (formData.alignment_justification || '').length;
                 const remaining = 200 - len;
@@ -380,41 +387,44 @@ export function StageMSDPScreening({ wizard }: StageMSDPScreeningProps) {
             <Textarea
               value={formData.alignment_justification || ''}
               onChange={e => updateField('alignment_justification', e.target.value)}
-              placeholder="Explain how this project contributes to the selected NDP goal..."
+              placeholder="Explain how this project contributes to the selected MSDP goals and strategies..."
               rows={4}
             />
           </div>
 
-          <div className="max-w-md">
-            <Label>Sector Strategy Reference <HelpTooltip text="Select one or more government planning documents or frameworks that this project implements." /></Label>
-            <MultiSelect
-              options={strategyOptions}
-              selected={formData.sector_strategy_reference || []}
-              onChange={v => updateField('sector_strategy_reference', v.length > 0 ? v : null)}
-              placeholder="Select planning documents..."
-              searchable
-              searchPlaceholder="Filter documents..."
-              selectedLabel="document(s)"
-              renderOption={(option) => (
-                <div className="py-0.5">
-                  <div className="text-sm">{option.label}</div>
-                  {option.subtitle && (
-                    <div className="text-[10px] text-muted-foreground">{option.subtitle}</div>
-                  )}
-                </div>
-              )}
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Switch
-              checked={formData.in_sector_investment_plan || false}
-              onCheckedChange={v => updateField('in_sector_investment_plan', v)}
-            />
-            <Label>Included in sector investment plan <HelpTooltip text="A sector investment plan is a government-endorsed, costed programme of priority projects within a specific sector (e.g. transport, energy, health). Toggle this on if the project appears in an approved sector investment plan, public investment programme (PIP), or equivalent prioritised pipeline." /></Label>
-          </div>
         </>
       )}
+
+      <div className="max-w-lg">
+        <Label>Sector Strategy Reference <HelpTooltip text="Select one or more government planning documents or frameworks that this project implements." /></Label>
+        <MultiSelect
+          options={strategyOptions}
+          selected={formData.sector_strategy_reference || []}
+          onChange={v => updateField('sector_strategy_reference', v.length > 0 ? v : null)}
+          placeholder="Select planning documents..."
+          searchable
+          searchPlaceholder="Filter documents..."
+          selectedLabel="document(s)"
+          renderOption={(option) => (
+            <div className="py-0.5">
+              <div className="text-sm flex items-center gap-2">
+                {option.subtitle && (
+                  <span className="shrink-0 font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.subtitle}</span>
+                )}
+                <span>{option.label}</span>
+              </div>
+            </div>
+          )}
+        />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Switch
+          checked={formData.in_sector_investment_plan || false}
+          onCheckedChange={v => updateField('in_sector_investment_plan', v)}
+        />
+        <Label>Included in sector investment plan <HelpTooltip text="A sector investment plan is a government-endorsed, costed programme of priority projects within a specific sector (e.g. transport, energy, health). Toggle this on if the project appears in an approved sector investment plan, public investment programme (PIP), or equivalent prioritised pipeline." /></Label>
+      </div>
 
     </div>
   );

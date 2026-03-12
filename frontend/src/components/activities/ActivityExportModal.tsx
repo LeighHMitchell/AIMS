@@ -47,11 +47,17 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
     if (exportRef.current) {
       const printWindow = window.open('', '_blank');
       if (printWindow) {
+        const safeTitle = (activity.title || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
         printWindow.document.write(`
           <!DOCTYPE html>
           <html>
             <head>
-              <title>Activity Card - ${activity.title}</title>
+              <title>Activity Card - ${safeTitle}</title>
               <link href="https://cdn.tailwindcss.com/2.2.19/tailwind.min.css" rel="stylesheet">
               <style>
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');

@@ -111,9 +111,6 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
   }
 
   const handleExport = async (format: 'png' | 'svg' | 'csv') => {
-    // #region agent log - hypothesis A (Stubbed Implementation)
-    fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectTimeline.tsx:handleExport-entry',message:'Export button clicked',data:{format, timelineDataLength: timelineData.data?.length || 0, browser: navigator.userAgent.substring(0,50)},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{}); // #endregion
-
     if (timelineData.data.length === 0) {
       toast.warning('No data available to export');
       return;
@@ -131,9 +128,6 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
         differenceInDays(parseISO(entry.endDate), parseISO(entry.startDate))
       ]);
       const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-      
-      // #region agent log - hypothesis C (Data Serialization)
-      fetch('http://127.0.0.1:7242/ingest/b4892be5-ca87-459d-a863-d3e1a440a1d9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ProjectTimeline.tsx:handleExport-csv-success',message:'CSV export generated',data:{rowCount: rows.length, sampleRow: rows[0], error: null},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'C'})}).catch(()=>{}); // #endregion
 
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);

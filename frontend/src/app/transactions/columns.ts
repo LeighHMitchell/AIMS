@@ -25,6 +25,7 @@ export type TransactionColumnId =
   | "transactionReference"
   // Status Indicators (optional)
   | "linkedStatus"
+  | "internalTransfer"
   | "acceptanceStatus"
   | "validatedStatus"
   // Classification (optional)
@@ -66,6 +67,7 @@ export const transactionColumns: ColumnConfig<TransactionColumnId>[] = [
 
   // Status Indicators
   { id: "linkedStatus", label: "Linked Status", group: "statusIndicators", defaultVisible: false },
+  { id: "internalTransfer", label: "Internal Transfer", group: "statusIndicators", defaultVisible: false },
   { id: "acceptanceStatus", label: "Acceptance Status", group: "statusIndicators", defaultVisible: false },
   { id: "validatedStatus", label: "Validated", group: "statusIndicators", defaultVisible: false },
 

@@ -13,14 +13,10 @@ export const maxDuration = 60; // Allow up to 60 seconds for cron
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret (Vercel sets this header)
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
+    const authError = verifyCronSecret(request);
+    if (authError) return authError;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      console.log('[Cron Dispatch] Unauthorized request');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const supabase = getSupabaseAdmin();
     if (!supabase) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }

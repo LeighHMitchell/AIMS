@@ -229,11 +229,11 @@ export async function GET(request: NextRequest) {
 
       // Child flows for Sankey: only children with actual disbursement value (no third tier if no flows)
       const childFlows = childActivities
-        .map(c => ({ id: c.id, name: c.acronym || c.title, total: childDisbursed[c.id] || 0 }))
+        .map(c => ({ id: c.id, name: c.title, total: childDisbursed[c.id] || 0 }))
         .filter(c => c.total > 0)
         .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
         .slice(0, 6)
-        .map(({ id, name, total }) => ({ id, name: name.length > 14 ? name.slice(0, 12) + '…' : name, total }))
+        .map(({ id, name, total }) => ({ id, name, total }))
 
       return {
         id: fund.id,

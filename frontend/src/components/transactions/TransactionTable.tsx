@@ -282,6 +282,9 @@ interface TransactionData {
   aid_types?: Array<{code: string; vocabulary?: string}>;
   recipient_countries?: Array<{code: string; percentage?: number}>;
   recipient_regions?: Array<{code: string; vocabulary?: string; percentage?: number; narrative?: string}>;
+  // Activity link UUIDs (for internal transfer detection)
+  provider_activity_uuid?: string;
+  receiver_activity_uuid?: string;
   // Metadata fields
   created_at?: string;
   updated_at?: string;
@@ -664,6 +667,7 @@ export function TransactionTable({
                     </SortableTableHeader>
                   ),
                   linkedStatus: <SortableTableHeader key="linkedStatus" id="linkedStatus" className="text-center">Linked</SortableTableHeader>,
+                  internalTransfer: <SortableTableHeader key="internalTransfer" id="internalTransfer" className="text-center">Internal Transfer</SortableTableHeader>,
                   acceptanceStatus: <SortableTableHeader key="acceptanceStatus" id="acceptanceStatus" className="text-center">Acceptance</SortableTableHeader>,
                   organizations: (
                     <SortableTableHeader key="organizations" id="organizations" className="cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => onSort("provider_org_name")}>
@@ -904,6 +908,25 @@ export function TransactionTable({
                       <td key="linkedStatus" className="py-3 px-4 text-center whitespace-nowrap">
                         {transaction.transaction_source === 'linked' ? (
                           <Tooltip><TooltipTrigger asChild><Badge variant="outline" className="text-xs bg-orange-50 border-orange-200 text-orange-700 px-1 cursor-help"><Link2 className="h-3 w-3" /></Badge></TooltipTrigger><TooltipContent><p className="text-sm">Linked Transaction</p></TooltipContent></Tooltip>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    ),
+                    internalTransfer: (
+                      <td key="internalTransfer" className="py-3 px-4 text-center whitespace-nowrap">
+                        {((['2', '3', '4'].includes(transaction.transaction_type) && transaction.receiver_activity_uuid) ||
+                          (['1', '11', '13'].includes(transaction.transaction_type) && transaction.provider_activity_uuid)) ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="text-xs bg-indigo-50 border-indigo-200 text-indigo-700 px-1.5 cursor-help gap-1">
+                                <Shuffle className="h-3 w-3" />
+                                Internal
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-sm">This transaction is an internal fund transfer</p>
+                              <p className="text-xs text-muted-foreground mt-1">Excluded from portfolio totals to avoid double-counting</p>
+                            </TooltipContent>
+                          </Tooltip>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),

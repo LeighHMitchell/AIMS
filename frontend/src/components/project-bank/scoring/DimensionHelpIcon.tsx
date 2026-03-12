@@ -21,9 +21,9 @@ interface SubScore {
 const HELP_DATA: Record<ScoringStage, Record<ScoringDimension, HelpItem[]>> = {
   intake: {
     msdp_alignment: [
-      { key: 'ndp_goal_linked', label: 'Link a primary NDP goal', pts: 10 },
+      { key: 'ndp_goal_linked', label: 'Link a primary MSDP goal', pts: 10 },
       { key: 'ndp_aligned_flag', label: 'Set the NDP aligned flag', pts: 5 },
-      { key: 'secondary_goals_count', label: 'Link 3+ secondary NDP goals', pts: 10 },
+      { key: 'secondary_goals_count', label: 'Link additional MSDP goals (1→3, 2→7, 3+→10 pts)', pts: 10 },
       { key: 'sdg_count', label: 'Link 3+ SDG goals', pts: 10 },
       { key: 'msdp_strategy', label: 'Specify MSDP strategy area', pts: 10 },
       { key: 'alignment_justification', label: 'Write alignment justification (200+ chars)', pts: 10 },
@@ -37,7 +37,10 @@ const HELP_DATA: Record<ScoringStage, Record<ScoringDimension, HelpItem[]>> = {
       { key: 'cost_estimate_doc', label: 'Upload a cost estimate document', pts: 20 },
     ],
     technical_maturity: [
-      { key: 'objectives', label: 'Define objectives (100+ chars)', pts: 15 },
+      { key: 'description', label: 'Write a project description (200+ chars)', pts: 10 },
+      { key: 'objectives', label: 'Define objectives (200+ chars)', pts: 15 },
+      { key: 'target_beneficiaries', label: 'Describe target beneficiaries (200+ chars)', pts: 10 },
+      { key: 'region', label: 'Specify a region', pts: 5 },
       { key: 'project_type', label: 'Specify a project type', pts: 10 },
       { key: 'concept_note', label: 'Upload a concept note', pts: 15 },
       { key: 'proposal_doc', label: 'Upload a project proposal', pts: 15 },

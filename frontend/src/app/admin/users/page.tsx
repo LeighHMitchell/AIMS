@@ -30,7 +30,8 @@ import {
   ChevronUp,
   ChevronDown,
   User as UserIcon,
-  ExternalLink
+  ExternalLink,
+  RotateCcw
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
@@ -249,6 +250,7 @@ export default function UserManagement() {
             lastLogin: user.updated_at,
             createdAt: user.created_at,
             updatedAt: user.updated_at,
+            onboardingCompleted: user.onboardingCompleted ?? user.onboarding_completed,
           }));
           setUsers(transformedUsers);
         } else {
@@ -461,6 +463,28 @@ export default function UserManagement() {
     } catch (error) {
       console.error('Error deleting user:', error);
       toast.error("Failed to delete user");
+    }
+  };
+
+  const handleResetOnboarding = async (targetUser: User) => {
+    try {
+      const response = await apiFetch('/api/users', {
+        method: 'PUT',
+        body: JSON.stringify({
+          id: targetUser.id,
+          onboarding_completed: false,
+        }),
+      });
+
+      if (response.ok) {
+        setUsers(users.map(u => u.id === targetUser.id ? { ...u, onboardingCompleted: false } : u));
+        toast.success(`Onboarding reset for ${targetUser.name || targetUser.email}. They will see the setup wizard on next login.`);
+      } else {
+        toast.error("Failed to reset onboarding");
+      }
+    } catch (error) {
+      console.error('Error resetting onboarding:', error);
+      toast.error("Failed to reset onboarding");
     }
   };
 
@@ -866,6 +890,16 @@ export default function UserManagement() {
                                     className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                                   >
                                     <Key className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleResetOnboarding(user)}
+                                    disabled={user.id === currentUser?.id}
+                                    title="Reset onboarding wizard"
+                                    className="h-8 w-8 p-0 text-violet-600 hover:text-violet-700 hover:bg-violet-50"
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     size="sm"

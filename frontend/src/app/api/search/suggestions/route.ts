@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase-simple'
+import { requireAuth } from '@/lib/auth'
+import { createSupabaseClient } from '@/lib/supabase-simple'
 import { searchCache, cacheKeys } from '@/lib/search-cache'
 import { highlightSearchResults, extractSearchTerms } from '@/lib/search-highlighting'
 import { escapeIlikeWildcards } from '@/lib/security-utils'
@@ -26,6 +27,9 @@ interface RPCSuggestion {
 }
 
 export async function GET(request: NextRequest) {
+  const { response: authResponse } = await requireAuth()
+  if (authResponse) return authResponse
+
   const startTime = Date.now()
   
   try {
@@ -44,7 +48,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const supabase = createClient()
+    const supabase = createSupabaseClient()
     if (!supabase) {
       throw new Error('Failed to create Supabase client')
     }
@@ -168,7 +172,7 @@ async function fallbackLegacySuggestions(
   startTime: number
 ) {
   try {
-    const supabase = createClient()
+    const supabase = createSupabaseClient()
     if (!supabase) {
       throw new Error('Failed to create Supabase client')
     }

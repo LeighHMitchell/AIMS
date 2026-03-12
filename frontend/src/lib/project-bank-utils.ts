@@ -861,7 +861,7 @@ export function getGateStatus(stage: ProjectStage, gate: 'intake_to_fs1' | 'fs1_
     return 'locked';
   }
   if (gate === 'fs1_to_fs2') {
-    if (stage === 'fs1_submitted') return 'awaiting_review';
+    if (stage === 'fs1_submitted' || stage === 'fs1_desk_claimed') return 'awaiting_review';
     if (stage === 'fs1_approved' || stage.startsWith('fs2_') || stage.startsWith('fs3_')) return 'approved';
     if (stage === 'fs1_returned') return 'returned';
     if (stage === 'fs1_rejected') return 'rejected';
@@ -875,8 +875,8 @@ export function getGateStatus(stage: ProjectStage, gate: 'intake_to_fs1' | 'fs1_
 }
 
 /** Compact currency formatter for kanban/card views */
-export function fmtCost(value: number | null, currency: string): string | null {
-  if (!value) return null
+export function fmtCost(value: number | null | undefined, currency: string): string | null {
+  if (value === null || value === undefined) return null
   if (value >= 1_000_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000_000).toFixed(1)}m`
   if (value >= 1_000) return `${currency === "USD" ? "$" : currency + " "}${(value / 1_000).toFixed(0)}k`
   return formatCurrency(value, currency)

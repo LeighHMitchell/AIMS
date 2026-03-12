@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { sanitizeMinimal } from "@/lib/sanitize"
 import releases from '@/data/releases.json'
 
 interface Release {
@@ -187,7 +188,7 @@ export default function BuildHistoryPage() {
                                   className={`flex items-start gap-3 text-sm ${isHeader ? 'text-foreground font-medium mt-3 first:mt-0' : 'text-muted-foreground'}`}
                                 >
                                   {!isHeader && <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />}
-                                  <span dangerouslySetInnerHTML={{ __html: change }} />
+                                  <span dangerouslySetInnerHTML={{ __html: sanitizeMinimal(change) }} />
                                 </li>
                               )
                             })}

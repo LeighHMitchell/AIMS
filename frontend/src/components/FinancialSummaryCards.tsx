@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import { HeroCard } from "@/components/ui/hero-card";
 import { cn } from "@/lib/utils";
 import { normalizeTransactionType } from "@/lib/transaction-usd-helper";
@@ -56,11 +56,6 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
   // Use refs to track previous values and prevent unnecessary updates
   const prevBudgetsRef = useRef<Budget[] | undefined>();
   const prevTotalBudgetedRef = useRef<number>(0);
-
-  // Initialize Supabase client
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   const fetchFinancials = useCallback(async () => {
     console.log('[FinancialSummaryCards] Starting fetchFinancials for activityId:', activityId);

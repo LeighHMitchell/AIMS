@@ -61,7 +61,9 @@ export function MultiSelect({
   dropdownSide = "bottom",
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false)
+  const [search, setSearch] = React.useState("")
   const isSelectingRef = React.useRef(false)
+  const searchInputRef = React.useRef<HTMLInputElement>(null)
 
   const handleUnselect = (item: string) => {
     onChange(selected.filter((i) => i !== item))
@@ -69,28 +71,29 @@ export function MultiSelect({
 
   const handleSelect = (item: string) => {
     isSelectingRef.current = true
-    
+
     if (item === "SELECT_ALL") {
-      // Select all options
       onChange(options.map(opt => opt.value))
     } else if (selected.includes(item)) {
       handleUnselect(item)
     } else {
       onChange([...selected, item])
     }
-    
-    // Keep popover open after selection
+
     setTimeout(() => {
       isSelectingRef.current = false
     }, 0)
   }
-  
+
   const handleOpenChange = (newOpen: boolean) => {
-    // Don't close if we're in the middle of selecting
     if (!newOpen && isSelectingRef.current) {
       return
     }
     setOpen(newOpen)
+    if (!newOpen) setSearch("")
+    if (newOpen && searchable) {
+      setTimeout(() => searchInputRef.current?.focus(), 0)
+    }
     onOpenChange?.(newOpen)
   }
 
@@ -103,11 +106,23 @@ export function MultiSelect({
     }
   }
 
-  // Group options by their group property
+  // Filter options by search term
+  const filteredOptions = React.useMemo(() => {
+    if (!search.trim()) return options
+    const q = search.toLowerCase()
+    return options.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(q) ||
+        (opt.subtitle && opt.subtitle.toLowerCase().includes(q)) ||
+        (opt.group && opt.group.toLowerCase().includes(q))
+    )
+  }, [options, search])
+
+  // Group filtered options by their group property
   const groupedOptions = React.useMemo(() => {
     const groups: Record<string, MultiSelectOption[]> = {}
 
-    options.forEach((option) => {
+    filteredOptions.forEach((option) => {
       const groupName = option.group || ""
       if (!groups[groupName]) {
         groups[groupName] = []
@@ -116,7 +131,7 @@ export function MultiSelect({
     })
 
     return groups
-  }, [options])
+  }, [filteredOptions])
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
@@ -148,51 +163,61 @@ export function MultiSelect({
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align={dropdownAlign} side={dropdownSide} sideOffset={4}>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align={dropdownAlign} side={dropdownSide} sideOffset={4} avoidCollisions={false}>
         <Command>
           {searchable && (
-            <CommandInput placeholder={searchPlaceholder} className="h-9" />
+            <CommandInput
+              ref={searchInputRef}
+              placeholder={searchPlaceholder}
+              className="h-9"
+              onValueChange={setSearch}
+              autoFocus
+            />
           )}
-          <CommandEmpty>No results found.</CommandEmpty>
           <div className="max-h-[300px] overflow-y-auto">
-            {showSelectAll && (
-              <CommandGroup>
-                <CommandItem
-                  onSelect={() => handleSelect("SELECT_ALL")}
-                  className="font-semibold"
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selected.length === options.length ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  Select All
-                </CommandItem>
-              </CommandGroup>
-            )}
-            {Object.entries(groupedOptions).map(([groupName, groupOptions]) => (
-              <CommandGroup key={groupName || "_ungrouped"} heading={groupName || undefined}>
-                {groupOptions.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    onSelect={() => handleSelect(option.value)}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        selected.includes(option.value) ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {renderOption ? renderOption(option) : option.label}
-                  </CommandItem>
+            {filteredOptions.length === 0 ? (
+              <CommandEmpty>No results found.</CommandEmpty>
+            ) : (
+              <>
+                {showSelectAll && (
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={() => handleSelect("SELECT_ALL")}
+                      className="font-semibold"
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selected.length === options.length ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      Select All
+                    </CommandItem>
+                  </CommandGroup>
+                )}
+                {Object.entries(groupedOptions).map(([groupName, groupOptions]) => (
+                  <CommandGroup key={groupName || "_ungrouped"} heading={groupName || undefined}>
+                    {groupOptions.map((option) => (
+                      <CommandItem
+                        key={option.value}
+                        onSelect={() => handleSelect(option.value)}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selected.includes(option.value) ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {renderOption ? renderOption(option) : option.label}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
                 ))}
-              </CommandGroup>
-            ))}
+              </>
+            )}
           </div>
         </Command>
       </PopoverContent>
     </Popover>
   )
 }
-

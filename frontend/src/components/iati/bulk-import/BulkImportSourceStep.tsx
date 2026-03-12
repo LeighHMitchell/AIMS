@@ -937,7 +937,7 @@ export default function BulkImportSourceStep({
                       </Button>
                     </div>
                   ) : (
-                    <div className="w-full max-w-lg">
+                    <div className="w-full max-w-2xl">
                       <OrganizationCombobox
                         organizations={organizations}
                         value={selectedOrgId || user?.organizationId || ''}
@@ -1207,14 +1207,14 @@ export default function BulkImportSourceStep({
                             value={dateRangeStart}
                             onChange={(value) => { setDateRangeStart(value); setDateFilterEnabled(true) }}
                             placeholder="Start"
-                            className={`h-9 w-32 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
+                            className={`h-9 w-44 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
                           />
                           <span className={`text-gray-400 ${!dateFilterEnabled ? 'opacity-50' : ''}`}>to</span>
                           <DatePicker
                             value={dateRangeEnd}
                             onChange={(value) => { setDateRangeEnd(value); setDateFilterEnabled(true) }}
                             placeholder="End"
-                            className={`h-9 w-32 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
+                            className={`h-9 w-44 text-sm ${!dateFilterEnabled ? 'opacity-50' : ''}`}
                           />
                         </div>
                       </div>
@@ -1275,7 +1275,7 @@ export default function BulkImportSourceStep({
                         <p className="text-sm text-gray-400 mt-2">
                           {paginatedProgress.activitiesFetched.toLocaleString()} of {paginatedProgress.totalActivities.toLocaleString()} activities downloaded
                         </p>
-                        <p className="text-sm text-gray-500 mt-2">
+                        <p className="text-sm text-gray-500 mt-2" style={{ fontVariantNumeric: 'tabular-nums' }}>
                           {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')} elapsed
                           {paginatedProgress.currentPage > 0 && paginatedProgress.currentPage < paginatedProgress.totalPages && (
                             <span className="text-gray-400 ml-2">
@@ -1334,7 +1334,7 @@ export default function BulkImportSourceStep({
                             }
                           </p>
                         )}
-                        <p className="text-sm text-gray-500 mt-2">
+                        <p className="text-sm text-gray-500 mt-2" style={{ fontVariantNumeric: 'tabular-nums' }}>
                           {Math.floor(elapsedSeconds / 60)}:{Math.floor(elapsedSeconds % 60).toString().padStart(2, '0')}.{Math.floor((elapsedSeconds % 1) * 10)} elapsed
                         </p>
                       </div>

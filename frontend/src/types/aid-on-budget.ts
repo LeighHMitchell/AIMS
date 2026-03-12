@@ -16,6 +16,7 @@ export interface BudgetClassification {
   id: string;
   code: string;
   name: string;
+  acronym?: string;
   nameLocal?: string;
   description?: string;
   classificationType: ClassificationType;
@@ -39,6 +40,7 @@ export interface BudgetClassificationRow {
   id: string;
   code: string;
   name: string;
+  acronym?: string;
   name_local?: string;
   description?: string;
   classification_type: ClassificationType;
@@ -220,6 +222,7 @@ export interface AidOnBudgetChartData {
 export interface BudgetClassificationFormData {
   code: string;
   name: string;
+  acronym?: string;
   nameLocal?: string;
   description?: string;
   classificationType: ClassificationType;
@@ -317,6 +320,7 @@ export function toBudgetClassification(row: BudgetClassificationRow): BudgetClas
     id: row.id,
     code: row.code,
     name: row.name,
+    acronym: row.acronym,
     nameLocal: row.name_local,
     description: row.description,
     classificationType: row.classification_type,
@@ -339,6 +343,7 @@ export function toBudgetClassificationRow(
   return {
     code: data.code,
     name: data.name,
+    acronym: data.acronym,
     name_local: data.nameLocal,
     description: data.description,
     classification_type: data.classificationType,

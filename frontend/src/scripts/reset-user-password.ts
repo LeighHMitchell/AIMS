@@ -10,6 +10,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
+import { randomInt } from 'crypto';
 import { resolve } from 'path';
 
 // Load environment variables manually from .env.local
@@ -58,18 +59,23 @@ function generateTempPassword(): string {
   let password = '';
   
   // Ensure at least one uppercase, lowercase, number, and symbol
-  password += 'ABCDEFGHJKMNPQRSTUVWXYZ'[Math.floor(Math.random() * 23)];
-  password += 'abcdefghijkmnpqrstuvwxyz'[Math.floor(Math.random() * 23)];
-  password += '23456789'[Math.floor(Math.random() * 8)];
-  password += symbols[Math.floor(Math.random() * symbols.length)];
+  password += 'ABCDEFGHJKMNPQRSTUVWXYZ'[randomInt(23)];
+  password += 'abcdefghijkmnpqrstuvwxyz'[randomInt(23)];
+  password += '23456789'[randomInt(8)];
+  password += symbols[randomInt(symbols.length)];
   
   // Fill the rest
   for (let i = 4; i < 12; i++) {
-    password += chars[Math.floor(Math.random() * chars.length)];
+    password += chars[randomInt(chars.length)];
   }
   
-  // Shuffle the password
-  return password.split('').sort(() => Math.random() - 0.5).join('');
+  // Fisher-Yates shuffle with crypto-safe random
+  const arr = password.split('');
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.join('');
 }
 
 async function resetUserPassword(email: string) {

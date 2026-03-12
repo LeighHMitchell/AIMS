@@ -6,6 +6,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "./hover-card"
 import { ScrollArea } from "./scroll-area"
 import { Calendar, ExternalLink } from "lucide-react"
 import releases from "@/data/releases.json"
+import { sanitizeMinimal } from "@/lib/sanitize"
 
 export function VersionBadge() {
   const latestRelease = releases.releases[0]
@@ -73,7 +74,7 @@ export function VersionBadge() {
                       className={`text-xs flex items-start gap-2 ${isHeader ? 'text-foreground font-medium mt-2 first:mt-0' : 'text-muted-foreground'}`}
                     >
                       {!isHeader && <span className="text-primary mt-1.5 h-1 w-1 rounded-full bg-current flex-shrink-0" />}
-                      <span dangerouslySetInnerHTML={{ __html: change }} />
+                      <span dangerouslySetInnerHTML={{ __html: sanitizeMinimal(change) }} />
                     </li>
                   )
                 })}

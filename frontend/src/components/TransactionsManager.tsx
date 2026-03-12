@@ -310,6 +310,7 @@ interface TransactionsManagerProps {
   initialTransactionId?: string;
   geographyLevel?: 'activity' | 'transaction';
   activitySectors?: ActivitySector[];
+  isPooledFund?: boolean;
 }
 
 export default function TransactionsManager({ 
@@ -326,7 +327,8 @@ export default function TransactionsManager({
   defaultDisbursementChannel,
   initialTransactionId,
   geographyLevel = 'activity',
-  activitySectors = []
+  activitySectors = [],
+  isPooledFund = false
 }: TransactionsManagerProps) {
   const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -1268,6 +1270,7 @@ export default function TransactionsManager({
         isSubmitting={submitting}
         geographyLevel={geographyLevel}
         activitySectors={activitySectors}
+        isPooledFund={isPooledFund}
       />
 
       {/* Bulk Action Toolbar - appears from bottom when items selected */}

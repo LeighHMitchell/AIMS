@@ -81,6 +81,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const {
       code,
       name,
+      acronym,
       nameLocal,
       description,
       classificationType,
@@ -94,6 +95,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (code !== undefined) updateData.code = code;
     if (name !== undefined) updateData.name = name;
+    if (acronym !== undefined) updateData.acronym = acronym || undefined;
     if (nameLocal !== undefined) updateData.name_local = nameLocal;
     if (description !== undefined) updateData.description = description;
     if (classificationType !== undefined) {

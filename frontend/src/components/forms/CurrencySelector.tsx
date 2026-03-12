@@ -195,10 +195,10 @@ export function CurrencySelector({
         </PopoverTrigger>
         <PopoverContent
           className={cn(
-            "w-[var(--radix-popover-trigger-width)] min-w-[320px] max-h-[400px] overflow-y-auto p-0 shadow-lg border",
+            "min-w-[320px] max-h-[400px] overflow-y-auto p-0 shadow-lg border",
             dropDirection === "top" && "bottom-full top-auto mb-1"
           )}
-          align="start"
+          align="end"
           sideOffset={4}
         >
           <Command>
