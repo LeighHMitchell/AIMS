@@ -20,10 +20,10 @@ export interface EmptyStateProps {
  */
 export function EmptyState({ title, message, icon }: EmptyStateProps) {
   return (
-    <div className="bg-white rounded-md shadow-sm border border-gray-200 p-8 text-center">
+    <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
       {icon && <div className="mb-3 flex justify-center">{icon}</div>}
       {title && <p className="text-sm font-medium mb-1">{title}</p>}
-      <p className="text-slate-500">{message}</p>
+      <p className="text-muted-foreground">{message}</p>
     </div>
   );
 }

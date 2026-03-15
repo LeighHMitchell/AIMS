@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -267,7 +268,7 @@ export function StrategyForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label htmlFor="title">Title <RequiredDot /></Label>
             <Input
               id="title"
               value={title}
@@ -280,7 +281,7 @@ export function StrategyForm({
           {/* Document Type & Status */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Document Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Label>Document Type <RequiredDot /></Label>
               <Select value={documentType} onValueChange={setDocumentType}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type..." />
@@ -296,7 +297,7 @@ export function StrategyForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Status <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Label>Status <RequiredDot /></Label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status..." />

@@ -379,11 +379,11 @@ export async function PUT(request: NextRequest) {
     // Explicitly copy only allowed fields (defense against mass assignment)
     const allowedFields = [
       'first_name', 'last_name', 'middle_name', 'title', 'suffix',
-      'organization_id', 'organisation', 'department', 'job_title',
+      'gender', 'organization_id', 'organisation', 'department', 'job_title',
       'telephone', 'website', 'mailing_address', 'avatar_url',
       'contact_type', 'fax_number', 'notes',
       'address_line_1', 'address_line_2', 'city', 'state_province', 'country', 'postal_code',
-      'default_activity_columns', 'onboarding_completed'
+      'default_activity_columns', 'onboarding_completed', 'preferred_language'
     ];
 
     for (const field of allowedFields) {

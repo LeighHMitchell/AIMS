@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 import { findParentGroup, INSTITUTIONAL_GROUPS } from '@/data/location-groups';
 
 export const dynamic = 'force-dynamic';
@@ -197,7 +197,8 @@ export async function GET(request: NextRequest) {
         .eq('status', 'actual')
         .not('provider_org_id', 'is', null);
       // Exclude internal transfers (pooled fund flows)
-      txQuery = excludeInternalTransfers(txQuery, [transactionType]);
+      const pooledFundIds = await getPooledFundIds(supabase);
+      txQuery = excludeInternalTransfers(txQuery, pooledFundIds, [transactionType]);
       const { data: txData, error: txError } = await txQuery;
 
       if (txError) {

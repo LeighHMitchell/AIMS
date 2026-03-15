@@ -6,6 +6,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FilterBar } from "@/components/ui/filter-bar"
 import {
   Select,
   SelectContent,
@@ -208,7 +209,7 @@ export default function ParcelsListPage() {
         </div>
 
         {/* Filter bar */}
-        <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200 mb-4 flex-wrap">
+        <FilterBar className="flex-wrap">
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
             <Label className="text-xs text-muted-foreground">Search</Label>
             <div className="relative">
@@ -334,7 +335,7 @@ export default function ParcelsListPage() {
               />
             </div>
           </div>
-        </div>
+        </FilterBar>
 
         {/* Map view */}
         {viewMode === "map" ? (

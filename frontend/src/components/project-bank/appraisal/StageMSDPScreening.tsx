@@ -7,15 +7,13 @@ import { Switch } from '@/components/ui/switch';
 import { AlertTriangle, Check, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { apiFetch } from '@/lib/api-fetch';
-import { HelpTooltip } from './HelpTooltip';
+import { HelpTooltip } from '@/components/ui/help-text-tooltip';
+import { RequiredDot } from '@/components/ui/required-dot';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 import type { NationalDevelopmentGoal } from '@/types/project-bank';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
 import { cn } from '@/lib/utils';
 
-function RequiredDot() {
-  return <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" />;
-}
 
 interface StageMSDPScreeningProps {
   wizard: UseAppraisalWizardReturn;

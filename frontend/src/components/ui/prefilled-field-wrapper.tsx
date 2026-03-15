@@ -1,3 +1,4 @@
+import { RequiredDot } from "@/components/ui/required-dot";
 import React from 'react';
 import { LabelSaveIndicator } from '@/components/ui/save-indicator';
 
@@ -68,7 +69,7 @@ export function PrefilledFieldWrapper({
         <div className="flex items-center gap-2">
           <span>
             {label}
-            {required && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />}
+            {required && <RequiredDot />}
           </span>
           {helpText}
         </div>

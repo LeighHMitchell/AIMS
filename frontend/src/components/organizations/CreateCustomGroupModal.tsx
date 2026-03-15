@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react'
 import {
   Dialog,
@@ -7,7 +8,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,7 +15,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Plus, X, Search, Check, Users, Upload, ImageIcon, CircleDashed } from 'lucide-react'
+import { Plus, X, Search, Check, Users, Upload, ImageIcon } from 'lucide-react'
+import { ModalFooter } from '@/components/ui/modal-footer'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
@@ -293,7 +294,7 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Group Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label htmlFor="name">Group Name <RequiredDot /></Label>
             <Input
               id="name"
               value={formData.name}
@@ -556,26 +557,13 @@ export function CreateCustomGroupModal({ open, onOpenChange, onSuccess }: Create
             />
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <CircleDashed className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Create Group'
-              )}
-            </Button>
-          </DialogFooter>
+          <ModalFooter
+            onCancel={() => onOpenChange(false)}
+            submitText="Create Group"
+            loadingText="Saving..."
+            isLoading={loading}
+            submitType="submit"
+          />
         </form>
       </DialogContent>
     </Dialog>

@@ -7,6 +7,7 @@ import { InvestorParcelCard } from "@/components/invest/InvestorParcelCard"
 import { InvestorProjectCard } from "@/components/invest/InvestorProjectCard"
 import { InvestorMapView } from "@/components/invest/InvestorMapView"
 import { MapPin, Briefcase, Loader2 } from "lucide-react"
+import { FilterBar } from "@/components/ui/filter-bar"
 import type { PublicParcel, PublicProject } from "@/types/land-bank"
 
 type Tab = "parcels" | "projects"
@@ -158,7 +159,7 @@ export default function InvestPage() {
         ) : (
           <div className="space-y-6">
             {/* Search only for projects */}
-            <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200">
+            <FilterBar>
               <div className="flex flex-col gap-1 flex-1 max-w-sm">
                 <label className="text-xs text-muted-foreground">Search</label>
                 <input
@@ -169,7 +170,7 @@ export default function InvestPage() {
                   className="h-9 px-3 rounded-md border border-input bg-background text-sm"
                 />
               </div>
-            </div>
+            </FilterBar>
 
             {filteredProjects.length === 0 ? (
               <div className="py-12 text-center text-muted-foreground">

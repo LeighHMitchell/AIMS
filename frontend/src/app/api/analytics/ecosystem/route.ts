@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 
 /**
  * Aid Ecosystem Analytics API
@@ -139,7 +139,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Exclude internal transfers (pooled fund flows)
-    query = excludeInternalTransfers(query, transactionType !== 'all' ? [transactionType] : undefined)
+    const pooledFundIds = await getPooledFundIds(supabaseAdmin);
+    query = excludeInternalTransfers(query, pooledFundIds, transactionType !== 'all' ? [transactionType] : undefined)
 
     const { data: transactions, error: txError } = await query
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import { Card } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Send } from "lucide-react";
@@ -203,7 +204,7 @@ export function NewsletterSection() {
                             </div>
                           </div>
                           <div className="mc-field-group">
-                            <label htmlFor="mce-EMAIL">Email Address <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></label>
+                            <label htmlFor="mce-EMAIL">Email Address <RequiredDot /></label>
                             <input
                               type="email"
                               name="EMAIL"

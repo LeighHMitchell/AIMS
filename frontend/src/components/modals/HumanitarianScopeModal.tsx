@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -110,7 +111,7 @@ export function HumanitarianScopeModal({
 
         <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto">
           <div className="space-y-2">
-            <Label>Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label>Type <RequiredDot /></Label>
             <HumanitarianTypeSelect
               value={formData.type}
               onValueChange={(value) => setFormData({ ...formData, type: value as '1' | '2' })}
@@ -119,7 +120,7 @@ export function HumanitarianScopeModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Vocabulary <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label>Vocabulary <RequiredDot /></Label>
             <HumanitarianVocabularySelect
               value={formData.vocabulary}
               onValueChange={(value) => {
@@ -134,7 +135,7 @@ export function HumanitarianScopeModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label>Code <RequiredDot /></Label>
             {formData.vocabulary === '98' ? (
               <EmergencySearchableSelect
                 value={formData.code}
@@ -163,7 +164,7 @@ export function HumanitarianScopeModal({
           )}
 
           <div className="space-y-2">
-            <Label>Response Description <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label>Response Description <RequiredDot /></Label>
             {formData.narratives.map((narrative, index) => (
               <div key={index} className="space-y-2">
                 <Textarea

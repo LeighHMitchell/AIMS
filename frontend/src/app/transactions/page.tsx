@@ -13,6 +13,7 @@ import { Download, ChevronUp, ChevronDown, ChevronsUpDown, Frown, ChevronLeft, C
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { ColumnSelector } from "@/components/ui/column-selector";
 import {
   TransactionColumnId,
@@ -718,7 +719,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Search, Filters, and View Controls - All in One Row */}
-        <div className="flex items-end gap-3 py-3 bg-muted rounded-lg px-3 border border-border" data-tour="transactions-filters">
+        <FilterBar data-tour="transactions-filters">
           {/* Search */}
           <div className="flex flex-col gap-1">
             <Label className="text-xs text-muted-foreground">Search</Label>
@@ -833,8 +834,8 @@ export default function TransactionsPage() {
               groupLabels={transactionColumnGroups}
             />
           </div>
-        </div>
-        
+        </FilterBar>
+
         {/* Performance Warning (if applicable) */}
         {(transactions?.total || 0) > 500 && pageLimit === 9999 && (
           <div className="text-xs text-amber-600 px-4">
@@ -873,7 +874,7 @@ export default function TransactionsPage() {
         {loading || (transactions?.total || 0) === 0 ? (
           <TransactionsListSkeleton />
         ) : error ? (
-          <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-foreground mb-2">Unable to Load Transactions</h3>
@@ -885,11 +886,11 @@ export default function TransactionsPage() {
             </div>
           </div>
         ) : sortedTransactions.length === 0 && (searchQuery || filters.transactionTypes.length > 0 || filters.statuses.length > 0 || filters.organizations.length > 0 || filters.financeTypes.length > 0) ? (
-          <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
             <div className="text-muted-foreground">No matching transactions found</div>
           </div>
         ) : (
-          <div className="bg-card rounded-md shadow-sm border border-border overflow-hidden" data-tour="transactions-table">
+          <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden" data-tour="transactions-table">
             <div className="overflow-x-auto">
               <TransactionTable
                 transactions={sortedTransactions}

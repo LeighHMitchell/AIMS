@@ -1,15 +1,16 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { ModalFooter } from '@/components/ui/modal-footer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -234,7 +235,7 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
         <div className="space-y-4 mt-4">
           {/* Title - full width */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label htmlFor="title">Title <RequiredDot /></Label>
             <Input
               id="title"
               placeholder="Enter document title"
@@ -341,24 +342,14 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
         </div>
 
         </div>
-        <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+        <ModalFooter
+          className="px-6 py-4 border-t flex-shrink-0"
+          onCancel={onClose}
+          onSubmit={handleSubmit}
+          submitText="Save Changes"
+          loadingText="Saving..."
+          isLoading={isSubmitting}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 import dacSectors from '@/data/dac-sectors.json';
 
 export const dynamic = 'force-dynamic';
@@ -167,7 +167,8 @@ export async function GET(request: NextRequest) {
         .eq('transaction_type', transactionType)
         .eq('status', 'actual');
       // Exclude internal transfers (pooled fund flows)
-      txQuery = excludeInternalTransfers(txQuery, [transactionType]);
+      const pooledFundIds = await getPooledFundIds(supabase);
+      txQuery = excludeInternalTransfers(txQuery, pooledFundIds, [transactionType]);
       const { data: txData, error: txError } = await txQuery;
 
       if (txError) {

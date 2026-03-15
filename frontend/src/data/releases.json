@@ -1,7 +1,36 @@
 {
-  "currentVersion": "3.12.0",
-  "narrativeSummary": "Version 3.12 hardens security across the platform with origin-restricted CORS, authenticated API routes, and removal of debug endpoints. New users now see a guided onboarding modal on first login. The top navigation menu is rebuilt with native components, multi-select dropdowns gain search filtering, the Fund Flow Sankey chart improves label readability, and the project list adds a Date Added column with copy-to-clipboard support. Transaction tables now flag internal fund transfers. Scoring criteria are updated with graduated MSDP goal points and richer intake technical maturity checks.",
+  "currentVersion": "3.13.0",
+  "narrativeSummary": "Version 3.13 delivers a comprehensive design-system alignment pass, replacing 63 hardcoded Tailwind gray colour classes with semantic theme tokens across 100+ files for consistent dark-mode support. Five new shared UI primitives — RequiredDot, FilterBar, ConfirmationDialog, FormErrorAlert, and ModalFooter — are extracted from duplicated patterns and adopted throughout forms and modals. The internal-transfer exclusion filter is refined to scope only to pooled-fund activities, fixing an issue where regular activity transactions were incorrectly excluded from portfolio analytics. Fund auto-link suggestion logic is refactored into a standalone utility, and a new useLocalStorage hook is introduced.",
   "releases": [
+    {
+      "version": "3.13.0",
+      "date": "2026-03-15",
+      "narrativeSummary": "This release focuses on design-system consistency and component consolidation. Sixty-three hardcoded Tailwind gray colour utilities (text-gray-500, bg-gray-50, border-gray-200, etc.) are replaced with semantic theme tokens (text-muted-foreground, bg-muted, border-border, text-foreground) across 100+ files, enabling proper dark-mode theming. Five new shared UI components are introduced: RequiredDot (red dot for required fields), FilterBar (standardised filter container), ConfirmationDialog (reusable confirm/cancel modal), FormErrorAlert (conditional destructive alert), and ModalFooter (cancel/submit button pair with loading state). These replace dozens of inline implementations. The internal-transfer exclusion filter in analytics is refined to only exclude transactions belonging to pooled-fund activities with activity links, fixing a bug where regular activity transactions were incorrectly filtered from portfolio totals. The fund auto-link suggestion algorithm is extracted from the API route into a standalone utility at lib/fund-auto-link.ts. A new useLocalStorage hook is added for persistent client-side state.",
+      "changes": [
+        "<b>Design System &mdash; Theme Token Migration</b>",
+        "&nbsp;&nbsp;Replaced 63 hardcoded <code>text-gray-*</code>, <code>bg-gray-*</code>, and <code>border-gray-*</code> classes with semantic tokens (<code>text-foreground</code>, <code>text-muted-foreground</code>, <code>bg-muted</code>, <code>border-border</code>) across 100+ files",
+        "&nbsp;&nbsp;Ensures consistent appearance in both light and dark mode themes",
+        "<b>New Shared UI Components</b>",
+        "&nbsp;&nbsp;<code>RequiredDot</code> &mdash; red dot indicator for required form fields, replacing inline <code>&lt;span&gt;</code> elements",
+        "&nbsp;&nbsp;<code>FilterBar</code> &mdash; standardised filter container with consistent padding, background, and border styling",
+        "&nbsp;&nbsp;<code>ConfirmationDialog</code> &mdash; reusable confirm/cancel modal with warning icon, customisable title, description, and loading state",
+        "&nbsp;&nbsp;<code>FormErrorAlert</code> &mdash; conditional destructive alert that renders only when an error string is present",
+        "&nbsp;&nbsp;<code>ModalFooter</code> &mdash; cancel/submit button pair with loading spinner, adopted across multiple modal forms",
+        "<b>Internal Transfer Filter Fix</b>",
+        "&nbsp;&nbsp;<code>excludeInternalTransfers()</code> now accepts a <code>pooledFundIds</code> parameter and only excludes transactions belonging to pooled-fund activities",
+        "&nbsp;&nbsp;New <code>getPooledFundIds()</code> helper fetches pooled fund IDs once per request",
+        "&nbsp;&nbsp;Regular activities with activity links are no longer incorrectly excluded from portfolio analytics totals",
+        "&nbsp;&nbsp;All analytics API routes updated to pass pooled fund IDs to the filter",
+        "<b>Fund Auto-Link Refactor</b>",
+        "&nbsp;&nbsp;Fund suggestion algorithm extracted from <code>api/activities/[id]/fund-suggestions/route.ts</code> into <code>lib/fund-auto-link.ts</code>",
+        "&nbsp;&nbsp;API route now calls <code>generateFundSuggestions()</code> utility, reducing route file by ~180 lines",
+        "<b>Other Improvements</b>",
+        "&nbsp;&nbsp;New <code>useLocalStorage</code> hook for persistent client-side state",
+        "&nbsp;&nbsp;Filter bars across pages (activities, budgets, transactions, reports, organisations, etc.) migrated to <code>FilterBar</code> component",
+        "&nbsp;&nbsp;Empty state cards use <code>rounded-lg</code> consistently instead of <code>rounded-md</code>",
+        "&nbsp;&nbsp;Hover states refined to <code>bg-muted/50</code> for subtler interaction feedback"
+      ]
+    },
     {
       "version": "3.12.0",
       "date": "2026-03-12",

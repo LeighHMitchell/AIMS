@@ -1,7 +1,10 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { ModalFooter } from "@/components/ui/modal-footer"
+import { FormErrorAlert } from "@/components/ui/form-error-alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +13,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+
+
 import { OrganizationCombobox, Organization as ComboboxOrganization } from "@/components/ui/organization-combobox"
 import { PhoneFields } from "@/components/ui/phone-fields"
 import { AddressSearch, AddressComponents } from "@/components/ui/address-search"
@@ -322,12 +326,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
         </DialogHeader>
 
         <div className="space-y-6">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          <FormErrorAlert error={error} />
 
           {/* Profile Picture */}
           <div className="space-y-4">
@@ -364,7 +363,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
                 </Select>
               </div>
               <div>
-                <Label htmlFor="firstName">First Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="firstName">First Name <RequiredDot /></Label>
                 <Input
                   id="firstName"
                   value={form.firstName}
@@ -415,7 +414,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="role">User Role <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="role">User Role <RequiredDot /></Label>
                 <Select value={form.role} onValueChange={(value) => handleFormChange("role", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select user role" />
@@ -511,7 +510,7 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="email">Primary Email <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="email">Primary Email <RequiredDot /></Label>
                 <Input
                   id="email"
                   type="email"
@@ -579,17 +578,12 @@ export function EditUserModal({ isOpen, onClose, onUserUpdated, user, organizati
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            <Save className="h-4 w-4 mr-2" />
-            Update User
-          </Button>
-        </DialogFooter>
+        <ModalFooter
+          onCancel={handleClose}
+          onSubmit={handleSubmit}
+          submitText="Update User"
+          isLoading={isSubmitting}
+        />
       </DialogContent>
     </Dialog>
   )

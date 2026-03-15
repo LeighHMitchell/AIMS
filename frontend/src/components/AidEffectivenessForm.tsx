@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1530,7 +1531,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-gray-600">First Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                    <Label className="text-xs text-gray-600">First Name <RequiredDot /></Label>
                     <Input
                       value={formData.editingContact.firstName || ""}
                       onChange={(e) => updateField('editingContact', { ...formData.editingContact, firstName: e.target.value })}
@@ -1539,7 +1540,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-gray-600">Last Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                    <Label className="text-xs text-gray-600">Last Name <RequiredDot /></Label>
                     <Input
                       value={formData.editingContact.lastName || ""}
                       onChange={(e) => updateField('editingContact', { ...formData.editingContact, lastName: e.target.value })}

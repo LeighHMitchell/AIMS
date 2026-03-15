@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Download, ChevronLeft, ChevronRight, FileText, ShieldCheck, Building2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { BudgetTable, BudgetColumnSelector, DEFAULT_VISIBLE_BUDGET_COLUMNS, BUDGET_COLUMNS_LOCALSTORAGE_KEY, type BudgetColumnId } from "@/components/budgets/BudgetTable";
 import { useBudgets } from "@/hooks/useBudgets";
 import { Budget, BudgetFilter } from "@/types/budget";
@@ -22,12 +23,13 @@ import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CustomYearSelector } from "@/components/ui/custom-year-selector";
 import { useCustomYears } from "@/hooks/useCustomYears";
 import { LoadingText } from "@/components/ui/loading-text";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { apiFetch } from '@/lib/api-fetch';
 
 export default function BudgetsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [pageLimit, setPageLimit] = useState<number>(20);
+  const [pageLimit, setPageLimit] = useLocalStorage<number>("budgets-page-limit", 20);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<string>("period_start");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -39,26 +41,10 @@ export default function BudgetsPage() {
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   
   // Column visibility state with localStorage persistence
-  const [visibleColumns, setVisibleColumns] = useState<BudgetColumnId[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(BUDGET_COLUMNS_LOCALSTORAGE_KEY);
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          return DEFAULT_VISIBLE_BUDGET_COLUMNS;
-        }
-      }
-    }
-    return DEFAULT_VISIBLE_BUDGET_COLUMNS;
-  });
-  
-  // Save column visibility to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(BUDGET_COLUMNS_LOCALSTORAGE_KEY, JSON.stringify(visibleColumns));
-    }
-  }, [visibleColumns]);
+  const [visibleColumns, setVisibleColumns] = useLocalStorage<BudgetColumnId[]>(
+    BUDGET_COLUMNS_LOCALSTORAGE_KEY,
+    DEFAULT_VISIBLE_BUDGET_COLUMNS,
+  );
 
   const [filters, setFilters] = useState({
     types: [] as string[],
@@ -124,16 +110,8 @@ export default function BudgetsPage() {
     }
   }, [loading, budgets.budgets, startLoading, stopLoading]);
 
-  // Load saved page limit preference and fetch organizations on mount
+  // Fetch organizations on mount
   useEffect(() => {
-    const saved = localStorage.getItem("budgets-page-limit");
-    if (saved) {
-      const savedLimit = Number(saved);
-      if (savedLimit > 0 && savedLimit !== 9999) {
-        setPageLimit(savedLimit);
-      }
-    }
-
     fetchOrganizations();
   }, []);
 
@@ -249,7 +227,6 @@ export default function BudgetsPage() {
   const handlePageLimitChange = (newLimit: number) => {
     setPageLimit(newLimit);
     setCurrentPage(1);
-    localStorage.setItem("budgets-page-limit", newLimit.toString());
   };
 
   const exportBudgets = () => {
@@ -433,7 +410,7 @@ export default function BudgetsPage() {
         </div>
 
         {/* Search, Filters, and View Controls */}
-        <div className="flex items-end gap-3 py-3 bg-surface-muted rounded-lg px-3 border border-border">
+        <FilterBar>
             {/* Search Input */}
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">Search</Label>
@@ -512,7 +489,7 @@ export default function BudgetsPage() {
                 onColumnsChange={setVisibleColumns}
               />
             </div>
-        </div>
+        </FilterBar>
 
         {/* Yearly Summary Chart */}
         <YearlyTotalsBarChart
@@ -543,11 +520,11 @@ export default function BudgetsPage() {
 
         {/* Budgets Table */}
         {loading && sortedBudgets.length === 0 && !searchQuery ? (
-          <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
             <LoadingText>Loading budgets...</LoadingText>
           </div>
         ) : error ? (
-          <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-foreground mb-2">Unable to Load Budgets</h3>
@@ -559,11 +536,11 @@ export default function BudgetsPage() {
             </div>
           </div>
         ) : sortedBudgets.length === 0 ? (
-          <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
             <p className="text-muted-foreground">No budgets found</p>
           </div>
         ) : (
-          <div className="bg-card rounded-md shadow-sm border border-border overflow-hidden">
+          <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <BudgetTable
                 key={`budget-table-${budgets.length}-${selectedBudgetIds.size}`}

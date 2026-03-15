@@ -765,7 +765,7 @@ export default function PartnerProfilePage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Select 'Global / Not Country-Specific' for multilaterals or regional organisations like UN agencies, the World Bank, etc.
               </p>
               {validationErrors.countryRepresented && (
@@ -801,7 +801,7 @@ export default function PartnerProfilePage() {
                     <SelectItem key={type.value} value={type.value}>
                       <div className="text-left">
                         <div className="font-medium">{type.value} - {type.label}</div>
-                        <div className="text-xs text-gray-500">{type.description}</div>
+                        <div className="text-xs text-muted-foreground">{type.description}</div>
                       </div>
                     </SelectItem>
                   ))}

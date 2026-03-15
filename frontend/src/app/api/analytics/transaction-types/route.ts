@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 import { TRANSACTION_TYPE_LABELS } from '@/types/transaction';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +30,8 @@ export async function GET() {
     let txQuery = supabaseAdmin
       .from('transactions')
       .select('transaction_type, value_usd');
-    txQuery = excludeInternalTransfers(txQuery);
+    const pooledFundIds = await getPooledFundIds(supabaseAdmin);
+    txQuery = excludeInternalTransfers(txQuery, pooledFundIds);
     const { data: transactions, error } = await txQuery;
 
     if (error) {

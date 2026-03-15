@@ -1,5 +1,6 @@
 'use client';
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -347,7 +348,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
           {/* Contact Type */}
           <div>
             <Label htmlFor="type">
-              Contact Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              Contact Type <RequiredDot />
             </Label>
             <Popover open={contactTypeOpen} onOpenChange={setContactTypeOpen}>
               <PopoverTrigger asChild>
@@ -448,7 +449,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
         
         <div className="col-span-5">
           <Label htmlFor="firstName">
-            First Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+            First Name <RequiredDot />
           </Label>
           <Input
             id="firstName"
@@ -461,7 +462,7 @@ export default function ContactForm({ contact, onSave, onCancel, isOpen = true }
         
         <div className="col-span-5">
           <Label htmlFor="lastName">
-            Last Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+            Last Name <RequiredDot />
           </Label>
           <Input
             id="lastName"

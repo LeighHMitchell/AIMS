@@ -1,3 +1,4 @@
+import { RequiredDot } from "@/components/ui/required-dot";
 import React from 'react';
 import {
   Plus,
@@ -1086,7 +1087,7 @@ function DocumentMetadataModal({
           <div className="space-y-4 py-4 px-1">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="doc-title">Document Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label htmlFor="doc-title">Document Title <RequiredDot /></Label>
             <Input
               id="doc-title"
               value={formData.title[0]?.text || ''}
@@ -1115,7 +1116,7 @@ function DocumentMetadataModal({
 
           {/* Format */}
           <div className="space-y-2">
-            <Label>Document Format <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label>Document Format <RequiredDot /></Label>
             <DocumentFormatSelect
               value={formData.format}
               onValueChange={(value) => setFormData(prev => ({ ...prev, format: value }))}

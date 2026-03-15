@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { FilterBar } from "@/components/ui/filter-bar"
 import {
   Plus, Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown,
   MoreVertical, ListTodo, Copy, Check,
@@ -256,7 +257,7 @@ export default function ProjectListPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200 mb-4">
+        <FilterBar>
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
             <Label className="text-xs text-muted-foreground">Search</Label>
             <div className="relative">
@@ -344,7 +345,7 @@ export default function ProjectListPage() {
               </SelectContent>
             </Select>
           </div>
-        </div>
+        </FilterBar>
 
         {/* Table */}
         <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
@@ -396,7 +397,7 @@ export default function ProjectListPage() {
                     return (
                     <tr
                       key={p.id}
-                      className="group hover:bg-muted transition-colors cursor-pointer"
+                      className="group hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => router.push(`/project-bank/${p.id}`)}
                     >
                       {/* Project Code + Name merged */}

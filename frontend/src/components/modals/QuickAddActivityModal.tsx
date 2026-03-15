@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { RequiredDot } from '@/components/ui/required-dot';
 import { SelectIATI } from '@/components/ui/SelectIATI';
 import {
   Loader2,
@@ -583,7 +584,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                       <div className="space-y-5">
                         <div className="space-y-2">
                           <Label htmlFor="activity-title">
-                            Activity Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                            Activity Title <RequiredDot />
                           </Label>
                           <Input
                             id="activity-title"
@@ -626,7 +627,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
 
                         <div className="space-y-2">
                           <Label>
-                            Activity Status <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                            Activity Status <RequiredDot />
                           </Label>
                           <SelectIATI
                             groups={ACTIVITY_STATUS_GROUPS}
@@ -649,7 +650,7 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
                       <div className="space-y-5">
                         <div className="space-y-2">
                           <Label>
-                            Country <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                            Country <RequiredDot />
                           </Label>
                           <SelectIATI
                             groups={countryGroups}

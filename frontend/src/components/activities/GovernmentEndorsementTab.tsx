@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -794,7 +795,7 @@ export default function GovernmentEndorsementTab({
             </div>
 
             <div className="space-y-2">
-              <Label>Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Label>Code <RequiredDot /></Label>
               <Input
                 value={refFormData.code}
                 onChange={(e) => handleRefFormChange('code', e.target.value)}

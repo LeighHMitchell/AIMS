@@ -1,5 +1,6 @@
 'use client';
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -405,7 +406,7 @@ export function ReadinessItemManagement({
             {/* Basic Info */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="code">Code <RequiredDot /></Label>
                 <Input
                   id="code"
                   value={formData.code}
@@ -427,7 +428,7 @@ export function ReadinessItemManagement({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Label htmlFor="title">Title <RequiredDot /></Label>
               <Input
                 id="title"
                 value={formData.title}

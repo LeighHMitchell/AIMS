@@ -1,13 +1,14 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModalFooter } from '@/components/ui/modal-footer';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/hooks/useUser';
-import { HelpCircle, SendIcon, Loader2Icon, Lightbulb } from 'lucide-react';
+import { HelpCircle, SendIcon, Lightbulb } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -99,7 +100,7 @@ export function AskQuestionModal({ isOpen, onClose }: AskQuestionModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="question">Your Question <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label htmlFor="question">Your Question <RequiredDot /></Label>
             <Textarea
               id="question"
               value={question}
@@ -154,32 +155,15 @@ export function AskQuestionModal({ isOpen, onClose }: AskQuestionModalProps) {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || !question.trim()}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <SendIcon className="mr-2 h-4 w-4" />
-                  Submit Question
-                </>
-              )}
-            </Button>
-          </DialogFooter>
+          <ModalFooter
+            onCancel={handleClose}
+            submitText="Submit Question"
+            loadingText="Submitting..."
+            isLoading={isSubmitting}
+            isDisabled={!question.trim()}
+            submitType="submit"
+            submitIcon={<SendIcon className="h-4 w-4" />}
+          />
         </form>
       </DialogContent>
     </Dialog>

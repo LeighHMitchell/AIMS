@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
@@ -219,14 +220,14 @@ function EditMeetingModal({
         <div className="space-y-5 px-6 py-4 overflow-y-auto flex-1">
           {/* Title */}
           <div className="space-y-2">
-            <Label>Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label>Title <RequiredDot /></Label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Meeting title" />
           </div>
 
           {/* Date + Status */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Label>Date <RequiredDot /></Label>
               <Input type="date" value={meetingDate} onChange={(e) => setMeetingDate(e.target.value)} />
             </div>
             <div className="space-y-2">
@@ -654,7 +655,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
           </DialogHeader>
           <div className="space-y-4 px-6 py-4 overflow-y-auto flex-1">
             <div className="space-y-2">
-              <Label>Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Label>Title <RequiredDot /></Label>
               <Input
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
@@ -662,7 +663,7 @@ export default function MeetingsSection({ workingGroupId }: MeetingsSectionProps
               />
             </div>
             <div className="space-y-2">
-              <Label>Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Label>Date <RequiredDot /></Label>
               <Input
                 type="date"
                 value={newDate}

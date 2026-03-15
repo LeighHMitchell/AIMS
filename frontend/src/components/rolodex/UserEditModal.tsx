@@ -1,3 +1,4 @@
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react';
 import { RolodexPerson } from '@/app/api/rolodex/route';
 import {
@@ -206,7 +207,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="first_name">First Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="first_name">First Name <RequiredDot /></Label>
                 <Input
                   id="first_name"
                   value={formData.first_name}
@@ -216,7 +217,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="last_name">Last Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="last_name">Last Name <RequiredDot /></Label>
                 <Input
                   id="last_name"
                   value={formData.last_name}
@@ -226,7 +227,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="email">Email Address <RequiredDot /></Label>
                 <Input
                   id="email"
                   type="email"
@@ -285,7 +286,7 @@ export function UserEditModal({ person, isOpen, onClose, onUpdate }: UserEditMod
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="role">User Role <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="role">User Role <RequiredDot /></Label>
                 <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select user role" />

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 import { MeasureType, DashboardData, RankedItem, FundingByType } from '@/types/national-priorities';
 
 // In-memory cache for dashboard results (keyed by query params)
@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
         },
       });
     }
+
+    const pooledFundIds = await getPooledFundIds(supabase);
 
     // If organizationId provided, get activity IDs where org is reporting org
     let orgActivityIds: string[] | null = null;
@@ -670,7 +672,7 @@ export async function GET(request: NextRequest) {
         .eq('status', 'actual')
         .not('receiver_org_id', 'is', null);
       // Exclude internal transfers (pooled fund flows)
-      recipientGovQuery = excludeInternalTransfers(recipientGovQuery, [transactionType]);
+      recipientGovQuery = excludeInternalTransfers(recipientGovQuery, pooledFundIds, [transactionType]);
       
       // Apply date filters at query level for efficiency
       if (dateFrom) {
@@ -846,7 +848,7 @@ export async function GET(request: NextRequest) {
       .eq('status', 'actual')
       .order('transaction_date');
     // Exclude internal transfers (pooled fund flows)
-    fundingQuery = excludeInternalTransfers(fundingQuery, [transactionType]);
+    fundingQuery = excludeInternalTransfers(fundingQuery, pooledFundIds, [transactionType]);
     const { data: fundingData } = await fundingQuery;
 
     const fundingMap = new Map<string, Map<string, number>>();

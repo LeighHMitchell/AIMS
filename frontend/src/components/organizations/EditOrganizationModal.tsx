@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   Dialog,
@@ -730,7 +731,7 @@ export function EditOrganizationModal({
               {/* Name (Required) */}
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">
-                  Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Name <RequiredDot />
                 </Label>
                 <Input
                   id="name"
@@ -744,7 +745,7 @@ export function EditOrganizationModal({
               {/* Acronym / Short Name (Required) */}
               <div className="space-y-2">
                 <Label htmlFor="acronym" className="text-sm font-medium">
-                  Acronym / Short Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Acronym / Short Name <RequiredDot />
                 </Label>
                 <Input
                   id="acronym"
@@ -758,7 +759,7 @@ export function EditOrganizationModal({
               {/* Location Represented */}
               <div className="space-y-2">
                 <Label htmlFor="country_represented" className="text-sm font-medium">
-                  Location Represented <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Location Represented <RequiredDot />
                 </Label>
                 <Select
                   key={`country-${organization?.id || 'new'}`}
@@ -914,7 +915,7 @@ export function EditOrganizationModal({
               {/* Organisation Type (Required) */}
               <div className="space-y-2">
                 <Label htmlFor="Organisation_Type_Code" className="text-sm font-medium">
-                  Organisation Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Organisation Type <RequiredDot />
                 </Label>
                 <Select 
                   value={formData.Organisation_Type_Code || ''} 

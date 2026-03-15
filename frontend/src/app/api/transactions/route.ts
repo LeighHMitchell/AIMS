@@ -11,6 +11,7 @@ import {
 } from '@/lib/transaction-field-cleaner';
 import { inferAndApplyBudgetLines } from '@/lib/transaction-budget-inference';
 import { escapeIlikeWildcards } from '@/lib/security-utils';
+import { autoLinkFundChildren } from '@/lib/fund-auto-link';
 
 export const dynamic = 'force-dynamic';
 
@@ -960,7 +961,23 @@ export async function POST(request: NextRequest) {
       console.error('[Transactions API] Background budget inference failed:', err)
     );
 
-    return NextResponse.json(responseData, { status: 201 });
+    // Auto-link fund children if this is a pooled fund activity
+    let autoLinked: string[] = [];
+    try {
+      const { linked } = await autoLinkFundChildren(supabase, body.activity_id);
+      autoLinked = linked;
+      if (linked.length > 0) {
+        console.log(`[AIMS] Auto-linked ${linked.length} child activities for pooled fund ${body.activity_id}`);
+      }
+    } catch (err) {
+      // Non-blocking — log but don't fail the transaction save
+      console.warn('[AIMS] Auto-link failed:', err);
+    }
+
+    return NextResponse.json(
+      { ...responseData, autoLinked: autoLinked.length > 0 ? autoLinked : undefined },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('[Transactions API] Unexpected error:', error);
     return NextResponse.json(

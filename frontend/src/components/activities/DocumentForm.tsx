@@ -1,3 +1,4 @@
+import { RequiredDot } from "@/components/ui/required-dot";
 import React from 'react';
 import { X, Plus, Trash2, Info, Globe, HelpCircle, Save } from 'lucide-react';
 import {
@@ -312,7 +313,7 @@ export function DocumentForm({
                 <div>
                   <Label>
                     Title
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                    <RequiredDot />
                   </Label>
                   <div className="space-y-2 mt-2">
                     {formData.title.map((narrative, index) => (

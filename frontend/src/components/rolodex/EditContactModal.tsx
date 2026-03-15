@@ -1,3 +1,4 @@
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react';
 import { RolodexPerson } from '@/app/api/rolodex/route';
 import {
@@ -173,7 +174,7 @@ export function EditContactModal({ person, isOpen, onClose, onUpdate }: EditCont
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Label htmlFor="name">Full Name <RequiredDot /></Label>
               <Input
                 id="name"
                 value={formData.name}

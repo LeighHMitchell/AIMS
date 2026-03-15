@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 
 export async function GET(request: NextRequest) {
   const { supabase, response: authResponse } = await requireAuth();
@@ -60,7 +60,8 @@ export async function GET(request: NextRequest) {
       .eq('status', 'actual')
       .not('provider_org_id', 'is', null);
     // Exclude internal transfers (pooled fund flows)
-    transactionsQuery = excludeInternalTransfers(transactionsQuery, ['2', '3']);
+    const pooledFundIds = await getPooledFundIds(supabase);
+    transactionsQuery = excludeInternalTransfers(transactionsQuery, pooledFundIds, ['2', '3']);
 
     if (filteredActivityIds.length > 0) {
       transactionsQuery = transactionsQuery.in('activity_id', filteredActivityIds);

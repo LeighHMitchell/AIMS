@@ -45,9 +45,9 @@ export function ParcelProgressRail({
                       disabled={!clickable}
                       className={cn(
                         "w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0",
-                        completed && "bg-gray-800 border-gray-800 text-white",
-                        isCurrent && !completed && "border-gray-600 bg-gray-100 text-gray-800",
-                        !completed && !isCurrent && "border-gray-300 bg-background text-gray-400",
+                        completed && "bg-foreground border-foreground text-background",
+                        isCurrent && !completed && "border-muted-foreground bg-muted text-foreground",
+                        !completed && !isCurrent && "border-border bg-background text-muted-foreground/60",
                         clickable && "cursor-pointer hover:scale-110",
                         !clickable && "cursor-default",
                       )}
@@ -58,7 +58,7 @@ export function ParcelProgressRail({
                         <span
                           className={cn(
                             "w-2 h-2 rounded-full",
-                            isCurrent ? "bg-gray-600" : "bg-gray-300",
+                            isCurrent ? "bg-muted-foreground" : "bg-border",
                           )}
                         />
                       )}
@@ -68,7 +68,7 @@ export function ParcelProgressRail({
                       <div
                         className={cn(
                           "w-0.5 h-8 transition-colors",
-                          completed ? "bg-gray-600" : "bg-gray-300",
+                          completed ? "bg-muted-foreground" : "bg-border",
                         )}
                       />
                     )}
@@ -81,8 +81,8 @@ export function ParcelProgressRail({
                     className={cn(
                       "text-sm pt-1 text-left transition-colors",
                       isCurrent && "font-semibold text-foreground",
-                      completed && !isCurrent && "text-gray-600",
-                      !completed && !isCurrent && "text-gray-400",
+                      completed && !isCurrent && "text-muted-foreground",
+                      !completed && !isCurrent && "text-muted-foreground/60",
                       clickable && "cursor-pointer hover:text-foreground",
                       !clickable && "cursor-default",
                     )}
@@ -113,17 +113,17 @@ export function ParcelProgressRail({
               <div
                 className={cn(
                   "h-1.5 rounded-full mb-1 transition-colors",
-                  completed && "bg-gray-700",
-                  isCurrent && !completed && "bg-gray-500",
-                  !completed && !isCurrent && "bg-gray-200",
+                  completed && "bg-foreground",
+                  isCurrent && !completed && "bg-muted-foreground",
+                  !completed && !isCurrent && "bg-border",
                 )}
               />
               <span
                 className={cn(
                   "text-[10px] leading-tight block truncate",
                   isCurrent && "font-semibold text-foreground",
-                  completed && !isCurrent && "text-gray-600",
-                  !completed && !isCurrent && "text-gray-400",
+                  completed && !isCurrent && "text-muted-foreground",
+                  !completed && !isCurrent && "text-muted-foreground/60",
                 )}
               >
                 {STEP_LABELS[step]}

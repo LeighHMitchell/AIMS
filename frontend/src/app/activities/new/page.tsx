@@ -25,6 +25,7 @@ import { OrganizationSearchableSelect } from "@/components/ui/organization-searc
 import { DropdownProvider } from "@/contexts/DropdownContext";
 import { LinkedActivityTitle } from "@/components/ui/linked-activity-title";
 import { CreateActivityModal } from "@/components/modals/CreateActivityModal";
+import { RequiredDot } from "@/components/ui/required-dot";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1033,7 +1034,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             className="text-foreground"
           >
             <div className="flex items-center gap-2">
-              Activity Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              Activity Title <RequiredDot />
               <HelpTextTooltip>
                 A short, human-readable title that provides a meaningful summary of the activity. It should be clear, descriptive, and consistent with the reporting organisation's titles used in published projects.
               </HelpTextTooltip>
@@ -1429,7 +1430,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Identifier Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></label>
+              <label className="text-sm font-medium text-foreground">Identifier Code <RequiredDot /></label>
               <Input
                 type="text"
                 value={otherIdentifierForm.code}
@@ -1501,7 +1502,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Owner Organisation Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></label>
+              <label className="text-sm font-medium text-foreground">Owner Organisation Name <RequiredDot /></label>
               <Input
                 type="text"
                 value={otherIdentifierForm.ownerOrgNarrative}

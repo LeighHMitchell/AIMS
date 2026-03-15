@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
@@ -162,7 +163,7 @@ export function EditTaskModal({
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="edit-title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label htmlFor="edit-title">Title <RequiredDot /></Label>
             <Input
               id="edit-title"
               value={title}
@@ -276,7 +277,7 @@ export function EditTaskModal({
 
           {/* Assignees */}
           <div className="space-y-2">
-            <Label>Assign To <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label>Assign To <RequiredDot /></Label>
             <UserPicker
               userId={userId}
               selectedAssignees={assignees}

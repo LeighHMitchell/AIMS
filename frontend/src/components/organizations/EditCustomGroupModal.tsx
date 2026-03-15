@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react'
 import {
   Dialog,
@@ -331,7 +332,7 @@ export function EditCustomGroupModal({ group, open, onOpenChange, onSuccess }: E
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Group Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label htmlFor="name">Group Name <RequiredDot /></Label>
             <Input
               id="name"
               value={formData.name}

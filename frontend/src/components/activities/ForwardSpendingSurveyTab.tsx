@@ -1,5 +1,6 @@
 'use client';
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
 import { Trash2, Plus, Loader2, Pencil, Save, X, AlertCircle, CheckCircle, TrendingUp } from 'lucide-react';
@@ -477,7 +478,7 @@ export default function ForwardSpendingSurveyTab({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="extraction_date">
-                Extraction Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                Extraction Date <RequiredDot />
               </Label>
               <Input
                 id="extraction_date"
@@ -744,7 +745,7 @@ export default function ForwardSpendingSurveyTab({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="forecast_year">
-                  Forecast Year <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Forecast Year <RequiredDot />
                 </Label>
                 <Select
                   value={modalForecast?.forecast_year?.toString() || ''}
@@ -771,7 +772,7 @@ export default function ForwardSpendingSurveyTab({
 
               <div className="space-y-2">
                 <Label htmlFor="amount">
-                  Amount <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Amount <RequiredDot />
                 </Label>
                 <Input
                   id="amount"
@@ -791,7 +792,7 @@ export default function ForwardSpendingSurveyTab({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="currency">
-                  Currency <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Currency <RequiredDot />
                 </Label>
                 <Select
                   value={modalForecast?.currency || 'USD'}
@@ -815,7 +816,7 @@ export default function ForwardSpendingSurveyTab({
 
               <div className="space-y-2">
                 <Label htmlFor="value_date">
-                  Value Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Value Date <RequiredDot />
                 </Label>
                 <Input
                   id="value_date"

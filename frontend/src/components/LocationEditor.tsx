@@ -1,5 +1,6 @@
 'use client';
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -255,7 +256,7 @@ export default function LocationEditor({
               {/* Location Name */}
               <div>
                 <Label htmlFor={`name-${location.id}`}>
-                  Location Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Location Name <RequiredDot />
                 </Label>
                 <Input
                   id={`name-${location.id}`}
@@ -269,7 +270,7 @@ export default function LocationEditor({
               {/* Country */}
               <div>
                 <Label htmlFor={`country-${location.id}`}>
-                  Country <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Country <RequiredDot />
                 </Label>
                 <EnhancedSearchableSelect
                   value={location.country || ''}

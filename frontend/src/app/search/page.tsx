@@ -214,7 +214,7 @@ function SearchPageContent() {
           {/* Searchable content badges - shown when no query */}
           {!query && (
             <div className="mt-6 text-center">
-              <p className="text-gray-500 text-sm mb-3">Search across</p>
+              <p className="text-muted-foreground text-sm mb-3">Search across</p>
               <div className="flex flex-wrap gap-2 justify-center">
                 <Badge variant="outline">Activities</Badge>
                 <Badge variant="outline">Organisations</Badge>
@@ -282,7 +282,7 @@ function SearchPageContent() {
                 <SearchResultsSkeleton />
               ) : filteredResults.length === 0 && !loading ? (
                 <div className="text-center py-12">
-                  <div className="text-gray-500">
+                  <div className="text-muted-foreground">
                     {activeTab === 'all'
                       ? 'No results found'
                       : `No ${resultTypeLabels[activeTab as SearchResultType].toLowerCase()} found`

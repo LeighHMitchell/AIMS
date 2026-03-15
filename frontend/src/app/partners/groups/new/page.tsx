@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -140,8 +141,8 @@ export default function NewGroupPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create Custom Group</h1>
-            <p className="text-gray-600 mt-1">Create a new custom grouping of organizations</p>
+            <h1 className="text-3xl font-bold text-foreground">Create Custom Group</h1>
+            <p className="text-muted-foreground mt-1">Create a new custom grouping of organizations</p>
           </div>
         </div>
 
@@ -157,7 +158,7 @@ export default function NewGroupPage() {
             <CardContent className="space-y-6">
               {/* Name */}
               <div className="space-y-2">
-                <Label htmlFor="name">Group Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="name">Group Name <RequiredDot /></Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -176,7 +177,7 @@ export default function NewGroupPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, group_code: e.target.value }))}
                   placeholder="e.g., HDC-2024"
                 />
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   An internal identifier or abbreviation for this group
                 </p>
               </div>
@@ -291,7 +292,7 @@ export default function NewGroupPage() {
                   </PopoverContent>
                 </Popover>
                 {selectedOrgs.length > 0 && (
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     Selected: {getSelectedOrgNames()}
                   </p>
                 )}
@@ -301,7 +302,7 @@ export default function NewGroupPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="is_public">Public Group</Label>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Public groups are visible to all users
                   </p>
                 </div>

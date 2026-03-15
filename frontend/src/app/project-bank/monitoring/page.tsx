@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FilterBar } from "@/components/ui/filter-bar"
 import { CalendarClock, AlertTriangle, CheckCircle, Search, BarChart3 } from "lucide-react"
 import { apiFetch } from "@/lib/api-fetch"
 
@@ -107,7 +108,7 @@ export default function MonitoringDashboardPage() {
         </div>
 
         {/* Search — styled like Project List filter bar */}
-        <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200 mb-4">
+        <FilterBar>
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
             <Label className="text-xs text-muted-foreground">Search</Label>
             <div className="relative">
@@ -115,7 +116,7 @@ export default function MonitoringDashboardPage() {
               <Input placeholder="Search projects..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
             </div>
           </div>
-        </div>
+        </FilterBar>
 
         {/* Table */}
         <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
@@ -149,7 +150,7 @@ export default function MonitoringDashboardPage() {
                     return (
                       <tr
                         key={s.id}
-                        className="group hover:bg-muted transition-colors cursor-pointer"
+                        className="group hover:bg-muted/50 transition-colors cursor-pointer"
                         onClick={() => router.push(`/project-bank/${s.project_id}`)}
                       >
                         <td className="px-4 py-2">

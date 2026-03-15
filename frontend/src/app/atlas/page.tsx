@@ -16,8 +16,8 @@ export default function AtlasPage() {
   return (
     <MainLayout>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Atlas</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <h1 className="text-3xl font-bold text-foreground">Atlas</h1>
+        <p className="text-muted-foreground mt-2">
           Interactive map powered by MapLibre GL for improved performance and WebGL rendering
         </p>
       </div>

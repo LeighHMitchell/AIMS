@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import { useState, useEffect, useMemo } from "react";
 import { useUser } from "@/hooks/useUser";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -890,7 +891,7 @@ export default function ProfilePage() {
                           </Select>
                         </div>
                         <div className="md:col-span-3">
-                              <Label htmlFor="firstName" className="text-xs">First Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                              <Label htmlFor="firstName" className="text-xs">First Name <RequiredDot /></Label>
                           <Input
                             id="firstName"
                             value={formData.firstName}
@@ -910,7 +911,7 @@ export default function ProfilePage() {
                           />
                         </div>
                         <div className="md:col-span-2">
-                              <Label htmlFor="lastName" className="text-xs">Last Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                              <Label htmlFor="lastName" className="text-xs">Last Name <RequiredDot /></Label>
                           <Input
                             id="lastName"
                             value={formData.lastName}

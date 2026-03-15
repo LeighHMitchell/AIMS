@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Download, ChevronLeft, ChevronRight, FileText, Building2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { 
   PlannedDisbursementsTable, 
   PlannedDisbursementColumnSelector,
@@ -406,7 +407,7 @@ export default function PlannedDisbursementsPage() {
         </div>
 
         {/* Search and Filters */}
-        <div className="flex items-end gap-3 py-3 bg-surface-muted rounded-lg px-3 border border-gray-200">
+        <FilterBar>
             {/* Search Input */}
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">Search</Label>
@@ -468,7 +469,7 @@ export default function PlannedDisbursementsPage() {
                 onColumnsChange={setVisibleColumns}
               />
             </div>
-        </div>
+        </FilterBar>
 
         {/* Yearly Summary Chart */}
         <YearlyTotalsBarChart

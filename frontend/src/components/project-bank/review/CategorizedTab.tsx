@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FilterBar } from "@/components/ui/filter-bar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Loader2, Search,
@@ -246,7 +247,7 @@ export function CategorizedTab() {
   return (
     <>
       {/* Filters + View Toggle */}
-      <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200 mb-4">
+      <FilterBar>
         <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
           <Label className="text-xs text-muted-foreground">Search</Label>
           <div className="relative">
@@ -320,7 +321,7 @@ export function CategorizedTab() {
             <Table2 className="h-4 w-4" />
           </Button>
         </div>
-      </div>
+      </FilterBar>
 
       {/* Kanban View */}
       {viewMode === "kanban" && (

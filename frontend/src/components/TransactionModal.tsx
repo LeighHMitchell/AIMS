@@ -1,4 +1,5 @@
 "use client"
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Info, CheckCircle2, DollarSign, Copy, Clipboard, SearchIcon, ChevronsUpDown, Siren, Globe, ChevronDown, AlertTriangle, RefreshCw, Upload } from "lucide-react";
@@ -1087,7 +1088,13 @@ export default function TransactionModal({
       }
       
       showTransactionSuccess((isEditing || createdTransactionId) ? 'Transaction updated successfully' : 'Transaction added successfully');
-      
+
+      // Notify user if auto-linking occurred on a pooled fund
+      if (saved.autoLinked && saved.autoLinked.length > 0) {
+        const count = saved.autoLinked.length;
+        toast.info(`Auto-linked ${count} child ${count === 1 ? 'activity' : 'activities'} to this fund`);
+      }
+
       // Call onSubmit callback to notify parent component
       if (onSubmit) {
         onSubmit(saved);
@@ -1396,7 +1403,13 @@ export default function TransactionModal({
         }
         
         showAutoCreateSuccess('Transaction saved! You can now upload documents.');
-        
+
+        // Notify user if auto-linking occurred on a pooled fund
+        if (saved.autoLinked && saved.autoLinked.length > 0) {
+          const count = saved.autoLinked.length;
+          toast.info(`Auto-linked ${count} child ${count === 1 ? 'activity' : 'activities'} to this fund`);
+        }
+
         // Save any pending fields (with same abort controller)
         if (Object.keys(pendingFields).length > 0) {
           await apiFetch('/api/transactions', {
@@ -1507,7 +1520,7 @@ export default function TransactionModal({
                     isSaved={transactionTypeAutosave.isSaved}
                     hasValue={!!formData.transaction_type}
                   >
-                    Transaction Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                    Transaction Type <RequiredDot />
                   </LabelWithInfoAndSave>
                   <Popover open={transactionTypePopoverOpen} onOpenChange={setTransactionTypePopoverOpen}>
                     <PopoverTrigger asChild className="w-full">
@@ -1703,7 +1716,7 @@ export default function TransactionModal({
                     isSaved={valueAutosave.isSaved}
                     hasValue={!!formData.value && formData.value > 0}
                   >
-                    Transaction Value <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                    Transaction Value <RequiredDot />
                   </LabelWithInfoAndSave>
                   <Input
                     type="text"
@@ -1747,7 +1760,7 @@ export default function TransactionModal({
                     isSaved={currencyAutosave.isSaved || hasDefaultValue('currency', formData.currency)}
                     hasValue={!!formData.currency}
                   >
-                    Currency <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                    Currency <RequiredDot />
                   </LabelWithInfoAndSave>
                   <CurrencySelector
                     value={formData.currency || undefined}
@@ -1772,7 +1785,7 @@ export default function TransactionModal({
                       isSaved={transactionDateAutosave.isSaved}
                       hasValue={!!formData.transaction_date}
                     >
-                      Transaction Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                      Transaction Date <RequiredDot />
                     </LabelWithInfoAndSave>
                   </div>
                   <Input
@@ -1855,7 +1868,7 @@ export default function TransactionModal({
                   isSaved={providerOrgAutosave.isSaved}
                   hasValue={!!formData.provider_org_id}
                 >
-                  Provider Organization <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Provider Organization <RequiredDot />
                 </LabelWithInfoAndSave>
                 <OrganizationSearchableSelect
                   value={formData.provider_org_id || ''}
@@ -2062,7 +2075,7 @@ export default function TransactionModal({
                   isSaved={receiverOrgAutosave.isSaved}
                   hasValue={!!formData.receiver_org_id}
                 >
-                  Receiver Organization <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  Receiver Organization <RequiredDot />
                 </LabelWithInfoAndSave>
                 <OrganizationSearchableSelect
                   value={formData.receiver_org_id || ''}

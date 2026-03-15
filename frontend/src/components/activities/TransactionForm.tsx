@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -690,7 +691,7 @@ export default function TransactionForm({
             {/* Transaction Type */}
             <div className="space-y-2">
               <Label htmlFor="transaction_type">
-                Transaction Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                Transaction Type <RequiredDot />
               </Label>
               <Popover open={transactionTypePopoverOpen} onOpenChange={setTransactionTypePopoverOpen}>
                 <PopoverTrigger asChild>
@@ -768,7 +769,7 @@ export default function TransactionForm({
             {/* Transaction Date */}
             <div className="space-y-2">
               <Label htmlFor="transaction_date">
-                Transaction Date <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                Transaction Date <RequiredDot />
               </Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -792,7 +793,7 @@ export default function TransactionForm({
             {/* Value */}
             <div className="space-y-2">
               <Label htmlFor="value">
-                Value <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                Value <RequiredDot />
               </Label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -818,7 +819,7 @@ export default function TransactionForm({
             {/* Currency */}
             <div className="space-y-2">
               <Label htmlFor="currency">
-                Currency <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                Currency <RequiredDot />
               </Label>
               <Select
                 value={formData.currency}
@@ -847,7 +848,7 @@ export default function TransactionForm({
             {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="status">
-                Transaction Status <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                Transaction Status <RequiredDot />
               </Label>
               <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-gray-100">
                 <span className="flex items-center gap-2">

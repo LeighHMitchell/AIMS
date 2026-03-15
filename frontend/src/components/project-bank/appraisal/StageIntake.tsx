@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DocumentUploadZone } from './DocumentUploadZone';
-import { HelpTooltip } from './HelpTooltip';
+import { HelpTooltip } from '@/components/ui/help-text-tooltip';
+import { RequiredDot } from '@/components/ui/required-dot';
 import { DatePicker } from '@/components/ui/date-picker';
 import { apiFetch } from '@/lib/api-fetch';
 import type { UseAppraisalWizardReturn } from '@/hooks/use-appraisal-wizard';
@@ -28,10 +29,6 @@ const SDG_GOALS = Array.from({ length: 17 }, (_, i) => ({
   label: `SDG ${i + 1}`,
 }));
 
-/** Red dot indicator for required fields */
-function RequiredDot() {
-  return <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" />;
-}
 
 /** Currency formatter for display */
 function formatCurrencyDisplay(value: number | null | undefined): string {

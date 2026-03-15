@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,7 +80,8 @@ export async function GET(request: NextRequest) {
       .in('activity_id', publishedActivityIds)
       .not('value_usd', 'is', null); // Only include transactions with USD values
     // Exclude internal transfers (pooled fund flows)
-    txQuery = excludeInternalTransfers(txQuery, ['2', '3', '4']);
+    const pooledFundIds = await getPooledFundIds(supabaseAdmin);
+    txQuery = excludeInternalTransfers(txQuery, pooledFundIds, ['2', '3', '4']);
     const { data: transactions, error: transactionsError } = await txQuery;
 
     if (transactionsError) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Onboarding, ChoiceGroup, useOnboarding } from "@/components/ui/onboarding";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { OrganizationSearchableSelect } from "@/components/ui/organization-searchable-select";
+import { useOrganizations } from "@/hooks/use-organizations";
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 import { User } from "@/types/user";
 import { apiFetch } from "@/lib/api-fetch";
@@ -24,6 +25,27 @@ const TITLE_OPTIONS = [
   { value: "U", label: "U" },
 ] as const;
 
+const GENDER_OPTIONS = [
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" },
+  { value: "Other", label: "Other" },
+  { value: "Prefer not to say", label: "Prefer not to say" },
+] as const;
+
+const LANGUAGE_OPTIONS = [
+  { code: "en", name: "English" },
+  { code: "fr", name: "French" },
+  { code: "es", name: "Spanish" },
+  { code: "ar", name: "Arabic" },
+  { code: "zh", name: "Chinese" },
+  { code: "pt", name: "Portuguese" },
+  { code: "ru", name: "Russian" },
+  { code: "hi", name: "Hindi" },
+  { code: "sw", name: "Swahili" },
+  { code: "de", name: "German" },
+  { code: "my", name: "Myanmar" },
+];
+
 interface OnboardingModalProps {
   user: User;
   onComplete: (updatedUser: User) => void;
@@ -33,10 +55,12 @@ interface FormData {
   title: string;
   firstName: string;
   lastName: string;
+  gender: string;
   organizationId: string;
   department: string;
   position: string;
   phone: string;
+  preferredLanguage: string;
   profilePicture: string;
 }
 
@@ -45,35 +69,17 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
     title: user.title || "",
     firstName: user.firstName || "",
     lastName: user.lastName || "",
+    gender: user.gender || "",
     organizationId: user.organizationId || "",
     department: user.department || "",
     position: user.jobTitle || "",
     phone: user.telephone || user.phone || "",
+    preferredLanguage: user.preferredLanguage || "en",
     profilePicture: user.profilePicture || "",
   });
-  const [organizations, setOrganizations] = useState<{ value: string; label: string }[]>([]);
+  const { organizations } = useOrganizations();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Fetch organizations
-  useEffect(() => {
-    async function fetchOrgs() {
-      try {
-        const res = await apiFetch("/api/organizations");
-        if (res.ok) {
-          const data = await res.json();
-          const orgs = (Array.isArray(data) ? data : []).map((org: any) => ({
-            value: org.id,
-            label: org.acronym ? `${org.name} (${org.acronym})` : org.name,
-          }));
-          setOrganizations(orgs);
-        }
-      } catch (err) {
-        console.error("[Onboarding] Failed to fetch organizations:", err);
-      }
-    }
-    fetchOrgs();
-  }, []);
 
   const updateField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -91,10 +97,12 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
           title: form.title || undefined,
           first_name: form.firstName,
           last_name: form.lastName,
+          gender: form.gender || undefined,
           organization_id: form.organizationId || undefined,
           department: form.department || undefined,
           job_title: form.position || undefined,
           telephone: form.phone || undefined,
+          preferred_language: form.preferredLanguage || undefined,
           avatar_url: form.profilePicture || undefined,
           onboarding_completed: true,
         }),
@@ -117,7 +125,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
   return (
     <Dialog open modal>
       <DialogContent
-        className="sm:max-w-lg"
+        className="sm:max-w-xl"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
@@ -170,6 +178,14 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
                 />
               </div>
             </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Gender</label>
+              <ChoiceGroup
+                options={GENDER_OPTIONS as any}
+                value={form.gender}
+                onChange={(v) => updateField("gender", v)}
+              />
+            </div>
           </Onboarding.Step>
 
           {/* Step 2: Organization & Role */}
@@ -178,13 +194,12 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
               <label className="mb-1.5 block text-sm font-medium">
                 Organization <span className="text-destructive">*</span>
               </label>
-              <SearchableSelect
-                options={organizations}
+              <OrganizationSearchableSelect
+                organizations={organizations}
                 value={form.organizationId}
                 onValueChange={(v) => updateField("organizationId", v)}
                 placeholder="Select your organization..."
                 searchPlaceholder="Search organizations..."
-                emptyText="No organizations found."
               />
             </div>
             <div>
@@ -220,6 +235,20 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="+95 9 xxx xxx xxx"
               />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Preferred Language</label>
+              <select
+                value={form.preferredLanguage}
+                onChange={(e) => updateField("preferredLanguage", e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {LANGUAGE_OPTIONS.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium">Profile Picture</label>

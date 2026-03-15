@@ -9,8 +9,8 @@ export default function AidFlowMapPage() {
   return (
     <MainLayout>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Network</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Network</h1>
+        <p className="text-muted-foreground">
           Interactive visualization of aid flows between donors and recipients
         </p>
       </div>

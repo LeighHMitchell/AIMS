@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Search } from "lucide-react"
+import { FilterBar } from "@/components/ui/filter-bar"
 import { STATES_REGIONS } from "@/lib/land-bank-utils"
 
 interface InvestorFilterBarProps {
@@ -38,7 +39,7 @@ export function InvestorFilterBar({
   assetTypes,
 }: InvestorFilterBarProps) {
   return (
-    <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200 flex-wrap">
+    <FilterBar className="flex-wrap">
       <div className="flex flex-col gap-1 flex-1 min-w-[180px] max-w-sm">
         <Label className="text-xs text-muted-foreground">Search</Label>
         <div className="relative">
@@ -96,6 +97,6 @@ export function InvestorFilterBar({
           </SelectContent>
         </Select>
       </div>
-    </div>
+    </FilterBar>
   )
 }

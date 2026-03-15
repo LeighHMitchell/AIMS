@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
@@ -636,10 +637,7 @@ export function PBSectorsManagement() {
             <div className="space-y-2">
               <Label htmlFor="sector-code">
                 Code{" "}
-                <span
-                  className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle"
-                  aria-hidden="true"
-                />
+                <RequiredDot />
               </Label>
               <Input
                 id="sector-code"
@@ -658,10 +656,7 @@ export function PBSectorsManagement() {
             <div className="space-y-2">
               <Label htmlFor="sector-name">
                 Name{" "}
-                <span
-                  className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle"
-                  aria-hidden="true"
-                />
+                <RequiredDot />
               </Label>
               <Input
                 id="sector-name"
@@ -716,10 +711,7 @@ export function PBSectorsManagement() {
             <div className="space-y-2">
               <Label htmlFor="subsector-name">
                 Name{" "}
-                <span
-                  className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle"
-                  aria-hidden="true"
-                />
+                <RequiredDot />
               </Label>
               <Input
                 id="subsector-name"

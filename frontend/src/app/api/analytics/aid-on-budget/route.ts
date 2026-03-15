@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 import { AidOnBudgetMetrics, ClassificationType } from "@/types/aid-on-budget";
 
 /**
@@ -26,6 +26,8 @@ export async function GET(request: NextRequest) {
     const classificationType = searchParams.get("type") as ClassificationType | null;
     const organizationId = searchParams.get("organizationId");
 
+    const pooledFundIds = await getPooledFundIds(supabase);
+
     // Get total aid (all disbursements)
     let totalAidQuery = supabase
       .from("transactions")
@@ -33,7 +35,7 @@ export async function GET(request: NextRequest) {
       .eq("transaction_type", "3") // Disbursements
       .not("value_usd", "is", null);
     // Exclude internal transfers (pooled fund flows)
-    totalAidQuery = excludeInternalTransfers(totalAidQuery, ["3"]);
+    totalAidQuery = excludeInternalTransfers(totalAidQuery, pooledFundIds, ["3"]);
 
     if (dateFrom) {
       totalAidQuery = totalAidQuery.gte("transaction_date", dateFrom);
@@ -98,7 +100,7 @@ export async function GET(request: NextRequest) {
       .eq("transaction_type", "3") // Disbursements
       .not("value_usd", "is", null);
     // Exclude internal transfers (pooled fund flows)
-    disbursementsQuery = excludeInternalTransfers(disbursementsQuery, ["3"]);
+    disbursementsQuery = excludeInternalTransfers(disbursementsQuery, pooledFundIds, ["3"]);
 
     if (dateFrom) {
       disbursementsQuery = disbursementsQuery.gte("transaction_date", dateFrom);
@@ -138,7 +140,7 @@ export async function GET(request: NextRequest) {
       .eq("transaction_type", "2") // Commitments
       .not("value_usd", "is", null);
     // Exclude internal transfers (pooled fund flows)
-    commitmentsQuery = excludeInternalTransfers(commitmentsQuery, ["2"]);
+    commitmentsQuery = excludeInternalTransfers(commitmentsQuery, pooledFundIds, ["2"]);
 
     if (dateFrom) {
       commitmentsQuery = commitmentsQuery.gte("transaction_date", dateFrom);

@@ -1,7 +1,9 @@
 "use client";
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModalFooter } from '@/components/ui/modal-footer';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -232,7 +234,7 @@ export function ParticipatingOrgModal({
           {/* Organization Selection */}
           <div className="space-y-2">
             <Label htmlFor="organization" className="flex items-center gap-2">
-              Organization <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 align-middle" aria-hidden="true" />
+              Organization <RequiredDot />
               <HelpTextTooltip content="Select an existing organization from your database. Can't find your organization? Add it in the Organizations page first." />
             </Label>
             <OrganizationCombobox
@@ -249,7 +251,7 @@ export function ParticipatingOrgModal({
           {/* Role Selection */}
           <div className="space-y-2">
             <Label htmlFor="role" className="flex items-center gap-2">
-              Organization Role <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 align-middle" aria-hidden="true" />
+              Organization Role <RequiredDot />
               <HelpTextTooltip content="The role of the organization in this activity according to IATI standard: Funding (provides funds), Accountable (legal responsibility), Extending (manages on behalf of funder), or Implementing (physically carries out)." />
             </Label>
             <EnhancedSearchableSelect
@@ -490,24 +492,14 @@ export function ParticipatingOrgModal({
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={!formData.organization_id || !formData.role_type || saving}
-          >
-            {saving ? (
-              <>Saving...</>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                {editingOrg ? 'Update' : 'Save'}
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+        <ModalFooter
+          onCancel={onClose}
+          onSubmit={handleSubmit}
+          submitText={editingOrg ? 'Update' : 'Save'}
+          loadingText="Saving..."
+          isLoading={saving}
+          isDisabled={!formData.organization_id || !formData.role_type}
+        />
       </DialogContent>
     </Dialog>
   );

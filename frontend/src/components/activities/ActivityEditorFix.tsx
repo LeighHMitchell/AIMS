@@ -1,3 +1,4 @@
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -170,7 +171,7 @@ export function AutosaveSelectField({
       <label htmlFor={id} className="text-sm font-medium text-gray-700 flex items-center">
         {label}
         {helpText}
-        {required && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />}
+        {required && <RequiredDot />}
       </label>
       <SelectComponent
         id={id}

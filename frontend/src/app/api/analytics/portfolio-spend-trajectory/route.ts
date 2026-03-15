@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 
 // Force dynamic rendering to bypass fetch cache
 export const dynamic = 'force-dynamic'
@@ -127,7 +127,8 @@ export async function GET(request: NextRequest) {
       .eq('transaction_type', '3') // ONLY disbursements
       .order('transaction_date', { ascending: true })
     // Exclude internal transfers (pooled fund flows)
-    txQuery = excludeInternalTransfers(txQuery, ['3'])
+    const pooledFundIds = await getPooledFundIds(supabase);
+    txQuery = excludeInternalTransfers(txQuery, pooledFundIds, ['3'])
     const { data: transactions, error: transactionsError } = await txQuery
 
     if (transactionsError) {

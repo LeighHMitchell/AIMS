@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FilterBar } from "@/components/ui/filter-bar"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -303,7 +304,7 @@ export function IntakeReviewTab() {
     return (
       <>
         {/* Filter bar with view toggle */}
-        <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200 mb-4">
+        <FilterBar>
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
             <Label className="text-xs text-muted-foreground">Search</Label>
             <div className="relative">
@@ -325,7 +326,7 @@ export function IntakeReviewTab() {
               <Table2 className="h-4 w-4" />
             </Button>
           </div>
-        </div>
+        </FilterBar>
         <div className="text-center py-12 text-muted-foreground">
           <Inbox className="h-8 w-8 mx-auto mb-3 text-gray-300" />
           <p className="text-sm">No projects awaiting intake review</p>
@@ -339,7 +340,7 @@ export function IntakeReviewTab() {
   return (
     <>
       {/* Filters + View Toggle */}
-      <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200 mb-4">
+      <FilterBar>
         <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
           <Label className="text-xs text-muted-foreground">Search</Label>
           <div className="relative">
@@ -417,7 +418,7 @@ export function IntakeReviewTab() {
             <Table2 className="h-4 w-4" />
           </Button>
         </div>
-      </div>
+      </FilterBar>
 
       {/* Kanban View */}
       {viewMode === "kanban" && (

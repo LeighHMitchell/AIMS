@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -236,7 +237,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-foreground">
-                Email <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                Email <RequiredDot />
               </label>
               <Input
                 id="email"
@@ -251,7 +252,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium text-foreground">
-                Password <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                Password <RequiredDot />
               </label>
               <Input
                 id="password"
@@ -267,7 +268,7 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
-                Confirm Password <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                Confirm Password <RequiredDot />
               </label>
               <Input
                 id="confirmPassword"

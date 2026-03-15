@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -508,7 +509,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
             {addMode === 'manual' && (
               <>
                 <div className="space-y-2">
-                  <Label>Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                  <Label>Name <RequiredDot /></Label>
                   <Input
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}

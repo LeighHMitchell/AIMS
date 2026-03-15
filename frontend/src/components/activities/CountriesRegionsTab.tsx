@@ -1,5 +1,6 @@
 'use client';
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -964,7 +965,7 @@ export default function CountriesRegionsTab({
                 <div ref={formRef as any} className="space-y-4 pr-4">
                   {/* Type Selection */}
                   <div className="space-y-2">
-                    <Label>Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5 align-middle" aria-hidden="true" /></Label>
+                    <Label>Type <RequiredDot /></Label>
                     <Popover open={typeDropdownOpen} onOpenChange={setTypeDropdownOpen}>
                       <PopoverTrigger
                         className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent/50 transition-colors"
@@ -1106,7 +1107,7 @@ export default function CountriesRegionsTab({
 
                   {/* Item Selection */}
                   <div className="space-y-2">
-                    <Label>Item <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5 align-middle" aria-hidden="true" /></Label>
+                    <Label>Item <RequiredDot /></Label>
                     {selectedType === 'custom' ? (
                       <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
                         Custom Geography fields below
@@ -1278,7 +1279,7 @@ export default function CountriesRegionsTab({
 
                   {/* Percentage */}
                   <div className="space-y-2">
-                    <Label>Percentage (%) <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5 align-middle" aria-hidden="true" /></Label>
+                    <Label>Percentage (%) <RequiredDot /></Label>
                     <Input
                       type="number"
                       min="0"
@@ -1311,7 +1312,7 @@ export default function CountriesRegionsTab({
                       <h4 className="text-sm font-medium text-gray-900">Custom Geography Details</h4>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5 align-middle" aria-hidden="true" /></Label>
+                          <Label className="text-sm font-medium">Name <RequiredDot /></Label>
                           <Input
                             type="text"
                             value={customName}
@@ -1322,7 +1323,7 @@ export default function CountriesRegionsTab({
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5 align-middle" aria-hidden="true" /></Label>
+                          <Label className="text-sm font-medium">Code <RequiredDot /></Label>
                           <Input
                             type="text"
                             value={customCode}

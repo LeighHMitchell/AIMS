@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useCallback, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -259,7 +260,7 @@ export default function GeneralSection({
             isSaved={!!labelAutosave.state.lastSaved || (!isCreating && !!label)}
             hasValue={!!label}
           >
-            Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+            Name <RequiredDot />
           </LabelSaveIndicator>
           <Input
             value={label}
@@ -276,7 +277,7 @@ export default function GeneralSection({
             isSaved={!!codeAutosave.state.lastSaved || (!isCreating && !!code)}
             hasValue={!!code}
           >
-            Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+            Code <RequiredDot />
           </LabelSaveIndicator>
           <Input
             value={code}

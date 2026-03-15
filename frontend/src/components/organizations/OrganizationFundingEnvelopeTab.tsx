@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -679,7 +680,7 @@ export default function OrganizationFundingEnvelopeTab({
                   {/* Period Type */}
                   <div className="space-y-2">
                     <div className="flex items-center">
-                      <Label>Period Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                      <Label>Period Type <RequiredDot /></Label>
                       <HelpIcon helpKey="period_type" />
                     </div>
                     <Select
@@ -704,7 +705,7 @@ export default function OrganizationFundingEnvelopeTab({
                   {/* Year Type */}
                   <div className="space-y-2">
                     <div className="flex items-center">
-                      <Label>Year Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                      <Label>Year Type <RequiredDot /></Label>
                       <HelpIcon helpKey="year_type" />
                     </div>
                     <Select
@@ -759,7 +760,7 @@ export default function OrganizationFundingEnvelopeTab({
                   {/* Year Start */}
                   <div className="space-y-2">
                     <div className="flex items-center">
-                      <Label>{editingEnvelope.period_type === 'multi_year' ? <>Start Year <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></> : <>Year <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></>}</Label>
+                      <Label>{editingEnvelope.period_type === 'multi_year' ? <>Start Year <RequiredDot /></> : <>Year <RequiredDot /></>}</Label>
                       <HelpIcon helpKey="year_start" />
                     </div>
                     <Select
@@ -788,7 +789,7 @@ export default function OrganizationFundingEnvelopeTab({
                   {editingEnvelope.period_type === 'multi_year' ? (
                     <div className="space-y-2">
                       <div className="flex items-center">
-                        <Label>End Year <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                        <Label>End Year <RequiredDot /></Label>
                         <HelpIcon helpKey="year_end" />
                       </div>
                       <Select
@@ -824,7 +825,7 @@ export default function OrganizationFundingEnvelopeTab({
                   {/* Amount */}
                   <div className="space-y-2">
                     <div className="flex items-center">
-                      <Label>Amount <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                      <Label>Amount <RequiredDot /></Label>
                       <HelpIcon helpKey="amount" />
                     </div>
                     <Input
@@ -845,7 +846,7 @@ export default function OrganizationFundingEnvelopeTab({
                   {/* Currency */}
                   <div className="space-y-2">
                     <div className="flex items-center">
-                      <Label>Currency <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                      <Label>Currency <RequiredDot /></Label>
                       <HelpIcon helpKey="currency" />
                     </div>
                     <Select
@@ -897,7 +898,7 @@ export default function OrganizationFundingEnvelopeTab({
                   {/* Flow Direction */}
                   <div className="space-y-2">
                     <div className="flex items-center">
-                      <Label>Flow Direction <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                      <Label>Flow Direction <RequiredDot /></Label>
                       <HelpIcon helpKey="flow_direction" />
                     </div>
                     <Select
@@ -920,7 +921,7 @@ export default function OrganizationFundingEnvelopeTab({
                   {/* Organisation Role */}
                   <div className="space-y-2">
                     <div className="flex items-center">
-                      <Label>Organisation Role <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                      <Label>Organisation Role <RequiredDot /></Label>
                       <HelpIcon helpKey="organization_role" />
                     </div>
                     <Select
@@ -957,7 +958,7 @@ export default function OrganizationFundingEnvelopeTab({
                   {/* Status */}
                   <div className="space-y-2">
                     <div className="flex items-center">
-                      <Label>Status <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                      <Label>Status <RequiredDot /></Label>
                       <HelpIcon helpKey="status" />
                     </div>
                     <Select

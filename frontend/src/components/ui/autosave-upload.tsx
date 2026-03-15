@@ -1,3 +1,4 @@
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Image as ImageIcon, CircleDashed, Move, Check, ZoomIn, ZoomOut } from 'lucide-react';
@@ -336,7 +337,7 @@ export function AutosaveUpload({
         <div className="flex items-center gap-2">
           <span>
             {label}
-            {required && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />}
+            {required && <RequiredDot />}
           </span>
           {helpText}
         </div>

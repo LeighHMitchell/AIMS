@@ -1,3 +1,4 @@
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
@@ -13219,7 +13220,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                       {/* Search Filters */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <Label htmlFor="iati-title">Activity Title or IATI Identifier <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                          <Label htmlFor="iati-title">Activity Title or IATI Identifier <RequiredDot /></Label>
                           <Input
                             id="iati-title"
                             placeholder="e.g., Health Project or 44000-P156634"

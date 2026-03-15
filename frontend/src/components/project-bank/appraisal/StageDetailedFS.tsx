@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentUploadZone } from './DocumentUploadZone';
-import { HelpTooltip } from './HelpTooltip';
+import { HelpTooltip } from '@/components/ui/help-text-tooltip';
+import { RequiredDot } from '@/components/ui/required-dot';
 import { FieldCheck } from './FieldCheck';
 import { DatePicker } from '@/components/ui/date-picker';
 import { StageFIRR } from './StageFIRR';
@@ -22,9 +23,6 @@ import type { FS2Tab, FS2Assignment } from '@/types/project-bank';
 import { cn } from '@/lib/utils';
 import { UserCircle, Calendar, Clock, Check } from 'lucide-react';
 
-function RequiredDot() {
-  return <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" />;
-}
 
 interface StageDetailedFSProps {
   wizard: UseAppraisalWizardReturn;

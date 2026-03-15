@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useEffect, useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -452,7 +453,7 @@ export function SavedReportsManager({
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="report-name">Report Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Label htmlFor="report-name">Report Name <RequiredDot /></Label>
               <Input
                 id="report-name"
                 value={reportName}

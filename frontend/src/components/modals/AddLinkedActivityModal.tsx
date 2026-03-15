@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from "react";
 import { X, Search, Link2, ExternalLink, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -310,7 +311,7 @@ export function AddLinkedActivityModal({
 
               <div className="space-y-2">
                 <Label htmlFor="external-iati-id">
-                  IATI Identifier <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                  IATI Identifier <RequiredDot />
                 </Label>
                 <Input
                   id="external-iati-id"
@@ -341,7 +342,7 @@ export function AddLinkedActivityModal({
           {/* Relationship Type */}
           <div className="space-y-2">
             <Label htmlFor="relationship-type">
-              Relationship Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              Relationship Type <RequiredDot />
             </Label>
             <Select value={relationshipType} onValueChange={setRelationshipType}>
               <SelectTrigger id="relationship-type">

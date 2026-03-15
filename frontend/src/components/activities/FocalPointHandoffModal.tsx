@@ -1,5 +1,6 @@
 'use client';
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -76,7 +77,7 @@ export function FocalPointHandoffModal({
 
           <div>
             <label className="text-sm font-medium mb-2 block">
-              Select User to Handoff To <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              Select User to Handoff To <RequiredDot />
             </label>
             <UserSearchableSelect
               value={selectedUser?.id}

@@ -1,5 +1,6 @@
 'use client';
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, AlertCircle, Search, X, User as UserIcon, Mail, Phone, Globe, Pencil, Trash2, Upload, ChevronsUpDown, Check, LayoutGrid, Table as TableIcon } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/user-avatar';
@@ -1018,7 +1019,7 @@ function ContactFormDialog({
           {/* Contact Type */}
           <div>
             <Label htmlFor="type">
-              Contact Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              Contact Type <RequiredDot />
             </Label>
             <Popover open={contactTypeOpen} onOpenChange={setContactTypeOpen}>
               <PopoverTrigger asChild>
@@ -1104,7 +1105,7 @@ function ContactFormDialog({
 
             <div className="col-span-5">
               <Label htmlFor="firstName">
-                First Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                First Name <RequiredDot />
               </Label>
               <Input
                 id="firstName"
@@ -1117,7 +1118,7 @@ function ContactFormDialog({
 
             <div className="col-span-5">
               <Label htmlFor="lastName">
-                Last Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                Last Name <RequiredDot />
               </Label>
               <Input
                 id="lastName"

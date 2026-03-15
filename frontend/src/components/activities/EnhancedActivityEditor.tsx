@@ -1,3 +1,4 @@
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
@@ -739,7 +740,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Activity Title */}
-                <FieldWrapper section="basic_info" field="title" label={<>Activity Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></>}>
+                <FieldWrapper section="basic_info" field="title" label={<>Activity Title <RequiredDot /></>}>
                   <div className="space-y-1">
                     <Input
                       type="text"
@@ -1058,7 +1059,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                                 {/* Identifier Code (Required) */}
                                 <div className="space-y-1">
                                   <label className="text-sm font-medium text-gray-700">
-                                    Identifier Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                                    Identifier Code <RequiredDot />
                                   </label>
                                   <Input
                                     type="text"
@@ -1089,7 +1090,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                                 {/* Owner Organisation Name (Required) */}
                                 <div className="space-y-1">
                                   <label className="text-sm font-medium text-gray-700">
-                                    Owner Organisation Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+                                    Owner Organisation Name <RequiredDot />
                                   </label>
                                   <Input
                                     type="text"

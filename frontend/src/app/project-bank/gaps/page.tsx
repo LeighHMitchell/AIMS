@@ -157,7 +157,7 @@ export default function FundingGapsPage() {
                     return (
                       <tr
                         key={p.id}
-                        className="group hover:bg-muted transition-colors cursor-pointer"
+                        className="group hover:bg-muted/50 transition-colors cursor-pointer"
                         onClick={() => router.push(`/project-bank/${p.id}`)}
                       >
                         {/* Project Code + Name merged — single line like Project List */}

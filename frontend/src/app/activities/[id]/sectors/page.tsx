@@ -50,7 +50,7 @@ export default function ActivitySectorsPage() {
         <div className="mb-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center text-muted-foreground hover:text-foreground mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Activity
@@ -58,7 +58,7 @@ export default function ActivitySectorsPage() {
           
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Sector & Sub-sector Allocation</h1>
+              <h1 className="text-2xl font-bold text-foreground">Sector & Sub-sector Allocation</h1>
 
             </div>
             
@@ -123,9 +123,9 @@ export default function ActivitySectorsPage() {
         )}
 
         {/* CSV Template info */}
-        <div className="mt-8 bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-3">Bulk Import Template</h3>
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="mt-8 bg-muted rounded-lg p-6">
+          <h3 className="text-lg font-medium text-foreground mb-3">Bulk Import Template</h3>
+          <p className="text-sm text-muted-foreground mb-4">
             To import multiple sector allocations at once, use a CSV file with the following format:
           </p>
           <pre className="bg-white border border-gray-200 rounded p-3 text-xs overflow-x-auto">
@@ -136,7 +136,7 @@ export default function ActivitySectorsPage() {
 15110,15
 31110,10`}
           </pre>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             The first row must be the header. DAC5 codes must be valid OECD DAC codes.
           </p>
         </div>

@@ -1895,7 +1895,7 @@ function OrganizationsPageContent() {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-card rounded-md shadow-sm border border-border overflow-hidden">
+                    <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow>

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth';
-import { excludeInternalTransfers } from '@/lib/analytics-transaction-filters';
+import { excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic'
 
@@ -39,7 +39,8 @@ export async function GET() {
       .from('transactions')
       .select('activity_id, transaction_type, value_usd')
       .in('activity_id', activityIds)
-    txQuery = excludeInternalTransfers(txQuery)
+    const pooledFundIds = await getPooledFundIds(supabase);
+    txQuery = excludeInternalTransfers(txQuery, pooledFundIds)
     const { data: transactions } = await txQuery
 
     // Calculate totals per activity

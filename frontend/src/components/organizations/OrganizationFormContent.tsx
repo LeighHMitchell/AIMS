@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -896,7 +897,7 @@ export function OrganizationFormContent({
               isSaved={!!nameAutosave.state.lastSaved}
               hasValue={!!formData.name}
             >
-              Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              Name <RequiredDot />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -924,7 +925,7 @@ export function OrganizationFormContent({
               isSaved={!!acronymAutosave.state.lastSaved}
               hasValue={!!formData.acronym}
             >
-              Acronym / Short Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              Acronym / Short Name <RequiredDot />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -977,7 +978,7 @@ export function OrganizationFormContent({
               isSaved={!!countryAutosave.state.lastSaved}
               hasValue={!!formData.country_represented}
             >
-              Location Represented <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              Location Represented <RequiredDot />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1192,7 +1193,7 @@ export function OrganizationFormContent({
               isSaved={!!orgTypeAutosave.state.lastSaved}
               hasValue={!!formData.Organisation_Type_Code}
             >
-              Organisation Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+              Organisation Type <RequiredDot />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

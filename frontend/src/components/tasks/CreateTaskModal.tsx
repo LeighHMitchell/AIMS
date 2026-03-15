@@ -1,11 +1,11 @@
 "use client";
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -26,7 +26,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
+import { ModalFooter } from '@/components/ui/modal-footer';
 import { format } from 'date-fns';
 import { UserPicker } from './UserPicker';
 import type { CreateTaskRequest, TaskPriority, TaskAssignees } from '@/types/task';
@@ -142,7 +143,7 @@ export function CreateTaskModal({
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label htmlFor="title">Title <RequiredDot /></Label>
             <Input
               id="title"
               tabIndex={1}
@@ -251,7 +252,7 @@ export function CreateTaskModal({
 
           {/* Assignees */}
           <div className="space-y-2">
-            <Label>Assign To <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+            <Label>Assign To <RequiredDot /></Label>
             <UserPicker
               userId={userId}
               selectedAssignees={assignees}
@@ -260,20 +261,14 @@ export function CreateTaskModal({
           </div>
 
           </div>
-          <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!canSubmit}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Task
-            </Button>
-          </DialogFooter>
+          <ModalFooter
+            className="px-6 py-4 border-t flex-shrink-0"
+            onCancel={() => onOpenChange(false)}
+            submitText="Create Task"
+            isLoading={loading}
+            isDisabled={!canSubmit}
+            submitType="submit"
+          />
         </form>
       </DialogContent>
     </Dialog>

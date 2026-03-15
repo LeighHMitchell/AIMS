@@ -1,5 +1,6 @@
 "use client";
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
@@ -627,7 +628,7 @@ export function ProjectReferencesManagement() {
           <div className="space-y-4 py-4">
             {/* Activity Search */}
             <div className="space-y-2">
-              <Label htmlFor="activity">Activity <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+              <Label htmlFor="activity">Activity <RequiredDot /></Label>
               <Input
                 id="activity"
                 value={activitySearch}
@@ -664,7 +665,7 @@ export function ProjectReferencesManagement() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="referenceType">Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="referenceType">Type <RequiredDot /></Label>
                 <Select
                   value={formData.referenceType}
                   onValueChange={(value) =>
@@ -686,7 +687,7 @@ export function ProjectReferencesManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="code">Code <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="code">Code <RequiredDot /></Label>
                 <Input
                   id="code"
                   value={formData.code}

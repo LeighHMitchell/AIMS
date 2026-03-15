@@ -1,5 +1,6 @@
 'use client';
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 
@@ -61,7 +62,7 @@ const LinkedActivityModal: React.FC<LinkedActivityModalProps> = ({
         
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Select Relationship Type <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" />
+            Select Relationship Type <RequiredDot />
           </label>
           <div className="space-y-2">
             {RELATIONSHIP_TYPES.map((type) => (

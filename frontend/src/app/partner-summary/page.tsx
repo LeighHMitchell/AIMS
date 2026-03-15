@@ -1,5 +1,6 @@
 "use client"
 
+import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useMemo } from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -788,7 +789,7 @@ export default function PartnerSummaryPage() {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="groupName">Group Name <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" aria-hidden="true" /></Label>
+                <Label htmlFor="groupName">Group Name <RequiredDot /></Label>
                 <Input
                   id="groupName"
                   value={newGroupName}

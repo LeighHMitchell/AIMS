@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FilterBar } from "@/components/ui/filter-bar"
 import {
   Select,
   SelectContent,
@@ -71,7 +72,7 @@ export default function TransfersListPage() {
           <div className="flex items-center gap-3">
             <TrendingDown className="h-8 w-8 text-muted-foreground" />
             <div>
-              <h1 className="text-3xl font-bold">SEE Transfers</h1>
+              <h1 className="text-2xl font-bold">SEE Transfers</h1>
               <p className="text-muted-foreground mt-1">State Economic Enterprise equitization pipeline</p>
             </div>
           </div>
@@ -105,7 +106,7 @@ export default function TransfersListPage() {
         </div>
 
         {/* Filters — styled like Project List */}
-        <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200 mb-4">
+        <FilterBar>
           <div className="flex flex-col gap-1 flex-1 min-w-[200px] max-w-sm">
             <Label className="text-xs text-muted-foreground">Search</Label>
             <div className="relative">
@@ -132,7 +133,7 @@ export default function TransfersListPage() {
               </SelectContent>
             </Select>
           </div>
-        </div>
+        </FilterBar>
 
         {/* Table */}
         <Card>

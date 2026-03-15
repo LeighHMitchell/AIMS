@@ -38,6 +38,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect, SearchableSelectOption } from "@/components/ui/searchable-select";
 import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { ActivityStatusFilterSelect } from "@/components/forms/ActivityStatusFilterSelect";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
@@ -1682,7 +1683,7 @@ const router = useRouter();
       </div>
 
       {/* Filters and View Controls - All in One Row */}
-      <div className="flex items-end gap-3 py-2 bg-surface-muted rounded-lg px-3 border border-gray-200" data-tour="activities-filters">
+      <FilterBar data-tour="activities-filters">
         {/* Status Filter */}
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground">Status</Label>
@@ -1846,14 +1847,14 @@ const router = useRouter();
             <LayoutGrid className="h-4 w-4" />
           </Button>
         </div>
-      </div>
-      
+      </FilterBar>
+
 
       {/* Activities Content */}
       {loading || userLoading || !hasLoadedOnce || isInitialLoad ? (
         <ActivityListSkeleton />
       ) : error ? (
-        <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
           <div className="space-y-4">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
             <div>
@@ -1869,7 +1870,7 @@ const router = useRouter();
           </div>
         </div>
       ) : showEmptyState ? (
-        <div className="bg-card rounded-md shadow-sm border border-border p-8 text-center">
+        <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
           <div className="space-y-4">
             <div className="text-slate-500">No activities found</div>
             <p className="text-sm text-slate-400">
@@ -2525,7 +2526,7 @@ const router = useRouter();
                   return (
                     <tr
                       key={activity.id}
-                      className={`group hover:bg-muted transition-colors ${isSelected ? 'bg-muted border-border' : ''}`}
+                      className={`group hover:bg-muted/50 transition-colors ${isSelected ? 'bg-muted border-border' : ''}`}
                     >
                       {/* Checkbox cell - always visible */}
                       <td className="px-4 py-2 text-center" onClick={(e) => e.stopPropagation()}>
@@ -2704,7 +2705,7 @@ const router = useRouter();
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-gray-500 hover:text-primary cursor-pointer`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
+                                <DatabaseZap className={`${publicationStatus === 'published' ? 'h-5 w-5' : 'h-4 w-4'} text-muted-foreground hover:text-primary cursor-pointer`} strokeWidth={publicationStatus === 'published' ? 2.5 : 1} />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <div className="space-y-2 p-1">
@@ -2842,7 +2843,7 @@ const router = useRouter();
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
-                              <ReceiptText className="h-4 w-4 text-gray-500 hover:text-primary cursor-pointer mx-auto" />
+                              <ReceiptText className="h-4 w-4 text-muted-foreground hover:text-primary cursor-pointer mx-auto" />
                             </TooltipTrigger>
                             <TooltipContent>
                               <div className="space-y-2 p-1">

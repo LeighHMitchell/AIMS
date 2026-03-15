@@ -19,7 +19,7 @@ export interface TableSkeletonProps {
  */
 export function TableSkeleton({ rows = 5, columns = 6 }: TableSkeletonProps) {
   return (
-    <div className="bg-card rounded-md shadow-sm border border-border overflow-hidden">
+    <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
       {/* Header skeleton */}
       <div className="border-b border-border bg-muted/30">
         <div className="flex items-center gap-4 px-4 py-3">

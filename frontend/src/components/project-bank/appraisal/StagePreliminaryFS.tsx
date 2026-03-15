@@ -13,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { CashFlowTable } from './CashFlowTable';
 import { DocumentUploadZone } from './DocumentUploadZone';
-import { HelpTooltip } from './HelpTooltip';
+import { HelpTooltip } from '@/components/ui/help-text-tooltip';
+import { RequiredDot } from '@/components/ui/required-dot';
 import { FieldCheck } from './FieldCheck';
 import { DatePicker } from '@/components/ui/date-picker';
 import { StageFIRR } from './StageFIRR';
@@ -26,9 +27,6 @@ import { cn } from '@/lib/utils';
 import { AlertTriangle, Check, CheckCircle, ChevronsUpDown } from 'lucide-react';
 import Image from 'next/image';
 
-function RequiredDot() {
-  return <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-1 align-middle" />;
-}
 
 function CharacterSuggestion({ value, min = 200 }: { value: string | null | undefined; min?: number }) {
   const len = (value || '').length;
