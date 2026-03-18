@@ -254,6 +254,12 @@ select:focus {
   }
   body {
     @apply bg-background text-foreground;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Balanced text wrapping on all headings — prevents orphaned words */
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
   }
 
   /* Remove any default borders on main containers */
@@ -928,14 +934,26 @@ table td:has(div:contains("AA-AAA")) {
   /* Improve text rendering on high-DPI displays */
   body {
     text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Prevent subpixel rendering issues */
   .text-xs, .text-sm {
     text-rendering: geometricPrecision;
   }
+}
+
+/* Subtle inset outline for images — prevents bleeding into same-colored backgrounds */
+.image-outline {
+  position: relative;
+}
+.image-outline::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Prevent flex children from overflowing (cross-browser) */

@@ -4,6 +4,7 @@ import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { DollarSign, TrendingUp, Activity, Users, Target, Wallet } from 'lucide-react'
 import { BRAND_COLORS, CHART_BAR_COLORS } from './sectorColorMap'
+import { StaggerContainer, StaggerItem } from '@/components/ui/stagger'
 
 interface SectorMetricsCardsProps {
   totalPlanned: number
@@ -83,11 +84,12 @@ export function SectorMetricsCards({
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {metrics.map((metric, index) => {
         const Icon = metric.icon
         return (
-          <Card key={index} className="border-slate-200">
+          <StaggerItem key={index}>
+          <Card className="border-slate-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -103,9 +105,10 @@ export function SectorMetricsCards({
               </div>
             </CardContent>
           </Card>
+          </StaggerItem>
         )
       })}
-    </div>
+    </StaggerContainer>
   )
 }
 

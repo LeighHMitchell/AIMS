@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { HeroCard } from "@/components/ui/hero-card";
 import { Transaction, TRANSACTION_TYPE_LABELS } from '@/types/transaction';
 import { DollarSign, Hash } from "lucide-react";
+import { StaggerContainer, StaggerItem } from "@/components/ui/stagger";
 
 interface TransactionTypeSummaryCardsProps {
   transactions: Transaction[];
@@ -58,10 +59,10 @@ export function TransactionTypeSummaryCards({
 
   return (
     <div className={className}>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {transactionTypeSummaries.map((summary) => (
+          <StaggerItem key={summary.type}>
           <HeroCard
-            key={summary.type}
             title={summary.typeName}
             items={[
               {
@@ -81,8 +82,9 @@ export function TransactionTypeSummaryCards({
               }
             ]}
           />
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerContainer>
     </div>
   );
 }

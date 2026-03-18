@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useOrgDashboardStats } from '@/hooks/useOrgDashboardStats';
 import { useUser } from '@/hooks/useUser';
 import { Activity, Pencil, Clock, CheckCircle } from 'lucide-react';
+import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
 
 interface OrgSummaryCardsProps {
   organizationId: string;
@@ -93,10 +94,10 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => (
+        <StaggerItem key={card.title}>
         <Card
-          key={card.title}
           className={`bg-white cursor-pointer ${card.bgColor} hover:shadow-md`}
           onClick={card.onClick}
         >
@@ -113,7 +114,8 @@ export function OrgSummaryCards({ organizationId }: OrgSummaryCardsProps) {
             </p>
           </CardContent>
         </Card>
+        </StaggerItem>
       ))}
-    </div>
+    </StaggerContainer>
   );
 }

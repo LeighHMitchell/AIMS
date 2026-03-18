@@ -24,6 +24,7 @@ import Link from "next/link"
 import { SectorDistributionChart } from "@/components/charts/SectorDistributionChart"
 import { ActivityCalendarHeatmap } from "@/components/charts/ActivityCalendarHeatmap"
 import { apiFetch } from "@/lib/api-fetch"
+import { StaggerContainer, StaggerItem } from "@/components/ui/stagger"
 
 interface MyPortfolioTabProps {
   userId: string
@@ -143,7 +144,8 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
       </p>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
@@ -154,7 +156,9 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <p className="text-xs text-muted-foreground">Created by you</p>
           </CardContent>
         </Card>
+        </StaggerItem>
 
+        <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Budgeted</CardTitle>
@@ -165,7 +169,9 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <p className="text-xs text-muted-foreground">Sum of budgets (USD)</p>
           </CardContent>
         </Card>
+        </StaggerItem>
 
+        <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Planned Disbursements</CardTitle>
@@ -176,7 +182,9 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <p className="text-xs text-muted-foreground">Planned total (USD)</p>
           </CardContent>
         </Card>
+        </StaggerItem>
 
+        <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Commitments</CardTitle>
@@ -187,7 +195,9 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <p className="text-xs text-muted-foreground">Committed total (USD)</p>
           </CardContent>
         </Card>
+        </StaggerItem>
 
+        <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Disbursements</CardTitle>
@@ -198,7 +208,9 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <p className="text-xs text-muted-foreground">Disbursed total (USD)</p>
           </CardContent>
         </Card>
+        </StaggerItem>
 
+        <StaggerItem>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Expenditure</CardTitle>
@@ -209,7 +221,8 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
             <p className="text-xs text-muted-foreground">Spent total (USD)</p>
           </CardContent>
         </Card>
-      </div>
+        </StaggerItem>
+      </StaggerContainer>
 
       {/* Smart Filter Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

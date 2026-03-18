@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { normalizeTransactionType } from "@/lib/transaction-usd-helper";
+import { StaggerContainer, StaggerItem } from "@/components/ui/stagger";
 
 interface Transaction {
   transaction_type: string;
@@ -167,8 +168,9 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Total Funds Card */}
+      <StaggerItem>
       <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-blue-800">
@@ -197,8 +199,10 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
           </div>
         </CardContent>
       </Card>
+      </StaggerItem>
 
       {/* Organization & Creator Card */}
+      <StaggerItem>
       <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-green-800">
@@ -234,8 +238,10 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
           </div>
         </CardContent>
       </Card>
+      </StaggerItem>
 
       {/* Activity Progress Card */}
+      <StaggerItem>
       <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-purple-800">
@@ -281,8 +287,10 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
           </div>
         </CardContent>
       </Card>
+      </StaggerItem>
 
       {/* Financial Performance Card */}
+      <StaggerItem>
       <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold flex items-center gap-2 text-orange-800">
@@ -318,6 +326,7 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
           </div>
         </CardContent>
       </Card>
-    </div>
+      </StaggerItem>
+    </StaggerContainer>
   );
 };

@@ -31,7 +31,7 @@ export function OrganizationLogo({
   
   if (logo) {
     return (
-      <div className={`${sizeClass} flex-shrink-0 ${className}`}>
+      <div className={`${sizeClass} flex-shrink-0 rounded-sm image-outline ${className}`}>
         <img
           src={logo}
           alt={`${name || 'Organization'} logo`}
@@ -57,7 +57,7 @@ export function OrganizationLogo({
   
   // Fallback when no logo
   return (
-    <div className={`${sizeClass} bg-gray-100 rounded-sm flex items-center justify-center ${className}`}>
+    <div className={`${sizeClass} bg-gray-100 rounded-sm flex items-center justify-center image-outline ${className}`}>
       <Building2 className={`${iconSize} text-gray-400`} />
     </div>
   );

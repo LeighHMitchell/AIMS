@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
 import {
   Tooltip,
   TooltipContent,
@@ -55,7 +56,7 @@ function DualMetricCard({
 }: DualMetricCardProps) {
   return (
     <TooltipProvider>
-      <Card className={`bg-white hover:shadow-md transition-shadow ${className || ''}`}>
+      <Card className={`bg-white hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.06)] transition-shadow ${className || ''}`}>
         <CardContent className="p-5">
           {/* Card Title */}
           <div className="flex items-center gap-2 mb-4">
@@ -180,83 +181,90 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+    <StaggerContainer className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
       {/* Card 1: Budgets & Planned Disbursements (2-col span) */}
-      <DualMetricCard
-        title="Budgets & Planned Disbursements"
-        icon={Wallet}
-        helpText="Total budget records and planned disbursement records across all your organisation's activities. Budgets define planned spending; planned disbursements define expected fund transfers."
-        className="lg:col-span-2"
-        leftMetric={{
-          value: stats?.orgBudgetCount ?? 0,
-          label: 'Budgets',
-          tooltip: 'Total budget records across all your organisation\'s activities',
-        }}
-        rightMetric={{
-          value: stats?.orgPlannedDisbursementCount ?? 0,
-          label: 'Planned Disbursements',
-          tooltip: 'Total planned disbursement records across all your organisation\'s activities',
-        }}
-      />
+      <StaggerItem className="lg:col-span-2">
+        <DualMetricCard
+          title="Budgets & Planned Disbursements"
+          icon={Wallet}
+          helpText="Total budget records and planned disbursement records across all your organisation's activities. Budgets define planned spending; planned disbursements define expected fund transfers."
+          leftMetric={{
+            value: stats?.orgBudgetCount ?? 0,
+            label: 'Budgets',
+            tooltip: 'Total budget records across all your organisation\'s activities',
+          }}
+          rightMetric={{
+            value: stats?.orgPlannedDisbursementCount ?? 0,
+            label: 'Planned Disbursements',
+            tooltip: 'Total planned disbursement records across all your organisation\'s activities',
+          }}
+        />
+      </StaggerItem>
 
       {/* Card 2: Financial Transactions */}
-      <DualMetricCard
-        title="Financial Transactions"
-        icon={ArrowRightLeft}
-        helpText="Financial transactions where your organisation is involved — either as the reporting organisation, provider, or receiver of funds."
-        leftMetric={{
-          value: stats?.orgTransactionCount ?? 0,
-          label: 'Organisation',
-          onClick: () => navigateToActivities('tab=transactions'),
-          tooltip: 'All transactions involving your organisation (as reporter, provider, or receiver)',
-        }}
-        rightMetric={{
-          value: stats?.userTransactionCount ?? 0,
-          label: 'Reported by you',
-          onClick: () => navigateToActivities('tab=transactions&createdBy=me'),
-          tooltip: 'Transactions you have personally created or submitted',
-        }}
-      />
+      <StaggerItem>
+        <DualMetricCard
+          title="Financial Transactions"
+          icon={ArrowRightLeft}
+          helpText="Financial transactions where your organisation is involved — either as the reporting organisation, provider, or receiver of funds."
+          leftMetric={{
+            value: stats?.orgTransactionCount ?? 0,
+            label: 'Organisation',
+            onClick: () => navigateToActivities('tab=transactions'),
+            tooltip: 'All transactions involving your organisation (as reporter, provider, or receiver)',
+          }}
+          rightMetric={{
+            value: stats?.userTransactionCount ?? 0,
+            label: 'Reported by you',
+            onClick: () => navigateToActivities('tab=transactions&createdBy=me'),
+            tooltip: 'Transactions you have personally created or submitted',
+          }}
+        />
+      </StaggerItem>
 
       {/* Card 3: Validation Status */}
-      <DualMetricCard
-        title="Validation Status"
-        icon={ClipboardCheck}
-        helpText="Government validation status of your organisation's activities. Activities must be submitted for review and then validated by the relevant authority."
-        leftMetric={{
-          value: stats?.pendingValidationCount ?? 0,
-          label: 'Pending validation',
-          onClick: () => navigateToActivities('submissionStatuses=submitted'),
-          tooltip: 'Activities submitted and awaiting government review',
-        }}
-        rightMetric={{
-          value: stats?.validatedCount ?? 0,
-          label: 'Validated',
-          onClick: () => navigateToActivities('submissionStatuses=validated'),
-          tooltip: 'Activities reviewed and approved by the government',
-        }}
-        onTitleClick={() => navigateToActivities('submissionStatuses=submitted,validated')}
-      />
+      <StaggerItem>
+        <DualMetricCard
+          title="Validation Status"
+          icon={ClipboardCheck}
+          helpText="Government validation status of your organisation's activities. Activities must be submitted for review and then validated by the relevant authority."
+          leftMetric={{
+            value: stats?.pendingValidationCount ?? 0,
+            label: 'Pending validation',
+            onClick: () => navigateToActivities('submissionStatuses=submitted'),
+            tooltip: 'Activities submitted and awaiting government review',
+          }}
+          rightMetric={{
+            value: stats?.validatedCount ?? 0,
+            label: 'Validated',
+            onClick: () => navigateToActivities('submissionStatuses=validated'),
+            tooltip: 'Activities reviewed and approved by the government',
+          }}
+          onTitleClick={() => navigateToActivities('submissionStatuses=submitted,validated')}
+        />
+      </StaggerItem>
 
       {/* Card 4: Activities */}
-      <DualMetricCard
-        title="Activities"
-        icon={FileText}
-        helpText="Publication status of your organisation's activities. Published activities are visible publicly; draft activities are still being prepared."
-        leftMetric={{
-          value: stats?.publishedCount ?? 0,
-          label: 'Published',
-          onClick: () => navigateToActivities('publicationStatus=published'),
-          tooltip: 'Activities that have been published and are publicly visible',
-        }}
-        rightMetric={{
-          value: stats?.draftCount ?? 0,
-          label: 'Draft',
-          onClick: () => navigateToActivities('publicationStatus=draft'),
-          tooltip: 'Activities still in draft form, not yet published',
-        }}
-        onTitleClick={() => navigateToActivities()}
-      />
-    </div>
+      <StaggerItem>
+        <DualMetricCard
+          title="Activities"
+          icon={FileText}
+          helpText="Publication status of your organisation's activities. Published activities are visible publicly; draft activities are still being prepared."
+          leftMetric={{
+            value: stats?.publishedCount ?? 0,
+            label: 'Published',
+            onClick: () => navigateToActivities('publicationStatus=published'),
+            tooltip: 'Activities that have been published and are publicly visible',
+          }}
+          rightMetric={{
+            value: stats?.draftCount ?? 0,
+            label: 'Draft',
+            onClick: () => navigateToActivities('publicationStatus=draft'),
+            tooltip: 'Activities still in draft form, not yet published',
+          }}
+          onTitleClick={() => navigateToActivities()}
+        />
+      </StaggerItem>
+    </StaggerContainer>
   );
 }
