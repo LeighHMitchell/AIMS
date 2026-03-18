@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-import { useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Lock, Trash2 } from "lucide-react"
 import { StableTabCompletionIndicator } from "@/utils/stable-tab-completion"
@@ -11,15 +10,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import {
-  ACTIVITY_OVERVIEW_SECTIONS,
-  isActivityOverviewSection,
-  isStakeholdersSection,
-  isFundingDeliverySection,
-  isStrategicAlignmentSection,
-  isSupportingInfoSection,
-  isAdvancedSection
-} from "@/components/activities/groups"
 
 interface NavigationSection {
   id: string
@@ -53,76 +43,13 @@ export default function ActivityEditorNavigation({
   activityId,
   onDelete
 }: ActivityEditorNavigationProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
 
-  const isScrollableSection = (sectionId: string) => {
-    return isActivityOverviewSection(sectionId) ||
-           isStakeholdersSection(sectionId) ||
-           isFundingDeliverySection(sectionId) ||
-           isStrategicAlignmentSection(sectionId) ||
-           isSupportingInfoSection(sectionId) ||
-           isAdvancedSection(sectionId)
-  }
-
-  // Helper to get the linked scroll group for a section
-  // All five groups are linked together for continuous scrolling:
-  // Activity Overview -> Stakeholders -> Funding & Delivery -> Strategic Alignment -> Supporting Info
-  const getLinkedScrollGroup = (sectionId: string) => {
-    if (isActivityOverviewSection(sectionId) ||
-        isStakeholdersSection(sectionId) ||
-        isFundingDeliverySection(sectionId) ||
-        isStrategicAlignmentSection(sectionId) ||
-        isSupportingInfoSection(sectionId) ||
-        isAdvancedSection(sectionId)) {
-      return 'main-editor-scroll'
-    }
-    return null
-  }
-
-  // Enhanced section change handler that updates URL
+  // Section change handler - delegates all logic to parent's handleTabChange
   const handleSectionChange = (sectionId: string) => {
-    // Don't allow section change when disabled (saving in progress)
     if (disabled) {
       return;
     }
-
-    // For scrollable sections, scroll directly to the element
-    const targetGroup = getLinkedScrollGroup(sectionId)
-
-    if (targetGroup) {
-      // Dispatch scroll event for any scrollable section (for backwards compatibility)
-      window.dispatchEvent(new CustomEvent('scrollToSection', { detail: sectionId }))
-
-      // Scroll directly using DOM - this is more reliable during re-renders
-      const element = document.getElementById(sectionId)
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
-
-      // Delay state updates until after scroll starts to prevent re-render from resetting scroll
-      setTimeout(() => {
-        // Call the original onSectionChange handler
-        onSectionChange(sectionId)
-
-        // Update URL with the new section parameter
-        const params = new URLSearchParams(searchParams?.toString() || '')
-        params.set('section', sectionId)
-
-        // Use replace to avoid adding to browser history for each tab switch
-        router.replace(`?${params.toString()}`, { scroll: false })
-      }, 50)
-    } else {
-      // For non-scrollable sections, update state immediately
-      onSectionChange(sectionId)
-
-      // Update URL with the new section parameter
-      const params = new URLSearchParams(searchParams?.toString() || '')
-      params.set('section', sectionId)
-
-      // Use replace to avoid adding to browser history for each tab switch
-      router.replace(`?${params.toString()}`, { scroll: false })
-    }
+    onSectionChange(sectionId)
   }
   const navigationGroups: NavigationGroup[] = [
     {

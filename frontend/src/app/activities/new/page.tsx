@@ -4908,9 +4908,12 @@ function NewActivityPageContent() {
 
     if (isValueInScrollableGroup && isCurrentInScrollableGroup) {
       console.log('[AIMS Performance] Scrolling to section:', value, 'from:', activeSection);
-      // Dispatch scroll event that both groups listen for
+
+      // Dispatch scroll event — group components listen and handle scrollIntoView
+      // with requestAnimationFrame to wait for DOM to settle
       window.dispatchEvent(new CustomEvent('scrollToSection', { detail: value }));
       setActiveSection(value);
+
       // Update URL
       const params = new URLSearchParams(window.location.search);
       params.set('section', value);

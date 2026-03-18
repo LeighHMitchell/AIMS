@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react"
 import { useScrollSpy, SectionRef } from "@/hooks/useScrollSpy"
 import { useManualLazyLoader } from "@/hooks/useLazySectionLoader"
 import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHeader"
+import { SectionSkeleton, getSectionMinHeight } from "./SectionSkeleton"
 
 import LinkedActivitiesEditorTab from "@/components/activities/LinkedActivitiesEditorTab"
 import { ResultsTab } from "@/components/activities/ResultsTab"
@@ -26,20 +27,6 @@ export type AdvancedSectionId = typeof ADVANCED_SECTIONS[number]
 
 export function isAdvancedSection(sectionId: string): boolean {
   return ADVANCED_SECTIONS.includes(sectionId as AdvancedSectionId)
-}
-
-function SectionSkeleton({ sectionId }: { sectionId: string }) {
-  return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-8 bg-gray-200 rounded w-1/3" />
-      <div className="space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-full" />
-        <div className="h-4 bg-gray-200 rounded w-5/6" />
-        <div className="h-4 bg-gray-200 rounded w-4/6" />
-      </div>
-      <div className="h-32 bg-gray-200 rounded w-full" />
-    </div>
-  )
 }
 
 interface AdvancedGroupProps {
@@ -131,7 +118,7 @@ export function AdvancedGroup({
     debounceMs: 100,
   })
 
-  const { isSectionActive, activateSection, activeSections } = useManualLazyLoader(
+  const { isSectionActive, activateSection, activateSections, activeSections } = useManualLazyLoader(
     activityCreated ? ['linked_activities'] : []
   )
 
@@ -199,7 +186,7 @@ export function AdvancedGroup({
         })
       },
       {
-        rootMargin: '800px 0px 800px 0px',
+        rootMargin: '1500px 0px 1500px 0px',
         threshold: 0,
       }
     )
@@ -225,13 +212,10 @@ export function AdvancedGroup({
 
     const sectionsToPreload = ADVANCED_SECTIONS.slice()
 
-    sectionsToPreload.forEach((sectionId, index) => {
-      setTimeout(() => {
-        if (!activeSections.has(sectionId)) {
-          activateSection(sectionId)
-        }
-      }, 500 + (50 * index))
-    })
+    const unloaded = sectionsToPreload.filter(id => !activeSections.has(id))
+    if (unloaded.length > 0) {
+      activateSections(unloaded)
+    }
   }, [activityCreated, enablePreloading, activateSection, activeSections])
 
   return (
@@ -249,6 +233,7 @@ export function AdvancedGroup({
             id="linked_activities"
             ref={linkedActivitiesRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pb-16"
+            style={{ minHeight: getSectionMinHeight('linked_activities') }}
           >
             {isSectionActive('linked_activities') || activeSections.has('linked_activities') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -275,6 +260,7 @@ export function AdvancedGroup({
             id="results"
             ref={resultsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('results') }}
           >
             {isSectionActive('results') || activeSections.has('results') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -301,6 +287,7 @@ export function AdvancedGroup({
             id="forward-spending-survey"
             ref={forwardSpendRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('forward-spending-survey') }}
           >
             {isSectionActive('forward-spending-survey') || activeSections.has('forward-spending-survey') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -326,6 +313,7 @@ export function AdvancedGroup({
             id="capital-spend"
             ref={capitalSpendRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('capital-spend') }}
           >
             {isSectionActive('capital-spend') || activeSections.has('capital-spend') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -351,6 +339,7 @@ export function AdvancedGroup({
             id="financing-terms"
             ref={financingTermsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('financing-terms') }}
           >
             {isSectionActive('financing-terms') || activeSections.has('financing-terms') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -378,6 +367,7 @@ export function AdvancedGroup({
             id="conditions"
             ref={conditionsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('conditions') }}
           >
             {isSectionActive('conditions') || activeSections.has('conditions') ? (
               <ConditionsTab
@@ -396,6 +386,7 @@ export function AdvancedGroup({
             id="country-budget"
             ref={countryBudgetRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('country-budget') }}
           >
             {isSectionActive('country-budget') || activeSections.has('country-budget') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">

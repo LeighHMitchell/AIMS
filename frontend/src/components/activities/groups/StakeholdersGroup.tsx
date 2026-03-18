@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react"
 import { useScrollSpy, SectionRef } from "@/hooks/useScrollSpy"
 import { useManualLazyLoader } from "@/hooks/useLazySectionLoader"
 import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHeader"
+import { SectionSkeleton, getSectionMinHeight } from "./SectionSkeleton"
 
 // Import the tab components
 import OrganisationsSection from "@/components/OrganisationsSection"
@@ -19,23 +20,6 @@ export type StakeholdersSectionId = typeof STAKEHOLDERS_SECTIONS[number]
  */
 export function isStakeholdersSection(sectionId: string): boolean {
   return STAKEHOLDERS_SECTIONS.includes(sectionId as StakeholdersSectionId)
-}
-
-/**
- * Loading skeleton for sections
- */
-function SectionSkeleton({ sectionId }: { sectionId: string }) {
-  return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-8 bg-gray-200 rounded w-1/3" />
-      <div className="space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-full" />
-        <div className="h-4 bg-gray-200 rounded w-5/6" />
-        <div className="h-4 bg-gray-200 rounded w-4/6" />
-      </div>
-      <div className="h-32 bg-gray-200 rounded w-full" />
-    </div>
-  )
 }
 
 // Props interface
@@ -123,7 +107,7 @@ export function StakeholdersGroup({
   })
 
   // Use lazy loader to track which sections have been scrolled into view
-  const { isSectionActive, activateSection, activeSections } = useManualLazyLoader(
+  const { isSectionActive, activateSection, activateSections, activeSections } = useManualLazyLoader(
     activityCreated ? ['organisations'] : []
   )
 
@@ -202,7 +186,7 @@ export function StakeholdersGroup({
         })
       },
       {
-        rootMargin: '800px 0px 800px 0px', // Preload 800px before visible for seamless loading
+        rootMargin: '1500px 0px 1500px 0px', // Preload 1500px before visible for seamless loading
         threshold: 0,
       }
     )
@@ -225,16 +209,13 @@ export function StakeholdersGroup({
   useEffect(() => {
     if (!activityCreated || !enablePreloading) return
 
-    // Preload all sections with minimal staggering
+    // Preload all sections in a single batch
     const sectionsToPreload = ['organisations', 'contacts', 'focal_points']
 
-    sectionsToPreload.forEach((sectionId, index) => {
-      setTimeout(() => {
-        if (!activeSections.has(sectionId)) {
-          activateSection(sectionId)
-        }
-      }, 200 + (50 * index)) // Start after 200ms, 50ms stagger between sections
-    })
+    const unloaded = sectionsToPreload.filter(id => !activeSections.has(id))
+    if (unloaded.length > 0) {
+      activateSections(unloaded)
+    }
   }, [activityCreated, enablePreloading, activateSection, activeSections])
 
   return (
@@ -254,6 +235,7 @@ export function StakeholdersGroup({
             id="organisations"
             ref={organisationsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pb-16"
+            style={{ minHeight: getSectionMinHeight('organisations') }}
           >
             {isSectionActive('organisations') || activeSections.has('organisations') ? (
               <OrganisationsSection
@@ -275,6 +257,7 @@ export function StakeholdersGroup({
             id="contacts"
             ref={contactsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('contacts') }}
           >
             {isSectionActive('contacts') || activeSections.has('contacts') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -300,6 +283,7 @@ export function StakeholdersGroup({
             id="focal_points"
             ref={focalPointsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('focal_points') }}
           >
             {isSectionActive('focal_points') || activeSections.has('focal_points') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">

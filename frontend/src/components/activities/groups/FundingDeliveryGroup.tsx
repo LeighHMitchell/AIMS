@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react"
 import { useScrollSpy, SectionRef } from "@/hooks/useScrollSpy"
 import { useManualLazyLoader } from "@/hooks/useLazySectionLoader"
 import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHeader"
+import { SectionSkeleton, getSectionMinHeight } from "./SectionSkeleton"
 
 // Import the tab components
 import { EnhancedFinancesSection } from "@/components/activities/EnhancedFinancesSection"
@@ -23,23 +24,6 @@ export type FundingDeliverySectionId = typeof FUNDING_DELIVERY_SECTIONS[number]
  */
 export function isFundingDeliverySection(sectionId: string): boolean {
   return FUNDING_DELIVERY_SECTIONS.includes(sectionId as FundingDeliverySectionId)
-}
-
-/**
- * Loading skeleton for sections
- */
-function SectionSkeleton({ sectionId }: { sectionId: string }) {
-  return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-8 bg-gray-200 rounded w-1/3" />
-      <div className="space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-full" />
-        <div className="h-4 bg-gray-200 rounded w-5/6" />
-        <div className="h-4 bg-gray-200 rounded w-4/6" />
-      </div>
-      <div className="h-32 bg-gray-200 rounded w-full" />
-    </div>
-  )
 }
 
 // Props interface
@@ -133,7 +117,7 @@ export function FundingDeliveryGroup({
   })
 
   // Use lazy loader to track which sections have been scrolled into view
-  const { isSectionActive, activateSection, activeSections } = useManualLazyLoader(
+  const { isSectionActive, activateSection, activateSections, activeSections } = useManualLazyLoader(
     activityCreated ? ['finances'] : []
   )
 
@@ -212,7 +196,7 @@ export function FundingDeliveryGroup({
         })
       },
       {
-        rootMargin: '800px 0px 800px 0px', // Preload 800px before visible for seamless loading
+        rootMargin: '1500px 0px 1500px 0px', // Preload 1500px before visible for seamless loading
         threshold: 0,
       }
     )
@@ -235,16 +219,13 @@ export function FundingDeliveryGroup({
   useEffect(() => {
     if (!activityCreated || !enablePreloading) return
 
-    // Preload all sections with minimal staggering
+    // Preload all sections in a single batch
     const sectionsToPreload = FUNDING_DELIVERY_SECTIONS.slice()
 
-    sectionsToPreload.forEach((sectionId, index) => {
-      setTimeout(() => {
-        if (!activeSections.has(sectionId)) {
-          activateSection(sectionId)
-        }
-      }, 400 + (50 * index)) // Start after 400ms, 50ms stagger between sections
-    })
+    const unloaded = sectionsToPreload.filter(id => !activeSections.has(id))
+    if (unloaded.length > 0) {
+      activateSections(unloaded)
+    }
   }, [activityCreated, enablePreloading, activateSection, activeSections])
 
   return (
@@ -264,6 +245,7 @@ export function FundingDeliveryGroup({
             id="finances"
             ref={financesRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pb-16"
+            style={{ minHeight: getSectionMinHeight('finances') }}
           >
             {isSectionActive('finances') || activeSections.has('finances') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -304,6 +286,7 @@ export function FundingDeliveryGroup({
             id="planned-disbursements"
             ref={plannedDisbursementsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('planned-disbursements') }}
           >
             {isSectionActive('planned-disbursements') || activeSections.has('planned-disbursements') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -332,6 +315,7 @@ export function FundingDeliveryGroup({
             id="budgets"
             ref={budgetsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('budgets') }}
           >
             {isSectionActive('budgets') || activeSections.has('budgets') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">

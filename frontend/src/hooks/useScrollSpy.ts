@@ -25,12 +25,14 @@ interface UseScrollSpyReturn {
   scrollToSection: (sectionId: string) => void
   /** Manually set the active section (useful for initial load) */
   setActiveSection: (sectionId: string) => void
+  /** Lock scroll spy for a given duration (prevents auto-updates during content loading) */
+  lockScrollSpy: (durationMs: number) => void
 }
 
 /**
  * Hook that tracks which section is currently visible in the viewport
  * and provides smooth scroll functionality to navigate between sections.
- * 
+ *
  * Uses Intersection Observer to detect when sections enter the "active zone"
  * (upper portion of the viewport by default).
  */
@@ -48,27 +50,45 @@ export function useScrollSpy(
   const [activeSection, setActiveSection] = useState<string | null>(
     sections.length > 0 ? sections[0].id : null
   )
-  
+
   // Track which sections are currently intersecting and their ratios
   const intersectingMap = useRef<Map<string, number>>(new Map())
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
   const isScrollingProgrammatically = useRef(false)
+  const lockTimeout = useRef<NodeJS.Timeout | null>(null)
+
+  /**
+   * Lock scroll spy updates for a given duration.
+   * Use this during programmatic navigation or content loading to prevent
+   * the active section from flickering due to layout shifts.
+   */
+  const lockScrollSpy = useCallback((durationMs: number) => {
+    isScrollingProgrammatically.current = true
+    // Clear any existing unlock timeout
+    if (lockTimeout.current) {
+      clearTimeout(lockTimeout.current)
+    }
+    lockTimeout.current = setTimeout(() => {
+      isScrollingProgrammatically.current = false
+      lockTimeout.current = null
+    }, durationMs)
+  }, [])
 
   // Listen for global scroll events to pause scroll spy during programmatic scrolls
   useEffect(() => {
     const handleGlobalScroll = (event: CustomEvent<string>) => {
       // When any section is being scrolled to, pause this scroll spy
-      isScrollingProgrammatically.current = true
-      setTimeout(() => {
-        isScrollingProgrammatically.current = false
-      }, 1200) // Slightly longer than the scroll animation
+      lockScrollSpy(2000) // Extended from 1200ms to cover content loading + scroll animation
     }
 
     window.addEventListener('scrollToSection', handleGlobalScroll as EventListener)
     return () => {
       window.removeEventListener('scrollToSection', handleGlobalScroll as EventListener)
+      if (lockTimeout.current) {
+        clearTimeout(lockTimeout.current)
+      }
     }
-  }, [])
+  }, [lockScrollSpy])
 
   // Debounced function to update active section based on intersections
   const updateActiveSection = useCallback(() => {
@@ -77,14 +97,14 @@ export function useScrollSpy(
     }
 
     debounceTimeout.current = setTimeout(() => {
-      // Skip update if we're programmatically scrolling
+      // Skip update if we're programmatically scrolling or externally locked
       if (isScrollingProgrammatically.current) {
         return
       }
 
       const intersecting = Array.from(intersectingMap.current.entries())
         .filter(([_, ratio]) => ratio > 0)
-      
+
       if (intersecting.length === 0) {
         return
       }
@@ -162,29 +182,30 @@ export function useScrollSpy(
       return
     }
 
-    // Mark that we're scrolling programmatically to prevent scroll spy updates
-    isScrollingProgrammatically.current = true
+    // Lock scroll spy during programmatic scroll + content loading settle time
+    lockScrollSpy(2000)
 
     // Update active section immediately for responsive UI
     setActiveSection(sectionId)
 
-    // Scroll to section
-    element.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
+    // Use requestAnimationFrame to ensure DOM has settled before scrolling
+    requestAnimationFrame(() => {
+      // Re-query the element in case the DOM shifted during the frame
+      const targetElement = document.getElementById(sectionId)
+      if (targetElement) {
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        })
+      }
     })
-
-    // Reset programmatic scroll flag after animation completes
-    // Using a timeout since scrollIntoView doesn't have a callback
-    setTimeout(() => {
-      isScrollingProgrammatically.current = false
-    }, 1000) // Conservative estimate for scroll animation duration
-  }, [sections])
+  }, [sections, lockScrollSpy])
 
   return {
     activeSection,
     scrollToSection,
     setActiveSection,
+    lockScrollSpy,
   }
 }
 
@@ -193,7 +214,7 @@ export function useScrollSpy(
  */
 export function useSectionRefs(sectionIds: string[]): SectionRef[] {
   const refs = useRef<Map<string, RefObject<HTMLElement>>>(new Map())
-  
+
   // Initialize refs for any new section IDs
   sectionIds.forEach(id => {
     if (!refs.current.has(id)) {
