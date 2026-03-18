@@ -1,7 +1,27 @@
 {
-  "currentVersion": "3.13.0",
-  "narrativeSummary": "Version 3.13 delivers a comprehensive design-system alignment pass, replacing 63 hardcoded Tailwind gray colour classes with semantic theme tokens across 100+ files for consistent dark-mode support. Five new shared UI primitives — RequiredDot, FilterBar, ConfirmationDialog, FormErrorAlert, and ModalFooter — are extracted from duplicated patterns and adopted throughout forms and modals. The internal-transfer exclusion filter is refined to scope only to pooled-fund activities, fixing an issue where regular activity transactions were incorrectly excluded from portfolio analytics. Fund auto-link suggestion logic is refactored into a standalone utility, and a new useLocalStorage hook is introduced.",
+  "currentVersion": "3.14.0",
+  "narrativeSummary": "Version 3.14 fixes Activity Editor scroll navigation and loading performance. Section skeletons now reserve realistic heights to prevent layout shifts, sidebar navigation is consolidated to eliminate duplicate scroll calls, and the scroll spy is locked during programmatic navigation to prevent flickering. Section preloading uses batch activation instead of staggered timeouts for smoother loading.",
   "releases": [
+    {
+      "version": "3.14.0",
+      "date": "2026-03-18",
+      "narrativeSummary": "This release fixes Activity Editor scroll navigation and loading issues. When editing an activity, clicking sidebar tabs during loading would scroll to the wrong section due to layout shifts caused by small skeleton placeholders being replaced by full-height content. The scroll spy would also highlight the wrong section during these transitions. These issues are resolved through height-reserving skeletons, consolidated scroll navigation, scroll spy locking, and batch section preloading.",
+      "changes": [
+        "<b>Activity Editor &mdash; Scroll Navigation Fix</b>",
+        "&nbsp;&nbsp;Sidebar tab clicks now reliably scroll to the correct section, even during initial page load",
+        "&nbsp;&nbsp;Eliminated duplicate <code>scrollIntoView</code> calls between navigation and group components",
+        "&nbsp;&nbsp;Scroll uses <code>requestAnimationFrame</code> to wait for DOM to settle before scrolling",
+        "<b>Activity Editor &mdash; Layout Shift Prevention</b>",
+        "&nbsp;&nbsp;New shared <code>SectionSkeleton</code> component with per-section estimated heights (280&ndash;560px) and layout-appropriate skeleton variants (form, table, cards, mixed)",
+        "&nbsp;&nbsp;All 24 section containers now reserve <code>minHeight</code> to prevent content-swap jumps",
+        "<b>Activity Editor &mdash; Scroll Spy Improvements</b>",
+        "&nbsp;&nbsp;New <code>lockScrollSpy()</code> function suppresses scroll spy updates for 2 seconds during programmatic navigation",
+        "&nbsp;&nbsp;Prevents sidebar highlight from flickering when content loads and shifts the page",
+        "<b>Activity Editor &mdash; Preloading Optimisation</b>",
+        "&nbsp;&nbsp;Replaced staggered <code>setTimeout</code> preloading with single-batch <code>activateSections()</code> calls across all 6 group components",
+        "&nbsp;&nbsp;Increased <code>IntersectionObserver</code> preload distance from 800px to 1500px for earlier section loading"
+      ]
+    },
     {
       "version": "3.13.0",
       "date": "2026-03-15",
