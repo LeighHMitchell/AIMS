@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { HeroCard } from "@/components/ui/hero-card";
 import { cn } from "@/lib/utils";
 import { normalizeTransactionType } from "@/lib/transaction-usd-helper";
+import { StaggerContainer, StaggerItem } from "@/components/ui/stagger";
 
 interface Budget {
   id?: string;
@@ -304,8 +305,9 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
   console.log('[FinancialSummaryCards] Rendering with state:', { totalBudgeted, plannedDisbursements, totalCommitted, totalDisbursed, totalExpended, totalDisbursedAndExpended });
 
   return (
-    <div className={cn("grid gap-4 md:grid-cols-2 lg:grid-cols-4", className)}>
+    <StaggerContainer className={cn("grid gap-4 md:grid-cols-2 lg:grid-cols-4", className)}>
       {!hideTotalBudgeted && (
+        <StaggerItem>
         <HeroCard
           title="Total Budgeted"
           subtitle="Planned budget for the full activity lifecycle"
@@ -319,8 +321,10 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
             { value: totalExpended, label: "Total Expended" }
           ]}
         />
+        </StaggerItem>
       )}
-      
+
+      <StaggerItem>
       <HeroCard
         title="Total Disbursed & Expended"
         subtitle="Funds transferred and spent by implementers"
@@ -333,6 +337,7 @@ export function FinancialSummaryCards({ activityId, className, budgets, showBudg
         }
         animate={false}
       />
-    </div>
+      </StaggerItem>
+    </StaggerContainer>
   );
 }

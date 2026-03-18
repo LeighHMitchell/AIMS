@@ -4,6 +4,7 @@ import React from 'react';
 import { HeroCard } from '@/components/ui/hero-card';
 import { Activity, DollarSign, TrendingUp, TrendingDown, Briefcase } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
 
 interface YearMetrics {
   activeProjects: number;
@@ -48,9 +49,9 @@ export function SummaryMetricsCards({
   const expendituresDelta = formatDelta(currentYear.expenditures, previousYear.expenditures);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {/* Active Projects */}
-      <div className="relative">
+      <StaggerItem className="relative">
         <HeroCard
           title="Active Projects"
           staticValue={currentYear.activeProjects}
@@ -71,10 +72,10 @@ export function SummaryMetricsCards({
             </span>
           </div>
         )}
-      </div>
+      </StaggerItem>
 
       {/* Total Commitments */}
-      <div className="relative">
+      <StaggerItem className="relative">
         <HeroCard
           title="Total Commitments"
           staticValue={currentYear.commitments}
@@ -95,10 +96,10 @@ export function SummaryMetricsCards({
             </span>
           </div>
         )}
-      </div>
+      </StaggerItem>
 
       {/* Total Disbursements */}
-      <div className="relative">
+      <StaggerItem className="relative">
         <HeroCard
           title="Total Disbursements"
           staticValue={currentYear.disbursements}
@@ -119,10 +120,10 @@ export function SummaryMetricsCards({
             </span>
           </div>
         )}
-      </div>
+      </StaggerItem>
 
       {/* Total Expenditures */}
-      <div className="relative">
+      <StaggerItem className="relative">
         <HeroCard
           title="Total Expenditures"
           staticValue={currentYear.expenditures}
@@ -143,8 +144,8 @@ export function SummaryMetricsCards({
             </span>
           </div>
         )}
-      </div>
-    </div>
+      </StaggerItem>
+    </StaggerContainer>
   );
 }
 

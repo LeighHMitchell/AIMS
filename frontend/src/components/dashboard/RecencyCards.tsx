@@ -9,6 +9,7 @@ import { useUser } from '@/hooks/useUser';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Plus, Pencil, CheckCircle, XCircle, HelpCircle, FileText } from 'lucide-react';
 import type { ValidationEventType } from '@/types/dashboard';
+import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
 
 interface RecencyCardsProps {
   organizationId: string;
@@ -94,8 +95,9 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
   const lastValidation = stats?.lastValidationEvent;
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <StaggerContainer className="grid gap-4 md:grid-cols-3">
       {/* Last Activity Created */}
+      <StaggerItem>
       <a
         href={lastCreated ? `/activities/${lastCreated.id}` : undefined}
         className={lastCreated ? '' : 'pointer-events-none'}
@@ -147,8 +149,10 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
           </CardContent>
         </Card>
       </a>
+      </StaggerItem>
 
       {/* Last Activity Edited */}
+      <StaggerItem>
       <a
         href={lastEdited ? `/activities/${lastEdited.id}` : undefined}
         className={lastEdited ? '' : 'pointer-events-none'}
@@ -207,8 +211,10 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
           </CardContent>
         </Card>
       </a>
+      </StaggerItem>
 
       {/* Last Validation Event */}
+      <StaggerItem>
       <a
         href={lastValidation ? `/activities/${lastValidation.activityId}?tab=government-endorsement` : undefined}
         className={lastValidation ? '' : 'pointer-events-none'}
@@ -271,6 +277,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
           </CardContent>
         </Card>
       </a>
-    </div>
+      </StaggerItem>
+    </StaggerContainer>
   );
 }

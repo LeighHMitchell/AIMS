@@ -22,7 +22,7 @@ export function EmptyState({ title, message, icon }: EmptyStateProps) {
   return (
     <div className="bg-card rounded-lg shadow-sm border border-border p-8 text-center">
       {icon && <div className="mb-3 flex justify-center">{icon}</div>}
-      {title && <p className="text-sm font-medium mb-1">{title}</p>}
+      {title && <p className="text-sm font-medium mb-1 text-balance">{title}</p>}
       <p className="text-muted-foreground">{message}</p>
     </div>
   );

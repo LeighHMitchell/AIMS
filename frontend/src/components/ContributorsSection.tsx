@@ -345,16 +345,18 @@ export default function ContributorsSection({
                       const organization = organizations.find(o => o.id === contributor.organization_id);
                       console.log('[ContributorsSection] Organization:', organization?.name, 'Logo:', organization?.logo);
                       return organization?.logo ? (
-                        <img 
-                          src={organization.logo} 
+                        <div className="h-8 w-8 rounded image-outline flex-shrink-0">
+                        <img
+                          src={organization.logo}
                           alt={organization.name}
-                          className="h-8 w-8 rounded object-cover flex-shrink-0"
+                          className="h-full w-full rounded object-cover"
                           onError={(e) => {
                             // Fallback to Users icon if logo fails to load
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.nextElementSibling?.classList.remove('hidden');
                           }}
                         />
+                        </div>
                       ) : (
                         <Users className="h-8 w-8 text-muted-foreground flex-shrink-0" />
                       );
