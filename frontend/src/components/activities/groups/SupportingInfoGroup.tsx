@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react"
 import { useScrollSpy, SectionRef } from "@/hooks/useScrollSpy"
 import { useManualLazyLoader } from "@/hooks/useLazySectionLoader"
 import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHeader"
+import { SectionSkeleton, getSectionMinHeight } from "./SectionSkeleton"
 
 // Import the tab components
 import { DocumentsAndImagesTabInline } from "@/components/activities/DocumentsAndImagesTabInline"
@@ -21,23 +22,6 @@ export type SupportingInfoSectionId = typeof SUPPORTING_INFO_SECTIONS[number]
  */
 export function isSupportingInfoSection(sectionId: string): boolean {
   return SUPPORTING_INFO_SECTIONS.includes(sectionId as SupportingInfoSectionId)
-}
-
-/**
- * Loading skeleton for sections
- */
-function SectionSkeleton({ sectionId }: { sectionId: string }) {
-  return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-8 bg-gray-200 rounded w-1/3" />
-      <div className="space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-full" />
-        <div className="h-4 bg-gray-200 rounded w-5/6" />
-        <div className="h-4 bg-gray-200 rounded w-4/6" />
-      </div>
-      <div className="h-32 bg-gray-200 rounded w-full" />
-    </div>
-  )
 }
 
 // Props interface
@@ -113,7 +97,7 @@ export function SupportingInfoGroup({
   })
 
   // Use lazy loader to track which sections have been scrolled into view
-  const { isSectionActive, activateSection, activeSections } = useManualLazyLoader(
+  const { isSectionActive, activateSection, activateSections, activeSections } = useManualLazyLoader(
     activityCreated ? ['documents'] : []
   )
 
@@ -192,7 +176,7 @@ export function SupportingInfoGroup({
         })
       },
       {
-        rootMargin: '800px 0px 800px 0px', // Preload 800px before visible for seamless loading
+        rootMargin: '1500px 0px 1500px 0px', // Preload 1500px before visible for seamless loading
         threshold: 0,
       }
     )
@@ -214,16 +198,13 @@ export function SupportingInfoGroup({
   useEffect(() => {
     if (!activityCreated || !enablePreloading) return
 
-    // Preload all sections with minimal staggering
+    // Preload all sections in a single batch
     const sectionsToPreload = ['documents', 'aid_effectiveness']
 
-    sectionsToPreload.forEach((sectionId, index) => {
-      setTimeout(() => {
-        if (!activeSections.has(sectionId)) {
-          activateSection(sectionId)
-        }
-      }, 350 + (50 * index)) // Start after 350ms, 50ms stagger between sections
-    })
+    const unloaded = sectionsToPreload.filter(id => !activeSections.has(id))
+    if (unloaded.length > 0) {
+      activateSections(unloaded)
+    }
   }, [activityCreated, enablePreloading, activateSection, activeSections])
 
   return (
@@ -243,6 +224,7 @@ export function SupportingInfoGroup({
             id="documents"
             ref={documentsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('documents') }}
           >
             {isSectionActive('documents') || activeSections.has('documents') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -272,6 +254,7 @@ export function SupportingInfoGroup({
             id="aid_effectiveness"
             ref={aidEffectivenessRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('aid_effectiveness') }}
           >
             {isSectionActive('aid_effectiveness') || activeSections.has('aid_effectiveness') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">

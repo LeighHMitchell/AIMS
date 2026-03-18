@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react"
 import { useScrollSpy, SectionRef } from "@/hooks/useScrollSpy"
 import { useManualLazyLoader } from "@/hooks/useLazySectionLoader"
 import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHeader"
+import { SectionSkeleton, getSectionMinHeight } from "./SectionSkeleton"
 
 // Import the tab components
 import SDGAlignmentSection from "@/components/SDGAlignmentSection"
@@ -25,23 +26,6 @@ export type StrategicAlignmentSectionId = typeof STRATEGIC_ALIGNMENT_SECTIONS[nu
  */
 export function isStrategicAlignmentSection(sectionId: string): boolean {
   return STRATEGIC_ALIGNMENT_SECTIONS.includes(sectionId as StrategicAlignmentSectionId)
-}
-
-/**
- * Loading skeleton for sections
- */
-function SectionSkeleton({ sectionId }: { sectionId: string }) {
-  return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-8 bg-gray-200 rounded w-1/3" />
-      <div className="space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-full" />
-        <div className="h-4 bg-gray-200 rounded w-5/6" />
-        <div className="h-4 bg-gray-200 rounded w-4/6" />
-      </div>
-      <div className="h-32 bg-gray-200 rounded w-full" />
-    </div>
-  )
 }
 
 // Props interface
@@ -143,7 +127,7 @@ export function StrategicAlignmentGroup({
   })
 
   // Use lazy loader to track which sections have been scrolled into view
-  const { isSectionActive, activateSection, activeSections } = useManualLazyLoader(
+  const { isSectionActive, activateSection, activateSections, activeSections } = useManualLazyLoader(
     activityCreated ? ['sdg'] : []
   )
 
@@ -222,7 +206,7 @@ export function StrategicAlignmentGroup({
         })
       },
       {
-        rootMargin: '800px 0px 800px 0px', // Preload 800px before visible for seamless loading
+        rootMargin: '1500px 0px 1500px 0px', // Preload 1500px before visible for seamless loading
         threshold: 0,
       }
     )
@@ -246,16 +230,13 @@ export function StrategicAlignmentGroup({
   useEffect(() => {
     if (!activityCreated || !enablePreloading) return
 
-    // Preload all sections with minimal staggering
+    // Preload all sections in a single batch
     const sectionsToPreload = ['sdg', 'tags', 'working_groups', 'policy_markers']
 
-    sectionsToPreload.forEach((sectionId, index) => {
-      setTimeout(() => {
-        if (!activeSections.has(sectionId)) {
-          activateSection(sectionId)
-        }
-      }, 300 + (50 * index)) // Start after 300ms, 50ms stagger between sections
-    })
+    const unloaded = sectionsToPreload.filter(id => !activeSections.has(id))
+    if (unloaded.length > 0) {
+      activateSections(unloaded)
+    }
   }, [activityCreated, enablePreloading, activateSection, activeSections])
 
   return (
@@ -275,6 +256,7 @@ export function StrategicAlignmentGroup({
             id="sdg"
             ref={sdgRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pb-16"
+            style={{ minHeight: getSectionMinHeight('sdg') }}
           >
             {isSectionActive('sdg') || activeSections.has('sdg') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -300,6 +282,7 @@ export function StrategicAlignmentGroup({
             id="tags"
             ref={tagsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('tags') }}
           >
             {isSectionActive('tags') || activeSections.has('tags') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -325,6 +308,7 @@ export function StrategicAlignmentGroup({
             id="working_groups"
             ref={workingGroupsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('working_groups') }}
           >
             {isSectionActive('working_groups') || activeSections.has('working_groups') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -351,6 +335,7 @@ export function StrategicAlignmentGroup({
             id="policy_markers"
             ref={policyMarkersRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('policy_markers') }}
           >
             {isSectionActive('policy_markers') || activeSections.has('policy_markers') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">

@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useCallback, useState } from "react"
 import { useScrollSpy, SectionRef } from "@/hooks/useScrollSpy"
 import { useManualLazyLoader } from "@/hooks/useLazySectionLoader"
 import { SectionHeader, getSectionLabel, getSectionHelpText } from "./SectionHeader"
-import { Skeleton } from "@/components/ui/skeleton"
+import { SectionSkeleton, getSectionMinHeight } from "./SectionSkeleton"
 
 // Import the tab components
 import ImprovedSectorAllocationForm from "@/components/activities/ImprovedSectorAllocationForm"
@@ -84,22 +84,6 @@ interface ActivityOverviewGroupProps {
   renderGeneralSection: () => React.ReactNode
 }
 
-/**
- * Loading skeleton for sections
- */
-function SectionSkeleton({ sectionId }: { sectionId: string }) {
-  return (
-    <div className="space-y-4 animate-pulse">
-      <div className="h-8 bg-gray-200 rounded w-1/3" />
-      <div className="space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-full" />
-        <div className="h-4 bg-gray-200 rounded w-5/6" />
-        <div className="h-4 bg-gray-200 rounded w-4/6" />
-      </div>
-      <div className="h-32 bg-gray-200 rounded w-full" />
-    </div>
-  )
-}
 
 /**
  * ActivityOverviewGroup - Renders all Activity Overview sections in a scrollable container
@@ -189,7 +173,7 @@ export function ActivityOverviewGroup({
   })
   
   // Use lazy loader to track which sections have been scrolled into view
-  const { isSectionActive, activateSection, activeSections } = useManualLazyLoader(['general'])
+  const { isSectionActive, activateSection, activateSections, activeSections } = useManualLazyLoader(['general'])
   
   // Track if sections have been revealed (for animation)
   const [sectionsRevealed, setSectionsRevealed] = useState(activityCreated)
@@ -265,7 +249,7 @@ export function ActivityOverviewGroup({
         })
       },
       {
-        rootMargin: '800px 0px 800px 0px', // Preload 800px before visible for seamless loading
+        rootMargin: '1500px 0px 1500px 0px', // Preload 1500px before visible for seamless loading
         threshold: 0,
       }
     )
@@ -279,22 +263,18 @@ export function ActivityOverviewGroup({
     return () => observer.disconnect()
   }, [activityCreated, activateSection])
 
-  // Aggressive preloading - load all sections quickly for seamless scrolling
+  // Batch preloading - load all sections at once to avoid cascading layout shifts
   // Only enabled when enablePreloading prop is true (user has visited this group)
   useEffect(() => {
     if (!activityCreated || !enablePreloading) return
 
-    // Preload all sections immediately with minimal staggering
+    // Activate all sections in a single batch to prevent sequential layout shifts
     const sectionsToPreload = ['sectors', 'humanitarian', 'country-region', 'locations']
-
-    sectionsToPreload.forEach((sectionId, index) => {
-      setTimeout(() => {
-        if (!activeSections.has(sectionId)) {
-          activateSection(sectionId)
-        }
-      }, 50 * index) // 50ms stagger between sections
-    })
-  }, [activityCreated, enablePreloading, activateSection, activeSections])
+    const unloaded = sectionsToPreload.filter(id => !activeSections.has(id))
+    if (unloaded.length > 0) {
+      activateSections(unloaded)
+    }
+  }, [activityCreated, enablePreloading, activateSections, activeSections])
   
   return (
     <div className="activity-overview-group space-y-0">
@@ -315,6 +295,7 @@ export function ActivityOverviewGroup({
             id="sectors"
             ref={sectorsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('sectors') }}
           >
             {isSectionActive('sectors') || activeSections.has('sectors') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -349,6 +330,7 @@ export function ActivityOverviewGroup({
             id="humanitarian"
             ref={humanitarianRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('humanitarian') }}
           >
             {isSectionActive('humanitarian') || activeSections.has('humanitarian') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -377,6 +359,7 @@ export function ActivityOverviewGroup({
             id="country-region"
             ref={countryRegionRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('country-region') }}
           >
             {isSectionActive('country-region') || activeSections.has('country-region') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -403,10 +386,11 @@ export function ActivityOverviewGroup({
           </section>
           
           {/* Locations Section */}
-          <section 
-            id="locations" 
+          <section
+            id="locations"
             ref={locationsRef as React.RefObject<HTMLElement>}
             className="scroll-mt-0 pt-16 pb-16"
+            style={{ minHeight: getSectionMinHeight('locations') }}
           >
             {isSectionActive('locations') || activeSections.has('locations') ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
