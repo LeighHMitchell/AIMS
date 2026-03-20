@@ -88,7 +88,7 @@ const AID_TYPES = [
 ];
 
 // Aid type codes that indicate a contribution to a trust fund / pooled fund
-const TRUST_FUND_AID_TYPES = ['B02', 'B03', 'B031', 'B032', 'B033', 'B04'];
+const TRUST_FUND_AID_TYPES = ['B02', 'B021', 'B022', 'B03', 'B031', 'B032', 'B033', 'B04'];
 
 // Finance types (sample)
 const FINANCE_TYPES = [
@@ -429,7 +429,9 @@ export default function TransactionForm({
       'id', 'uuid', 'activity_id', 'transaction_type', 'transaction_date', 'value', 'currency', 'status',
       'transaction_reference', 'value_date', 'description',
       'provider_org_id', 'provider_org_type', 'provider_org_ref', 'provider_org_name',
+      'provider_org_activity_id', 'provider_activity_uuid',
       'receiver_org_id', 'receiver_org_type', 'receiver_org_ref', 'receiver_org_name',
+      'receiver_org_activity_id', 'receiver_activity_uuid',
       'disbursement_channel', 'flow_type', 'finance_type', 'aid_type', 'tied_status',
       'sector_code', 'sector_vocabulary', 'recipient_country_code', 'recipient_region_code', 'recipient_region_vocab',
       'financing_classification', 'is_humanitarian'
@@ -1116,52 +1118,54 @@ export default function TransactionForm({
               </CardContent>
             </Card>
 
-            {/* Receiver Activity */}
-            <Card className="border-dashed bg-blue-50">
-              <CardHeader className="pb-3 border-b border-blue-200">
-                <CardTitle className="text-sm">Receiver Activity</CardTitle>
-                <CardDescription className="text-xs">Link to the activity receiving these funds</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <ActivityCombobox
-                  value={formData.receiver_activity_uuid || ''}
-                  onValueChange={async (activityId) => {
-                    console.log('[TransactionForm] Receiver activity selected:', activityId);
-                    setFormData(prev => ({ ...prev, receiver_activity_uuid: activityId }));
-                    
-                    if (activityId) {
-                      try {
-                        const response = await apiFetch(`/api/activities/${activityId}`);
-                        if (response.ok) {
-                          const activity = await response.json();
-                          console.log('[TransactionForm] Fetched activity IATI ID:', activity.iati_identifier);
-                          setFormData(prev => ({ 
-                            ...prev, 
-                            receiver_org_activity_id: activity.iati_identifier || '' 
-                          }));
-                        }
-                      } catch (error) {
-                        console.error('Error fetching activity:', error);
-                      }
-                    } else {
-                      setFormData(prev => ({ ...prev, receiver_org_activity_id: '' }));
-                    }
+            {/* Receiver Activity - hidden when trust fund prompt handles this */}
+            {!TRUST_FUND_AID_TYPES.includes(formData.aid_type || '') && (
+              <Card className="border-dashed bg-blue-50">
+                <CardHeader className="pb-3 border-b border-blue-200">
+                  <CardTitle className="text-sm">Receiver Activity</CardTitle>
+                  <CardDescription className="text-xs">Link to the activity receiving these funds</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <ActivityCombobox
+                    value={formData.receiver_activity_uuid || ''}
+                    onValueChange={async (activityId) => {
+                      console.log('[TransactionForm] Receiver activity selected:', activityId);
+                      setFormData(prev => ({ ...prev, receiver_activity_uuid: activityId }));
 
-                    if (transaction && activityId !== transaction.receiver_activity_uuid) {
-                      await saveField("receiver_activity_uuid", activityId);
-                    }
-                  }}
-                  placeholder="Search for receiver activity..."
-                  fallbackIatiId={formData.receiver_org_activity_id}
-                />
-                {formData.receiver_org_activity_id && (
-                  <p className="text-xs text-gray-500">
-                    IATI ID: {formData.receiver_org_activity_id}
-                  </p>
-                )}
-                {renderFieldIcon("receiver_activity_uuid")}
-              </CardContent>
-            </Card>
+                      if (activityId) {
+                        try {
+                          const response = await apiFetch(`/api/activities/${activityId}`);
+                          if (response.ok) {
+                            const activity = await response.json();
+                            console.log('[TransactionForm] Fetched activity IATI ID:', activity.iati_identifier);
+                            setFormData(prev => ({
+                              ...prev,
+                              receiver_org_activity_id: activity.iati_identifier || ''
+                            }));
+                          }
+                        } catch (error) {
+                          console.error('Error fetching activity:', error);
+                        }
+                      } else {
+                        setFormData(prev => ({ ...prev, receiver_org_activity_id: '' }));
+                      }
+
+                      if (transaction && activityId !== transaction.receiver_activity_uuid) {
+                        await saveField("receiver_activity_uuid", activityId);
+                      }
+                    }}
+                    placeholder="Search for receiver activity..."
+                    fallbackIatiId={formData.receiver_org_activity_id}
+                  />
+                  {formData.receiver_org_activity_id && (
+                    <p className="text-xs text-gray-500">
+                      IATI ID: {formData.receiver_org_activity_id}
+                    </p>
+                  )}
+                  {renderFieldIcon("receiver_activity_uuid")}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Trust Fund / MDTF Contribution Prompt */}
@@ -1189,10 +1193,17 @@ export default function TransactionForm({
                         const response = await apiFetch(`/api/activities/${activityId}`);
                         if (response.ok) {
                           const activity = await response.json();
-                          setFormData(prev => ({
-                            ...prev,
-                            receiver_org_activity_id: activity.iati_identifier || ''
-                          }));
+                          const updates: Partial<TransactionFormData> = {
+                            receiver_org_activity_id: activity.iati_identifier || '',
+                          };
+                          // Auto-populate receiver org from the fund manager
+                          if (activity.reporting_org_id && !receiverManuallySet) {
+                            updates.receiver_org_id = activity.reporting_org_id;
+                            updates.receiver_org_name = activity.reporting_org_name || activity.created_by_org_name || '';
+                            updates.receiver_org_ref = activity.reporting_org_ref || '';
+                            updates.receiver_org_type = activity.reporting_org_type || '';
+                          }
+                          setFormData(prev => ({ ...prev, ...updates }));
                         }
                       } catch (error) {
                         console.error('Error fetching trust fund activity:', error);
@@ -1212,6 +1223,11 @@ export default function TransactionForm({
                 {formData.receiver_org_activity_id && (
                   <p className="text-xs text-amber-700">
                     Linked to IATI activity: <span className="font-mono">{formData.receiver_org_activity_id}</span>
+                  </p>
+                )}
+                {formData.receiver_org_name && formData.receiver_activity_uuid && (
+                  <p className="text-xs text-amber-700">
+                    Fund manager: {formData.receiver_org_name}
                   </p>
                 )}
               </CardContent>
