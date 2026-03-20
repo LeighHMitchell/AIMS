@@ -48,6 +48,7 @@ interface ActivityComboboxProps {
   fallbackIatiId?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  pooledFundsOnly?: boolean;
 }
 
 /** Convert a 2-letter country code to its flag emoji */
@@ -114,6 +115,7 @@ export function ActivityCombobox({
   fallbackIatiId,
   open: externalOpen,
   onOpenChange: externalOnOpenChange,
+  pooledFundsOnly = false,
 }: ActivityComboboxProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
 
@@ -178,9 +180,10 @@ export function ActivityCombobox({
     const fetchActivities = async () => {
       setLoading(true);
       try {
+        const pooledParam = pooledFundsOnly ? '&pooled_funds_only=true' : '';
         const url = searchQuery
-          ? `/api/activities/search?q=${encodeURIComponent(searchQuery)}&limit=50`
-          : `/api/activities/search?limit=50`;
+          ? `/api/activities/search?q=${encodeURIComponent(searchQuery)}&limit=50${pooledParam}`
+          : `/api/activities/search?limit=50${pooledParam}`;
 
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch activities');
@@ -202,7 +205,7 @@ export function ActivityCombobox({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, pooledFundsOnly]);
 
   const getActivityTitle = (activity: Activity) => {
     return activity.title_narrative || activity.title || 'Untitled Activity';

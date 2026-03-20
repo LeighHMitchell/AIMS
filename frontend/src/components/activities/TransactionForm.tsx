@@ -74,6 +74,11 @@ const AID_TYPES = [
   { code: 'A02', name: 'Sector budget support' },
   { code: 'B01', name: 'Core support to NGOs, other private bodies, PPPs' },
   { code: 'B02', name: 'Core contributions to multilateral institutions' },
+  { code: 'B03', name: 'Contributions to specific-purpose programmes and funds' },
+  { code: 'B031', name: 'Contributions to multi-donor/multi-entity funding mechanisms' },
+  { code: 'B032', name: 'Contributions to multi-donor/single-entity funding mechanisms' },
+  { code: 'B033', name: 'Contributions to single-donor funding mechanisms' },
+  { code: 'B04', name: 'Basket funds / pooled funding' },
   { code: 'C01', name: 'Project-type interventions' },
   { code: 'D01', name: 'Donor country personnel' },
   { code: 'D02', name: 'Other technical assistance' },
@@ -81,6 +86,9 @@ const AID_TYPES = [
   { code: 'F01', name: 'Debt relief' },
   { code: 'G01', name: 'Administrative costs' },
 ];
+
+// Aid type codes that indicate a contribution to a trust fund / pooled fund
+const TRUST_FUND_AID_TYPES = ['B02', 'B03', 'B031', 'B032', 'B033', 'B04'];
 
 // Finance types (sample)
 const FINANCE_TYPES = [
@@ -124,7 +132,9 @@ export default function TransactionForm({
   defaultFlowType,
   activityId
 }: TransactionFormProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // Auto-open advanced section if aid type is a trust fund type (so user sees context)
+  const initialAidType = transaction?.effective_aid_type || transaction?.aid_type || defaultAidType || '';
+  const [showAdvanced, setShowAdvanced] = useState(TRUST_FUND_AID_TYPES.includes(initialAidType));
   const [transactionTypePopoverOpen, setTransactionTypePopoverOpen] = useState(false);
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
 
@@ -1153,6 +1163,60 @@ export default function TransactionForm({
               </CardContent>
             </Card>
           </div>
+
+          {/* Trust Fund / MDTF Contribution Prompt */}
+          {TRUST_FUND_AID_TYPES.includes(formData.aid_type || '') && (
+            <Card className="border-amber-300 bg-amber-50">
+              <CardHeader className="pb-3 border-b border-amber-200">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-amber-600" />
+                  Trust Fund Contribution
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Aid type <span className="font-mono font-semibold">{formData.aid_type}</span> indicates a contribution to a pooled fund or trust fund.
+                  Link it to the receiving fund to enable deduplication and traceability.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-3 space-y-3">
+                <Label className="text-sm font-medium">Which trust fund is receiving this contribution?</Label>
+                <ActivityCombobox
+                  value={formData.receiver_activity_uuid || ''}
+                  onValueChange={async (activityId) => {
+                    setFormData(prev => ({ ...prev, receiver_activity_uuid: activityId }));
+
+                    if (activityId) {
+                      try {
+                        const response = await apiFetch(`/api/activities/${activityId}`);
+                        if (response.ok) {
+                          const activity = await response.json();
+                          setFormData(prev => ({
+                            ...prev,
+                            receiver_org_activity_id: activity.iati_identifier || ''
+                          }));
+                        }
+                      } catch (error) {
+                        console.error('Error fetching trust fund activity:', error);
+                      }
+                    } else {
+                      setFormData(prev => ({ ...prev, receiver_org_activity_id: '' }));
+                    }
+
+                    if (transaction && activityId !== transaction.receiver_activity_uuid) {
+                      await saveField("receiver_activity_uuid", activityId);
+                    }
+                  }}
+                  placeholder="Search for a trust fund or pooled fund..."
+                  fallbackIatiId={formData.receiver_org_activity_id}
+                  pooledFundsOnly
+                />
+                {formData.receiver_org_activity_id && (
+                  <p className="text-xs text-amber-700">
+                    Linked to IATI activity: <span className="font-mono">{formData.receiver_org_activity_id}</span>
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Description Section */}
           <div className="space-y-2">

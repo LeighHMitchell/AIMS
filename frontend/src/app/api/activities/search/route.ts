@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('q') || searchParams.get('search') || '';
     const limit = parseInt(searchParams.get('limit') || '100', 10);
+    const pooledFundsOnly = searchParams.get('pooled_funds_only') === 'true';
 
     console.log('[Activities Search API] Received search request:', { search, limit });
     if (!supabase) {
@@ -41,6 +42,11 @@ export async function GET(request: NextRequest) {
       `)
       .order('created_at', { ascending: false })
       .limit(limit);
+
+    // Filter to pooled funds only if requested
+    if (pooledFundsOnly) {
+      query = query.eq('is_pooled_fund', true);
+    }
 
     // Add search filter if provided
     if (search) {
