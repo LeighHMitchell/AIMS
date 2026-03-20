@@ -60,7 +60,7 @@ import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import {
   Plus, Download, Pencil, Trash2, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Users, LayoutGrid, TableIcon, Search, MoreVertical, BookOpenCheck, BookLock, CheckCircle2, AlertTriangle, Circle, Info, ReceiptText, Handshake, Shuffle, Link2,
   FileCheck, ShieldCheck, Globe, DatabaseZap, RefreshCw, Copy, Check, Blocks, DollarSign, Settings, ExternalLink, FileCode, Columns3, ChevronDown, ChevronUp, Heart,
-  Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck
+  Building2, ArrowRightLeft, X, FileText, FileSpreadsheet, Bookmark, BookmarkCheck, Briefcase, Wallet
 } from "lucide-react";
 import { exportActivityToPDF, exportActivityToExcel } from "@/lib/activity-export";
 import { useUser } from "@/hooks/useUser";
@@ -518,6 +518,9 @@ function ActivitiesPageContent() {
     y: number;
   } | null>(null);
   
+  // Activity type filter (all / regular / pooled fund)
+  const [activityTypeFilter, setActivityTypeFilter] = useState<'all' | 'regular' | 'pooled'>('all');
+
   // Sector filter state (hierarchical filter like Map & Analysis page)
   const [sectorFilter, setSectorFilter] = useState<SectorFilterSelection>({
     sectorCategories: [],
@@ -1041,21 +1044,19 @@ const router = useRouter();
             if (usingOptimization) {
               safeOptimizedData.refetch();
             } else {
-              window.location.reload();
+              fetchActivities(currentPage, false);
             }
             throw new Error("Delete endpoint not found");
           }
         }
-        
+
         // For other errors, we need to revert the optimistic update or refetch
         if (retryCount === 0) {
           console.error("[AIMS] Delete failed, reverting optimistic update");
           if (usingOptimization) {
             safeOptimizedData.refetch(); // Refetch to get current state
           } else {
-            // For legacy mode, we'd need to restore the activity or refetch
-            // For now, just refetch by calling the fetch function
-            window.location.reload(); // Simple fallback
+            fetchActivities(currentPage, false);
           }
         }
         
@@ -1355,6 +1356,13 @@ const router = useRouter();
       sectorFilter.sectors.length > 0 || 
       sectorFilter.subSectors.length > 0;
     
+    // Activity type filter helper
+    const matchesTypeFilter = (activity: any) => {
+      if (activityTypeFilter === 'all') return true;
+      const isPooled = activity.isPooledFund || activity.is_pooled_fund || false;
+      return activityTypeFilter === 'pooled' ? isPooled : !isPooled;
+    };
+
     if (usingOptimization) {
       let result = activities;
       if (hasSectorFilter) {
@@ -1364,23 +1372,26 @@ const router = useRouter();
           return matchesSectorFilter(sectorCodes, sectorFilter);
         });
       }
+      if (activityTypeFilter !== 'all') {
+        result = result.filter(matchesTypeFilter);
+      }
       return result;
     }
-    
+
     // Legacy client-side filtering (search removed as it's now global)
     return activities.filter(activity => {
-      const activityStatus = activity.activityStatus || 
+      const activityStatus = activity.activityStatus ||
         (activity.status && !["published", "draft"].includes(activity.status) ? activity.status : "1");
-      const publicationStatus = activity.publicationStatus || 
+      const publicationStatus = activity.publicationStatus ||
         (activity.status === "published" ? "published" : "draft");
       const submissionStatus = activity.submissionStatus || 'draft';
-      
+
       const matchesActivityStatus = filterStatus === "all" || activityStatus === filterStatus;
-      const matchesValidationStatus = filterValidation === "all" || 
+      const matchesValidationStatus = filterValidation === "all" ||
         (filterValidation === "validated" && submissionStatus === "validated") ||
         (filterValidation === "rejected" && submissionStatus === "rejected") ||
         (filterValidation === "pending" && !["validated", "rejected"].includes(submissionStatus));
-      
+
       // Apply sector filter
       let matchesSectorSelection = true;
       if (hasSectorFilter) {
@@ -1388,10 +1399,10 @@ const router = useRouter();
         const sectorCodes = activitySectors.map((s: any) => s.code || s.sector_code);
         matchesSectorSelection = matchesSectorFilter(sectorCodes, sectorFilter);
       }
-      
-      return matchesActivityStatus && matchesValidationStatus && matchesSectorSelection;
+
+      return matchesActivityStatus && matchesValidationStatus && matchesSectorSelection && matchesTypeFilter(activity);
     });
-  }, [usingOptimization, activities, filterStatus, filterValidation, sectorFilter]);
+  }, [usingOptimization, activities, filterStatus, filterValidation, sectorFilter, activityTypeFilter]);
 
   // Pre-compute creator organization strings for all filtered activities
   // This cache eliminates repeated lookups during rendering and sorting
@@ -1663,7 +1674,7 @@ const router = useRouter();
       <div className="flex flex-wrap justify-between items-center mb-6" data-tour="activities-header">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold text-slate-800">Activities</h1>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3"><Briefcase className="h-8 w-8 text-foreground" />Activities</h1>
             <HelpTextTooltip 
               content="View key information about each activity. Users with appropriate permissions can update or remove activities from this list."
             />
@@ -1825,6 +1836,21 @@ const router = useRouter();
           </div>
         )}
 
+        {/* Activity Type Filter */}
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">Type</Label>
+          <Select value={activityTypeFilter} onValueChange={(v) => setActivityTypeFilter(v as 'all' | 'regular' | 'pooled')}>
+            <SelectTrigger className="w-[150px] h-9">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="regular">Activities</SelectItem>
+              <SelectItem value="pooled">Pooled Funds</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Spacer to push view toggle to the right */}
         <div className="flex-1 min-w-[8px]" />
 
@@ -1882,7 +1908,7 @@ const router = useRouter();
           </div>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden fade-in" data-tour="activities-table">
+        <div className="bg-card rounded-lg border border-border shadow-sm fade-in" data-tour="activities-table">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse activities-table data-table-balanced">
               <thead className="bg-surface-muted border-b border-border">
@@ -2610,6 +2636,20 @@ const router = useRouter();
                                   <span className="font-medium text-foreground">
                                     {' '}({activity.acronym})
                                   </span>
+                                )}
+                                {(activity as any).isPooledFund && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="inline-flex items-center ml-1.5 align-middle">
+                                          <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <span className="text-sm">Pooled Fund</span>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 )}
                                 {activity.autoSync && activity.syncStatus === 'live' && (
                                   <TooltipProvider>
@@ -4053,10 +4093,11 @@ const router = useRouter();
             <Button variant="outline" onClick={() => setDeleteActivityId(null)}>
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={() => deleteActivityId && handleDelete(deleteActivityId)}
             >
+              <Trash2 className="h-4 w-4 mr-1" />
               Delete Activity
             </Button>
           </DialogFooter>

@@ -36,7 +36,7 @@ interface CacheEntry {
 }
 
 let systemTotalsCache: CacheEntry | null = null;
-const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 /**
  * Fetches system-wide totals from the database with caching.
@@ -45,7 +45,7 @@ const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
  * - Uses pre-aggregated data from activity_budgets, planned_disbursements, 
  *   and activity_transaction_summaries tables
  * - Expected query time: 5-50ms
- * - Results cached for 2 minutes to reduce database load
+ * - Results cached for 10 minutes to reduce database load
  * 
  * @param forceRefresh - If true, bypasses cache and fetches fresh data
  * @returns SystemTotals object with aggregated financial totals

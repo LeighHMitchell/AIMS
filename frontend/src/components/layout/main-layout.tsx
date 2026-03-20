@@ -96,7 +96,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         />
 
         {/* Page Content */}
-        <div className="pt-8 px-8 border-0">
+        <div className="pt-8 px-8 pb-24 border-0">
           {children}
         </div>
       </main>

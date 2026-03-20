@@ -179,7 +179,7 @@ export default function SectorsListingPage() {
         <div className="w-full p-6">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground mb-1">Sectors</h1>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3 mb-1"><BarChart3 className="h-8 w-8 text-foreground" />Sectors</h1>
             <p className="text-sm text-muted-foreground">
               DAC CRS Purpose Codes — {data.totals.activeSectors} active sectors across {data.totals.totalActivities} activities
             </p>

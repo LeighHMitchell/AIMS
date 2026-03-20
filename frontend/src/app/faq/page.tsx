@@ -321,7 +321,7 @@ export default function FAQPage() {
               <HelpCircle className="h-8 w-8 text-muted-foreground" />
               <div>
                 <div className="flex items-center space-x-2">
-                  <h1 className="text-2xl font-bold text-foreground">Frequently Asked Questions</h1>
+                  <h1 className="text-3xl font-bold text-foreground flex items-center gap-3"><HelpCircle className="h-8 w-8 text-foreground" />Frequently Asked Questions</h1>
                   <HelpTextTooltip content="Find answers to common questions or add new ones. If you cannot find what you are looking for, submit feedback through the User Menu in the top right to request a new FAQ entry." />
                 </div>
               </div>

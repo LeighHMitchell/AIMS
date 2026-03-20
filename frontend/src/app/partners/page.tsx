@@ -954,7 +954,7 @@ export default function PartnersPage() {
         <div className="max-w-screen-2xl mx-auto px-6 py-4 space-y-6">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground mb-2">Partner Summary</h1>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3 mb-2"><Building2 className="h-8 w-8 text-foreground" />Partner Summary</h1>
           </div>
 
           {/* Main Content */}

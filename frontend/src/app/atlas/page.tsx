@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import dynamicImport from 'next/dynamic';
+import { Globe } from 'lucide-react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { MapSkeleton } from '@/components/ui/skeleton-loader';
 
@@ -16,7 +17,7 @@ export default function AtlasPage() {
   return (
     <MainLayout>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground">Atlas</h1>
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3"><Globe className="h-8 w-8 text-foreground" />Atlas</h1>
         <p className="text-muted-foreground mt-2">
           Interactive map powered by MapLibre GL for improved performance and WebGL rendering
         </p>
