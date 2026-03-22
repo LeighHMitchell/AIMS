@@ -5,26 +5,6 @@ import type { UpsertChecklistItemRequest } from '@/types/readiness';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/**
- * Check if user is admin
- */
-async function requireAdmin(supabase: any, userId: string | undefined) {
-  if (!userId) {
-    return { error: 'Authentication required', status: 401 };
-  }
-
-  const { data: user } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single();
-
-  if (!user || !['admin', 'super_admin'].includes(user.role)) {
-    return { error: 'Admin access required', status: 403 };
-  }
-
-  return null;
-}
 
 /**
  * GET /api/admin/readiness/items
@@ -35,10 +15,6 @@ export async function GET(request: NextRequest) {
     const { supabase, user, response: authResponse } = await requireAdmin();
     if (authResponse) return authResponse;
 
-    const adminError = await requireAdmin(supabase, user?.id);
-    if (adminError) {
-      return NextResponse.json({ error: adminError.error }, { status: adminError.status });
-    }
 
     const { searchParams } = new URL(request.url);
     const templateId = searchParams.get('template_id');
@@ -88,10 +64,6 @@ export async function POST(request: NextRequest) {
     const { supabase, user, response: authResponse } = await requireAdmin();
     if (authResponse) return authResponse;
 
-    const adminError = await requireAdmin(supabase, user?.id);
-    if (adminError) {
-      return NextResponse.json({ error: adminError.error }, { status: adminError.status });
-    }
 
     const body: UpsertChecklistItemRequest = await request.json();
 
