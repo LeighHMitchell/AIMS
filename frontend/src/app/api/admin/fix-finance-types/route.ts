@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 
 /**
  * Admin API endpoint to fix empty string finance types
@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log('[FINANCE-FIX] Starting comprehensive finance type fix...');
 
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, response: authResponse } = await requireAdmin();
     if (authResponse) return authResponse;
 
     if (!supabase) {
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
 
 // GET endpoint to check status without making changes
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   try {

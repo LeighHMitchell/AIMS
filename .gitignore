@@ -9,6 +9,9 @@ frontend/.next/
 frontend/out/
 
 # Environment variables
+.env.local
+.env.test
+.env*.local
 frontend/.env.local
 frontend/.env*.local
 

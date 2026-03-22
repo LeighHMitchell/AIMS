@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import {
   CountryEmergencyRow,
   toCountryEmergency,
@@ -10,7 +10,7 @@ import {
  * List all country emergencies with optional filters
  */
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   try {
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
  * Create a new country emergency
  */
 export async function POST(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   try {

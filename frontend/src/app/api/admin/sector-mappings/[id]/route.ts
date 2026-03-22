@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import {
   SectorBudgetMappingRow,
   toSectorBudgetMapping,
@@ -14,7 +14,7 @@ interface RouteParams {
  * Get a single sector-to-budget mapping by ID
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   if (!supabase) {
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * Update a sector-to-budget mapping
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   if (!supabase) {
@@ -196,7 +196,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  * Delete a sector-to-budget mapping
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   if (!supabase) {

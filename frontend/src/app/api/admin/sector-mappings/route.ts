@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import {
   SectorBudgetMappingRow,
   toSectorBudgetMapping,
@@ -11,7 +11,7 @@ import {
  * List all sector-to-budget mappings with optional filters
  */
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   try {
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
  * Create a new sector-to-budget mapping
  */
 export async function POST(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   try {

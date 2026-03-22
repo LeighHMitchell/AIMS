@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import {
   DomesticBudgetDataRow,
   toDomesticBudgetData,
@@ -12,7 +12,7 @@ import { ClassificationType } from "@/types/aid-on-budget";
  * List domestic budget data with optional filtering
  */
 export async function GET(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   try {
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
  * Create or update a domestic budget entry (upsert by classification + year)
  */
 export async function POST(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   try {
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
  * Bulk upsert domestic budget entries
  */
 export async function PUT(request: NextRequest) {
-  const { supabase, response: authResponse } = await requireAuth();
+  const { supabase, response: authResponse } = await requireAdmin();
   if (authResponse) return authResponse;
 
   try {

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, response: authResponse } = await requireAdmin();
     if (authResponse) return authResponse;
 
     console.log('[System Settings] GET request received')
@@ -67,7 +67,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, response: authResponse } = await requireAdmin();
     if (authResponse) return authResponse;
 
     console.log('[System Settings] POST request received')

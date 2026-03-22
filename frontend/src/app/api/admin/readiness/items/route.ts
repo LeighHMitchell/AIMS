@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import type { UpsertChecklistItemRequest } from '@/types/readiness';
 
 export const dynamic = 'force-dynamic';
@@ -32,7 +32,7 @@ async function requireAdmin(supabase: any, userId: string | undefined) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, user, response: authResponse } = await requireAuth();
+    const { supabase, user, response: authResponse } = await requireAdmin();
     if (authResponse) return authResponse;
 
     const adminError = await requireAdmin(supabase, user?.id);
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, user, response: authResponse } = await requireAuth();
+    const { supabase, user, response: authResponse } = await requireAdmin();
     if (authResponse) return authResponse;
 
     const adminError = await requireAdmin(supabase, user?.id);

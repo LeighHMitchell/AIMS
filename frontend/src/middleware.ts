@@ -2,6 +2,39 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
+// ---------------------------------------------------------------------------
+// In-memory sliding-window rate limiter (per IP, per instance).
+// Not shared across serverless instances — use Redis or Vercel WAF for
+// production-grade enforcement. This stops casual abuse.
+// ---------------------------------------------------------------------------
+const RATE_LIMIT_WINDOW_MS = 60_000 // 1 minute
+const RATE_LIMIT_MAX = 100          // max requests per window per IP
+
+const hitsByIp = new Map<string, number[]>()
+
+// Prevent unbounded memory growth — evict stale entries every 5 minutes
+let lastCleanup = Date.now()
+function cleanupHits() {
+  const now = Date.now()
+  if (now - lastCleanup < 300_000) return
+  lastCleanup = now
+  for (const [ip, timestamps] of hitsByIp) {
+    const valid = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS)
+    if (valid.length === 0) hitsByIp.delete(ip)
+    else hitsByIp.set(ip, valid)
+  }
+}
+
+function isRateLimited(ip: string): boolean {
+  cleanupHits()
+  const now = Date.now()
+  const timestamps = hitsByIp.get(ip) ?? []
+  const recent = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS)
+  recent.push(now)
+  hitsByIp.set(ip, recent)
+  return recent.length > RATE_LIMIT_MAX
+}
+
 const ALLOWED_ORIGINS = new Set(
   (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3000')
     .split(',')
@@ -23,6 +56,19 @@ export async function middleware(request: NextRequest) {
   })
 
   const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
+
+  // Rate-limit API routes
+  if (isApiRoute) {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown'
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      )
+    }
+  }
 
   // Refresh Supabase session cookies so server-side auth stays valid.
   // Use a 5s timeout to prevent MIDDLEWARE_INVOCATION_TIMEOUT on slow edges.

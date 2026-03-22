@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   console.log('[AIMS] POST /api/users/reset-password - Starting request');
   
-  const { supabase, response } = await requireAuth();
+  const { supabase, response } = await requireAdmin();
   if (response) return response;
   
   try {

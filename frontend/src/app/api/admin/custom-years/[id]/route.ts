@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import { CustomYearRow, toCustomYear } from "@/types/custom-years";
 
 interface RouteParams {
@@ -12,7 +12,7 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, response: authResponse } = await requireAdmin();
     if (authResponse) return authResponse;
 
     const { id } = await params;
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, response: authResponse } = await requireAdmin();
     if (authResponse) return authResponse;
 
     const { id } = await params;
@@ -239,7 +239,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { supabase, response: authResponse } = await requireAuth();
+    const { supabase, response: authResponse } = await requireAdmin();
     if (authResponse) return authResponse;
 
     const { id } = await params;

@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { User, SupabaseClient } from '@supabase/supabase-js'
+import { logger } from '@/lib/logger'
 
 /**
  * Authentication helper for API routes.
@@ -71,6 +72,48 @@ export async function requireAuth(): Promise<{
 }
 
 /**
+ * Authentication + admin authorization helper for API routes.
+ * Verifies the user is authenticated AND has the super_user role.
+ *
+ * Usage:
+ * ```typescript
+ * export async function GET(request: NextRequest) {
+ *   const { supabase, user, response } = await requireAdmin()
+ *   if (response) return response
+ *
+ *   // ... your admin-only logic here
+ * }
+ * ```
+ */
+export async function requireAdmin(): Promise<{
+  supabase: SupabaseClient | null
+  user: User | null
+  response: NextResponse | null
+}> {
+  const { supabase, user, response } = await requireAuth()
+  if (response) return { supabase: null, user: null, response }
+
+  const { data: profile, error: profileError } = await supabase!
+    .from('users')
+    .select('role')
+    .eq('auth_user_id', user!.id)
+    .single()
+
+  if (profileError || !profile || profile.role !== 'super_user') {
+    return {
+      supabase: null,
+      user: null,
+      response: NextResponse.json(
+        { error: 'Forbidden: admin access required' },
+        { status: 403 }
+      )
+    }
+  }
+
+  return { supabase, user, response: null }
+}
+
+/**
  * Verify cron job authentication using secret header.
  * 
  * Usage:
@@ -88,7 +131,7 @@ export function verifyCronSecret(request: Request): NextResponse | null {
   const cronSecret = process.env.CRON_SECRET
   
   if (!cronSecret) {
-    console.error('[Auth] CRON_SECRET environment variable not set')
+    logger.error('CRON_SECRET environment variable not set', { context: 'auth' })
     return NextResponse.json(
       { error: 'Server configuration error' },
       { status: 500 }
