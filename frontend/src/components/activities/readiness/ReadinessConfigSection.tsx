@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -50,46 +50,24 @@ export function ReadinessConfigSection({
     is_infrastructure: config?.is_infrastructure || false,
   });
 
-  // Update local state when config changes (compare values, not reference)
-  useEffect(() => {
-    const newType = config?.financing_type || null;
-    const newModality = config?.financing_modality || null;
-    const newInfra = config?.is_infrastructure || false;
-
-    setLocalConfig(prev => {
-      if (prev.financing_type === newType &&
-          prev.financing_modality === newModality &&
-          prev.is_infrastructure === newInfra) {
-        return prev; // No change — skip re-render
-      }
-      return { financing_type: newType, financing_modality: newModality, is_infrastructure: newInfra };
-    });
-  }, [config?.financing_type, config?.financing_modality, config?.is_infrastructure]);
-
-  const handleFinancingTypeChange = async (value: string) => {
+  const handleFinancingTypeChange = (value: string) => {
     const newType = value as FinancingType;
-    setLocalConfig(prev => ({ ...prev, financing_type: newType }));
-    await onUpdate({
-      ...localConfig,
-      financing_type: newType,
-    });
+    const updated = { ...localConfig, financing_type: newType };
+    setLocalConfig(updated);
+    onUpdate(updated);
   };
 
-  const handleModalityChange = async (value: string) => {
+  const handleModalityChange = (value: string) => {
     const newModality = value as FinancingModality;
-    setLocalConfig(prev => ({ ...prev, financing_modality: newModality }));
-    await onUpdate({
-      ...localConfig,
-      financing_modality: newModality,
-    });
+    const updated = { ...localConfig, financing_modality: newModality };
+    setLocalConfig(updated);
+    onUpdate(updated);
   };
 
-  const handleInfrastructureChange = async (checked: boolean) => {
-    setLocalConfig(prev => ({ ...prev, is_infrastructure: checked }));
-    await onUpdate({
-      ...localConfig,
-      is_infrastructure: checked,
-    });
+  const handleInfrastructureChange = (checked: boolean) => {
+    const updated = { ...localConfig, is_infrastructure: checked };
+    setLocalConfig(updated);
+    onUpdate(updated);
   };
 
   return (
