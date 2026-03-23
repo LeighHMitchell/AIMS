@@ -40,11 +40,7 @@ export async function GET(
         governmentInputs: {
           onBudgetClassification: {},
           rgcContribution: {},
-          nationalPlanAlignment: {},
-          technicalCoordination: {},
-          oversightAgreement: {},
-          geographicContext: {},
-          strategicConsiderations: {},
+          riskAssessment: {},
           evaluationResults: {}
         }
       });
@@ -54,12 +50,14 @@ export async function GET(
     const frontendFormat = {
       onBudgetClassification: governmentInput.on_budget_classification || {},
       rgcContribution: governmentInput.rgc_contribution || {},
+      riskAssessment: governmentInput.risk_assessment || {},
+      evaluationResults: governmentInput.evaluation_results || {},
+      // Legacy fields (read-only, kept for backward compat)
       nationalPlanAlignment: governmentInput.national_plan_alignment || {},
       technicalCoordination: governmentInput.technical_coordination || {},
       oversightAgreement: governmentInput.oversight_agreement || {},
       geographicContext: governmentInput.geographic_context || {},
       strategicConsiderations: governmentInput.strategic_considerations || {},
-      evaluationResults: governmentInput.evaluation_results || {}
     };
 
     return NextResponse.json({
@@ -118,12 +116,14 @@ export async function POST(
       activity_id: activityId,
       on_budget_classification: body.onBudgetClassification || {},
       rgc_contribution: body.rgcContribution || {},
+      risk_assessment: body.riskAssessment || {},
+      evaluation_results: body.evaluationResults || {},
+      // Preserve legacy fields if sent (backward compat)
       national_plan_alignment: body.nationalPlanAlignment || {},
       technical_coordination: body.technicalCoordination || {},
       oversight_agreement: body.oversightAgreement || {},
       geographic_context: body.geographicContext || {},
       strategic_considerations: body.strategicConsiderations || {},
-      evaluation_results: body.evaluationResults || {}
     };
 
     // Handle user tracking fields
@@ -174,12 +174,8 @@ export async function POST(
     const frontendFormat = {
       onBudgetClassification: governmentInput.on_budget_classification || {},
       rgcContribution: governmentInput.rgc_contribution || {},
-      nationalPlanAlignment: governmentInput.national_plan_alignment || {},
-      technicalCoordination: governmentInput.technical_coordination || {},
-      oversightAgreement: governmentInput.oversight_agreement || {},
-      geographicContext: governmentInput.geographic_context || {},
-      strategicConsiderations: governmentInput.strategic_considerations || {},
-      evaluationResults: governmentInput.evaluation_results || {}
+      riskAssessment: governmentInput.risk_assessment || {},
+      evaluationResults: governmentInput.evaluation_results || {},
     };
 
     return NextResponse.json({

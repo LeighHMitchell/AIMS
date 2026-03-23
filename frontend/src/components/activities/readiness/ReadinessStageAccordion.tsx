@@ -1,13 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+// Card removed - using plain divs to avoid gray card backgrounds
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { 
-  ChevronDown, 
-  ChevronUp,
+import {
   CheckCircle,
   Clock,
   Circle,
@@ -71,17 +69,17 @@ export function ReadinessStageAccordion({
   };
 
   return (
-    <Card className={cn(
-      "transition-all",
+    <div className={cn(
+      "border rounded-lg transition-all",
       isStageSigned && "border-green-200",
       isComplete && !isStageSigned && "border-blue-200"
     )}>
       {/* Header - Always visible */}
-      <CardHeader
+      <div
         className={cn(
-          "cursor-pointer select-none",
-          isStageSigned && "bg-green-50",
-          isComplete && !isStageSigned && "bg-blue-50"
+          "p-6 cursor-pointer select-none",
+          isStageSigned && "bg-green-50 rounded-t-lg",
+          isComplete && !isStageSigned && "bg-blue-50 rounded-t-lg"
         )}
         onClick={onToggle}
       >
@@ -130,19 +128,13 @@ export function ReadinessStageAccordion({
               )}
             </div>
 
-            {/* Expand/Collapse icon */}
-            {isExpanded ? (
-              <ChevronUp className="h-5 w-5 text-gray-400" />
-            ) : (
-              <ChevronDown className="h-5 w-5 text-gray-400" />
-            )}
           </div>
         </div>
-      </CardHeader>
+      </div>
 
       {/* Expanded content */}
       {isExpanded && (
-        <CardContent className="pt-0">
+        <div className="p-6 pt-0">
           {/* Sign-off section at top if stage is signed */}
           {isStageSigned && (
             <ReadinessStageSignoff
@@ -189,9 +181,9 @@ export function ReadinessStageAccordion({
               />
             </div>
           )}
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }
 

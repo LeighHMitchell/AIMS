@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { HelpCircle, Briefcase, Target, Wallet, Pencil, Landmark, Gift, GraduationCap, Layers, MoreHorizontal } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -107,26 +107,21 @@ export function ReadinessConfigSection({
             disabled={disabled}
           >
             <SelectTrigger id="financing-type">
-              <SelectValue placeholder="Select financing type..." />
+              <SelectValue placeholder="Select financing type...">
+                {localConfig.financing_type
+                  ? FINANCING_TYPE_OPTIONS.find(o => o.value === localConfig.financing_type)?.label
+                  : 'Select financing type...'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {FINANCING_TYPE_OPTIONS.map((option) => {
-                const IconComponent = {
-                  Landmark,
-                  Gift,
-                  GraduationCap,
-                  Layers,
-                  MoreHorizontal,
-                }[option.icon];
-                return (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex items-center gap-2">
-                      <IconComponent className="h-4 w-4 text-gray-500" />
-                      <span>{option.label}</span>
-                    </div>
-                  </SelectItem>
-                );
-              })}
+              {FINANCING_TYPE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value} className="pl-2">
+                  <div>
+                    <div>{option.label}</div>
+                    <div className="text-xs text-gray-500">{option.description}</div>
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -150,28 +145,21 @@ export function ReadinessConfigSection({
             disabled={disabled}
           >
             <SelectTrigger id="financing-modality">
-              <SelectValue placeholder="Select modality..." />
+              <SelectValue placeholder="Select modality...">
+                {localConfig.financing_modality
+                  ? FINANCING_MODALITY_OPTIONS.find(o => o.value === localConfig.financing_modality)?.label
+                  : 'Select modality...'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {FINANCING_MODALITY_OPTIONS.map((option) => {
-                const IconComponent = {
-                  Briefcase,
-                  Target,
-                  Wallet,
-                  Pencil,
-                }[option.icon];
-                return (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex items-start gap-2">
-                      <IconComponent className="h-4 w-4 mt-0.5 text-gray-500 flex-shrink-0" />
-                      <div>
-                        <div>{option.label}</div>
-                        <div className="text-xs text-gray-500">{option.description}</div>
-                      </div>
-                    </div>
-                  </SelectItem>
-                );
-              })}
+              {FINANCING_MODALITY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value} className="pl-2">
+                  <div>
+                    <div>{option.label}</div>
+                    <div className="text-xs text-gray-500">{option.description}</div>
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -184,8 +172,15 @@ export function ReadinessConfigSection({
               <TooltipTrigger asChild>
                 <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
               </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p>Enable this for projects involving construction, land acquisition, or physical infrastructure.</p>
+              <TooltipContent className="max-w-sm">
+                <p className="font-medium mb-1">Enable if the project includes physical works such as:</p>
+                <ul className="list-disc list-inside text-xs space-y-0.5 mb-2">
+                  <li>Construction of buildings, roads, bridges, or utilities</li>
+                  <li>Land acquisition or resettlement</li>
+                  <li>Rehabilitation or expansion of existing structures</li>
+                  <li>Installation of equipment requiring civil works</li>
+                </ul>
+                <p className="text-xs">When enabled, additional checklist items for land acquisition, environmental assessment, and construction readiness will be shown.</p>
               </TooltipContent>
             </Tooltip>
           </Label>
@@ -196,18 +191,13 @@ export function ReadinessConfigSection({
               onCheckedChange={handleInfrastructureChange}
               disabled={disabled}
             />
-            <Label 
-              htmlFor="is-infrastructure" 
+            <Label
+              htmlFor="is-infrastructure"
               className="text-sm font-normal text-gray-600 cursor-pointer"
             >
               {localConfig.is_infrastructure ? 'Yes' : 'No'}
             </Label>
           </div>
-          {localConfig.is_infrastructure && (
-            <p className="text-xs text-gray-500">
-              Additional items for land acquisition, environmental assessment, and construction will be shown.
-            </p>
-          )}
         </div>
       </div>
     </TooltipProvider>

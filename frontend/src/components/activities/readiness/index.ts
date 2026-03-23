@@ -1,8 +1,9 @@
 // Main components
 export { ReadinessChecklistTab } from './ReadinessChecklistTab';
 export { ReadinessConfigSection } from './ReadinessConfigSection';
-export { ReadinessProgressSummary } from './ReadinessProgressSummary';
-export { ReadinessStageAccordion } from './ReadinessStageAccordion';
+export { ReadinessProgressRail } from './ReadinessProgressRail';
+export { ReadinessStageContent } from './ReadinessStageContent';
+export { ReadinessWizardFooter } from './ReadinessWizardFooter';
 export { ReadinessChecklistItem } from './ReadinessChecklistItem';
 export { ReadinessDocumentUpload } from './ReadinessDocumentUpload';
 export { ReadinessStageSignoff } from './ReadinessStageSignoff';

@@ -149,19 +149,80 @@ export async function GET(
       signed_off_by_user: s.signed_off_by ? userMap.get(s.signed_off_by) || null : null,
     }));
 
+    // ── Auto-check: query live data for oversight items ──
+    const autoCheckItems = (items || []).filter((i: any) => i.auto_check_type);
+    const autoCheckStatuses = new Map<string, boolean>();
+
+    if (autoCheckItems.length > 0) {
+      // MOU uploaded? Check activity_documents with category A09
+      const { data: mouDocs } = await supabase
+        .from('activity_document_categories')
+        .select('document_id, activity_documents!inner(activity_id)')
+        .eq('category_code', 'A09')
+        .eq('activity_documents.activity_id', activityId)
+        .limit(1);
+      autoCheckStatuses.set('mou_uploaded', (mouDocs?.length || 0) > 0);
+
+      // Government ministry assigned?
+      const { data: govOrgs } = await supabase
+        .from('activity_participating_organizations')
+        .select('id')
+        .eq('activity_id', activityId)
+        .eq('role_type', 'government')
+        .limit(1);
+      autoCheckStatuses.set('gov_ministry_assigned', (govOrgs?.length || 0) > 0);
+
+      // Signing agency (extending org) recorded?
+      const { data: extOrgs } = await supabase
+        .from('activity_participating_organizations')
+        .select('id')
+        .eq('activity_id', activityId)
+        .eq('role_type', 'extending')
+        .limit(1);
+      autoCheckStatuses.set('signing_agency_recorded', (extOrgs?.length || 0) > 0);
+
+      // Government endorsement complete?
+      const { data: endorsement } = await supabase
+        .from('government_endorsements')
+        .select('validation_status')
+        .eq('activity_id', activityId)
+        .single();
+      autoCheckStatuses.set('endorsement_complete', endorsement?.validation_status === 'validated');
+    }
+
     // Build the response structure
     const stages: ReadinessStageWithData[] = (templates || []).map(template => {
       const templateItems = (items || []).filter(item => item.template_id === template.id);
       
-      const itemsWithResponses: ReadinessItemWithResponse[] = templateItems.map(item => {
+      const itemsWithResponses: ReadinessItemWithResponse[] = templateItems.map((item: any) => {
         const response = enrichedResponses.find(r => r.checklist_item_id === item.id) || null;
         const itemDocuments = response
           ? enrichedDocuments.filter(d => d.response_id === response.id)
           : [];
 
+        // For auto-check items, synthesize a response based on live data
+        let effectiveResponse = response;
+        if (item.auto_check_type && autoCheckStatuses.has(item.auto_check_type)) {
+          const isComplete = autoCheckStatuses.get(item.auto_check_type);
+          effectiveResponse = {
+            ...(response || {}),
+            id: response?.id || `auto-${item.id}`,
+            activity_id: activityId,
+            checklist_item_id: item.id,
+            status: isComplete ? 'completed' : 'not_completed',
+            remarks: isComplete ? 'Automatically verified from activity data' : null,
+            completed_by: null,
+            completed_at: null,
+            verified_by: null,
+            verified_at: null,
+            completed_by_user: null,
+            verified_by_user: null,
+          };
+        }
+
         return {
           ...item,
-          response,
+          response: effectiveResponse,
           documents: itemDocuments,
         };
       });

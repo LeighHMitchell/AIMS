@@ -1,7 +1,37 @@
 {
-  "currentVersion": "3.15.0",
-  "narrativeSummary": "Version 3.15 polishes the Activity Editor with better form controls, smarter search, and UI refinements across dozens of components. Focal point assignment and linked activities now use inline search with preloaded results instead of dropdown selects. Conditions use a proper modal dialog. Disbursement channel, aid effectiveness indicators, and sector charts get redesigned controls. Rich text fields use debounced autosave. Documents show language names alongside codes. Toggle switches show skeleton placeholders during mode changes. Section headers support action buttons, and the countries/regions layout is streamlined.",
+  "currentVersion": "3.16.0",
+  "narrativeSummary": "Version 3.16 redesigns the Government Inputs section and enhances the Readiness Checklist. Government Inputs is streamlined from 4 tabs to 3 by removing duplicated Coordination fields and replacing the Oversight tab with a scored Risk Assessment matrix across 5 categories. Oversight checks are now automated items in the Readiness Checklist that auto-complete when MOUs, ministries, and endorsements exist. Document uploads throughout Government Inputs now use drag-and-drop with multi-file support. Budget classification cards show help text inline. The Readiness Checklist removes card backgrounds for a cleaner look.",
   "releases": [
+    {
+      "version": "3.16.0",
+      "date": "2026-03-23",
+      "narrativeSummary": "This release redesigns the Government Inputs section to eliminate duplicate data entry and adds intelligent automation to the Readiness Checklist. The Coordination tab is removed (data is already captured in Participating Organizations, Contacts, and Locations). The Oversight tab is replaced with a scored Risk Assessment matrix featuring 10 questions across 5 categories (Political, Environmental, Social, Fiduciary, Operational) with color-coded summary badges. Oversight requirements become auto-check items in the Readiness Checklist that verify live data. A new drag-and-drop document upload component supports multiple files across Budget Classification, Agreement, and Evaluation sections. Budget classification dimension cards now display help descriptions inline below each label.",
+      "changes": [
+        "<b>Government Inputs &mdash; Risk Assessment Matrix</b>",
+        "&nbsp;&nbsp;New scored risk assessment replacing the Oversight tab with 5 categories &times; 2 questions each",
+        "&nbsp;&nbsp;Each question scored Low/Medium/High with per-category and overall risk summary badges",
+        "&nbsp;&nbsp;Risk data stored as JSONB in the <code>government_inputs</code> table",
+        "<b>Government Inputs &mdash; Streamlined Tabs</b>",
+        "&nbsp;&nbsp;Removed Coordination tab (Accountable Ministry, Working Groups, Focal Point, Regions duplicated elsewhere)",
+        "&nbsp;&nbsp;Removed Oversight tab (MOU, Signing Agency, Oversight Ministry moved to Readiness auto-checks)",
+        "&nbsp;&nbsp;Now 3 tabs: Budget &amp; Finance, Risk Assessment, Evaluation",
+        "<b>Readiness Checklist &mdash; Auto-Check Items</b>",
+        "&nbsp;&nbsp;New &ldquo;Oversight &amp; Governance&rdquo; stage with 4 automated checklist items",
+        "&nbsp;&nbsp;MOU Uploaded: auto-completes when a document with category A09 exists",
+        "&nbsp;&nbsp;Government Ministry Assigned: auto-completes when a participating org with &lsquo;government&rsquo; role exists",
+        "&nbsp;&nbsp;Signing Agency Recorded: auto-completes when an extending org is assigned",
+        "&nbsp;&nbsp;Government Endorsement Complete: auto-completes when endorsement status is &lsquo;validated&rsquo;",
+        "<b>Document Uploads &mdash; Drag &amp; Drop</b>",
+        "&nbsp;&nbsp;New reusable <code>DocumentDropzone</code> component with multi-file drag-and-drop, file type icons, and hover-reveal actions",
+        "&nbsp;&nbsp;Uploads to Supabase Storage via new <code>/api/activities/[id]/government-input-documents</code> route",
+        "&nbsp;&nbsp;Applied to Budget Classification supporting docs, Agreement docs, and Evaluation docs",
+        "<b>Budget Classification &mdash; Inline Help Text</b>",
+        "&nbsp;&nbsp;Each dimension (On Plan, On Budget, etc.) now shows its description directly below the label instead of in a tooltip",
+        "&nbsp;&nbsp;Dimension cards use white backgrounds instead of gray",
+        "<b>Readiness Checklist &mdash; Card Cleanup</b>",
+        "&nbsp;&nbsp;Removed card backgrounds from stage accordions, configuration, and endorsement sections for a cleaner appearance"
+      ]
+    },
     {
       "version": "3.15.0",
       "date": "2026-03-23",

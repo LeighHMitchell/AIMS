@@ -11,7 +11,7 @@
 
 export type ChecklistStatus = 'completed' | 'not_completed' | 'not_required' | 'in_progress';
 
-export type FinancingType = 'loan' | 'grant' | 'technical_assistance' | 'mixed' | 'other';
+export type FinancingType = 'grant' | 'loan' | 'technical_assistance' | 'reimbursable' | 'investment_guarantee';
 
 export type FinancingModality = 'standard' | 'results_based' | 'budgetary_support' | 'project_preparation';
 
@@ -29,12 +29,12 @@ export const CHECKLIST_STATUS_OPTIONS: { value: ChecklistStatus; label: string; 
   { value: 'not_required', label: 'Not Required', color: 'text-gray-900' },
 ];
 
-export const FINANCING_TYPE_OPTIONS: { value: FinancingType; label: string; icon: 'Landmark' | 'Gift' | 'GraduationCap' | 'Layers' | 'MoreHorizontal' }[] = [
-  { value: 'loan', label: 'Loan', icon: 'Landmark' },
-  { value: 'grant', label: 'Grant', icon: 'Gift' },
-  { value: 'technical_assistance', label: 'Technical Assistance', icon: 'GraduationCap' },
-  { value: 'mixed', label: 'Mixed (Loan & Grant)', icon: 'Layers' },
-  { value: 'other', label: 'Other', icon: 'MoreHorizontal' },
+export const FINANCING_TYPE_OPTIONS: { value: FinancingType; label: string; description: string; icon: 'Gift' | 'Landmark' | 'GraduationCap' | 'Layers' | 'MoreHorizontal' }[] = [
+  { value: 'grant', label: 'Grant', description: 'Non-repayable funds, typically public sector support', icon: 'Gift' },
+  { value: 'loan', label: 'Loan', description: 'Repayable funds with terms and conditions', icon: 'Landmark' },
+  { value: 'technical_assistance', label: 'Technical Assistance', description: 'Personnel, training, or capacity support', icon: 'GraduationCap' },
+  { value: 'reimbursable', label: 'Reimbursable Grant or Other', description: 'Partial repayment or hybrid arrangement', icon: 'Layers' },
+  { value: 'investment_guarantee', label: 'Investment/Guarantee', description: 'Risk capital or financial instruments without cash transfer', icon: 'MoreHorizontal' },
 ];
 
 export const FINANCING_MODALITY_OPTIONS: { value: FinancingModality; label: string; description: string; icon: 'Briefcase' | 'Target' | 'Wallet' | 'Pencil' }[] = [
@@ -90,6 +90,7 @@ export interface ReadinessChecklistItem {
   is_required: boolean;
   is_active: boolean;
   applicable_conditions: ApplicableConditions;
+  auto_check_type?: string | null;
   created_at: string;
   updated_at: string;
 }
