@@ -1,7 +1,39 @@
 {
-  "currentVersion": "3.14.0",
-  "narrativeSummary": "Version 3.14 fixes Activity Editor scroll navigation and loading performance. Section skeletons now reserve realistic heights to prevent layout shifts, sidebar navigation is consolidated to eliminate duplicate scroll calls, and the scroll spy is locked during programmatic navigation to prevent flickering. Section preloading uses batch activation instead of staggered timeouts for smoother loading.",
+  "currentVersion": "3.15.0",
+  "narrativeSummary": "Version 3.15 polishes the Activity Editor with better form controls, smarter search, and UI refinements across dozens of components. Focal point assignment and linked activities now use inline search with preloaded results instead of dropdown selects. Conditions use a proper modal dialog. Disbursement channel, aid effectiveness indicators, and sector charts get redesigned controls. Rich text fields use debounced autosave. Documents show language names alongside codes. Toggle switches show skeleton placeholders during mode changes. Section headers support action buttons, and the countries/regions layout is streamlined.",
   "releases": [
+    {
+      "version": "3.15.0",
+      "date": "2026-03-23",
+      "narrativeSummary": "This release refines the Activity Editor experience across many sections. The focal point assignment modal is rebuilt with inline user search and preloaded results, replacing the previous dropdown select. Linked activities search is similarly upgraded with preloaded activity lists and collapsible relationship groups showing organization logos. The conditions form moves into a proper modal dialog. The disbursement channel selector is rebuilt as a searchable popover command palette. Aid effectiveness indicators get a searchable combobox for national plan selection. Sector allocation charts are collapsed by default behind a toggle. Rich text description fields now autosave with a 3-second debounce instead of saving on every keystroke. The date picker gains an endAdornment prop. Documents display full language names next to codes. Geography and sector mode toggles show skeleton placeholders during switching. Section headers accept an action prop for inline buttons. The countries/regions tab removes redundant cards and headers for a cleaner layout. Policy marker tab completion logic is simplified. Over 30 form select components receive minor consistency fixes.",
+      "changes": [
+        "<b>Focal Point Assignment &mdash; Inline Search</b>",
+        "&nbsp;&nbsp;Rebuilt <code>AssignFocalPointModal</code> with inline search input, preloaded user list, and filtered results replacing the <code>UserSearchableSelect</code> dropdown",
+        "&nbsp;&nbsp;<code>FocalPointsTab</code> updated with improved state management and contact search integration",
+        "<b>Linked Activities &mdash; Search &amp; Grouping</b>",
+        "&nbsp;&nbsp;Linked activities search now preloads all activities and filters locally instead of debounced API calls",
+        "&nbsp;&nbsp;Relationship groups displayed in collapsible sections with <code>GitBranch</code> icons and organization logos",
+        "<b>Conditions &mdash; Modal Dialog</b>",
+        "&nbsp;&nbsp;Moved the &ldquo;Add Condition&rdquo; form from an inline card into a proper <code>Dialog</code> modal with <code>RequiredDot</code> field indicators",
+        "<b>Disbursement Channel &mdash; Searchable Popover</b>",
+        "&nbsp;&nbsp;Replaced <code>Select</code> dropdown with <code>Popover</code> + <code>Command</code> palette for disbursement channel selection, with checkmark indicators",
+        "<b>Aid Effectiveness &mdash; Searchable Combobox</b>",
+        "&nbsp;&nbsp;National plan indicator selection rebuilt as a searchable combobox with <code>Popover</code> + <code>Command</code>, supporting multiple evidence document uploads per field",
+        "<b>Sector Allocation &mdash; Collapsed Charts</b>",
+        "&nbsp;&nbsp;Sankey visualization section now collapsed by default behind a <code>Collapsible</code> toggle with <code>BarChart2</code> icon",
+        "<b>Rich Text Autosave &mdash; Debounced Saves</b>",
+        "&nbsp;&nbsp;Description, objectives, target groups, and other narrative fields now autosave with 3-second debounce instead of immediate saves on every keystroke",
+        "<b>UI Component Refinements</b>",
+        "&nbsp;&nbsp;<code>DatePicker</code> gains <code>endAdornment</code> prop for rendering elements at the right end of the trigger",
+        "&nbsp;&nbsp;<code>SectionHeader</code> gains <code>action</code> prop for inline action buttons",
+        "&nbsp;&nbsp;Geography and sector mode toggles show skeleton placeholders during switching instead of a spinner",
+        "&nbsp;&nbsp;Documents table shows full language names alongside ISO codes",
+        "&nbsp;&nbsp;Countries/regions tab removes redundant card wrappers and duplicate &ldquo;Add&rdquo; buttons for a cleaner layout",
+        "&nbsp;&nbsp;<code>AutosaveUpload</code> handles icon vs banner reset defaults and async save callbacks",
+        "&nbsp;&nbsp;Policy marker tab completion logic simplified &mdash; any marker present counts as complete",
+        "&nbsp;&nbsp;30+ form select components receive minor consistency and spacing fixes"
+      ]
+    },
     {
       "version": "3.14.0",
       "date": "2026-03-18",

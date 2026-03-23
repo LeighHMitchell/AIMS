@@ -52,8 +52,8 @@ const getTagColorVariant = (tag: Tag, index: number) => {
 
 // Function to check if tag was imported from IATI XML
 const isIatiImportedTag = (tag: Tag) => {
-  // IATI tags have vocabulary and code fields
-  return !!(tag.vocabulary && tag.code);
+  // Only IATI standard vocabulary tags (not custom '99') are considered imported
+  return !!(tag.vocabulary && tag.code && tag.vocabulary !== '99');
 };
 
 // Format date for tooltip display
@@ -128,7 +128,9 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
   // Add a new tag
   const addTag = async (tagName: string) => {
     const normalizedName = tagName.toLowerCase().trim();
-    
+    setOpen(false);
+    setInputValue('');
+
     if (!normalizedName) {
       toast.error('Tag name cannot be empty');
       return;
@@ -273,8 +275,9 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
                 />
               </PopoverTrigger>
               <Hash className="absolute right-3 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
-              <PopoverContent className="p-0 w-full" align="start">
-                <Command>
+              <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
+                <Command shouldFilter={true}>
+                  <CommandInput placeholder="Search tags..." autoFocus />
                   <CommandList>
                     {loading ? (
                       <CommandEmpty><LoadingText>Loading tags...</LoadingText></CommandEmpty>

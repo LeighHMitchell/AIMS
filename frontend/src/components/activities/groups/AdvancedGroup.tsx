@@ -113,16 +113,35 @@ export function AdvancedGroup({
     { id: 'country-budget', ref: countryBudgetRef },
   ] : []
 
-  const { activeSection, scrollToSection, setActiveSection } = useScrollSpy(sectionRefs, {
+  const { activeSection, scrollToSection, setActiveSection, lockScrollSpy } = useScrollSpy(sectionRefs, {
     rootMargin: '-80px 0px -60% 0px',
     debounceMs: 100,
   })
 
   const { isSectionActive, activateSection, activateSections, activeSections } = useManualLazyLoader(
-    activityCreated ? ['linked_activities'] : []
+    activityCreated
+      ? (enablePreloading ? [...ADVANCED_SECTIONS] : ['linked_activities'])
+      : []
   )
 
   const [sectionsRevealed, setSectionsRevealed] = useState(activityCreated)
+
+  // When initialSection changes (user clicked a section in this group),
+  // lock scroll spy, set active section, and instantly scroll to target
+  const prevInitialSection = useRef(initialSection)
+  useEffect(() => {
+    if (initialSection && isAdvancedSection(initialSection) && activityCreated) {
+      lockScrollSpy(500)
+      setActiveSection(initialSection)
+      if (initialSection !== 'linked_activities' || prevInitialSection.current !== initialSection) {
+        requestAnimationFrame(() => {
+          const el = document.getElementById(initialSection)
+          if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+        })
+      }
+      prevInitialSection.current = initialSection
+    }
+  }, [initialSection, activityCreated, lockScrollSpy, setActiveSection])
 
   useEffect(() => {
     if (activeSection && isAdvancedSection(activeSection)) {
@@ -133,23 +152,6 @@ export function AdvancedGroup({
       window.history.replaceState({}, '', `?${params.toString()}`)
     }
   }, [activeSection, onActiveSectionChange])
-
-  useEffect(() => {
-    if (
-      !hasInitiallyScrolled.current &&
-      initialSection &&
-      initialSection !== 'linked_activities' &&
-      activityCreated &&
-      isAdvancedSection(initialSection)
-    ) {
-      hasInitiallyScrolled.current = true
-      const timer = setTimeout(() => {
-        scrollToSection(initialSection)
-        activateSection(initialSection)
-      }, 100)
-      return () => clearTimeout(timer)
-    }
-  }, [initialSection, activityCreated, scrollToSection, activateSection])
 
   useEffect(() => {
     if (activityCreated && !sectionsRevealed) {

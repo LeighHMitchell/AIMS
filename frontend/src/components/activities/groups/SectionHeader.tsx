@@ -15,6 +15,8 @@ interface SectionHeaderProps {
   className?: string
   /** Whether to show a divider line above the header */
   showDivider?: boolean
+  /** Optional action element (e.g. button) rendered on the right */
+  action?: React.ReactNode
 }
 
 /**
@@ -27,22 +29,26 @@ export function SectionHeader({
   id,
   className = "",
   showDivider = false,
+  action,
 }: SectionHeaderProps) {
   return (
-    <div 
+    <div
       className={`section-header ${className}`}
       data-section-header={id}
     >
       {showDivider && (
         <div className="border-t border-gray-200 my-8" />
       )}
-      <div className="flex items-center gap-3 mb-6">
-        <h2 className="text-3xl font-semibold text-gray-900">{title}</h2>
-        {helpText && (
-          <HelpTextTooltip content={helpText}>
-            <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
-          </HelpTextTooltip>
-        )}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <h2 className="text-3xl font-semibold text-gray-900">{title}</h2>
+          {helpText && (
+            <HelpTextTooltip content={helpText}>
+              <HelpCircle className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-help" />
+            </HelpTextTooltip>
+          )}
+        </div>
+        {action}
       </div>
     </div>
   )

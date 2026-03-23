@@ -161,14 +161,8 @@ export function DocumentFormatSelect({
                         setIsOpen(false);
                         setSearchQuery("");
                       }}
-                      className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                      className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                     >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === format.mime ? "opacity-100" : "opacity-0"
-                        )}
-                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">

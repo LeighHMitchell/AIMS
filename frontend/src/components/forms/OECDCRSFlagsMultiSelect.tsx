@@ -91,7 +91,7 @@ export function OECDCRSFlagsMultiSelect({
                     <CommandItem
                       key={flag.code}
                       onSelect={() => toggleFlag(flag.code)}
-                      className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                      className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                     >
                       <div className="flex items-center gap-2 mr-2">
                         <div

@@ -441,7 +441,6 @@ export default function LocationsTab({
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Coordinates</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Activity Description</TableHead>
                 {canEdit && <TableHead className="w-[100px]">Actions</TableHead>}
@@ -466,13 +465,18 @@ export default function LocationsTab({
 
                 return (
                   <TableRow key={location.id}>
-                    <TableCell className="font-medium">
-                      {location.location_name || 'Unnamed Location'}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {location.latitude && location.longitude
-                        ? `${Number(location.latitude).toFixed(4)}, ${Number(location.longitude).toFixed(4)}`
-                        : 'N/A'}
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{location.location_name || 'Unnamed Location'}</span>
+                        {location.id && (
+                          <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        )}
+                      </div>
+                      {location.latitude && location.longitude && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {Number(location.latitude).toFixed(4)}, {Number(location.longitude).toFixed(4)}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
                       <div>{formatAddress()}</div>
@@ -496,9 +500,6 @@ export default function LocationsTab({
                             </TooltipContent>
                           )}
                         </Tooltip>
-                        {location.id && (
-                          <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        )}
                       </div>
                     </TableCell>
                     {canEdit && (

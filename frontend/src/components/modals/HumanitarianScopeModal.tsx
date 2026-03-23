@@ -103,7 +103,7 @@ export function HumanitarianScopeModal({
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit' : 'Add'} Humanitarian Scope</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit' : 'Add'} Emergency / Appeal</DialogTitle>
           <DialogDescription>
             Link this activity to a specific emergency or appeal
           </DialogDescription>

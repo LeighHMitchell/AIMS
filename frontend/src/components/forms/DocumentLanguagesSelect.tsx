@@ -60,11 +60,11 @@ export function DocumentLanguagesSelect({
           <span className="truncate">
             {multiple ? (
               selectedOptions.length > 0 ? (
-                <span className="flex items-center gap-1 flex-wrap">
-                  {selectedOptions.map((option, index) => (
-                    <span key={option.code} className="inline-flex items-center gap-1 text-xs bg-muted px-1.5 py-0.5 rounded">
-                      {option.code.toUpperCase()}
-                      {index < selectedOptions.length - 1 && ','}
+                <span className="flex items-center gap-2 flex-wrap">
+                  {selectedOptions.map((option) => (
+                    <span key={option.code} className="inline-flex items-center gap-1">
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code.toUpperCase()}</span>
+                      <span className="text-sm font-medium">{option.name}</span>
                     </span>
                   ))}
                 </span>

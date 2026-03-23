@@ -40,7 +40,8 @@ import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualiza
 import { toast } from 'sonner';
 import { SectorAllocationModeToggle } from '@/components/activities/SectorAllocationModeToggle';
 import { useSectorAllocationMode, SectorAllocationMode } from '@/hooks/use-sector-allocation-mode';
-import { Lock, ExternalLink } from 'lucide-react';
+import { Lock, ExternalLink, BarChart2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Sector {
   code: string;
@@ -1305,29 +1306,31 @@ export default function ImprovedSectorAllocationForm({
           </Alert>
         )}
 
-        {/* Visualization - Interactive Charts */}
+        {/* Visualization - Interactive Charts (collapsed by default) */}
         {allocations.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-base">Sector Allocation Visualization</CardTitle>
-                <HelpTextTooltip content="Interactive Sankey diagram showing sector allocation hierarchy from categories to sectors to subsectors">
-                  <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
-                </HelpTextTooltip>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="relative overflow-hidden w-full">
-                <SectorSankeyVisualization
-                  allocations={allocations}
-                  onSegmentClick={handleSunburstSegmentClick}
-                  showControls={false}
-                  defaultView="sankey"
-                  className="w-full"
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <BarChart2 className="h-4 w-4" />
+                Show Allocation Visualization
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="relative overflow-hidden w-full">
+                    <SectorSankeyVisualization
+                      allocations={allocations}
+                      onSegmentClick={handleSunburstSegmentClick}
+                      showControls={false}
+                      defaultView="sankey"
+                      className="w-full"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </CollapsibleContent>
+          </Collapsible>
         )}
       </div>
       </div>

@@ -167,10 +167,33 @@ export function SectorAllocationModeToggle({
           </div>
         </button>
 
-        {isSwitching && (
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        )}
       </div>
+
+      {/* Skeleton overlay when switching */}
+      {isSwitching && (
+        <div className="space-y-4 animate-pulse">
+          <div className="flex items-center justify-between">
+            <div className="h-5 w-48 bg-muted rounded" />
+            <div className="h-8 w-32 bg-muted rounded" />
+          </div>
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="bg-muted/50 px-4 py-3 flex gap-4">
+              <div className="h-4 w-20 bg-muted rounded" />
+              <div className="h-4 w-32 bg-muted rounded" />
+              <div className="h-4 w-24 bg-muted rounded" />
+            </div>
+            <div className="divide-y divide-border">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="px-4 py-3 flex gap-4">
+                  <div className="h-4 w-20 bg-muted rounded" />
+                  <div className="h-4 w-40 bg-muted rounded" />
+                  <div className="h-4 w-16 bg-muted rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>

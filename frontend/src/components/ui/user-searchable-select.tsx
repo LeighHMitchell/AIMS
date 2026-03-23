@@ -98,7 +98,7 @@ export function UserSearchableSelect({
   };
 
   return (
-    <div className={cn("flex gap-2", className)}>
+    <div className={cn("flex", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
@@ -119,10 +119,23 @@ export function UserSearchableSelect({
             ) : (
               <span className="text-muted-foreground">{placeholder}</span>
             )}
-            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <div className="flex items-center gap-1 ml-2">
+              {value && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); handleClear(); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); handleClear(); } }}
+                  className="h-4 w-4 rounded-full hover:bg-muted-foreground/20 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </span>
+              )}
+              <Search className="h-4 w-4 shrink-0 opacity-50" />
+            </div>
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-[400px] p-0" align="start">
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
           <Command shouldFilter={false}>
             <CommandInput
               placeholder={searchPlaceholder}
@@ -170,17 +183,6 @@ export function UserSearchableSelect({
           </Command>
         </PopoverContent>
       </Popover>
-      {value && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleClear}
-          disabled={disabled}
-          className="flex-shrink-0"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      )}
     </div>
   );
 }

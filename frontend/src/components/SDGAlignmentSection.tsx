@@ -244,8 +244,9 @@ export default function SDGAlignmentSection({
     if (!canEdit) return;
     setHasUserEdited(true);
 
+    // Update alignment strength on all mappings for this goal
     setMappings(prev => prev.map(m =>
-      m.sdgGoal === goalId && m.sdgTarget === ''
+      m.sdgGoal === goalId
         ? { ...m, alignmentStrength: strength }
         : m
     ));
@@ -263,7 +264,9 @@ export default function SDGAlignmentSection({
   };
 
   const getGoalMapping = (goalId: number) => {
-    return mappings.find(m => m.sdgGoal === goalId && m.sdgTarget === '');
+    // First try finding a goal-level mapping (sdgTarget === ''), then fall back to any mapping for this goal
+    return mappings.find(m => m.sdgGoal === goalId && m.sdgTarget === '')
+      || mappings.find(m => m.sdgGoal === goalId);
   };
 
   const getGoalTargetMappings = (goalId: number) => {
@@ -303,11 +306,6 @@ export default function SDGAlignmentSection({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {selectedGoalIds.length > 0 && (
-            <Badge variant="secondary" className="text-sm">
-              {selectedGoalIds.length} SDG{selectedGoalIds.length !== 1 ? 's' : ''} selected
-            </Badge>
-          )}
           {isSaving && (
             <div className="flex items-center gap-1.5 text-amber-600">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -372,7 +370,7 @@ export default function SDGAlignmentSection({
       {selectedGoalIds.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-lg font-semibold">
               Selected SDGs
             </CardTitle>
           </CardHeader>
@@ -380,7 +378,7 @@ export default function SDGAlignmentSection({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>SDG</TableHead>
+                  <TableHead className="w-[300px]">SDG</TableHead>
                   <TableHead>Alignment</TableHead>
                   <TableHead>Targets</TableHead>
                   <TableHead>Notes</TableHead>
@@ -397,8 +395,7 @@ export default function SDGAlignmentSection({
                   return (
                     <TableRow
                       key={goalId}
-                      className="cursor-pointer"
-                      onClick={() => setModalGoalId(goalId)}
+                      className=""
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -407,10 +404,12 @@ export default function SDGAlignmentSection({
                             alt={`SDG ${goalId}`}
                             className="w-10 h-10 rounded flex-shrink-0"
                           />
-                          <div className="min-w-0">
-                            <span className="font-medium">Goal {goalId}</span>
-                            <p className="text-sm text-muted-foreground truncate max-w-[200px]">{goal.name}</p>
-                          </div>
+                          <span className="font-medium">
+                            Goal {goalId}: {goal.name}
+                            {isGoalSaved(goalId) && (
+                              <CheckCircle className="h-4 w-4 text-green-500 inline-block ml-1.5 align-text-bottom" />
+                            )}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -421,41 +420,53 @@ export default function SDGAlignmentSection({
                       </TableCell>
                       <TableCell>
                         {selectedTargets.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {selectedTargets.map(m => (
-                              <Badge key={m.sdgTarget} variant="secondary" className="text-xs">
-                                {m.sdgTarget}
-                              </Badge>
-                            ))}
+                          <div className="flex gap-1">
+                            {selectedTargets.map(m => {
+                              const target = SDG_TARGETS.find(t => t.id === m.sdgTarget);
+                              return (
+                                <TooltipProvider key={m.sdgTarget}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="secondary" className="text-xs cursor-default">
+                                        {m.sdgTarget}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs">
+                                      <p>{target?.description || m.sdgTarget}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            })}
                           </div>
                         ) : (
                           <span className="text-muted-foreground text-sm">None</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className="text-muted-foreground text-sm truncate block max-w-[200px]">
+                        <span className="text-muted-foreground text-sm block break-words">
                           {goalMapping?.notes || '—'}
                         </span>
                       </TableCell>
                       {canEdit && (
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
                               onClick={(e) => { e.stopPropagation(); setModalGoalId(goalId); }}
-                              className="hover:bg-blue-50 hover:text-blue-600"
+                              className="p-1.5 rounded hover:bg-gray-100"
+                              title="Edit"
                             >
-                              <Pencil className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                              <Pencil className="h-4 w-4 text-slate-500" />
+                            </button>
+                            <button
+                              type="button"
                               onClick={(e) => { e.stopPropagation(); removeGoal(goalId); }}
-                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                              className="p-1.5 rounded hover:bg-gray-100"
+                              title="Remove"
                             >
                               <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
+                            </button>
                           </div>
                         </TableCell>
                       )}

@@ -430,9 +430,12 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
         return { bg: '#f3f4f6', color: '#374151', text: statusName };
       };
       
+      const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+      const activityIdDisplay = d.activityId && !isUUID(d.activityId) ? d.activityId : d.iatiId;
       let content = `
-        <div style="font-weight: 600; font-size: 16px; line-height: 1.3; margin-bottom: 12px; color: #111827;">
-          ${d.title}
+        <div style="line-height: 1.3; margin-bottom: 12px; color: #111827;">
+          <span style="font-weight: 600; font-size: 15px;">${d.title}</span>
+          ${activityIdDisplay ? ` <span style="color: #9ca3af;">·</span> <code style="font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; background: #f3f4f6; padding: 1px 6px; border-radius: 4px; font-size: 11px; color: #6b7280;">${activityIdDisplay}</code>` : ''}
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
       `;
@@ -446,25 +449,6 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
         `;
       }
       
-      const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-      if (d.activityId && !isUUID(d.activityId)) {
-        content += `
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #6b7280; font-size: 13px;">Activity ID</span>
-            <code style="font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; background: #f3f4f6; padding: 2px 8px; border-radius: 4px; font-size: 12px; color: #374151;">${d.activityId}</code>
-          </div>
-        `;
-      }
-      
-      // IATI ID - styled with monospace and gray background
-      if (d.iatiId) {
-        content += `
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #6b7280; font-size: 13px;">IATI ID</span>
-            <code style="font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; background: #f3f4f6; padding: 2px 8px; border-radius: 4px; font-size: 12px; color: #374151;">${d.iatiId}</code>
-          </div>
-        `;
-      }
       
       if (d.organizationName) {
         const orgText = d.organizationAcronym ? `${d.organizationName} (${d.organizationAcronym})` : d.organizationName;
@@ -475,15 +459,13 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
           </div>
         `;
       }
-      
+
       if (d.status && d.status !== '1') {
         const statusStyle = getStatusBadgeStyle(d.status);
         content += `
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="color: #6b7280; font-size: 13px;">Status</span>
-            <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; background-color: ${statusStyle.bg}; color: ${statusStyle.color};">
-              ${statusStyle.text}
-            </span>
+            <span style="font-size: 13px; color: #374151;">${statusStyle.text}</span>
           </div>
         `;
       }
@@ -492,15 +474,10 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
       
       // Show distance for multi-level view
       if (d.distance !== undefined && d.distance > 0) {
-        const relationshipColor = d.relationshipType ? getRelationshipColor(d.relationshipType) : '#6b7280';
         content += `
-          <div style="border-top: 1px solid #e5e7eb; margin: 12px 0; padding-top: 12px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="color: #6b7280; font-size: 12px;">Distance:</span>
-              <span style="color: ${relationshipColor}; font-size: 12px; font-weight: 600;">
-                ${d.distance} ${d.distance === 1 ? 'hop' : 'hops'} from current
-              </span>
-            </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #6b7280; font-size: 13px;">Distance</span>
+            <span style="font-size: 13px; color: #374151;">${d.distance} ${d.distance === 1 ? 'hop' : 'hops'} from current</span>
           </div>
         `;
       }

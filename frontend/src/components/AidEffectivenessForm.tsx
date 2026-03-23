@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ChevronsUpDown, Search } from "lucide-react";
 import { OrganizationCombobox } from "@/components/ui/organization-combobox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -35,8 +38,10 @@ import {
   Heart,
   MessageSquare,
   Paperclip,
-  Loader2
+  Loader2,
+  HelpCircle
 } from "lucide-react";
+import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
@@ -118,8 +123,8 @@ export interface AidEffectivenessFormData {
   // Section 10: Remarks
   remarks?: string;
 
-  // Per-field evidence documents
-  documents?: Record<string, { fileName: string; fileUrl: string; uploadedAt: string } | null>;
+  // Per-field evidence documents (supports multiple per field)
+  documents?: Record<string, Array<{ fileName: string; fileUrl: string; uploadedAt: string }> | { fileName: string; fileUrl: string; uploadedAt: string } | null>;
 
   // Metadata
   lastSaved?: string;
@@ -308,65 +313,76 @@ const FieldWithDescription: React.FC<{ description: string; children: React.Reac
 // Renders inline (same row) next to dropdowns/radio buttons
 const InlineDocumentUpload: React.FC<{
   fieldName: string;
-  document?: { fileName: string; fileUrl: string; uploadedAt: string } | null;
+  document?: Array<{ fileName: string; fileUrl: string; uploadedAt: string }> | { fileName: string; fileUrl: string; uploadedAt: string } | null;
   uploading: boolean;
   onUpload: (fieldName: string, file: File) => void;
-  onRemove: (fieldName: string) => void;
+  onRemove: (fieldName: string, index?: number) => void;
 }> = ({ fieldName, document: docInfo, uploading, onUpload, onRemove }) => {
   const inputId = `doc-upload-${fieldName}`;
 
-  if (docInfo) {
-    return (
-      <div className="flex items-center gap-2">
-        <Paperclip className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
-        <a
-          href={docInfo.fileUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-blue-600 hover:underline truncate max-w-[200px]"
-        >
-          {docInfo.fileName}
-        </a>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-5 w-5 p-0 text-gray-400 hover:text-red-500"
-          onClick={() => onRemove(fieldName)}
-        >
-          <X className="h-3 w-3" />
-        </Button>
-      </div>
-    );
-  }
+  // Normalize to array (backward compatible with old single-doc format)
+  const docs: Array<{ fileName: string; fileUrl: string; uploadedAt: string }> = docInfo
+    ? Array.isArray(docInfo) ? docInfo : [docInfo]
+    : [];
 
   return (
-    <>
-      <Input
-        type="file"
-        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onUpload(fieldName, file);
-        }}
-        className="hidden"
-        id={inputId}
-        disabled={uploading}
-      />
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-9 px-3 text-xs text-slate-600 hover:text-slate-800 flex-shrink-0"
-        onClick={() => document.getElementById(inputId)?.click()}
-        disabled={uploading}
-      >
-        {uploading ? (
-          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-        ) : (
-          <Paperclip className="h-3.5 w-3.5 mr-1.5" />
-        )}
-        {uploading ? "Uploading..." : "Attach evidence"}
-      </Button>
-    </>
+    <div className="flex flex-col items-end gap-1.5">
+      <div>
+        <Input
+          type="file"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onUpload(fieldName, file);
+            if (e.target) e.target.value = '';
+          }}
+          className="hidden"
+          id={inputId}
+          disabled={uploading}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 px-3 text-xs text-slate-600 hover:text-slate-800 flex-shrink-0"
+          onClick={() => document.getElementById(inputId)?.click()}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+          ) : (
+            <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+          )}
+          {uploading ? "Uploading..." : "Attach evidence"}
+        </Button>
+      </div>
+      {docs.length > 0 && (
+        <div className="flex gap-2 flex-wrap justify-end">
+          {docs.map((doc, index) => (
+            <div key={index} className="relative group">
+              <a
+                href={doc.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={doc.fileName}
+                className="flex flex-col items-center justify-center w-10 h-12 bg-muted rounded border border-border hover:border-slate-400 hover:bg-slate-100 transition-colors"
+              >
+                <FileText className="h-5 w-5 text-slate-400" />
+                <span className="text-[8px] text-slate-500 mt-0.5 truncate w-8 text-center">
+                  {doc.fileName.split('.').pop()?.toUpperCase()}
+                </span>
+              </a>
+              <button
+                type="button"
+                onClick={() => onRemove(fieldName, index)}
+                className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-white border border-border rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-300 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -451,11 +467,11 @@ const DropdownField: React.FC<{
         </SelectTrigger>
         <SelectContent>
           {options.map(option => (
-            <SelectItem key={option.label} value={option.label}>
-              <div className="flex flex-col">
-                <span>{option.label}</span>
+            <SelectItem key={option.label} value={option.label} className="pl-2">
+              <div>
+                <span className="font-medium">{option.label}</span>
                 {option.description && (
-                  <span className="text-xs text-gray-500">{option.description}</span>
+                  <span className="text-xs text-gray-500 ml-2">{option.description}</span>
                 )}
               </div>
             </SelectItem>
@@ -482,18 +498,27 @@ const CountryDropdownField: React.FC<{
   onDocUpload?: (fieldName: string, file: File) => void;
   onDocRemove?: (fieldName: string) => void;
 }> = ({ id, value, onValueChange, label, tooltip, description, negativeOption, aeOptions, documentUpload, document, uploadingDoc, onDocUpload, onDocRemove }) => {
-  // Build options: admin-configured options + "yes" + negative option
+  const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+
   const options = [
-    { value: "yes", label: "Yes", displayLabel: "Yes", dateRange: "", ministries: undefined as { id: string; code: string; name: string }[] | undefined },
-    ...aeOptions.map(opt => {
-      const displayLabel = opt.acronym ? `${opt.label} (${opt.acronym})` : opt.label;
-      const startStr = formatAEDate(opt.start_date, opt.start_date_precision);
-      const endStr = formatAEDate(opt.end_date, opt.end_date_precision);
-      const dateRange = startStr || endStr ? `${startStr}${startStr && endStr ? " – " : ""}${endStr}` : "";
-      return { value: opt.label, label: opt.label, displayLabel, dateRange, ministries: opt.responsible_ministries };
-    }),
-    { value: negativeOption, label: negativeOption, displayLabel: negativeOption, dateRange: "", ministries: undefined as { id: string; code: string; name: string }[] | undefined },
+    { value: "yes", label: "Yes", acronym: "" },
+    ...aeOptions.map(opt => ({
+      value: opt.label,
+      label: opt.label,
+      acronym: opt.acronym || "",
+    })),
+    { value: negativeOption, label: negativeOption, acronym: "" },
   ];
+
+  const filteredOptions = search
+    ? options.filter(o =>
+        o.label.toLowerCase().includes(search.toLowerCase()) ||
+        o.acronym.toLowerCase().includes(search.toLowerCase())
+      )
+    : options;
+
+  const selectedOption = options.find(o => o.value === value);
 
   return (
     <div className="py-3 border-b border-slate-100 last:border-b-0">
@@ -520,28 +545,66 @@ const CountryDropdownField: React.FC<{
             />
           )}
         </div>
-        <Select value={value || ""} onValueChange={onValueChange}>
-          <SelectTrigger className="max-w-md">
-            <SelectValue placeholder="Select an option..." />
-          </SelectTrigger>
-          <SelectContent>
-            {options.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                <div className="flex flex-col">
-                  <span>{option.displayLabel}</span>
-                  {option.dateRange && (
-                    <span className="text-xs text-gray-400">{option.dateRange}</span>
+        <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSearch(""); }}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex h-10 w-full max-w-md items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              {selectedOption ? (
+                <span className="flex items-center gap-2 truncate">
+                  {selectedOption.acronym && (
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{selectedOption.acronym}</span>
                   )}
-                  {option.ministries && option.ministries.length > 0 && (
-                    <span className="text-xs text-gray-500">
-                      {option.ministries.map(m => `${m.name} (${m.code})`).join(", ")}
-                    </span>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+                  <span>{selectedOption.label}</span>
+                </span>
+              ) : (
+                <span className="text-muted-foreground">Select an option...</span>
+              )}
+              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+            <div className="flex items-center border-b px-3 py-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <input
+                placeholder="Search options..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex h-9 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
+                autoFocus
+              />
+            </div>
+            <div className="max-h-[250px] overflow-y-auto p-1">
+              {filteredOptions.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">No options found.</div>
+              ) : (
+                filteredOptions.map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      onValueChange(option.value);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                    className={cn(
+                      "w-full text-left px-2 py-2 rounded-md text-sm hover:bg-accent transition-colors",
+                      value === option.value && "bg-accent"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      {option.acronym && (
+                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.acronym}</span>
+                      )}
+                      <span>{option.label}</span>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
@@ -805,15 +868,40 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
         .from('activity-documents')
         .getPublicUrl(filePath);
 
+      // Append to existing docs (backward compatible with old single-doc format)
+      const existing = formData.documents?.[fieldName];
+      const existingArray: Array<{ fileName: string; fileUrl: string; uploadedAt: string }> = existing
+        ? Array.isArray(existing) ? existing : [existing]
+        : [];
       const newDocuments = {
         ...formData.documents,
-        [fieldName]: {
+        [fieldName]: [...existingArray, {
           fileName: file.name,
           fileUrl: publicUrl,
           uploadedAt: new Date().toISOString(),
-        }
+        }]
       };
-      updateField('documents', newDocuments);
+
+      // Update local state
+      const updatedFormData = { ...formData, documents: newDocuments };
+      setFormData(updatedFormData);
+      formDataRef.current = updatedFormData;
+
+      // Force immediate save (don't wait for debounce)
+      if (general.id) {
+        const updatedGeneral = { ...general, aidEffectiveness: updatedFormData };
+        onUpdate(updatedGeneral);
+
+        await apiFetch(`/api/activities/${general.id}/general-info`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            aidEffectiveness: updatedFormData,
+            general_info: { aidEffectiveness: updatedFormData }
+          })
+        });
+      }
+
       toast.success(`Evidence document uploaded`);
     } catch (error) {
       console.error('Upload error:', error);
@@ -823,10 +911,18 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
     }
   };
 
-  // Per-field evidence document remove
-  const handleFieldDocumentRemove = (fieldName: string) => {
+  // Per-field evidence document remove (supports removing by index)
+  const handleFieldDocumentRemove = (fieldName: string, index?: number) => {
     const newDocuments = { ...formData.documents };
-    newDocuments[fieldName] = null;
+    const existing = newDocuments[fieldName];
+
+    if (index !== undefined && Array.isArray(existing)) {
+      const filtered = existing.filter((_, i) => i !== index);
+      newDocuments[fieldName] = filtered.length > 0 ? filtered : null;
+    } else {
+      newDocuments[fieldName] = null;
+    }
+
     updateField('documents', newDocuments);
   };
 
@@ -1027,9 +1123,12 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           <div className="space-y-2">
-            <FieldWithDescription description={TOOLTIPS.implementingPartner}>
-              <Label className="text-sm font-medium text-slate-700">Implementing Partner</Label>
-            </FieldWithDescription>
+            <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+              Implementing Partner
+              <HelpTextTooltip content={TOOLTIPS.implementingPartner}>
+                <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+              </HelpTextTooltip>
+            </Label>
             <OrganizationCombobox
               organizations={organizations}
               value={formData.implementingPartner}
@@ -1037,9 +1136,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               placeholder="Select implementing partner..."
               className="max-w-xl"
             />
-            {user?.organizationId && formData.implementingPartner === user.organizationId && (
-              <p className="text-xs text-gray-500">Pre-filled with your organization</p>
-            )}
           </div>
 
           <div className="space-y-0 border rounded-lg px-4 bg-white">
@@ -1049,11 +1145,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               onValueChange={(value) => updateField('formallyApprovedByGov', value)}
               label="Formally Approved by Government Before Implementation Began"
               tooltip={TOOLTIPS.formallyApprovedByGov}
-              documentUpload
-              document={formData.documents?.formallyApprovedByGov}
-              uploadingDoc={uploadingDocField === 'formallyApprovedByGov'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <CountryDropdownField
               id="includedInNationalPlan"
@@ -1061,14 +1152,9 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               onValueChange={(value) => updateField('includedInNationalPlan', value)}
               label="Included in National Development Plan or Sector Strategy"
               tooltip={TOOLTIPS.includedInNationalPlan}
-              description="Document reference exists"
+              description=""
               negativeOption={COUNTRY_DROPDOWN_FIELDS.includedInNationalPlan}
               aeOptions={getOptionsForCategory('includedInNationalPlan')}
-              documentUpload
-              document={formData.documents?.includedInNationalPlan}
-              uploadingDoc={uploadingDocField === 'includedInNationalPlan'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <CountryDropdownField
               id="linkedToGovFramework"
@@ -1078,11 +1164,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               tooltip={TOOLTIPS.linkedToGovFramework}
               negativeOption={COUNTRY_DROPDOWN_FIELDS.linkedToGovFramework}
               aeOptions={getOptionsForCategory('linkedToGovFramework')}
-              documentUpload
-              document={formData.documents?.linkedToGovFramework}
-              uploadingDoc={uploadingDocField === 'linkedToGovFramework'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <RadioButtonField
               id="indicatorsFromGov"
@@ -1090,11 +1171,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               onValueChange={(value) => updateField('indicatorsFromGov', value)}
               label="Indicators Drawn from Government Monitoring Frameworks"
               tooltip={TOOLTIPS.indicatorsFromGov}
-              documentUpload
-              document={formData.documents?.indicatorsFromGov}
-              uploadingDoc={uploadingDocField === 'indicatorsFromGov'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <RadioButtonField
               id="indicatorsViaGovData"
@@ -1166,11 +1242,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               onValueChange={(value) => updateField('fundsViaNationalTreasury', value)}
               label="Funds Disbursed Through National Treasury System"
               tooltip={TOOLTIPS.fundsViaNationalTreasury}
-              documentUpload
-              document={formData.documents?.fundsViaNationalTreasury}
-              uploadingDoc={uploadingDocField === 'fundsViaNationalTreasury'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <RadioButtonField
               id="govBudgetSystem"
@@ -1199,11 +1270,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               onValueChange={(value) => updateField('govAudit', value)}
               label="Government Audit Procedures Used (National Audit Institution)"
               tooltip={TOOLTIPS.govAudit}
-              documentUpload
-              document={formData.documents?.govAudit}
-              uploadingDoc={uploadingDocField === 'govAudit'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <RadioButtonField
               id="govProcurement"
@@ -1215,8 +1281,8 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
           </div>
 
           {anyGovSystemNo && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
-              <Label className="text-sm font-medium text-amber-800">
+            <div className="p-4 bg-muted border border-border rounded-lg space-y-2">
+              <Label className="text-sm font-medium text-foreground">
                 Please explain why government systems are not being used
               </Label>
               <Textarea
@@ -1245,11 +1311,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               onValueChange={(value) => updateField('annualBudgetShared', value)}
               label="Annual Budget Shared with Government in Advance of Fiscal Year"
               tooltip={TOOLTIPS.annualBudgetShared}
-              documentUpload
-              document={formData.documents?.annualBudgetShared}
-              uploadingDoc={uploadingDocField === 'annualBudgetShared'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <RadioButtonField
               id="forwardPlanShared"
@@ -1280,10 +1341,10 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               </SelectTrigger>
               <SelectContent>
                 {TIED_STATUS_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex flex-col">
-                      <span>{option.label}</span>
-                      <span className="text-xs text-gray-500">{option.description}</span>
+                  <SelectItem key={option.value} value={option.value} className="pl-2">
+                    <div>
+                      <span className="font-medium">{option.label}</span>
+                      <span className="text-xs text-gray-500 ml-2">{option.description}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -1307,11 +1368,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               onValueChange={(value) => updateField('annualFinReportsPublic', value)}
               label="Annual Financial Reports Publicly Accessible"
               tooltip={TOOLTIPS.annualFinReportsPublic}
-              documentUpload
-              document={formData.documents?.annualFinReportsPublic}
-              uploadingDoc={uploadingDocField === 'annualFinReportsPublic'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <RadioButtonField
               id="dataUpdatedPublicly"
@@ -1326,11 +1382,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               onValueChange={(value) => updateField('finalEvalPlanned', value)}
               label="Final Evaluation Planned"
               tooltip={TOOLTIPS.finalEvalPlanned}
-              documentUpload
-              document={formData.documents?.finalEvalPlanned}
-              uploadingDoc={uploadingDocField === 'finalEvalPlanned'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <RadioButtonField
               id="evalReportPublic"
@@ -1380,11 +1431,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               onValueChange={(value) => updateField('jointAnnualReview', value)}
               label="Joint Annual Review Conducted with Government and Development Partners"
               tooltip={TOOLTIPS.jointAnnualReview}
-              documentUpload
-              document={formData.documents?.jointAnnualReview}
-              uploadingDoc={uploadingDocField === 'jointAnnualReview'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <CountryDropdownField
               id="mutualAccountabilityFramework"
@@ -1394,11 +1440,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               tooltip={TOOLTIPS.mutualAccountabilityFramework}
               negativeOption={COUNTRY_DROPDOWN_FIELDS.mutualAccountabilityFramework}
               aeOptions={getOptionsForCategory('mutualAccountabilityFramework')}
-              documentUpload
-              document={formData.documents?.mutualAccountabilityFramework}
-              uploadingDoc={uploadingDocField === 'mutualAccountabilityFramework'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <RadioButtonField
               id="correctiveActionsDocumented"
@@ -1488,11 +1529,6 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               onValueChange={(value) => updateField('genderBudgetAllocation', value)}
               label="Dedicated Budget Allocation for Gender Equality Outcomes"
               tooltip={TOOLTIPS.genderBudgetAllocation}
-              documentUpload
-              document={formData.documents?.genderBudgetAllocation}
-              uploadingDoc={uploadingDocField === 'genderBudgetAllocation'}
-              onDocUpload={handleFieldDocumentUpload}
-              onDocRemove={handleFieldDocumentRemove}
             />
             <RadioButtonField
               id="genderDisaggregatedIndicators"
@@ -1627,7 +1663,7 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
             <h3 className="font-semibold text-gray-900">Supporting Documentation</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Upload Supporting Document</Label>
               <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-gray-300 transition-colors">
@@ -1695,18 +1731,31 @@ export const AidEffectivenessForm: React.FC<Props> = ({ general, onUpdate }) => 
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full">
               <Label className="text-sm font-medium text-gray-700">External Document Link</Label>
-              <div className="flex items-center gap-2">
-                <Link2 className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              <div className="relative w-full">
+                <Link2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   type="url"
                   value={formData.externalDocumentLink || ""}
                   onChange={(e) => updateField('externalDocumentLink', e.target.value)}
                   placeholder="https://..."
-                  className="flex-1"
+                  className="w-full pl-10"
                 />
               </div>
+            </div>
+
+            {/* Evidence Documents */}
+            <div className="space-y-2 w-full">
+              <Label className="text-sm font-medium text-gray-700">Evidence Documents</Label>
+              <p className="text-xs text-slate-500">Upload supporting evidence for any of the questions above</p>
+              <InlineDocumentUpload
+                fieldName="evidence"
+                document={formData.documents?.evidence}
+                uploading={uploadingDocField === 'evidence'}
+                onUpload={handleFieldDocumentUpload}
+                onRemove={handleFieldDocumentRemove}
+              />
             </div>
           </div>
         </div>

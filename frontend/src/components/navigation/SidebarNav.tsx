@@ -699,14 +699,7 @@ export function SidebarNav({
                                   </Badge>
                                 )}
                                 {'underDevelopment' in item && item.underDevelopment && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Construction className="h-3.5 w-3.5 text-gray-400 cursor-help" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-[200px] text-center whitespace-normal">
-                                      <span className="text-xs">Under Development — This feature is usable but not in its final form</span>
-                                    </TooltipContent>
-                                  </Tooltip>
+                                  <Construction className="h-3.5 w-3.5 text-gray-400 cursor-help" title="Under Development — This feature is usable but not in its final form" />
                                 )}
                               </span>
                               {!isCollapsed && itemCount != null && itemCount > 0 && (

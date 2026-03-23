@@ -15,6 +15,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
+import { OrganizationLogo } from '@/components/ui/organization-logo';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { GitBranch } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IATI_RELATIONSHIP_TYPES, getRelationshipTypeName } from '@/data/iati-relationship-types';
 import { fetchBasicActivityWithCache } from '@/lib/activity-cache';
@@ -54,6 +57,8 @@ interface Activity {
   status: string;
   organizationName?: string;
   organizationAcronym?: string;
+  organizationLogo?: string | null;
+  organizationIatiId?: string;
   icon?: string | null;
 }
 
@@ -72,7 +77,10 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Activity[]>([]);
+  const [allActivities, setAllActivities] = useState<Activity[]>([]);
   const [searching, setSearching] = useState(false);
+  const [hasLoadedActivities, setHasLoadedActivities] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [linkedActivities, setLinkedActivities] = useState<LinkedActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -186,59 +194,88 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
   }, [linkedActivities, graphDepth, fetchGraphData]);
 
   // Search activities with debounce
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    
-    debounceRef.current = setTimeout(async () => {
+  const fetchActivities = useCallback(async (query: string = '') => {
     setSearching(true);
     try {
-        const response = await apiFetch(`/api/activities/search?q=${encodeURIComponent(query)}&limit=20`);
-        if (!response.ok) throw new Error('Search failed');
-        
-        const data = await response.json();
-        
+      const params = query.trim() ? `?q=${encodeURIComponent(query)}&limit=20` : '?limit=20';
+      const response = await apiFetch(`/api/activities/search${params}`);
+      if (!response.ok) throw new Error('Search failed');
 
-        // Map the database field names to component field names
-        const mappedActivities = (data.activities || []).map((activity: any) => ({
-          id: activity.id,
-          title: activity.title_narrative || activity.title || 'Untitled Activity',
-          acronym: activity.acronym || '',
-          otherIdentifier: activity.other_identifier || '',
-          iatiIdentifier: activity.iati_identifier || activity.iatiIdentifier || '',
-          status: activity.activity_status || activity.status || '',
-          organizationName: activity.created_by_org_name || activity.organizationName || '',
-          organizationAcronym: activity.created_by_org_acronym || activity.organizationAcronym || '',
-          icon: activity.icon || null
-        }));
+      const data = await response.json();
 
-        // Filter out current activity and already linked activities
-        const linkedActivityIds = linkedActivities
-          .map(la => la.activityId)
-          .filter((id): id is string => id !== null);
-        
-        setSearchResults(mappedActivities.filter((a: Activity) => 
-          a.id !== activityId && !linkedActivityIds.includes(a.id)
-        ));
+      const mappedActivities = (data.activities || []).map((activity: any) => ({
+        id: activity.id,
+        title: activity.title_narrative || activity.title || 'Untitled Activity',
+        acronym: activity.acronym || '',
+        otherIdentifier: activity.other_identifier || '',
+        iatiIdentifier: activity.iati_identifier || activity.iatiIdentifier || '',
+        status: activity.activity_status || activity.status || '',
+        organizationName: activity.reporting_org?.name || activity.created_by_org_name || activity.organizationName || '',
+        organizationAcronym: activity.reporting_org?.acronym || activity.created_by_org_acronym || activity.organizationAcronym || '',
+        organizationLogo: activity.reporting_org?.logo || null,
+        organizationIatiId: activity.reporting_org?.iati_org_id || activity.reporting_org?.reporting_org_ref || '',
+        icon: activity.icon || null
+      }));
+
+      const linkedActivityIds = linkedActivities
+        .map(la => la.activityId)
+        .filter((id): id is string => id !== null);
+
+      const filtered = mappedActivities.filter((a: Activity) =>
+        a.id !== activityId && !linkedActivityIds.includes(a.id)
+      );
+
+      if (!query.trim()) {
+        setAllActivities(filtered);
+      }
+      setSearchResults(filtered);
+      setHasLoadedActivities(true);
     } catch (error) {
-        console.error('Search error:', error);
-        toast.error('Search failed');
+      console.error('Search error:', error);
+      toast.error('Search failed');
     } finally {
       setSearching(false);
     }
-    }, 300);
   }, [activityId, linkedActivities]);
 
-  // Use search results when searching, otherwise empty
-  const displayActivities = searchQuery.trim() ? searchResults : [];
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setShowSearchResults(true);
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (!query.trim()) {
+      setSearchResults(allActivities);
+      return;
+    }
+
+    // Client-side filter for immediate responsiveness
+    const clientFiltered = allActivities.filter(a =>
+      a.title.toLowerCase().includes(query.toLowerCase()) ||
+      a.acronym?.toLowerCase().includes(query.toLowerCase()) ||
+      a.iatiIdentifier?.toLowerCase().includes(query.toLowerCase()) ||
+      a.otherIdentifier?.toLowerCase().includes(query.toLowerCase()) ||
+      a.organizationName?.toLowerCase().includes(query.toLowerCase())
+    );
+    setSearchResults(clientFiltered);
+
+    // Always do server search for complete results (beyond initial 20)
+    if (clientFiltered.length === 0) {
+      setSearching(true); // Show loading if client-side found nothing
+    }
+    debounceRef.current = setTimeout(() => fetchActivities(query), 300);
+  }, [allActivities, fetchActivities]);
+
+  const handleSearchFocus = useCallback(() => {
+    setShowSearchResults(true);
+    if (!hasLoadedActivities) {
+      fetchActivities('');
+    }
+  }, [hasLoadedActivities, fetchActivities]);
+
+  const displayActivities = showSearchResults ? searchResults : [];
 
   // Handle activity selection from the list
   const handleActivitySelect = (activity: Activity) => {
@@ -402,7 +439,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
     }
   };
 
-      return (
+  return (
     <div className="h-[calc(100vh-16rem)] overflow-y-auto">
       <div className="space-y-6">
         {/* Search & Link Activities - Full Width */}
@@ -417,6 +454,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                   placeholder="Search by title, acronym, Activity ID, IATI ID, or organisation..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
+                  onFocus={handleSearchFocus}
                   className="pl-10 pr-10 border-gray-300 focus:border-gray-500 focus:ring-gray-500"
                   disabled={!canEdit}
                 />
@@ -425,7 +463,8 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                     type="button"
                     onClick={() => {
                       setSearchQuery('');
-                      handleSearch('');
+                      setSearchResults(allActivities);
+                      setShowSearchResults(false);
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-400 hover:text-gray-600"
                     aria-label="Clear search"
@@ -437,7 +476,6 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
               {canEdit && (
                 <Button
                   type="button"
-                  variant="outline"
                   onClick={() => setShowExternalModal(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -448,7 +486,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           </div>
 
           {/* Search Results */}
-          {searchQuery.trim() && (
+          {showSearchResults && (hasLoadedActivities || searching) && (
             <div className="mt-4 max-h-60 overflow-y-auto">
               <div className="space-y-2">
                             {searching ? (
@@ -460,7 +498,7 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
               ) : displayActivities.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-gray-500">
-                    No activities found for "{searchQuery}"
+                    {searchQuery.trim() ? `No activities found for "${searchQuery}"` : 'No activities available'}
                   </p>
                   <p className="text-xs text-gray-400 mt-2">
                     Try a different search term
@@ -477,59 +515,43 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                     onClick={() => canEdit && handleActivitySelect(activity)}
                   >
                     <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        {/* Activity Icon */}
-                        <div className="flex-shrink-0 mt-0.5">
-                          {activity.icon ? (
-                            <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-                              <img 
-                                src={activity.icon} 
-                                alt="Activity icon" 
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  // Fallback to default icon if image fails to load
-                                  const target = e.target as HTMLImageElement
-                                  target.style.display = 'none'
-                                  target.parentElement!.innerHTML = `
-                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                      <span class="text-blue-600 font-semibold text-sm">A</span>
-                                    </div>
-                                  `
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <span className="text-blue-600 font-semibold text-sm">A</span>
-                            </div>
+                      <div className="flex-1 min-w-0">
+                        {/* First line: Title (Acronym) · Activity ID or IATI ID */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-gray-900 line-clamp-1">
+                            {activity.title}
+                            {activity.acronym && ` (${activity.acronym})`}
+                          </span>
+                          {(activity.otherIdentifier || activity.iatiIdentifier) && (
+                            <>
+                              <span className="text-gray-400">·</span>
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
+                                {activity.otherIdentifier || activity.iatiIdentifier}
+                              </span>
+                            </>
                           )}
                         </div>
-                        
-                        {/* Activity Details */}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 line-clamp-1">
-                            {activity.title}
-                            {activity.acronym && (
-                              <span className="font-medium text-gray-900"> ({activity.acronym})</span>
-                            )}
-                          </h4>
-                          <div className="mt-1 flex items-center gap-2 flex-wrap">
-                            {activity.iatiIdentifier && (
-                              <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-gray-600">
-                                {activity.iatiIdentifier}
-                              </code>
-                            )}
-                            {(activity.otherIdentifier || activity.organizationName || activity.organizationAcronym) && (
-                              <span className="text-xs text-gray-500 truncate">
-                                {[
-                                  activity.otherIdentifier,
-                                  activity.organizationName && activity.organizationAcronym 
-                                    ? `${activity.organizationName} (${activity.organizationAcronym})`
-                                    : activity.organizationName || (activity.organizationAcronym && `(${activity.organizationAcronym})`)
-                                ].filter(Boolean).join(' • ')}
+                        {/* Second line: Org logo · Org name (acronym) · Org IATI ID */}
+                        <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
+                          <OrganizationLogo
+                            logo={activity.organizationLogo}
+                            name={activity.organizationName}
+                            size="sm"
+                          />
+                          {activity.organizationName && (
+                            <span>
+                              {activity.organizationName}
+                              {activity.organizationAcronym && ` (${activity.organizationAcronym})`}
+                            </span>
+                          )}
+                          {activity.organizationIatiId && (
+                            <>
+                              <span className="text-gray-400">·</span>
+                              <span className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                {activity.organizationIatiId}
                               </span>
-                            )}
-                          </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -594,80 +616,45 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
                     className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        {/* Activity Icon */}
-                        <div className="flex-shrink-0 mt-0.5">
-                          {link.icon ? (
-                            <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-                              <img 
-                                src={link.icon} 
-                                alt="Activity icon" 
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement
-                                  target.style.display = 'none'
-                                  target.parentElement!.innerHTML = `
-                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                      <span class="text-blue-600 font-semibold text-sm">A</span>
-                                    </div>
-                                  `
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <span className="text-blue-600 font-semibold text-sm">A</span>
-                            </div>
+                      <div className="flex-1 min-w-0">
+                        {/* First line: Arrow + Title (Acronym) · Activity ID + Green tick */}
+                        <div className="flex items-center gap-1.5 mb-1">
+                          {getRelationshipIcon(link.relationshipType)}
+                          <span className="font-medium text-gray-900 text-sm">
+                            {link.activityTitle}
+                            {link.acronym && ` (${link.acronym})`}
+                          </span>
+                          {(link.otherIdentifier || link.iatiIdentifier) && (
+                            <>
+                              <span className="text-gray-400">·</span>
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
+                                {link.otherIdentifier || link.iatiIdentifier}
+                              </span>
+                            </>
                           )}
+                          <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
                         </div>
 
-                        {/* Activity Details */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            {getRelationshipIcon(link.relationshipType)}
-                            <h4 className="font-medium text-gray-900 text-sm leading-tight break-words">
-                              {link.activityTitle}
-                              {link.acronym && (
-                                <span className="font-medium text-gray-900"> ({link.acronym})</span>
+                        {/* Second line: Narrative or relationship description */}
+                        <div className="ml-6 space-y-1">
+                          {(link.organizationName || link.organizationAcronym) && (
+                            <p className="text-xs text-gray-500">
+                              {link.organizationName}
+                              {link.organizationAcronym && ` (${link.organizationAcronym})`}
+                            </p>
+                          )}
+                          {link.narrative && (
+                            <div>
+                              {link.narrative.startsWith('Imported from XML') ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-md" style={{ backgroundColor: '#004F59', color: 'white' }}>
+                                  <FileCode className="h-3 w-3 flex-shrink-0" />
+                                  Imported from XML
+                                </span>
+                              ) : (
+                                <p className="text-sm text-gray-600">{link.narrative}</p>
                               )}
-                            </h4>
-                            {/* Green tick to show this link is saved to backend */}
-                            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                          </div>
-                          
-                          <div className="space-y-1 ml-6">
-                            {link.iatiIdentifier && (
-                              <p className="text-xs break-words">
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-mono">
-                                  {link.iatiIdentifier}
-                                </code>
-                              </p>
-                            )}
-                            {link.otherIdentifier && (
-                              <p className="text-xs text-gray-500 break-words">
-                                {link.otherIdentifier}
-                              </p>
-                            )}
-                            {(link.organizationName || link.organizationAcronym) && (
-                              <p className="text-xs text-gray-500 break-words">
-                                {link.organizationName && link.organizationAcronym 
-                                  ? `${link.organizationName} (${link.organizationAcronym})`
-                                  : link.organizationName || (link.organizationAcronym && `(${link.organizationAcronym})`)}
-                              </p>
-                            )}
-                            {link.narrative && (
-                              <div className="mt-2">
-                                {link.narrative.startsWith('Imported from XML') ? (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-md" style={{ backgroundColor: '#004F59', color: 'white' }}>
-                                    <FileCode className="h-3 w-3 flex-shrink-0" />
-                                    Imported from XML
-                                  </span>
-                                ) : (
-                                  <p className="text-sm text-gray-600">{link.narrative}</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -704,21 +691,28 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
           </div>
         </div>
 
-        {/* Relationship Visualization - Full Width */}
-        {currentActivity && (
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Relationship Visualization</h3>
-            <div className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden" style={{ height: '600px' }}>
-              <LinkedActivitiesGraph
-                currentActivity={currentActivity}
-                linkedActivities={linkedActivities}
-                graphData={graphData}
-                depth={graphDepth}
-                onDepthChange={handleDepthChange}
-                loading={graphLoading}
-              />
-            </div>
-          </div>
+        {/* Relationship Visualization - Collapsed by default */}
+        {currentActivity && linkedActivities.length > 0 && (
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <GitBranch className="h-4 w-4" />
+                Show Relationship Map
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4">
+              <div className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden" style={{ height: '600px' }}>
+                <LinkedActivitiesGraph
+                  currentActivity={currentActivity}
+                  linkedActivities={linkedActivities}
+                  graphData={graphData}
+                  depth={graphDepth}
+                  onDepthChange={handleDepthChange}
+                  loading={graphLoading}
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
         {/* Add/Edit Modal */}
@@ -739,67 +733,38 @@ const LinkedActivitiesEditorTab: React.FC<LinkedActivitiesEditorTabProps> = ({
             {/* Selected Activity Info */}
             {(selectedActivity || editingActivity) && (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <div className="flex items-start gap-3">
-                  {/* Activity Icon */}
-                  <div className="flex-shrink-0 mt-0.5">
-                    {(selectedActivity?.icon || editingActivity?.icon) ? (
-                      <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-                        <img 
-                          src={selectedActivity?.icon || editingActivity?.icon} 
-                          alt="Activity icon" 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            target.parentElement!.innerHTML = `
-                              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span class="text-blue-600 font-semibold text-sm">A</span>
-                              </div>
-                            `
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 font-semibold text-sm">A</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Activity Details */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 text-sm leading-tight break-words">
+                <div className="flex-1 min-w-0">
+                  {/* First line: Title (Acronym) · ID */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-gray-900 text-sm">
                       {editingActivity ? editingActivity.activityTitle : selectedActivity?.title}
-                      {(selectedActivity?.acronym || editingActivity?.acronym) && (
-                        <span className="font-medium text-gray-900"> ({selectedActivity?.acronym || editingActivity?.acronym})</span>
-                      )}
-                    </h4>
-                    <div className="mt-1 space-y-1">
-                      <p className="text-xs text-gray-500 break-words">
-                        {selectedActivity ? [
-                          selectedActivity.otherIdentifier,
-                          selectedActivity.iatiIdentifier
-                        ].filter(Boolean).join(' • ') : (editingActivity ? [
-                          editingActivity.otherIdentifier,
-                          editingActivity.iatiIdentifier
-                        ].filter(Boolean).join(' • ') : '')}
-                      </p>
-                      {((selectedActivity && (selectedActivity.organizationName || selectedActivity.organizationAcronym)) ||
-                        (editingActivity && (editingActivity.organizationName || editingActivity.organizationAcronym))) && (
-                        <p className="text-xs text-gray-500 break-words">
-                          Reported by: {selectedActivity ? (
-                            selectedActivity.organizationName && selectedActivity.organizationAcronym 
-                              ? `${selectedActivity.organizationName} (${selectedActivity.organizationAcronym})`
-                              : selectedActivity.organizationName || (selectedActivity.organizationAcronym && `(${selectedActivity.organizationAcronym})`)
-                          ) : editingActivity ? (
-                            editingActivity.organizationName && editingActivity.organizationAcronym 
-                              ? `${editingActivity.organizationName} (${editingActivity.organizationAcronym})`
-                              : editingActivity.organizationName || (editingActivity.organizationAcronym && `(${editingActivity.organizationAcronym})`)
-                          ) : ''}
-                        </p>
-                      )}
-                    </div>
+                      {(selectedActivity?.acronym || editingActivity?.acronym) && ` (${selectedActivity?.acronym || editingActivity?.acronym})`}
+                    </span>
+                    {(() => {
+                      const id = selectedActivity?.otherIdentifier || selectedActivity?.iatiIdentifier || editingActivity?.otherIdentifier || editingActivity?.iatiIdentifier;
+                      return id ? (
+                        <>
+                          <span className="text-gray-400">·</span>
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">{id}</span>
+                        </>
+                      ) : null;
+                    })()}
                   </div>
+                  {/* Second line: Org name */}
+                  {((selectedActivity && (selectedActivity.organizationName || selectedActivity.organizationAcronym)) ||
+                    (editingActivity && (editingActivity.organizationName || editingActivity.organizationAcronym))) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {selectedActivity ? (
+                        selectedActivity.organizationName && selectedActivity.organizationAcronym
+                          ? `${selectedActivity.organizationName} (${selectedActivity.organizationAcronym})`
+                          : selectedActivity.organizationName || (selectedActivity.organizationAcronym && `(${selectedActivity.organizationAcronym})`)
+                      ) : editingActivity ? (
+                        editingActivity.organizationName && editingActivity.organizationAcronym
+                          ? `${editingActivity.organizationName} (${editingActivity.organizationAcronym})`
+                          : editingActivity.organizationName || (editingActivity.organizationAcronym && `(${editingActivity.organizationAcronym})`)
+                      ) : ''}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

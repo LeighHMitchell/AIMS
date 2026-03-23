@@ -291,6 +291,7 @@ export async function GET(
       lastSyncTime: activity.last_sync_time || null,
       syncStatus: activity.sync_status || 'not_synced',
       autoSyncFields: activity.auto_sync_fields || [],
+      aidEffectiveness: activity.general_info?.aidEffectiveness || {},
       banner: activity.banner,
       bannerPosition: activity.banner_position ?? 50,
       banner_position: activity.banner_position ?? 50,

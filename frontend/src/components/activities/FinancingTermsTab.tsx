@@ -273,8 +273,8 @@ export function FinancingTermsTab({
             {!readOnly && (
               <Dialog open={showLoanTermsModal} onOpenChange={setShowLoanTermsModal}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  <Button className="flex items-center gap-2">
+                    <Pencil className="h-4 w-4" />
                     Edit Loan Terms
                   </Button>
                 </DialogTrigger>

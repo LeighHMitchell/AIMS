@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         icon,
         recipient_countries,
         reporting_org:organizations!reporting_org_id (
-          id, name, acronym, logo, country,
+          id, name, acronym, logo, country, iati_org_id, reporting_org_ref,
           type, Organisation_Type_Code, Organisation_Type_Name
         )
       `)

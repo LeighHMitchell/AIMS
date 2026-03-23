@@ -101,51 +101,48 @@ export function StakeholdersGroup({
   ] : []
 
   // Use scroll spy to track visible section
-  const { activeSection, scrollToSection, setActiveSection } = useScrollSpy(sectionRefs, {
+  const { activeSection, scrollToSection, setActiveSection, lockScrollSpy } = useScrollSpy(sectionRefs, {
     rootMargin: '-80px 0px -60% 0px', // Account for sticky headers
     debounceMs: 100,
   })
 
   // Use lazy loader to track which sections have been scrolled into view
   const { isSectionActive, activateSection, activateSections, activeSections } = useManualLazyLoader(
-    activityCreated ? ['organisations'] : []
+    activityCreated
+      ? (enablePreloading ? [...STAKEHOLDERS_SECTIONS] : ['organisations'])
+      : []
   )
 
   // Track if sections have been revealed (for animation)
   const [sectionsRevealed, setSectionsRevealed] = useState(activityCreated)
 
+  // When initialSection changes (user clicked a section in this group),
+  // lock scroll spy, set active section, and instantly scroll to target
+  const prevInitialSection = useRef(initialSection)
+  useEffect(() => {
+    if (initialSection && isStakeholdersSection(initialSection) && activityCreated) {
+      lockScrollSpy(500)
+      setActiveSection(initialSection)
+      if (initialSection !== 'organisations' || prevInitialSection.current !== initialSection) {
+        requestAnimationFrame(() => {
+          const el = document.getElementById(initialSection)
+          if (el) el.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' })
+        })
+      }
+      prevInitialSection.current = initialSection
+    }
+  }, [initialSection, activityCreated, lockScrollSpy, setActiveSection])
+
   // Update parent when active section changes (for sidebar highlighting)
-  // Only update if the active section belongs to this group
   useEffect(() => {
     if (activeSection && isStakeholdersSection(activeSection)) {
       onActiveSectionChange(activeSection)
 
-      // Update URL without triggering navigation
       const params = new URLSearchParams(window.location.search)
       params.set('section', activeSection)
       window.history.replaceState({}, '', `?${params.toString()}`)
     }
   }, [activeSection, onActiveSectionChange])
-
-  // Handle initial scroll to section from URL (only on first mount)
-  useEffect(() => {
-    // Only scroll on initial mount, not when initialSection changes from scrolling
-    if (
-      !hasInitiallyScrolled.current &&
-      initialSection &&
-      initialSection !== 'organisations' &&
-      activityCreated &&
-      isStakeholdersSection(initialSection)
-    ) {
-      hasInitiallyScrolled.current = true
-      // Wait for content to render, then scroll
-      const timer = setTimeout(() => {
-        scrollToSection(initialSection)
-        activateSection(initialSection)
-      }, 100)
-      return () => clearTimeout(timer)
-    }
-  }, [initialSection, activityCreated, scrollToSection, activateSection])
 
   // Handle activity creation - reveal sections with animation
   useEffect(() => {

@@ -251,7 +251,7 @@ export function CurrencySelector({
                         }
                       }}
                       className={cn(
-                        "pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors",
+                        "cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors",
                         option.withdrawn && "opacity-50 pointer-events-none bg-muted"
                       )}
                     >
@@ -294,7 +294,7 @@ export function CurrencySelector({
                           }
                         }}
                         className={cn(
-                          "pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors",
+                          "cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors",
                           option.withdrawn && "opacity-50 pointer-events-none bg-muted"
                         )}
                       >
@@ -336,7 +336,7 @@ export function CurrencySelector({
                           }
                         }}
                         className={cn(
-                          "pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors",
+                          "cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors",
                           option.withdrawn && "opacity-50 pointer-events-none bg-muted"
                         )}
                       >

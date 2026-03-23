@@ -63,7 +63,8 @@ export function OrganizationSearchableSelect({
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = externalOnOpenChange || setInternalOpen;
 
-  const selectedOrganization = organizations.find(org => org.id === value);
+  const orgs = Array.isArray(organizations) ? organizations : [];
+  const selectedOrganization = orgs.find(org => org.id === value);
 
   // Clean up search when dropdown closes
   React.useEffect(() => {
@@ -74,24 +75,24 @@ export function OrganizationSearchableSelect({
 
   // Filter organizations based on search query
   const filteredOrganizations = React.useMemo(() => {
-    if (!search) return organizations;
-    
+    if (!search) return orgs;
+
     const query = search.toLowerCase();
-    return organizations.filter(
+    return orgs.filter(
       org =>
         org.name.toLowerCase().includes(query) ||
         (org.acronym && org.acronym.toLowerCase().includes(query)) ||
         (org.iati_org_id && org.iati_org_id.toLowerCase().includes(query)) ||
         (org.country && org.country.toLowerCase().includes(query))
     );
-  }, [organizations, search]);
+  }, [orgs, search]);
 
   const handleSelect = (organizationId: string) => {
     onValueChange(organizationId);
     setOpen(false);
 
     if (onLegacyTypeDetected) {
-      const org = organizations.find(o => o.id === organizationId);
+      const org = orgs.find(o => o.id === organizationId);
       if (org) {
         const orgTypeCode = org.Organisation_Type_Code || org.organisation_type;
         if (isLegacyOrgType(orgTypeCode)) {

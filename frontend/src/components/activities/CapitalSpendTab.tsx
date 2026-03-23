@@ -256,7 +256,6 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                   isSaved={saved}
                   hasValue={!!capitalSpend}
                 >
-                  <Building2 className="h-4 w-4 text-gray-600" />
                   Capital Spend Percentage
                 </LabelSaveIndicator>
                 <div className="relative max-w-xs">
@@ -292,7 +291,6 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                   isSaved={saved}
                   hasValue={!!capitalSpend}
                 >
-                  <Repeat className="h-4 w-4 text-gray-600" />
                   Recurrent Spend Percentage
                 </LabelSaveIndicator>
                 <div className="relative max-w-xs">
@@ -322,7 +320,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
             )}
 
             <Collapsible open={showExamples} onOpenChange={setShowExamples} className="pt-4">
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:underline">
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
                 <ChevronDown className={cn(
                   "h-4 w-4 transition-transform",
                   showExamples && "rotate-180"

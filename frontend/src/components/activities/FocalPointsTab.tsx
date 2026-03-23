@@ -1,21 +1,19 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  UserSearchableSelect, 
-  UserOption 
-} from '@/components/ui/user-searchable-select';
+import type { UserOption } from './AssignFocalPointModal';
 import { useUser } from '@/hooks/useUser';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import { 
   UserPlus, 
   HandPlatter, 
-  Check, 
-  X, 
+  Check,
+  CheckCircle2,
+  X,
   Users, 
   Building2,
   AlertCircle,
@@ -23,8 +21,7 @@ import {
   Trash2,
   Clock
 } from 'lucide-react';
-import { PersonCard } from '@/components/rolodex/PersonCard';
-import type { RolodexPerson } from '@/app/api/rolodex/route';
+import { UserAvatar, getInitials } from '@/components/ui/user-avatar';
 import { FocalPointHandoffModal } from './FocalPointHandoffModal';
 import { AssignFocalPointModal } from './AssignFocalPointModal';
 import {
@@ -52,6 +49,7 @@ export default function FocalPointsTab({
   
   // Assignment state
   const [selectedUser, setSelectedUser] = useState<UserOption | null>(null);
+  const userClearedRef = useRef(false);
   
   // Assign modal state
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -63,13 +61,14 @@ export default function FocalPointsTab({
 
   // Pre-fill selectedUser with logged-in user on mount for quick self-assignment
   useEffect(() => {
-    if (user && !selectedUser) {
+    if (user && !selectedUser && !userClearedRef.current) {
       const currentUserAsOption: UserOption = {
         id: user.id,
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         email: user.email,
+        avatarUrl: (user as any).profilePicture || null,
         organizationId: user.organizationId,
         organization: user.organisation || user.organization?.name,
         value: user.id,
@@ -320,63 +319,58 @@ export default function FocalPointsTab({
         );
       case 'assigned':
       default:
-        return (
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            Assigned
-          </Badge>
-        );
+        return null;
     }
-  };
-
-  // Convert a FocalPoint to a RolodexPerson for PersonCard display
-  const focalPointToRolodexPerson = (focalPoint: FocalPoint): RolodexPerson => {
-    const nameParts = focalPoint.name?.split(' ') || [];
-    return {
-      id: focalPoint.id,
-      source: 'user',
-      name: focalPoint.name || focalPoint.email || 'Unknown',
-      first_name: nameParts[0],
-      last_name: nameParts.slice(1).join(' '),
-      email: focalPoint.email || '',
-      job_title: focalPoint.job_title,
-      position: focalPoint.job_title,
-      organization_id: focalPoint.organization?.id,
-      organization_name: focalPoint.organization?.name || focalPoint.organisation,
-      organization_acronym: focalPoint.organization?.acronym,
-      profile_photo: focalPoint.avatar_url || null,
-      phone: undefined,
-      created_at: '',
-      updated_at: '',
-    };
   };
 
   const renderFocalPointCard = (focalPoint: FocalPoint) => {
     const showHandoffButton = canHandoff(focalPoint);
     const showRemoveButton = canRemove(focalPoint);
     const isLoading = actionLoading?.includes(focalPoint.id);
-    const person = focalPointToRolodexPerson(focalPoint);
+    const displayName = focalPoint.name || focalPoint.email || 'Unknown';
+    const orgDisplay = focalPoint.organization?.acronym
+      ? `${focalPoint.organization.name} (${focalPoint.organization.acronym})`
+      : focalPoint.organization?.name || focalPoint.organisation || '';
 
     return (
-      <div key={focalPoint.id} className="space-y-2">
-        <PersonCard person={person} compact />
-
-        {/* Focal-point-specific info & actions */}
-        <div className="flex items-center justify-between px-3 pb-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            {getStatusBadge(focalPoint.status)}
-            {isCurrentUserFocalPoint(focalPoint) && (
-              <Badge variant="secondary" className="bg-slate-100">
-                You
-              </Badge>
+      <div key={focalPoint.id} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+        {/* Top: Avatar + Name + Status */}
+        <div className="flex items-start gap-3">
+          <UserAvatar
+            src={focalPoint.avatar_url}
+            seed={focalPoint.id || displayName}
+            name={displayName}
+            size="sm"
+            initials={getInitials(displayName)}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-medium text-slate-900">{displayName}</span>
+              {isCurrentUserFocalPoint(focalPoint) && (
+                <Badge variant="secondary" className="text-xs bg-slate-100">You</Badge>
+              )}
+              {getStatusBadge(focalPoint.status)}
+            </div>
+            {focalPoint.job_title && (
+              <div className="text-xs text-slate-500 mt-0.5">{focalPoint.job_title}</div>
             )}
+            {orgDisplay && (
+              <div className="text-xs text-slate-500">{orgDisplay}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom: Assigned info + Actions */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+          <div className="text-xs text-slate-400">
             {focalPoint.assigned_by_name && (
-              <span className="text-xs text-slate-400">Assigned by {focalPoint.assigned_by_name}</span>
+              <span>Assigned by {focalPoint.assigned_by_name}</span>
             )}
             {focalPoint.handed_off_by_name && focalPoint.status !== 'pending_handoff' && (
-              <span className="text-xs text-slate-400">Handed off by {focalPoint.handed_off_by_name}</span>
+              <span>Handed off by {focalPoint.handed_off_by_name}</span>
             )}
             {focalPoint.status === 'pending_handoff' && focalPoint.handed_off_by_name && (
-              <span className="text-xs text-slate-400">Handoff initiated by {focalPoint.handed_off_by_name}</span>
+              <span>Handoff initiated by {focalPoint.handed_off_by_name}</span>
             )}
           </div>
 
@@ -490,28 +484,33 @@ export default function FocalPointsTab({
 
   return (
     <div className="space-y-6">
+      {/* Assign Focal Point Button - pulled up to align with section header */}
+      {permissions.canAssignFocalPoints && (
+        <div className="flex justify-end -mt-12">
+          <Button onClick={() => setShowAssignModal(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Assign Focal Point
+          </Button>
+        </div>
+      )}
+
       {/* Pending Handoff Alerts */}
       {renderPendingHandoffAlert('government_focal_point')}
       {renderPendingHandoffAlert('development_partner_focal_point')}
 
-      {/* Assign Focal Point Button + Modal */}
+      {/* Assign Focal Point Modal */}
       {permissions.canAssignFocalPoints && (
         <>
-          <div className="flex justify-end">
-            <Button onClick={() => setShowAssignModal(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Assign Focal Point
-            </Button>
-          </div>
-
           <AssignFocalPointModal
             isOpen={showAssignModal}
-            onClose={() => setShowAssignModal(false)}
+            onClose={() => { setShowAssignModal(false); userClearedRef.current = false; }}
             onAssign={(type) => {
               handleAssign(type).then(() => setShowAssignModal(false));
             }}
             selectedUser={selectedUser}
             onSelectedUserChange={(userId, userData) => {
+              if (!userId) userClearedRef.current = true;
+              else userClearedRef.current = false;
               setSelectedUser(userId && userData ? userData : null);
             }}
             actionLoading={actionLoading}
@@ -527,6 +526,9 @@ export default function FocalPointsTab({
             <CardTitle className="flex items-center gap-2 text-base">
               <Building2 className="h-5 w-5 text-slate-600" />
               Government Focal Points
+              {governmentFocalPoints.length > 0 && (
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+              )}
             </CardTitle>
             <CardDescription className="text-xs">
               Officials responsible for reviewing and endorsing this activity.
@@ -551,6 +553,9 @@ export default function FocalPointsTab({
             <CardTitle className="flex items-center gap-2 text-base">
               <Users className="h-5 w-5 text-slate-600" />
               Development Partner Focal Points
+              {developmentPartnerFocalPoints.length > 0 && (
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+              )}
             </CardTitle>
             <CardDescription className="text-xs">
               Main contacts responsible for updating and managing the activity information.

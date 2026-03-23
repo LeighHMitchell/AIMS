@@ -219,7 +219,8 @@ export async function PATCH(
           sdg_goal: mapping.sdgGoal,
           sdg_target: mapping.sdgTarget && mapping.sdgTarget !== '' ? mapping.sdgTarget : `${mapping.sdgGoal}.1`,
           contribution_percent: mapping.contributionPercent || null,
-          notes: mapping.notes || null
+          notes: mapping.notes || null,
+          alignment_strength: mapping.alignmentStrength || 'primary'
         }));
         
         console.log('[AIMS API] Inserting SDG mappings:', JSON.stringify(sdgMappingsData, null, 2));
@@ -1206,9 +1207,13 @@ export async function GET(
       submissionStatus: activity.submission_status,
       reportingOrgId: activity.reporting_org_id,
       plannedStartDate: activity.planned_start_date,
+      plannedStartDescription: activity.planned_start_description,
       plannedEndDate: activity.planned_end_date,
+      plannedEndDescription: activity.planned_end_description,
       actualStartDate: activity.actual_start_date,
+      actualStartDescription: activity.actual_start_description,
       actualEndDate: activity.actual_end_date,
+      actualEndDescription: activity.actual_end_description,
       defaultAidType: activity.default_aid_type,
       defaultFinanceType: activity.default_finance_type,
       defaultCurrency: activity.default_currency,
@@ -1251,6 +1256,7 @@ export async function GET(
       autoSyncFields: activity.auto_sync_fields || [],
       // Include general_info data
       general_info: activity.general_info || {},
+      aidEffectiveness: activity.general_info?.aidEffectiveness || {},
       // Include custom dates (for "Add another Activity Date" feature)
       customDates: activity.custom_dates || [],
       // Budget status fields
@@ -1303,6 +1309,7 @@ export async function GET(
         id: mapping.id,
         sdgGoal: mapping.sdg_goal,
         sdgTarget: mapping.sdg_target, // Keep as is - should never be null from DB
+        alignmentStrength: mapping.alignment_strength || 'primary',
         contributionPercent: mapping.contribution_percent,
         notes: mapping.notes
       })) || [],

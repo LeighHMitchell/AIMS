@@ -24,6 +24,8 @@ import { useEffect, useCallback, useRef } from 'react'
 interface RichTextEditorProps {
   content: string
   onChange: (content: string) => void
+  onFocus?: () => void
+  onBlur?: () => void
   placeholder?: string
   className?: string
   disabled?: boolean
@@ -33,6 +35,8 @@ interface RichTextEditorProps {
 export function RichTextEditor({
   content,
   onChange,
+  onFocus,
+  onBlur,
   placeholder = "Start typing...",
   className,
   disabled = false,
@@ -74,6 +78,8 @@ export function RichTextEditor({
       }
     },
     editable: !disabled,
+    onFocus: () => onFocus?.(),
+    onBlur: () => onBlur?.(),
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none',

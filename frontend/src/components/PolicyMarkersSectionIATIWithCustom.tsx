@@ -655,7 +655,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
             </div>
             
             {isSelected && (
-              <CheckCircle className="h-4 w-4 text-slate-600 flex-shrink-0" />
+              <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
             )}
           </div>
           

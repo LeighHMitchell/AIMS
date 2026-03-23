@@ -1,12 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, AlertCircle } from 'lucide-react';
+import { Plus, AlertCircle, LayoutGrid, TableIcon, Pencil, Trash2, Mail, Phone, Loader2 } from 'lucide-react';
 import ContactForm from './ContactForm';
 import ContactSearchBar from './ContactSearchBar';
 import { PersonCard } from '@/components/rolodex/PersonCard';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { OrganizationLogo } from '@/components/ui/organization-logo';
 import { toast } from 'sonner';
 import { normalizeContact, deduplicateContacts, areContactsDuplicate } from '@/lib/contact-utils';
 import { apiFetch } from '@/lib/api-fetch';
@@ -67,6 +71,8 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [contactsView, setContactsView] = useState<'table' | 'cards'>('table');
+  const [orgLogos, setOrgLogos] = useState<Record<string, string>>({});
   const saveInProgressRef = useRef(false);
   const lastNotifiedCountRef = useRef<number>(-1);
 
@@ -142,6 +148,33 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contacts, isLoading]); // Intentionally exclude onContactsChange to prevent infinite loops
+
+  // Fetch org logos for contacts
+  useEffect(() => {
+    const orgIds = contacts
+      .map(c => c.organisationId)
+      .filter((id): id is string => !!id && !orgLogos[id]);
+    const uniqueIds = Array.from(new Set(orgIds));
+    if (uniqueIds.length === 0) return;
+
+    (async () => {
+      try {
+        const response = await apiFetch(`/api/organizations?ids=${uniqueIds.join(',')}&fields=id,logo`);
+        if (response.ok) {
+          const data = await response.json();
+          const logos: Record<string, string> = {};
+          (Array.isArray(data) ? data : data.data || []).forEach((org: any) => {
+            if (org.logo) logos[org.id] = org.logo;
+          });
+          if (Object.keys(logos).length > 0) {
+            setOrgLogos(prev => ({ ...prev, ...logos }));
+          }
+        }
+      } catch {
+        // Silently fail — logos are optional
+      }
+    })();
+  }, [contacts]);
 
   // Save contacts to database
   const saveContacts = async (newContacts: Contact[]) => {
@@ -414,11 +447,32 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
       )}
 
       {/* Current Contacts List */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <div className="mb-4">
+      <div>
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">
             Current Activity Contacts
+            {isSaving && <Loader2 className="inline-block ml-2 h-4 w-4 animate-spin text-muted-foreground" />}
           </h2>
+          {contacts.length > 0 && (
+            <div className="flex items-center gap-1 border border-border rounded-md p-0.5">
+              <button
+                type="button"
+                onClick={() => setContactsView('table')}
+                className={`p-1.5 rounded transition-colors ${contactsView === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                title="Table view"
+              >
+                <TableIcon className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setContactsView('cards')}
+                className={`p-1.5 rounded transition-colors ${contactsView === 'cards' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                title="Card view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {contacts.length === 0 ? (
@@ -428,6 +482,77 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
               No contacts added yet. {!readOnly && 'Search for existing contacts or create a new one above.'}
             </AlertDescription>
           </Alert>
+        ) : contactsView === 'table' ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Organisation</TableHead>
+                <TableHead>Email</TableHead>
+                {!readOnly && <TableHead className="w-[80px]">Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {contacts.map((contact, index) => {
+                const fullName = [contact.title, contact.firstName, contact.lastName].filter(Boolean).join(' ');
+                const initials = `${contact.firstName?.[0] || ''}${contact.lastName?.[0] || ''}`.toUpperCase();
+                const orgDisplay = contact.organisationAcronym
+                  ? `${contact.organisation} (${contact.organisationAcronym})`
+                  : contact.organisation;
+
+                return (
+                  <TableRow key={contact.id || index}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          {contact.profilePhoto && (
+                            <AvatarImage src={contact.profilePhoto} alt={fullName} />
+                          )}
+                          <AvatarFallback className="bg-slate-100 text-xs">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{fullName || 'Unknown Contact'}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {contact.jobTitle || contact.position || '-'}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {orgDisplay ? (
+                        <div className="flex items-center gap-2">
+                          <OrganizationLogo
+                            logo={contact.organisationId ? orgLogos[contact.organisationId] : undefined}
+                            name={orgDisplay}
+                            size="sm"
+                          />
+                          <span>{orgDisplay}</span>
+                        </div>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {contact.email || '-'}
+                    </TableCell>
+                    {!readOnly && (
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(contact.id || '')}
+                            className="p-1.5 rounded hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-50"
+                            title="Remove contact"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {contacts.map((contact, index) => {
@@ -443,18 +568,6 @@ export default function ContactsTab({ activityId, readOnly = false, onContactsCh
           </div>
         )}
       </div>
-
-      {/* Loading overlay */}
-      {isSaving && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl">
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <p className="text-gray-700">Saving contacts...</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

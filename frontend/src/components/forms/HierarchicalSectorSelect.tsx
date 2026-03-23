@@ -265,14 +265,14 @@ export function HierarchicalSectorSelect({
                     
                     {/* 3-digit Sectors and their 5-digit subsectors */}
                     {category.sectors.map((sector) => (
-                      <div key={sector.code} className="ml-2">
+                      <div key={sector.code}>
                         {/* 3-digit Sector Header - Non-selectable */}
                         <div
-                          className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 cursor-default"
+                          className="px-3 py-1.5 text-sm font-semibold text-gray-700 bg-gray-50 cursor-default"
                           role="heading"
                           aria-level={4}
                         >
-                          <span className="font-mono">{sector.code}</span> – {sector.name}
+                          <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{sector.code}</span> {sector.name}
                         </div>
                         
                         {/* 5-digit Subsectors - Selectable */}
@@ -284,7 +284,7 @@ export function HierarchicalSectorSelect({
                             <div
                               key={subsector.code}
                               className={cn(
-                                "relative flex cursor-pointer select-none items-center rounded-sm px-6 py-2 text-sm outline-none transition-colors ml-4",
+                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none transition-colors",
                                 isSelected && "bg-blue-100 text-blue-900",
                                 !isSelected && !isDisabled && "hover:bg-gray-100",
                                 isDisabled && "text-gray-400 cursor-not-allowed"
@@ -302,7 +302,7 @@ export function HierarchicalSectorSelect({
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm truncate">
-                                  <span className="font-mono text-xs text-gray-700">{subsector.code}</span> – {subsector.name}
+                                  <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{subsector.code}</span> {subsector.name}
                                 </div>
                               </div>
                             </div>

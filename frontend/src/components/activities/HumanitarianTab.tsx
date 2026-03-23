@@ -17,6 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Plus, Trash2, Pencil, AlertCircle, Heart, CheckCircle2 } from 'lucide-react';
+import { format } from 'date-fns';
 import { HumanitarianScope } from '@/types/humanitarian';
 import { CountryEmergency } from '@/types/country-emergency';
 import {
@@ -103,8 +104,8 @@ export function HumanitarianTab({
 
   const formatEmergencyDateRange = (emergency: CountryEmergency) => {
     const parts: string[] = [];
-    if (emergency.startDate) parts.push(new Date(emergency.startDate).toLocaleDateString());
-    if (emergency.endDate) parts.push(new Date(emergency.endDate).toLocaleDateString());
+    if (emergency.startDate) parts.push(format(new Date(emergency.startDate), 'd MMMM yyyy'));
+    if (emergency.endDate) parts.push(format(new Date(emergency.endDate), 'd MMMM yyyy'));
     if (parts.length === 0) return null;
     return parts.join(' – ');
   };
@@ -223,9 +224,9 @@ export function HumanitarianTab({
             />
           </div>
           {humanitarian && !readOnly && activityId !== 'NEW' && (
-            <Button onClick={handleAddScope} size="sm" disabled={isSaving} className="bg-red-600 text-white hover:bg-red-700">
+            <Button onClick={handleAddScope} size="sm" disabled={isSaving}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Scope
+              Add Emergency / Appeal
             </Button>
           )}
         </div>
@@ -245,7 +246,7 @@ export function HumanitarianTab({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Humanitarian Scope
+              Emergencies & Appeals
               <HelpTextTooltip content="Identify specific emergencies (using GLIDE codes) or appeals (using UN OCHA HRP codes) that this activity responds to. Multiple entries can be added." />
             </CardTitle>
             <CardDescription>
@@ -255,7 +256,7 @@ export function HumanitarianTab({
           <CardContent className="space-y-4">
             {scopes.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                No humanitarian scopes defined. Click "Add Scope" to link to a specific emergency or appeal.
+                No emergencies or appeals linked. Click "Add Emergency / Appeal" to link to a specific emergency or appeal.
               </div>
             )}
 
@@ -346,22 +347,24 @@ export function HumanitarianTab({
                         {!readOnly && (
                           <TableCell className="align-top">
                             <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
+                              <button
+                                type="button"
                                 onClick={() => handleEditScope(scope)}
                                 disabled={isSaving}
+                                className="p-1.5 rounded hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-50"
+                                title="Edit"
                               >
                                 <Pencil className="h-4 w-4 text-slate-500" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => handleDeleteScope(scope.id)}
                                 disabled={isSaving}
+                                className="p-1.5 rounded hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-50"
+                                title="Delete"
                               >
                                 <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
+                              </button>
                             </div>
                           </TableCell>
                         )}

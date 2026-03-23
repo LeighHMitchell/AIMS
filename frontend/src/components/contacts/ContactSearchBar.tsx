@@ -150,7 +150,7 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef}>
       <div className="flex gap-3">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -166,13 +166,14 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
             <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
           )}
         </div>
-        <Button type="button" variant="outline" onClick={onCreateNew}>
+        <Button type="button" onClick={onCreateNew}>
           Create New Contact
         </Button>
       </div>
 
       {/* Search Results Dropdown */}
       {showResults && filteredResults.length > 0 && (
+        <div className="relative">
         <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
           <div className="p-2">
             <p className="text-xs text-gray-500 px-2 py-1">
@@ -186,9 +187,6 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
               const orgDisplay = result.organisationAcronym
                 ? `${result.organisation} (${result.organisationAcronym})`
                 : result.organisation;
-              const phoneDisplay = result.countryCode && result.phone
-                ? `${result.countryCode} ${result.phone}`
-                : result.phone;
 
               return (
                 <button
@@ -199,7 +197,7 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
                 >
                   <div className="flex items-start gap-3">
                     {/* Profile Photo */}
-                    <Avatar className="h-12 w-12 flex-shrink-0">
+                    <Avatar className="h-10 w-10 flex-shrink-0">
                       {result.profilePhoto ? (
                         <AvatarImage src={result.profilePhoto} alt={fullName} />
                       ) : (
@@ -231,30 +229,13 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
                           {orgDisplay}
                         </p>
                       )}
-
-                      {/* Email and Phone on one line */}
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                        {result.email && (
-                          <span className="truncate">{result.email}</span>
-                        )}
-                        {result.email && phoneDisplay && (
-                          <span>&bull;</span>
-                        )}
-                        {phoneDisplay && (
-                          <span className="truncate">{phoneDisplay}</span>
-                        )}
-                      </div>
                     </div>
-
-                    {/* Contact Badge */}
-                    <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-600 flex-shrink-0">
-                      Contact
-                    </span>
                   </div>
                 </button>
               );
             })}
           </div>
+        </div>
         </div>
       )}
 

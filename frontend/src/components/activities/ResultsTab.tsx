@@ -645,11 +645,10 @@ export function ResultsTab({
           </p>
         </div>
           {!readOnly && (
-            <Button 
-              onClick={() => setShowAddResult(true)} 
-            className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
+            <Button
+              onClick={() => setShowAddResult(true)}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4 mr-2" />
               Add Result
             </Button>
           )}
@@ -755,22 +754,13 @@ export function ResultsTab({
 
       {/* Main Content - Simple List */}
       {displayResults.length === 0 && !showDummyData ? (
-        <div className="bg-gray-50 rounded-lg border border-gray-200 p-8 text-center">
-              <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <div className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center">
+          <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h4 className="text-lg font-medium text-gray-900 mb-2">No results yet</h4>
-              <p className="text-gray-600 mb-4">
+          <p className="text-gray-600">
             Start by adding what changes you want this activity to achieve
-              </p>
-              {!readOnly && (
-            <Button 
-              onClick={() => setShowAddResult(true)} 
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Result
-                </Button>
-              )}
-            </div>
+          </p>
+        </div>
       ) : (
         <div className="space-y-6">
           {/* Enhanced Tabs for Different Views */}
@@ -955,13 +945,12 @@ export function ResultsTab({
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-lg font-medium text-gray-900">How will we measure this?</h4>
                             {!readOnly && (
-                              <Button 
+                              <Button
                                 size="sm"
                                 onClick={() => setShowAddIndicator(result.id)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400"
                               >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add Measure
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add Measure
                               </Button>
                             )}
                           </div>
@@ -982,7 +971,7 @@ export function ResultsTab({
                           {result.indicators && result.indicators.length > 0 ? (
                   <div className="space-y-3">
                     {result.indicators.map((indicator, idx) => (
-                      <div key={indicator.id} className="bg-gray-50 p-4 rounded-lg">
+                      <div key={indicator.id} className="bg-white border border-gray-200 p-4 rounded-lg">
                         {/* Edit Indicator Modal */}
                         <Dialog
                           open={editingIndicator === indicator.id && !readOnly}

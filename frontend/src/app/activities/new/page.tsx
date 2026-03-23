@@ -37,7 +37,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2 } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, PartyPopper, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FieldHelp, RequiredFieldIndicator } from "@/components/ActivityFieldHelpers";
@@ -76,6 +77,7 @@ import {
 } from '@/components/activities/TabSkeletons';
 import { DebugPanel } from '@/components/DebugPanel';
 import { fetchActivityWithCache, invalidateActivityCache } from '@/lib/activity-cache';
+import { setFieldSaved } from '@/utils/persistentSave';
 // Removed old bulk autosave imports - now using field-level autosave
 // import { AutosaveFormWrapper } from "@/components/forms/AutosaveFormWrapper";
 // import { AutosaveDebugPanel } from "@/components/debug/AutosaveDebugPanel";
@@ -87,7 +89,7 @@ import { saveGeneralTab } from '@/lib/general-tab-service';
 import { LabelSaveIndicator, SaveIndicator } from '@/components/ui/save-indicator';
 import { getTabCompletionStatus } from "@/utils/tab-completion";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
-import { useTabDataLoader, getTabGroup, TabGroupData } from "@/hooks/useTabDataLoader";
+import { useTabDataLoader, getTabGroup, TabGroupData, TAB_GROUPS } from "@/hooks/useTabDataLoader";
 
 // Remove test utilities import that's causing module not found error
 // if (process.env.NODE_ENV === 'development') {
@@ -188,10 +190,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   });
 
   // State to track collapsible date descriptions
-  const [showPlannedStartDescription, setShowPlannedStartDescription] = useState(false);
-  const [showPlannedEndDescription, setShowPlannedEndDescription] = useState(false);
-  const [showActualStartDescription, setShowActualStartDescription] = useState(false);
-  const [showActualEndDescription, setShowActualEndDescription] = useState(false);
   const [showCustomDateDescriptions, setShowCustomDateDescriptions] = useState<Record<number, boolean>>({});
   const [savedCustomDates, setSavedCustomDates] = useState<Record<number, boolean>>({});
   const customDatesInitializedRef = useRef(false);
@@ -202,10 +200,14 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   const [isPlannedEndDescriptionFocused, setIsPlannedEndDescriptionFocused] = useState(false);
   const [isActualStartDescriptionFocused, setIsActualStartDescriptionFocused] = useState(false);
   const [isActualEndDescriptionFocused, setIsActualEndDescriptionFocused] = useState(false);
+  const [isDescriptionFocused, setIsDescriptionFocused] = useState(false);
+  const [isDescriptionObjectivesFocused, setIsDescriptionObjectivesFocused] = useState(false);
+  const [isDescriptionTargetGroupsFocused, setIsDescriptionTargetGroupsFocused] = useState(false);
+  const [isDescriptionOtherFocused, setIsDescriptionOtherFocused] = useState(false);
   const [otherIdentifiersFocusStates, setOtherIdentifiersFocusStates] = useState<Record<string, boolean>>({});
   const [showOtherIdentifierModal, setShowOtherIdentifierModal] = useState(false);
   const [editingIdentifierIndex, setEditingIdentifierIndex] = useState<number | null>(null);
-  const [otherIdentifierForm, setOtherIdentifierForm] = useState({ label: '', code: '', type: '', ownerOrgNarrative: '', ownerOrgRef: '' });
+  const [otherIdentifierForm, setOtherIdentifierForm] = useState({ label: '', code: '', type: '', ownerOrgId: '', ownerOrgNarrative: '', ownerOrgRef: '' });
   const [showIdentifierTypeDropdown, setShowIdentifierTypeDropdown] = useState(false);
   const [showActivityDateModal, setShowActivityDateModal] = useState(false);
   const [editingDateIndex, setEditingDateIndex] = useState<number | null>(null);
@@ -241,17 +243,6 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     }
   }, [general.customDates]);
 
-  // Auto-collapse actual date narrative sections when the date fields become disabled
-  // (e.g. when status changes from Implementation → Pipeline)
-  useEffect(() => {
-    const dateStatus = getDateFieldStatus();
-    if (!dateStatus.actualStartDate) {
-      setShowActualStartDescription(false);
-    }
-    if (!dateStatus.actualEndDate) {
-      setShowActualEndDescription(false);
-    }
-  }, [getDateFieldStatus]);
 
   // Initialize tracking refs with current data on first load
   useEffect(() => {
@@ -278,11 +269,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   // Pass 'NEW' for new activities to trigger creation on first save
   // IMPORTANT: All hooks must be called before any early returns (Rules of Hooks)
   const effectiveActivityId = general.id || 'NEW';
-  const descriptionAutosave = useFieldAutosave('description', { 
+  const descriptionAutosave = useFieldAutosave('description', {
     activityId: effectiveActivityId,
     userId: user?.id,
     immediate: false,
-    debounceMs: 0,
+    debounceMs: 3000,
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
       if (data.id && !general.id) {
@@ -293,11 +284,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     }
   });
 
-  const descriptionObjectivesAutosave = useFieldAutosave('descriptionObjectives', { 
+  const descriptionObjectivesAutosave = useFieldAutosave('descriptionObjectives', {
     activityId: effectiveActivityId,
     userId: user?.id,
     immediate: false,
-    debounceMs: 0,
+    debounceMs: 3000,
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
       if (data.id && !general.id) {
@@ -308,11 +299,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     }
   });
 
-  const descriptionTargetGroupsAutosave = useFieldAutosave('descriptionTargetGroups', { 
+  const descriptionTargetGroupsAutosave = useFieldAutosave('descriptionTargetGroups', {
     activityId: effectiveActivityId,
     userId: user?.id,
     immediate: false,
-    debounceMs: 0,
+    debounceMs: 3000,
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
       if (data.id && !general.id) {
@@ -323,11 +314,11 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
     }
   });
 
-  const descriptionOtherAutosave = useFieldAutosave('descriptionOther', { 
+  const descriptionOtherAutosave = useFieldAutosave('descriptionOther', {
     activityId: effectiveActivityId,
     userId: user?.id,
     immediate: false,
-    debounceMs: 0,
+    debounceMs: 3000,
     additionalData: { title: general.title || 'New Activity' },
     onSuccess: (data, isUserInitiated = false) => {
       if (data.id && !general.id) {
@@ -995,25 +986,25 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 // Save scale if provided - use direct API call for reliability
                 if (scale !== undefined && general.id) {
                   console.log('[ICON SAVE] Saving scale:', scale, 'activityId:', general.id);
-                  try {
-                    const response = await apiFetch('/api/activities/field', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        field: 'iconScale',
-                        value: Math.round(scale),
-                        activityId: general.id,
-                        userId: user?.id
-                      })
-                    });
-                    const result = await response.json();
-                    console.log('[ICON SAVE] Scale save result:', result);
-                    if (!response.ok) {
-                      console.error('[ICON SAVE] Scale save failed:', result);
-                    }
-                  } catch (error) {
-                    console.error('[ICON SAVE] Scale save error:', error);
+                  const response = await apiFetch('/api/activities/field', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      field: 'iconScale',
+                      value: Math.round(scale),
+                      activityId: general.id,
+                      userId: user?.id
+                    })
+                  });
+                  const result = await response.json();
+                  console.log('[ICON SAVE] Scale save result:', result);
+                  if (!response.ok) {
+                    console.error('[ICON SAVE] Scale save failed:', result);
+                    throw new Error(result.error || 'Failed to save zoom level');
                   }
+                } else if (scale !== undefined && !general.id) {
+                  console.error('[ICON SAVE] Cannot save scale - no activity ID');
+                  throw new Error('Activity must be created before saving zoom level');
                 }
               }}
               disabled={fieldLockStatus.isLocked}
@@ -1135,7 +1126,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                         <Wand2 className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Generate from title</TooltipContent>
+                    <TooltipContent align="end">Generate from title</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
@@ -1314,10 +1305,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                   className="relative bg-background border border-input rounded-md px-3 py-2 pr-14 cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => {
                     setEditingIdentifierIndex(index);
+                    const matchingOrg = organizations.find((o: any) =>
+                      o.name === identifier.ownerOrg?.narrative ||
+                      o.iati_org_id === identifier.ownerOrg?.ref ||
+                      o.iati_identifier === identifier.ownerOrg?.ref
+                    );
                     setOtherIdentifierForm({
                       label: identifier.label || '',
                       code: identifier.code || '',
                       type: identifier.type || '',
+                      ownerOrgId: matchingOrg?.id || '',
                       ownerOrgNarrative: identifier.ownerOrg?.narrative || '',
                       ownerOrgRef: identifier.ownerOrg?.ref || ''
                     });
@@ -1353,10 +1350,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditingIdentifierIndex(index);
+                        const matchOrg = organizations.find((o: any) =>
+                          o.name === identifier.ownerOrg?.narrative ||
+                          o.iati_org_id === identifier.ownerOrg?.ref ||
+                          o.iati_identifier === identifier.ownerOrg?.ref
+                        );
                         setOtherIdentifierForm({
                           label: identifier.label || '',
                           code: identifier.code || '',
                           type: identifier.type || '',
+                          ownerOrgId: matchOrg?.id || '',
                           ownerOrgNarrative: identifier.ownerOrg?.narrative || '',
                           ownerOrgRef: identifier.ownerOrg?.ref || ''
                         });
@@ -1395,7 +1398,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           size="sm"
           onClick={() => {
             setEditingIdentifierIndex(null);
-            setOtherIdentifierForm({ label: '', code: '', type: '', ownerOrgNarrative: '', ownerOrgRef: '' });
+            setOtherIdentifierForm({ label: '', code: '', type: '', ownerOrgId: '', ownerOrgNarrative: '', ownerOrgRef: '' });
             setShowIdentifierTypeDropdown(false);
             setShowOtherIdentifierModal(true);
           }}
@@ -1412,7 +1415,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         setShowOtherIdentifierModal(open);
         if (!open) setShowIdentifierTypeDropdown(false);
       }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingIdentifierIndex !== null ? 'Edit Other Identifier' : 'Add Other Identifier'}</DialogTitle>
             <DialogDescription>
@@ -1421,7 +1424,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Label/Name</label>
+              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+                Label/Name
+                <HelpTextTooltip>A short, human-readable label for this identifier, such as "CRS ID" or "Internal Reference". This helps distinguish between multiple identifiers at a glance.</HelpTextTooltip>
+              </label>
               <Input
                 type="text"
                 value={otherIdentifierForm.label}
@@ -1430,7 +1436,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Identifier Code <RequiredDot /></label>
+              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+                Identifier Code <RequiredDot />
+                <HelpTextTooltip>The actual identifier value assigned to this activity by the owner organisation. For example, a CRS number or an internal project code.</HelpTextTooltip>
+              </label>
               <Input
                 type="text"
                 value={otherIdentifierForm.code}
@@ -1439,7 +1448,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Identifier Type</label>
+              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+                Identifier Type
+                <HelpTextTooltip>The IATI classification for this identifier. Common types include internal activity identifiers (A1), CRS activity identifiers (A2), and previous activity identifiers (A3).</HelpTextTooltip>
+              </label>
               <div
                 className="relative"
                 onBlur={(e) => {
@@ -1502,23 +1514,38 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Owner Organisation Name <RequiredDot /></label>
-              <Input
-                type="text"
-                value={otherIdentifierForm.ownerOrgNarrative}
-                onChange={(e) => setOtherIdentifierForm(prev => ({ ...prev, ownerOrgNarrative: e.target.value }))}
-                placeholder="e.g., OECD/DAC"
+              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+                Owner Organisation <RequiredDot />
+                <HelpTextTooltip>The organisation that originally assigned or owns this identifier. Selecting an organisation will automatically fill in the Organisation Ref field.</HelpTextTooltip>
+              </label>
+              <OrganizationSearchableSelect
+                organizations={organizations}
+                value={otherIdentifierForm.ownerOrgId || ''}
+                onValueChange={(orgId) => {
+                  const org = organizations.find((o: any) => o.id === orgId);
+                  setOtherIdentifierForm(prev => ({
+                    ...prev,
+                    ownerOrgId: orgId,
+                    ownerOrgNarrative: org ? (org.name || '') : '',
+                    ownerOrgRef: org ? (org.iati_org_id || org.iati_identifier || '') : ''
+                  }));
+                }}
+                placeholder="Select organisation..."
+                searchPlaceholder="Search organisations..."
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
+              <label className="text-sm font-medium text-foreground flex items-center gap-1">
                 Owner Organisation Ref
+                <HelpTextTooltip>The organisation identifier (e.g. IATI org ID) of the organisation that owns this identifier. This is automatically filled when you select an organisation above.</HelpTextTooltip>
               </label>
               <Input
                 type="text"
                 value={otherIdentifierForm.ownerOrgRef}
                 onChange={(e) => setOtherIdentifierForm(prev => ({ ...prev, ownerOrgRef: e.target.value }))}
                 placeholder="e.g., XM-DAC-5-1"
+                readOnly
+                className="bg-muted/50"
               />
             </div>
           </div>
@@ -1558,7 +1585,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                 otherIdentifiersAutosave.triggerFieldSave(updatedIdentifiers);
                 setShowOtherIdentifierModal(false);
               }}
-              disabled={!otherIdentifierForm.code.trim()}
+              disabled={!otherIdentifierForm.code.trim() || !otherIdentifierForm.ownerOrgNarrative.trim()}
             >
               Save
             </Button>
@@ -1567,32 +1594,39 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       </Dialog>
 
       {/* Reporting Organisation */}
-      <div className="space-y-2 mb-6">
-        <LabelSaveIndicator
-          isSaving={isSavingReportingOrg}
-          isSaved={!!general.reportingOrgId}
-          hasValue={!!general.reportingOrgId}
-          className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
-        >
-          <div className="flex items-center gap-2">
-            Reporting Organisation
-            <HelpTextTooltip>
-              Select the organization that reports this activity. This determines which organization is credited as the reporting organization for IATI compliance.
-            </HelpTextTooltip>
-            {fieldLockStatus.isLocked && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{fieldLockStatus.tooltipMessage}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-        </LabelSaveIndicator>
+      <div className="lg:w-2/3 space-y-2 mb-6">
+        <div className="flex items-center gap-2">
+          <LabelSaveIndicator
+            isSaving={isSavingReportingOrg}
+            isSaved={!!general.reportingOrgId}
+            hasValue={!!general.reportingOrgId}
+            className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
+          >
+            <div className="flex items-center gap-2">
+              Reporting Organisation
+              <HelpTextTooltip>
+                Select the organization that reports this activity. This determines which organization is credited as the reporting organization for IATI compliance.
+              </HelpTextTooltip>
+              {fieldLockStatus.isLocked && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Lock className="h-3 w-3 ml-2 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{fieldLockStatus.tooltipMessage}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          </LabelSaveIndicator>
+          {general.is_pooled_fund === true && (
+            <span className="text-xs text-muted-foreground font-normal">
+              — shown as fund manager on the Pooled funds page
+            </span>
+          )}
+        </div>
         <div className={fieldLockStatus.isLocked ? 'opacity-50' : ''}>
           <OrganizationSearchableSelect
             organizations={organizations}
@@ -1611,18 +1645,13 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             disabled={fieldLockStatus.isLocked}
           />
         </div>
-        {general.is_pooled_fund === true && (
-          <p className="text-xs text-muted-foreground mt-1">
-            For pooled funds, this organisation is shown as the fund manager on the Pooled funds page.
-          </p>
-        )}
       </div>
 
-      {/* Activity Type: Standard vs Pooled Fund (same card UI as Sectors / Geography) */}
+      {/* Activity Type: Standard vs Pooled Fund */}
       <div className="w-full space-y-2 mb-6">
         <LabelSaveIndicator
           isSaving={isPooledFundAutosave.state.isSaving}
-          isSaved={isPooledFundAutosave.state.isPersistentlySaved || general.is_pooled_fund === true}
+          isSaved={isPooledFundAutosave.state.isPersistentlySaved}
           hasValue={general.is_pooled_fund === true}
           className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
         >
@@ -1653,6 +1682,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           isSaving={descriptionAutosave.state.isSaving}
           isSaved={descriptionAutosave.state.isPersistentlySaved}
           hasValue={!!general.description && general.description.replace(/<[^>]*>/g, '').trim() !== ''}
+          isFocused={isDescriptionFocused}
           className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
         >
                       <div className="flex items-center gap-2">
@@ -1679,11 +1709,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
             content={general.description || ''}
             onChange={(content) => {
               if (!fieldLockStatus.isLocked) {
-                console.log('[GeneralSection] Description onChange triggered with content:', content);
-                // Mark that the user has actually edited the description
                 hasUserEditedDescriptionRef.current = true;
                 setGeneral((g: any) => ({ ...g, description: content }));
                 descriptionAutosave.triggerFieldSave(content);
+              }
+            }}
+            onFocus={() => setIsDescriptionFocused(true)}
+            onBlur={() => {
+              setIsDescriptionFocused(false);
+              if (general.description && general.description.replace(/<[^>]*>/g, '').trim() !== '') {
+                descriptionAutosave.triggerFieldSave(general.description);
               }
             }}
             placeholder="Describe your activity's objectives, scope, and expected outcomes..."
@@ -1717,6 +1752,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               isSaving={descriptionObjectivesAutosave.state.isSaving}
               isSaved={descriptionObjectivesAutosave.state.isPersistentlySaved}
               hasValue={!!general.descriptionObjectives && general.descriptionObjectives.replace(/<[^>]*>/g, '').trim() !== ''}
+              isFocused={isDescriptionObjectivesFocused}
               className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
             >
               <div className="flex items-center gap-2">
@@ -1750,6 +1786,13 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       descriptionObjectivesAutosave.triggerFieldSave(content);
                     }
                   }}
+                  onFocus={() => setIsDescriptionObjectivesFocused(true)}
+                  onBlur={() => {
+                    setIsDescriptionObjectivesFocused(false);
+                    if (general.descriptionObjectives && general.descriptionObjectives.replace(/<[^>]*>/g, '').trim() !== '') {
+                      descriptionObjectivesAutosave.triggerFieldSave(general.descriptionObjectives);
+                    }
+                  }}
                   placeholder="Describe the specific objectives of this activity..."
                   rows={6}
                   disabled={fieldLockStatus.isLocked}
@@ -1781,6 +1824,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               isSaving={descriptionTargetGroupsAutosave.state.isSaving}
               isSaved={descriptionTargetGroupsAutosave.state.isPersistentlySaved}
               hasValue={!!general.descriptionTargetGroups && general.descriptionTargetGroups.replace(/<[^>]*>/g, '').trim() !== ''}
+              isFocused={isDescriptionTargetGroupsFocused}
               className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
             >
               <div className="flex items-center gap-2">
@@ -1814,6 +1858,13 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                       descriptionTargetGroupsAutosave.triggerFieldSave(content);
                     }
                   }}
+                  onFocus={() => setIsDescriptionTargetGroupsFocused(true)}
+                  onBlur={() => {
+                    setIsDescriptionTargetGroupsFocused(false);
+                    if (general.descriptionTargetGroups && general.descriptionTargetGroups.replace(/<[^>]*>/g, '').trim() !== '') {
+                      descriptionTargetGroupsAutosave.triggerFieldSave(general.descriptionTargetGroups);
+                    }
+                  }}
                   placeholder="Describe the target groups and beneficiaries of this activity..."
                   rows={6}
                   disabled={fieldLockStatus.isLocked}
@@ -1845,6 +1896,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               isSaving={descriptionOtherAutosave.state.isSaving}
               isSaved={descriptionOtherAutosave.state.isPersistentlySaved}
               hasValue={!!general.descriptionOther && general.descriptionOther.replace(/<[^>]*>/g, '').trim() !== ''}
+              isFocused={isDescriptionOtherFocused}
               className={`text-sm font-medium ${fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}`}
             >
               <div className="flex items-center gap-2">
@@ -1876,6 +1928,13 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
                     if (!fieldLockStatus.isLocked) {
                       setGeneral((g: any) => ({ ...g, descriptionOther: content }));
                       descriptionOtherAutosave.triggerFieldSave(content);
+                    }
+                  }}
+                  onFocus={() => setIsDescriptionOtherFocused(true)}
+                  onBlur={() => {
+                    setIsDescriptionOtherFocused(false);
+                    if (general.descriptionOther && general.descriptionOther.replace(/<[^>]*>/g, '').trim() !== '') {
+                      descriptionOtherAutosave.triggerFieldSave(general.descriptionOther);
                     }
                   }}
                   placeholder="Add any other relevant information about this activity..."
@@ -1984,7 +2043,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="w-full space-y-2">
             <LabelSaveIndicator
               isSaving={activityScopeAutosave.state.isSaving}
-              isSaved={activityScopeAutosave.state.isPersistentlySaved || !!general.activityScope}
+              isSaved={activityScopeAutosave.state.isPersistentlySaved}
               hasValue={!!general.activityScope}
               className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
             >
@@ -2028,7 +2087,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           <div className="w-full space-y-2">
             <LabelSaveIndicator
               isSaving={hierarchyAutosave.state.isSaving}
-              isSaved={hierarchyAutosave.state.isPersistentlySaved || general.hierarchy !== undefined}
+              isSaved={hierarchyAutosave.state.isPersistentlySaved}
               hasValue={general.hierarchy !== undefined}
               className={fieldLockStatus.isLocked ? 'text-muted-foreground' : 'text-foreground'}
             >
@@ -2117,63 +2176,55 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               disabled={fieldLockStatus.isLocked}
               className={fieldLockStatus.isLocked ? "opacity-50" : ""}
               dropdownId="date-planned-start"
+              endAdornment={
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+                      className={`p-1 rounded transition-colors ${
+                        general.plannedStartDescription?.trim()
+                          ? 'text-primary hover:bg-primary/10'
+                          : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent'
+                      }`}
+                      title={general.plannedStartDescription?.trim() ? general.plannedStartDescription : 'Add context'}
+                    >
+                      {general.plannedStartDescription?.trim() ? <Pencil className="h-3.5 w-3.5" /> : <StickyNote className="h-3.5 w-3.5" />}
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end" onClick={(e) => e.stopPropagation()}>
+                    <div className="space-y-2">
+                      <LabelSaveIndicator
+                        isSaving={plannedStartDescriptionAutosave.state.isSaving}
+                        isSaved={plannedStartDescriptionAutosave.state.isPersistentlySaved}
+                        hasValue={!!general.plannedStartDescription?.trim()}
+                        isFocused={isPlannedStartDescriptionFocused}
+                        className="text-xs text-muted-foreground"
+                      >
+                        Date Context
+                      </LabelSaveIndicator>
+                      <Textarea
+                        value={general.plannedStartDescription || ''}
+                        onChange={(e) => {
+                          if (!fieldLockStatus.isLocked) {
+                            setGeneral((g: any) => ({ ...g, plannedStartDescription: e.target.value }));
+                            plannedStartDescriptionAutosave.triggerFieldSave(e.target.value);
+                          }
+                        }}
+                        onFocus={() => setIsPlannedStartDescriptionFocused(true)}
+                        onBlur={() => setIsPlannedStartDescriptionFocused(false)}
+                        placeholder="e.g., 'Government approval received on this date'"
+                        disabled={fieldLockStatus.isLocked}
+                        className="min-h-[60px] text-sm"
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              }
             />
             {plannedStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedStartDateAutosave.state.error.message}</p>}
-            <div className="mt-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowPlannedStartDescription(!showPlannedStartDescription)}
-                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-gray-800 transition-colors"
-                  disabled={fieldLockStatus.isLocked}
-                >
-                  <ChevronDown className={`h-3 w-3 transition-transform ${showPlannedStartDescription ? 'rotate-180' : ''}`} />
-                </button>
-                <LabelSaveIndicator
-                  isSaving={plannedStartDescriptionAutosave.state.isSaving}
-                  isSaved={plannedStartDescriptionAutosave.state.isPersistentlySaved}
-                  hasValue={!!general.plannedStartDescription?.trim()}
-                  isFocused={isPlannedStartDescriptionFocused}
-                  className="text-xs text-muted-foreground"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setShowPlannedStartDescription(!showPlannedStartDescription)}
-                    className="hover:text-gray-800 transition-colors"
-                    disabled={fieldLockStatus.isLocked}
-                  >
-                    {general.plannedStartDescription ? 'Edit context' : 'Add context'}
-                  </button>
-                </LabelSaveIndicator>
-              </div>
-              {showPlannedStartDescription && (
-                <div className="mt-2 space-y-1">
-                  <LabelSaveIndicator
-                    isSaving={plannedStartDescriptionAutosave.state.isSaving}
-                    isSaved={plannedStartDescriptionAutosave.state.isPersistentlySaved}
-                    hasValue={!!general.plannedStartDescription?.trim()}
-                    isFocused={isPlannedStartDescriptionFocused}
-                    className="text-xs text-muted-foreground"
-                  >
-                    Description/Context
-                  </LabelSaveIndicator>
-                  <Textarea
-                    value={general.plannedStartDescription || ''}
-                    onChange={(e) => {
-                      if (!fieldLockStatus.isLocked) {
-                        setGeneral((g: any) => ({ ...g, plannedStartDescription: e.target.value }));
-                        plannedStartDescriptionAutosave.triggerFieldSave(e.target.value);
-                      }
-                    }}
-                    onFocus={() => setIsPlannedStartDescriptionFocused(true)}
-                    onBlur={() => setIsPlannedStartDescriptionFocused(false)}
-                    placeholder="Add context about this date (e.g., 'Government approval received on this date')"
-                    disabled={fieldLockStatus.isLocked}
-                    className={`min-h-[60px] text-sm ${fieldLockStatus.isLocked ? "opacity-50" : ""}`}
-                  />
-                </div>
-              )}
-            </div>
           </div>
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -2213,63 +2264,55 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               disabled={fieldLockStatus.isLocked}
               className={fieldLockStatus.isLocked ? "opacity-50" : ""}
               dropdownId="date-planned-end"
+              endAdornment={
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+                      className={`p-1 rounded transition-colors ${
+                        general.plannedEndDescription?.trim()
+                          ? 'text-primary hover:bg-primary/10'
+                          : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent'
+                      }`}
+                      title={general.plannedEndDescription?.trim() ? general.plannedEndDescription : 'Add context'}
+                    >
+                      {general.plannedEndDescription?.trim() ? <Pencil className="h-3.5 w-3.5" /> : <StickyNote className="h-3.5 w-3.5" />}
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end" onClick={(e) => e.stopPropagation()}>
+                    <div className="space-y-2">
+                      <LabelSaveIndicator
+                        isSaving={plannedEndDescriptionAutosave.state.isSaving}
+                        isSaved={plannedEndDescriptionAutosave.state.isPersistentlySaved}
+                        hasValue={!!general.plannedEndDescription?.trim()}
+                        isFocused={isPlannedEndDescriptionFocused}
+                        className="text-xs text-muted-foreground"
+                      >
+                        Date Context
+                      </LabelSaveIndicator>
+                      <Textarea
+                        value={general.plannedEndDescription || ''}
+                        onChange={(e) => {
+                          if (!fieldLockStatus.isLocked) {
+                            setGeneral((g: any) => ({ ...g, plannedEndDescription: e.target.value }));
+                            plannedEndDescriptionAutosave.triggerFieldSave(e.target.value);
+                          }
+                        }}
+                        onFocus={() => setIsPlannedEndDescriptionFocused(true)}
+                        onBlur={() => setIsPlannedEndDescriptionFocused(false)}
+                        placeholder="Add context about this date"
+                        disabled={fieldLockStatus.isLocked}
+                        className="min-h-[60px] text-sm"
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              }
             />
             {plannedEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {plannedEndDateAutosave.state.error.message}</p>}
-            <div className="mt-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowPlannedEndDescription(!showPlannedEndDescription)}
-                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-gray-800 transition-colors"
-                  disabled={fieldLockStatus.isLocked}
-                >
-                  <ChevronDown className={`h-3 w-3 transition-transform ${showPlannedEndDescription ? 'rotate-180' : ''}`} />
-                </button>
-                <LabelSaveIndicator
-                  isSaving={plannedEndDescriptionAutosave.state.isSaving}
-                  isSaved={plannedEndDescriptionAutosave.state.isPersistentlySaved}
-                  hasValue={!!general.plannedEndDescription?.trim()}
-                  isFocused={isPlannedEndDescriptionFocused}
-                  className="text-xs text-muted-foreground"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setShowPlannedEndDescription(!showPlannedEndDescription)}
-                    className="hover:text-gray-800 transition-colors"
-                    disabled={fieldLockStatus.isLocked}
-                  >
-                    {general.plannedEndDescription ? 'Edit context' : 'Add context'}
-                  </button>
-                </LabelSaveIndicator>
-              </div>
-              {showPlannedEndDescription && (
-                <div className="mt-2 space-y-1">
-                  <LabelSaveIndicator
-                    isSaving={plannedEndDescriptionAutosave.state.isSaving}
-                    isSaved={plannedEndDescriptionAutosave.state.isPersistentlySaved}
-                    hasValue={!!general.plannedEndDescription?.trim()}
-                    isFocused={isPlannedEndDescriptionFocused}
-                    className="text-xs text-muted-foreground"
-                  >
-                    Description/Context
-                  </LabelSaveIndicator>
-                  <Textarea
-                    value={general.plannedEndDescription || ''}
-                    onChange={(e) => {
-                      if (!fieldLockStatus.isLocked) {
-                        setGeneral((g: any) => ({ ...g, plannedEndDescription: e.target.value }));
-                        plannedEndDescriptionAutosave.triggerFieldSave(e.target.value);
-                      }
-                    }}
-                    onFocus={() => setIsPlannedEndDescriptionFocused(true)}
-                    onBlur={() => setIsPlannedEndDescriptionFocused(false)}
-                    placeholder="Add context about this date"
-                    disabled={fieldLockStatus.isLocked}
-                    className={`min-h-[60px] text-sm ${fieldLockStatus.isLocked ? "opacity-50" : ""}`}
-                  />
-                </div>
-              )}
-            </div>
           </div>
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -2309,50 +2352,55 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
               className={(fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate) ? "opacity-50" : ""}
               dropdownId="date-actual-start"
+              endAdornment={
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+                      className={`p-1 rounded transition-colors ${
+                        general.actualStartDescription?.trim()
+                          ? 'text-primary hover:bg-primary/10'
+                          : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent'
+                      }`}
+                      title={general.actualStartDescription?.trim() ? general.actualStartDescription : 'Add context'}
+                    >
+                      {general.actualStartDescription?.trim() ? <Pencil className="h-3.5 w-3.5" /> : <StickyNote className="h-3.5 w-3.5" />}
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end" onClick={(e) => e.stopPropagation()}>
+                    <div className="space-y-2">
+                      <LabelSaveIndicator
+                        isSaving={actualStartDescriptionAutosave.state.isSaving}
+                        isSaved={actualStartDescriptionAutosave.state.isPersistentlySaved}
+                        hasValue={!!general.actualStartDescription?.trim()}
+                        isFocused={isActualStartDescriptionFocused}
+                        className="text-xs text-muted-foreground"
+                      >
+                        Date Context
+                      </LabelSaveIndicator>
+                      <Textarea
+                        value={general.actualStartDescription || ''}
+                        onChange={(e) => {
+                          if (!fieldLockStatus.isLocked && getDateFieldStatus().actualStartDate) {
+                            setGeneral((g: any) => ({ ...g, actualStartDescription: e.target.value }));
+                            actualStartDescriptionAutosave.triggerFieldSave(e.target.value);
+                          }
+                        }}
+                        onFocus={() => setIsActualStartDescriptionFocused(true)}
+                        onBlur={() => setIsActualStartDescriptionFocused(false)}
+                        placeholder="Add context about this date"
+                        disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
+                        className="min-h-[60px] text-sm"
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              }
             />
             {actualStartDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualStartDateAutosave.state.error.message}</p>}
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => setShowActualStartDescription(!showActualStartDescription)}
-                className={`flex items-center gap-2 text-xs transition-colors ${
-                  fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate
-                    ? 'text-muted-foreground cursor-not-allowed'
-                    : 'text-muted-foreground hover:text-gray-800'
-                }`}
-                disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
-              >
-                <ChevronDown className={`h-3 w-3 transition-transform ${showActualStartDescription ? 'rotate-180' : ''}`} />
-                <span>{general.actualStartDescription ? 'Edit context' : 'Add context'}</span>
-              </button>
-              {showActualStartDescription && (
-                <div className="mt-2 space-y-1">
-                  <LabelSaveIndicator
-                    isSaving={actualStartDescriptionAutosave.state.isSaving}
-                    isSaved={actualStartDescriptionAutosave.state.isPersistentlySaved}
-                    hasValue={!!general.actualStartDescription?.trim()}
-                    isFocused={isActualStartDescriptionFocused}
-                    className="text-xs text-muted-foreground"
-                  >
-                    Description/Context
-                  </LabelSaveIndicator>
-                  <Textarea
-                    value={general.actualStartDescription || ''}
-                    onChange={(e) => {
-                      if (!fieldLockStatus.isLocked && getDateFieldStatus().actualStartDate) {
-                        setGeneral((g: any) => ({ ...g, actualStartDescription: e.target.value }));
-                        actualStartDescriptionAutosave.triggerFieldSave(e.target.value);
-                      }
-                    }}
-                    onFocus={() => setIsActualStartDescriptionFocused(true)}
-                    onBlur={() => setIsActualStartDescriptionFocused(false)}
-                    placeholder="Add context about this date"
-                    disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate}
-                    className={`min-h-[60px] text-sm ${(fieldLockStatus.isLocked || !getDateFieldStatus().actualStartDate) ? "opacity-50" : ""}`}
-                  />
-                </div>
-              )}
-            </div>
           </div>
           <div className="space-y-2">
             <LabelSaveIndicator
@@ -2392,71 +2440,55 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
               className={(fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate) ? "opacity-50" : ""}
               dropdownId="date-actual-end"
+              endAdornment={
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+                      className={`p-1 rounded transition-colors ${
+                        general.actualEndDescription?.trim()
+                          ? 'text-primary hover:bg-primary/10'
+                          : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent'
+                      }`}
+                      title={general.actualEndDescription?.trim() ? general.actualEndDescription : 'Add context'}
+                    >
+                      {general.actualEndDescription?.trim() ? <Pencil className="h-3.5 w-3.5" /> : <StickyNote className="h-3.5 w-3.5" />}
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end" onClick={(e) => e.stopPropagation()}>
+                    <div className="space-y-2">
+                      <LabelSaveIndicator
+                        isSaving={actualEndDescriptionAutosave.state.isSaving}
+                        isSaved={actualEndDescriptionAutosave.state.isPersistentlySaved}
+                        hasValue={!!general.actualEndDescription?.trim()}
+                        isFocused={isActualEndDescriptionFocused}
+                        className="text-xs text-muted-foreground"
+                      >
+                        Date Context
+                      </LabelSaveIndicator>
+                      <Textarea
+                        value={general.actualEndDescription || ''}
+                        onChange={(e) => {
+                          if (!fieldLockStatus.isLocked && getDateFieldStatus().actualEndDate) {
+                            setGeneral((g: any) => ({ ...g, actualEndDescription: e.target.value }));
+                            actualEndDescriptionAutosave.triggerFieldSave(e.target.value);
+                          }
+                        }}
+                        onFocus={() => setIsActualEndDescriptionFocused(true)}
+                        onBlur={() => setIsActualEndDescriptionFocused(false)}
+                        placeholder="Add context about this date"
+                        disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
+                        className="min-h-[60px] text-sm"
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              }
             />
             {actualEndDateAutosave.state.error && <p className="text-xs text-red-600">Failed to save: {actualEndDateAutosave.state.error.message}</p>}
-            <div className="mt-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowActualEndDescription(!showActualEndDescription)}
-                  className={`flex items-center gap-2 text-xs transition-colors ${
-                    fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate
-                      ? 'text-muted-foreground cursor-not-allowed'
-                      : 'text-muted-foreground hover:text-gray-800'
-                  }`}
-                  disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
-                >
-                  <ChevronDown className={`h-3 w-3 transition-transform ${showActualEndDescription ? 'rotate-180' : ''}`} />
-                </button>
-                <LabelSaveIndicator
-                  isSaving={actualEndDescriptionAutosave.state.isSaving}
-                  isSaved={actualEndDescriptionAutosave.state.isPersistentlySaved}
-                  hasValue={!!general.actualEndDescription?.trim()}
-                  isFocused={isActualEndDescriptionFocused}
-                  className="text-xs text-muted-foreground"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setShowActualEndDescription(!showActualEndDescription)}
-                    className={`transition-colors ${
-                      fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate
-                        ? 'text-muted-foreground cursor-not-allowed'
-                        : 'hover:text-gray-800'
-                    }`}
-                    disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
-                  >
-                    {general.actualEndDescription ? 'Edit context' : 'Add context'}
-                  </button>
-                </LabelSaveIndicator>
-              </div>
-              {showActualEndDescription && (
-                <div className="mt-2 space-y-1">
-                  <LabelSaveIndicator
-                    isSaving={actualEndDescriptionAutosave.state.isSaving}
-                    isSaved={actualEndDescriptionAutosave.state.isPersistentlySaved}
-                    hasValue={!!general.actualEndDescription?.trim()}
-                    isFocused={isActualEndDescriptionFocused}
-                    className="text-xs text-muted-foreground"
-                  >
-                    Description/Context
-                  </LabelSaveIndicator>
-                  <Textarea
-                    value={general.actualEndDescription || ''}
-                    onChange={(e) => {
-                      if (!fieldLockStatus.isLocked && getDateFieldStatus().actualEndDate) {
-                        setGeneral((g: any) => ({ ...g, actualEndDescription: e.target.value }));
-                        actualEndDescriptionAutosave.triggerFieldSave(e.target.value);
-                      }
-                    }}
-                    onFocus={() => setIsActualEndDescriptionFocused(true)}
-                    onBlur={() => setIsActualEndDescriptionFocused(false)}
-                    placeholder="Add context about this date"
-                    disabled={fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate}
-                    className={`min-h-[60px] text-sm ${(fieldLockStatus.isLocked || !getDateFieldStatus().actualEndDate) ? "opacity-50" : ""}`}
-                  />
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
@@ -2686,217 +2718,184 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
     />
   ), [general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, clearSavedFormData, isNewActivity]);
 
-  // Check if this is any scrollable section - render all five grouped components
-  // for continuous scrolling: Activity Overview -> Stakeholders -> Funding & Delivery -> Strategic Alignment -> Supporting Info
-  if (isActivityOverviewSection(section) || isStakeholdersSection(section) ||
-      isFundingDeliverySection(section) || isStrategicAlignmentSection(section) ||
-      isSupportingInfoSection(section) || isAdvancedSection(section)) {
+  // Determine which group is active
+  const activeGroup = isActivityOverviewSection(section) ? 'activity-overview'
+    : isStakeholdersSection(section) ? 'stakeholders'
+    : isFundingDeliverySection(section) ? 'funding-delivery'
+    : isStrategicAlignmentSection(section) ? 'strategic-alignment'
+    : isSupportingInfoSection(section) ? 'supporting-info'
+    : isAdvancedSection(section) ? 'advanced'
+    : null;
+
+  // Render all visited groups but only show the active one (CSS display toggle).
+  // This preserves internal component state so switching back is instant — no re-fetching.
+  if (activeGroup) {
     return (
       <>
-        <ActivityOverviewGroup
-          // General state and handlers
-          general={general}
-          setGeneral={setGeneral}
-          user={user}
-          getDateFieldStatus={getDateFieldStatus}
-          setHasUnsavedChanges={setHasUnsavedChanges}
-          updateActivityNestedField={updateActivityNestedField}
-          setShowActivityCreatedAlert={setShowActivityCreatedAlert}
-          onTitleAutosaveState={onTitleAutosaveState}
-          clearSavedFormData={clearSavedFormData}
-          isNewActivity={isNewActivity}
+        <div style={{ display: activeGroup === 'activity-overview' ? 'block' : 'none' }}>
+          <ActivityOverviewGroup
+            general={general}
+            setGeneral={setGeneral}
+            user={user}
+            getDateFieldStatus={getDateFieldStatus}
+            setHasUnsavedChanges={setHasUnsavedChanges}
+            updateActivityNestedField={updateActivityNestedField}
+            setShowActivityCreatedAlert={setShowActivityCreatedAlert}
+            onTitleAutosaveState={onTitleAutosaveState}
+            clearSavedFormData={clearSavedFormData}
+            isNewActivity={isNewActivity}
+            sectors={sectors}
+            setSectors={setSectors}
+            setSectorValidation={setSectorValidation}
+            setSectorsCompletionStatusWithLogging={setSectorsCompletionStatusWithLogging}
+            onSectorExportLevelChange={onSectorExportLevelChange}
+            setHumanitarian={setHumanitarian}
+            setHumanitarianScopes={setHumanitarianScopes}
+            countries={countries}
+            regions={regions}
+            setCountries={setCountries}
+            setRegions={setRegions}
+            onGeographyLevelChange={onGeographyLevelChange}
+            specificLocations={specificLocations}
+            coverageAreas={coverageAreas}
+            advancedLocations={advancedLocations}
+            setSpecificLocations={setSpecificLocations}
+            setCoverageAreas={setCoverageAreas}
+            setAdvancedLocations={setAdvancedLocations}
+            subnationalBreakdowns={subnationalBreakdowns}
+            setSubnationalBreakdowns={setSubnationalBreakdowns}
+            permissions={permissions}
+            onActiveSectionChange={onSectionChange}
+            initialSection={section}
+            activityCreated={!!general.id}
+            enablePreloading={true}
+            renderGeneralSection={renderGeneralSection}
+          />
+        </div>
 
-          // Sectors props
-          sectors={sectors}
-          setSectors={setSectors}
-          setSectorValidation={setSectorValidation}
-          setSectorsCompletionStatusWithLogging={setSectorsCompletionStatusWithLogging}
-          onSectorExportLevelChange={onSectorExportLevelChange}
+        {visitedGroups.has('stakeholders') && (
+          <div style={{ display: activeGroup === 'stakeholders' ? 'block' : 'none' }}>
+            <StakeholdersGroup
+              activityId={general.id}
+              permissions={permissions}
+              onActiveSectionChange={onSectionChange}
+              initialSection={section}
+              activityCreated={!!general.id}
+              enablePreloading={true}
+              extendingPartners={extendingPartners}
+              implementingPartners={implementingPartners}
+              governmentPartners={governmentPartners}
+              fundingPartners={fundingPartners}
+              onOrganisationsChange={(field, value) => {
+                switch(field) {
+                  case 'extendingPartners':
+                    setExtendingPartners(value);
+                    break;
+                  case 'implementingPartners':
+                    setImplementingPartners(value);
+                    break;
+                  case 'governmentPartners':
+                    setGovernmentPartners(value);
+                    break;
+                  case 'fundingPartners':
+                    setFundingPartners(value);
+                    break;
+                }
+              }}
+              onParticipatingOrganizationsChange={setParticipatingOrgsCount}
+              onContactsChange={setContacts}
+              onFocalPointsChange={(focalPoints) => setFocalPointsCount(focalPoints.length)}
+            />
+          </div>
+        )}
 
-          // Humanitarian props
-          setHumanitarian={setHumanitarian}
-          setHumanitarianScopes={setHumanitarianScopes}
+        {visitedGroups.has('funding-delivery') && (
+          <div style={{ display: activeGroup === 'funding-delivery' ? 'block' : 'none' }}>
+            <FundingDeliveryGroup
+              activityId={general.id}
+              general={general}
+              setGeneral={setGeneral}
+              permissions={permissions}
+              onActiveSectionChange={onSectionChange}
+              initialSection={section}
+              activityCreated={!!general.id}
+              enablePreloading={true}
+              transactions={transactions}
+              setTransactions={setTransactions}
+              refreshTransactions={refreshTransactions}
+              initialTransactionId={transactionId}
+              geographyLevel={general.geographyLevel || 'activity'}
+              activitySectors={sectors}
+              onBudgetsChange={setBudgets}
+              onDisbursementsChange={handlePlannedDisbursementsChange}
+            />
+          </div>
+        )}
 
-          // Countries/Regions props
-          countries={countries}
-          regions={regions}
-          setCountries={setCountries}
-          setRegions={setRegions}
-          onGeographyLevelChange={onGeographyLevelChange}
+        {visitedGroups.has('strategic-alignment') && (
+          <div style={{ display: activeGroup === 'strategic-alignment' ? 'block' : 'none' }}>
+            <StrategicAlignmentGroup
+              activityId={general.id}
+              userId={user?.id}
+              permissions={permissions}
+              onActiveSectionChange={onSectionChange}
+              initialSection={section}
+              activityCreated={!!general.id}
+              enablePreloading={true}
+              sdgMappings={sdgMappings}
+              onSdgMappingsChange={setSdgMappings}
+              tags={tags}
+              onTagsChange={setTags}
+              workingGroups={workingGroups}
+              onWorkingGroupsChange={setWorkingGroups}
+              setHasUnsavedChanges={setHasUnsavedChanges}
+              policyMarkers={policyMarkers}
+              onPolicyMarkersChange={setPolicyMarkers}
+            />
+          </div>
+        )}
 
-          // Locations props
-          specificLocations={specificLocations}
-          coverageAreas={coverageAreas}
-          advancedLocations={advancedLocations}
-          setSpecificLocations={setSpecificLocations}
-          setCoverageAreas={setCoverageAreas}
-          setAdvancedLocations={setAdvancedLocations}
-          subnationalBreakdowns={subnationalBreakdowns}
-          setSubnationalBreakdowns={setSubnationalBreakdowns}
+        {visitedGroups.has('supporting-info') && (
+          <div style={{ display: activeGroup === 'supporting-info' ? 'block' : 'none' }}>
+            <SupportingInfoGroup
+              activityId={general.id}
+              general={general}
+              setGeneral={setGeneral}
+              permissions={permissions}
+              onActiveSectionChange={onSectionChange}
+              initialSection={section}
+              activityCreated={!!general.id}
+              enablePreloading={true}
+              documents={documents}
+              onDocumentsChange={setDocuments}
+              documentsAutosave={documentsAutosave}
+            />
+          </div>
+        )}
 
-          // Permissions
-          permissions={permissions}
-
-          // Scroll integration
-          onActiveSectionChange={onSectionChange}
-          initialSection={section}
-          activityCreated={!!general.id}
-
-          // Render function for GeneralSection (memoized above)
-          renderGeneralSection={renderGeneralSection}
-        />
-
-        <StakeholdersGroup
-          // Activity context
-          activityId={general.id}
-          permissions={permissions}
-
-          // Scroll integration
-          onActiveSectionChange={onSectionChange}
-          initialSection={section}
-          activityCreated={!!general.id}
-
-          // Lazy loading - only enable preloading when this group has been visited
-          enablePreloading={visitedGroups.has('stakeholders')}
-
-          // OrganisationsSection props
-          extendingPartners={extendingPartners}
-          implementingPartners={implementingPartners}
-          governmentPartners={governmentPartners}
-          fundingPartners={fundingPartners}
-          onOrganisationsChange={(field, value) => {
-            switch(field) {
-              case 'extendingPartners':
-                setExtendingPartners(value);
-                break;
-              case 'implementingPartners':
-                setImplementingPartners(value);
-                break;
-              case 'governmentPartners':
-                setGovernmentPartners(value);
-                break;
-              case 'fundingPartners':
-                setFundingPartners(value);
-                break;
-            }
-          }}
-
-          // Callbacks for data changes
-          onParticipatingOrganizationsChange={setParticipatingOrgsCount}
-          onContactsChange={setContacts}
-          onFocalPointsChange={(focalPoints) => setFocalPointsCount(focalPoints.length)}
-        />
-
-        <FundingDeliveryGroup
-          // Activity context
-          activityId={general.id}
-          general={general}
-          setGeneral={setGeneral}
-          permissions={permissions}
-
-          // Scroll integration
-          onActiveSectionChange={onSectionChange}
-          initialSection={section}
-          activityCreated={!!general.id}
-
-          // Lazy loading - only enable preloading when this group has been visited
-          enablePreloading={visitedGroups.has('funding-delivery')}
-
-          // Finances props
-          transactions={transactions}
-          setTransactions={setTransactions}
-          refreshTransactions={refreshTransactions}
-          initialTransactionId={transactionId}
-          geographyLevel={general.geographyLevel || 'activity'}
-          activitySectors={sectors}
-
-          // Callbacks
-          onBudgetsChange={setBudgets}
-          onDisbursementsChange={handlePlannedDisbursementsChange}
-        />
-
-        <StrategicAlignmentGroup
-          // Activity context
-          activityId={general.id}
-          userId={user?.id}
-          permissions={permissions}
-
-          // Scroll integration
-          onActiveSectionChange={onSectionChange}
-          initialSection={section}
-          activityCreated={!!general.id}
-
-          // Lazy loading - only enable preloading when this group has been visited
-          enablePreloading={visitedGroups.has('strategic-alignment')}
-
-          // SDG props
-          sdgMappings={sdgMappings}
-          onSdgMappingsChange={setSdgMappings}
-
-          // Tags props
-          tags={tags}
-          onTagsChange={setTags}
-
-          // Working Groups props
-          workingGroups={workingGroups}
-          onWorkingGroupsChange={setWorkingGroups}
-          setHasUnsavedChanges={setHasUnsavedChanges}
-
-          // Policy Markers props
-          policyMarkers={policyMarkers}
-          onPolicyMarkersChange={setPolicyMarkers}
-        />
-
-        <SupportingInfoGroup
-          // Activity context
-          activityId={general.id}
-          general={general}
-          setGeneral={setGeneral}
-          permissions={permissions}
-
-          // Scroll integration
-          onActiveSectionChange={onSectionChange}
-          initialSection={section}
-          activityCreated={!!general.id}
-
-          // Lazy loading - only enable preloading when this group has been visited
-          enablePreloading={visitedGroups.has('supporting-info')}
-
-          // Documents props
-          documents={documents}
-          onDocumentsChange={setDocuments}
-          documentsAutosave={documentsAutosave}
-        />
-
-        <AdvancedGroup
-          // Activity context
-          activityId={general.id}
-          userId={user?.id}
-          permissions={permissions}
-
-          // Scroll integration
-          onActiveSectionChange={onSectionChange}
-          initialSection={section}
-          activityCreated={!!general.id}
-
-          // Lazy loading - only enable preloading when this group has been visited
-          enablePreloading={visitedGroups.has('advanced')}
-
-          // Callbacks
-          onLinkedActivitiesCountChange={setLinkedActivitiesCount}
-          onResultsChange={handleResultsChange}
-          onFssChange={setForwardSpendCount}
-          onCapitalSpendChange={(percentage) => setCapitalSpendPercentage(percentage)}
-          onFinancingTermsChange={(hasData) => setFinancingTermsCount(hasData ? 1 : 0)}
-          onConditionsChange={(conditions) => setConditionsCount(conditions.length)}
-
-          // Budget Mapping props
-          general={general}
-          setGeneral={setGeneral}
-          onCountryBudgetItemsChange={setCountryBudgetItemsCount}
-          totalBudgetUSD={totalBudgetUSD}
-        />
-
+        {visitedGroups.has('advanced') && (
+          <div style={{ display: activeGroup === 'advanced' ? 'block' : 'none' }}>
+            <AdvancedGroup
+              activityId={general.id}
+              userId={user?.id}
+              permissions={permissions}
+              onActiveSectionChange={onSectionChange}
+              initialSection={section}
+              activityCreated={!!general.id}
+              enablePreloading={true}
+              onLinkedActivitiesCountChange={setLinkedActivitiesCount}
+              onResultsChange={handleResultsChange}
+              onFssChange={setForwardSpendCount}
+              onCapitalSpendChange={(percentage) => setCapitalSpendPercentage(percentage)}
+              onFinancingTermsChange={(hasData) => setFinancingTermsCount(hasData ? 1 : 0)}
+              onConditionsChange={(conditions) => setConditionsCount(conditions.length)}
+              general={general}
+              setGeneral={setGeneral}
+              onCountryBudgetItemsChange={setCountryBudgetItemsCount}
+              totalBudgetUSD={totalBudgetUSD}
+            />
+          </div>
+        )}
       </>
     );
   }
@@ -2997,7 +2996,12 @@ function NewActivityPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { startLoading, stopLoading } = useLoadingBar();
-  
+
+  // Tab count refs for completion checks (avoids infinite re-render loops)
+  const tabCountTransactionsRef = useRef<number>(0);
+  const tabCountBudgetsRef = useRef<number>(0);
+  const tabCountPlannedDisbursementsRef = useRef<number>(0);
+
   // Modal state for activity creation
   const [showCreateModal, setShowCreateModal] = useState(false);
   
@@ -4258,8 +4262,43 @@ function NewActivityPageContent() {
             // Geography level
             geographyLevel: data.geography_level || data.geographyLevel || "activity",
             // Sector export level (for IATI export)
-            sectorExportLevel: data.sector_export_level || data.sectorExportLevel || "activity"
+            sectorExportLevel: data.sector_export_level || data.sectorExportLevel || "activity",
+            // Aid Effectiveness data (loaded separately to avoid re-render loops)
+            // aidEffectiveness is loaded via general_info in the AidEffectivenessForm component
           });
+
+          // Mark fields with existing data as "saved" in localStorage so green ticks show
+          if (user?.id && activityId) {
+            const fieldsToCheck: [string, any][] = [
+              ['title', data.title],
+              ['acronym', data.acronym],
+              ['description', data.description],
+              ['descriptionObjectives', data.descriptionObjectives],
+              ['descriptionTargetGroups', data.descriptionTargetGroups],
+              ['descriptionOther', data.descriptionOther],
+              ['otherIdentifier', data.partnerId || data.otherIdentifier],
+              ['iatiIdentifier', data.iatiIdentifier],
+              ['collaborationType', data.collaborationType],
+              ['activityScope', data.activityScope],
+              ['hierarchy', data.hierarchy],
+              ['plannedStartDate', data.plannedStartDate],
+              ['plannedEndDate', data.plannedEndDate],
+              ['actualStartDate', data.actualStartDate],
+              ['actualEndDate', data.actualEndDate],
+              ['plannedStartDescription', data.plannedStartDescription],
+              ['plannedEndDescription', data.plannedEndDescription],
+              ['actualStartDescription', data.actualStartDescription],
+              ['actualEndDescription', data.actualEndDescription],
+              ['icon', data.icon],
+              ['banner', data.banner],
+              ['is_pooled_fund', data.is_pooled_fund],
+            ];
+            for (const [field, value] of fieldsToCheck) {
+              if (value) {
+                setFieldSaved(activityId, user.id, field);
+              }
+            }
+          }
 
           // Set capital spend percentage for tab completion
           console.log('[AIMS] Capital spend percentage from API:', data.capital_spend_percentage);
@@ -4352,12 +4391,17 @@ function NewActivityPageContent() {
             setCountryBudgetItemsCount(data.tabCounts.country_budget_items || 0);
             setResultsCount(data.tabCounts.results || 0);
             if (data.tabCounts.fss > 0) setForwardSpendCount(1);
+            // Store counts for completion checks (without creating placeholder arrays)
+            tabCountTransactionsRef.current = data.tabCounts.transactions || 0;
+            tabCountBudgetsRef.current = data.tabCounts.budgets || 0;
+            tabCountPlannedDisbursementsRef.current = data.tabCounts.planned_disbursements || 0;
             // Mark these individual tabs as having valid count data
             // so getStatusForTab bypasses the group-level data loading check
             setTabCountsReady(new Set([
               'contacts', 'focal_points', 'linked_activities',
               'financing-terms', 'conditions', 'country-budget',
               'results', 'forward-spending-survey',
+              'finances', 'budgets', 'planned-disbursements',
             ]));
           }
 
@@ -4384,6 +4428,53 @@ function NewActivityPageContent() {
     loadActivity();
   }, [searchParams, user, userLoading]);
 
+
+  // BACKGROUND PRELOADING: After initial activity load, progressively load all group data
+  // so switching between groups is seamless (no loading delay)
+  // Groups are loaded sequentially with a small delay to avoid overwhelming the server
+  // NOTE: We use a ref for tabDataLoader to avoid it being a dependency —
+  // tabDataLoader is a new object on every render (its callbacks depend on state like loadedGroups),
+  // so including it directly in the deps array would cause an infinite re-render loop.
+  const tabDataLoaderRef = useRef(tabDataLoader);
+  tabDataLoaderRef.current = tabDataLoader;
+
+  useEffect(() => {
+    if (!general.id || general.id === 'NEW' || loading) return;
+
+    const groupsToPreload = ['stakeholders', 'funding-delivery', 'strategic-alignment', 'supporting-info', 'advanced', 'administration'];
+    let cancelled = false;
+
+    const preloadAll = async () => {
+      for (const group of groupsToPreload) {
+        if (cancelled) break;
+        // Pick any tab from the group to trigger loading
+        const firstTab = TAB_GROUPS[group as keyof typeof TAB_GROUPS]?.[0];
+        if (firstTab && !tabDataLoaderRef.current.isGroupLoaded(firstTab)) {
+          try {
+            await tabDataLoaderRef.current.loadTabData(firstTab);
+          } catch (err) {
+            console.warn('[AIMS] Background preload failed for group:', group, err);
+          }
+          // Small delay between groups to avoid overwhelming the server
+          if (!cancelled) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        }
+      }
+      if (!cancelled) {
+        // Mark all groups as visited so preloading works when switching
+        setVisitedGroups(new Set(['activity-overview', ...groupsToPreload]));
+        console.log('[AIMS] Background preloading complete - all group data loaded');
+      }
+    };
+
+    // Start preloading after a short delay to let the initial render settle
+    const timer = setTimeout(preloadAll, 1000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [general.id, loading]);
 
   // REMOVED: localStorage persistence for existing activities
   // This was causing stale data issues on page refresh
@@ -4619,13 +4710,13 @@ function NewActivityPageContent() {
     });
 
     // Finances tab: green check if at least one transaction
-    const financesComplete = transactions && transactions.length > 0;
+    const financesComplete = (transactions && transactions.length > 0) || tabCountTransactionsRef.current > 0;
 
     // Budgets tab: green check if at least one budget or budget not provided
-    const budgetsComplete = (budgets && budgets.length > 0) || budgetNotProvided;
+    const budgetsComplete = (budgets && budgets.length > 0) || budgetNotProvided || tabCountBudgetsRef.current > 0;
 
     // Planned Disbursements tab: green check if at least one planned disbursement
-    const plannedDisbursementsComplete = plannedDisbursements && plannedDisbursements.length > 0;
+    const plannedDisbursementsComplete = (plannedDisbursements && plannedDisbursements.length > 0) || tabCountPlannedDisbursementsRef.current > 0;
 
     // Forward Spend tab: green check if FSS exists with forecasts
     const forwardSpendComplete = forwardSpendCount > 0;
@@ -4907,11 +4998,26 @@ function NewActivityPageContent() {
                                         isAdvancedSection(activeSection);
 
     if (isValueInScrollableGroup && isCurrentInScrollableGroup) {
-      console.log('[AIMS Performance] Scrolling to section:', value, 'from:', activeSection);
+      console.log('[AIMS Performance] Switching to section:', value, 'from:', activeSection);
 
-      // Dispatch scroll event — group components listen and handle scrollIntoView
-      // with requestAnimationFrame to wait for DOM to settle
-      window.dispatchEvent(new CustomEvent('scrollToSection', { detail: value }));
+      // Determine if switching within the same group or between groups
+      const sameGroup = (isActivityOverviewSection(value) && isActivityOverviewSection(activeSection)) ||
+                        (isStakeholdersSection(value) && isStakeholdersSection(activeSection)) ||
+                        (isFundingDeliverySection(value) && isFundingDeliverySection(activeSection)) ||
+                        (isStrategicAlignmentSection(value) && isStrategicAlignmentSection(activeSection)) ||
+                        (isSupportingInfoSection(value) && isSupportingInfoSection(activeSection)) ||
+                        (isAdvancedSection(value) && isAdvancedSection(activeSection));
+
+      if (sameGroup) {
+        // Within same group - scroll to section
+        window.dispatchEvent(new CustomEvent('scrollToSection', { detail: value }));
+      } else {
+        // Switching between groups - scroll main content area to top
+        // The new group will handle initial scroll via initialSection prop
+        const mainEl = document.querySelector('main.flex-1.overflow-y-auto');
+        if (mainEl) mainEl.scrollTop = 0;
+      }
+
       setActiveSection(value);
 
       // Update URL
@@ -4989,11 +5095,7 @@ function NewActivityPageContent() {
     
     console.log('[AIMS Performance] Switching to tab:', value);
 
-    setTabLoading(true);
     setActiveSection(value);
-
-    // Check if tab was already loaded BEFORE updating state
-    const wasAlreadyLoaded = loadedTabs.has(value);
 
     // OPTIMIZATION: Mark tab as loaded for lazy loading
     setLoadedTabs(prev => {
@@ -5023,19 +5125,6 @@ function NewActivityPageContent() {
         console.error('[AIMS Performance] Failed to load tab data:', err);
       });
     }
-
-    // Only add delay if tab hasn't been loaded before
-    if (!wasAlreadyLoaded) {
-      console.log('[AIMS Performance] First load of tab:', value, '- showing skeleton');
-      // Simulate minimum loading time for smooth transition
-      await new Promise(resolve => setTimeout(resolve, 300));
-    } else {
-      console.log('[AIMS Performance] Tab already loaded:', value, '- instant switch');
-      // Instant switch for previously loaded tabs
-      await new Promise(resolve => setTimeout(resolve, 50));
-    }
-
-    setTabLoading(false);
   };
 
   // Save activity to API

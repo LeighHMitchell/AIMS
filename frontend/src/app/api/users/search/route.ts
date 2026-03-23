@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         first_name,
         last_name,
         email,
+        avatar_url,
         organization_id,
         organizations!users_organization_id_fkey (
           id,
@@ -63,10 +64,11 @@ export async function GET(request: NextRequest) {
         lastName: user.last_name || '',
         name: fullName,
         email: user.email,
+        avatarUrl: user.avatar_url || null,
         organizationId: user.organization_id,
         organization: orgName,
         value: user.id,
-        label: orgName 
+        label: orgName
           ? `${fullName} (${user.email}) - ${orgName}`
           : `${fullName} (${user.email})`
       };

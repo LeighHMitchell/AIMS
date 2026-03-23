@@ -387,18 +387,15 @@ export function checkWorkingGroupsTabCompletion(workingGroups: any[]): TabComple
 export function checkPolicyMarkersTabCompletion(policyMarkers: any[]): TabCompletionStatus {
   const completedFields: string[] = []
   const missingFields: string[] = []
-  
+
   if (policyMarkers && policyMarkers.length > 0) {
-    // Check if we have at least one policy marker with a significance > 0
-    // Support both old 'score' field and new 'significance' field
-    const hasValidPolicyMarkers = policyMarkers.some(marker => 
-      marker && (
-        (marker.significance && marker.significance > 0) || 
-        (marker.score && marker.score > 0)
-      )
+    // Check if at least one policy marker has been explicitly saved to the database
+    // A saved marker has an id and a significance that is not null/undefined
+    const hasAssignedPolicyMarkers = policyMarkers.some(marker =>
+      marker && marker.id && marker.significance !== null && marker.significance !== undefined
     );
-    
-    if (hasValidPolicyMarkers) {
+
+    if (hasAssignedPolicyMarkers) {
       completedFields.push('policy_markers')
     } else {
       missingFields.push('policy_markers')
@@ -406,10 +403,10 @@ export function checkPolicyMarkersTabCompletion(policyMarkers: any[]): TabComple
   } else {
     missingFields.push('policy_markers')
   }
-  
+
   return {
     isComplete: missingFields.length === 0,
-    isInProgress: false, // Policy markers don't have an in-progress state
+    isInProgress: false,
     completedFields,
     missingFields
   }
@@ -833,11 +830,10 @@ export function checkAidEffectivenessTabCompletion(data: any): TabCompletionStat
   }
   
   const isComplete = missingFields.length === 0
-  const isInProgress = completedFields.length > 0 && !isComplete
-  
+
   return {
     isComplete,
-    isInProgress,
+    isInProgress: false, // Don't show in-progress spinner for aid effectiveness
     completedFields,
     missingFields
   }

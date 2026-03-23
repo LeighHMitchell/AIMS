@@ -72,7 +72,8 @@ import {
   Bookmark,
   BookmarkCheck,
   Layers,
-  Scale
+  Scale,
+  Info
 } from "lucide-react"
 import { toast } from "sonner"
 import { Transaction } from "@/types/transaction"
@@ -297,9 +298,13 @@ interface Activity {
   createdBy?: { id: string; name: string; role: string }
   createdByOrg?: string
   plannedStartDate?: string
+  plannedStartDescription?: string
   plannedEndDate?: string
+  plannedEndDescription?: string
   actualStartDate?: string
+  actualStartDescription?: string
   actualEndDate?: string
+  actualEndDescription?: string
   createdAt: string
   updatedAt: string
   // Default finance fields
@@ -1982,6 +1987,16 @@ export default function ActivityDetailPage() {
                               <span className="font-medium text-foreground truncate">
                                 {activity.plannedStartDate ? formatDate(activity.plannedStartDate) : '—'}
                               </span>
+                              {activity.plannedStartDescription && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                    </TooltipTrigger>
+                                    <TooltipContent><p className="max-w-xs">{activity.plannedStartDescription}</p></TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
                               <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
@@ -1989,6 +2004,16 @@ export default function ActivityDetailPage() {
                               <span className="font-medium text-foreground truncate">
                                 {activity.actualStartDate ? formatDate(activity.actualStartDate) : '—'}
                               </span>
+                              {activity.actualStartDescription && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                    </TooltipTrigger>
+                                    <TooltipContent><p className="max-w-xs">{activity.actualStartDescription}</p></TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                           </div>
 
@@ -2000,6 +2025,16 @@ export default function ActivityDetailPage() {
                               <span className="font-medium text-foreground truncate">
                                 {activity.plannedEndDate ? formatDate(activity.plannedEndDate) : '—'}
                               </span>
+                              {activity.plannedEndDescription && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                    </TooltipTrigger>
+                                    <TooltipContent><p className="max-w-xs">{activity.plannedEndDescription}</p></TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
                               <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
@@ -2007,6 +2042,16 @@ export default function ActivityDetailPage() {
                               <span className="font-medium text-foreground truncate">
                                 {activity.actualEndDate ? formatDate(activity.actualEndDate) : '—'}
                               </span>
+                              {activity.actualEndDescription && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                    </TooltipTrigger>
+                                    <TooltipContent><p className="max-w-xs">{activity.actualEndDescription}</p></TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                           </div>
 

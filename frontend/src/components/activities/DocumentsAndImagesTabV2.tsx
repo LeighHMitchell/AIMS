@@ -665,7 +665,7 @@ export function DocumentsAndImagesTabV2({
                   <TableHead className="font-medium w-[120px]">Language</TableHead>
                   <TableHead className="font-medium w-[120px]">Date</TableHead>
                   <TableHead className="font-medium w-[100px]">Type</TableHead>
-                  <TableHead className="font-medium text-right w-[120px]">Actions</TableHead>
+                  <TableHead className="font-medium text-right w-[150px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -743,32 +743,32 @@ export function DocumentsAndImagesTabV2({
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
+                          <button
+                            type="button"
                             onClick={() => handleOpenDocument(doc.url)}
-                            className="h-8 w-8 p-0"
+                            className="p-1.5 rounded hover:bg-gray-100"
+                            title="Open document"
                           >
-                            <ExternalLink className="w-4 h-4" />
-                          </Button>
+                            <ExternalLink className="h-[18px] w-[18px] text-slate-500" />
+                          </button>
                           {!readOnly && (
                             <>
-                              <Button
-                                size="sm"
-                                variant="ghost"
+                              <button
+                                type="button"
                                 onClick={() => handleEditDocument(doc)}
-                                className="h-8 w-8 p-0"
+                                className="p-1.5 rounded hover:bg-gray-100"
+                                title="Edit"
                               >
-                                <Pencil className="w-4 h-4 text-slate-500" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
+                                <Pencil className="h-[18px] w-[18px] text-slate-500" />
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => handleDeleteDocument(doc.url)}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                className="p-1.5 rounded hover:bg-gray-100"
+                                title="Delete"
                               >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
+                                <Trash2 className="h-[18px] w-[18px] text-red-500" />
+                              </button>
                             </>
                           )}
                         </div>

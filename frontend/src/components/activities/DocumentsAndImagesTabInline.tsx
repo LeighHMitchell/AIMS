@@ -832,7 +832,7 @@ export function DocumentsAndImagesTabInline({
                                     <TableHead>Category</TableHead>
                                     <TableHead>Languages</TableHead>
                                     <TableHead>Date</TableHead>
-                                    <TableHead className="w-28">Actions</TableHead>
+                                    <TableHead className="w-40">Actions</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -874,11 +874,15 @@ export function DocumentsAndImagesTabInline({
                                       <TableCell>
                                         {doc.languageCodes && doc.languageCodes.length > 0 && (
                                           <div className="flex flex-wrap gap-1">
-                                            {doc.languageCodes.map(code => (
-                                              <span key={code} className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                {code.toUpperCase()}
-                                              </span>
-                                            ))}
+                                            {doc.languageCodes.map(code => {
+                                              const lang = (customLanguages || COMMON_LANGUAGES).find(l => l.code === code);
+                                              return (
+                                                <span key={code} className="text-xs text-sm">
+                                                  <span className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{code.toUpperCase()}</span>
+                                                  {lang && <span className="ml-1 text-foreground">{lang.name}</span>}
+                                                </span>
+                                              );
+                                            })}
                                           </div>
                                         )}
                                       </TableCell>
@@ -890,39 +894,31 @@ export function DocumentsAndImagesTabInline({
                                         )}
                                       </TableCell>
                                       <TableCell>
-                                        <div className="flex gap-1">
-                                          {/* Download Button - Always visible */}
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
+                                        <div className="flex gap-2 items-center">
+                                          <button
+                                            type="button"
                                             onClick={() => handleDownloadDocument(doc)}
-                                            className="h-7 w-7 p-0 hover:bg-blue-50"
+                                            className="p-2 rounded hover:bg-gray-100"
                                             title="Download"
                                           >
-                                            <Download className="w-3 h-3 text-blue-600" />
-                                          </Button>
-                                          
-                                          {/* Edit Button */}
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
+                                            <Download style={{ width: 18, height: 18 }} className="text-slate-500" />
+                                          </button>
+                                          <button
+                                            type="button"
                                             onClick={() => handleEditDocument(doc)}
-                                            className="h-7 w-7 p-0"
+                                            className="p-2 rounded hover:bg-gray-100"
                                             title="Edit"
                                           >
-                                            <Pencil className="w-3 h-3 text-slate-500" />
-                                          </Button>
-                                          
-                                          {/* Delete Button */}
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
+                                            <Pencil style={{ width: 18, height: 18 }} className="text-slate-500" />
+                                          </button>
+                                          <button
+                                            type="button"
                                             onClick={() => handleDeleteDocument(doc.url)}
-                                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                                            className="p-2 rounded hover:bg-gray-100"
                                             title="Delete"
                                           >
-                                            <Trash2 className="w-3 h-3 text-red-500" />
-                                          </Button>
+                                            <Trash2 style={{ width: 18, height: 18 }} className="text-red-500" />
+                                          </button>
                                         </div>
                                       </TableCell>
                                     </TableRow>

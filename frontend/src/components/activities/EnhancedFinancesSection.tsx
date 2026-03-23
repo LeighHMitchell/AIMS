@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, CreditCard, Settings, Wallet } from 'lucide-react';
+import { CheckCircle, CreditCard, Settings, Wallet, ArrowDownToLine, ArrowUpFromLine, Scale, Link2 } from 'lucide-react';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { ModalitySearchableSelect } from '@/components/forms/ModalitySearchableSelect';
 import { FinanceTypeSearchableSelect } from '@/components/forms/FinanceTypeSearchableSelect';
@@ -256,21 +256,25 @@ export function EnhancedFinancesSection({
           )}
           {general?.is_pooled_fund === true && (
             <TabsTrigger value="fund-contributions" className="flex items-center gap-2">
+              <ArrowDownToLine className="h-4 w-4" />
               Contributions
             </TabsTrigger>
           )}
           {general?.is_pooled_fund === true && (
             <TabsTrigger value="fund-disbursements" className="flex items-center gap-2">
+              <ArrowUpFromLine className="h-4 w-4" />
               Disbursements
             </TabsTrigger>
           )}
           {general?.is_pooled_fund === true && (
             <TabsTrigger value="fund-reconciliation" className="flex items-center gap-2">
+              <Scale className="h-4 w-4" />
               Reconciliation
             </TabsTrigger>
           )}
           {general?.is_pooled_fund === true && (
             <TabsTrigger value="fund-suggestions" className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
               Suggested Links
             </TabsTrigger>
           )}

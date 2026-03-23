@@ -23,7 +23,7 @@ interface AutosaveUploadProps {
     isPersistentlySaved?: boolean;
     error?: Error | null;
   };
-  triggerSave?: (value: string | null, positionOrScale?: number) => void;
+  triggerSave?: (value: string | null, positionOrScale?: number) => void | Promise<void>;
   disabled?: boolean;
 }
 
@@ -125,8 +125,12 @@ export function AutosaveUpload({
         reader.onloadend = () => {
           const base64String = reader.result as string;
           setPreview(base64String);
-          setPosition(50); // Reset to center for new images
-          onImageChange(base64String, 50);
+          // Reset position for banners (center=50%), reset scale for icons (100%)
+          const isIcon = aspectRatio === 'square';
+          const defaultValue = isIcon ? 100 : 50;
+          setPosition(50);
+          if (isIcon) setScale(100);
+          onImageChange(base64String, defaultValue);
 
           // "Blur" to trigger save - this simulates the blur behavior of text fields
           setIsFocused(false);
@@ -138,7 +142,7 @@ export function AutosaveUpload({
           if (triggerSave) {
             // Small delay to show the orange indicator
             setTimeout(() => {
-              triggerSave(base64String, 50);
+              triggerSave(base64String, defaultValue);
             }, 100);
           }
         };
@@ -151,7 +155,7 @@ export function AutosaveUpload({
         setIsProcessing(false);
       }
     },
-    [onImageChange, triggerSave, maxSize]
+    [onImageChange, triggerSave, maxSize, aspectRatio]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -273,17 +277,23 @@ export function AutosaveUpload({
     };
   }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
-  const savePosition = () => {
+  const savePosition = async () => {
     setIsRepositioning(false);
     onImageChange(preview, position);
 
     // Trigger autosave with ONLY the position (not the banner image)
     // Pass null for banner to indicate we're only updating position
     if (triggerSave) {
-      triggerSave(null, position);
+      try {
+        await triggerSave(null, position);
+        toast.success("Position saved");
+      } catch (error) {
+        console.error('[AutosaveUpload] Position save failed:', error);
+        toast.error("Failed to save position");
+      }
+    } else {
+      toast.success("Position saved");
     }
-
-    toast.success("Position saved");
   };
 
   const cancelReposition = () => {
@@ -291,16 +301,22 @@ export function AutosaveUpload({
     setPosition(currentPosition);
   };
 
-  const saveScale = () => {
+  const saveScale = async () => {
     setIsZooming(false);
     onImageChange(preview, scale);
 
     // Trigger autosave with ONLY the scale (not the icon image)
     if (triggerSave) {
-      triggerSave(null, scale);
+      try {
+        await triggerSave(null, scale);
+        toast.success("Zoom saved");
+      } catch (error) {
+        console.error('[AutosaveUpload] Scale save failed:', error);
+        toast.error("Failed to save zoom level");
+      }
+    } else {
+      toast.success("Zoom saved");
     }
-
-    toast.success("Zoom saved");
   };
 
   const cancelZoom = () => {

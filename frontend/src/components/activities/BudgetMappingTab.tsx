@@ -283,8 +283,6 @@ export default function BudgetMappingTab({
 
   const formatUSD = (value: number): string => {
     return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -671,20 +669,20 @@ export default function BudgetMappingTab({
 
                       return (
                         <TableRow key={`${cbi.id}-${index}`} className={isAutoMapped ? "bg-muted/30" : ""}>
-                          <TableCell className="text-sm text-muted-foreground">
+                          <TableCell className="text-sm text-foreground">
                             {getVocabularyName(cbi.vocabulary)}
                           </TableCell>
-                          <TableCell className="text-sm">
+                          <TableCell className="text-sm text-foreground">
                             {classification
                               ? CLASSIFICATION_TYPE_LABELS[classification.classificationType]
                               : '-'}
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            <div className="flex items-center gap-2 flex-nowrap">
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded flex-shrink-0">
                                 {item.code}
                               </span>
-                              <span className="text-sm font-medium">
+                              <span className="text-sm font-medium whitespace-nowrap">
                                 {classification?.name || '-'}
                               </span>
                               {isAutoMapped && (
@@ -699,18 +697,13 @@ export default function BudgetMappingTab({
                           {totalBudgetUSD != null && totalBudgetUSD > 0 && (
                             <TableCell className="text-sm text-right font-medium">
                               {calculateUSDValue(item.percentage) !== null
-                                ? formatUSD(calculateUSDValue(item.percentage)!)
+                                ? <><span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-1.5">USD</span>{formatUSD(calculateUSDValue(item.percentage)!)}</>
                                 : '-'}
                             </TableCell>
                           )}
                           <TableCell>
                             <div className="text-sm text-gray-600">
                               {getPrimaryDescription(item.description)}
-                              {isAutoMapped && item.source_sector_name && (
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  From sector: {item.source_sector_name}
-                                </div>
-                              )}
                             </div>
                           </TableCell>
                           <TableCell>

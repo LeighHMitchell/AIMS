@@ -3,7 +3,9 @@
 import { RequiredDot } from "@/components/ui/required-dot";
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, parseISO, isValid } from 'date-fns';
-import { Trash2, Plus, Loader2, Pencil, Save, X, AlertCircle, CheckCircle, TrendingUp } from 'lucide-react';
+import { Trash2, Plus, Loader2, Pencil, Save, X, AlertCircle, CheckCircle, TrendingUp, HelpCircle } from 'lucide-react';
+import { DatePicker } from '@/components/ui/date-picker';
+import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -468,7 +470,7 @@ export default function ForwardSpendingSurveyTab({
                 onClick={deleteFss}
                 disabled={savingFss}
               >
-                <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                <Trash2 className="h-4 w-4 mr-2 text-white" />
                 Delete FSS
               </Button>
             )}
@@ -477,29 +479,33 @@ export default function ForwardSpendingSurveyTab({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="extraction_date">
+              <Label htmlFor="extraction_date" className="flex items-center gap-2">
                 Extraction Date <RequiredDot />
+                <HelpTextTooltip content="Date when forecast data was extracted">
+                  <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                </HelpTextTooltip>
               </Label>
-              <Input
-                id="extraction_date"
-                type="date"
+              <DatePicker
                 value={fss?.extraction_date || ''}
-                onChange={(e) => handleFssFieldChange('extraction_date', e.target.value)}
-                onBlur={() => {
-                  if (fss?.extraction_date) {
-                    saveFss(fss);
+                onChange={(value) => {
+                  handleFssFieldChange('extraction_date', value);
+                  if (value) {
+                    saveFss({ ...fss, extraction_date: value });
                   }
                 }}
+                placeholder="Select extraction date"
                 disabled={isReadOnly || savingFss}
-                required
+                dropdownId="fss-extraction-date"
               />
-              <p className="text-xs text-muted-foreground">
-                Date when forecast data was extracted
-              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="priority">Priority Level</Label>
+              <Label htmlFor="priority" className="flex items-center gap-2">
+                Priority Level
+                <HelpTextTooltip content="Moderate confidence in funding">
+                  <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                </HelpTextTooltip>
+              </Label>
               <Select
                 value={fss?.priority?.toString() || ''}
                 onValueChange={(value) => handleFssFieldChange('priority', value ? parseInt(value) : null)}
@@ -510,19 +516,21 @@ export default function ForwardSpendingSurveyTab({
                 </SelectTrigger>
                 <SelectContent>
                   {FSS_PRIORITY_LEVELS.map((level) => (
-                    <SelectItem key={level.code} value={level.code.toString()}>
+                    <SelectItem key={level.code} value={level.code.toString()} className="pl-2">
                       {level.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                {fss?.priority && FSS_PRIORITY_LEVELS.find(l => l.code === fss.priority)?.description}
-              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phaseout_year">Phaseout Year</Label>
+              <Label htmlFor="phaseout_year" className="flex items-center gap-2">
+                Phaseout Year
+                <HelpTextTooltip content="Expected end year of funding">
+                  <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                </HelpTextTooltip>
+              </Label>
               <Select
                 value={fss?.phaseout_year?.toString() || ''}
                 onValueChange={(value) => {
@@ -540,16 +548,13 @@ export default function ForwardSpendingSurveyTab({
                   {Array.from({ length: 101 }, (_, i) => {
                     const year = 2000 + i;
                     return (
-                      <SelectItem key={year} value={year.toString()}>
+                      <SelectItem key={year} value={year.toString()} className="pl-2">
                         {year}
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Expected end year of funding
-              </p>
             </div>
           </div>
 
@@ -630,10 +635,11 @@ export default function ForwardSpendingSurveyTab({
                       >
                         <TableCell className="py-3 px-4 font-medium">{forecast.forecast_year}</TableCell>
                         <TableCell className="py-3 px-4 text-right font-medium">
-                          {forecast.currency} {forecast.amount.toLocaleString()}
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-1.5">{forecast.currency}</span>
+                          {forecast.amount.toLocaleString()}
                         </TableCell>
                         <TableCell className="py-3 px-4">
-                          {forecast.value_date ? format(parseISO(forecast.value_date), 'MMM d, yyyy') : '-'}
+                          {forecast.value_date ? format(parseISO(forecast.value_date), 'd MMMM yyyy') : '-'}
                         </TableCell>
                         <TableCell className="py-3 px-4 text-right font-medium">
                           <div className="flex items-center justify-end gap-1">
@@ -644,7 +650,8 @@ export default function ForwardSpendingSurveyTab({
                                 <UITooltip>
                                   <TooltipTrigger asChild>
                                     <span className="font-medium cursor-help">
-                                      ${usdValues[forecast.id || ''].usd?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-1.5">USD</span>
+                                      {usdValues[forecast.id || ''].usd?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent>

@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { RequiredDot } from '@/components/ui/required-dot';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -179,14 +181,8 @@ function ConditionTypeSelect({
                       setIsOpen(false);
                       setSearchQuery("");
                     }}
-                    className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                    className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                   >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === option.code ? "opacity-100" : "opacity-0"
-                      )}
-                    />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{option.code}</span>
@@ -404,16 +400,21 @@ export function ConditionsTab({
       )}
 
 
-      {/* Add Condition Form */}
-      {showAddCondition && !readOnly && (
-        <Card className="border-2 border-gray-400 bg-gray-50">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg text-gray-900">Add New Condition</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      {/* Add Condition Modal */}
+      <Dialog open={showAddCondition && !readOnly} onOpenChange={(open) => {
+        if (!open) {
+          setShowAddCondition(false);
+          setNewCondition({ type: '1', narrative: '' });
+        }
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New Condition</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="condition-type" className="text-base font-medium text-gray-900 flex items-center gap-2">
-                Condition Type *
+              <Label htmlFor="condition-type" className="text-sm font-medium flex items-center gap-2">
+                Condition Type <RequiredDot />
                 <HelpTextTooltip>
                   Select the type of condition based on IATI standard
                 </HelpTextTooltip>
@@ -426,8 +427,8 @@ export function ConditionsTab({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="condition-narrative" className="text-base font-medium text-gray-900">
-                Description *
+              <Label htmlFor="condition-narrative" className="text-sm font-medium flex items-center gap-2">
+                Description <RequiredDot />
               </Label>
               <Textarea
                 id="condition-narrative"
@@ -438,31 +439,28 @@ export function ConditionsTab({
                 className="w-full"
               />
             </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <Button 
-                onClick={handleCreateCondition}
-                disabled={!newCondition.narrative.trim() || isCreating}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400 px-6"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {isCreating ? 'Saving...' : 'Save Condition'}
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => {
-                  setShowAddCondition(false);
-                  setNewCondition({ type: '1', narrative: '' });
-                }}
-                disabled={isCreating}
-                className="text-gray-600"
-              >
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddCondition(false);
+                setNewCondition({ type: '1', narrative: '' });
+              }}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateCondition}
+              disabled={!newCondition.narrative.trim() || isCreating}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isCreating ? 'Saving...' : 'Save Condition'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Conditions List */}
       {conditions.length === 0 ? (
@@ -470,7 +468,7 @@ export function ConditionsTab({
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl font-semibold text-gray-900">Conditions</CardTitle>
-              {!readOnly && !showAddCondition && (
+              {!readOnly && (
                 <Button
                   size="sm"
                   onClick={() => setShowAddCondition(true)}

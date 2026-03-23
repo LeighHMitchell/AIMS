@@ -863,14 +863,13 @@ export default function CountriesRegionsTab({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold">Countries & Regions Allocation</h3>
           {geographyLevel === 'transaction' && (
             <Badge variant="secondary" className="text-xs">
               Disabled - Using Transaction Level
             </Badge>
           )}
         </div>
-        
+
         {geographyLevel === 'activity' && !isValidAllocation && !hasOverlappingAllocations && (countries.length > 0 || regions.length > 0) && (
           <Button
             variant="outline"
@@ -930,15 +929,6 @@ export default function CountriesRegionsTab({
 
       {!isLoading && (
         <div className={`space-y-6 ${geographyLevel === 'transaction' ? 'opacity-50 pointer-events-none' : ''}`}>
-          {/* Add Country/Region Button */}
-          {canEdit && (
-            <div className="flex justify-end">
-              <Button onClick={() => setShowAddForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Country or Region
-              </Button>
-            </div>
-          )}
 
           {/* Add/Edit Allocation Modal */}
           <Dialog
@@ -1379,11 +1369,16 @@ export default function CountriesRegionsTab({
           </Dialog>
 
           {/* Allocations Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Allocations</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Current Allocations</h3>
+              {canEdit && (
+                <Button onClick={() => setShowAddForm(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Country or Region
+                </Button>
+              )}
+            </div>
               {countries.length === 0 && regions.length === 0 && customGeographies.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -1408,10 +1403,8 @@ export default function CountriesRegionsTab({
                       <TableRow key={countryAllocation.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-gray-600" />
-                            <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">
-                              Country
-                            </Badge>
+                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">CT</Badge>
+                            <span className="text-sm font-medium text-gray-900">Country</span>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
@@ -1425,10 +1418,10 @@ export default function CountriesRegionsTab({
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-gray-500 text-sm">
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">A4</span>
-                            <span className="text-sm text-gray-500 font-normal">ISO Country</span>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">A4</Badge>
+                            <span className="text-sm font-medium text-gray-900">ISO Country</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1469,10 +1462,8 @@ export default function CountriesRegionsTab({
                       <TableRow key={regionAllocation.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-gray-600" />
-                            <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">
-                              Region
-                            </Badge>
+                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">RG</Badge>
+                            <span className="text-sm font-medium text-gray-900">Region</span>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
@@ -1486,10 +1477,10 @@ export default function CountriesRegionsTab({
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-gray-500 text-sm">
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">1</span>
-                            <span className="text-sm text-gray-500 font-normal">OECD DAC</span>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">1</Badge>
+                            <span className="text-sm font-medium text-gray-900">OECD DAC</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1530,13 +1521,8 @@ export default function CountriesRegionsTab({
                       <TableRow key={customAllocation.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <div className="relative">
-                              <MapPin className="h-4 w-4 text-gray-600" />
-                              <Plus className="h-2 w-2 text-gray-600 absolute -top-1 -right-1" />
-                            </div>
-                            <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">
-                              Custom
-                            </Badge>
+                            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">CG</Badge>
+                            <span className="text-sm font-medium text-gray-900">Custom</span>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
@@ -1547,13 +1533,13 @@ export default function CountriesRegionsTab({
                             <span className="text-sm font-medium text-gray-900">{customAllocation.name}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-gray-500 text-sm">
+                        <TableCell>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1 cursor-help">
-                                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">99</span>
-                                  <span className="text-sm text-gray-500 font-normal">Custom</span>
+                                <div className="flex items-center gap-2 cursor-help">
+                                  <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground">99</Badge>
+                                  <span className="text-sm font-medium text-gray-900">Custom</span>
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-gray-200 bg-white shadow-lg">
@@ -1599,8 +1585,7 @@ export default function CountriesRegionsTab({
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
-          </Card>
+          </div>
         </div>
       )}
     </div>

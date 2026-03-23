@@ -207,7 +207,7 @@ export function FlowTypeSelect({
                         setOpen(false);
                         setSearchQuery("");
                       }}
-                      className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                      className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                     >
                       <Check
                         className={cn(
@@ -241,7 +241,7 @@ export function FlowTypeSelect({
                         setOpen(false);
                         setSearchQuery("");
                       }}
-                      className="pl-6 cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
+                      className="cursor-pointer py-3 hover:bg-accent/50 focus:bg-accent data-[selected]:bg-accent transition-colors"
                     >
                       <Check
                         className={cn(
