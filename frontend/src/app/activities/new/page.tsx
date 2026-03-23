@@ -2982,7 +2982,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
               <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
             </HelpTextTooltip>
           </div>
-          <ReadinessChecklistTab activityId={general.id} defaultModality={general.defaultModality} />
+          <ReadinessChecklistTab activityId={general.id} />
         </div>
       );
     // Note: sdg, country-budget, tags, working_groups, policy_markers are now handled by StrategicAlignmentGroup above
