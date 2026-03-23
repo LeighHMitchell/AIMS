@@ -50,14 +50,21 @@ export function ReadinessConfigSection({
     is_infrastructure: config?.is_infrastructure || false,
   });
 
-  // Update local state when config changes
+  // Update local state when config changes (compare values, not reference)
   useEffect(() => {
-    setLocalConfig({
-      financing_type: config?.financing_type || null,
-      financing_modality: config?.financing_modality || null,
-      is_infrastructure: config?.is_infrastructure || false,
+    const newType = config?.financing_type || null;
+    const newModality = config?.financing_modality || null;
+    const newInfra = config?.is_infrastructure || false;
+
+    setLocalConfig(prev => {
+      if (prev.financing_type === newType &&
+          prev.financing_modality === newModality &&
+          prev.is_infrastructure === newInfra) {
+        return prev; // No change — skip re-render
+      }
+      return { financing_type: newType, financing_modality: newModality, is_infrastructure: newInfra };
     });
-  }, [config]);
+  }, [config?.financing_type, config?.financing_modality, config?.is_infrastructure]);
 
   const handleFinancingTypeChange = async (value: string) => {
     const newType = value as FinancingType;
